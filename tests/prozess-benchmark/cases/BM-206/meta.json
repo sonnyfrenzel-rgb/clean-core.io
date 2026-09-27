@@ -1,0 +1,31 @@
+{
+  "id": "BM-206",
+  "title": "Retouren-Vorprüfung mit Validator-Kette und Ablehnungsereignis",
+  "domain": "SD",
+  "band": "mittel",
+  "loc": 97,
+  "constructs": [
+    "REPORT",
+    "lokales Interface",
+    "Validator-Kette",
+    "EVENTS/RAISE EVENT",
+    "SET HANDLER",
+    "funktionale Aufrufe in IF",
+    "RETURN in Schleife",
+    "MESSAGE E"
+  ],
+  "scenario": "Kundenservice-Report, mit dem vor Anlage eines Retourenauftrags geprüft wird, ob eine Rückgabe zulässig ist.",
+  "s4_issues": [
+    "VBRK/VBRP-Direktzugriff (Released-API: I_BillingDocument)",
+    "Materialnummer 40 Zeichen"
+  ],
+  "wave": 3,
+  "module": "SD",
+  "edge_constructs": [
+    "RAISE EVENT mit synchronem Handler",
+    "RETURN aus LOOP in Methode",
+    "auskommentierter Validator",
+    "polymorpher Aufruf in Bedingung"
+  ],
+  "oo": true
+}

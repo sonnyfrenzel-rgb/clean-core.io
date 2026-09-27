@@ -1,0 +1,38 @@
+{
+  "id": "BM-259",
+  "title": "Gateway-Service Zeitgenehmigung: offene CATS-Zeiten der Mitarbeiter lesen, korrigieren, genehmigen oder ablehnen",
+  "domain": "HR / CATS Zeitgenehmigung",
+  "band": "sehr komplex",
+  "loc": 410,
+  "constructs": [
+    "GET_ENTITYSET mit it_filter_select_options und Paging",
+    "UPDATE_ENTITY",
+    "EXECUTE_ACTION (Funktionsimport) mit CASE iv_action_name",
+    "Nachrichtencontainer + Geschäftsausnahme",
+    "Ausnahmeklasse mit sechs Texten",
+    "LOOP ... GROUP BY",
+    "FOR ALL ENTRIES",
+    "AUTHORITY-CHECK auf Kundenobjekt",
+    "ENQUEUE je Personalnummer",
+    "CALL FUNCTION IN UPDATE TASK mit MESSAGE TYPE 'A'",
+    "COMMIT WORK AND WAIT",
+    "UPDATE CATSDB direkt",
+    "CL_BCS-Mail"
+  ],
+  "scenario": "Eigene Fiori-App für Führungskräfte: offene CATS-Zeiten der eigenen Mitarbeiter werden angezeigt, korrigiert und genehmigt oder abgelehnt; der Service schreibt den Status direkt in die CATSDB.",
+  "s4_issues": [
+    "Direkte Änderung der CATSDB ohne CATS-Verbuchung/Änderungsbelege",
+    "Führungsbeziehung über Kundenbaustein statt OM-Standardauswertung",
+    "SEGW-Service statt Standard-App „Zeiten genehmigen“"
+  ],
+  "wave": 3,
+  "module": "HR",
+  "edge_constructs": [
+    "Ausnahme aus Serviceklasse in CATCH des DPC",
+    "Hilfsmethode, die immer eine Ausnahme wirft",
+    "COMMIT WORK AND WAIT ohne Auswertung",
+    "Mailfehler wird geschluckt",
+    "leere Range-Tabelle"
+  ],
+  "oo": true
+}

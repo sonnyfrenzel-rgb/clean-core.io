@@ -1,0 +1,1312 @@
+{
+  "id": "BM-208",
+  "title": "Bestellfreigabe-Job mit Zustandsklassen und Freigabeereignis",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Polymorpher Aufruf handle: Kanten zu allen drei Zustandsklassen mit „always“; die Auswahl ergibt sich aus dem jeweils gesetzten Zustand.",
+    "Gateway kg: beide Zweige enden in der Zustandszuweisung, daher zwei Kanten kg→ke."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EKKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_po_approval_f01.abap",
+        "line": 6,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_po_approval_f01.abap:6"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_po_approval_c01.abap",
+        "line": 63,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_po_approval_c01.abap:63"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PO_RELEASE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_po_approval_c01.abap",
+        "line": 110,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_po_approval_c01.abap:110"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_po_approval_c01.abap",
+        "line": 123,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_po_approval_c01.abap:123"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SWE_EVENT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_po_approval_c01.abap",
+        "line": 148,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_po_approval_c01.abap:148"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_BUDGET",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zmm_po_approval_c01.abap",
+        "line": 97,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_po_approval_c01.abap:97"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_PO_REJECT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zmm_po_approval_c01.abap",
+        "line": 138,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_po_approval_c01.abap:138"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-208-B01",
+      "text": "Der Nachtjob selektiert alle gesperrten, nicht gelöschten Bestellungen der gewählten Belegarten und Einkäufergruppen.",
+      "anchors": [
+        {
+          "file": "zmm_po_approval_f01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_f01.abap:6"
+        }
+      ]
+    },
+    {
+      "id": "BM-208-B02",
+      "text": "Gibt es keine solche Bestellung, meldet der Job das und endet.",
+      "anchors": [
+        {
+          "file": "zmm_po_approval.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval.abap:16"
+        },
+        {
+          "file": "zmm_po_approval.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval.abap:17"
+        },
+        {
+          "file": "zmm_po_approval.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-208-B03",
+      "text": "Je Bestellung wird der Nettowert der nicht gelöschten Positionen ermittelt.",
+      "anchors": [
+        {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-208-B04",
+      "text": "Bestellungen bis 5.000 gehen direkt in die Freigabe, größere zuerst in die Budgetprüfung.",
+      "anchors": [
+        {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-208-B05",
+      "text": "Für die Budgetprüfung wird das Restbudget der Einkäufergruppe im laufenden Jahr gelesen; ohne Budgetsatz wird die Bestellung als Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:88"
+        },
+        {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:91"
+        },
+        {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:92"
+        }
+      ]
+    },
+    {
+      "id": "BM-208-B06",
+      "text": "Reicht das Restbudget, wird es um den Bestellwert gemindert und die Bestellung geht in die Freigabe.",
+      "anchors": [
+        {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:95"
+        },
+        {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-208-B07",
+      "text": "Reicht es nicht, wird die Ablehnung mit Grund BUDGET, Wert und Datum vermerkt; die Bestellung bleibt gesperrt.",
+      "anchors": [
+        {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:138"
+        }
+      ]
+    },
+    {
+      "id": "BM-208-B08",
+      "text": "Die Freigabe erfolgt mit dem Freigabecode Z1; schlägt sie fehl, wird die Bestellung als Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:110"
+        },
+        {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:119"
+        },
+        {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:120"
+        }
+      ]
+    },
+    {
+      "id": "BM-208-B09",
+      "text": "Eine erfolgreiche Freigabe wird festgeschrieben, zusammen mit einer zuvor vorgemerkten Budgetminderung.",
+      "anchors": [
+        {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:123"
+        }
+      ]
+    },
+    {
+      "id": "BM-208-B10",
+      "text": "Nach der Freigabe wird ein Workflow-Ereignis zur Bestellung erzeugt, das den Besteller benachrichtigen soll, und die Freigabe gezählt und ausgegeben.",
+      "anchors": [
+        {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:81"
+        },
+        {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:148"
+        },
+        {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:157"
+        }
+      ]
+    },
+    {
+      "id": "BM-208-B11",
+      "text": "Fehler werden mit Bestellnummer und Text rot ausgegeben und gezählt; der Job fährt mit der nächsten Bestellung fort.",
+      "anchors": [
+        {
+          "file": "zmm_po_approval_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_f01.abap:24"
+        },
+        {
+          "file": "zmm_po_approval_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_f01.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-208-B12",
+      "text": "Am Ende gibt der Job die Anzahl der Freigaben und der Fehler aus.",
+      "anchors": [
+        {
+          "file": "zmm_po_approval.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval.abap:27"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_approval.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval.abap:14"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "cs",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_approval.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval.abap:15"
+        },
+        "meaning": "Freizugebende Bestellungen selektieren"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_approval.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval.abap:16"
+        },
+        "meaning": "Keine Bestellungen?"
+      },
+      {
+        "id": "o0",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_po_approval.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval.abap:17"
+        },
+        "meaning": "Keine Bestellungen melden"
+      },
+      {
+        "id": "r0",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_approval.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval.abap:18"
+        },
+        "meaning": "Job ohne Arbeit beenden"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_po_approval.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval.abap:23"
+        },
+        "meaning": "Je Bestellung"
+      },
+      {
+        "id": "cp",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_approval.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval.abap:24"
+        },
+        "meaning": "Bestellung durch Freigabemodell fuehren"
+      },
+      {
+        "id": "wo",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_po_approval.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval.abap:27"
+        },
+        "meaning": "Zaehler Freigaben/Fehler ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_approval.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval.abap:27"
+        },
+        "meaning": "Jobende"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_approval_f01.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_f01.abap:4"
+        },
+        "meaning": "Selektion"
+      },
+      {
+        "id": "sq",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_po_approval_f01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_f01.abap:6"
+        },
+        "meaning": "Gesperrte, nicht geloeschte Bestellungen lesen"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_po_approval_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_f01.abap:13"
+        }
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_approval_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_f01.abap:15"
+        },
+        "meaning": "Bestellung verarbeiten"
+      },
+      {
+        "id": "pc",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_approval_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_f01.abap:19"
+        },
+        "meaning": "Freigabeobjekt mit Anfangszustand erzeugen"
+      },
+      {
+        "id": "pr",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_approval_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_f01.abap:22"
+        },
+        "meaning": "Zustandsmodell durchlaufen"
+      },
+      {
+        "id": "ce",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_approval_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_f01.abap:24"
+        },
+        "meaning": "Fehler protokollieren"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_po_approval_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_f01.abap:26"
+        }
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_approval_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_f01.abap:28"
+        },
+        "meaning": "Fehlerprotokoll"
+      },
+      {
+        "id": "lo",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_po_approval_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_f01.abap:31"
+        },
+        "meaning": "Bestellung und Fehlertext ausgeben"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_po_approval_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_f01.abap:32"
+        }
+      },
+      {
+        "id": "ks",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:60"
+        },
+        "meaning": "Fabrikmethode Freigabeobjekt"
+      },
+      {
+        "id": "kq",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:63"
+        },
+        "meaning": "Nettowert der offenen Positionen summieren"
+      },
+      {
+        "id": "kg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:67"
+        },
+        "meaning": "Kleinbestellung bis 5.000?"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "meaning": "Freigabeobjekt zurueckgeben",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:72"
+        }
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:74"
+        },
+        "meaning": "Zustandsmaschine"
+      },
+      {
+        "id": "rw",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:75"
+        },
+        "meaning": "Solange ein Zustand aktiv ist"
+      },
+      {
+        "id": "rh",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:76"
+        },
+        "meaning": "Aktuellen Zustand ausfuehren (polymorph)"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:78"
+        }
+      },
+      {
+        "id": "bs",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:86"
+        },
+        "meaning": "Zustand Budgetpruefung"
+      },
+      {
+        "id": "bq",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:88"
+        },
+        "meaning": "Restbudget der Einkaeufergruppe im Jahr lesen"
+      },
+      {
+        "id": "bg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:91"
+        },
+        "meaning": "Kein Budget gepflegt?"
+      },
+      {
+        "id": "bx",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:92"
+        },
+        "meaning": "Ausnahme: kein Budget"
+      },
+      {
+        "id": "bg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:95"
+        },
+        "meaning": "Budget reicht?"
+      },
+      {
+        "id": "bu",
+        "type": "write",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:97"
+        },
+        "meaning": "Restbudget um Bestellwert mindern"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:104"
+        }
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:108"
+        },
+        "meaning": "Zustand Freigabe"
+      },
+      {
+        "id": "ab",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:110"
+        },
+        "meaning": "Bestellung mit Freigabecode Z1 freigeben"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:119"
+        },
+        "meaning": "Freigabe fehlgeschlagen?"
+      },
+      {
+        "id": "ax",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:120"
+        },
+        "meaning": "Ausnahme: Freigabe fehlgeschlagen"
+      },
+      {
+        "id": "ac",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:123"
+        },
+        "meaning": "Freigabe (und Budgetvormerkung) festschreiben"
+      },
+      {
+        "id": "an",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:126"
+        },
+        "meaning": "Freigabe-Ereignis ausloesen lassen"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:128"
+        }
+      },
+      {
+        "id": "js",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:132"
+        },
+        "meaning": "Zustand Ablehnung"
+      },
+      {
+        "id": "jw",
+        "type": "write",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:138"
+        },
+        "meaning": "Ablehnung wegen Budget vermerken"
+      },
+      {
+        "id": "je",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:140"
+        }
+      },
+      {
+        "id": "ns",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:80"
+        },
+        "meaning": "Benachrichtigung"
+      },
+      {
+        "id": "nv",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:81"
+        },
+        "meaning": "Ereignis Bestellung freigegeben"
+      },
+      {
+        "id": "ne",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:82"
+        }
+      },
+      {
+        "id": "hs",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:144"
+        },
+        "meaning": "Ereignisbehandler Protokoll"
+      },
+      {
+        "id": "hc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:148"
+        },
+        "meaning": "Workflow-Ereignis BUS2012.ZAUTORELEASED erzeugen"
+      },
+      {
+        "id": "ho",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:157"
+        },
+        "meaning": "Freigabe ausgeben"
+      },
+      {
+        "id": "he",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_po_approval_c01.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_approval_c01.abap:158"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "sq",
+        "condition": "always"
+      },
+      {
+        "from": "sq",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "o0",
+        "condition": "gt_ekko IS INITIAL"
+      },
+      {
+        "from": "o0",
+        "to": "r0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "lp",
+        "to": "cp",
+        "condition": "next row"
+      },
+      {
+        "from": "cp",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "wo",
+        "condition": "no more rows"
+      },
+      {
+        "from": "wo",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "pc",
+        "condition": "always"
+      },
+      {
+        "from": "pc",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "ke",
+        "to": "pr",
+        "condition": "always"
+      },
+      {
+        "from": "ks",
+        "to": "kq",
+        "condition": "always"
+      },
+      {
+        "from": "kq",
+        "to": "kg",
+        "condition": "always"
+      },
+      {
+        "from": "kg",
+        "to": "ke",
+        "condition": "ro_appr->mv_netwr <= gc_auto_limit"
+      },
+      {
+        "from": "kg",
+        "to": "ke",
+        "condition": "else"
+      },
+      {
+        "from": "pr",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "rw",
+        "condition": "always"
+      },
+      {
+        "from": "rw",
+        "to": "rh",
+        "condition": "next row"
+      },
+      {
+        "from": "rh",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "rw",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rh",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "rw",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rh",
+        "to": "js",
+        "condition": "always"
+      },
+      {
+        "from": "je",
+        "to": "rw",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rw",
+        "to": "re",
+        "condition": "no more rows"
+      },
+      {
+        "from": "bs",
+        "to": "bq",
+        "condition": "always"
+      },
+      {
+        "from": "bq",
+        "to": "bg1",
+        "condition": "always"
+      },
+      {
+        "from": "bg1",
+        "to": "bx",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "bg1",
+        "to": "bg2",
+        "condition": "else"
+      },
+      {
+        "from": "bg2",
+        "to": "bu",
+        "condition": "lv_rest >= io_ctx->mv_netwr"
+      },
+      {
+        "from": "bu",
+        "to": "be",
+        "condition": "always"
+      },
+      {
+        "from": "bg2",
+        "to": "be",
+        "condition": "else"
+      },
+      {
+        "from": "as",
+        "to": "ab",
+        "condition": "always"
+      },
+      {
+        "from": "ab",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "ax",
+        "condition": "sy-subrc <> 0 OR line_exists( lt_return[ type = 'E' ] )"
+      },
+      {
+        "from": "ag",
+        "to": "ac",
+        "condition": "else"
+      },
+      {
+        "from": "ac",
+        "to": "an",
+        "condition": "always"
+      },
+      {
+        "from": "an",
+        "to": "ns",
+        "condition": "always"
+      },
+      {
+        "from": "ne",
+        "to": "ae",
+        "condition": "always"
+      },
+      {
+        "from": "ns",
+        "to": "nv",
+        "condition": "always"
+      },
+      {
+        "from": "nv",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "he",
+        "to": "ne",
+        "condition": "always"
+      },
+      {
+        "from": "hs",
+        "to": "hc",
+        "condition": "always"
+      },
+      {
+        "from": "hc",
+        "to": "ho",
+        "condition": "always"
+      },
+      {
+        "from": "ho",
+        "to": "he",
+        "condition": "always"
+      },
+      {
+        "from": "js",
+        "to": "jw",
+        "condition": "always"
+      },
+      {
+        "from": "jw",
+        "to": "je",
+        "condition": "always"
+      },
+      {
+        "from": "bx",
+        "to": "ce",
+        "condition": "lcx_approval"
+      },
+      {
+        "from": "ax",
+        "to": "ce",
+        "condition": "lcx_approval"
+      },
+      {
+        "from": "ce",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "lo",
+        "condition": "always"
+      },
+      {
+        "from": "lo",
+        "to": "le",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zmm_po_approval_c01.abap:120 — kein Fachsatz „die Budgetminderung wird bei fehlgeschlagener Freigabe zurückgenommen“ — es gibt kein ROLLBACK; die offene UPDATE-Änderung wird mit dem nächsten Commit festgeschrieben.",
+    "zmm_po_approval_c01.abap:138 — kein Fachsatz „die Bestellung wird abgelehnt/storniert“ — nur ein Z-Vermerk wird geschrieben, der SAP-Freigabestatus bleibt unverändert.",
+    "zmm_po_approval_c01.abap:148 — kein Fachsatz „der Besteller erhält eine Mail“ — erzeugt wird nur ein Workflow-Ereignis; ob und wie benachrichtigt wird, liegt außerhalb des Codes.",
+    "zmm_po_approval_c01.abap:67 — kein Fachsatz „Kleinbestellungen werden ohne Freigabe gebucht“ — auch sie laufen durch BAPI_PO_RELEASE."
+  ],
+  "processDescription": "Der Nachtjob liest alle gesperrten Bestellungen der gewählten Belegarten und Einkäufergruppen; gibt es keine, endet er mit einer Meldung. Für jede Bestellung erzeugt eine Fabrik ein Freigabeobjekt und summiert den Nettowert der Positionen. Bis 5.000 beginnt es im Zustand Freigabe, sonst im Zustand Budgetprüfung. Die Budgetprüfung liest das Restbudget der Einkäufergruppe; fehlt es, wird die Bestellung als Fehler protokolliert. Reicht das Budget, wird es gemindert und der Zustand wechselt zur Freigabe, sonst zur Ablehnung, die nur einen Z-Vermerk schreibt. Die Freigabe ruft BAPI_PO_RELEASE mit Code Z1, protokolliert Fehler, schreibt sonst fest und löst ein Ereignis aus, dessen Handler ein Workflow-Ereignis erzeugt und die Freigabe zählt und ausgibt. Am Ende stehen die Zähler für Freigaben und Fehler in der Liste."
+}

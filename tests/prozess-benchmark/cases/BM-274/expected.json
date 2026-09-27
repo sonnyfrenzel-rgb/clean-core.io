@@ -1,0 +1,2302 @@
+{
+  "id": "BM-274",
+  "title": "IDoc-Eingang Versandbestätigung mit Segment-Handler-Hierarchie",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "LIKP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_seg_hdr.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_seg_hdr.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_seg_hdr.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_seg_hdr.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LIPS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_seg_itm.abap",
+        "line": 33,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_seg_itm.abap:33"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_SHP_TOL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_seg_itm.abap",
+        "line": 43,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_seg_itm.abap:43"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MCH1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_seg_itm.abap",
+        "line": 68,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_seg_itm.abap:68"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EVVBLKE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_idoc_input_zshpconf.abap",
+        "line": 60,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_idoc_input_zshpconf.abap:60"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "WS_DELIVERY_UPDATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_idoc_input_zshpconf.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_idoc_input_zshpconf.abap:79"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_idoc_log.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_idoc_log.abap:39"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_idoc_log.abap",
+        "line": 97,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_idoc_log.abap:97"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-274-B01",
+      "text": "Der Logistikdienstleister bestätigt den Versand von Auslieferungen per IDoc; jedes IDoc des Pakets wird einzeln verarbeitet und erhält ein eigenes Anwendungsprotokoll zur IDoc-Nummer.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:40"
+        },
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:41"
+        },
+        {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-274-B02",
+      "text": "Lässt sich das Anwendungsprotokoll nicht anlegen, wird ohne Protokoll weitergearbeitet; der IDoc-Status bleibt die einzige Rückmeldung.",
+      "anchors": [
+        {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:46"
+        },
+        {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-274-B03",
+      "text": "Kopf- und Positionssegmente werden über einen zum Segmenttyp passenden Handler geprüft und in den Verarbeitungskontext übernommen; andere Segmente, etwa Freitexte, werden übergangen.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:46"
+        },
+        {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:36"
+        },
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:48"
+        },
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-274-B04",
+      "text": "Jedes verarbeitete Segment wird erst geprüft und dann übernommen; ein leeres Segment ist ein Fehler.",
+      "anchors": [
+        {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:49"
+        },
+        {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:50"
+        },
+        {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:57"
+        },
+        {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-274-B05",
+      "text": "Die gemeldete Lieferung muss existieren; sonst ist das IDoc fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:23"
+        },
+        {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:25"
+        },
+        {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-274-B06",
+      "text": "Ist der Warenausgang der Lieferung laut Gesamtstatus bereits vollständig gebucht, wird die Bestätigung abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:32"
+        },
+        {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:34"
+        },
+        {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-274-B07",
+      "text": "Aus dem Kopf werden Lieferung, Warenausgangskennzeichen und Warenausgangsdatum übernommen; fehlt das Datum, gilt das Tagesdatum.",
+      "anchors": [
+        {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:47"
+        },
+        {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:49"
+        },
+        {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-274-B08",
+      "text": "Eine Position ohne vorher gemeldeten Kopf oder zu einer unbekannten Lieferposition macht das IDoc fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:27"
+        },
+        {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:28"
+        },
+        {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:33"
+        },
+        {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:36"
+        },
+        {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-274-B09",
+      "text": "Die Pickmenge darf die Liefermenge höchstens um die Überpicktoleranz des Werks überschreiten; ist keine Toleranz gepflegt, gilt 0 %, und jede Überschreitung macht das IDoc fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:43"
+        },
+        {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:45"
+        },
+        {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:46"
+        },
+        {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:48"
+        },
+        {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-274-B10",
+      "text": "Die Pickmenge jeder Position wird übernommen, auch eine Nullmenge; eine gemeldete Charge muss zum Material existieren und wird mitgegeben.",
+      "anchors": [
+        {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:56"
+        },
+        {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:67"
+        },
+        {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:68"
+        },
+        {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:71"
+        },
+        {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-274-B11",
+      "text": "Ohne ermittelte Lieferung ist das IDoc fehlerhaft.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:53"
+        },
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-274-B12",
+      "text": "Vor dem Fortschreiben wird die Lieferung gesperrt; ist sie gesperrt, ist das IDoc fehlerhaft.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:60"
+        },
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:67"
+        },
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-274-B13",
+      "text": "In der Lieferung werden die Pickmengen und Chargen fortgeschrieben und, wenn gemeldet, der Warenausgang zum Warenausgangsdatum gebucht.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:79"
+        }
+      ]
+    },
+    {
+      "id": "BM-274-B14",
+      "text": "Meldet das Fortschreiben einen Fehler, werden die Änderungen verworfen, die Lieferung entsperrt und das IDoc als fehlerhaft behandelt.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:92"
+        },
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:93"
+        },
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:94"
+        },
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-274-B15",
+      "text": "Sonst werden die Änderungen synchron festgeschrieben, die Lieferung entsperrt und das IDoc mit der Lieferungsnummer auf Status 53 gesetzt; die Lieferung wird als Anwendungsobjekt verknüpft.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:102"
+        },
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:103"
+        },
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:107"
+        },
+        {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:78"
+        }
+      ]
+    },
+    {
+      "id": "BM-274-B16",
+      "text": "Jeder Fehler wird mit seinem Text protokolliert, das IDoc mit diesem Text auf Status 51 gesetzt und dem Workflow ein Fehlerergebnis gemeldet.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:113"
+        },
+        {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:55"
+        },
+        {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:56"
+        },
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:114"
+        },
+        {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:82"
+        },
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:115"
+        }
+      ]
+    },
+    {
+      "id": "BM-274-B17",
+      "text": "Am Ende jedes IDocs wird der Statussatz an die IDoc-Verarbeitung übergeben und, falls vorhanden, das Anwendungsprotokoll gesichert.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:118"
+        },
+        {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:93"
+        },
+        {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:97"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:1"
+        },
+        "meaning": "Eingang Versandbestätigungen (ZSHPCONF)"
+      },
+      {
+        "id": "lc",
+        "type": "loop",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:40"
+        },
+        "meaning": "IDocs des Pakets durchlaufen"
+      },
+      {
+        "id": "lnew",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:41"
+        },
+        "meaning": "Protokoll für das IDoc anlegen"
+      },
+      {
+        "id": "ld",
+        "type": "loop",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:46"
+        },
+        "meaning": "Segmente des IDocs durchlaufen"
+      },
+      {
+        "id": "fcr",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:47"
+        },
+        "meaning": "Handler zum Segmenttyp beschaffen"
+      },
+      {
+        "id": "ck",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:48"
+        },
+        "meaning": "Segment wird verarbeitet?"
+      },
+      {
+        "id": "hd",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:49"
+        },
+        "meaning": "Segment prüfen und übernehmen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:53"
+        },
+        "meaning": "Keine Lieferung ermittelt?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:54"
+        },
+        "meaning": "Fehler: keine Lieferung"
+      },
+      {
+        "id": "enq",
+        "type": "lock",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:60"
+        },
+        "meaning": "Lieferung sperren"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:67"
+        },
+        "meaning": "Sperre nicht erhalten?"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:68"
+        },
+        "meaning": "Fehler: Lieferung gesperrt"
+      },
+      {
+        "id": "wsu",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:79"
+        },
+        "meaning": "Pickmengen/Chargen fortschreiben und ggf. Warenausgang buchen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:92"
+        },
+        "meaning": "Lieferungsupdate fehlerhaft?"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:93"
+        },
+        "meaning": "Änderungen verwerfen"
+      },
+      {
+        "id": "deq1",
+        "type": "lock",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:94"
+        },
+        "meaning": "Lieferung entsperren"
+      },
+      {
+        "id": "x3",
+        "type": "end",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:97"
+        },
+        "meaning": "Fehler: Buchung fehlgeschlagen"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:102"
+        },
+        "meaning": "Lieferungsänderung synchron festschreiben"
+      },
+      {
+        "id": "deq2",
+        "type": "lock",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:103"
+        },
+        "meaning": "Lieferung entsperren"
+      },
+      {
+        "id": "st53",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:107"
+        },
+        "meaning": "IDoc-Status 53 vorbereiten"
+      },
+      {
+        "id": "cae",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:113"
+        },
+        "meaning": "Fehlertext protokollieren"
+      },
+      {
+        "id": "st51",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:114"
+        },
+        "meaning": "IDoc-Status 51 vorbereiten"
+      },
+      {
+        "id": "sv",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:118"
+        },
+        "meaning": "Status übergeben und Protokoll sichern"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "z_idoc_input_zshpconf.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zshpconf.abap:121"
+        },
+        "meaning": "Ende Eingangsverarbeitung"
+      },
+      {
+        "id": "cs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:35"
+        },
+        "meaning": "Handler zum Segmenttyp wählen"
+      },
+      {
+        "id": "ccs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:36"
+        },
+        "meaning": "Segmenttyp"
+      },
+      {
+        "id": "cnh",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:38"
+        },
+        "meaning": "Kopf-Handler erzeugen"
+      },
+      {
+        "id": "cni",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:40"
+        },
+        "meaning": "Positions-Handler erzeugen"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:45"
+        },
+        "meaning": "Handler (oder keinen) zurückgeben"
+      },
+      {
+        "id": "hs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:48"
+        },
+        "meaning": "Segment verarbeiten (Schablone)"
+      },
+      {
+        "id": "hv",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:49"
+        },
+        "meaning": "Segment prüfen"
+      },
+      {
+        "id": "ha",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:50"
+        },
+        "meaning": "Segment in Kontext übernehmen"
+      },
+      {
+        "id": "he",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:52"
+        },
+        "meaning": "Ende Segment"
+      },
+      {
+        "id": "vs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:55"
+        },
+        "meaning": "Grundprüfung"
+      },
+      {
+        "id": "vg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:57"
+        },
+        "meaning": "Segment leer?"
+      },
+      {
+        "id": "vx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:58"
+        },
+        "meaning": "Fehler: leeres Segment"
+      },
+      {
+        "id": "ve",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_seg_handler.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_handler.abap:62"
+        },
+        "meaning": "Grundprüfung bestanden"
+      },
+      {
+        "id": "hvs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:16"
+        },
+        "meaning": "Kopfsegment prüfen"
+      },
+      {
+        "id": "hsup",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:20"
+        },
+        "meaning": "Grundprüfung"
+      },
+      {
+        "id": "hq1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:23"
+        },
+        "meaning": "Lieferung lesen"
+      },
+      {
+        "id": "hg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:25"
+        },
+        "meaning": "Lieferung unbekannt?"
+      },
+      {
+        "id": "hx1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:26"
+        },
+        "meaning": "Fehler: unbekannte Lieferung"
+      },
+      {
+        "id": "hq2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:32"
+        },
+        "meaning": "Warenausgangsstatus der Lieferung lesen"
+      },
+      {
+        "id": "hg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:34"
+        },
+        "meaning": "Warenausgang schon gebucht?"
+      },
+      {
+        "id": "hx2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:35"
+        },
+        "meaning": "Fehler: Warenausgang bereits gebucht"
+      },
+      {
+        "id": "hve",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:39"
+        },
+        "meaning": "Kopf gültig"
+      },
+      {
+        "id": "has",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:42"
+        },
+        "meaning": "Kopfdaten übernehmen"
+      },
+      {
+        "id": "hg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:49"
+        },
+        "meaning": "Kein Warenausgangsdatum gemeldet?"
+      },
+      {
+        "id": "hae",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_seg_hdr.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_hdr.abap:53"
+        },
+        "meaning": "Ende Kopf"
+      },
+      {
+        "id": "ivs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:19"
+        },
+        "meaning": "Positionssegment prüfen"
+      },
+      {
+        "id": "isup",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:23"
+        },
+        "meaning": "Grundprüfung"
+      },
+      {
+        "id": "ig0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:27"
+        },
+        "meaning": "Position vor dem Kopf?"
+      },
+      {
+        "id": "ix0",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:28"
+        },
+        "meaning": "Fehler: Position ohne Kopf"
+      },
+      {
+        "id": "iq1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:33"
+        },
+        "meaning": "Lieferposition mit Liefermenge und Werk lesen"
+      },
+      {
+        "id": "ig1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:36"
+        },
+        "meaning": "Position unbekannt?"
+      },
+      {
+        "id": "ix1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:37"
+        },
+        "meaning": "Fehler: unbekannte Position"
+      },
+      {
+        "id": "iq2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:43"
+        },
+        "meaning": "Überpicktoleranz des Werks lesen"
+      },
+      {
+        "id": "ig2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:45"
+        },
+        "meaning": "Keine Toleranz gepflegt?"
+      },
+      {
+        "id": "ig3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:48"
+        },
+        "meaning": "Pickmenge über Liefermenge plus Toleranz?"
+      },
+      {
+        "id": "ix2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:49"
+        },
+        "meaning": "Fehler: Überpick"
+      },
+      {
+        "id": "ive",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:53"
+        },
+        "meaning": "Position gültig"
+      },
+      {
+        "id": "ias",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:56"
+        },
+        "meaning": "Positionsdaten übernehmen"
+      },
+      {
+        "id": "ig4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:67"
+        },
+        "meaning": "Charge gemeldet?"
+      },
+      {
+        "id": "iq3",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:68"
+        },
+        "meaning": "Charge zum Material lesen"
+      },
+      {
+        "id": "ig5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:71"
+        },
+        "meaning": "Charge unbekannt?"
+      },
+      {
+        "id": "ix3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:72"
+        },
+        "meaning": "Fehler: unbekannte Charge"
+      },
+      {
+        "id": "iae",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_seg_itm.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_itm.abap:81"
+        },
+        "meaning": "Pickmenge (ggf. mit Charge) übernommen"
+      },
+      {
+        "id": "gcs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:32"
+        },
+        "meaning": "Protokoll anlegen"
+      },
+      {
+        "id": "gbc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:39"
+        },
+        "meaning": "Anwendungsprotokoll ZSD_IDOC/SHPCONF zur IDoc-Nummer anlegen"
+      },
+      {
+        "id": "gg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:46"
+        },
+        "meaning": "Anlegen fehlgeschlagen?"
+      },
+      {
+        "id": "gce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:50"
+        },
+        "meaning": "Ende Konstruktor"
+      },
+      {
+        "id": "ats",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:53"
+        },
+        "meaning": "Text protokollieren"
+      },
+      {
+        "id": "atk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:55"
+        },
+        "meaning": "Protokoll vorhanden?"
+      },
+      {
+        "id": "atf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:56"
+        },
+        "meaning": "Fehlertext ins Protokoll"
+      },
+      {
+        "id": "ate",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:63"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "aes",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:66"
+        },
+        "meaning": "Ausnahme protokollieren"
+      },
+      {
+        "id": "aec",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:67"
+        },
+        "meaning": "Ausnahmetext protokollieren"
+      },
+      {
+        "id": "aee",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:68"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "sss",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:71"
+        },
+        "meaning": "IDoc-Status festlegen"
+      },
+      {
+        "id": "ssg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:76"
+        },
+        "meaning": "Erfolgsstatus?"
+      },
+      {
+        "id": "sse",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:86"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "svs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:89"
+        },
+        "meaning": "Status übergeben, Protokoll sichern"
+      },
+      {
+        "id": "svg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:93"
+        },
+        "meaning": "Kein Protokoll?"
+      },
+      {
+        "id": "svr",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:94"
+        },
+        "meaning": "Nur Status übergeben"
+      },
+      {
+        "id": "svd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:97"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "sve",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_idoc_log.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_idoc_log.abap:102"
+        },
+        "meaning": "Ende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "lc",
+        "condition": "always"
+      },
+      {
+        "from": "lc",
+        "to": "lnew",
+        "condition": "next row"
+      },
+      {
+        "from": "lnew",
+        "to": "gcs",
+        "condition": "always"
+      },
+      {
+        "from": "gcs",
+        "to": "gbc",
+        "condition": "always"
+      },
+      {
+        "from": "gbc",
+        "to": "gg",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "gce",
+        "condition": "else"
+      },
+      {
+        "from": "gce",
+        "to": "ld",
+        "condition": "always"
+      },
+      {
+        "from": "ld",
+        "to": "fcr",
+        "condition": "next row"
+      },
+      {
+        "from": "fcr",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "ccs",
+        "condition": "always"
+      },
+      {
+        "from": "ccs",
+        "to": "cnh",
+        "condition": "WHEN 'Z1SHPH'"
+      },
+      {
+        "from": "ccs",
+        "to": "cni",
+        "condition": "WHEN 'Z1SHPI'"
+      },
+      {
+        "from": "ccs",
+        "to": "ce",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "cnh",
+        "to": "ce",
+        "condition": "always"
+      },
+      {
+        "from": "cni",
+        "to": "ce",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "ck",
+        "condition": "always"
+      },
+      {
+        "from": "ck",
+        "to": "ld",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ck",
+        "to": "hd",
+        "condition": "lo_handler IS BOUND"
+      },
+      {
+        "from": "hd",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "hs",
+        "to": "hv",
+        "condition": "always"
+      },
+      {
+        "from": "hv",
+        "to": "hvs",
+        "condition": "always"
+      },
+      {
+        "from": "hv",
+        "to": "ivs",
+        "condition": "always"
+      },
+      {
+        "from": "hvs",
+        "to": "hsup",
+        "condition": "always"
+      },
+      {
+        "from": "hsup",
+        "to": "vs",
+        "condition": "always"
+      },
+      {
+        "from": "ivs",
+        "to": "isup",
+        "condition": "always"
+      },
+      {
+        "from": "isup",
+        "to": "vs",
+        "condition": "always"
+      },
+      {
+        "from": "vs",
+        "to": "vg",
+        "condition": "always"
+      },
+      {
+        "from": "vg",
+        "to": "vx",
+        "condition": "is_edidd-sdata IS INITIAL"
+      },
+      {
+        "from": "vg",
+        "to": "ve",
+        "condition": "else"
+      },
+      {
+        "from": "ve",
+        "to": "hq1",
+        "condition": "always"
+      },
+      {
+        "from": "ve",
+        "to": "ig0",
+        "condition": "always"
+      },
+      {
+        "from": "hq1",
+        "to": "hg1",
+        "condition": "always"
+      },
+      {
+        "from": "hg1",
+        "to": "hx1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "hg1",
+        "to": "hq2",
+        "condition": "else"
+      },
+      {
+        "from": "hq2",
+        "to": "hg2",
+        "condition": "always"
+      },
+      {
+        "from": "hg2",
+        "to": "hx2",
+        "condition": "lv_wbstk = 'C'"
+      },
+      {
+        "from": "hg2",
+        "to": "hve",
+        "condition": "else"
+      },
+      {
+        "from": "ig0",
+        "to": "ix0",
+        "condition": "is_ctx-vbeln IS INITIAL"
+      },
+      {
+        "from": "ig0",
+        "to": "iq1",
+        "condition": "else"
+      },
+      {
+        "from": "iq1",
+        "to": "ig1",
+        "condition": "always"
+      },
+      {
+        "from": "ig1",
+        "to": "ix1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ig1",
+        "to": "iq2",
+        "condition": "else"
+      },
+      {
+        "from": "iq2",
+        "to": "ig2",
+        "condition": "always"
+      },
+      {
+        "from": "ig2",
+        "to": "ig3",
+        "condition": "else"
+      },
+      {
+        "from": "ig3",
+        "to": "ix2",
+        "condition": "ls_itm-pikmg > mv_lfimg * ( 100 + lv_tol ) / 100"
+      },
+      {
+        "from": "ig3",
+        "to": "ive",
+        "condition": "else"
+      },
+      {
+        "from": "hve",
+        "to": "ha",
+        "condition": "always"
+      },
+      {
+        "from": "ive",
+        "to": "ha",
+        "condition": "always"
+      },
+      {
+        "from": "ha",
+        "to": "has",
+        "condition": "always"
+      },
+      {
+        "from": "ha",
+        "to": "ias",
+        "condition": "always"
+      },
+      {
+        "from": "hg3",
+        "to": "hae",
+        "condition": "else"
+      },
+      {
+        "from": "ias",
+        "to": "ig4",
+        "condition": "always"
+      },
+      {
+        "from": "ig4",
+        "to": "iq3",
+        "condition": "ls_itm-charg IS NOT INITIAL"
+      },
+      {
+        "from": "iq3",
+        "to": "ig5",
+        "condition": "always"
+      },
+      {
+        "from": "ig5",
+        "to": "ix3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ig5",
+        "to": "iae",
+        "condition": "else"
+      },
+      {
+        "from": "ig4",
+        "to": "iae",
+        "condition": "else"
+      },
+      {
+        "from": "hae",
+        "to": "he",
+        "condition": "always"
+      },
+      {
+        "from": "iae",
+        "to": "he",
+        "condition": "always"
+      },
+      {
+        "from": "he",
+        "to": "ld",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ld",
+        "to": "g1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g1",
+        "to": "x1",
+        "condition": "ls_ctx-vbeln IS INITIAL"
+      },
+      {
+        "from": "g1",
+        "to": "enq",
+        "condition": "else"
+      },
+      {
+        "from": "enq",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "x2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "wsu",
+        "condition": "else"
+      },
+      {
+        "from": "wsu",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "rb",
+        "condition": "lv_error = abap_true"
+      },
+      {
+        "from": "rb",
+        "to": "deq1",
+        "condition": "always"
+      },
+      {
+        "from": "deq1",
+        "to": "x3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "cw",
+        "condition": "else"
+      },
+      {
+        "from": "cw",
+        "to": "deq2",
+        "condition": "always"
+      },
+      {
+        "from": "deq2",
+        "to": "st53",
+        "condition": "always"
+      },
+      {
+        "from": "st53",
+        "to": "sss",
+        "condition": "always"
+      },
+      {
+        "from": "sss",
+        "to": "ssg",
+        "condition": "always"
+      },
+      {
+        "from": "sse",
+        "to": "sv",
+        "condition": "always"
+      },
+      {
+        "from": "x1",
+        "to": "cae",
+        "condition": "zcx_sd_shpconf"
+      },
+      {
+        "from": "x2",
+        "to": "cae",
+        "condition": "zcx_sd_shpconf"
+      },
+      {
+        "from": "x3",
+        "to": "cae",
+        "condition": "zcx_sd_shpconf"
+      },
+      {
+        "from": "vx",
+        "to": "cae",
+        "condition": "zcx_sd_shpconf"
+      },
+      {
+        "from": "hx1",
+        "to": "cae",
+        "condition": "zcx_sd_shpconf"
+      },
+      {
+        "from": "hx2",
+        "to": "cae",
+        "condition": "zcx_sd_shpconf"
+      },
+      {
+        "from": "ix0",
+        "to": "cae",
+        "condition": "zcx_sd_shpconf"
+      },
+      {
+        "from": "ix1",
+        "to": "cae",
+        "condition": "zcx_sd_shpconf"
+      },
+      {
+        "from": "ix2",
+        "to": "cae",
+        "condition": "zcx_sd_shpconf"
+      },
+      {
+        "from": "ix3",
+        "to": "cae",
+        "condition": "zcx_sd_shpconf"
+      },
+      {
+        "from": "cae",
+        "to": "aes",
+        "condition": "always"
+      },
+      {
+        "from": "aes",
+        "to": "aec",
+        "condition": "always"
+      },
+      {
+        "from": "aec",
+        "to": "ats",
+        "condition": "always"
+      },
+      {
+        "from": "ats",
+        "to": "atk",
+        "condition": "always"
+      },
+      {
+        "from": "atk",
+        "to": "ate",
+        "condition": "else"
+      },
+      {
+        "from": "atk",
+        "to": "atf",
+        "condition": "mv_handle IS NOT INITIAL"
+      },
+      {
+        "from": "atf",
+        "to": "ate",
+        "condition": "always"
+      },
+      {
+        "from": "ate",
+        "to": "aee",
+        "condition": "always"
+      },
+      {
+        "from": "aee",
+        "to": "st51",
+        "condition": "always"
+      },
+      {
+        "from": "st51",
+        "to": "sss",
+        "condition": "always"
+      },
+      {
+        "from": "sv",
+        "to": "svs",
+        "condition": "always"
+      },
+      {
+        "from": "svs",
+        "to": "svg",
+        "condition": "always"
+      },
+      {
+        "from": "svg",
+        "to": "svr",
+        "condition": "mv_handle IS INITIAL"
+      },
+      {
+        "from": "svg",
+        "to": "svd",
+        "condition": "else"
+      },
+      {
+        "from": "svd",
+        "to": "sve",
+        "condition": "always"
+      },
+      {
+        "from": "svr",
+        "to": "lc",
+        "condition": "next iteration"
+      },
+      {
+        "from": "sve",
+        "to": "lc",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lc",
+        "to": "e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "has",
+        "to": "hg3",
+        "condition": "always"
+      },
+      {
+        "from": "hg3",
+        "to": "hae",
+        "condition": "cs_ctx-gi_date IS INITIAL"
+      },
+      {
+        "from": "ig2",
+        "to": "ig3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gg",
+        "to": "gce",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ssg",
+        "to": "sse",
+        "condition": "iv_status = '53'"
+      },
+      {
+        "from": "ssg",
+        "to": "sse",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_sd_seg_hdr.abap:32 — kein Fachsatz „nur Lieferungen ohne Warenausgang werden angenommen“ ohne Einschränkung (fehlt der VBUK-Satz, bleibt der Status leer und die Prüfung greift nicht; teilweiser Warenausgang wird nicht abgelehnt)",
+    "z_idoc_input_zshpconf.abap:68 — kein Fachsatz „gesperrte Lieferungen werden automatisch später erneut verarbeitet“ (das IDoc geht auf Status 51; eine Wiederholung liegt außerhalb des Falls)",
+    "zcl_sd_idoc_log.abap:97 — kein Fachsatz „Protokoll ist mit dem IDoc-Status festgeschrieben“ (kein COMMIT im Protokoll; das Festschreiben liegt beim Aufrufer der Eingangsverarbeitung)",
+    "zcl_sd_seg_itm.abap:56 — kein Fachsatz „Positionen mit Pickmenge 0 werden storniert/gelöscht“ (sie werden mit Pickmenge 0 gemeldet)"
+  ],
+  "processDescription": "Der Logistikdienstleister bestätigt Kommissionierung und Warenausgang von Auslieferungen per IDoc. Für jedes IDoc des Pakets wird ein Anwendungsprotokoll angelegt (scheitert das, geht es ohne weiter). Die Segmente werden über eine Fabrik an Kopf- oder Positions-Handler gegeben, andere Segmente übergangen; jeder Handler prüft sein Segment erst (Grundprüfung auf leere Segmente plus eigene Prüfungen) und übernimmt es dann. Der Kopf verlangt eine existierende Lieferung ohne vollständig gebuchten Warenausgang und liefert Warenausgangskennzeichen und -datum (ersatzweise heute). Positionen verlangen einen vorher gemeldeten Kopf, eine existierende Lieferposition, eine Pickmenge innerhalb der Überpicktoleranz des Werks und gegebenenfalls eine existierende Charge. Danach wird die Lieferung gesperrt, die Pickmengen werden fortgeschrieben und bei gesetztem Kennzeichen der Warenausgang gebucht. Scheitert das, wird zurückgerollt und entsperrt; sonst synchron festgeschrieben, entsperrt und Status 53 mit der Lieferung gesetzt. Jeder Fehler auf dem Weg wird protokolliert und führt zu Status 51 und einem Fehlerergebnis für den Workflow. Zum Schluss wird der Status übergeben und das Protokoll gesichert."
+}

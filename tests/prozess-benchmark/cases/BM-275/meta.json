@@ -1,0 +1,41 @@
+{
+  "id": "BM-275",
+  "title": "Massenänderung Infosatzpreise über generische Parallelisierung",
+  "domain": "MM",
+  "band": "sehr komplex",
+  "loc": 442,
+  "constructs": [
+    "REPORT mit FORM",
+    "generische Parallelisierungsklasse",
+    "Interface-Handler",
+    "STARTING NEW TASK ... CALLING meth ON END OF TASK",
+    "RECEIVE RESULTS in Methode",
+    "WAIT UNTIL ... UP TO",
+    "SPBT_INITIALIZE",
+    "CREATE OBJECT TYPE (dynamisch)",
+    "CALL TRANSFORMATION id",
+    "CALL TRANSACTION ME12 USING bdcdata",
+    "UPDATE",
+    "COMMIT WORK",
+    "REUSE_ALV_GRID_DISPLAY"
+  ],
+  "scenario": "Jährliche Preisrunde im Einkauf: tausende Infosatzpreise aus einem Upload werden über ein im Kundensystem wiederverwendetes Parallelisierungs-Framework per Batch-Input geändert.",
+  "s4_issues": [
+    "Batch-Input ME12 – Zielbild API Purchasing Info Record / Konditionspflege",
+    "aRFC/SPBT nicht in ABAP Cloud (bgPF)",
+    "EINA-Direktzugriff",
+    "dynamische Klasseninstanziierung aus Parameter"
+  ],
+  "wave": 3,
+  "module": "MM",
+  "edge_constructs": [
+    "Taskgrenze mit WAIT",
+    "drei Startversuche und lokaler Fallback",
+    "Callback-Methode ohne Aufrufer im Code",
+    "IF/ELSEIF mit zusammengesetzter Bedingung",
+    "RETURN aus DO in Methode",
+    "dynamische Handlerklasse per Name",
+    "Handler an drei Aufrufstellen"
+  ],
+  "oo": true
+}

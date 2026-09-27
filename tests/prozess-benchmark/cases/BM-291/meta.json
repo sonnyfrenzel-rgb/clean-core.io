@@ -1,0 +1,36 @@
+{
+  "id": "BM-291",
+  "title": "QM-Verwendungsentscheid im Wareneingang: Regelvorschlag über Interface-Implementierungen und Buchung per BAPI",
+  "domain": "QM Wareneingangsprüfung",
+  "band": "komplex",
+  "loc": 236,
+  "constructs": [
+    "Interface mit zwei Implementierungen",
+    "Fabrikmethode",
+    "polymorpher Aufruf in IF",
+    "EXIT in LOOP",
+    "Ausnahmeklasse IF_T100_DYN_MSG",
+    "RAISE EXCEPTION MESSAGE",
+    "TRY/CATCH im PAI",
+    "SELECT NOT EXISTS",
+    "SELECT COUNT(*)",
+    "COND",
+    "POPUP_TO_CONFIRM",
+    "BAPI_INSPLOT_SETUSAGEDECISION"
+  ],
+  "scenario": "Schnellerfassung des Verwendungsentscheids am Wareneingang, damit Lagerarbeiter nicht in QA11 müssen; der Vorschlag kommt aus Z-Regeln.",
+  "s4_issues": [
+    "Direktlesen QALS/QAVE/QAMR statt released CDS",
+    "SAP-GUI-Dynpro nicht in Fiori",
+    "MATNR 40 Zeichen"
+  ],
+  "wave": 3,
+  "module": "QM",
+  "edge_constructs": [
+    "funktionaler Methodenaufruf als Bedingung (zweimal)",
+    "polymorpher Aufruf mit zwei möglichen Zielen",
+    "RETURN liefert abap_false an den Aufrufer",
+    "Ausnahme aus Methode im PAI gefangen"
+  ],
+  "oo": true
+}

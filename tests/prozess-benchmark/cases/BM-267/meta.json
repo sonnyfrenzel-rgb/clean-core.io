@@ -1,0 +1,36 @@
+{
+  "id": "BM-267",
+  "title": "IDoc-Eingang Kundenauftrag mit Segment-Mapper-Klassen",
+  "domain": "SD",
+  "band": "komplex",
+  "loc": 275,
+  "constructs": [
+    "IDoc-Eingangsbaustein",
+    "EDIDC/EDIDD",
+    "Interface mit zwei Implementierungen",
+    "Fabrikmethode",
+    "TRY/CATCH",
+    "RAISE EXCEPTION",
+    "CHECK in Methode",
+    "BAPI_SALESORDER_CREATEFROMDAT2",
+    "IDoc-Status 51/53",
+    "RETURN_VARIABLES"
+  ],
+  "scenario": "Kundenaufträge von EDI-Kunden kommen als ORDERS05-IDocs; das Kundenprojekt hat die kopierte Standard-Eingangsverarbeitung durch Mapper-Klassen ersetzt.",
+  "s4_issues": [
+    "KNA1/KNMT/MARA direkt gelesen (Business Partner, Materialnummer 40 Zeichen)",
+    "COMMIT im IDoc-Eingangsbaustein (Massenverarbeitung)",
+    "Kundeneigener Nachrichtentyp statt Standard-ORDERS"
+  ],
+  "wave": 3,
+  "module": "SD",
+  "edge_constructs": [
+    "polymorpher Aufruf über Interface",
+    "Ausnahme aus Methode bricht innere Schleife ab",
+    "CONTINUE nach TRY",
+    "Fallback-Suche Kundenmaterial→MARA",
+    "CHECK beendet Methode",
+    "auskommentierter Fabrikzweig"
+  ],
+  "oo": true
+}

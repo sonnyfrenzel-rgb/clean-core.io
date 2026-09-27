@@ -1,0 +1,36 @@
+{
+  "id": "BM-229",
+  "title": "Dienstjubiläen eines Monats mit Prämie ermitteln",
+  "domain": "HR",
+  "band": "komplex",
+  "loc": 230,
+  "constructs": [
+    "REPORT mit TOP/CLS/F01",
+    "AT SELECTION-SCREEN ON",
+    "MESSAGE W/I/S",
+    "lokale Klasse mit statischen Methoden",
+    "lokale Ausnahmeklasse",
+    "RAISE EXCEPTION",
+    "TRY/CATCH",
+    "DO VARYING",
+    "RETURN in DO",
+    "CASE",
+    "CHECK in FORM",
+    "Makro",
+    "REUSE_ALV_GRID_DISPLAY"
+  ],
+  "scenario": "Monatliche HR-Auswertung der Personalabteilung, gewachsen von FORM-Code zu einer lokalen Hilfsklasse.",
+  "s4_issues": [
+    "PA-Tabellen per Direkt-SELECT ohne Berechtigungsprüfung",
+    "REUSE_ALV nicht Cloud-fähig"
+  ],
+  "wave": 3,
+  "module": "HCM-PA",
+  "edge_constructs": [
+    "RETURN in DO innerhalb einer Methode",
+    "RAISE EXCEPTION am Methodenende",
+    "Warnung im Selektionsbild",
+    "funktionale Methodenaufrufe in Zuweisungen"
+  ],
+  "oo": true
+}

@@ -1,0 +1,1812 @@
+{
+  "id": "BM-220",
+  "title": "Filialnachschub mit paralleler UB-Anlage, Auslieferung und EWM-Meldung",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Asynchroner Aufruf sa: Kante zum Baustein-Start und Direktkante zum nächsten Schritt; die Rückmelde-FORM wird über fe→os an das Taskende gehängt und kehrt nach oe→wt in das WAIT zurück.",
+    "fe hat zwei Rückkanten: zum synchronen Aufrufer (sg2) und zur Rückmelde-FORM (os).",
+    "Gateway hg zählt nur offene EWM-Meldungen; beide Zweige führen in den Protokolleintrag."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "MARC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_sto_replenish_c01.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_replenish_c01.abap:36"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_sto_replenish_c01.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_replenish_c01.abap:36"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_sto_replenish_c01.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_replenish_c01.abap:47"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKET",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_sto_replenish_c01.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_replenish_c01.abap:52"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_sto_replenish_c01.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_replenish_c01.abap:52"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_sto_replenish_c01.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_replenish_c01.abap:52"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PO_CREATE1",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_mm_sto_create_rfc.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_mm_sto_create_rfc.abap:29"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_OUTB_DELIVERY_CREATE_STO",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_sto_replenish_c01.abap",
+        "line": 157,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_replenish_c01.abap:157"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_MM_STO_CREATE_RFC",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_sto_replenish_c01.abap",
+        "line": 96,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_replenish_c01.abap:96"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_EWM_DLV_NOTIFY",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_sto_replenish_c01.abap",
+        "line": 175,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_replenish_c01.abap:175"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_EWM_RETRY",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zmm_sto_replenish_c01.abap",
+        "line": 186,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_replenish_c01.abap:186"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_STO_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zmm_sto_replenish_c01.abap",
+        "line": 217,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_replenish_c01.abap:217"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-220-B01",
+      "text": "Ohne gepflegte RFC-Destination für das EWM der Lagernummer bricht der Lauf ab.",
+      "anchors": [
+        {
+          "file": "zmm_sto_replenish.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:20"
+        },
+        {
+          "file": "zmm_sto_replenish.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:22"
+        },
+        {
+          "file": "zmm_sto_replenish.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-220-B02",
+      "text": "Nachschubrelevant sind nicht zum Löschen vorgemerkte Filialmaterialien mit Dispositionsmerkmal Z1 und Sicherheitsbestand.",
+      "anchors": [
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-220-B03",
+      "text": "Der Bedarf ist der doppelte Sicherheitsbestand abzüglich des frei verwendbaren Filialbestands und der offenen Umlagerungsmengen aus dem Zentrallager.",
+      "anchors": [
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:47"
+        },
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:52"
+        },
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-220-B04",
+      "text": "Nur positive Bedarfe werden übernommen und, falls gepflegt, auf den Rundungswert aufgerundet.",
+      "anchors": [
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:63"
+        },
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:65"
+        },
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-220-B05",
+      "text": "Gibt es keinen Bedarf, endet der Lauf mit einer Meldung.",
+      "anchors": [
+        {
+          "file": "zmm_sto_replenish.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:28"
+        },
+        {
+          "file": "zmm_sto_replenish.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:29"
+        },
+        {
+          "file": "zmm_sto_replenish.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-220-B06",
+      "text": "Je Filialwerk wird eine Umlagerungsbestellung (UB) mit Lieferwerk Zentrallager in einem parallelen Task angelegt.",
+      "anchors": [
+        {
+          "file": "zmm_sto_replenish.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:38"
+        },
+        {
+          "file": "zmm_sto_replenish.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:40"
+        },
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:96"
+        },
+        {
+          "file": "z_mm_sto_create_rfc.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_sto_create_rfc.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-220-B07",
+      "text": "Lässt sich kein paralleler Task starten, wird die UB synchron im eigenen Prozess angelegt.",
+      "anchors": [
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:108"
+        },
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:110"
+        }
+      ]
+    },
+    {
+      "id": "BM-220-B08",
+      "text": "Der RFC-Baustein schreibt eine angelegte UB fest und verwirft sonst.",
+      "anchors": [
+        {
+          "file": "z_mm_sto_create_rfc.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_sto_create_rfc.abap:40"
+        },
+        {
+          "file": "z_mm_sto_create_rfc.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_sto_create_rfc.abap:41"
+        },
+        {
+          "file": "z_mm_sto_create_rfc.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_sto_create_rfc.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-220-B09",
+      "text": "Der Lauf wartet höchstens 600 Sekunden auf alle Rückmeldungen und weist auf eine Zeitüberschreitung hin.",
+      "anchors": [
+        {
+          "file": "zmm_sto_replenish.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:45"
+        },
+        {
+          "file": "zmm_sto_replenish.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:47"
+        },
+        {
+          "file": "zmm_sto_replenish.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-220-B10",
+      "text": "Jede Rückmeldung wird abgeholt; ist keine UB entstanden, wird das Werk mit Fehler ausgegeben.",
+      "anchors": [
+        {
+          "file": "zmm_sto_replenish_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_f01.abap:12"
+        },
+        {
+          "file": "zmm_sto_replenish_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_f01.abap:22"
+        },
+        {
+          "file": "zmm_sto_replenish_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_f01.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-220-B11",
+      "text": "Zu jeder angelegten UB wird eine Auslieferung angelegt und festgeschrieben; entsteht keine, wird verworfen und ein Fehler zur UB ausgegeben.",
+      "anchors": [
+        {
+          "file": "zmm_sto_replenish.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:51"
+        },
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:157"
+        },
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:165"
+        },
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:166"
+        },
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:167"
+        },
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:170"
+        },
+        {
+          "file": "zmm_sto_replenish.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-220-B12",
+      "text": "Jede Auslieferung wird dem EWM des Zentrallagers synchron angekündigt; ist es nicht erreichbar, wird ein Wiederholungseintrag geschrieben.",
+      "anchors": [
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:175"
+        },
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 184,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:184"
+        },
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:186"
+        }
+      ]
+    },
+    {
+      "id": "BM-220-B13",
+      "text": "Jede angelegte Lieferung wird mit UB und EWM-Status protokolliert.",
+      "anchors": [
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 193,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:193"
+        },
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 217,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:217"
+        }
+      ]
+    },
+    {
+      "id": "BM-220-B14",
+      "text": "Am Ende werden die Anzahl der UB, der Lieferungen und der offenen EWM-Meldungen ausgegeben.",
+      "anchors": [
+        {
+          "file": "zmm_sto_replenish_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_f01.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-220-B15",
+      "text": "Jeder erfolgreich gestartete Task wird gezählt, damit auf alle Rückmeldungen gewartet werden kann.",
+      "anchors": [
+        {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:123"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:19"
+        },
+        "meaning": "Nachschublauf starten"
+      },
+      {
+        "id": "rq",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:20"
+        },
+        "meaning": "RFC-Ziel des EWM zur Lagernummer lesen"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:22"
+        },
+        "meaning": "Kein RFC-Ziel?"
+      },
+      {
+        "id": "rm",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:23"
+        },
+        "meaning": "Fehler: keine Destination"
+      },
+      {
+        "id": "rmx",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:23"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "cc",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:26"
+        },
+        "meaning": "Nachschubbedarf ermitteln"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:28"
+        },
+        "meaning": "Kein Bedarf?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:29"
+        },
+        "meaning": "Kein Bedarf melden"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:30"
+        },
+        "meaning": "Ende ohne Nachschub"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:38"
+        },
+        "meaning": "Je Filialwerk"
+      },
+      {
+        "id": "cs",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:40"
+        },
+        "meaning": "UB-Anlage fuer das Werk anstossen"
+      },
+      {
+        "id": "wt",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:45"
+        },
+        "meaning": "Auf Rueckmeldung aller Tasks warten (max. 600 s)"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:47"
+        },
+        "meaning": "Zeitueberschreitung?"
+      },
+      {
+        "id": "m2",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:48"
+        },
+        "meaning": "Hinweis Zeitueberschreitung"
+      },
+      {
+        "id": "lp2",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:51"
+        },
+        "meaning": "Je angelegte UB"
+      },
+      {
+        "id": "cd",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:53"
+        },
+        "meaning": "Auslieferung anlegen und EWM melden"
+      },
+      {
+        "id": "cw",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:55"
+        },
+        "meaning": "Fehler zur UB ausgeben"
+      },
+      {
+        "id": "pw",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:59"
+        },
+        "meaning": "Zusammenfassung ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_replenish.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish.abap:59"
+        },
+        "meaning": "Laufende"
+      },
+      {
+        "id": "ks",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:30"
+        },
+        "meaning": "Bedarfsermittlung"
+      },
+      {
+        "id": "kq",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:36"
+        },
+        "meaning": "Filialmaterialien mit Dispomerkmal Z1 und Sicherheitsbestand lesen"
+      },
+      {
+        "id": "kl",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:45"
+        },
+        "meaning": "Je Werk/Material"
+      },
+      {
+        "id": "kq2",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:47"
+        },
+        "meaning": "Frei verwendbaren Filialbestand summieren"
+      },
+      {
+        "id": "kq3",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:52"
+        },
+        "meaning": "Offene UB-Mengen aus dem Zentrallager summieren"
+      },
+      {
+        "id": "ka",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:62"
+        },
+        "meaning": "Bedarf = 2 x Sicherheitsbestand - Bestand - offene UB"
+      },
+      {
+        "id": "kg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:63"
+        },
+        "meaning": "Bedarf vorhanden?"
+      },
+      {
+        "id": "kg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:65"
+        },
+        "meaning": "Rundungswert gepflegt?"
+      },
+      {
+        "id": "ka2",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:66"
+        },
+        "meaning": "Auf Rundungswert aufrunden"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:72"
+        }
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:90"
+        },
+        "meaning": "UB-Anlage anstossen"
+      },
+      {
+        "id": "sa",
+        "type": "async",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:96"
+        },
+        "meaning": "UB in eigenem Task anlegen (aRFC, Servergruppe)"
+      },
+      {
+        "id": "sg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:108"
+        },
+        "meaning": "Task nicht startbar?"
+      },
+      {
+        "id": "sc",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:110"
+        },
+        "meaning": "UB synchron anlegen"
+      },
+      {
+        "id": "sg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:118"
+        },
+        "meaning": "UB angelegt?"
+      },
+      {
+        "id": "sr",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:121"
+        },
+        "meaning": "Synchroner Pfad fertig"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:124"
+        }
+      },
+      {
+        "id": "ds",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:149"
+        },
+        "meaning": "Lieferanlage"
+      },
+      {
+        "id": "db",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:157"
+        },
+        "meaning": "Auslieferung zur UB anlegen"
+      },
+      {
+        "id": "dg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:165"
+        },
+        "meaning": "Keine Lieferung?"
+      },
+      {
+        "id": "drb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:166"
+        },
+        "meaning": "Verwerfen"
+      },
+      {
+        "id": "dx",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:167"
+        },
+        "meaning": "Ausnahme: keine Lieferung"
+      },
+      {
+        "id": "dc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:170"
+        },
+        "meaning": "Lieferung festschreiben"
+      },
+      {
+        "id": "dr",
+        "type": "rfc",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:175"
+        },
+        "meaning": "Lieferankuendigung an EWM (synchron)"
+      },
+      {
+        "id": "dg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 184,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:184"
+        },
+        "meaning": "EWM nicht erreichbar?"
+      },
+      {
+        "id": "dw",
+        "type": "write",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:186"
+        },
+        "meaning": "Wiederholungseintrag fuer Job ZMM_EWM_RETRY"
+      },
+      {
+        "id": "dev",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 193,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:193"
+        },
+        "meaning": "Ereignis Lieferung angelegt"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 198,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:198"
+        }
+      },
+      {
+        "id": "hs",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 212,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:212"
+        },
+        "meaning": "Protokoll-Handler (statisch)"
+      },
+      {
+        "id": "hg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 214,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:214"
+        },
+        "meaning": "EWM-Meldung offen?"
+      },
+      {
+        "id": "hw",
+        "type": "write",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 217,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:217"
+        },
+        "meaning": "UB, Lieferung, EWM-Status protokollieren"
+      },
+      {
+        "id": "he",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_sto_replenish_c01.abap",
+          "line": 222,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_c01.abap:222"
+        }
+      },
+      {
+        "id": "os",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_replenish_f01.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_f01.abap:7"
+        },
+        "meaning": "Rueckmeldung eines Tasks"
+      },
+      {
+        "id": "orr",
+        "type": "async",
+        "anchor": {
+          "file": "zmm_sto_replenish_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_f01.abap:12"
+        },
+        "meaning": "Ergebnis des Tasks abholen"
+      },
+      {
+        "id": "og",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_replenish_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_f01.abap:22"
+        },
+        "meaning": "Fehler oder keine UB?"
+      },
+      {
+        "id": "ow",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_sto_replenish_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_f01.abap:23"
+        },
+        "meaning": "Fehler je Werk ausgeben"
+      },
+      {
+        "id": "oe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_sto_replenish_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_f01.abap:30"
+        }
+      },
+      {
+        "id": "ws",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_replenish_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_f01.abap:32"
+        },
+        "meaning": "Zusammenfassung"
+      },
+      {
+        "id": "wo",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_sto_replenish_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_f01.abap:35"
+        },
+        "meaning": "Anzahl UB, Lieferungen, EWM-Wiederholungen"
+      },
+      {
+        "id": "we",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_sto_replenish_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_replenish_f01.abap:38"
+        }
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "z_mm_sto_create_rfc.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_sto_create_rfc.abap:1"
+        },
+        "meaning": "RFC-Baustein UB-Anlage"
+      },
+      {
+        "id": "fb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_mm_sto_create_rfc.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_sto_create_rfc.abap:29"
+        },
+        "meaning": "Umlagerungsbestellung UB mit Lieferwerk Zentrallager anlegen"
+      },
+      {
+        "id": "fg",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mm_sto_create_rfc.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_sto_create_rfc.abap:40"
+        },
+        "meaning": "Keine UB?"
+      },
+      {
+        "id": "frb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_mm_sto_create_rfc.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_sto_create_rfc.abap:41"
+        },
+        "meaning": "Verwerfen"
+      },
+      {
+        "id": "fc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_mm_sto_create_rfc.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_sto_create_rfc.abap:43"
+        },
+        "meaning": "UB festschreiben"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "z_mm_sto_create_rfc.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_sto_create_rfc.abap:47"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "rq",
+        "condition": "always"
+      },
+      {
+        "from": "rq",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rm",
+        "to": "rmx",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "cc",
+        "condition": "else"
+      },
+      {
+        "from": "cc",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "ke",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "gt_need IS INITIAL"
+      },
+      {
+        "from": "m1",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "lp",
+        "to": "cs",
+        "condition": "next row"
+      },
+      {
+        "from": "cs",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "sr",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "wt",
+        "condition": "no more rows"
+      },
+      {
+        "from": "wt",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "m2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "lp2",
+        "condition": "else"
+      },
+      {
+        "from": "m2",
+        "to": "lp2",
+        "condition": "always"
+      },
+      {
+        "from": "lp2",
+        "to": "cd",
+        "condition": "next row"
+      },
+      {
+        "from": "cd",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "de",
+        "to": "lp2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "dx",
+        "to": "cw",
+        "condition": "lcx_sto"
+      },
+      {
+        "from": "cw",
+        "to": "lp2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp2",
+        "to": "pw",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pw",
+        "to": "ws",
+        "condition": "always"
+      },
+      {
+        "from": "we",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "ws",
+        "to": "wo",
+        "condition": "always"
+      },
+      {
+        "from": "wo",
+        "to": "we",
+        "condition": "always"
+      },
+      {
+        "from": "ks",
+        "to": "kq",
+        "condition": "always"
+      },
+      {
+        "from": "kq",
+        "to": "kl",
+        "condition": "always"
+      },
+      {
+        "from": "kl",
+        "to": "kq2",
+        "condition": "next row"
+      },
+      {
+        "from": "kq2",
+        "to": "kq3",
+        "condition": "always"
+      },
+      {
+        "from": "kq3",
+        "to": "ka",
+        "condition": "always"
+      },
+      {
+        "from": "ka",
+        "to": "kg",
+        "condition": "always"
+      },
+      {
+        "from": "kg",
+        "to": "kg2",
+        "condition": "lv_need > 0"
+      },
+      {
+        "from": "kg",
+        "to": "kl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "kg2",
+        "to": "ka2",
+        "condition": "ls_marc-bstrf > 0"
+      },
+      {
+        "from": "kg2",
+        "to": "kl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ka2",
+        "to": "kl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "kl",
+        "to": "ke",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ss",
+        "to": "sa",
+        "condition": "always"
+      },
+      {
+        "from": "sa",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "sa",
+        "to": "sg",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "sc",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sg",
+        "to": "se",
+        "condition": "else"
+      },
+      {
+        "from": "sc",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "sg2",
+        "condition": "always"
+      },
+      {
+        "from": "sg2",
+        "to": "sr",
+        "condition": "lv_ebeln IS NOT INITIAL"
+      },
+      {
+        "from": "sg2",
+        "to": "sr",
+        "condition": "else"
+      },
+      {
+        "from": "fs",
+        "to": "fb",
+        "condition": "always"
+      },
+      {
+        "from": "fb",
+        "to": "fg",
+        "condition": "always"
+      },
+      {
+        "from": "fg",
+        "to": "frb",
+        "condition": "ev_ebeln IS INITIAL"
+      },
+      {
+        "from": "fg",
+        "to": "fc",
+        "condition": "else"
+      },
+      {
+        "from": "frb",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "fc",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "os",
+        "condition": "always"
+      },
+      {
+        "from": "os",
+        "to": "orr",
+        "condition": "always"
+      },
+      {
+        "from": "orr",
+        "to": "og",
+        "condition": "always"
+      },
+      {
+        "from": "og",
+        "to": "ow",
+        "condition": "sy-subrc <> 0 OR lv_ebeln IS INITIAL"
+      },
+      {
+        "from": "og",
+        "to": "oe",
+        "condition": "else"
+      },
+      {
+        "from": "ow",
+        "to": "oe",
+        "condition": "always"
+      },
+      {
+        "from": "oe",
+        "to": "wt",
+        "condition": "always"
+      },
+      {
+        "from": "ds",
+        "to": "db",
+        "condition": "always"
+      },
+      {
+        "from": "db",
+        "to": "dg",
+        "condition": "always"
+      },
+      {
+        "from": "dg",
+        "to": "drb",
+        "condition": "lv_vbeln IS INITIAL"
+      },
+      {
+        "from": "drb",
+        "to": "dx",
+        "condition": "always"
+      },
+      {
+        "from": "dg",
+        "to": "dc",
+        "condition": "else"
+      },
+      {
+        "from": "dc",
+        "to": "dr",
+        "condition": "always"
+      },
+      {
+        "from": "dr",
+        "to": "dg2",
+        "condition": "always"
+      },
+      {
+        "from": "dg2",
+        "to": "dw",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "dg2",
+        "to": "dev",
+        "condition": "else"
+      },
+      {
+        "from": "dw",
+        "to": "dev",
+        "condition": "always"
+      },
+      {
+        "from": "dev",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "he",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "hs",
+        "to": "hg",
+        "condition": "always"
+      },
+      {
+        "from": "hg",
+        "to": "hw",
+        "condition": "ev_ewm = abap_false"
+      },
+      {
+        "from": "hg",
+        "to": "hw",
+        "condition": "else"
+      },
+      {
+        "from": "hw",
+        "to": "he",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zmm_sto_replenish.abap:45 — kein Fachsatz „nach Zeitüberschreitung werden die fehlenden UB storniert oder neu angelegt“ — es gibt nur einen Hinweis; späte Rückmeldungen gehen verloren.",
+    "zmm_sto_replenish_c01.abap:186 — kein Fachsatz „die Lieferung wird zurückgenommen, wenn EWM nicht erreichbar ist“ — sie bleibt festgeschrieben, nur ein Wiederholungseintrag entsteht.",
+    "zmm_sto_replenish.abap:51 — kein Fachsatz „auch die synchron angelegten UB werden beliefert“ — gilt nur, wenn ihre Nummer zurückkam; ohne Nummer fehlt jede Fehlermeldung.",
+    "zmm_sto_replenish_c01.abap:175 — kein Fachsatz „EWM legt die Anlieferung an“ — was der Zielbaustein im EWM tut, liegt außerhalb des Falls."
+  ],
+  "processDescription": "Der Lauf liest zuerst das RFC-Ziel des EWM im Zentrallager und bricht ohne es ab. Dann ermittelt er je Filialwerk und Material den Nachschubbedarf: doppelter Sicherheitsbestand minus Filialbestand minus offene Umlagerungsmengen, aufgerundet auf den Rundungswert; ohne Bedarf endet er. Je Filialwerk wird eine Umlagerungsbestellung in einem parallelen Task angelegt, ersatzweise synchron. Der Lauf wartet bis zu 600 Sekunden auf die Rückmeldungen, holt jede ab und meldet Werke ohne UB. Zu jeder angelegten UB wird eine Auslieferung angelegt und festgeschrieben, bei Misserfolg zurückgerollt und gemeldet. Jede Lieferung wird dem EWM synchron angekündigt; ist es nicht erreichbar, entsteht ein Wiederholungseintrag. Alle Lieferungen werden protokolliert, am Ende steht eine Zusammenfassung."
+}

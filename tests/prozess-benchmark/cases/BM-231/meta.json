@@ -1,0 +1,32 @@
+{
+  "id": "BM-231",
+  "title": "Plan/Ist-Abweichung je Kostenstelle mit Mail an den Verantwortlichen",
+  "domain": "CO",
+  "band": "komplex",
+  "loc": 175,
+  "constructs": [
+    "REPORT mit F01",
+    "SELECT SINGLE mit Default",
+    "MESSAGE I",
+    "CHECK in LOOP",
+    "CONTINUE",
+    "DO VARYING",
+    "RETURN in FORM",
+    "CL_BCS Methodenkette",
+    "TRY/CATCH cx_bcs",
+    "COMMIT WORK"
+  ],
+  "scenario": "Monatlicher Controlling-Job, der Kostenstellenverantwortliche per SAPoffice-Mail über Budgetabweichungen informiert.",
+  "s4_issues": [
+    "COSP ist in S/4HANA Kompatibilitätssicht auf ACDOCA/ACDOCP",
+    "Planung in S/4 über ACDOCP statt COSP-Planwerte"
+  ],
+  "wave": 3,
+  "module": "CO-OM-CCA",
+  "edge_constructs": [
+    "CHECK mit Builtin-Funktion",
+    "verschachtelte LOOP/DO VARYING",
+    "Ausnahme aus jeder BCS-Methode in einen CATCH"
+  ],
+  "oo": false
+}

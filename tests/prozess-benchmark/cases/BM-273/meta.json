@@ -1,0 +1,35 @@
+{
+  "id": "BM-273",
+  "title": "Faktura-Export mit Wiederaufsetzpunkten",
+  "domain": "SD",
+  "band": "komplex",
+  "loc": 153,
+  "constructs": [
+    "REPORT mit TOP/F01",
+    "PERFORM/FORM",
+    "OPEN DATASET FOR OUTPUT/APPENDING",
+    "TRANSFER",
+    "CLOSE DATASET",
+    "SELECT SUM",
+    "INSERT",
+    "MODIFY",
+    "DELETE",
+    "COMMIT WORK",
+    "MESSAGE E/S"
+  ],
+  "scenario": "Täglicher Export gebuchter Rechnungen an einen E-Invoicing-/Steuerdienstleister, der die Datei per SFTP abholt; nach Abbrüchen bei Monatsende wiederaufsetzbar gemacht.",
+  "s4_issues": [
+    "KONV entfällt in S/4 (PRCD_ELEMENTS)",
+    "VBRK/VBRP-Direktzugriff (Zielbild I_BillingDocument)",
+    "Dateischnittstelle auf Applikationsserver"
+  ],
+  "wave": 3,
+  "module": "SD",
+  "edge_constructs": [
+    "Wiederaufsetzen im Anhängemodus",
+    "Commit-Intervall über Zähler",
+    "MESSAGE E in FORM",
+    "Restart nur mit Kennzeichen"
+  ],
+  "oo": false
+}

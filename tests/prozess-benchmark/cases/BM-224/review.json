@@ -1,0 +1,14 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten ok (lzhr_abwu01.abap:50)",
+      "before": "action „Antrag als zulässig kennzeichnen“ auf ev_ok = 'X'; Kanten m3→ok, g2→ok [else], ok→e",
+      "after": "Knoten entfernt; m3→e [always], g2→e [else]",
+      "why": "Reine Zuweisung einer Konstante an den Exportparameter ist keine Berechnung und kein Knoten (Autorenbrief; Zeile 24 mit derselben Zuweisung ist ebenfalls kein Knoten). Fachsatz B09 bleibt auf Zeile 50.",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": []
+}

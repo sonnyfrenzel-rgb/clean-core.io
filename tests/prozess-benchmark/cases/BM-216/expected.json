@@ -1,0 +1,2088 @@
+{
+  "id": "BM-216",
+  "title": "Kitting-Reservierung für Fertigungsaufträge mit Sperr-Manager und Zuteilungsstrategien",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Polymorpher Aufruf allocate: Kanten zu beiden Strategien mit „always“.",
+    "Ausnahmen laufen zuerst in den CLEANUP (ccu) und von dessen Rückkehr in den äußeren CATCH (pl3).",
+    "Report-Aufruf des Bausteins: Rückkanten von allen drei Pfadenden (r1, r2, fe) in die Schleife."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "AFKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_kit_manual.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_kit_manual.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JEST",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_kit_manual.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_kit_manual.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AUFK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzmm_kitc01.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmm_kitc01.abap:83"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RESB",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzmm_kitc01.abap",
+        "line": 92,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmm_kitc01.abap:92"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MCHB",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzmm_kitc01.abap",
+        "line": 144,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmm_kitc01.abap:144"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MCH1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzmm_kitc01.abap",
+        "line": 144,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmm_kitc01.abap:144"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzmm_kitc01.abap",
+        "line": 211,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmm_kitc01.abap:211"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_MATERIAL_AVAILABILITY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzmm_kitc01.abap",
+        "line": 180,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmm_kitc01.abap:180"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_RESERVATION_CREATE1",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzmm_kitf01.abap",
+        "line": 35,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmm_kitf01.abap:35"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZ_KIT_MAT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "lzmm_kitc01.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmm_kitc01.abap:37"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_MM_KIT_RESERVE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_kit_manual.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_kit_manual.abap:50"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-216-B01",
+      "text": "Im Rückfallbetrieb selektiert der Schichtleiter freigegebene Fertigungsaufträge einer Linie und eines Starttermins; gibt es keine, endet der Report mit einer Meldung.",
+      "anchors": [
+        {
+          "file": "zmm_kit_manual.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:32"
+        },
+        {
+          "file": "zmm_kit_manual.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:43"
+        },
+        {
+          "file": "zmm_kit_manual.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:44"
+        },
+        {
+          "file": "zmm_kit_manual.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-216-B02",
+      "text": "Für jeden Auftrag wird das Kitting mit erlaubter Teilreservierung aufgerufen und das Ergebnis je Auftrag als ALV-Liste angezeigt.",
+      "anchors": [
+        {
+          "file": "zmm_kit_manual.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:48"
+        },
+        {
+          "file": "zmm_kit_manual.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:50"
+        },
+        {
+          "file": "zmm_kit_manual.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-216-B03",
+      "text": "Der aufrufende Benutzer braucht die Berechtigung, Reservierungen zur Bewegungsart 311 anzulegen; sonst wird nur ein Fehler zurückgegeben.",
+      "anchors": [
+        {
+          "file": "lzmm_kitu01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:23"
+        },
+        {
+          "file": "lzmm_kitu01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:26"
+        },
+        {
+          "file": "lzmm_kitu01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:27"
+        },
+        {
+          "file": "lzmm_kitu01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-216-B04",
+      "text": "Der Fertigungsauftrag muss im angegebenen Werk existieren.",
+      "anchors": [
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:83"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:86"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-216-B05",
+      "text": "Kitting-relevant sind die offenen, nicht gelöschten, nicht endausgefassten Komponenten ohne Phantombaugruppen; gibt es keine, wird abgebrochen.",
+      "anchors": [
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:92"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:99"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:100"
+        }
+      ]
+    },
+    {
+      "id": "BM-216-B06",
+      "text": "Die offene Menge je Komponente ist Bedarf minus bereits entnommene Menge.",
+      "anchors": [
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:104"
+        }
+      ]
+    },
+    {
+      "id": "BM-216-B07",
+      "text": "Jedes Komponentenmaterial wird für die Dauer des Kittings gesperrt; ist es bereits gesperrt, wird der Vorgang abgebrochen.",
+      "anchors": [
+        {
+          "file": "lzmm_kitu01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:39"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:37"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:45"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-216-B08",
+      "text": "Chargenpflichtige Materialien werden nach Verfallsdatum aus freien, nicht gesperrten Chargen zugeteilt, höchstens aus einer Charge je Komponente.",
+      "anchors": [
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 211,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:211"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 214,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:214"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:144"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:157"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:159"
+        }
+      ]
+    },
+    {
+      "id": "BM-216-B09",
+      "text": "Übrige Materialien werden nach Verfügbarkeitsprüfung (Prüfregel PP) zugeteilt; schlägt die Prüfung fehl, wird nichts zugeteilt.",
+      "anchors": [
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:180"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 193,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:193"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 194,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:194"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:196"
+        }
+      ]
+    },
+    {
+      "id": "BM-216-B10",
+      "text": "Bleibt eine Fehlmenge, wird sie als Warnung zur Komponente protokolliert.",
+      "anchors": [
+        {
+          "file": "lzmm_kitu01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:44"
+        },
+        {
+          "file": "lzmm_kitu01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-216-B11",
+      "text": "Ist keine Teilreservierung erlaubt, bricht jede Fehlmenge den Vorgang ab.",
+      "anchors": [
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:117"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:118"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:119"
+        }
+      ]
+    },
+    {
+      "id": "BM-216-B12",
+      "text": "Im Echtlauf wird eine Umlagerungsreservierung (311) der zugeteilten Mengen und Chargen in das Produktionsversorgungslager PVB3 angelegt.",
+      "anchors": [
+        {
+          "file": "lzmm_kitu01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:52"
+        },
+        {
+          "file": "lzmm_kitf01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitf01.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-216-B13",
+      "text": "Entsteht keine Reservierung, wird zurückgerollt und mit dem BAPI-Fehlertext abgebrochen; sonst wird festgeschrieben und die Reservierungsnummer protokolliert.",
+      "anchors": [
+        {
+          "file": "lzmm_kitf01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitf01.abap:44"
+        },
+        {
+          "file": "lzmm_kitf01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitf01.abap:45"
+        },
+        {
+          "file": "lzmm_kitf01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitf01.abap:46"
+        },
+        {
+          "file": "lzmm_kitf01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitf01.abap:51"
+        },
+        {
+          "file": "lzmm_kitf01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitf01.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-216-B14",
+      "text": "Bei jedem Abbruch werden alle gesetzten Sperren gelöst und der Fehler protokolliert; im Normalfall werden die Sperren am Ende gelöst.",
+      "anchors": [
+        {
+          "file": "lzmm_kitu01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:57"
+        },
+        {
+          "file": "lzmm_kitc01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:54"
+        },
+        {
+          "file": "lzmm_kitu01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:60"
+        },
+        {
+          "file": "lzmm_kitu01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-216-B15",
+      "text": "Das Ergebnis mit Warnungen, Fehlern und Reservierungsnummer geht als Ergebnisliste an den Aufrufer zurück.",
+      "anchors": [
+        {
+          "file": "lzmm_kitu01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:66"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_kit_manual.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:30"
+        },
+        "meaning": "Manuelles Kitting starten"
+      },
+      {
+        "id": "rq",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_kit_manual.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:32"
+        },
+        "meaning": "Freigegebene Fertigungsauftraege der Linie lesen"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_kit_manual.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:43"
+        },
+        "meaning": "Keine Auftraege?"
+      },
+      {
+        "id": "ro",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_kit_manual.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:44"
+        },
+        "meaning": "Keine Auftraege melden"
+      },
+      {
+        "id": "rr",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_kit_manual.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:45"
+        },
+        "meaning": "Ende ohne Kitting"
+      },
+      {
+        "id": "rl",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_kit_manual.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:48"
+        },
+        "meaning": "Je Auftrag"
+      },
+      {
+        "id": "rc",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_kit_manual.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:50"
+        },
+        "meaning": "Kitting-Reservierung (Teilmengen erlaubt)"
+      },
+      {
+        "id": "rf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_kit_manual.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:64"
+        },
+        "meaning": "ALV aufbauen"
+      },
+      {
+        "id": "rd",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_kit_manual.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:66"
+        },
+        "meaning": "Ergebnisse je Auftrag anzeigen"
+      },
+      {
+        "id": "re0",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_kit_manual.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_kit_manual.abap:66"
+        },
+        "meaning": "Reportende"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:1"
+        },
+        "meaning": "RFC-Baustein Kitting-Reservierung"
+      },
+      {
+        "id": "au",
+        "type": "action",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:23"
+        },
+        "meaning": "Reservierungsberechtigung Bewegungsart 311 pruefen"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:26"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "pl1",
+        "type": "call",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:27"
+        },
+        "meaning": "Fehler protokollieren"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:29"
+        },
+        "meaning": "Ende ohne Reservierung"
+      },
+      {
+        "id": "cb",
+        "type": "call",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:36"
+        },
+        "meaning": "Offene Auftragskomponenten ermitteln"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:38"
+        },
+        "meaning": "Je Komponente"
+      },
+      {
+        "id": "cl",
+        "type": "call",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:39"
+        },
+        "meaning": "Material sperren"
+      },
+      {
+        "id": "cf",
+        "type": "call",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:41"
+        },
+        "meaning": "Zuteilungsstrategie waehlen"
+      },
+      {
+        "id": "ca",
+        "type": "call",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:43"
+        },
+        "meaning": "Menge zuteilen (polymorph)"
+      },
+      {
+        "id": "gs",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:44"
+        },
+        "meaning": "Fehlmenge?"
+      },
+      {
+        "id": "pl2",
+        "type": "call",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:45"
+        },
+        "meaning": "Fehlmenge protokollieren"
+      },
+      {
+        "id": "cac",
+        "type": "call",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:49"
+        },
+        "meaning": "Vollstaendigkeit pruefen"
+      },
+      {
+        "id": "gsim",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:52"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "pp",
+        "type": "call",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:53"
+        },
+        "meaning": "Reservierung buchen"
+      },
+      {
+        "id": "ccu",
+        "type": "call",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:57"
+        },
+        "meaning": "CLEANUP: alle Sperren loesen"
+      },
+      {
+        "id": "pl3",
+        "type": "call",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:60"
+        },
+        "meaning": "Fehler protokollieren"
+      },
+      {
+        "id": "r2",
+        "type": "end",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:62"
+        },
+        "meaning": "Ende nach Fehler"
+      },
+      {
+        "id": "crl",
+        "type": "call",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:65"
+        },
+        "meaning": "Alle Sperren loesen"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "meaning": "Ergebnis zurueckgeben",
+        "anchor": {
+          "file": "lzmm_kitu01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitu01.abap:67"
+        }
+      },
+      {
+        "id": "ks",
+        "type": "start",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:36"
+        },
+        "meaning": "Sperre setzen und merken"
+      },
+      {
+        "id": "kl",
+        "type": "lock",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:37"
+        },
+        "meaning": "Material/Werk sperren"
+      },
+      {
+        "id": "kg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:45"
+        },
+        "meaning": "Gesperrt durch anderen?"
+      },
+      {
+        "id": "kx",
+        "type": "end",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:46"
+        },
+        "meaning": "Ausnahme: in Bearbeitung"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:50"
+        }
+      },
+      {
+        "id": "ls0",
+        "type": "start",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:52"
+        },
+        "meaning": "Sperren loesen"
+      },
+      {
+        "id": "rl2",
+        "type": "loop",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:53"
+        },
+        "meaning": "Je gemerkte Sperre"
+      },
+      {
+        "id": "rd2",
+        "type": "lock",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:54"
+        },
+        "meaning": "Entsperren"
+      },
+      {
+        "id": "re2",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:60"
+        }
+      },
+      {
+        "id": "bs",
+        "type": "start",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:80"
+        },
+        "meaning": "Kit-Aufbau"
+      },
+      {
+        "id": "bq1",
+        "type": "read",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:83"
+        },
+        "meaning": "Fertigungsauftrag (Typ 10) lesen"
+      },
+      {
+        "id": "bg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:86"
+        },
+        "meaning": "Auftrag fehlt oder anderes Werk?"
+      },
+      {
+        "id": "bx1",
+        "type": "end",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:87"
+        },
+        "meaning": "Ausnahme: Auftrag ungueltig"
+      },
+      {
+        "id": "bq2",
+        "type": "read",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:92"
+        },
+        "meaning": "Offene Komponenten lesen"
+      },
+      {
+        "id": "bg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:99"
+        },
+        "meaning": "Keine Komponenten?"
+      },
+      {
+        "id": "bx2",
+        "type": "end",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:100"
+        },
+        "meaning": "Ausnahme: keine Komponenten"
+      },
+      {
+        "id": "ba",
+        "type": "action",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:104"
+        },
+        "meaning": "Offene Menge = Bedarf - Entnahme"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:114"
+        }
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:116"
+        },
+        "meaning": "Vollstaendigkeitspruefung"
+      },
+      {
+        "id": "ack",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:117"
+        },
+        "meaning": "Keine Teilreservierung erlaubt?"
+      },
+      {
+        "id": "al",
+        "type": "loop",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:118"
+        },
+        "meaning": "Komponenten mit Fehlmenge"
+      },
+      {
+        "id": "ax",
+        "type": "end",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:119"
+        },
+        "meaning": "Ausnahme: Kit unvollstaendig"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:122"
+        }
+      },
+      {
+        "id": "fs2",
+        "type": "start",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:140"
+        },
+        "meaning": "FIFO-Chargenzuteilung"
+      },
+      {
+        "id": "fl",
+        "type": "loop",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:144"
+        },
+        "meaning": "Freie, nicht gesperrte Chargen nach Verfallsdatum"
+      },
+      {
+        "id": "fa",
+        "type": "action",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:157"
+        },
+        "meaning": "Zuteilung = min(Chargenbestand, offene Menge)"
+      },
+      {
+        "id": "fg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:159"
+        },
+        "meaning": "Etwas zugeteilt?"
+      },
+      {
+        "id": "fe2",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:163"
+        }
+      },
+      {
+        "id": "ws",
+        "type": "start",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:173"
+        },
+        "meaning": "ATP-Zuteilung"
+      },
+      {
+        "id": "wb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:180"
+        },
+        "meaning": "Verfuegbarkeit mit Pruefregel PP"
+      },
+      {
+        "id": "wg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 193,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:193"
+        },
+        "meaning": "Pruefung fehlgeschlagen?"
+      },
+      {
+        "id": "wret",
+        "type": "end",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 194,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:194"
+        },
+        "meaning": "Nichts zuteilen"
+      },
+      {
+        "id": "wa",
+        "type": "action",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:196"
+        },
+        "meaning": "Zuteilung = min(verfuegbar, offene Menge)"
+      },
+      {
+        "id": "we",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 198,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:198"
+        }
+      },
+      {
+        "id": "ys",
+        "type": "start",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 210,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:210"
+        },
+        "meaning": "Strategiefabrik"
+      },
+      {
+        "id": "yq",
+        "type": "read",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 211,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:211"
+        },
+        "meaning": "Chargenpflicht im Werk lesen"
+      },
+      {
+        "id": "yg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 214,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:214"
+        },
+        "meaning": "Chargenpflichtig?"
+      },
+      {
+        "id": "ye",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzmm_kitc01.abap",
+          "line": 219,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitc01.abap:219"
+        }
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "lzmm_kitf01.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitf01.abap:4"
+        },
+        "meaning": "Ergebniszeile sammeln"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzmm_kitf01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitf01.abap:8"
+        }
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "lzmm_kitf01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitf01.abap:10"
+        },
+        "meaning": "Reservierung buchen"
+      },
+      {
+        "id": "pb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzmm_kitf01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitf01.abap:35"
+        },
+        "meaning": "Umlagerungsreservierung 311 ins PVB anlegen"
+      },
+      {
+        "id": "pg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmm_kitf01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitf01.abap:44"
+        },
+        "meaning": "Keine Reservierung?"
+      },
+      {
+        "id": "prb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzmm_kitf01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitf01.abap:45"
+        },
+        "meaning": "Verwerfen"
+      },
+      {
+        "id": "px",
+        "type": "end",
+        "anchor": {
+          "file": "lzmm_kitf01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitf01.abap:46"
+        },
+        "meaning": "Ausnahme mit BAPI-Text"
+      },
+      {
+        "id": "pc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzmm_kitf01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitf01.abap:51"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "pls",
+        "type": "call",
+        "anchor": {
+          "file": "lzmm_kitf01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitf01.abap:54"
+        },
+        "meaning": "Reservierungsnummer protokollieren"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzmm_kitf01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_kitf01.abap:55"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "rs",
+        "to": "rq",
+        "condition": "always"
+      },
+      {
+        "from": "rq",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "ro",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ro",
+        "to": "rr",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rl",
+        "condition": "else"
+      },
+      {
+        "from": "rl",
+        "to": "rc",
+        "condition": "next row"
+      },
+      {
+        "from": "rc",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "rl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "r2",
+        "to": "rl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fe",
+        "to": "rl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rl",
+        "to": "rf",
+        "condition": "no more rows"
+      },
+      {
+        "from": "rf",
+        "to": "rd",
+        "condition": "always"
+      },
+      {
+        "from": "rd",
+        "to": "re0",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "au",
+        "condition": "always"
+      },
+      {
+        "from": "au",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "pl1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ag",
+        "to": "cb",
+        "condition": "else"
+      },
+      {
+        "from": "pl1",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "pl2",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "pl3",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "pls",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "le",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "le",
+        "to": "r2",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "cb",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "lp",
+        "to": "cl",
+        "condition": "next row"
+      },
+      {
+        "from": "cl",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "ke",
+        "to": "cf",
+        "condition": "always"
+      },
+      {
+        "from": "cf",
+        "to": "ys",
+        "condition": "always"
+      },
+      {
+        "from": "ye",
+        "to": "ca",
+        "condition": "always"
+      },
+      {
+        "from": "ca",
+        "to": "fs2",
+        "condition": "always"
+      },
+      {
+        "from": "ca",
+        "to": "ws",
+        "condition": "always"
+      },
+      {
+        "from": "fe2",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "we",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "wret",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "pl2",
+        "condition": "<ls_comp>-open_qty > 0"
+      },
+      {
+        "from": "gs",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "cac",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cac",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "gsim",
+        "condition": "always"
+      },
+      {
+        "from": "gsim",
+        "to": "pp",
+        "condition": "iv_simulate = abap_false"
+      },
+      {
+        "from": "gsim",
+        "to": "crl",
+        "condition": "else"
+      },
+      {
+        "from": "pp",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "crl",
+        "condition": "always"
+      },
+      {
+        "from": "crl",
+        "to": "ls0",
+        "condition": "always"
+      },
+      {
+        "from": "re2",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "ccu",
+        "to": "ls0",
+        "condition": "always"
+      },
+      {
+        "from": "re2",
+        "to": "pl3",
+        "condition": "always"
+      },
+      {
+        "from": "bx1",
+        "to": "ccu",
+        "condition": "lcx_kit"
+      },
+      {
+        "from": "bx2",
+        "to": "ccu",
+        "condition": "lcx_kit"
+      },
+      {
+        "from": "kx",
+        "to": "ccu",
+        "condition": "lcx_kit"
+      },
+      {
+        "from": "ax",
+        "to": "ccu",
+        "condition": "lcx_kit"
+      },
+      {
+        "from": "px",
+        "to": "ccu",
+        "condition": "lcx_kit"
+      },
+      {
+        "from": "ks",
+        "to": "kl",
+        "condition": "always"
+      },
+      {
+        "from": "kl",
+        "to": "kg",
+        "condition": "always"
+      },
+      {
+        "from": "kg",
+        "to": "kx",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "kg",
+        "to": "ke",
+        "condition": "else"
+      },
+      {
+        "from": "ls0",
+        "to": "rl2",
+        "condition": "always"
+      },
+      {
+        "from": "rl2",
+        "to": "rd2",
+        "condition": "next row"
+      },
+      {
+        "from": "rd2",
+        "to": "rl2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rl2",
+        "to": "re2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "bs",
+        "to": "bq1",
+        "condition": "always"
+      },
+      {
+        "from": "bq1",
+        "to": "bg1",
+        "condition": "always"
+      },
+      {
+        "from": "bg1",
+        "to": "bx1",
+        "condition": "sy-subrc <> 0 OR lv_werks <> iv_werks"
+      },
+      {
+        "from": "bg1",
+        "to": "bq2",
+        "condition": "else"
+      },
+      {
+        "from": "bq2",
+        "to": "bg2",
+        "condition": "always"
+      },
+      {
+        "from": "bg2",
+        "to": "bx2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "bg2",
+        "to": "ba",
+        "condition": "else"
+      },
+      {
+        "from": "ba",
+        "to": "be",
+        "condition": "always"
+      },
+      {
+        "from": "as",
+        "to": "ack",
+        "condition": "always"
+      },
+      {
+        "from": "ack",
+        "to": "al",
+        "condition": "iv_partial = abap_false"
+      },
+      {
+        "from": "ack",
+        "to": "ae",
+        "condition": "else"
+      },
+      {
+        "from": "al",
+        "to": "ax",
+        "condition": "next row"
+      },
+      {
+        "from": "al",
+        "to": "ae",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fs2",
+        "to": "fl",
+        "condition": "always"
+      },
+      {
+        "from": "fl",
+        "to": "fa",
+        "condition": "next row"
+      },
+      {
+        "from": "fa",
+        "to": "fg",
+        "condition": "always"
+      },
+      {
+        "from": "fg",
+        "to": "fe2",
+        "condition": "cs_comp-alloc > 0"
+      },
+      {
+        "from": "fg",
+        "to": "fl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fl",
+        "to": "fe2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ws",
+        "to": "wb",
+        "condition": "always"
+      },
+      {
+        "from": "wb",
+        "to": "wg",
+        "condition": "always"
+      },
+      {
+        "from": "wg",
+        "to": "wret",
+        "condition": "ls_return-type = 'E'"
+      },
+      {
+        "from": "wg",
+        "to": "wa",
+        "condition": "else"
+      },
+      {
+        "from": "wa",
+        "to": "we",
+        "condition": "always"
+      },
+      {
+        "from": "ys",
+        "to": "yq",
+        "condition": "always"
+      },
+      {
+        "from": "yq",
+        "to": "yg",
+        "condition": "always"
+      },
+      {
+        "from": "yg",
+        "to": "ye",
+        "condition": "lv_xchpf = abap_true"
+      },
+      {
+        "from": "yg",
+        "to": "ye",
+        "condition": "else"
+      },
+      {
+        "from": "ps",
+        "to": "pb",
+        "condition": "always"
+      },
+      {
+        "from": "pb",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "prb",
+        "condition": "cv_rsnum IS INITIAL"
+      },
+      {
+        "from": "prb",
+        "to": "px",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pc",
+        "condition": "else"
+      },
+      {
+        "from": "pc",
+        "to": "pls",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "lzmm_kitc01.abap:144 — kein Fachsatz „die Menge wird über mehrere Chargen verteilt“ — nach der ersten Charge mit Zuteilung wird die Schleife verlassen.",
+    "lzmm_kitu01.abap:52 — kein Fachsatz „die Simulation prüft ohne Sperren“ — auch im Simulationslauf werden Materialien gesperrt und Mengen zugeteilt.",
+    "lzmm_kitf01.abap:35 — kein Fachsatz „die Ware wird umgelagert“ — angelegt wird nur eine Reservierung, keine Warenbewegung.",
+    "lzmm_kitc01.abap:194 — kein Fachsatz „ein ATP-Fehler bricht das Kitting ab“ — die Komponente bleibt nur ohne Zuteilung."
+  ],
+  "processDescription": "Das MES – oder im Rückfall ein Report für freigegebene Aufträge einer Linie – ruft den Baustein je Fertigungsauftrag auf. Ohne Berechtigung für Reservierungen zur Bewegungsart 311 kommt nur ein Fehler zurück. Der Baustein prüft, dass der Auftrag im Werk existiert, und liest seine offenen Komponenten. Je Komponente sperrt ein Sperr-Manager das Material und eine Strategie teilt Menge zu: chargenpflichtige Materialien aus der Charge mit dem frühesten Verfallsdatum, andere nach Verfügbarkeitsprüfung. Fehlmengen werden als Warnung protokolliert; ist keine Teilreservierung erlaubt, führen sie zum Abbruch. Im Echtlauf wird eine Umlagerungsreservierung ins Produktionsversorgungslager angelegt und festgeschrieben, bei Misserfolg zurückgerollt. Bei jedem Abbruch löst ein CLEANUP alle Sperren, danach wird der Fehler protokolliert; im Normalfall werden die Sperren am Ende gelöst."
+}

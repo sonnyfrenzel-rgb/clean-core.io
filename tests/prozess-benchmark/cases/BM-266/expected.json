@@ -1,0 +1,658 @@
+{
+  "id": "BM-266",
+  "title": "Application-Log-Klasse für FI-Schnittstellen",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_fi_applog.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_applog.abap:37"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_fi_applog.abap",
+        "line": 74,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_applog.abap:74"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_fi_applog.abap",
+        "line": 97,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_applog.abap:97"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCX_FI_APPLOG",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_fi_applog.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_applog.abap:45"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-266-B01",
+      "text": "Für jede FI-Schnittstelle wird ein Anwendungsprotokoll zum Objekt ZFI mit dem jeweiligen Unterobjekt, einer externen Nummer, Benutzer und Programm angelegt, das 90 Tage aufbewahrt wird.",
+      "anchors": [
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:26"
+        },
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-266-B02",
+      "text": "Lässt sich das Protokoll nicht anlegen, wird eine Ausnahme „Protokoll nicht angelegt“ ausgelöst.",
+      "anchors": [
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:44"
+        },
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-266-B03",
+      "text": "Rückmeldungen von BAPIs werden ins Protokoll übernommen, Erfolgsmeldungen jedoch weggelassen.",
+      "anchors": [
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:54"
+        },
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:56"
+        },
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-266-B04",
+      "text": "Fehler- und Abbruchmeldungen werden als sehr wichtig eingestuft und gezählt, Warnungen als wichtig, alle übrigen als Zusatzinformation.",
+      "anchors": [
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:65"
+        },
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-266-B05",
+      "text": "Kann eine Meldung nicht ins Protokoll geschrieben werden, geht sie verloren, ohne dass die Verarbeitung abbricht.",
+      "anchors": [
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-266-B06",
+      "text": "Ob Fehler protokolliert wurden, ergibt sich daraus, dass mindestens eine Fehlermeldung gezählt wurde.",
+      "anchors": [
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:89"
+        }
+      ]
+    },
+    {
+      "id": "BM-266-B07",
+      "text": "Beim Sichern wird das Protokoll in die Datenbank geschrieben; scheitert das, erscheint nur ein Hinweis und es wird nichts festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:97"
+        },
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:102"
+        },
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:103"
+        },
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:104"
+        }
+      ]
+    },
+    {
+      "id": "BM-266-B08",
+      "text": "Nur auf Anforderung des Aufrufers wird nach dem Sichern festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:106"
+        },
+        {
+          "file": "zcl_fi_applog.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:107"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:26"
+        },
+        "meaning": "Protokoll für eine FI-Schnittstelle anlegen"
+      },
+      {
+        "id": "cr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:37"
+        },
+        "meaning": "Anwendungsprotokoll ZFI mit Unterobjekt und 90 Tagen Aufbewahrung anlegen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:44"
+        },
+        "meaning": "Anlegen fehlgeschlagen?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:45"
+        },
+        "meaning": "Ausnahme: Protokoll nicht angelegt"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:48"
+        },
+        "meaning": "Protokollobjekt zurückgeben"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:51"
+        },
+        "meaning": "BAPI-Rückmeldungen ins Protokoll übernehmen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:54"
+        },
+        "meaning": "Rückmeldungen durchlaufen"
+      },
+      {
+        "id": "ck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:56"
+        },
+        "meaning": "Keine Erfolgsmeldung?"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:65"
+        },
+        "meaning": "Problemklasse nach Meldungstyp"
+      },
+      {
+        "id": "ma",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:74"
+        },
+        "meaning": "Meldung ins Protokoll schreiben"
+      },
+      {
+        "id": "gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:80"
+        },
+        "meaning": "Meldung nicht übernommen?"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:85"
+        },
+        "meaning": "Ende Übernahme"
+      },
+      {
+        "id": "s3",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:88"
+        },
+        "meaning": "Abfrage: Fehler protokolliert?"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:90"
+        },
+        "meaning": "Ergebnis zurückgeben"
+      },
+      {
+        "id": "s4",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:93"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "ds",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:97"
+        },
+        "meaning": "Protokoll in der Datenbank sichern"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:102"
+        },
+        "meaning": "Sichern fehlgeschlagen?"
+      },
+      {
+        "id": "mw",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:103"
+        },
+        "meaning": "Hinweis: Protokoll nicht gesichert"
+      },
+      {
+        "id": "r4",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:104"
+        },
+        "meaning": "Methode verlassen"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:106"
+        },
+        "meaning": "Festschreiben angefordert?"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:107"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "e4",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_applog.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_applog.abap:109"
+        },
+        "meaning": "Ende Sichern"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s1",
+        "to": "cr",
+        "condition": "always"
+      },
+      {
+        "from": "cr",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "x1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "s2",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "ck",
+        "condition": "next row"
+      },
+      {
+        "from": "ck",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ck",
+        "to": "cs",
+        "condition": "ls_ret-type <> 'S'"
+      },
+      {
+        "from": "cs",
+        "to": "ma",
+        "condition": "WHEN 'W'"
+      },
+      {
+        "from": "cs",
+        "to": "ma",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "ma",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "gm",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s4",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "ds",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "mw",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mw",
+        "to": "r4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "g5",
+        "condition": "else"
+      },
+      {
+        "from": "g5",
+        "to": "cw",
+        "condition": "iv_commit = abap_true"
+      },
+      {
+        "from": "cw",
+        "to": "e4",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "e4",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "ma",
+        "condition": "WHEN 'E' OR 'A' OR 'X'"
+      },
+      {
+        "from": "s3",
+        "to": "e3",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_fi_applog.abap:80 — kein Fachsatz „Schnittstelle bricht bei Protokollfehler ab“ (das CONTINUE steht am Schleifenende und ändert nichts)",
+    "zcl_fi_applog.abap:93 — kein Fachsatz „Protokoll wird immer festgeschrieben“ (COMMIT WORK nur bei iv_commit = abap_true)",
+    "zcl_fi_applog.abap:68 — kein Fachsatz „Warnungen zählen als Fehler“ (nur E/A/X erhöhen den Zähler)"
+  ],
+  "processDescription": "Die Klasse bündelt das Anwendungsprotokoll der FI-Schnittstellen. Über die Fabrikmethode legt eine Schnittstelle ein Protokoll zum Objekt ZFI mit ihrem Unterobjekt und 90 Tagen Aufbewahrung an; misslingt das, wird eine Ausnahme ausgelöst. BAPI-Rückmeldungen werden übernommen, wobei Erfolgsmeldungen entfallen, Fehler- und Abbruchmeldungen als sehr wichtig gezählt, Warnungen als wichtig und sonstige als Zusatzinformation eingestuft werden; eine nicht übernommene Meldung geht still verloren. Über die Fehlerabfrage erfährt der Aufrufer, ob mindestens ein Fehler protokolliert wurde. Beim Sichern wird das Protokoll in die Datenbank geschrieben; scheitert das, erscheint ein Hinweis und die Methode endet, sonst wird auf Wunsch des Aufrufers festgeschrieben."
+}

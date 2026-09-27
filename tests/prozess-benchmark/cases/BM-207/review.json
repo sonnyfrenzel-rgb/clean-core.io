@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "Knoten gd (lv_class = Default) und ki (xkomv-kinak = 'Y') sind reine Zuweisungen; belassen, weil sie ein fachliches Ergebnis festlegen (Default-Strategie bzw. Kondition inaktiv) — Grenzfall der Regel „reine Zuweisungen sind keine Knoten“."
+  ]
+}

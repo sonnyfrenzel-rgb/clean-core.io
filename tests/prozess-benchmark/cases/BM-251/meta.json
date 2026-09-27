@@ -1,0 +1,35 @@
+{
+  "id": "BM-251",
+  "title": "Eigener Mahnvorschlag aus CDS-View mit Mahnsperre, Stufenlogik und Ersetzen des Vorschlags",
+  "domain": "FI-AR Mahnwesen",
+  "band": "komplex",
+  "loc": 287,
+  "constructs": [
+    "SELECT aus CDS-View mit Parameter",
+    "released CDS I_CustomerCompany FOR ALL ENTRIES",
+    "Ausnahmeklasse mit IF_T100_MESSAGE",
+    "RAISE EXCEPTION ... EXPORTING textid",
+    "TRY/CATCH im Report",
+    "CATCH cx_sy_open_sql_db mit ROLLBACK WORK",
+    "ENQUEUE/DEQUEUE",
+    "COMMIT WORK",
+    "CASE mit OR-Liste und WHEN OTHERS",
+    "SWITCH",
+    "READ TABLE BINARY SEARCH",
+    "funktionaler Methodenaufruf"
+  ],
+  "scenario": "Sondermahnverfahren für Key Accounts einer Tochtergesellschaft, als Klasse mit CDS-Datenbasis neu geschrieben während der S/4-Konvertierung; Vorschläge werden später von einem Sachbearbeiter abgearbeitet.",
+  "s4_issues": [
+    "Kundeneigener Mahnlauf parallel zu F150",
+    "ZI_OFFENEPOSTEN nicht im Fall – Herkunft der Felder (ACDOCA/BSID) unbekannt"
+  ],
+  "wave": 3,
+  "module": "FI",
+  "edge_constructs": [
+    "Ausnahme aus Konstruktor in NEW",
+    "frühes RETURN ohne Meldung",
+    "Sperre bleibt bei Fehler stehen",
+    "zwei CONTINUE"
+  ],
+  "oo": true
+}

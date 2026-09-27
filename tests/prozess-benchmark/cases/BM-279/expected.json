@@ -1,0 +1,1943 @@
+{
+  "id": "BM-279",
+  "title": "Inbound-Proxy Lageraufgabenquittierung mit Fehlerqueue und Wiederholungsjob",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "/SCWM/ORDIM_O",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ewm_wt_processor.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ewm_wt_processor.abap:47"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "/SCWM/ORDIM_C",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ewm_wt_processor.abap",
+        "line": 53,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ewm_wt_processor.abap:53"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "/SCWM/TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ewm_wt_processor.abap",
+        "line": 86,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ewm_wt_processor.abap:86"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEWM_TEMP_MSG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ewm_wt_processor.abap",
+        "line": 110,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ewm_wt_processor.abap:110"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEWM_WTQ",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_ewm_wt_queue.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ewm_wt_queue.abap:56"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEWM_WTQ",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ewm_wt_queue.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ewm_wt_queue.abap:64"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZEWM_WTQ",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zewm_wt_retry.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zewm_wt_retry.abap:34"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-279-B01",
+      "text": "Das Staplerleitsystem meldet quittierte Lageraufgaben asynchron per Inbound-Proxy; jede gemeldete Quittierung wird einzeln ausgeführt, und Fehler werden nicht an den Sender zurückgemeldet, sondern in eine Fehlerqueue gestellt.",
+      "anchors": [
+        {
+          "file": "zcl_ewm_ii_wt_confirm.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_ii_wt_confirm.abap:28"
+        },
+        {
+          "file": "zcl_ewm_ii_wt_confirm.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_ii_wt_confirm.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-279-B02",
+      "text": "Ist die Lageraufgabe nicht mehr offen, aber bereits quittiert, geschieht nichts, sodass Wiederholungen unschädlich sind; ist sie unbekannt, ist das ein fachlicher Fehler.",
+      "anchors": [
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:47"
+        },
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:51"
+        },
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:53"
+        },
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:57"
+        },
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:58"
+        },
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-279-B03",
+      "text": "Eine Quittierung über der Sollmenge ist ein fachlicher Fehler; eine Mindermenge wird mit dem Ausnahmecode DIFF als Differenz quittiert.",
+      "anchors": [
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:65"
+        },
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:66"
+        },
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:77"
+        },
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-279-B04",
+      "text": "Die Lageraufgabe wird mit Istmenge, Einheit und Nachplatz quittiert und bei Erfolg synchron festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:86"
+        },
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:103"
+        }
+      ]
+    },
+    {
+      "id": "BM-279-B05",
+      "text": "Scheitert die Quittierung, wird zurückgerollt; ist eine der Fehlermeldungen als vorübergehend (Sperre) gepflegt, gilt der Fehler als vorübergehend, sonst als fachlich.",
+      "anchors": [
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:97"
+        },
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:98"
+        },
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:110"
+        },
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:115"
+        },
+        {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:120"
+        }
+      ]
+    },
+    {
+      "id": "BM-279-B06",
+      "text": "Ein vorübergehender Fehler stellt die Quittierung mit Status E und Wiederholung in fünf Minuten in die Queue, ein fachlicher mit Status F zur manuellen Klärung; die Quittierung wird dazu als XML gesichert.",
+      "anchors": [
+        {
+          "file": "zcl_ewm_ii_wt_confirm.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_ii_wt_confirm.abap:39"
+        },
+        {
+          "file": "zcl_ewm_ii_wt_confirm.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_ii_wt_confirm.abap:43"
+        },
+        {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:46"
+        },
+        {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:50"
+        },
+        {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-279-B07",
+      "text": "Der Wiederholungsjob löscht zuerst erledigte Einträge, die älter als die Aufbewahrungsfrist sind; endgültig fehlerhafte bleiben stehen.",
+      "anchors": [
+        {
+          "file": "zewm_wt_retry.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:24"
+        },
+        {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:110"
+        },
+        {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:115"
+        },
+        {
+          "file": "zewm_wt_retry.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-279-B08",
+      "text": "Dann holt er die Einträge mit Status E, deren Wiederholungszeitpunkt erreicht ist; gibt es keine, endet er mit Hinweis.",
+      "anchors": [
+        {
+          "file": "zewm_wt_retry.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:27"
+        },
+        {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:64"
+        },
+        {
+          "file": "zewm_wt_retry.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:28"
+        },
+        {
+          "file": "zewm_wt_retry.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-279-B09",
+      "text": "Je Lauf werden höchstens p_max Einträge bearbeitet; jeder wird gesperrt, und ist er anderweitig in Bearbeitung, wird er übersprungen.",
+      "anchors": [
+        {
+          "file": "zewm_wt_retry.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:33"
+        },
+        {
+          "file": "zewm_wt_retry.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:34"
+        },
+        {
+          "file": "zewm_wt_retry.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-279-B10",
+      "text": "Die gesicherte Quittierung wird erneut ausgeführt; gelingt sie, wird der Eintrag als erledigt gekennzeichnet.",
+      "anchors": [
+        {
+          "file": "zewm_wt_retry.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:47"
+        },
+        {
+          "file": "zewm_wt_retry.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:50"
+        },
+        {
+          "file": "zewm_wt_retry.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:51"
+        },
+        {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-279-B11",
+      "text": "Bei erneutem vorübergehendem Fehler wird der nächste Versuch mit verdoppelter Wartezeit eingeplant; ab dem sechsten Versuch wird der Eintrag endgültig fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zewm_wt_retry.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:54"
+        },
+        {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:83"
+        },
+        {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:84"
+        },
+        {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:90"
+        }
+      ]
+    },
+    {
+      "id": "BM-279-B12",
+      "text": "Bei fachlichem Fehler wird der Eintrag mit Fehlertext endgültig fehlerhaft gekennzeichnet.",
+      "anchors": [
+        {
+          "file": "zewm_wt_retry.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:58"
+        },
+        {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:98"
+        }
+      ]
+    },
+    {
+      "id": "BM-279-B13",
+      "text": "Jede Queue-Änderung wird sofort festgeschrieben und die Sperre gelöst; am Ende werden die Zahlen quittierter, erneut eingeplanter, endgültig fehlerhafter und gesperrter Einträge ausgegeben.",
+      "anchors": [
+        {
+          "file": "zewm_wt_retry.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:62"
+        },
+        {
+          "file": "zewm_wt_retry.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:64"
+        },
+        {
+          "file": "zewm_wt_retry.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:69"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "xs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ewm_ii_wt_confirm.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_ii_wt_confirm.abap:18"
+        },
+        "meaning": "Eingang Quittierungen aus dem Staplerleitsystem (Inbound-Proxy)"
+      },
+      {
+        "id": "xl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_ewm_ii_wt_confirm.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_ii_wt_confirm.abap:28"
+        },
+        "meaning": "Gemeldete Quittierungen durchlaufen"
+      },
+      {
+        "id": "xpc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ewm_ii_wt_confirm.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_ii_wt_confirm.abap:37"
+        },
+        "meaning": "Lageraufgabe quittieren"
+      },
+      {
+        "id": "xq1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ewm_ii_wt_confirm.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_ii_wt_confirm.abap:39"
+        },
+        "meaning": "Vorübergehender Fehler: zur Wiederholung einreihen"
+      },
+      {
+        "id": "xq2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ewm_ii_wt_confirm.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_ii_wt_confirm.abap:43"
+        },
+        "meaning": "Fachlicher Fehler: endgültig einreihen"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ewm_ii_wt_confirm.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_ii_wt_confirm.abap:49"
+        },
+        "meaning": "Ende (kein Fault an den Sender)"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:38"
+        },
+        "meaning": "Quittierung einer Lageraufgabe"
+      },
+      {
+        "id": "psl",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:45"
+        },
+        "meaning": "Lagernummer für die Transaktion setzen"
+      },
+      {
+        "id": "pq1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:47"
+        },
+        "meaning": "Offene Lageraufgabe mit Sollmenge lesen"
+      },
+      {
+        "id": "pg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:51"
+        },
+        "meaning": "Keine offene Lageraufgabe?"
+      },
+      {
+        "id": "pq2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:53"
+        },
+        "meaning": "Bereits quittierte Lageraufgabe suchen"
+      },
+      {
+        "id": "pg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:57"
+        },
+        "meaning": "Schon quittiert?"
+      },
+      {
+        "id": "pr",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:58"
+        },
+        "meaning": "Nichts zu tun (Wiederholung)"
+      },
+      {
+        "id": "px1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:60"
+        },
+        "meaning": "Fachlicher Fehler: unbekannte Lageraufgabe"
+      },
+      {
+        "id": "pg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:65"
+        },
+        "meaning": "Mehrmenge?"
+      },
+      {
+        "id": "px2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:66"
+        },
+        "meaning": "Fachlicher Fehler: Überquittierung"
+      },
+      {
+        "id": "pg4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:77"
+        },
+        "meaning": "Mindermenge?"
+      },
+      {
+        "id": "pto",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:86"
+        },
+        "meaning": "Lageraufgabe mit Istmenge und Nachplatz quittieren"
+      },
+      {
+        "id": "pg5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:97"
+        },
+        "meaning": "Quittierung fehlerhaft?"
+      },
+      {
+        "id": "prb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:98"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "pcl1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:99"
+        },
+        "meaning": "Transaktionspuffer zurücksetzen"
+      },
+      {
+        "id": "prf",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:100"
+        },
+        "meaning": "Fehlerart aus Meldungen bestimmen"
+      },
+      {
+        "id": "pcw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:103"
+        },
+        "meaning": "Quittierung synchron festschreiben"
+      },
+      {
+        "id": "pcl2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:104"
+        },
+        "meaning": "Transaktionspuffer zurücksetzen"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:105"
+        },
+        "meaning": "Quittiert"
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:108"
+        },
+        "meaning": "Fehlerart bestimmen"
+      },
+      {
+        "id": "rl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:109"
+        },
+        "meaning": "Fehlermeldungen durchlaufen"
+      },
+      {
+        "id": "rq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:110"
+        },
+        "meaning": "Meldung als vorübergehend (Sperre) gepflegt?"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:114"
+        },
+        "meaning": "Vorübergehende Meldung?"
+      },
+      {
+        "id": "rx1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:115"
+        },
+        "meaning": "Vorübergehender Fehler (gesperrt)"
+      },
+      {
+        "id": "rx2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ewm_wt_processor.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_processor.abap:120"
+        },
+        "meaning": "Fachlicher Fehler: Buchung fehlgeschlagen"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:40"
+        },
+        "meaning": "Quittierung einreihen"
+      },
+      {
+        "id": "ect",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:46"
+        },
+        "meaning": "Quittierung als XML sichern"
+      },
+      {
+        "id": "eg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:50"
+        },
+        "meaning": "Vorübergehender Fehler?"
+      },
+      {
+        "id": "ei",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:56"
+        },
+        "meaning": "Queue-Eintrag mit Fehlertext schreiben"
+      },
+      {
+        "id": "eend",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:57"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "gs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:60"
+        },
+        "meaning": "Fällige Einträge"
+      },
+      {
+        "id": "gq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:64"
+        },
+        "meaning": "Einträge mit Status E und erreichtem Wiederholungszeitpunkt lesen"
+      },
+      {
+        "id": "ge",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:68"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "ds",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:71"
+        },
+        "meaning": "Als erledigt kennzeichnen"
+      },
+      {
+        "id": "du",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:72"
+        },
+        "meaning": "Status P"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:74"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:77"
+        },
+        "meaning": "Erneut einplanen"
+      },
+      {
+        "id": "mg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:83"
+        },
+        "meaning": "Höchstzahl Versuche erreicht?"
+      },
+      {
+        "id": "mmf",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:84"
+        },
+        "meaning": "Endgültig fehlerhaft kennzeichnen"
+      },
+      {
+        "id": "mr",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:85"
+        },
+        "meaning": "Methode verlassen"
+      },
+      {
+        "id": "mu",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:90"
+        },
+        "meaning": "Versuchszahl, nächsten Zeitpunkt (Wartezeit verdoppelt) und Fehlertext fortschreiben"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:94"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:97"
+        },
+        "meaning": "Endgültig fehlerhaft"
+      },
+      {
+        "id": "fu",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:98"
+        },
+        "meaning": "Status F mit Fehlertext"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:101"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "us",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:104"
+        },
+        "meaning": "Aufräumen"
+      },
+      {
+        "id": "ug",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:110"
+        },
+        "meaning": "Keine Aufbewahrungsfrist?"
+      },
+      {
+        "id": "ur",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:111"
+        },
+        "meaning": "Nichts löschen"
+      },
+      {
+        "id": "ud",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:115"
+        },
+        "meaning": "Erledigte Einträge älter als Frist löschen"
+      },
+      {
+        "id": "ue",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ewm_wt_queue.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ewm_wt_queue.abap:119"
+        },
+        "meaning": "Anzahl gelöschter zurückgeben"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:20"
+        },
+        "meaning": "Wiederholungsjob (alle 5 Minuten)"
+      },
+      {
+        "id": "pu",
+        "type": "call",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:24"
+        },
+        "meaning": "Alte erledigte Einträge löschen"
+      },
+      {
+        "id": "cw1",
+        "type": "transaction",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:25"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "gd",
+        "type": "call",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:27"
+        },
+        "meaning": "Fällige Einträge holen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:28"
+        },
+        "meaning": "Nichts fällig?"
+      },
+      {
+        "id": "w1",
+        "type": "output",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:29"
+        },
+        "meaning": "Hinweis mit Anzahl gelöschter"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:30"
+        },
+        "meaning": "Job verlassen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:33"
+        },
+        "meaning": "Höchstens p_max fällige Einträge durchlaufen"
+      },
+      {
+        "id": "enq",
+        "type": "lock",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:34"
+        },
+        "meaning": "Queue-Eintrag sperren"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:41"
+        },
+        "meaning": "Gerade anderweitig in Bearbeitung?"
+      },
+      {
+        "id": "ct",
+        "type": "action",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:47"
+        },
+        "meaning": "Gesicherte Quittierung wiederherstellen"
+      },
+      {
+        "id": "rp",
+        "type": "call",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:50"
+        },
+        "meaning": "Quittierung erneut ausführen"
+      },
+      {
+        "id": "md",
+        "type": "call",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:51"
+        },
+        "meaning": "Als erledigt kennzeichnen"
+      },
+      {
+        "id": "mrt",
+        "type": "call",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:54"
+        },
+        "meaning": "Erneut einplanen"
+      },
+      {
+        "id": "mfl",
+        "type": "call",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:58"
+        },
+        "meaning": "Endgültig fehlerhaft kennzeichnen"
+      },
+      {
+        "id": "cw2",
+        "type": "transaction",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:62"
+        },
+        "meaning": "Queue-Änderung festschreiben"
+      },
+      {
+        "id": "deq",
+        "type": "lock",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:64"
+        },
+        "meaning": "Sperre lösen"
+      },
+      {
+        "id": "ws",
+        "type": "output",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:69"
+        },
+        "meaning": "Summen ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zewm_wt_retry.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_wt_retry.abap:69"
+        },
+        "meaning": "Ende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "xs",
+        "to": "xl",
+        "condition": "always"
+      },
+      {
+        "from": "xl",
+        "to": "xpc",
+        "condition": "next row"
+      },
+      {
+        "from": "xpc",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "xl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pr",
+        "to": "xl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rx1",
+        "to": "xq1",
+        "condition": "zcx_ewm_wt_temp"
+      },
+      {
+        "from": "px1",
+        "to": "xq2",
+        "condition": "zcx_ewm_wt"
+      },
+      {
+        "from": "px2",
+        "to": "xq2",
+        "condition": "zcx_ewm_wt"
+      },
+      {
+        "from": "rx2",
+        "to": "xq2",
+        "condition": "zcx_ewm_wt"
+      },
+      {
+        "from": "xq1",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "xq2",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "eend",
+        "to": "xl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "xl",
+        "to": "xe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ps",
+        "to": "psl",
+        "condition": "always"
+      },
+      {
+        "from": "psl",
+        "to": "pq1",
+        "condition": "always"
+      },
+      {
+        "from": "pq1",
+        "to": "pg1",
+        "condition": "always"
+      },
+      {
+        "from": "pg1",
+        "to": "pq2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pq2",
+        "to": "pg2",
+        "condition": "always"
+      },
+      {
+        "from": "pg2",
+        "to": "pr",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "pg2",
+        "to": "px1",
+        "condition": "else"
+      },
+      {
+        "from": "pg1",
+        "to": "pg3",
+        "condition": "else"
+      },
+      {
+        "from": "pg3",
+        "to": "px2",
+        "condition": "is_conf-qty > ls_open-vsolm"
+      },
+      {
+        "from": "pg3",
+        "to": "pg4",
+        "condition": "else"
+      },
+      {
+        "from": "pg4",
+        "to": "pto",
+        "condition": "else"
+      },
+      {
+        "from": "pto",
+        "to": "pg5",
+        "condition": "always"
+      },
+      {
+        "from": "pg5",
+        "to": "prb",
+        "condition": "lv_severity CA 'EAX'"
+      },
+      {
+        "from": "prb",
+        "to": "pcl1",
+        "condition": "always"
+      },
+      {
+        "from": "pcl1",
+        "to": "prf",
+        "condition": "always"
+      },
+      {
+        "from": "prf",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "pg5",
+        "to": "pcw",
+        "condition": "else"
+      },
+      {
+        "from": "pcw",
+        "to": "pcl2",
+        "condition": "always"
+      },
+      {
+        "from": "pcl2",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "rl",
+        "condition": "always"
+      },
+      {
+        "from": "rl",
+        "to": "rq",
+        "condition": "next row"
+      },
+      {
+        "from": "rq",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rx1",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "rg",
+        "to": "rl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rl",
+        "to": "rx2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "es",
+        "to": "ect",
+        "condition": "always"
+      },
+      {
+        "from": "ect",
+        "to": "eg",
+        "condition": "always"
+      },
+      {
+        "from": "ei",
+        "to": "eend",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "gq",
+        "condition": "always"
+      },
+      {
+        "from": "gq",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ds",
+        "to": "du",
+        "condition": "always"
+      },
+      {
+        "from": "du",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "mg",
+        "condition": "always"
+      },
+      {
+        "from": "mg",
+        "to": "mmf",
+        "condition": "lv_retries >= gc_max_retry"
+      },
+      {
+        "from": "mmf",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "mr",
+        "condition": "always"
+      },
+      {
+        "from": "mg",
+        "to": "mu",
+        "condition": "else"
+      },
+      {
+        "from": "mu",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "fu",
+        "condition": "always"
+      },
+      {
+        "from": "fu",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "us",
+        "to": "ug",
+        "condition": "always"
+      },
+      {
+        "from": "ug",
+        "to": "ur",
+        "condition": "iv_days <= 0"
+      },
+      {
+        "from": "ug",
+        "to": "ud",
+        "condition": "else"
+      },
+      {
+        "from": "ud",
+        "to": "ue",
+        "condition": "always"
+      },
+      {
+        "from": "s",
+        "to": "pu",
+        "condition": "always"
+      },
+      {
+        "from": "pu",
+        "to": "us",
+        "condition": "always"
+      },
+      {
+        "from": "ur",
+        "to": "cw1",
+        "condition": "always"
+      },
+      {
+        "from": "ue",
+        "to": "cw1",
+        "condition": "always"
+      },
+      {
+        "from": "cw1",
+        "to": "gd",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "w1",
+        "condition": "gt_due IS INITIAL"
+      },
+      {
+        "from": "w1",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "enq",
+        "condition": "next row"
+      },
+      {
+        "from": "enq",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g2",
+        "to": "ct",
+        "condition": "else"
+      },
+      {
+        "from": "ct",
+        "to": "rp",
+        "condition": "always"
+      },
+      {
+        "from": "rp",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "md",
+        "condition": "always"
+      },
+      {
+        "from": "pr",
+        "to": "md",
+        "condition": "always"
+      },
+      {
+        "from": "md",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "de",
+        "to": "cw2",
+        "condition": "always"
+      },
+      {
+        "from": "rx1",
+        "to": "mrt",
+        "condition": "zcx_ewm_wt_temp"
+      },
+      {
+        "from": "px1",
+        "to": "mfl",
+        "condition": "zcx_ewm_wt"
+      },
+      {
+        "from": "px2",
+        "to": "mfl",
+        "condition": "zcx_ewm_wt"
+      },
+      {
+        "from": "rx2",
+        "to": "mfl",
+        "condition": "zcx_ewm_wt"
+      },
+      {
+        "from": "mrt",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "cw2",
+        "condition": "always"
+      },
+      {
+        "from": "mr",
+        "to": "cw2",
+        "condition": "always"
+      },
+      {
+        "from": "mfl",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "cw2",
+        "condition": "always"
+      },
+      {
+        "from": "cw2",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "deq",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "ws",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ws",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "pg4",
+        "to": "pto",
+        "condition": "is_conf-qty < ls_open-vsolm"
+      },
+      {
+        "from": "eg",
+        "to": "ei",
+        "condition": "iv_temporary = abap_true"
+      },
+      {
+        "from": "eg",
+        "to": "ei",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_ewm_ii_wt_confirm.abap:37 — kein Fachsatz „fehlerhafte Quittierungen werden dem Staplerleitsystem als Fehler gemeldet“ (es wird kein Fault ausgelöst; Fehler landen nur in der Queue)",
+    "zcl_ewm_wt_processor.abap:58 — kein Fachsatz „doppelte Quittierungen werden als Fehler abgelehnt“ (bereits quittierte Aufgaben werden stillschweigend als erledigt behandelt)",
+    "zcl_ewm_wt_processor.abap:80 — kein Fachsatz „Mindermengen werden abgelehnt“ (sie werden mit Differenz quittiert)",
+    "zcl_ewm_wt_queue.abap:115 — kein Fachsatz „auch endgültig fehlerhafte Einträge werden aufgeräumt“ (gelöscht wird nur Status P)"
+  ],
+  "processDescription": "Das Staplerleitsystem meldet quittierte Lageraufgaben asynchron per Proxy. Jede Quittierung wird von einer Verarbeitungsklasse ausgeführt: Ist die Aufgabe bereits quittiert, geschieht nichts; ist sie unbekannt oder wird mehr als die Sollmenge gemeldet, ist das ein fachlicher Fehler; eine Mindermenge wird mit Differenzcode quittiert. Die Quittierung wird gebucht und bei Erfolg synchron festgeschrieben; bei Fehler wird zurückgerollt und anhand gepflegter Sperrmeldungen zwischen vorübergehendem und fachlichem Fehler unterschieden. Fehler gehen nicht an den Sender zurück, sondern in eine Queue: vorübergehende mit Wiederholung in fünf Minuten, fachliche zur manuellen Klärung. Ein Job räumt alle fünf Minuten alte erledigte Einträge auf, holt die fälligen, sperrt jeden, führt die gesicherte Quittierung erneut aus und kennzeichnet ihn als erledigt, mit verdoppelter Wartezeit erneut eingeplant (höchstens sechs Versuche) oder endgültig fehlerhaft. Jede Änderung wird sofort festgeschrieben, am Ende werden Summen ausgegeben."
+}

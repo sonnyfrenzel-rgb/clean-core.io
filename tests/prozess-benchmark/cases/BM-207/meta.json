@@ -1,0 +1,36 @@
+{
+  "id": "BM-207",
+  "title": "Konditionswertformel mit Preisstrategie-Klassenhierarchie",
+  "domain": "SD",
+  "band": "komplex",
+  "loc": 242,
+  "constructs": [
+    "VOFM-Formel FORM frm_kondi_wert_901",
+    "abstrakte Klasse",
+    "Schablonenmethode",
+    "REDEFINITION",
+    "super->",
+    "Fabrik",
+    "SELECT ENDSELECT mit EXIT",
+    "RAISE EXCEPTION",
+    "TRY/CATCH",
+    "CHECK"
+  ],
+  "scenario": "Kundeneigene Konditionswertformel aus einem Großhandelsprojekt: der Nettopreis wird nicht über Konditionstechnik, sondern über Z-Klassen je Kundengruppe ermittelt.",
+  "s4_issues": [
+    "KOMV → PRCD_ELEMENTS (Formel selbst bleibt, Umfeld ändert sich)",
+    "MBEW-Preise in S/4 über Material Ledger",
+    "MESSAGE in Preisfindungsformel",
+    "Modifikations-Insert DEVK… im VOFM-Include"
+  ],
+  "wave": 3,
+  "module": "SD-BF-PR",
+  "edge_constructs": [
+    "Redefinition mit super-Aufruf",
+    "Ausnahme über zwei Aufrufebenen",
+    "EXIT in SELECT-Schleife",
+    "polymorphe Aufrufe",
+    "MESSAGE in Preisfindung"
+  ],
+  "oo": true
+}

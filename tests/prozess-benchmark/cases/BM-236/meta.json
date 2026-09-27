@@ -1,0 +1,36 @@
+{
+  "id": "BM-236",
+  "title": "Kostenplanung aus Datei prüfen und als Primärkostenplan buchen",
+  "domain": "CO",
+  "band": "sehr komplex",
+  "loc": 469,
+  "constructs": [
+    "REPORT mit TOP/SEL/F01",
+    "globale Klasse",
+    "globale Ausnahmeklasse mit T100-Texten",
+    "RAISE EXCEPTION TYPE ... EXPORTING textid",
+    "TRY/CATCH",
+    "OPEN/READ/TRANSFER/CLOSE DATASET",
+    "DO mit EXIT",
+    "CHECK in DO",
+    "ASSIGN COMPONENT",
+    "BAPI_COSTACTPLN_*",
+    "ELSEIF",
+    "String-Templates"
+  ],
+  "scenario": "Planungsupload im Controlling aus einem externen Planungswerkzeug, Kandidat für Ablösung durch SAP Analytics Cloud oder Fiori-Planung.",
+  "s4_issues": [
+    "Kostenarten (CSKB) sind in S/4HANA Sachkonten mit Kostenartentyp",
+    "Primärkostenplanung in S/4 über ACDOCP",
+    "Dateizugriff auf dem Applikationsserver nicht Cloud-fähig"
+  ],
+  "wave": 3,
+  "module": "CO-OM-CCA",
+  "edge_constructs": [
+    "sy-subrc nach OPEN DATASET und READ DATASET",
+    "CHECK in DO",
+    "RAISE aus privater Hilfsmethode im IF",
+    "sy-tabix nach Methodenaufruf"
+  ],
+  "oo": true
+}

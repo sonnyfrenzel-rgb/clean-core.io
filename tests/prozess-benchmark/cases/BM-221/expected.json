@@ -1,0 +1,257 @@
+{
+  "id": "BM-221",
+  "title": "Offene Posten eines Debitors auflisten",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "BSID",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:15"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-221-B01",
+      "text": "Es werden die offenen Posten des eingegebenen Debitors im eingegebenen Buchungskreis gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-221-B02",
+      "text": "Gibt es keine offenen Posten, erscheint eine Erfolgsmeldung im Stil einer Warnung mit der Debitorennummer und die Verarbeitung endet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-221-B03",
+      "text": "Jeder offene Posten wird mit Belegnummer, Geschäftsjahr, Basisdatum für Fälligkeit, Soll/Haben-Kennzeichen und Betrag in Hauswährung als Listenzeile ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Offene Debitorenposten des Buchungskreises lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Offene Posten gefunden?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Hinweis: keine offenen Posten"
+      },
+      {
+        "id": "r",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Offene Posten durchlaufen"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Posten in Liste schreiben"
+      },
+      {
+        "id": "done",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "m",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "o",
+        "condition": "next row"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "done",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:25 — kein Fachsatz „Saldo des Debitors wird berechnet“ (es wird nur je Posten ausgegeben, nicht summiert)",
+    "source.abap:15 — kein Fachsatz „ausgeglichene Posten werden berücksichtigt“ (nur BSID, der Kommentar verweist auf BSAD, das nicht gelesen wird)",
+    "source.abap:20 — kein Fachsatz „Programm bricht mit Warnung ab“ (Typ S, nur DISPLAY LIKE 'W'; das Ende kommt vom RETURN)"
+  ],
+  "processDescription": "Der Report wird mit Buchungskreis und Debitor gestartet. Er liest alle offenen Posten dieses Debitors aus BSID. Findet er keine, zeigt er eine Erfolgsmeldung in Warnoptik mit der Debitorennummer und beendet die Verarbeitung. Andernfalls gibt er jeden offenen Posten mit Belegnummer, Geschäftsjahr, Fälligkeitsbasis, Soll/Haben-Kennzeichen und Hauswährungsbetrag als Listenzeile aus. Es wird weder summiert noch etwas geändert."
+}

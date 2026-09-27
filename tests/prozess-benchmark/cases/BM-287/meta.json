@@ -1,0 +1,34 @@
+{
+  "id": "BM-287",
+  "title": "Instandhaltung: Störmeldungs-Schnellerfassung am Equipment mit Dublettenrückfrage",
+  "domain": "PM Instandhaltung / Shopfloor",
+  "band": "komplex",
+  "loc": 256,
+  "constructs": [
+    "Modulpool TOP/O01/I01/F01",
+    "Subscreen-Auswahl im PBO",
+    "AT EXIT-COMMAND",
+    "AUTHORITY-CHECK",
+    "MESSAGE E/A/W/S",
+    "POPUP_TO_CONFIRM",
+    "BAPI_ALM_NOTIF_CREATE/SAVE",
+    "BAL_LOG_MSG_ADD",
+    "LEAVE PROGRAM"
+  ],
+  "scenario": "Schnellerfassungs-Transaktion im Werk, mit der Schichtführer Störungen ohne IW21 direkt am Equipment melden.",
+  "s4_issues": [
+    "VIQMEL-Lesezugriff statt released CDS I_MaintenanceNotification",
+    "SAP-GUI-Dynpro nicht in Fiori",
+    "Include MZPM_STOER_O00 nicht geliefert"
+  ],
+  "wave": 3,
+  "module": "PM",
+  "edge_constructs": [
+    "LOOP mit RETURN in der ersten Iteration",
+    "Protokollroutine mit frühem RETURN und mehreren Aufrufern",
+    "MESSAGE A beendet die Transaktion",
+    "LEAVE TO SCREEN aus FORM",
+    "auskommentierte Aufrufe"
+  ],
+  "oo": false
+}

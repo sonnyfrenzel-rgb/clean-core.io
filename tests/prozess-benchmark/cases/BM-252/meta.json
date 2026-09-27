@@ -1,0 +1,37 @@
+{
+  "id": "BM-252",
+  "title": "Web Dynpro Wareneingang zur Bestellung: Bestellung prüfen, offene Mengen anbieten, WE buchen",
+  "domain": "MM Bestandsführung / Wareneingang",
+  "band": "komplex",
+  "loc": 227,
+  "constructs": [
+    "Web Dynpro View-Controller ONACTION",
+    "Component-Controller-Methoden",
+    "Assistenzklasse cl_wd_component_assistance",
+    "if_wd_message_manager report_exception / report_attribute_error_message",
+    "Outbound-Plug fire_*_plg",
+    "BAPI_PO_GETDETAIL1",
+    "BAPI_GOODSMVT_CREATE",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "RAISE EXCEPTION mit textid",
+    "TRY/CATCH mit RETURN",
+    "SELECT SUM auf MSEG",
+    "funktionaler Aufruf in Rechenausdruck"
+  ],
+  "scenario": "Web-Dynpro-Anwendung am Wareneingangstor: der Lagerarbeiter gibt eine Bestellnummer ein, bekommt die offenen Positionen und bucht den Wareneingang.",
+  "s4_issues": [
+    "MSEG ist in S/4 Kompatibilitätsview auf MATDOC",
+    "Web Dynpro statt Fiori (Nachfolger: App „Wareneingang zur Bestellung“)",
+    "BAPI_GOODSMVT_CREATE/BAPI_PO_GETDETAIL1 nicht für Cloud freigegeben"
+  ],
+  "wave": 3,
+  "module": "MM",
+  "edge_constructs": [
+    "Ausnahme aus Assistenzklasse in Component Controller gefangen",
+    "zwei frühe RETURN im View",
+    "Erfolg nur über Belegnummer erkannt",
+    "Mengen in unterschiedlicher Einheit verrechnet",
+    "auskommentierte Prüfung"
+  ],
+  "oo": true
+}

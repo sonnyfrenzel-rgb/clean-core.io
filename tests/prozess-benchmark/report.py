@@ -30,12 +30,15 @@ EXP = {o['id']: expected(o['id']) for o in after}
 
 
 def wave(o):
-    return 1 if int(o['id'][3:]) <= 100 else 2
+    n = int(o['id'][3:])
+    return 1 if n <= 100 else 2 if n <= 200 else 3
 
 
 PACKS = ['SD / Order-to-Cash', 'MM / Lager', 'FI/CO', 'PP / PM / QM', 'Querschnitt (IDoc, HR, Workflow, Stammdaten)',
          'W2: PM vertieft / CS / EHS', 'W2: PS / RE-FX / PSM / FSCM / TRM', 'W2: HCM (PY, PT, OM, Reise, PE, ESS)',
-         'W2: Branchen (IS-U, Retail, Oil, Automotive, VC, GTS, TRA, HU, Rebates)', 'W2: Technik (Formulare, OData, BOPF, WD, CIF, BW, Jobs)']
+         'W2: Branchen (IS-U, Retail, Oil, Automotive, VC, GTS, TRA, HU, Rebates)', 'W2: Technik (Formulare, OData, BOPF, WD, CIF, BW, Jobs)',
+         'W3: OO-Geschäftsanwendungen SD/MM', 'W3: Mehrdateiprogramme FI/CO/HR', 'W3: Gateway, RAP, BOPF, Web Dynpro, AMDP',
+         'W3: Schnittstellen und Massenverarbeitung', 'W3: Dialoganwendungen']
 
 
 def module(o):
@@ -99,7 +102,8 @@ def table(title, groups):
 ALL = {o['id'] for o in after}
 table('Gesamt', [('alle 200', ALL), ('Welle 1 (Kernmodule)', {o['id'] for o in after if wave(o) == 1}),
                  ('Welle 2 (Randmodule, Grenzfälle)', {o['id'] for o in after if wave(o) == 2}),
-                 ('Lernhälfte', ALL & LEARN), ('Prüfhälfte', ALL - LEARN)])
+                 ('Welle 3 (verdeckt, Schwerpunkt komplex/OO)', {o['id'] for o in after if wave(o) == 3}),
+                 ('Lernhälfte', ALL & LEARN), ('Prüfhälfte (W1+W2)', {o['id'] for o in after if wave(o) < 3} - LEARN)])
 table('Je Band', [(b, {o['id'] for o in after if o['meta'].get('band') == b}) for b in ['einfach', 'mittel', 'komplex', 'sehr komplex']])
 mods = collections.defaultdict(set)
 for o in after:

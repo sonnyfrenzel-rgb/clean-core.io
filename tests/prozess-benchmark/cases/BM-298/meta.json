@@ -1,0 +1,39 @@
+{
+  "id": "BM-298",
+  "title": "Kreditfreigabe am Verkaufsschalter gegen Barzahlung: Obligo aus KNKK/S066, Auftragssperre, Anzahlung im Verbucher und Protokoll über Ereignis",
+  "domain": "Vertrieb am Schalter / Kreditmanagement",
+  "band": "sehr komplex",
+  "loc": 400,
+  "constructs": [
+    "EVENTS / RAISE EVENT / SET HANDLER mit statischem Behandler",
+    "Fabrikmethode CREATE PRIVATE",
+    "Ausnahmeklasse IF_T100_DYN_MSG",
+    "ENQUEUE/DEQUEUE_EVVBAKE",
+    "POPUP_GET_VALUES",
+    "IN UPDATE TASK",
+    "SD_ORDER_CREDIT_RELEASE",
+    "ROLLBACK/COMMIT WORK AND WAIT",
+    "SUBMIT ... AND RETURN",
+    "PERFORM aus Methode",
+    "CL_GUI_ALV_GRID double_click",
+    "CALL TRANSACTION VA03"
+  ],
+  "scenario": "Schalterlösung einer Niederlassung, mit der Innendienst kreditgesperrte Aufträge gegen Barzahlung selbst freigibt.",
+  "s4_issues": [
+    "KNKK und S066 entfallen mit FSCM-Kreditmanagement",
+    "VBUK entfallen (CMGST in VBAK)",
+    "SD_ORDER_CREDIT_RELEASE nicht released",
+    "SAP-GUI-Grid nicht in Fiori"
+  ],
+  "wave": 3,
+  "module": "SD/FI-AR",
+  "edge_constructs": [
+    "Entsperrmethode mit vier Aufrufern",
+    "RAISE EVENT mit Behandler im Fall",
+    "frühes RETURN, das der Aufrufer als Erfolg behandelt",
+    "Ausnahmen aus drei Stellen in einem CATCH",
+    "SUBMIT AND RETURN aus FORM",
+    "CHECK im Ereignisbehandler"
+  ],
+  "oo": true
+}

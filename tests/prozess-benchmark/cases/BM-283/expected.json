@@ -1,0 +1,554 @@
+{
+  "id": "BM-283",
+  "title": "WM-Handscanner: Umlagerung Platz an Platz mit quittierter Transportauftragsanlage",
+  "classes": [
+    "K07",
+    "K01",
+    "K03"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "LAGP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LQUA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:44"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "L_TO_CREATE_SINGLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 53,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:53"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-283-B01",
+      "text": "Beim Scannen des Von-Platzes wird der Lagerplatz in der Lagernummer nachgelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-283-B02",
+      "text": "Ist der Platz unbekannt oder für Auslagerungen gesperrt, bricht eine Fehlermeldung die Eingabe ab und der Von-Platz muss neu gescannt werden.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-283-B03",
+      "text": "Mit F3 oder Zurück kehrt der Staplerfahrer zum Einstiegsbild 0100 zurück.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-283-B04",
+      "text": "Beim Bestätigen wird der Quantbestand des Materials auf dem Von-Platz aufsummiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-283-B05",
+      "text": "Übersteigt die Umlagermenge diesen Bestand, erhält der Fahrer nur eine Warnung mit dem Bestand; bestätigt er sie, geht die Buchung weiter.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-283-B06",
+      "text": "Anschließend wird ein Transportauftrag mit Bewegungsart 999 vom Von-Platz zum Nach-Platz angelegt, sofort quittiert und vom Baustein selbst festgeschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-283-B07",
+      "text": "Scheitert die Anlage, wird die Meldung des Bausteins als Fehlermeldung ausgegeben und der Fahrer bleibt auf dem Bild.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-283-B08",
+      "text": "Bei Erfolg wird die Transportauftragsnummer als Statusmeldung angezeigt, die Eingaben werden geleert und das Umlagerbild für den nächsten Scan neu aufgerufen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        },
+        {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Feldprüfung Von-Platz"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Lagerplatz lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Platz unbekannt oder gesperrt?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Fehler Von-Platz"
+      },
+      {
+        "id": "m1e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Abbruch, Feld neu eingeben"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Ende Feldprüfung"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "PAI Umlagerbild"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "lv1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        "meaning": "Zurück zum Einstieg"
+      },
+      {
+        "id": "rq",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        "meaning": "Quantbestand summieren"
+      },
+      {
+        "id": "gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Menge über Bestand?"
+      },
+      {
+        "id": "mw",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        "meaning": "Warnung Bestand"
+      },
+      {
+        "id": "to",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        "meaning": "Transportauftrag anlegen und quittieren"
+      },
+      {
+        "id": "gs",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        "meaning": "Anlage fehlgeschlagen?"
+      },
+      {
+        "id": "me",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        "meaning": "Fehlermeldung des Bausteins"
+      },
+      {
+        "id": "mee",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        },
+        "meaning": "TA-Nummer melden"
+      },
+      {
+        "id": "lv3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        },
+        "meaning": "Umlagerbild neu"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:89"
+        },
+        "meaning": "Ende PAI"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s1",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "sy-subrc <> 0 OR gs_lagp-skzua = 'X'"
+      },
+      {
+        "from": "m1",
+        "to": "m1e",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "s2",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "lv1",
+        "condition": "WHEN 'F3' OR 'BACK'"
+      },
+      {
+        "from": "g",
+        "to": "rq",
+        "condition": "WHEN 'ENTR' OR 'SAVE'"
+      },
+      {
+        "from": "g",
+        "to": "e2",
+        "condition": "else"
+      },
+      {
+        "from": "rq",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "gm",
+        "to": "mw",
+        "condition": "gv_menge > gv_bestand"
+      },
+      {
+        "from": "mw",
+        "to": "to",
+        "condition": "always"
+      },
+      {
+        "from": "gm",
+        "to": "to",
+        "condition": "else"
+      },
+      {
+        "from": "to",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "me",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "me",
+        "to": "mee",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "ms",
+        "condition": "else"
+      },
+      {
+        "from": "ms",
+        "to": "lv3",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:50 — kein Pfadende und kein Fachsatz „Umlagerung wird bei Überbestand abgelehnt“; die Warnung lässt den Fahrer nach Bestätigung weiterbuchen.",
+    "source.abap:53 — kein COMMIT-WORK-Knoten im Fall; das Festschreiben geschieht über i_commit_work im nicht gelieferten Standardbaustein.",
+    "source.abap:84 — kein Fachsatz „Etikett wird gedruckt“; der Zweig PRNT ist auskommentiert."
+  ],
+  "processDescription": "Zwei PAI-Module des RF-Umlagerbilds 0300. Beim Scannen des Von-Platzes liest die Feldprüfung den Lagerplatz; ist er unbekannt oder für Auslagerung gesperrt, bricht eine Fehlermeldung ab und das Feld wird wieder eingabebereit. Im Benutzerkommando führt F3/Zurück zum Einstiegsbild 0100. Beim Bestätigen wird der Quantbestand des Materials auf dem Platz summiert; ist die Menge größer, erscheint nur eine Warnung, nach deren Bestätigung weitergebucht wird. Dann legt L_TO_CREATE_SINGLE einen sofort quittierten Transportauftrag mit Bewegungsart 999 an und schreibt ihn selbst fest. Bei Fehler wird die Bausteinmeldung als Fehler gezeigt, bei Erfolg die TA-Nummer als Statusmeldung, die Eingaben werden geleert und das Bild 0300 neu aufgerufen. Andere Funktionscodes bleiben wirkungslos."
+}

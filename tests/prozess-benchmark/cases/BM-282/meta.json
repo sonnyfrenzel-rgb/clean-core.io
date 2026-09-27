@@ -1,0 +1,25 @@
+{
+  "id": "BM-282",
+  "title": "QM-Ergebniserfassung: Abbruch mit Datenverlust-Rückfrage (AT EXIT-COMMAND)",
+  "domain": "QM Wareneingangsprüfung",
+  "band": "einfach",
+  "loc": 35,
+  "constructs": [
+    "MODULE INPUT AT EXIT-COMMAND",
+    "POPUP_TO_CONFIRM",
+    "MESSAGE TYPE S",
+    "LEAVE TO SCREEN 0"
+  ],
+  "scenario": "Exit-Modul eines Z-Modulpools zur Schnellerfassung von Prüfergebnissen im Wareneingang.",
+  "s4_issues": [
+    "SAP-GUI-Dynpro und POPUP_TO_CONFIRM nicht in Fiori/Cloud verfügbar"
+  ],
+  "wave": 3,
+  "module": "QM",
+  "edge_constructs": [
+    "zwei LEAVE TO SCREEN 0 als getrennte Pfadenden",
+    "MESSAGE S vor LEAVE",
+    "Popup-Ausnahmen ignoriert"
+  ],
+  "oo": false
+}

@@ -1,0 +1,39 @@
+{
+  "id": "BM-294",
+  "title": "Werkstattrückmeldung Instandhaltungsauftrag: Arbeitszeit und Materialentnahme mit Sperre, Tabstrip und Grid in einer LUW",
+  "domain": "PM Instandhaltung / Werkstatt",
+  "band": "sehr komplex",
+  "loc": 429,
+  "constructs": [
+    "Modulpool TOP/C01/O01/I01/F01",
+    "Tabstrip mit Subscreens",
+    "Table Control mit Zeilenmodul",
+    "CL_GUI_ALV_GRID editierbar mit data_changed",
+    "AT EXIT-COMMAND",
+    "ENQUEUE/DEQUEUE_ESORDER",
+    "STATUS_CHECK",
+    "BAPI_ALM_CONF_CREATE",
+    "BAPI_GOODSMVT_CREATE",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "VALUE FOR WHERE",
+    "line_exists",
+    "SWITCH"
+  ],
+  "scenario": "Werkstatt-Transaktion, die IW41 und MB1A ersetzt: Mechaniker melden Stunden und entnommene Teile eines IH-Auftrags in einem Schritt zurück.",
+  "s4_issues": [
+    "Direktlesen AUFK/AFKO/AFVC/AFVV/RESB statt released CDS",
+    "SAP-GUI-Dynpro mit Tabstrip/Grid nicht in Fiori",
+    "Warenbewegung und Rückmeldung in einer LUW über zwei BAPIs"
+  ],
+  "wave": 3,
+  "module": "PM",
+  "edge_constructs": [
+    "Protokollroutine mit zwei Aufrufern, einer davon in einer Schleife",
+    "Entsperrroutine mit drei Aufrufern",
+    "CHECK in FORM verlässt die Routine",
+    "W-Meldung im Zeilenmodul",
+    "beides-oder-nichts-Commit",
+    "RETURN im Exit-Modul"
+  ],
+  "oo": true
+}

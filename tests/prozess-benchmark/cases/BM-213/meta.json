@@ -1,0 +1,35 @@
+{
+  "id": "BM-213",
+  "title": "Fakturierungslauf mit Intercompany-Unterklasse und RFC-Übergabe",
+  "domain": "SD",
+  "band": "komplex",
+  "loc": 231,
+  "constructs": [
+    "REPORT",
+    "Klassenhierarchie INHERITING FROM",
+    "Konstruktor mit super->constructor",
+    "REDEFINITION mit super->",
+    "leerer Hook",
+    "FOR ALL ENTRIES",
+    "FILTER",
+    "BAPI_BILLINGDOC_CREATEMULTIPLE",
+    "CALL FUNCTION DESTINATION",
+    "MESSAGE I/E"
+  ],
+  "scenario": "Fakturierungslauf eines Konzerns, der normale Fakturen und Intercompany-Fakturen erzeugt und letztere an das Buchhaltungssystem der Tochter übergibt.",
+  "s4_issues": [
+    "VBUK entfällt in S/4 (Status in LIKP)",
+    "RFC in Partnersystem statt Intercompany-Standard",
+    "Direktzugriff LIKP"
+  ],
+  "wave": 3,
+  "module": "SD-BIL",
+  "edge_constructs": [
+    "Ausnahme aus Konstruktor",
+    "Hook-Methode ohne Inhalt",
+    "RETURN im Lauf",
+    "Informationsmeldung in Schleife ohne Abbruch",
+    "CONTINUE bei fehlender Konfiguration"
+  ],
+  "oo": true
+}

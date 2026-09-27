@@ -1,0 +1,24 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante dd→hs",
+      "before": "dd → hs [always]",
+      "after": "entfernt; hs ist eigener Einstieg",
+      "why": "Im Fall gibt es kein RAISE EVENT: added_function löst die SAP-ALV erst bei einer Benutzeraktion aus, null- oder mehrmals. Eine „always“-Kante von der Anzeige in den Handler behauptet einen Pflichtschritt. Der Handler ist wie ein PAI-Modul ein eigener Einstieg.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante he→dd",
+      "before": "he → dd [always]",
+      "after": "entfernt; he ist Blockende des Einstiegs",
+      "why": "Die Rückkehr in die Anzeige läuft im opaken ALV-Dialog, nicht über Code im Fall. openReviewerQuestions[0] entsprechend angepasst.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "SET HANDLER … FOR mo_alv->get_event( ) (zsd_ret_disposition_c01.abap:154): ob ein funktionaler Aufruf an dieser Operandenposition syntaktisch zulässig ist, ist nicht sicher; üblich ist eine Hilfsvariable. Ohne Einfluss auf das Skelett.",
+    "Aktionen sa/pa1/pa2 sind Statuszuweisungen; belassen, weil der Status persistiert (Protokoll) und die Gutschrift steuert."
+  ]
+}

@@ -1,0 +1,1898 @@
+{
+  "id": "BM-297",
+  "title": "QM-Ergebniserfassung im Grid: Sofortbewertung über Bewerter-Interface, Buchung mit CLEANUP-Rollback und asynchroner Mängelmeldung",
+  "classes": [
+    "K07",
+    "K09",
+    "K01",
+    "K12",
+    "K11"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "QAMV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zqm_erg_erfassung.abap",
+        "line": 24,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_erg_erfassung.abap:24"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QAMR",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zqm_erg_erfassung.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_erg_erfassung.abap:36"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QPAC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zqm_erg_erfassung_c01.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_erg_erfassung_c01.abap:51"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_erg_erfassung.abap",
+        "line": 78,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_erg_erfassung.abap:78"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_INSPOPER_RECORDRESULTS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_erg_erfassung_c02.abap",
+        "line": 95,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_erg_erfassung_c02.abap:95"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_erg_erfassung_c02.abap",
+        "line": 110,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_erg_erfassung_c02.abap:110"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_erg_erfassung_c02.abap",
+        "line": 116,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_erg_erfassung_c02.abap:116"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_QM_MAENGEL_ANLEGEN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_erg_erfassung_c02.abap",
+        "line": 123,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_erg_erfassung_c02.abap:123"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_GUI_ALV_GRID",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_erg_erfassung.abap",
+        "line": 66,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_erg_erfassung.abap:66"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-297-B01",
+      "text": "Zu Prüflos und Vorgang werden die Merkmale mit Sollwert, Toleranzgrenzen, Maßeinheit und Auswahlmenge gelesen; gibt es keine, wird das in Fehleroptik gemeldet und die Erfassung beendet.",
+      "anchors": [
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:24"
+        },
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:30"
+        },
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:31"
+        },
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-297-B02",
+      "text": "Merkmale, zu denen bereits eine Bewertung vorliegt, werden als abgeschlossen markiert.",
+      "anchors": [
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:36"
+        },
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:40"
+        },
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:41"
+        },
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-297-B03",
+      "text": "Die Merkmale werden in einem editierbaren Grid angezeigt, dessen Eingaben bei Enter sofort geprüft werden.",
+      "anchors": [
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:47"
+        },
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:65"
+        },
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-297-B04",
+      "text": "Eine Eingabe zu einem abgeschlossenen Merkmal wird mit einem Fehlereintrag im Grid-Protokoll abgewiesen.",
+      "anchors": [
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:30"
+        },
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:34"
+        },
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-297-B05",
+      "text": "Für jede andere Eingabe wählt eine Fabrik den Bewerter: Merkmale mit Maßeinheit gelten als quantitativ, alle anderen als qualitativ.",
+      "anchors": [
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:45"
+        },
+        {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-297-B06",
+      "text": "Quantitativ wird der Messwert in eine Zahl umgesetzt; ist er keine Zahl, wird die Eingabe abgewiesen. Liegt er über der oberen oder unter der unteren Toleranzgrenze, ist die Bewertung zurückgewiesen, sonst angenommen.",
+      "anchors": [
+        {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:27"
+        },
+        {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:29"
+        },
+        {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:34"
+        },
+        {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:35"
+        },
+        {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-297-B07",
+      "text": "Qualitativ wird die Bewertung des eingegebenen Codes aus der Auswahlmenge des Merkmals gelesen; ist der Code dort nicht zulässig, wird die Eingabe abgewiesen.",
+      "anchors": [
+        {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:51"
+        },
+        {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:57"
+        },
+        {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-297-B08",
+      "text": "Die ermittelte Bewertung wird ins Grid geschrieben; jede Abweisung erscheint als Fehlereintrag am Feld im Grid-Protokoll.",
+      "anchors": [
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:49"
+        },
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-297-B09",
+      "text": "Beim Sichern werden zuerst die Grid-Eingaben übernommen; jedes noch offene Merkmal muss bewertet sein, sonst wird das erste unbewertete Merkmal gemeldet.",
+      "anchors": [
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:96"
+        },
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:101"
+        },
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:84"
+        },
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:69"
+        },
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-297-B10",
+      "text": "Die Ergebnisse der offenen Merkmale werden mit Mittelwert, Code und Bewertung zum Prüfvorgang gebucht; ein Fehler des BAPI wird als Ausnahme weitergegeben.",
+      "anchors": [
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:95"
+        },
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:104"
+        },
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:105"
+        }
+      ]
+    },
+    {
+      "id": "BM-297-B11",
+      "text": "Bei Erfolg wird synchron festgeschrieben und die Buchung nur protokolliert.",
+      "anchors": [
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:110"
+        },
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:113"
+        }
+      ]
+    },
+    {
+      "id": "BM-297-B12",
+      "text": "Verlässt eine Ausnahme den Buchungsblock, wird vorher zurückgerollt und der Rollback protokolliert; dem Laboranten wird die Meldung als Information in Fehleroptik gezeigt.",
+      "anchors": [
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:116"
+        },
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:117"
+        },
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:104"
+        }
+      ]
+    },
+    {
+      "id": "BM-297-B13",
+      "text": "Gibt es unter den gebuchten Merkmalen eine Zurückweisung, wird die Anlage einer Mängelmeldung für Prüflos und Vorgang asynchron angestoßen, ohne auf ihr Ergebnis zu warten.",
+      "anchors": [
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:122"
+        },
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:123"
+        }
+      ]
+    },
+    {
+      "id": "BM-297-B14",
+      "text": "Nach erfolgreicher Buchung werden die gebuchten Merkmale gesperrt, Prüflos und Vorgang gemeldet und das Grid aufgefrischt.",
+      "anchors": [
+        {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:132"
+        },
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:102"
+        },
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:106"
+        }
+      ]
+    },
+    {
+      "id": "BM-297-B15",
+      "text": "Beim Verlassen muss der Laborant bestätigen, dass nicht gebuchte Ergebnisse verworfen werden; sonst bleibt er im Grid.",
+      "anchors": [
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:78"
+        },
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:85"
+        },
+        {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:86"
+        }
+      ]
+    },
+    {
+      "id": "BM-297-B16",
+      "text": "Das Protokoll sammelt nur Texte mit Benutzer und Zeitpunkt und hat keine Wirkung auf den Ablauf.",
+      "anchors": [
+        {
+          "file": "zqm_erg_erfassung_c03.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c03.abap:23"
+        },
+        {
+          "file": "zqm_erg_erfassung_c03.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c03.abap:24"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s0",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:20"
+        },
+        "meaning": "Erfassung starten"
+      },
+      {
+        "id": "rm",
+        "type": "read",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:24"
+        },
+        "meaning": "Merkmale lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:30"
+        },
+        "meaning": "Keine Merkmale?"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:31"
+        },
+        "meaning": "Meldung in Fehleroptik"
+      },
+      {
+        "id": "r0",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:32"
+        },
+        "meaning": "Beenden"
+      },
+      {
+        "id": "rd",
+        "type": "read",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:36"
+        },
+        "meaning": "Bewertete Merkmale lesen"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:40"
+        },
+        "meaning": "Merkmale"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:41"
+        },
+        "meaning": "Schon bewertet?"
+      },
+      {
+        "id": "ast",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:42"
+        },
+        "meaning": "Als abgeschlossen markieren"
+      },
+      {
+        "id": "cs",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:47"
+        },
+        "meaning": "Erfassungsbild"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:47"
+        },
+        "meaning": "Ende nach Verlassen"
+      },
+      {
+        "id": "so",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:52"
+        },
+        "meaning": "PBO Erfassung"
+      },
+      {
+        "id": "gg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:56"
+        },
+        "meaning": "Grid angelegt?"
+      },
+      {
+        "id": "sh",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:65"
+        },
+        "meaning": "Prüfbehandler registrieren"
+      },
+      {
+        "id": "disp",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:66"
+        },
+        "meaning": "Merkmale anzeigen"
+      },
+      {
+        "id": "eo",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:72"
+        },
+        "meaning": "Ende PBO"
+      },
+      {
+        "id": "se",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:77"
+        },
+        "meaning": "Verlassen"
+      },
+      {
+        "id": "pop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:78"
+        },
+        "meaning": "Rückfrage verwerfen"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:85"
+        },
+        "meaning": "Bestätigt?"
+      },
+      {
+        "id": "lv",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:86"
+        },
+        "meaning": "Erfassung verlassen"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:89"
+        },
+        "meaning": "Im Grid bleiben"
+      },
+      {
+        "id": "su",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:94"
+        },
+        "meaning": "PAI Erfassung"
+      },
+      {
+        "id": "ccd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:96"
+        },
+        "meaning": "Grid-Eingaben übernehmen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:98"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "csv",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:101"
+        },
+        "meaning": "Ergebnisse buchen"
+      },
+      {
+        "id": "ms2",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:102"
+        },
+        "meaning": "Erfolgsmeldung"
+      },
+      {
+        "id": "mc",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:104"
+        },
+        "meaning": "Fehler als Information"
+      },
+      {
+        "id": "rf",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:106"
+        },
+        "meaning": "Grid auffrischen"
+      },
+      {
+        "id": "eu",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung.abap:110"
+        },
+        "meaning": "Ende PAI"
+      },
+      {
+        "id": "sqb",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:23"
+        },
+        "meaning": "Quantitativ bewerten"
+      },
+      {
+        "id": "akonv",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:27"
+        },
+        "meaning": "Messwert in Zahl umsetzen"
+      },
+      {
+        "id": "rzq",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:29"
+        },
+        "meaning": "Ausnahme kein Zahlenwert"
+      },
+      {
+        "id": "gq",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:34"
+        },
+        "meaning": "Außerhalb Toleranz?"
+      },
+      {
+        "id": "ar",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:35"
+        },
+        "meaning": "Zurückgewiesen"
+      },
+      {
+        "id": "aa",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:37"
+        },
+        "meaning": "Angenommen"
+      },
+      {
+        "id": "eqb",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:39"
+        },
+        "meaning": "Bewertung zurück"
+      },
+      {
+        "id": "sql",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:49"
+        },
+        "meaning": "Qualitativ bewerten"
+      },
+      {
+        "id": "rq",
+        "type": "read",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:51"
+        },
+        "meaning": "Bewertung des Codes lesen"
+      },
+      {
+        "id": "gql",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:57"
+        },
+        "meaning": "Code unzulässig?"
+      },
+      {
+        "id": "rzl",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:58"
+        },
+        "meaning": "Ausnahme Code"
+      },
+      {
+        "id": "eql",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:61"
+        },
+        "meaning": "Bewertung zurück"
+      },
+      {
+        "id": "sf",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:73"
+        },
+        "meaning": "Bewerterfabrik"
+      },
+      {
+        "id": "gf",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:76"
+        },
+        "meaning": "Mit Maßeinheit?"
+      },
+      {
+        "id": "ef",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c01.abap:81"
+        },
+        "meaning": "Bewerter zurück"
+      },
+      {
+        "id": "sd",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:24"
+        },
+        "meaning": "Grid-Eingabe prüfen"
+      },
+      {
+        "id": "lpd",
+        "type": "loop",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:30"
+        },
+        "meaning": "Geänderte Zellen"
+      },
+      {
+        "id": "gst",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:34"
+        },
+        "meaning": "Merkmal abgeschlossen?"
+      },
+      {
+        "id": "ape1",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:35"
+        },
+        "meaning": "Fehler abgeschlossen"
+      },
+      {
+        "id": "cf",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:45"
+        },
+        "meaning": "Bewerter holen"
+      },
+      {
+        "id": "cb",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:47"
+        },
+        "meaning": "Bewerten (polymorph)"
+      },
+      {
+        "id": "amc",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:49"
+        },
+        "meaning": "Bewertung ins Grid"
+      },
+      {
+        "id": "ape2",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:53"
+        },
+        "meaning": "Abweisung ins Protokoll"
+      },
+      {
+        "id": "ed",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:63"
+        },
+        "meaning": "Ende Prüfung"
+      },
+      {
+        "id": "sv",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:68"
+        },
+        "meaning": "Vollständigkeit"
+      },
+      {
+        "id": "lv2",
+        "type": "loop",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:69"
+        },
+        "meaning": "Offene unbewertete Merkmale"
+      },
+      {
+        "id": "rzv",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:70"
+        },
+        "meaning": "Ausnahme unbewertet"
+      },
+      {
+        "id": "ev",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:73"
+        },
+        "meaning": "Vollständig"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:78"
+        },
+        "meaning": "Sichern"
+      },
+      {
+        "id": "cvp",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:84"
+        },
+        "meaning": "Vollständigkeit prüfen"
+      },
+      {
+        "id": "cbapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:95"
+        },
+        "meaning": "Ergebnisse buchen"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:104"
+        },
+        "meaning": "BAPI-Fehler?"
+      },
+      {
+        "id": "rzb",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:105"
+        },
+        "meaning": "Ausnahme BAPI-Fehler"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:110"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "cl1",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:113"
+        },
+        "meaning": "Buchung protokollieren"
+      },
+      {
+        "id": "cup",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:116"
+        },
+        "meaning": "Rollback im CLEANUP"
+      },
+      {
+        "id": "cl2",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:117"
+        },
+        "meaning": "Rollback protokollieren"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:122"
+        },
+        "meaning": "Zurückweisung gebucht?"
+      },
+      {
+        "id": "async",
+        "type": "async",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:123"
+        },
+        "meaning": "Mängelmeldung asynchron anstoßen"
+      },
+      {
+        "id": "es",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c02.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c02.abap:134"
+        },
+        "meaning": "Ende Sichern"
+      },
+      {
+        "id": "sl",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c03.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c03.abap:23"
+        },
+        "meaning": "Protokolltext sammeln"
+      },
+      {
+        "id": "el",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_erg_erfassung_c03.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_erg_erfassung_c03.abap:25"
+        },
+        "meaning": "Ende Protokoll"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s0",
+        "to": "rm",
+        "condition": "always"
+      },
+      {
+        "from": "rm",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "ms",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ms",
+        "to": "r0",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "rd",
+        "condition": "else"
+      },
+      {
+        "from": "rd",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "lp",
+        "to": "gl",
+        "condition": "next row"
+      },
+      {
+        "from": "gl",
+        "to": "ast",
+        "condition": "line_exists( lt_done[ table_line = <ls_m>-merknr ] )"
+      },
+      {
+        "from": "ast",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gl",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "cs",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cs",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "so",
+        "to": "gg",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "sh",
+        "condition": "go_grid IS INITIAL"
+      },
+      {
+        "from": "sh",
+        "to": "disp",
+        "condition": "always"
+      },
+      {
+        "from": "disp",
+        "to": "eo",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "eo",
+        "condition": "else"
+      },
+      {
+        "from": "se",
+        "to": "pop",
+        "condition": "always"
+      },
+      {
+        "from": "pop",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "lv",
+        "condition": "gv_answer = '1'"
+      },
+      {
+        "from": "ga",
+        "to": "ee",
+        "condition": "else"
+      },
+      {
+        "from": "su",
+        "to": "ccd",
+        "condition": "always"
+      },
+      {
+        "from": "ccd",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "csv",
+        "condition": "WHEN 'SAVE'"
+      },
+      {
+        "from": "g2",
+        "to": "eu",
+        "condition": "else"
+      },
+      {
+        "from": "csv",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "ms2",
+        "condition": "always"
+      },
+      {
+        "from": "ms2",
+        "to": "rf",
+        "condition": "always"
+      },
+      {
+        "from": "mc",
+        "to": "rf",
+        "condition": "always"
+      },
+      {
+        "from": "rf",
+        "to": "eu",
+        "condition": "always"
+      },
+      {
+        "from": "sd",
+        "to": "lpd",
+        "condition": "always"
+      },
+      {
+        "from": "lpd",
+        "to": "gst",
+        "condition": "next row"
+      },
+      {
+        "from": "gst",
+        "to": "ape1",
+        "condition": "<ls_m>-status = 'X'"
+      },
+      {
+        "from": "ape1",
+        "to": "lpd",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gst",
+        "to": "cf",
+        "condition": "else"
+      },
+      {
+        "from": "cf",
+        "to": "sf",
+        "condition": "always"
+      },
+      {
+        "from": "ef",
+        "to": "cb",
+        "condition": "always"
+      },
+      {
+        "from": "cb",
+        "to": "sqb",
+        "condition": "always"
+      },
+      {
+        "from": "cb",
+        "to": "sql",
+        "condition": "always"
+      },
+      {
+        "from": "eqb",
+        "to": "amc",
+        "condition": "always"
+      },
+      {
+        "from": "eql",
+        "to": "amc",
+        "condition": "always"
+      },
+      {
+        "from": "amc",
+        "to": "lpd",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rzq",
+        "to": "ape2",
+        "condition": "lcx_erf"
+      },
+      {
+        "from": "rzl",
+        "to": "ape2",
+        "condition": "lcx_erf"
+      },
+      {
+        "from": "ape2",
+        "to": "lpd",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lpd",
+        "to": "ed",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sqb",
+        "to": "akonv",
+        "condition": "always"
+      },
+      {
+        "from": "akonv",
+        "to": "rzq",
+        "condition": "cx_sy_conversion_no_number"
+      },
+      {
+        "from": "akonv",
+        "to": "gq",
+        "condition": "always"
+      },
+      {
+        "from": "gq",
+        "to": "ar",
+        "condition": "lv_wert > is_merk-toleranzob OR lv_wert < is_merk-toleranzun"
+      },
+      {
+        "from": "gq",
+        "to": "aa",
+        "condition": "else"
+      },
+      {
+        "from": "ar",
+        "to": "eqb",
+        "condition": "always"
+      },
+      {
+        "from": "aa",
+        "to": "eqb",
+        "condition": "always"
+      },
+      {
+        "from": "sql",
+        "to": "rq",
+        "condition": "always"
+      },
+      {
+        "from": "rq",
+        "to": "gql",
+        "condition": "always"
+      },
+      {
+        "from": "gql",
+        "to": "rzl",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gql",
+        "to": "eql",
+        "condition": "else"
+      },
+      {
+        "from": "sf",
+        "to": "gf",
+        "condition": "always"
+      },
+      {
+        "from": "gf",
+        "to": "ef",
+        "condition": "is_merk-masseinhsw IS NOT INITIAL"
+      },
+      {
+        "from": "gf",
+        "to": "ef",
+        "condition": "else"
+      },
+      {
+        "from": "sv",
+        "to": "lv2",
+        "condition": "always"
+      },
+      {
+        "from": "lv2",
+        "to": "rzv",
+        "condition": "next row"
+      },
+      {
+        "from": "lv2",
+        "to": "ev",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ss",
+        "to": "cvp",
+        "condition": "always"
+      },
+      {
+        "from": "cvp",
+        "to": "sv",
+        "condition": "always"
+      },
+      {
+        "from": "ev",
+        "to": "cbapi",
+        "condition": "always"
+      },
+      {
+        "from": "rzv",
+        "to": "cup",
+        "condition": "lcx_erf"
+      },
+      {
+        "from": "cbapi",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "rzb",
+        "condition": "ls_return-type CA 'EA'"
+      },
+      {
+        "from": "gb",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "rzb",
+        "to": "cup",
+        "condition": "lcx_erf"
+      },
+      {
+        "from": "cm",
+        "to": "cl1",
+        "condition": "always"
+      },
+      {
+        "from": "cl1",
+        "to": "sl",
+        "condition": "always"
+      },
+      {
+        "from": "el",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "cup",
+        "to": "cl2",
+        "condition": "always"
+      },
+      {
+        "from": "cl2",
+        "to": "sl",
+        "condition": "always"
+      },
+      {
+        "from": "el",
+        "to": "mc",
+        "condition": "lcx_erf"
+      },
+      {
+        "from": "gr",
+        "to": "async",
+        "condition": "line_exists( gt_merk[ bewertung = 'R' status = space ] )"
+      },
+      {
+        "from": "gr",
+        "to": "es",
+        "condition": "else"
+      },
+      {
+        "from": "async",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "sl",
+        "to": "el",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zqm_erg_erfassung_c02.abap:123 — kein Fachsatz „Mängelmeldung ist angelegt“; der Aufruf ist asynchron, sein Ergebnis wird nicht abgeholt.",
+    "zqm_erg_erfassung_c02.abap:95 — kein Fachsatz „Verwendungsentscheid wird getroffen“ oder „Prüflos wird abgeschlossen“; gebucht werden nur Merkmalsergebnisse.",
+    "zqm_erg_erfassung_c02.abap:116 — kein Rollback auf dem Erfolgspfad; der CLEANUP-Block läuft nur, wenn eine Ausnahme den TRY-Block verlässt.",
+    "zqm_erg_erfassung_c01.abap:76 — kein Fachsatz „quantitativ laut Merkmalsstamm“; die Art wird nur aus der Maßeinheit abgeleitet."
+  ],
+  "processDescription": "Der Report liest zu Prüflos und Vorgang die Merkmale; ohne Merkmale endet er mit einer Meldung in Fehleroptik. Bereits bewertete Merkmale werden als abgeschlossen markiert, dann zeigt Bild 0100 alle Merkmale im editierbaren Grid. Jede Eingabe prüft ein DATA_CHANGED-Behandler: abgeschlossene Merkmale werden abgewiesen, sonst wählt eine Fabrik den quantitativen (Merkmal mit Maßeinheit) oder qualitativen Bewerter. Quantitativ wird der Wert als Zahl gegen die Toleranzgrenzen geprüft, qualitativ die Bewertung des Codes aus der Auswahlmenge gelesen; Fehler landen als Einträge im Grid-Protokoll, die Bewertung wird ins Grid geschrieben. Beim Sichern müssen alle offenen Merkmale bewertet sein; dann werden die Ergebnisse per BAPI gebucht und festgeschrieben. Verlässt eine Ausnahme den Buchungsblock, rollt CLEANUP zurück und die Meldung wird angezeigt. Bei Zurückweisungen wird eine Mängelmeldung asynchron angestoßen; gebuchte Merkmale werden gesperrt. Beim Verlassen fragt ein Popup nach."
+}

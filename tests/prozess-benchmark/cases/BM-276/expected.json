@@ -1,0 +1,2637 @@
+{
+  "id": "BM-276",
+  "title": "Kontoauszugsimport mit Wiederaufsetzen und Wiederholung",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EPS2_GET_DIRECTORY_LISTING",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_bankstmt_in_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bankstmt_in_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_STMT_CHKPT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_bankstmt_in_f01.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bankstmt_in_f01.abap:64"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_BANK_MAP",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_bankstmt_in_f02.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bankstmt_in_f02.abap:82"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BKPF",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_bankstmt_in_f02.abap",
+        "line": 99,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bankstmt_in_f02.abap:99"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_DOCUMENT_POST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_bankstmt_in_f02.abap",
+        "line": 144,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bankstmt_in_f02.abap:144"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_RETRY_MSG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_bankstmt_in_f02.abap",
+        "line": 168,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bankstmt_in_f02.abap:168"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_STMT_ERR",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zfi_bankstmt_in_f02.abap",
+        "line": 46,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bankstmt_in_f02.abap:46"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_STMT_CHKPT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zfi_bankstmt_in_f02.abap",
+        "line": 53,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bankstmt_in_f02.abap:53"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-276-B01",
+      "text": "Das Eingangsverzeichnis muss im Schnittstellenpfad liegen; sonst wird der Start auf dem Selektionsbild abgelehnt.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:19"
+        },
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-276-B02",
+      "text": "Es werden alle nicht leeren CSV-Dateien des Eingangsverzeichnisses nach Namen sortiert ermittelt; ist das Verzeichnis nicht lesbar, bricht der Lauf ab, gibt es keine Dateien, endet er mit Hinweis.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:11"
+        },
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:26"
+        },
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:27"
+        },
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:32"
+        },
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:25"
+        },
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-276-B03",
+      "text": "Jede Datei wird für die Dauer ihrer Verarbeitung gesperrt; ist sie von einem anderen Lauf gesperrt, wird sie mit Hinweis übersprungen.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:31"
+        },
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:43"
+        },
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:32"
+        },
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-276-B04",
+      "text": "Hat die Datei einen Wiederaufsetzpunkt, wird nach der dort gespeicherten Zeile fortgesetzt und das ausgegeben; sonst beginnt die Buchung nach der Überschriftszeile.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:64"
+        },
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:66"
+        },
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:67"
+        },
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-276-B05",
+      "text": "Die Datei wird vollständig eingelesen; ist sie nicht lesbar oder beginnt sie nicht mit der erwarteten Überschrift, wird sie ins Fehlerverzeichnis verschoben und nicht gebucht.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:85"
+        },
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:86"
+        },
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:101"
+        },
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:39"
+        },
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-276-B06",
+      "text": "Jede Umsatzzeile ab dem Wiederaufsetzpunkt wird in Bankkonto, Buchungs- und Valutadatum, Betrag, Währung, Referenz und Text zerlegt; ein ungültiger Betrag oder ein Bankkonto ohne Sachkontozuordnung macht die Zeile fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:23"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:26"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:76"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:82"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:86"
+        }
+      ]
+    },
+    {
+      "id": "BM-276-B07",
+      "text": "Zeilen mit Betrag null (Saldenzeilen) werden nicht gebucht.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-276-B08",
+      "text": "Vor dem Buchen wird geprüft, ob zur Bankreferenz und zum Buchungsdatum bereits ein nicht stornierter Bankbeleg existiert; dann wird nicht erneut gebucht, sondern der vorhandene Beleg gemeldet.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:33"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:99"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:105"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:106"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-276-B09",
+      "text": "Jeder neue Umsatz wird als Sachkontenbeleg der Belegart ZB zwischen Bankkonto und Verrechnungskonto mit Buchungs- und Belegdatum, Referenz und Text gebucht.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:126"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:144"
+        }
+      ]
+    },
+    {
+      "id": "BM-276-B10",
+      "text": "Ohne Fehlermeldung wird der Beleg festgeschrieben; bei Fehlermeldung wird zurückgerollt und nur dann nach zwei Sekunden erneut gebucht, wenn die Meldung als Sperrmeldung gepflegt ist – höchstens dreimal.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:142"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:155"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:156"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:164"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:168"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:171"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:174"
+        }
+      ]
+    },
+    {
+      "id": "BM-276-B11",
+      "text": "Nach jeder erfolgreich gebuchten oder als Dublette erkannten Zeile wird sie als Wiederaufsetzpunkt festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:53"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-276-B12",
+      "text": "Die erste fehlerhafte Zeile wird mit Fehlertext protokolliert und beendet die Verarbeitung der Datei, damit die Reihenfolge der Umsätze erhalten bleibt; die Datei bleibt im Eingang und wird beim nächsten Lauf ab dieser Zeile fortgesetzt.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:39"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:46"
+        },
+        {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:47"
+        },
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-276-B13",
+      "text": "Ist die ganze Datei gebucht, wird sie mit Tagesdatum ins Archiv verschoben, ihr Wiederaufsetzpunkt gelöscht und das gemeldet.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:43"
+        },
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:44"
+        },
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:45"
+        },
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:46"
+        },
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-276-B14",
+      "text": "Beim Verschieben wird der eingelesene Inhalt in eine Zieldatei mit Tagesdatum geschrieben und die Quelldatei gelöscht; lässt sich die Zieldatei nicht anlegen, bleibt die Quelle mit einem Hinweis liegen.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:120"
+        },
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:121"
+        },
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:122"
+        },
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:126"
+        },
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:129"
+        }
+      ]
+    },
+    {
+      "id": "BM-276-B15",
+      "text": "Nach jeder Datei wird die Sperre gelöst; am Ende werden die Zahl der Dateien und der vollständig gebuchten ausgegeben.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:54"
+        },
+        {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:54"
+        },
+        {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:59"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:18"
+        },
+        "meaning": "Prüfung des Eingangsverzeichnisses"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:19"
+        },
+        "meaning": "Verzeichnis außerhalb des Schnittstellenpfads?"
+      },
+      {
+        "id": "am",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:20"
+        },
+        "meaning": "Fehler: nur Schnittstellenverzeichnis erlaubt"
+      },
+      {
+        "id": "ax",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:20"
+        },
+        "meaning": "Zurück zum Selektionsbild"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:21"
+        },
+        "meaning": "Verzeichnis zulässig"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:23"
+        },
+        "meaning": "Verarbeitungsstart"
+      },
+      {
+        "id": "p1",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:24"
+        },
+        "meaning": "Kontoauszugsdateien ermitteln"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:25"
+        },
+        "meaning": "Keine Dateien?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:26"
+        },
+        "meaning": "Hinweis: keine Dateien"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:27"
+        },
+        "meaning": "Report verlassen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:30"
+        },
+        "meaning": "Dateien nacheinander verarbeiten"
+      },
+      {
+        "id": "plk",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:31"
+        },
+        "meaning": "Datei sperren"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:32"
+        },
+        "meaning": "Datei von anderem Lauf gesperrt?"
+      },
+      {
+        "id": "wl",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:33"
+        },
+        "meaning": "Hinweis: wird bereits verarbeitet"
+      },
+      {
+        "id": "prc",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:37"
+        },
+        "meaning": "Wiederaufsetzpunkt lesen"
+      },
+      {
+        "id": "prf",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:38"
+        },
+        "meaning": "Datei einlesen und Format prüfen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:39"
+        },
+        "meaning": "Datei unlesbar oder falsches Format?"
+      },
+      {
+        "id": "pme",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:40"
+        },
+        "meaning": "Datei ins Fehlerverzeichnis verschieben"
+      },
+      {
+        "id": "ppl",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:42"
+        },
+        "meaning": "Umsätze ab Wiederaufsetzpunkt buchen"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:43"
+        },
+        "meaning": "Alle Umsätze gebucht?"
+      },
+      {
+        "id": "pma",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:44"
+        },
+        "meaning": "Datei ins Archiv verschieben"
+      },
+      {
+        "id": "dch",
+        "type": "write",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:45"
+        },
+        "meaning": "Wiederaufsetzpunkt löschen"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:46"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "wok",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:47"
+        },
+        "meaning": "Meldung: Datei vollständig gebucht"
+      },
+      {
+        "id": "wab",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:50"
+        },
+        "meaning": "Meldung: Abbruch, Wiederaufsetzzeile"
+      },
+      {
+        "id": "pul",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:54"
+        },
+        "meaning": "Datei entsperren"
+      },
+      {
+        "id": "wsum",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:59"
+        },
+        "meaning": "Anzahl Dateien und vollständig gebuchte ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in.abap:59"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "gs",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:8"
+        },
+        "meaning": "Dateiliste"
+      },
+      {
+        "id": "gdl",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:11"
+        },
+        "meaning": "CSV-Dateien des Eingangsverzeichnisses auflisten"
+      },
+      {
+        "id": "gg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:26"
+        },
+        "meaning": "Verzeichnis nicht lesbar?"
+      },
+      {
+        "id": "gme",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:27"
+        },
+        "meaning": "Fehler: Verzeichnis nicht lesbar"
+      },
+      {
+        "id": "gxe",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:27"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "gl",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:30"
+        },
+        "meaning": "Dateien durchlaufen"
+      },
+      {
+        "id": "gck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:32"
+        },
+        "meaning": "Datei nicht leer?"
+      },
+      {
+        "id": "ge",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:36"
+        },
+        "meaning": "Nicht leere Dateien nach Namen sortiert"
+      },
+      {
+        "id": "lks",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:41"
+        },
+        "meaning": "Datei sperren"
+      },
+      {
+        "id": "lke",
+        "type": "lock",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:43"
+        },
+        "meaning": "Sperre auf Dateinamen setzen"
+      },
+      {
+        "id": "lkend",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:51"
+        },
+        "meaning": "Sperrergebnis zurückgeben"
+      },
+      {
+        "id": "uls",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:53"
+        },
+        "meaning": "Datei entsperren"
+      },
+      {
+        "id": "uld",
+        "type": "lock",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:54"
+        },
+        "meaning": "Sperre lösen"
+      },
+      {
+        "id": "ule",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:57"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "rcs",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:62"
+        },
+        "meaning": "Wiederaufsetzpunkt"
+      },
+      {
+        "id": "rcq",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:64"
+        },
+        "meaning": "Letzte gebuchte Zeile der Datei lesen"
+      },
+      {
+        "id": "rcg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:66"
+        },
+        "meaning": "Kein Wiederaufsetzpunkt?"
+      },
+      {
+        "id": "rcw",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:69"
+        },
+        "meaning": "Hinweis: Wiederaufsetzen nach Zeile n"
+      },
+      {
+        "id": "rce",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:71"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "rfs",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:76"
+        },
+        "meaning": "Datei einlesen"
+      },
+      {
+        "id": "rfo",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:85"
+        },
+        "meaning": "Datei öffnen"
+      },
+      {
+        "id": "rfg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:86"
+        },
+        "meaning": "Nicht lesbar?"
+      },
+      {
+        "id": "rfw1",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:87"
+        },
+        "meaning": "Hinweis: nicht lesbar"
+      },
+      {
+        "id": "rfr1",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:88"
+        },
+        "meaning": "Routine mit Misserfolg verlassen"
+      },
+      {
+        "id": "rfl",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:90"
+        },
+        "meaning": "Zeilen einlesen"
+      },
+      {
+        "id": "rfrd",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:91"
+        },
+        "meaning": "Nächste Zeile lesen"
+      },
+      {
+        "id": "rfg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:92"
+        },
+        "meaning": "Dateiende?"
+      },
+      {
+        "id": "rfc",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:97"
+        },
+        "meaning": "Eingelesene Datei schließen"
+      },
+      {
+        "id": "rfg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:101"
+        },
+        "meaning": "Überschrift nicht im erwarteten Format?"
+      },
+      {
+        "id": "rfw2",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:102"
+        },
+        "meaning": "Hinweis: unbekanntes Format"
+      },
+      {
+        "id": "rfr2",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:103"
+        },
+        "meaning": "Routine mit Misserfolg verlassen"
+      },
+      {
+        "id": "rfe",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:106"
+        },
+        "meaning": "Datei gültig eingelesen"
+      },
+      {
+        "id": "mvs",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:111"
+        },
+        "meaning": "Datei verschieben"
+      },
+      {
+        "id": "mvo",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:120"
+        },
+        "meaning": "Zieldatei mit Tagesdatum anlegen"
+      },
+      {
+        "id": "mvg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:121"
+        },
+        "meaning": "Zieldatei nicht anlegbar?"
+      },
+      {
+        "id": "mvm",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:122"
+        },
+        "meaning": "Hinweis: Ziel nicht beschreibbar"
+      },
+      {
+        "id": "mvr",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:123"
+        },
+        "meaning": "Ohne Verschieben verlassen"
+      },
+      {
+        "id": "mvl",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:125"
+        },
+        "meaning": "Eingelesene Zeilen durchlaufen"
+      },
+      {
+        "id": "mvt",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:126"
+        },
+        "meaning": "Zeile in Zieldatei schreiben"
+      },
+      {
+        "id": "mvc",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:128"
+        },
+        "meaning": "Zieldatei schließen"
+      },
+      {
+        "id": "mvd",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:129"
+        },
+        "meaning": "Quelldatei löschen"
+      },
+      {
+        "id": "mve",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f01.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f01.abap:130"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "pls",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:8"
+        },
+        "meaning": "Umsätze buchen"
+      },
+      {
+        "id": "pll",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:23"
+        },
+        "meaning": "Zeilen ab Wiederaufsetzpunkt durchlaufen"
+      },
+      {
+        "id": "pmap",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:26"
+        },
+        "meaning": "Zeile in Umsatz umsetzen"
+      },
+      {
+        "id": "pg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:27"
+        },
+        "meaning": "Zeile gültig?"
+      },
+      {
+        "id": "pg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:29"
+        },
+        "meaning": "Nullbetrag (Saldenzeile)?"
+      },
+      {
+        "id": "pdup",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:33"
+        },
+        "meaning": "Auf bereits gebuchten Umsatz prüfen"
+      },
+      {
+        "id": "pg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:34"
+        },
+        "meaning": "Noch nicht gebucht?"
+      },
+      {
+        "id": "ppost",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:35"
+        },
+        "meaning": "Umsatz mit Wiederholung buchen"
+      },
+      {
+        "id": "pg4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:39"
+        },
+        "meaning": "Zeile fehlerhaft?"
+      },
+      {
+        "id": "perr",
+        "type": "write",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:46"
+        },
+        "meaning": "Fehlerzeile mit Text protokollieren"
+      },
+      {
+        "id": "pcw1",
+        "type": "transaction",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:47"
+        },
+        "meaning": "Fehlerprotokoll festschreiben, Datei abbrechen"
+      },
+      {
+        "id": "pchk",
+        "type": "write",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:53"
+        },
+        "meaning": "Zeile als Wiederaufsetzpunkt speichern"
+      },
+      {
+        "id": "pcw2",
+        "type": "transaction",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:54"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "ple",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:56"
+        },
+        "meaning": "Anzahl Fehler zurückgeben"
+      },
+      {
+        "id": "mls",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:61"
+        },
+        "meaning": "Zeile umsetzen"
+      },
+      {
+        "id": "mconv",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:76"
+        },
+        "meaning": "Betrag umwandeln"
+      },
+      {
+        "id": "mr1",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:79"
+        },
+        "meaning": "Ungültiger Betrag – Misserfolg"
+      },
+      {
+        "id": "mq",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:82"
+        },
+        "meaning": "Sachkonto zum Bankkonto lesen"
+      },
+      {
+        "id": "mg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:86"
+        },
+        "meaning": "Keine Sachkontozuordnung?"
+      },
+      {
+        "id": "mr2",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:88"
+        },
+        "meaning": "Fehlende Zuordnung – Misserfolg"
+      },
+      {
+        "id": "mle",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:91"
+        },
+        "meaning": "Zeile gültig"
+      },
+      {
+        "id": "cds",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:96"
+        },
+        "meaning": "Dublettenprüfung"
+      },
+      {
+        "id": "cdq",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:99"
+        },
+        "meaning": "Nicht stornierten Bankbeleg mit gleicher Referenz und Buchungsdatum suchen"
+      },
+      {
+        "id": "cdg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:105"
+        },
+        "meaning": "Schon gebucht?"
+      },
+      {
+        "id": "cdw",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:106"
+        },
+        "meaning": "Hinweis: bereits gebucht mit Belegnummer"
+      },
+      {
+        "id": "cde",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:108"
+        },
+        "meaning": "Belegnummer oder leer zurückgeben"
+      },
+      {
+        "id": "prs",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:113"
+        },
+        "meaning": "Bankbuchung"
+      },
+      {
+        "id": "prq",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:126"
+        },
+        "meaning": "Bank- und Verrechnungskonto lesen"
+      },
+      {
+        "id": "prl",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:142"
+        },
+        "meaning": "Bis zu drei Buchungsversuche"
+      },
+      {
+        "id": "prb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:144"
+        },
+        "meaning": "Sachkontenbeleg Bank an Verrechnung buchen"
+      },
+      {
+        "id": "prg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:155"
+        },
+        "meaning": "Keine Fehlermeldung?"
+      },
+      {
+        "id": "prcm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:156"
+        },
+        "meaning": "Beleg festschreiben"
+      },
+      {
+        "id": "prr",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:161"
+        },
+        "meaning": "Erfolg mit Belegnummer"
+      },
+      {
+        "id": "prrb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:164"
+        },
+        "meaning": "Buchung zurückrollen, Meldung merken"
+      },
+      {
+        "id": "prq2",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:168"
+        },
+        "meaning": "Prüfen, ob die Meldung als wiederholbar (Sperre) gepflegt ist"
+      },
+      {
+        "id": "prg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:171"
+        },
+        "meaning": "Nicht wiederholbar?"
+      },
+      {
+        "id": "prw",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:174"
+        },
+        "meaning": "Zwei Sekunden warten"
+      },
+      {
+        "id": "pre",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_in_f02.abap",
+          "line": 176,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_in_f02.abap:176"
+        },
+        "meaning": "Misserfolg mit letzter Meldung"
+      }
+    ],
+    "edges": [
+      {
+        "from": "as",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "am",
+        "condition": "p_dir IS INITIAL OR p_dir NP '/interface/fi/*'"
+      },
+      {
+        "from": "am",
+        "to": "ax",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "ae",
+        "condition": "else"
+      },
+      {
+        "from": "s",
+        "to": "p1",
+        "condition": "always"
+      },
+      {
+        "from": "p1",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "gdl",
+        "condition": "always"
+      },
+      {
+        "from": "gdl",
+        "to": "gg",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "gme",
+        "condition": "sy-subrc <> 0 AND sy-subrc <> 7"
+      },
+      {
+        "from": "gme",
+        "to": "gxe",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "gl",
+        "condition": "else"
+      },
+      {
+        "from": "gl",
+        "to": "gck",
+        "condition": "next row"
+      },
+      {
+        "from": "gck",
+        "to": "gl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gl",
+        "to": "ge",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ge",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "gt_files IS INITIAL"
+      },
+      {
+        "from": "m1",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "plk",
+        "condition": "next row"
+      },
+      {
+        "from": "plk",
+        "to": "lks",
+        "condition": "always"
+      },
+      {
+        "from": "lks",
+        "to": "lke",
+        "condition": "always"
+      },
+      {
+        "from": "lke",
+        "to": "lkend",
+        "condition": "always"
+      },
+      {
+        "from": "lkend",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "wl",
+        "condition": "gv_locked = abap_false"
+      },
+      {
+        "from": "wl",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g2",
+        "to": "prc",
+        "condition": "else"
+      },
+      {
+        "from": "prc",
+        "to": "rcs",
+        "condition": "always"
+      },
+      {
+        "from": "rcs",
+        "to": "rcq",
+        "condition": "always"
+      },
+      {
+        "from": "rcq",
+        "to": "rcg",
+        "condition": "always"
+      },
+      {
+        "from": "rcg",
+        "to": "rcw",
+        "condition": "else"
+      },
+      {
+        "from": "rcw",
+        "to": "rce",
+        "condition": "always"
+      },
+      {
+        "from": "rce",
+        "to": "prf",
+        "condition": "always"
+      },
+      {
+        "from": "prf",
+        "to": "rfs",
+        "condition": "always"
+      },
+      {
+        "from": "rfs",
+        "to": "rfo",
+        "condition": "always"
+      },
+      {
+        "from": "rfo",
+        "to": "rfg1",
+        "condition": "always"
+      },
+      {
+        "from": "rfg1",
+        "to": "rfw1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rfw1",
+        "to": "rfr1",
+        "condition": "always"
+      },
+      {
+        "from": "rfg1",
+        "to": "rfl",
+        "condition": "else"
+      },
+      {
+        "from": "rfl",
+        "to": "rfrd",
+        "condition": "next row"
+      },
+      {
+        "from": "rfrd",
+        "to": "rfg2",
+        "condition": "always"
+      },
+      {
+        "from": "rfg2",
+        "to": "rfc",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rfg2",
+        "to": "rfl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rfg3",
+        "to": "rfw2",
+        "condition": "lv_line NP 'BANKL;BANKN;*'"
+      },
+      {
+        "from": "rfw2",
+        "to": "rfr2",
+        "condition": "always"
+      },
+      {
+        "from": "rfg3",
+        "to": "rfe",
+        "condition": "else"
+      },
+      {
+        "from": "rfr1",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "rfr2",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "rfe",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "pme",
+        "condition": "gv_ok = abap_false"
+      },
+      {
+        "from": "pme",
+        "to": "mvs",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "ppl",
+        "condition": "else"
+      },
+      {
+        "from": "ppl",
+        "to": "pls",
+        "condition": "always"
+      },
+      {
+        "from": "pls",
+        "to": "pll",
+        "condition": "always"
+      },
+      {
+        "from": "pll",
+        "to": "pmap",
+        "condition": "next row"
+      },
+      {
+        "from": "pmap",
+        "to": "mls",
+        "condition": "always"
+      },
+      {
+        "from": "mls",
+        "to": "mconv",
+        "condition": "always"
+      },
+      {
+        "from": "mconv",
+        "to": "mr1",
+        "condition": "cx_sy_conversion_no_number"
+      },
+      {
+        "from": "mconv",
+        "to": "mq",
+        "condition": "always"
+      },
+      {
+        "from": "mq",
+        "to": "mg",
+        "condition": "always"
+      },
+      {
+        "from": "mg",
+        "to": "mr2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mg",
+        "to": "mle",
+        "condition": "else"
+      },
+      {
+        "from": "mr1",
+        "to": "pg1",
+        "condition": "always"
+      },
+      {
+        "from": "mr2",
+        "to": "pg1",
+        "condition": "always"
+      },
+      {
+        "from": "mle",
+        "to": "pg1",
+        "condition": "always"
+      },
+      {
+        "from": "pg1",
+        "to": "pg2",
+        "condition": "lv_ok = abap_true"
+      },
+      {
+        "from": "pg2",
+        "to": "pll",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pg2",
+        "to": "pdup",
+        "condition": "else"
+      },
+      {
+        "from": "pdup",
+        "to": "cds",
+        "condition": "always"
+      },
+      {
+        "from": "cds",
+        "to": "cdq",
+        "condition": "always"
+      },
+      {
+        "from": "cdq",
+        "to": "cdg",
+        "condition": "always"
+      },
+      {
+        "from": "cdg",
+        "to": "cdw",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "cdw",
+        "to": "cde",
+        "condition": "always"
+      },
+      {
+        "from": "cdg",
+        "to": "cde",
+        "condition": "else"
+      },
+      {
+        "from": "cde",
+        "to": "pg3",
+        "condition": "always"
+      },
+      {
+        "from": "pg3",
+        "to": "ppost",
+        "condition": "lv_belnr IS INITIAL"
+      },
+      {
+        "from": "ppost",
+        "to": "prs",
+        "condition": "always"
+      },
+      {
+        "from": "prs",
+        "to": "prq",
+        "condition": "always"
+      },
+      {
+        "from": "prq",
+        "to": "prl",
+        "condition": "always"
+      },
+      {
+        "from": "prl",
+        "to": "prb",
+        "condition": "next row"
+      },
+      {
+        "from": "prb",
+        "to": "prg1",
+        "condition": "always"
+      },
+      {
+        "from": "prg1",
+        "to": "prcm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "prcm",
+        "to": "prr",
+        "condition": "always"
+      },
+      {
+        "from": "prg1",
+        "to": "prrb",
+        "condition": "else"
+      },
+      {
+        "from": "prrb",
+        "to": "prq2",
+        "condition": "always"
+      },
+      {
+        "from": "prq2",
+        "to": "prg2",
+        "condition": "always"
+      },
+      {
+        "from": "prg2",
+        "to": "pre",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "prg2",
+        "to": "prw",
+        "condition": "else"
+      },
+      {
+        "from": "prw",
+        "to": "prl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "prl",
+        "to": "pre",
+        "condition": "no more rows"
+      },
+      {
+        "from": "prr",
+        "to": "pg4",
+        "condition": "always"
+      },
+      {
+        "from": "pre",
+        "to": "pg4",
+        "condition": "always"
+      },
+      {
+        "from": "pg3",
+        "to": "pg4",
+        "condition": "else"
+      },
+      {
+        "from": "pg1",
+        "to": "pg4",
+        "condition": "else"
+      },
+      {
+        "from": "pg4",
+        "to": "perr",
+        "condition": "lv_ok = abap_false"
+      },
+      {
+        "from": "perr",
+        "to": "pcw1",
+        "condition": "always"
+      },
+      {
+        "from": "pcw1",
+        "to": "ple",
+        "condition": "always"
+      },
+      {
+        "from": "pg4",
+        "to": "pchk",
+        "condition": "else"
+      },
+      {
+        "from": "pchk",
+        "to": "pcw2",
+        "condition": "always"
+      },
+      {
+        "from": "pcw2",
+        "to": "pll",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pll",
+        "to": "ple",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ple",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "pma",
+        "condition": "gv_errors = 0"
+      },
+      {
+        "from": "pma",
+        "to": "mvs",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "wab",
+        "condition": "else"
+      },
+      {
+        "from": "mvs",
+        "to": "mvo",
+        "condition": "always"
+      },
+      {
+        "from": "mvo",
+        "to": "mvg",
+        "condition": "always"
+      },
+      {
+        "from": "mvg",
+        "to": "mvm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mvm",
+        "to": "mvr",
+        "condition": "always"
+      },
+      {
+        "from": "mvg",
+        "to": "mvl",
+        "condition": "else"
+      },
+      {
+        "from": "mvl",
+        "to": "mvt",
+        "condition": "next row"
+      },
+      {
+        "from": "mvt",
+        "to": "mvl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "mvl",
+        "to": "mvc",
+        "condition": "no more rows"
+      },
+      {
+        "from": "mvd",
+        "to": "mve",
+        "condition": "always"
+      },
+      {
+        "from": "mve",
+        "to": "pul",
+        "condition": "always"
+      },
+      {
+        "from": "mvr",
+        "to": "pul",
+        "condition": "always"
+      },
+      {
+        "from": "mve",
+        "to": "dch",
+        "condition": "always"
+      },
+      {
+        "from": "mvr",
+        "to": "dch",
+        "condition": "always"
+      },
+      {
+        "from": "dch",
+        "to": "cw",
+        "condition": "always"
+      },
+      {
+        "from": "cw",
+        "to": "wok",
+        "condition": "always"
+      },
+      {
+        "from": "wok",
+        "to": "pul",
+        "condition": "always"
+      },
+      {
+        "from": "wab",
+        "to": "pul",
+        "condition": "always"
+      },
+      {
+        "from": "pul",
+        "to": "uls",
+        "condition": "always"
+      },
+      {
+        "from": "uls",
+        "to": "uld",
+        "condition": "always"
+      },
+      {
+        "from": "uld",
+        "to": "ule",
+        "condition": "always"
+      },
+      {
+        "from": "ule",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "wsum",
+        "condition": "no more rows"
+      },
+      {
+        "from": "wsum",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "rfc",
+        "to": "rfg3",
+        "condition": "always"
+      },
+      {
+        "from": "mvc",
+        "to": "mvd",
+        "condition": "always"
+      },
+      {
+        "from": "rcg",
+        "to": "rce",
+        "condition": "sy-subrc <> 0"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zfi_bankstmt_in.abap:44 — kein Fachsatz „die Datei liegt nach erfolgreicher Buchung sicher im Archiv“ (scheitert das Anlegen der Archivdatei, bleibt die Quelle liegen, der Wiederaufsetzpunkt wird trotzdem gelöscht und „vollständig gebucht“ gemeldet; ein neuer Lauf findet die Datei wieder)",
+    "zfi_bankstmt_in.abap:40 — kein Fachsatz „die unlesbare Datei wird unverändert ins Fehlerverzeichnis kopiert“ (verschoben wird der eingelesene Inhalt; bei nicht lesbarer Datei ist er leer)",
+    "zfi_bankstmt_in_f02.abap:168 — kein Fachsatz „jede fehlgeschlagene Buchung wird dreimal versucht“ (nur Meldungen, die in ZFI_RETRY_MSG gepflegt sind)",
+    "zfi_bankstmt_in_f02.abap:29 — kein Fachsatz „Nullzeilen werden als verarbeitet vermerkt“ (sie verschieben den Wiederaufsetzpunkt nicht)"
+  ],
+  "processDescription": "Der Import läuft mehrmals täglich für einen Buchungskreis und ein Eingangsverzeichnis, das im Schnittstellenpfad liegen muss. Er ermittelt die nicht leeren CSV-Dateien, bricht bei unlesbarem Verzeichnis ab und endet mit Hinweis, wenn nichts da ist. Jede Datei wird gesperrt (gesperrte werden übersprungen), ihr Wiederaufsetzpunkt gelesen und ihr Inhalt eingelesen; unlesbare oder falsch formatierte Dateien gehen ins Fehlerverzeichnis. Danach werden die Umsatzzeilen ab dem Wiederaufsetzpunkt umgesetzt: ungültiger Betrag oder fehlende Sachkontozuordnung machen die Zeile fehlerhaft, Nullbeträge werden übergangen, bereits gebuchte Umsätze erkannt. Neue Umsätze werden als Bankbeleg gegen das Verrechnungskonto gebucht, bei gepflegten Sperrmeldungen bis zu dreimal mit Wartezeit. Jede erledigte Zeile wird als Wiederaufsetzpunkt festgeschrieben; die erste fehlerhafte Zeile wird protokolliert und beendet die Datei, die dann beim nächsten Lauf ab dort fortgesetzt wird. Vollständig gebuchte Dateien werden archiviert und ihr Wiederaufsetzpunkt gelöscht. Nach jeder Datei wird entsperrt, am Ende eine Summe ausgegeben."
+}

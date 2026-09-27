@@ -1,0 +1,36 @@
+{
+  "id": "BM-218",
+  "title": "Automatische Bestellerzeugung mit Bezugsquellen-Strategien",
+  "domain": "MM",
+  "band": "sehr komplex",
+  "loc": 422,
+  "constructs": [
+    "REPORT mit TOP/C01/F01",
+    "START-/END-OF-SELECTION mit STOP",
+    "lokales Interface, drei Strategien",
+    "Kette mit RETURN beim ersten Treffer",
+    "SELECT … ENDSELECT",
+    "LOOP … GROUP BY / LOOP AT GROUP",
+    "VALUE FOR IN GROUP",
+    "statischer Ereignisbehandler",
+    "BAPI_PO_CREATE1 mit TESTRUN",
+    "UPDATE auf SAP-Tabelle (Kundenfelder)"
+  ],
+  "scenario": "Nachtjob im Einkauf, der freigegebene Bestellanforderungen ohne Einkäufereingriff zu Bestellungen umsetzt (ME59N-Ersatz mit eigener Quellenfindung).",
+  "s4_issues": [
+    "EBAN-Kundenfelder und direktes UPDATE auf EBAN",
+    "EKKO/EKPO/EINA/EINE/EORD/EQUK/EQUP-Direktzugriff",
+    "Bezugsquellenfindung neben Standard (ME59N / Manage Purchase Requisitions)",
+    "Materialnummer 40 Zeichen"
+  ],
+  "wave": 3,
+  "module": "MM-PUR",
+  "edge_constructs": [
+    "STOP springt zu END-OF-SELECTION",
+    "Methode endet nur über RETURN oder RAISE",
+    "CONTINUE in Gruppenschleife",
+    "Hilfs-FORM mit zwei Aufrufern",
+    "Ausnahme aus zwei Methoden in einen CATCH"
+  ],
+  "oo": true
+}

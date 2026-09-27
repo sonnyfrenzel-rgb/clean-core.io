@@ -1,0 +1,79 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten bdel",
+      "before": "action zcl_hr_idoc_builder.abap:60 (Nur Kopfsegment mit Löschkennzeichen); Kanten bg->bdel [sy-subrc = 0 AND lv_stat = '0'], bdel->br [always]",
+      "after": "entfernt",
+      "why": "zcl_hr_idoc_builder.abap:60 (ls_hdr-action = 'D') ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante bg->br",
+      "before": "—",
+      "after": "[sy-subrc = 0 AND lv_stat = '0']",
+      "why": "Ersatz für den entfernten Zuweisungsknoten bdel.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten bupd",
+      "before": "action zcl_hr_idoc_builder.abap:65 (Kopfsegment mit Änderungskennzeichen); Kanten bg->bupd [else], bupd->bl [always]",
+      "after": "entfernt",
+      "why": "zcl_hr_idoc_builder.abap:65 (ls_hdr-action = 'U') ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante bg->bl",
+      "before": "—",
+      "after": "[else]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten bupd.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten m2a1",
+      "before": "action zcl_hr_it_mapper_0002.abap:45 (Volles Geburtsdatum übernehmen); Kanten m2g2->m2a1 [sy-subrc = 0 AND lv_consent = abap_true], m2a1->m2e [always]",
+      "after": "entfernt",
+      "why": "zcl_hr_it_mapper_0002.abap:45 (ls_seg-gbdat = ls_p0002-gbdat) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante m2g2->m2e",
+      "before": "—",
+      "after": "[sy-subrc = 0 AND lv_consent = abap_true]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten m2a1.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten m2a2",
+      "before": "action zcl_hr_it_mapper_0002.abap:48 (Nur Geburtsjahr (1. Januar) übernehmen); Kanten m2g2->m2a2 [else], m2a2->m2e [always]",
+      "after": "entfernt",
+      "why": "zcl_hr_it_mapper_0002.abap:48 (ls_seg-gbdat = |...0101|) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante m2g2->m2e",
+      "before": "—",
+      "after": "[else]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten m2a2.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten m21sus",
+      "before": "action zcl_hr_it_mapper_2001.abap:41 (Zutrittssperre für den Abwesenheitszeitraum als Segment); Kanten m21g2->m21sus [lv_days > gc_min_days], m21sus->m21e [always]",
+      "after": "entfernt",
+      "why": "zcl_hr_it_mapper_2001.abap:41 (ls_seg-suspended = abap_true) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante m21g2->m21e",
+      "before": "—",
+      "after": "[lv_days > gc_min_days]",
+      "why": "Ersatz für m21sus: nach APPEND verlässt EXIT die Schleife zum ENDMETHOD.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "Kante lc -> l trägt 'no more rows' (Ende der inneren Schleife, zugleich Rückkehr in die äußere); 'next iteration' wäre ebenso vertretbar. Nicht geändert."
+  ]
+}

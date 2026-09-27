@@ -1,0 +1,2181 @@
+{
+  "id": "BM-219",
+  "title": "Dialog zur Kreditfreigabe mit Dynpro-Modulen und Zustandsklassen",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Gegencheck: Die Ablauflogik der Dynpros 0100/0200 liegt nicht im Fall (nur als Kommentar im Kopf); PBO-/PAI-Module sind deshalb eigene Einstiege ohne Kanten von CALL SCREEN, LEAVE TO SCREEN oder Modulenden.",
+    "Gegencheck: START-OF-SELECTION erhält ein implizites Ende auf CALL SCREEN 100 (se0); ob die Dynprofolge zurückkehrt, bestimmt die nicht im Fall liegende Ablauflogik.",
+    "Polymorpher Aufruf handle: Kanten zu allen drei Zuständen mit „always“; Ausnahmen je nach Aktion in den CATCH des Freigabe- bzw. Ablehnungszweigs."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_credit_release_c01.abap",
+        "line": 62,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_credit_release_c01.abap:62"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_credit_release_c01.abap",
+        "line": 72,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_credit_release_c01.abap:72"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNKK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_credit_release_c01.abap",
+        "line": 99,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_credit_release_c01.abap:99"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SD_ORDER_CREDIT_RELEASE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_credit_release_c01.abap",
+        "line": 137,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_credit_release_c01.abap:137"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_SALESORDER_CHANGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_credit_release_c01.abap",
+        "line": 153,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_credit_release_c01.abap:153"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_CRED_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zsd_credit_release_c01.abap",
+        "line": 122,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_credit_release_c01.abap:122"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-219-B01",
+      "text": "Nur Mitarbeiter mit Änderungsberechtigung für Kreditdaten des Kreditkontrollbereichs 1000 können die Transaktion nutzen.",
+      "anchors": [
+        {
+          "file": "zsd_credit_release.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release.abap:33"
+        },
+        {
+          "file": "zsd_credit_release.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release.abap:36"
+        },
+        {
+          "file": "zsd_credit_release.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-219-B02",
+      "text": "Als Arbeitsvorrat werden die kreditgesperrten Aufträge der Verkaufsorganisation nach Auftragswert absteigend gelesen; der wertgrößte wird im Einstiegsbild vorgeschlagen.",
+      "anchors": [
+        {
+          "file": "zsd_credit_release_f01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_f01.abap:6"
+        },
+        {
+          "file": "zsd_credit_release_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_f01.abap:13"
+        },
+        {
+          "file": "zsd_credit_release_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_f01.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-219-B03",
+      "text": "Eine eingegebene Auftragsnummer muss existieren und einen Kreditstatus haben, sonst wird sie am Feld abgewiesen.",
+      "anchors": [
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:6"
+        },
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:8"
+        },
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:9"
+        }
+      ]
+    },
+    {
+      "id": "BM-219-B04",
+      "text": "Mit „Beenden“ wird die Transaktion verlassen; mit „Anzeigen“ wird der Kreditfall geladen und das Detailbild angezeigt.",
+      "anchors": [
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:14"
+        },
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:16"
+        },
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:19"
+        },
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-219-B05",
+      "text": "Beim Laden wird der Zustand aus dem Kreditstatus bestimmt: gesperrt, abgelehnt (gesperrt mit Liefersperre ZK) oder frei.",
+      "anchors": [
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:62"
+        },
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:72"
+        },
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:74"
+        },
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-219-B06",
+      "text": "Das Detailbild zeigt Kreditlimit, Obligo aus Forderungen, Sonderobligo und offenen Aufträgen, das freie Limit und den Wert aller kreditgesperrten Aufträge des Kunden.",
+      "anchors": [
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:99"
+        },
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:104"
+        },
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:110"
+        }
+      ]
+    },
+    {
+      "id": "BM-219-B07",
+      "text": "Eine Ampel zeigt rot, wenn das Limit schon überschritten ist, gelb, wenn der Auftrag das freie Limit übersteigt, sonst grün.",
+      "anchors": [
+        {
+          "file": "zsd_credit_release_o01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_o01.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-219-B08",
+      "text": "Ein gesperrter Auftrag wird bei Freigabe kreditfreigegeben und die Freigabe mit Begründung protokolliert.",
+      "anchors": [
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:137"
+        },
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:143"
+        },
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:147"
+        },
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:122"
+        }
+      ]
+    },
+    {
+      "id": "BM-219-B09",
+      "text": "Eine Ablehnung ist nur mit Begründung möglich; sie setzt die Liefersperre ZK, der Auftrag bleibt kreditgesperrt.",
+      "anchors": [
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:42"
+        },
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:43"
+        },
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:153"
+        },
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:160"
+        },
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:164"
+        }
+      ]
+    },
+    {
+      "id": "BM-219-B10",
+      "text": "Ein abgelehnter Auftrag kann nur noch freigegeben werden: die Liefersperre wird entfernt und der Auftrag kreditfreigegeben.",
+      "anchors": [
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:178"
+        },
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 179,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:179"
+        },
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:185"
+        },
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 192,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:192"
+        },
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 202,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:202"
+        }
+      ]
+    },
+    {
+      "id": "BM-219-B11",
+      "text": "Auf einen freien Auftrag ist keine Aktion möglich.",
+      "anchors": [
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 211,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:211"
+        }
+      ]
+    },
+    {
+      "id": "BM-219-B12",
+      "text": "Gelingt die Aktion, wird festgeschrieben und eine Erfolgsmeldung ausgegeben; schlägt sie fehl, wird zurückgerollt und der Grund als Information angezeigt.",
+      "anchors": [
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:34"
+        },
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:35"
+        },
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:37"
+        },
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:38"
+        },
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:48"
+        },
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:49"
+        },
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:51"
+        },
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-219-B13",
+      "text": "Mit „Zurück“ gelangt der Anwender vom Detailbild zum Einstiegsbild.",
+      "anchors": [
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-219-B14",
+      "text": "Lässt sich ein Auftrag nicht laden, wird die Eingabe im Einstiegsbild mit Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:65"
+        },
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-219-B15",
+      "text": "Nach einer Entscheidung endet die Eingabeverarbeitung des Detailbilds ohne Bildwechsel; beim erneuten Aufbau des Detailbilds wird die Kreditsituation neu ermittelt.",
+      "anchors": [
+        {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:57"
+        },
+        {
+          "file": "zsd_credit_release_o01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_o01.abap:13"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_credit_release.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release.abap:31"
+        },
+        "meaning": "Transaktionsstart"
+      },
+      {
+        "id": "au",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_credit_release.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release.abap:33"
+        },
+        "meaning": "Berechtigung Kreditdaten aendern pruefen"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_release.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release.abap:36"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "am",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_credit_release.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release.abap:37"
+        },
+        "meaning": "Fehler: keine Berechtigung"
+      },
+      {
+        "id": "amx",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_release.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release.abap:37"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "pw",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_credit_release.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release.abap:40"
+        },
+        "meaning": "Arbeitsvorrat laden"
+      },
+      {
+        "id": "cs",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_credit_release.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release.abap:41"
+        },
+        "meaning": "Einstiegsbild 0100"
+      },
+      {
+        "id": "se0",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_release.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release.abap:41"
+        },
+        "meaning": "Ende START-OF-SELECTION (nach Rueckkehr aus der Dynprofolge)"
+      },
+      {
+        "id": "lws",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_credit_release_f01.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_f01.abap:4"
+        },
+        "meaning": "Arbeitsvorrat"
+      },
+      {
+        "id": "lwq",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_credit_release_f01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_f01.abap:6"
+        },
+        "meaning": "Kreditgesperrte Auftraege der VkOrg nach Wert absteigend"
+      },
+      {
+        "id": "lwg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_release_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_f01.abap:13"
+        },
+        "meaning": "Vorrat vorhanden?"
+      },
+      {
+        "id": "lwa",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_credit_release_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_f01.abap:15"
+        },
+        "meaning": "Wertgroessten Auftrag vorschlagen"
+      },
+      {
+        "id": "lwe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_credit_release_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_f01.abap:17"
+        }
+      },
+      {
+        "id": "p1s",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_credit_release_o01.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_o01.abap:4"
+        },
+        "meaning": "PBO 0100"
+      },
+      {
+        "id": "p1e",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_credit_release_o01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_o01.abap:8"
+        }
+      },
+      {
+        "id": "p2s",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_credit_release_o01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_o01.abap:10"
+        },
+        "meaning": "PBO 0200"
+      },
+      {
+        "id": "p2c",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_credit_release_o01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_o01.abap:13"
+        },
+        "meaning": "Kreditsituation ermitteln"
+      },
+      {
+        "id": "pa",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_credit_release_o01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_o01.abap:15"
+        },
+        "meaning": "Ampel rot/gelb/gruen bestimmen"
+      },
+      {
+        "id": "p2e",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_credit_release_o01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_o01.abap:19"
+        }
+      },
+      {
+        "id": "vs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:4"
+        },
+        "meaning": "Feldpruefung Auftragsnummer"
+      },
+      {
+        "id": "vq",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:6"
+        },
+        "meaning": "Kreditstatus des Auftrags lesen"
+      },
+      {
+        "id": "vg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:8"
+        },
+        "meaning": "Unbekannt oder ohne Kreditpruefung?"
+      },
+      {
+        "id": "vm",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:9"
+        },
+        "meaning": "Fehler am Feld"
+      },
+      {
+        "id": "vmx",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:9"
+        },
+        "meaning": "Korrektur am Feld"
+      },
+      {
+        "id": "ve",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:11"
+        }
+      },
+      {
+        "id": "us",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:13"
+        },
+        "meaning": "PAI 0100"
+      },
+      {
+        "id": "uc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:14"
+        },
+        "meaning": "Funktion?"
+      },
+      {
+        "id": "ul",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:16"
+        },
+        "meaning": "Transaktion verlassen"
+      },
+      {
+        "id": "ulc",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:19"
+        },
+        "meaning": "Kreditfall laden"
+      },
+      {
+        "id": "um",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:21"
+        },
+        "meaning": "Fehler: Auftrag nicht ladbar"
+      },
+      {
+        "id": "umx",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:21"
+        },
+        "meaning": "Abbruch der Eingabe"
+      },
+      {
+        "id": "ult",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:24"
+        },
+        "meaning": "Weiter zu Dynpro 0200"
+      },
+      {
+        "id": "ue",
+        "type": "end",
+        "meaning": "Blockende (Folgebild laut Dynpro-Attribut, nicht im Fall)",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:26"
+        }
+      },
+      {
+        "id": "ws",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:28"
+        },
+        "meaning": "PAI 0200"
+      },
+      {
+        "id": "wc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:29"
+        },
+        "meaning": "Funktion?"
+      },
+      {
+        "id": "wr",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:33"
+        },
+        "meaning": "Freigeben"
+      },
+      {
+        "id": "wcm1",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:34"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "wm1",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:35"
+        },
+        "meaning": "Freigabe melden"
+      },
+      {
+        "id": "wrb1",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:37"
+        },
+        "meaning": "Zurueckrollen"
+      },
+      {
+        "id": "wi1",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:38"
+        },
+        "meaning": "Fehler als Information"
+      },
+      {
+        "id": "wg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:42"
+        },
+        "meaning": "Keine Begruendung?"
+      },
+      {
+        "id": "wme",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:43"
+        },
+        "meaning": "Fehler: Begruendung fehlt"
+      },
+      {
+        "id": "wmx",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:43"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "wj",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:47"
+        },
+        "meaning": "Ablehnen"
+      },
+      {
+        "id": "wcm2",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:48"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "wm2",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:49"
+        },
+        "meaning": "Ablehnung melden"
+      },
+      {
+        "id": "wrb2",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:51"
+        },
+        "meaning": "Zurueckrollen"
+      },
+      {
+        "id": "wi2",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:52"
+        },
+        "meaning": "Fehler als Information"
+      },
+      {
+        "id": "wb",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:55"
+        },
+        "meaning": "Zurueck zu Dynpro 0100"
+      },
+      {
+        "id": "we",
+        "type": "end",
+        "meaning": "Blockende (Folgebild laut Dynpro-Attribut, nicht im Fall)",
+        "anchor": {
+          "file": "zsd_credit_release_i01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_i01.abap:57"
+        }
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:60"
+        },
+        "meaning": "Kreditfall laden"
+      },
+      {
+        "id": "lq",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:62"
+        },
+        "meaning": "Auftragskopf lesen"
+      },
+      {
+        "id": "lg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:64"
+        },
+        "meaning": "Auftrag fehlt?"
+      },
+      {
+        "id": "lx",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:65"
+        },
+        "meaning": "Ausnahme: Auftrag fehlt"
+      },
+      {
+        "id": "lq2",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:72"
+        },
+        "meaning": "Kreditstatus lesen"
+      },
+      {
+        "id": "lc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:74"
+        },
+        "meaning": "Kreditstatus?"
+      },
+      {
+        "id": "lg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:76"
+        },
+        "meaning": "Liefersperre ZK gesetzt?"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:87"
+        }
+      },
+      {
+        "id": "xs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:89"
+        },
+        "meaning": "Aktion ausfuehren"
+      },
+      {
+        "id": "xc",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:90"
+        },
+        "meaning": "Aktion an Zustand (polymorph)"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:92"
+        }
+      },
+      {
+        "id": "ks",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:94"
+        },
+        "meaning": "Kreditsituation"
+      },
+      {
+        "id": "kq",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:99"
+        },
+        "meaning": "Kreditlimit und Obligo lesen"
+      },
+      {
+        "id": "kq2",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:104"
+        },
+        "meaning": "Wert aller kreditgesperrten Auftraege des Kunden"
+      },
+      {
+        "id": "ka",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:110"
+        },
+        "meaning": "Obligo und freies Limit berechnen"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:112"
+        }
+      },
+      {
+        "id": "gs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:114"
+        },
+        "meaning": "Entscheidung protokollieren"
+      },
+      {
+        "id": "gw",
+        "type": "write",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:122"
+        },
+        "meaning": "Aktion, Begruendung, Benutzer, Zeit speichern"
+      },
+      {
+        "id": "ge",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:123"
+        }
+      },
+      {
+        "id": "bs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:130"
+        },
+        "meaning": "Zustand GESPERRT"
+      },
+      {
+        "id": "bc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:135"
+        },
+        "meaning": "Aktion?"
+      },
+      {
+        "id": "bf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:137"
+        },
+        "meaning": "Auftrag kreditfreigeben"
+      },
+      {
+        "id": "bg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:143"
+        },
+        "meaning": "Freigabe fehlgeschlagen?"
+      },
+      {
+        "id": "bx",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:144"
+        },
+        "meaning": "Ausnahme: Freigabe fehlgeschlagen"
+      },
+      {
+        "id": "bl1",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:147"
+        },
+        "meaning": "Freigabe protokollieren"
+      },
+      {
+        "id": "bb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:153"
+        },
+        "meaning": "Liefersperre ZK setzen"
+      },
+      {
+        "id": "bg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:160"
+        },
+        "meaning": "Aenderung fehlgeschlagen?"
+      },
+      {
+        "id": "bx2",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:161"
+        },
+        "meaning": "Ausnahme: Sperre nicht gesetzt"
+      },
+      {
+        "id": "bl2",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:164"
+        },
+        "meaning": "Ablehnung protokollieren"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:166"
+        }
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:173"
+        },
+        "meaning": "Zustand ABGELEHNT"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:178"
+        },
+        "meaning": "Nicht Freigabe?"
+      },
+      {
+        "id": "rx",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 179,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:179"
+        },
+        "meaning": "Ausnahme: bereits abgelehnt"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:185"
+        },
+        "meaning": "Liefersperre entfernen"
+      },
+      {
+        "id": "rf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 192,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:192"
+        },
+        "meaning": "Auftrag kreditfreigeben"
+      },
+      {
+        "id": "rg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 198,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:198"
+        },
+        "meaning": "Freigabe fehlgeschlagen?"
+      },
+      {
+        "id": "rx2",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:199"
+        },
+        "meaning": "Ausnahme: Freigabe fehlgeschlagen"
+      },
+      {
+        "id": "rl",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 202,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:202"
+        },
+        "meaning": "Freigabe protokollieren"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 203,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:203"
+        }
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 210,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:210"
+        },
+        "meaning": "Zustand FREI"
+      },
+      {
+        "id": "fx",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_release_c01.abap",
+          "line": 211,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_release_c01.abap:211"
+        },
+        "meaning": "Ausnahme: nicht gesperrt"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "au",
+        "condition": "always"
+      },
+      {
+        "from": "au",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "am",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "am",
+        "to": "amx",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "pw",
+        "condition": "else"
+      },
+      {
+        "from": "pw",
+        "to": "lws",
+        "condition": "always"
+      },
+      {
+        "from": "lwe",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "se0",
+        "condition": "always"
+      },
+      {
+        "from": "lws",
+        "to": "lwq",
+        "condition": "always"
+      },
+      {
+        "from": "lwq",
+        "to": "lwg",
+        "condition": "always"
+      },
+      {
+        "from": "lwg",
+        "to": "lwa",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "lwg",
+        "to": "lwe",
+        "condition": "else"
+      },
+      {
+        "from": "lwa",
+        "to": "lwe",
+        "condition": "always"
+      },
+      {
+        "from": "p1s",
+        "to": "p1e",
+        "condition": "always"
+      },
+      {
+        "from": "vs",
+        "to": "vq",
+        "condition": "always"
+      },
+      {
+        "from": "vq",
+        "to": "vg",
+        "condition": "always"
+      },
+      {
+        "from": "vg",
+        "to": "vm",
+        "condition": "sy-subrc <> 0 OR lv_cmgst IS INITIAL"
+      },
+      {
+        "from": "vm",
+        "to": "vmx",
+        "condition": "always"
+      },
+      {
+        "from": "vg",
+        "to": "ve",
+        "condition": "else"
+      },
+      {
+        "from": "us",
+        "to": "uc",
+        "condition": "always"
+      },
+      {
+        "from": "uc",
+        "to": "ul",
+        "condition": "WHEN 'EXIT' OR 'BACK' OR 'CANC'"
+      },
+      {
+        "from": "uc",
+        "to": "ulc",
+        "condition": "WHEN 'SHOW' OR space"
+      },
+      {
+        "from": "uc",
+        "to": "ue",
+        "condition": "else"
+      },
+      {
+        "from": "ulc",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "ult",
+        "condition": "always"
+      },
+      {
+        "from": "lx",
+        "to": "um",
+        "condition": "lcx_credit"
+      },
+      {
+        "from": "um",
+        "to": "umx",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "lq",
+        "condition": "always"
+      },
+      {
+        "from": "lq",
+        "to": "lg",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "lx",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "lg",
+        "to": "lq2",
+        "condition": "else"
+      },
+      {
+        "from": "lq2",
+        "to": "lc",
+        "condition": "always"
+      },
+      {
+        "from": "lc",
+        "to": "lg2",
+        "condition": "WHEN 'B' OR 'C'"
+      },
+      {
+        "from": "lc",
+        "to": "le",
+        "condition": "else"
+      },
+      {
+        "from": "lg2",
+        "to": "le",
+        "condition": "ls_vbak-lifsk = gc_rej_block"
+      },
+      {
+        "from": "lg2",
+        "to": "le",
+        "condition": "else"
+      },
+      {
+        "from": "p2s",
+        "to": "p2c",
+        "condition": "always"
+      },
+      {
+        "from": "p2c",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "ke",
+        "to": "pa",
+        "condition": "always"
+      },
+      {
+        "from": "ks",
+        "to": "kq",
+        "condition": "always"
+      },
+      {
+        "from": "kq",
+        "to": "kq2",
+        "condition": "always"
+      },
+      {
+        "from": "kq2",
+        "to": "ka",
+        "condition": "always"
+      },
+      {
+        "from": "ka",
+        "to": "ke",
+        "condition": "always"
+      },
+      {
+        "from": "pa",
+        "to": "p2e",
+        "condition": "always"
+      },
+      {
+        "from": "ws",
+        "to": "wc",
+        "condition": "always"
+      },
+      {
+        "from": "wc",
+        "to": "wr",
+        "condition": "WHEN 'REL'"
+      },
+      {
+        "from": "wc",
+        "to": "wg",
+        "condition": "WHEN 'REJ'"
+      },
+      {
+        "from": "wc",
+        "to": "wb",
+        "condition": "WHEN 'BACK'"
+      },
+      {
+        "from": "wc",
+        "to": "we",
+        "condition": "else"
+      },
+      {
+        "from": "wr",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "wcm1",
+        "condition": "always"
+      },
+      {
+        "from": "wcm1",
+        "to": "wm1",
+        "condition": "always"
+      },
+      {
+        "from": "wm1",
+        "to": "we",
+        "condition": "always"
+      },
+      {
+        "from": "wrb1",
+        "to": "wi1",
+        "condition": "always"
+      },
+      {
+        "from": "wi1",
+        "to": "we",
+        "condition": "always"
+      },
+      {
+        "from": "wg",
+        "to": "wme",
+        "condition": "gv_reason IS INITIAL"
+      },
+      {
+        "from": "wme",
+        "to": "wmx",
+        "condition": "always"
+      },
+      {
+        "from": "wg",
+        "to": "wj",
+        "condition": "else"
+      },
+      {
+        "from": "wj",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "wcm2",
+        "condition": "always"
+      },
+      {
+        "from": "wcm2",
+        "to": "wm2",
+        "condition": "always"
+      },
+      {
+        "from": "wm2",
+        "to": "we",
+        "condition": "always"
+      },
+      {
+        "from": "wrb2",
+        "to": "wi2",
+        "condition": "always"
+      },
+      {
+        "from": "wi2",
+        "to": "we",
+        "condition": "always"
+      },
+      {
+        "from": "xs",
+        "to": "xc",
+        "condition": "always"
+      },
+      {
+        "from": "xc",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "xc",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "xc",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "bs",
+        "to": "bc",
+        "condition": "always"
+      },
+      {
+        "from": "bc",
+        "to": "bf",
+        "condition": "WHEN 'REL'"
+      },
+      {
+        "from": "bc",
+        "to": "bb",
+        "condition": "WHEN 'REJ'"
+      },
+      {
+        "from": "bc",
+        "to": "be",
+        "condition": "else"
+      },
+      {
+        "from": "bf",
+        "to": "bg",
+        "condition": "always"
+      },
+      {
+        "from": "bg",
+        "to": "bx",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "bg",
+        "to": "bl1",
+        "condition": "else"
+      },
+      {
+        "from": "bl1",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "be",
+        "condition": "always"
+      },
+      {
+        "from": "bb",
+        "to": "bg2",
+        "condition": "always"
+      },
+      {
+        "from": "bg2",
+        "to": "bx2",
+        "condition": "line_exists( lt_return[ type = 'E' ] )"
+      },
+      {
+        "from": "bg2",
+        "to": "bl2",
+        "condition": "else"
+      },
+      {
+        "from": "bl2",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rx",
+        "condition": "iv_action <> 'REL'"
+      },
+      {
+        "from": "rg",
+        "to": "rb",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "rf",
+        "condition": "always"
+      },
+      {
+        "from": "rf",
+        "to": "rg2",
+        "condition": "always"
+      },
+      {
+        "from": "rg2",
+        "to": "rx2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rg2",
+        "to": "rl",
+        "condition": "else"
+      },
+      {
+        "from": "rl",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "re",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "gw",
+        "condition": "always"
+      },
+      {
+        "from": "gw",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "fx",
+        "condition": "always"
+      },
+      {
+        "from": "bx",
+        "to": "wrb1",
+        "condition": "lcx_credit"
+      },
+      {
+        "from": "rx2",
+        "to": "wrb1",
+        "condition": "lcx_credit"
+      },
+      {
+        "from": "fx",
+        "to": "wrb1",
+        "condition": "lcx_credit"
+      },
+      {
+        "from": "bx2",
+        "to": "wrb2",
+        "condition": "lcx_credit"
+      },
+      {
+        "from": "rx",
+        "to": "wrb2",
+        "condition": "lcx_credit"
+      },
+      {
+        "from": "fx",
+        "to": "wrb2",
+        "condition": "lcx_credit"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zsd_credit_release_c01.abap:185 — kein Fachsatz „schlägt das Entfernen der Liefersperre fehl, wird abgebrochen“ — RETURN von BAPI_SALESORDER_CHANGE wird hier nicht ausgewertet.",
+    "zsd_credit_release_c01.abap:153 — kein Fachsatz „der Auftrag wird abgesagt/storniert“ — gesetzt wird nur eine Liefersperre.",
+    "gesamte Scheibe — kein Fachsatz „Freigabe per Batch-Input auf VKM3“ — der BDC-Altstand ist auskommentiert.",
+    "zsd_credit_release_c01.abap:99 — kein Fachsatz „Kreditlimit aus FSCM-Kreditmanagement“ — gelesen wird die klassische KNKK."
+  ],
+  "processDescription": "Ein Mitarbeiter des Kreditmanagements startet die Transaktion; ohne Berechtigung für Kreditdaten bricht sie ab. Sie liest die kreditgesperrten Aufträge der Verkaufsorganisation und schlägt den wertgrößten vor. Im Einstiegsbild wird eine eingegebene Auftragsnummer auf Existenz und Kreditstatus geprüft. „Anzeigen“ lädt den Kreditfall, bestimmt seinen Zustand – gesperrt, abgelehnt oder frei – und zeigt im Detailbild Limit, Obligo, freies Limit, gesperrtes Auftragsvolumen des Kunden und eine Ampel. Ein gesperrter Auftrag kann freigegeben oder mit Pflichtbegründung abgelehnt werden; die Ablehnung setzt die Liefersperre ZK. Ein abgelehnter Auftrag kann nur freigegeben werden, wobei die Liefersperre entfällt; auf freie Aufträge ist keine Aktion möglich. Jede Entscheidung wird protokolliert und festgeschrieben, Fehler werden zurückgerollt und angezeigt. „Zurück“ führt zum Einstiegsbild, „Beenden“ verlässt die Transaktion."
+}

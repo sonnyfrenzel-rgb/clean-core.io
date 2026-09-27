@@ -1,0 +1,2262 @@
+{
+  "id": "BM-235",
+  "title": "Genehmigte Mehrarbeit aus CATS als Entgeltbeleg an die Abrechnung übergeben",
+  "classes": [
+    "K01",
+    "K03",
+    "K09",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "CATSDB",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_ueberstunden_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_ueberstunden_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZHR_OT_UEBERTR",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_ueberstunden_f01.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_ueberstunden_f01.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZHR_OT_UEBERTR",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zhr_ueberstunden_f01.abap",
+        "line": 108,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_ueberstunden_f01.abap:108"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_ueberstunden_cls.abap",
+        "line": 66,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_ueberstunden_cls.abap:66"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZHR_OT_REGEL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_ueberstunden_cls.abap",
+        "line": 74,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_ueberstunden_cls.abap:74"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_INFOTYPE_OPERATION",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zhr_ueberstunden_f01.abap",
+        "line": 86,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_ueberstunden_f01.abap:86"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_EMPLOYEE_ENQUEUE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zhr_ueberstunden_f01.abap",
+        "line": 69,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_ueberstunden_f01.abap:69"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_EMPLOYEE_DEQUEUE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zhr_ueberstunden_f01.abap",
+        "line": 113,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_ueberstunden_f01.abap:113"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-235-B01",
+      "text": "Der Lauf verarbeitet den Kalendermonat der eingegebenen Periode bis zum Monatsletzten.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:27"
+        },
+        {
+          "file": "zhr_ueberstunden.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B02",
+      "text": "Es werden die genehmigten CATS-Zeiten der Periode für die gewählten Arten je Mitarbeiter und Art zu Stundensummen verdichtet.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:36"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:11"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B03",
+      "text": "Gibt es keine, erscheint eine Meldung in Warnoptik; das leere Protokoll wird trotzdem ausgegeben.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:37"
+        },
+        {
+          "file": "zhr_ueberstunden.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:38"
+        },
+        {
+          "file": "zhr_ueberstunden.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:39"
+        },
+        {
+          "file": "zhr_ueberstunden.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B04",
+      "text": "Wurde die Mehrarbeit eines Mitarbeiters für diese Art und Periode bereits übertragen, wird das als Warnung protokolliert und nicht erneut übertragen.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:34"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:39"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B05",
+      "text": "Die Mehrarbeitsregel ergibt sich aus dem Mitarbeiterkreis zum Periodenende und der Regeltabelle des Kunden.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:45"
+        },
+        {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:66"
+        },
+        {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B06",
+      "text": "Ohne organisatorische Zuordnung zum Periodenende wird ein Fehler protokolliert und der Mitarbeiter übersprungen.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:70"
+        },
+        {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:71"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B07",
+      "text": "Ohne Regel für den Mitarbeiterkreis oder bei unbekanntem Regeltyp wird „keine gültige Mehrarbeitsregel“ als Fehler protokolliert und der Mitarbeiter übersprungen.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:76"
+        },
+        {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:77"
+        },
+        {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:86"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B08",
+      "text": "Regeltyp T liefert die Tarifregel, Regeltyp A die AT-Regel.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:80"
+        },
+        {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:82"
+        },
+        {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:84"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B09",
+      "text": "Für Tarifmitarbeiter ist Mehrarbeit vergütungsfähig, solange die Stunden die Monatshöchstgrenze nicht überschreiten.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:55"
+        },
+        {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:94"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B10",
+      "text": "Für AT-Mitarbeiter ist Mehrarbeit nur oberhalb der Freistunden vergütungsfähig und zusätzlich an die Monatshöchstgrenze gebunden.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:116"
+        },
+        {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:118"
+        },
+        {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:120"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B11",
+      "text": "Nicht vergütungsfähige Mehrarbeit wird als Warnung protokolliert und nicht übertragen.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:55"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B12",
+      "text": "Die zu vergütende Anzahl ist bei Tarifmitarbeitern Stunden mal Zuschlagsfaktor, bei AT-Mitarbeitern die Stunden oberhalb der Freistunden ohne Zuschlag.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:60"
+        },
+        {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:107"
+        },
+        {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:125"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B13",
+      "text": "Im Testlauf wird nur die berechnete Anzahl protokolliert.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:62"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B14",
+      "text": "Im Echtlauf wird der Mitarbeiter gesperrt; ist er gesperrt, wird ein Fehler protokolliert und er übersprungen.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:69"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:74"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B15",
+      "text": "Es wird ein Entgeltbeleg zum Periodenende mit der Lohnart der Regel und der berechneten Anzahl angelegt, ohne dass der Baustein selbst festschreibt.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:83"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:86"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B16",
+      "text": "Scheitert das Anlegen, werden die Änderungen verworfen und der Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:98"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:99"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:100"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B17",
+      "text": "Sonst wird die Übertragung mit Anzahl, Benutzer und Datum vermerkt, beides gemeinsam festgeschrieben und der Erfolg protokolliert.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:108"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:109"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:110"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B18",
+      "text": "Danach wird die Mitarbeitersperre aufgehoben.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:113"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B19",
+      "text": "Jede protokollierte Fehlermeldung wird gezählt.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:132"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:133"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B20",
+      "text": "Am Ende wird das Protokoll nach Meldungstyp sortiert als ALV-Liste ausgegeben.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:49"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:153"
+        },
+        {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:154"
+        }
+      ]
+    },
+    {
+      "id": "BM-235-B21",
+      "text": "Gab es im Hintergrundlauf Fehler, endet der Job mit einer Fehlermeldung und der Fehlerzahl.",
+      "anchors": [
+        {
+          "file": "zhr_ueberstunden.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:52"
+        },
+        {
+          "file": "zhr_ueberstunden.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:53"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_ueberstunden.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:25"
+        },
+        "meaning": "Übergabelauf starten"
+      },
+      {
+        "id": "rp",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zhr_ueberstunden.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:28"
+        },
+        "meaning": "Periodenende ermitteln"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ueberstunden.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:36"
+        },
+        "meaning": "Genehmigte Zeiten verdichten"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_ueberstunden.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:37"
+        },
+        "meaning": "Zeiten vorhanden?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_ueberstunden.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:38"
+        },
+        "meaning": "Meldung: keine Mehrarbeit"
+      },
+      {
+        "id": "r",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:39"
+        },
+        "meaning": "Selektionsblock verlassen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zhr_ueberstunden.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:42"
+        },
+        "meaning": "Summen je Mitarbeiter und Art durchlaufen"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ueberstunden.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:43"
+        },
+        "meaning": "Mehrarbeit übertragen"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:44"
+        },
+        "meaning": "Ende Selektionsblock"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_ueberstunden.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:47"
+        },
+        "meaning": "Abschlussereignis"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ueberstunden.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:49"
+        },
+        "meaning": "Protokoll ausgeben"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_ueberstunden.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:52"
+        },
+        "meaning": "Fehler im Hintergrundlauf?"
+      },
+      {
+        "id": "m2",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_ueberstunden.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:53"
+        },
+        "meaning": "Fehlermeldung mit Fehlerzahl"
+      },
+      {
+        "id": "m2e",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:53"
+        },
+        "meaning": "Job endet als abgebrochen"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden.abap:54"
+        },
+        "meaning": "Programmende"
+      },
+      {
+        "id": "cs",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:10"
+        },
+        "meaning": "CATS-Verdichtung"
+      },
+      {
+        "id": "cq",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:11"
+        },
+        "meaning": "Genehmigte Stunden der Periode je Mitarbeiter und Art summieren"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:19"
+        },
+        "meaning": "Ende CATS-Verdichtung"
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:24"
+        },
+        "meaning": "Übertragung je Mitarbeiter"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:34"
+        },
+        "meaning": "Frühere Übertragung der Periode suchen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:39"
+        },
+        "meaning": "Bereits übertragen?"
+      },
+      {
+        "id": "p1",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:40"
+        },
+        "meaning": "Doppelte Übertragung protokollieren"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:41"
+        },
+        "meaning": "Mitarbeiter überspringen"
+      },
+      {
+        "id": "fb",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:45"
+        },
+        "meaning": "Mehrarbeitsregel des Mitarbeiters beschaffen"
+      },
+      {
+        "id": "p2a",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:48"
+        },
+        "meaning": "Fehlende Org-Zuordnung protokollieren"
+      },
+      {
+        "id": "r2a",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:49"
+        },
+        "meaning": "Mitarbeiter überspringen"
+      },
+      {
+        "id": "p2b",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:51"
+        },
+        "meaning": "Fehlende Regel protokollieren"
+      },
+      {
+        "id": "r2b",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:52"
+        },
+        "meaning": "Mitarbeiter überspringen"
+      },
+      {
+        "id": "cpr",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:55"
+        },
+        "meaning": "Vergütungsfähigkeit prüfen"
+      },
+      {
+        "id": "gp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:55"
+        },
+        "meaning": "Nicht vergütungsfähig?"
+      },
+      {
+        "id": "p3",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:56"
+        },
+        "meaning": "Nicht vergütungsfähig protokollieren"
+      },
+      {
+        "id": "r3",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:57"
+        },
+        "meaning": "Mitarbeiter überspringen"
+      },
+      {
+        "id": "cum",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:60"
+        },
+        "meaning": "Vergütungsanzahl berechnen"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:62"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "p4",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:65"
+        },
+        "meaning": "Testlaufergebnis protokollieren"
+      },
+      {
+        "id": "r4",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:66"
+        },
+        "meaning": "Testlauf: nichts buchen"
+      },
+      {
+        "id": "enq",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:69"
+        },
+        "meaning": "Mitarbeiter sperren"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:74"
+        },
+        "meaning": "Sperre fehlgeschlagen?"
+      },
+      {
+        "id": "p5",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:75"
+        },
+        "meaning": "Sperrfehler protokollieren"
+      },
+      {
+        "id": "r5",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:76"
+        },
+        "meaning": "Mitarbeiter überspringen"
+      },
+      {
+        "id": "cla",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:83"
+        },
+        "meaning": "Lohnart der Regel übernehmen"
+      },
+      {
+        "id": "hio",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:86"
+        },
+        "meaning": "Entgeltbeleg (Infotyp 2010) anlegen"
+      },
+      {
+        "id": "gh",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:98"
+        },
+        "meaning": "Anlegen fehlgeschlagen?"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:99"
+        },
+        "meaning": "Änderungen verwerfen"
+      },
+      {
+        "id": "p6",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:100"
+        },
+        "meaning": "Anlegefehler protokollieren"
+      },
+      {
+        "id": "ins",
+        "type": "write",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:108"
+        },
+        "meaning": "Übertragung vermerken"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:109"
+        },
+        "meaning": "Entgeltbeleg und Vermerk festschreiben"
+      },
+      {
+        "id": "p7",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:110"
+        },
+        "meaning": "Erfolg protokollieren"
+      },
+      {
+        "id": "deq",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:113"
+        },
+        "meaning": "Mitarbeitersperre aufheben"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:116"
+        },
+        "meaning": "Ende Übertragung je Mitarbeiter"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:121"
+        },
+        "meaning": "Protokollzeile sammeln"
+      },
+      {
+        "id": "pg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:132"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "pa",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:133"
+        },
+        "meaning": "Fehler zählen"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:135"
+        },
+        "meaning": "Ende Protokollzeile"
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:140"
+        },
+        "meaning": "Protokollausgabe"
+      },
+      {
+        "id": "afc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:143"
+        },
+        "meaning": "Feldkatalog aufbauen"
+      },
+      {
+        "id": "ad",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:154"
+        },
+        "meaning": "Protokoll als ALV-Liste anzeigen"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_f01.abap:162"
+        },
+        "meaning": "Ende Protokollausgabe"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:62"
+        },
+        "meaning": "Regelbeschaffung"
+      },
+      {
+        "id": "fq1",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:66"
+        },
+        "meaning": "Mitarbeiterkreis zum Periodenende lesen"
+      },
+      {
+        "id": "fg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:70"
+        },
+        "meaning": "Org-Zuordnung vorhanden?"
+      },
+      {
+        "id": "fx1",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:71"
+        },
+        "meaning": "Ausnahme keine Org-Zuordnung"
+      },
+      {
+        "id": "fq2",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:74"
+        },
+        "meaning": "Mehrarbeitsregel des Mitarbeiterkreises lesen"
+      },
+      {
+        "id": "fg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:76"
+        },
+        "meaning": "Regel vorhanden?"
+      },
+      {
+        "id": "fx2",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:77"
+        },
+        "meaning": "Ausnahme keine Regel"
+      },
+      {
+        "id": "fc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:80"
+        },
+        "meaning": "Regeltyp"
+      },
+      {
+        "id": "fo1",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:82"
+        },
+        "meaning": "Tarifregel erzeugen"
+      },
+      {
+        "id": "fo2",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:84"
+        },
+        "meaning": "AT-Regel erzeugen"
+      },
+      {
+        "id": "fx3",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:86"
+        },
+        "meaning": "Ausnahme unbekannter Regeltyp"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:90"
+        },
+        "meaning": "Ende Regelbeschaffung"
+      },
+      {
+        "id": "bs",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:92"
+        },
+        "meaning": "Höchstgrenzenprüfung"
+      },
+      {
+        "id": "ba",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:94"
+        },
+        "meaning": "Stunden gegen Monatshöchstgrenze prüfen"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:95"
+        },
+        "meaning": "Ende Höchstgrenzenprüfung"
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:97"
+        },
+        "meaning": "Lohnart liefern"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:99"
+        },
+        "meaning": "Ende Lohnart"
+      },
+      {
+        "id": "ts",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:106"
+        },
+        "meaning": "Umrechnung Tarif"
+      },
+      {
+        "id": "ta",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:107"
+        },
+        "meaning": "Stunden mit Zuschlagsfaktor multiplizieren"
+      },
+      {
+        "id": "te",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:108"
+        },
+        "meaning": "Ende Umrechnung Tarif"
+      },
+      {
+        "id": "xs",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:115"
+        },
+        "meaning": "Prüfung AT"
+      },
+      {
+        "id": "xg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:116"
+        },
+        "meaning": "Innerhalb der Freistunden?"
+      },
+      {
+        "id": "xr",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:118"
+        },
+        "meaning": "Nicht vergütungsfähig zurückgeben"
+      },
+      {
+        "id": "xsu",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:120"
+        },
+        "meaning": "Höchstgrenze der Basisregel prüfen"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:121"
+        },
+        "meaning": "Ende Prüfung AT"
+      },
+      {
+        "id": "us",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:123"
+        },
+        "meaning": "Umrechnung AT"
+      },
+      {
+        "id": "ua",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:125"
+        },
+        "meaning": "Freistunden abziehen"
+      },
+      {
+        "id": "ue",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ueberstunden_cls.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ueberstunden_cls.abap:126"
+        },
+        "meaning": "Ende Umrechnung AT"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "rp",
+        "condition": "always"
+      },
+      {
+        "from": "rp",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "cq",
+        "condition": "always"
+      },
+      {
+        "from": "cq",
+        "to": "ce",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "m",
+        "condition": "gt_summe IS INITIAL"
+      },
+      {
+        "from": "m",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "r",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "c2",
+        "condition": "next row"
+      },
+      {
+        "from": "c2",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "se",
+        "condition": "no more rows"
+      },
+      {
+        "from": "se",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "c3",
+        "condition": "always"
+      },
+      {
+        "from": "c3",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "as",
+        "to": "afc",
+        "condition": "always"
+      },
+      {
+        "from": "afc",
+        "to": "ad",
+        "condition": "always"
+      },
+      {
+        "from": "ad",
+        "to": "ae",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "m2",
+        "condition": "gv_fehler > 0 AND sy-batch = 'X'"
+      },
+      {
+        "from": "m2",
+        "to": "m2e",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "ee",
+        "condition": "else"
+      },
+      {
+        "from": "ms",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "p1",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "p1",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g1",
+        "to": "fb",
+        "condition": "else"
+      },
+      {
+        "from": "fb",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "fq1",
+        "condition": "always"
+      },
+      {
+        "from": "fq1",
+        "to": "fg1",
+        "condition": "always"
+      },
+      {
+        "from": "fg1",
+        "to": "fx1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "fx1",
+        "to": "p2a",
+        "condition": "lcx_keine_orgzuordnung"
+      },
+      {
+        "from": "fg1",
+        "to": "fq2",
+        "condition": "else"
+      },
+      {
+        "from": "fq2",
+        "to": "fg2",
+        "condition": "always"
+      },
+      {
+        "from": "fg2",
+        "to": "fx2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "fx2",
+        "to": "p2b",
+        "condition": "lcx_keine_regel"
+      },
+      {
+        "from": "fg2",
+        "to": "fc",
+        "condition": "else"
+      },
+      {
+        "from": "fc",
+        "to": "fo1",
+        "condition": "WHEN 'T'"
+      },
+      {
+        "from": "fc",
+        "to": "fo2",
+        "condition": "WHEN 'A'"
+      },
+      {
+        "from": "fc",
+        "to": "fx3",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "fx3",
+        "to": "p2b",
+        "condition": "lcx_keine_regel"
+      },
+      {
+        "from": "fo1",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "fo2",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "cpr",
+        "condition": "always"
+      },
+      {
+        "from": "p2a",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "r2a",
+        "condition": "always"
+      },
+      {
+        "from": "r2a",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "p2b",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "r2b",
+        "condition": "always"
+      },
+      {
+        "from": "r2b",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cpr",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "cpr",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "bs",
+        "to": "ba",
+        "condition": "always"
+      },
+      {
+        "from": "ba",
+        "to": "be",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "gp",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "xs",
+        "to": "xg",
+        "condition": "always"
+      },
+      {
+        "from": "xg",
+        "to": "xr",
+        "condition": "iv_stunden <= ms_cust-freistunden"
+      },
+      {
+        "from": "xr",
+        "to": "gp",
+        "condition": "always"
+      },
+      {
+        "from": "xg",
+        "to": "xsu",
+        "condition": "else"
+      },
+      {
+        "from": "xsu",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "gp",
+        "condition": "always"
+      },
+      {
+        "from": "gp",
+        "to": "p3",
+        "condition": "lo_regel->pruefen( ps_summe-stunden ) = abap_false"
+      },
+      {
+        "from": "p3",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "r3",
+        "condition": "always"
+      },
+      {
+        "from": "r3",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gp",
+        "to": "cum",
+        "condition": "else"
+      },
+      {
+        "from": "cum",
+        "to": "ts",
+        "condition": "always"
+      },
+      {
+        "from": "cum",
+        "to": "us",
+        "condition": "always"
+      },
+      {
+        "from": "ts",
+        "to": "ta",
+        "condition": "always"
+      },
+      {
+        "from": "ta",
+        "to": "te",
+        "condition": "always"
+      },
+      {
+        "from": "te",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "us",
+        "to": "ua",
+        "condition": "always"
+      },
+      {
+        "from": "ua",
+        "to": "ue",
+        "condition": "always"
+      },
+      {
+        "from": "ue",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "p4",
+        "condition": "p_test = 'X'"
+      },
+      {
+        "from": "p4",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "r4",
+        "condition": "always"
+      },
+      {
+        "from": "r4",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gt",
+        "to": "enq",
+        "condition": "else"
+      },
+      {
+        "from": "enq",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "p5",
+        "condition": "ls_ret-type = 'E'"
+      },
+      {
+        "from": "p5",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "r5",
+        "condition": "always"
+      },
+      {
+        "from": "r5",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ge",
+        "to": "cla",
+        "condition": "else"
+      },
+      {
+        "from": "cla",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "le",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "hio",
+        "condition": "always"
+      },
+      {
+        "from": "hio",
+        "to": "gh",
+        "condition": "always"
+      },
+      {
+        "from": "gh",
+        "to": "rb",
+        "condition": "ls_ret-type CA 'EA'"
+      },
+      {
+        "from": "rb",
+        "to": "p6",
+        "condition": "always"
+      },
+      {
+        "from": "p6",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "gh",
+        "to": "ins",
+        "condition": "else"
+      },
+      {
+        "from": "ins",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "p7",
+        "condition": "always"
+      },
+      {
+        "from": "p7",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "deq",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pa",
+        "condition": "pv_typ = 'E'"
+      },
+      {
+        "from": "pa",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pe",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zhr_ueberstunden_f01.abap:50 — kein Fachsatz „unbekannter Regeltyp wird gesondert gemeldet“ (WHEN OTHERS löst dieselbe Ausnahme lcx_keine_regel aus wie eine fehlende Regel)",
+    "zhr_ueberstunden_cls.abap:120 — kein Fachsatz „für AT-Mitarbeiter gilt keine Höchstgrenze“ (der Supercall prüft die Monatshöchstgrenze der Basisklasse)",
+    "zhr_ueberstunden_f01.abap:86 — kein Fachsatz „Entgeltbeleg ist nach dem Aufruf gespeichert“ (NOCOMMIT = X; erst das COMMIT WORK im Erfolgszweig schreibt fest)",
+    "gesamte Scheibe — kein Fachsatz „der Mitarbeiter wird abgerechnet“ (der Report übergibt nur Entgeltbelege an die Abrechnung)"
+  ],
+  "processDescription": "Der Report übergibt genehmigte Mehrarbeit aus der Zeiterfassung als Entgeltbelege an die Abrechnung. Er bestimmt den Kalendermonat der Periode und verdichtet die genehmigten CATS-Zeiten der gewählten Arten je Mitarbeiter und Art; ohne Zeiten meldet er das in Warnoptik und springt zum Abschlussereignis. Je Summe prüft eine FORM zuerst, ob schon übertragen wurde (Warnung, überspringen). Eine statische Fabrikmethode liest den Mitarbeiterkreis zum Periodenende und die Regel des Kunden und erzeugt je nach Regeltyp eine Tarif- oder AT-Regel; fehlende Org-Zuordnung, fehlende Regel oder unbekannter Regeltyp enden in Ausnahmen, die als Fehler protokolliert werden. Die Regel entscheidet polymorph über die Vergütungsfähigkeit: Tarif bis zur Monatshöchstgrenze, AT nur oberhalb der Freistunden und zusätzlich über die Höchstgrenze der Basisklasse. Sie berechnet die Anzahl (Tarif mit Zuschlagsfaktor, AT ohne Freistunden). Im Testlauf wird nur protokolliert. Im Echtlauf sperrt der Report den Mitarbeiter, legt über HR_INFOTYPE_OPERATION ohne eigenen Commit einen Infotyp 2010 an, verwirft bei Fehler per ROLLBACK WORK oder vermerkt die Übertragung in einer Kundentabelle und schreibt beides mit COMMIT WORK fest, und entsperrt ihn. Die Protokollroutine zählt Fehler. Am Ende wird das Protokoll als ALV-Liste ausgegeben, und im Hintergrund lässt eine Fehlermeldung den Job bei Fehlern abbrechen."
+}

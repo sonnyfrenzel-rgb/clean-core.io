@@ -1,0 +1,37 @@
+{
+  "id": "BM-235",
+  "title": "Genehmigte Mehrarbeit aus CATS als Entgeltbeleg an die Abrechnung übergeben",
+  "domain": "HR",
+  "band": "sehr komplex",
+  "loc": 411,
+  "constructs": [
+    "REPORT mit TOP/SEL/CLS/F01",
+    "abstrakte Klasse",
+    "INHERITING FROM/REDEFINITION",
+    "super->",
+    "Fabrikmethode",
+    "Ausnahmeklassenhierarchie",
+    "TRY mit zwei CATCH",
+    "funktionaler Aufruf im IF",
+    "HR_INFOTYPE_OPERATION",
+    "BAPI_EMPLOYEE_ENQUEUE/DEQUEUE",
+    "COMMIT/ROLLBACK WORK",
+    "END-OF-SELECTION mit MESSAGE E",
+    "RETURN in FORM"
+  ],
+  "scenario": "Monatlicher HR-Job zwischen Zeitwirtschaft und Entgeltabrechnung, gewachsen von CASE-Logik zu Regelklassen.",
+  "s4_issues": [
+    "HR_INFOTYPE_OPERATION nicht released",
+    "CATSDB-Direktzugriff",
+    "REUSE_ALV nicht Cloud-fähig"
+  ],
+  "wave": 3,
+  "module": "HCM-PT/PY",
+  "edge_constructs": [
+    "polymorpher Aufruf mit zwei Zielen",
+    "spezifischer vor allgemeinem CATCH",
+    "Protokollroutine mit Fehlerzähler, der den Jobstatus steuert",
+    "RETURN in START-OF-SELECTION mit END-OF-SELECTION"
+  ],
+  "oo": true
+}

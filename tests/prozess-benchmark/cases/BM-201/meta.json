@@ -1,0 +1,25 @@
+{
+  "id": "BM-201",
+  "title": "Kreditlimit-Schnellprüfung über lokale Klasse",
+  "domain": "SD",
+  "band": "einfach",
+  "loc": 33,
+  "constructs": [
+    "REPORT",
+    "CLASS-METHODS",
+    "funktionaler Aufruf in IF",
+    "SELECT SINGLE",
+    "xsdbool"
+  ],
+  "scenario": "Kleiner Innendienst-Report aus der ECC-Zeit, der vor Auftragsannahme das klassische SD-Kreditlimit prüft.",
+  "s4_issues": [
+    "KNKK/klassisches SD-Kreditmanagement in S/4 durch FIN-FSCM Credit Management (UKM) ersetzt"
+  ],
+  "wave": 3,
+  "module": "SD",
+  "edge_constructs": [
+    "funktionaler Methodenaufruf in Bedingung",
+    "sy-subrc im Ausdruck"
+  ],
+  "oo": true
+}

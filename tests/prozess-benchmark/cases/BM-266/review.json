@@ -1,0 +1,35 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten cnt",
+      "before": "action zcl_fi_applog.abap:68 (Fehler zählen (Problemklasse sehr wichtig)); Kanten cs->cnt [WHEN 'E' OR 'A' OR 'X'], cnt->ma [always]",
+      "after": "entfernt",
+      "why": "Zeile 68 (mv_err_count = mv_err_count + 1) ist eine reine Zähler-Zuweisung - laut Brief kein Knoten; Fachsatz B04 bleibt.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante cs->ma",
+      "before": "—",
+      "after": "[WHEN 'E' OR 'A' OR 'X']",
+      "why": "Ersatz für den entfernten Zuweisungsknoten cnt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten he",
+      "before": "action zcl_fi_applog.abap:89 (Fehlerkennzeichen aus Fehlerzähler ableiten); Kanten s3->he [always], he->e3 [always]",
+      "after": "entfernt",
+      "why": "Zeile 89 (rv_error = xsdbool( ... )) ist eine reine Zuweisung des Rückgabewerts - kein Knoten; Fachsatz B06 bleibt.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante s3->e3",
+      "before": "—",
+      "after": "[always]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten he.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

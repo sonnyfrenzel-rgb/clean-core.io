@@ -1,0 +1,9 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "zhr_abrechnung_vergleich_f01.abap:81 — clusterid = 'DE' ist vermutlich falsch: die Cluster-ID (RELID) der deutschen Abrechnung ist 'RD'; mit 'DE' endet PYXX_READ_PAYROLL_RESULT in ILLEGAL_ISOCODE_OR_CLUSTERID, und jeder Mitarbeiter würde über CHECK lv_rc = 0 still übersprungen. Korrektur 'DE' -> 'RD' (keine Zeilenverschiebung, keine Ankeränderung) konnte der Gegencheck nicht schreiben (Quelltextänderung durch die Werkzeugfreigabe verweigert) — bitte vom Autor nachziehen.",
+    "Knoten sa (f01:68, cv_seqnr = ls_rgdir-seqnr) ist eine reine Zuweisung; belassen, weil sie das Ergebnis der Suchroutine festlegt und sonst die Schleife sl keinen Körper hätte."
+  ]
+}

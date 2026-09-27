@@ -1,0 +1,17 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten cgl (meaning)",
+      "before": "Zeilen ergänzen (polymorph)",
+      "after": "Zeilen ergänzen",
+      "why": "GL_ZEILEN ist in LCL_BUCHUNG konkret implementiert und nicht redefiniert; der Aufruf ist monomorph (einziges Ziel sg). Polymorph sind erst die Aufrufe betrag_signiert/konto darin (cbs, ck).",
+      "category": "Fachsatz"
+    }
+  ],
+  "doubts": [
+    "PBO/PAI-Module und Grid-Behandler sind eigene Einstiege ohne eingehende Kante (Ablauflogik nicht im Fall) – geprüft, korrekt.",
+    "MESSAGE W im PAI außerhalb FIELD/CHAIN: Verarbeitung stoppt bis Enter, Felder sind dann nicht eingabebereit; Fortsetzung nach Bestätigung ist korrekt modelliert."
+  ]
+}

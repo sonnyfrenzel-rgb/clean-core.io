@@ -1,0 +1,73 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten rfrd",
+      "before": "output",
+      "after": "action",
+      "why": "READ DATASET liest eine Datei ein - keine Ausgabe (vereinheitlichte Konvention: READ DATASET = action).",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten rfc",
+      "before": "—",
+      "after": "output zfi_bankstmt_in_f01.abap:97 (Eingelesene Datei schließen)",
+      "why": "CLOSE DATASET nach dem EXIT aus der DO-Schleife fehlte; OPEN/CLOSE DATASET = output.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante rfg2->rfg3",
+      "before": "rfg2->rfg3 [sy-subrc <> 0]",
+      "after": "rfg2->rfc [sy-subrc <> 0]",
+      "why": "EXIT verlässt die DO-Schleife zur nächsten Anweisung CLOSE DATASET (f01:97), nicht direkt zur Formatprüfung.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante rfc->rfg3",
+      "before": "—",
+      "after": "[always]",
+      "why": "Nach dem Schließen folgt die Prüfung der Überschrift.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten mvc",
+      "before": "—",
+      "after": "output zfi_bankstmt_in_f01.abap:128 (Zieldatei schließen)",
+      "why": "CLOSE DATASET lv_dst nach der Schreibschleife fehlte; OPEN/CLOSE DATASET = output.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante mvl->mvd",
+      "before": "mvl->mvd [no more rows]",
+      "after": "mvl->mvc [no more rows]",
+      "why": "Nach der Schleife folgt zuerst CLOSE DATASET (f01:128), dann DELETE DATASET.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante mvc->mvd",
+      "before": "—",
+      "after": "[always]",
+      "why": "Nach dem Schließen der Zieldatei wird die Quelldatei gelöscht.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten rc1",
+      "before": "action zfi_bankstmt_in_f01.abap:67 (Ab erster Umsatzzeile nach der Überschrift); Kanten rcg->rc1 [sy-subrc <> 0], rc1->rce [always]",
+      "after": "entfernt",
+      "why": "f01:67 (pv_start = 1) ist eine reine Zuweisung - laut Brief kein Knoten; Fachsatz B04 bleibt.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante rcg->rce",
+      "before": "—",
+      "after": "[sy-subrc <> 0]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten rc1.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "mconv (f02:76, ps_stmt-amount = lv_amount) ist formal eine Zuweisung, trägt aber die Betragsprüfung (Konvertierungsausnahme -> fehlerhafte Zeile); daher als action belassen.",
+    "DELETE DATASET (f01:129) ist weder in der Knotentabelle noch in der vereinheitlichten DATASET-Regel genannt; als output (Dateioperation) belassen."
+  ]
+}

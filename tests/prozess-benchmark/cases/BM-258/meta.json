@@ -1,0 +1,37 @@
+{
+  "id": "BM-258",
+  "title": "ABC-Analyse des Verbrauchswerts je Werk: AMDP-Rechenkern, parallele RFC-Aufgaben, Ergebnis und MARC-Kennzeichen",
+  "domain": "MM Disposition / ABC-Analyse",
+  "band": "sehr komplex",
+  "loc": 410,
+  "constructs": [
+    "Report mit TOP-Include, INITIALIZATION, AT SELECTION-SCREEN, START-/END-OF-SELECTION",
+    "FORM/PERFORM",
+    "AMDP mit Fensterfunktion SUM() OVER",
+    "CALL FUNCTION STARTING NEW TASK DESTINATION IN GROUP CALLING ... ON END OF TASK",
+    "RECEIVE RESULTS FROM FUNCTION",
+    "WAIT UNTIL ... UP TO",
+    "CASE sy-subrc mit EXIT aus DO",
+    "MODIFY dbtab FROM TABLE",
+    "UPDATE MARC direkt",
+    "COMMIT WORK im RFC-Baustein",
+    "CL_SALV_TABLE mit WRITE-Ersatz im CATCH"
+  ],
+  "scenario": "Monatlicher Hintergrundjob der Disposition: ABC-Klassifizierung aller Materialien je Werk nach Verbrauchswert, parallelisiert über eine RFC-Servergruppe, mit optionaler Fortschreibung des ABC-Kennzeichens im Materialstamm.",
+  "s4_issues": [
+    "MSEG/BUDAT_MKPF in S/4 nur Kompatibilitätsview auf MATDOC – AMDP mit USING mseg prüfen",
+    "Direktes UPDATE auf MARC umgeht Änderungsbelege und Materialstamm-Logik",
+    "Parallelisierung über aRFC statt bgPF/SPTA"
+  ],
+  "wave": 3,
+  "module": "MM",
+  "edge_constructs": [
+    "asynchroner Aufruf eines Bausteins im Fall",
+    "Rückruf ohne Aufrufkante",
+    "Fallback auf synchronen Aufruf",
+    "Wartezeit-Obergrenze kann Werke verlieren",
+    "MESSAGE E in AT SELECTION-SCREEN",
+    "CHECK in END-OF-SELECTION"
+  ],
+  "oo": true
+}

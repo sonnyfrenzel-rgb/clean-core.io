@@ -1,0 +1,33 @@
+{
+  "id": "BM-263",
+  "title": "Inbound-Proxy Wareneingang zur Bestellung",
+  "domain": "MM",
+  "band": "mittel",
+  "loc": 108,
+  "constructs": [
+    "ABAP-Proxy-Interface",
+    "METHOD",
+    "SELECT SINGLE",
+    "RAISE EXCEPTION",
+    "LOOP/CONTINUE",
+    "BAPI_GOODSMVT_CREATE",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "INSERT"
+  ],
+  "scenario": "Anbindung eines externen Logistikdienstleisters über SAP PI/PO: Wareneingangsmeldungen kommen als XML und werden per Inbound-Proxy gebucht.",
+  "s4_issues": [
+    "BAPI_GOODSMVT_CREATE schreibt in S/4 in MATDOC statt MKPF/MSEG",
+    "PI/PO-Proxy – Zielbild CPI/SOAP-Consumption",
+    "Idempotenz über Z-Tabelle statt Standard-Message-ID"
+  ],
+  "wave": 3,
+  "module": "MM",
+  "edge_constructs": [
+    "frühes RETURN bei Duplikat",
+    "RAISE EXCEPTION ohne TRY im Fall",
+    "LOOP ... WHERE mit EXIT als Suche",
+    "CONTINUE",
+    "INSERT nach BAPI-Commit"
+  ],
+  "oo": true
+}

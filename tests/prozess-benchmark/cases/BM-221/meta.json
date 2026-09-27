@@ -1,0 +1,26 @@
+{
+  "id": "BM-221",
+  "title": "Offene Posten eines Debitors auflisten",
+  "domain": "FI",
+  "band": "einfach",
+  "loc": 27,
+  "constructs": [
+    "REPORT",
+    "SELECT INTO TABLE",
+    "MESSAGE DISPLAY LIKE",
+    "RETURN",
+    "LOOP",
+    "WRITE"
+  ],
+  "scenario": "Kleiner Kreditmanagement-Report aus ECC, der in der S/4-Transformation auf BSID-Zugriffe geprüft wird.",
+  "s4_issues": [
+    "BSID ist in S/4HANA eine Kompatibilitätssicht auf ACDOCA/BSEG"
+  ],
+  "wave": 3,
+  "module": "FI-AR",
+  "edge_constructs": [
+    "RETURN in START-OF-SELECTION",
+    "MESSAGE Typ S mit DISPLAY LIKE W"
+  ],
+  "oo": false
+}

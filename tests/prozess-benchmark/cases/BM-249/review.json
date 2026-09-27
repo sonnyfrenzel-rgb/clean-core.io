@@ -1,0 +1,37 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante a_g2 -> a_l2",
+      "before": "next iteration",
+      "after": "ls_mw-istwert_erfasst = abap_false",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist und direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten. ELSEIF ist eine Bedingungskante desselben Gateways.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante a_g2 -> a_l2",
+      "before": "fehlt",
+      "after": "a_g2 -> a_l2 [ls_mw-istwert < ls_mw-untergrenze OR ls_mw-istwert > ls_mw-obergrenze]",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist und direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten. ELSEIF ist eine Bedingungskante desselben Gateways.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante a_g2 -> a_l2",
+      "before": "fehlt",
+      "after": "a_g2 -> a_l2 [else]",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist und direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten. ELSEIF ist eine Bedingungskante desselben Gateways.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante v_g -> v_l",
+      "before": "next iteration",
+      "after": "else",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist und direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten. ELSEIF ist eine Bedingungskante desselben Gateways.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "a_st1/a_st2 (lr_root->status = R/F) sind Zuweisungen, legen aber das fachliche Ergebnis der Verzweigung a_g4 fest (zurückgewiesen/freigegeben) und bleiben deshalb als action; anders als in BM-247, wo die Statuszuweisung unbedingt war."
+  ]
+}

@@ -1,0 +1,1990 @@
+{
+  "id": "BM-257",
+  "title": "Web-Dynpro-Lieferantenbewertung: Kennzahlen aus Bestellungen, WE und Prüflosen, Note, Bestätigungsdialog und Eskalation",
+  "classes": [
+    "K01",
+    "K04",
+    "K09",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EKKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_lb_assist.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_lb_assist.abap:56"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_lb_assist.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_lb_assist.abap:56"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKET",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_lb_assist.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_lb_assist.abap:56"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKBE",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_lb_assist.abap",
+        "line": 71,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_lb_assist.abap:71"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QALS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_lb_assist.abap",
+        "line": 95,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_lb_assist.abap:95"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QAVE",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_lb_assist.abap",
+        "line": 106,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_lb_assist.abap:106"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_LIEF_BEW",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_mm_lb_assist.abap",
+        "line": 123,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_lb_assist.abap:123"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SAP_WAPI_CREATE_EVENT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_lb_assist.abap",
+        "line": 144,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_lb_assist.abap:144"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-257-B01",
+      "text": "Beim Start zeigt die Anwendung die 20 jüngsten gespeicherten Bewertungen und schlägt als Zeitraum die letzten 12 Monate vor.",
+      "anchors": [
+        {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:13"
+        },
+        {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:19"
+        },
+        {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-257-B02",
+      "text": "Speichern ist nur nach einer frischen Berechnung möglich.",
+      "anchors": [
+        {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:11"
+        },
+        {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:52"
+        },
+        {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-257-B03",
+      "text": "Ohne Lieferant wird nicht berechnet; ist der Zeitraum leer oder verkehrt, gelten die letzten 12 Monate.",
+      "anchors": [
+        {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:25"
+        },
+        {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:32"
+        },
+        {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-257-B04",
+      "text": "Grundlage sind die Einteilungen endgelieferter, nicht gelöschter Positionen normaler Bestellungen des Lieferanten mit Liefertermin im Zeitraum; gibt es keine, erscheint die Information ZMM_LB 001 und es wird nicht bewertet.",
+      "anchors": [
+        {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:56"
+        },
+        {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:39"
+        },
+        {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-257-B05",
+      "text": "Eine Einteilung gilt als pünktlich, wenn der letzte Wareneingang zur Position höchstens zwei Tage nach dem Liefertermin liegt, und als mengentreu, wenn die Wareneingangsmenge der Position mindestens 95 % der Einteilungsmenge erreicht.",
+      "anchors": [
+        {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:71"
+        },
+        {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:78"
+        },
+        {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-257-B06",
+      "text": "Die Qualitätsquote ist der Anteil nicht abgelehnter Prüflose zum Wareneingang im Zeitraum; ohne Prüflose beträgt sie 100.",
+      "anchors": [
+        {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:95"
+        },
+        {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:101"
+        },
+        {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:106"
+        },
+        {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:114"
+        }
+      ]
+    },
+    {
+      "id": "BM-257-B07",
+      "text": "Die Gesamtpunkte gewichten Liefertreue mit 40 %, Mengentreue und Qualität mit je 30 %; ab 85 Punkten gibt es Note A, ab 60 Note B, darunter Note C.",
+      "anchors": [
+        {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:48"
+        },
+        {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:56"
+        },
+        {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-257-B08",
+      "text": "Liegt die Bewertung unter 60 Punkten, muss der Einkäufer das Speichern in einem Dialog bestätigen, weil der Lieferant dann eskaliert wird; erst mit „Ja“ wird gespeichert.",
+      "anchors": [
+        {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:61"
+        },
+        {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:63"
+        },
+        {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:68"
+        },
+        {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-257-B09",
+      "text": "Die Bewertung wird mit Erfasser und Datum gespeichert; eine vorhandene Bewertung desselben Lieferanten und Zeitraums wird überschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:123"
+        },
+        {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:126"
+        },
+        {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:136"
+        }
+      ]
+    },
+    {
+      "id": "BM-257-B10",
+      "text": "Scheitert auch das Überschreiben, wird zurückgerollt und der Fehler angezeigt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:128"
+        },
+        {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:129"
+        },
+        {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-257-B11",
+      "text": "Bei Note C wird am Lieferanten das Workflow-Ereignis ZBEWERTUNG_C ausgelöst und eine Warnung angezeigt; jede gespeicherte Bewertung wird mit einer Erfolgsmeldung quittiert.",
+      "anchors": [
+        {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:86"
+        },
+        {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:144"
+        },
+        {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:88"
+        },
+        {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:92"
+        }
+      ]
+    },
+    {
+      "id": "BM-257-B12",
+      "text": "Eine frühere Bewertung aus der Historie kann angezeigt, aber nicht erneut gespeichert werden.",
+      "anchors": [
+        {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:94"
+        },
+        {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:104"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "mv_s",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:5"
+        },
+        "meaning": "Bild wird aufgebaut"
+      },
+      {
+        "id": "mv_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:10"
+        },
+        "meaning": "Speichern-Button vorhanden?"
+      },
+      {
+        "id": "mv_a",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:11"
+        },
+        "meaning": "Speichern nur nach frischer Berechnung freischalten"
+      },
+      {
+        "id": "mv_e",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:13"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "b_s",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:16"
+        },
+        "meaning": "Einkäufer startet die Berechnung"
+      },
+      {
+        "id": "b_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:25"
+        },
+        "meaning": "Lieferant fehlt?"
+      },
+      {
+        "id": "b_o1",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:26"
+        },
+        "meaning": "Feldfehler „Lieferant eingeben“"
+      },
+      {
+        "id": "b_x",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:29"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "b_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:32"
+        },
+        "meaning": "Zeitraum leer oder verkehrt?"
+      },
+      {
+        "id": "b_a",
+        "type": "action",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:33"
+        },
+        "meaning": "Zeitraum auf die letzten 12 Monate setzen"
+      },
+      {
+        "id": "b_c",
+        "type": "call",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:38"
+        },
+        "meaning": "Bewertung berechnen"
+      },
+      {
+        "id": "b_e",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:41"
+        },
+        "meaning": "Ende Berechnen"
+      },
+      {
+        "id": "s_s",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:44"
+        },
+        "meaning": "Einkäufer speichert die Bewertung"
+      },
+      {
+        "id": "s_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:52"
+        },
+        "meaning": "Nicht frisch berechnet?"
+      },
+      {
+        "id": "s_o1",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:53"
+        },
+        "meaning": "Warnung „Bitte zuerst berechnen“"
+      },
+      {
+        "id": "s_x1",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:54"
+        },
+        "meaning": "Nicht gespeichert"
+      },
+      {
+        "id": "s_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:61"
+        },
+        "meaning": "Gesamtpunkte unter 60?"
+      },
+      {
+        "id": "s_p",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:63"
+        },
+        "meaning": "Bestätigungsdialog „Lieferant wird eskaliert. Speichern?“"
+      },
+      {
+        "id": "s_sub",
+        "type": "action",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:68"
+        },
+        "meaning": "„Ja“ mit Aktion SPEICHERN_BESTAETIGT verknüpfen"
+      },
+      {
+        "id": "s_op",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:72"
+        },
+        "meaning": "Dialog öffnen"
+      },
+      {
+        "id": "s_x2",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:73"
+        },
+        "meaning": "Warten auf Bestätigung, nichts gespeichert"
+      },
+      {
+        "id": "s_c",
+        "type": "call",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:76"
+        },
+        "meaning": "Bewertung speichern"
+      },
+      {
+        "id": "s_e",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:77"
+        },
+        "meaning": "Ende Speichern"
+      },
+      {
+        "id": "sb_s",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:80"
+        },
+        "meaning": "Einkäufer bestätigt die Eskalation mit „Ja“"
+      },
+      {
+        "id": "sb_c",
+        "type": "call",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:81"
+        },
+        "meaning": "Bewertung speichern"
+      },
+      {
+        "id": "sb_e",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:82"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "h_s",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:85"
+        },
+        "meaning": "Einkäufer wählt eine frühere Bewertung"
+      },
+      {
+        "id": "h_r",
+        "type": "read",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:94"
+        },
+        "meaning": "Gespeicherte Bewertung lesen"
+      },
+      {
+        "id": "h_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:99"
+        },
+        "meaning": "Nicht gefunden?"
+      },
+      {
+        "id": "h_o",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:100"
+        },
+        "meaning": "Fehler ZMM_LB 002"
+      },
+      {
+        "id": "h_x",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:101"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "h_b",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:104"
+        },
+        "meaning": "Gespeicherte Bewertung anzeigen (nicht erneut speicherbar)"
+      },
+      {
+        "id": "h_e",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_lb_view.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_view.abap:107"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "i_s",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:10"
+        },
+        "meaning": "Anwendung startet"
+      },
+      {
+        "id": "i_r",
+        "type": "read",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:13"
+        },
+        "meaning": "Die 20 jüngsten Bewertungen lesen"
+      },
+      {
+        "id": "i_o",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:19"
+        },
+        "meaning": "Historie anzeigen"
+      },
+      {
+        "id": "i_b",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:22"
+        },
+        "meaning": "Zeitraum der letzten 12 Monate vorschlagen"
+      },
+      {
+        "id": "i_e",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:24"
+        },
+        "meaning": "Ende Initialisierung"
+      },
+      {
+        "id": "c_s",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:27"
+        },
+        "meaning": "Bewertung berechnen"
+      },
+      {
+        "id": "c_k",
+        "type": "call",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:36"
+        },
+        "meaning": "Liefer- und Mengentreue zählen"
+      },
+      {
+        "id": "c_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:39"
+        },
+        "meaning": "Keine Einteilungen im Zeitraum?"
+      },
+      {
+        "id": "c_o",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:40"
+        },
+        "meaning": "Info ZMM_LB 001"
+      },
+      {
+        "id": "c_x",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:41"
+        },
+        "meaning": "Keine Bewertung"
+      },
+      {
+        "id": "c_q",
+        "type": "call",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:44"
+        },
+        "meaning": "Qualitätsquote ermitteln"
+      },
+      {
+        "id": "c_a",
+        "type": "action",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:48"
+        },
+        "meaning": "Liefer- und Mengentreue in Prozent der Einteilungen"
+      },
+      {
+        "id": "c_a2",
+        "type": "action",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:56"
+        },
+        "meaning": "Gesamtpunkte: 40 % Liefertreue, 30 % Mengentreue, 30 % Qualität"
+      },
+      {
+        "id": "c_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:60"
+        },
+        "meaning": "Note A (ab 85), B (ab 60) oder C?"
+      },
+      {
+        "id": "c_b",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:68"
+        },
+        "meaning": "Bewertung mit Note anzeigen, Speichern freigeben"
+      },
+      {
+        "id": "c_e",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:71"
+        },
+        "meaning": "Ende Berechnung"
+      },
+      {
+        "id": "sp_s",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:74"
+        },
+        "meaning": "Bewertung speichern"
+      },
+      {
+        "id": "sp_c",
+        "type": "call",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:80"
+        },
+        "meaning": "Bewertung sichern"
+      },
+      {
+        "id": "sp_o1",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:82"
+        },
+        "meaning": "Speicherfehler anzeigen"
+      },
+      {
+        "id": "sp_x",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:83"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "sp_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:86"
+        },
+        "meaning": "Note C?"
+      },
+      {
+        "id": "sp_esk",
+        "type": "call",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:87"
+        },
+        "meaning": "Eskalation auslösen"
+      },
+      {
+        "id": "sp_o2",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:88"
+        },
+        "meaning": "Warnung ZMM_LB 011: eskaliert"
+      },
+      {
+        "id": "sp_o3",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:92"
+        },
+        "meaning": "Erfolgsmeldung ZMM_LB 010"
+      },
+      {
+        "id": "sp_e",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_lb_compctrl.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_lb_compctrl.abap:95"
+        },
+        "meaning": "Ende Speichern"
+      },
+      {
+        "id": "lk_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:54"
+        },
+        "meaning": "Lieferkennzahlen"
+      },
+      {
+        "id": "lk_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:56"
+        },
+        "meaning": "Einteilungen endgelieferter, nicht gelöschter Bestellpositionen des Lieferanten im Zeitraum lesen"
+      },
+      {
+        "id": "lk_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:67"
+        },
+        "meaning": "Jede Einteilung zählen"
+      },
+      {
+        "id": "lk_q",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:71"
+        },
+        "meaning": "Letztes WE-Datum und WE-Menge der Position lesen"
+      },
+      {
+        "id": "lk_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:78"
+        },
+        "meaning": "Letzter WE höchstens 2 Tage nach Liefertermin? (dann pünktlich)"
+      },
+      {
+        "id": "lk_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:83"
+        },
+        "meaning": "WE-Menge mindestens 95 %? (dann mengentreu)"
+      },
+      {
+        "id": "lk_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:87"
+        },
+        "meaning": "Zähler zurückgeben"
+      },
+      {
+        "id": "q_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:90"
+        },
+        "meaning": "Qualitätsquote"
+      },
+      {
+        "id": "q_r1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:95"
+        },
+        "meaning": "Prüflose zum Wareneingang im Zeitraum zählen"
+      },
+      {
+        "id": "q_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:101"
+        },
+        "meaning": "Keine Prüflose?"
+      },
+      {
+        "id": "q_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:103"
+        },
+        "meaning": "Quote 100"
+      },
+      {
+        "id": "q_r2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:106"
+        },
+        "meaning": "Abgelehnte Prüflose (Bewertung R) zählen"
+      },
+      {
+        "id": "q_a",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:114"
+        },
+        "meaning": "Anteil nicht abgelehnter Lose in Prozent"
+      },
+      {
+        "id": "q_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:115"
+        },
+        "meaning": "Quote zurückgeben"
+      },
+      {
+        "id": "sa_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:118"
+        },
+        "meaning": "Bewertung sichern"
+      },
+      {
+        "id": "sa_i",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:123"
+        },
+        "meaning": "Bewertung mit Erfasser und Datum einfügen"
+      },
+      {
+        "id": "sa_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:124"
+        },
+        "meaning": "Schon vorhanden?"
+      },
+      {
+        "id": "sa_u",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:126"
+        },
+        "meaning": "Vorhandene Bewertung überschreiben"
+      },
+      {
+        "id": "sa_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:127"
+        },
+        "meaning": "Überschreiben fehlgeschlagen?"
+      },
+      {
+        "id": "sa_rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:128"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "sa_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:129"
+        },
+        "meaning": "Ausnahme „Speichern fehlgeschlagen“"
+      },
+      {
+        "id": "sa_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:136"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "sa_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:137"
+        },
+        "meaning": "Gesichert"
+      },
+      {
+        "id": "es_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:140"
+        },
+        "meaning": "Eskalation"
+      },
+      {
+        "id": "es_c",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:144"
+        },
+        "meaning": "Workflow-Ereignis ZBEWERTUNG_C am Lieferanten (LFA1) auslösen und festschreiben"
+      },
+      {
+        "id": "es_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_lb_assist.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_lb_assist.abap:150"
+        },
+        "meaning": "Rückkehr"
+      }
+    ],
+    "edges": [
+      {
+        "from": "mv_s",
+        "to": "mv_g",
+        "condition": "always"
+      },
+      {
+        "from": "mv_g",
+        "to": "mv_a",
+        "condition": "lo_button IS BOUND"
+      },
+      {
+        "from": "mv_g",
+        "to": "mv_e",
+        "condition": "else"
+      },
+      {
+        "from": "mv_a",
+        "to": "mv_e",
+        "condition": "always"
+      },
+      {
+        "from": "i_s",
+        "to": "i_r",
+        "condition": "always"
+      },
+      {
+        "from": "i_r",
+        "to": "i_o",
+        "condition": "always"
+      },
+      {
+        "from": "i_o",
+        "to": "i_b",
+        "condition": "always"
+      },
+      {
+        "from": "i_b",
+        "to": "i_e",
+        "condition": "always"
+      },
+      {
+        "from": "b_s",
+        "to": "b_g1",
+        "condition": "always"
+      },
+      {
+        "from": "b_g1",
+        "to": "b_o1",
+        "condition": "ls_sel-lifnr IS INITIAL"
+      },
+      {
+        "from": "b_o1",
+        "to": "b_x",
+        "condition": "always"
+      },
+      {
+        "from": "b_g1",
+        "to": "b_g2",
+        "condition": "else"
+      },
+      {
+        "from": "b_g2",
+        "to": "b_a",
+        "condition": "ls_sel-bis < ls_sel-von OR ls_sel-von IS INITIAL"
+      },
+      {
+        "from": "b_g2",
+        "to": "b_c",
+        "condition": "else"
+      },
+      {
+        "from": "b_a",
+        "to": "b_c",
+        "condition": "always"
+      },
+      {
+        "from": "b_c",
+        "to": "c_s",
+        "condition": "always"
+      },
+      {
+        "from": "c_s",
+        "to": "c_k",
+        "condition": "always"
+      },
+      {
+        "from": "c_k",
+        "to": "lk_s",
+        "condition": "always"
+      },
+      {
+        "from": "lk_s",
+        "to": "lk_r",
+        "condition": "always"
+      },
+      {
+        "from": "lk_r",
+        "to": "lk_l",
+        "condition": "always"
+      },
+      {
+        "from": "lk_l",
+        "to": "lk_q",
+        "condition": "next row"
+      },
+      {
+        "from": "lk_q",
+        "to": "lk_g1",
+        "condition": "always"
+      },
+      {
+        "from": "lk_g1",
+        "to": "lk_g2",
+        "condition": "ls_we-letzter_we IS NOT INITIAL AND ls_we-letzter_we <= ls_eint-eindt + gc_toleranz_tage"
+      },
+      {
+        "from": "lk_g1",
+        "to": "lk_g2",
+        "condition": "else"
+      },
+      {
+        "from": "lk_g2",
+        "to": "lk_l",
+        "condition": "ls_we-we_menge >= ls_eint-menge * gc_toleranz_menge"
+      },
+      {
+        "from": "lk_l",
+        "to": "lk_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "lk_e",
+        "to": "c_g",
+        "condition": "always"
+      },
+      {
+        "from": "c_g",
+        "to": "c_o",
+        "condition": "ls_kennz-anzahl = 0"
+      },
+      {
+        "from": "c_o",
+        "to": "c_x",
+        "condition": "always"
+      },
+      {
+        "from": "c_g",
+        "to": "c_q",
+        "condition": "else"
+      },
+      {
+        "from": "c_q",
+        "to": "q_s",
+        "condition": "always"
+      },
+      {
+        "from": "q_s",
+        "to": "q_r1",
+        "condition": "always"
+      },
+      {
+        "from": "q_r1",
+        "to": "q_g",
+        "condition": "always"
+      },
+      {
+        "from": "q_g",
+        "to": "q_x",
+        "condition": "lv_lose = 0"
+      },
+      {
+        "from": "q_g",
+        "to": "q_r2",
+        "condition": "else"
+      },
+      {
+        "from": "q_r2",
+        "to": "q_a",
+        "condition": "always"
+      },
+      {
+        "from": "q_a",
+        "to": "q_e",
+        "condition": "always"
+      },
+      {
+        "from": "q_x",
+        "to": "c_a",
+        "condition": "always"
+      },
+      {
+        "from": "q_e",
+        "to": "c_a",
+        "condition": "always"
+      },
+      {
+        "from": "c_a",
+        "to": "c_a2",
+        "condition": "always"
+      },
+      {
+        "from": "c_a2",
+        "to": "c_g2",
+        "condition": "always"
+      },
+      {
+        "from": "c_g2",
+        "to": "c_b",
+        "condition": "wd_this->ms_bewertung-gesamt >= 85"
+      },
+      {
+        "from": "c_g2",
+        "to": "c_b",
+        "condition": "wd_this->ms_bewertung-gesamt >= 60"
+      },
+      {
+        "from": "c_g2",
+        "to": "c_b",
+        "condition": "else"
+      },
+      {
+        "from": "c_b",
+        "to": "c_e",
+        "condition": "always"
+      },
+      {
+        "from": "c_x",
+        "to": "b_e",
+        "condition": "always"
+      },
+      {
+        "from": "c_e",
+        "to": "b_e",
+        "condition": "always"
+      },
+      {
+        "from": "s_s",
+        "to": "s_g1",
+        "condition": "always"
+      },
+      {
+        "from": "s_g1",
+        "to": "s_o1",
+        "condition": "wd_comp_controller->mv_berechnet = abap_false"
+      },
+      {
+        "from": "s_o1",
+        "to": "s_x1",
+        "condition": "always"
+      },
+      {
+        "from": "s_g1",
+        "to": "s_g2",
+        "condition": "else"
+      },
+      {
+        "from": "s_g2",
+        "to": "s_p",
+        "condition": "lv_gesamt < 60"
+      },
+      {
+        "from": "s_p",
+        "to": "s_sub",
+        "condition": "always"
+      },
+      {
+        "from": "s_sub",
+        "to": "s_op",
+        "condition": "always"
+      },
+      {
+        "from": "s_op",
+        "to": "s_x2",
+        "condition": "always"
+      },
+      {
+        "from": "s_g2",
+        "to": "s_c",
+        "condition": "else"
+      },
+      {
+        "from": "s_c",
+        "to": "sp_s",
+        "condition": "always"
+      },
+      {
+        "from": "sb_s",
+        "to": "sb_c",
+        "condition": "always"
+      },
+      {
+        "from": "sb_c",
+        "to": "sp_s",
+        "condition": "always"
+      },
+      {
+        "from": "sp_s",
+        "to": "sp_c",
+        "condition": "always"
+      },
+      {
+        "from": "sp_c",
+        "to": "sa_s",
+        "condition": "always"
+      },
+      {
+        "from": "sa_s",
+        "to": "sa_i",
+        "condition": "always"
+      },
+      {
+        "from": "sa_i",
+        "to": "sa_g1",
+        "condition": "always"
+      },
+      {
+        "from": "sa_g1",
+        "to": "sa_u",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sa_g1",
+        "to": "sa_cm",
+        "condition": "else"
+      },
+      {
+        "from": "sa_u",
+        "to": "sa_g2",
+        "condition": "always"
+      },
+      {
+        "from": "sa_g2",
+        "to": "sa_rb",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sa_g2",
+        "to": "sa_cm",
+        "condition": "else"
+      },
+      {
+        "from": "sa_rb",
+        "to": "sa_x",
+        "condition": "always"
+      },
+      {
+        "from": "sa_x",
+        "to": "sp_o1",
+        "condition": "zcx_mm_lb"
+      },
+      {
+        "from": "sp_o1",
+        "to": "sp_x",
+        "condition": "always"
+      },
+      {
+        "from": "sa_cm",
+        "to": "sa_e",
+        "condition": "always"
+      },
+      {
+        "from": "sa_e",
+        "to": "sp_g",
+        "condition": "always"
+      },
+      {
+        "from": "sp_g",
+        "to": "sp_esk",
+        "condition": "wd_this->ms_bewertung-note = 'C'"
+      },
+      {
+        "from": "sp_g",
+        "to": "sp_o3",
+        "condition": "else"
+      },
+      {
+        "from": "sp_esk",
+        "to": "es_s",
+        "condition": "always"
+      },
+      {
+        "from": "es_s",
+        "to": "es_c",
+        "condition": "always"
+      },
+      {
+        "from": "es_c",
+        "to": "es_e",
+        "condition": "always"
+      },
+      {
+        "from": "es_e",
+        "to": "sp_o2",
+        "condition": "always"
+      },
+      {
+        "from": "sp_o2",
+        "to": "sp_o3",
+        "condition": "always"
+      },
+      {
+        "from": "sp_o3",
+        "to": "sp_e",
+        "condition": "always"
+      },
+      {
+        "from": "sp_x",
+        "to": "s_e",
+        "condition": "always"
+      },
+      {
+        "from": "sp_e",
+        "to": "s_e",
+        "condition": "always"
+      },
+      {
+        "from": "sp_x",
+        "to": "sb_e",
+        "condition": "always"
+      },
+      {
+        "from": "sp_e",
+        "to": "sb_e",
+        "condition": "always"
+      },
+      {
+        "from": "h_s",
+        "to": "h_r",
+        "condition": "always"
+      },
+      {
+        "from": "h_r",
+        "to": "h_g",
+        "condition": "always"
+      },
+      {
+        "from": "h_g",
+        "to": "h_o",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "h_o",
+        "to": "h_x",
+        "condition": "always"
+      },
+      {
+        "from": "h_g",
+        "to": "h_b",
+        "condition": "else"
+      },
+      {
+        "from": "h_b",
+        "to": "h_e",
+        "condition": "always"
+      },
+      {
+        "from": "lk_g2",
+        "to": "lk_l",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_mm_lb_assist.abap:71 — kein Fachsatz „Stornos und Rücklieferungen werden abgezogen“ (summiert wird MENGE aller Sätze der Vorgangsart 1 ohne Soll/Haben-Unterscheidung)",
+    "zcl_mm_lb_assist.abap:101 — kein Fachsatz „Lieferanten ohne Prüflose werden nicht bewertet“ (sie erhalten 100 % Qualität)",
+    "zwd_mm_lb_view.abap:72 — kein Fachsatz „die Bewertung wird nach dem Dialog gespeichert“ (gespeichert wird nur, wenn der Einkäufer später „Ja“ wählt; die Methode endet mit RETURN)",
+    "zcl_mm_lb_assist.abap:144 — kein Fachsatz „der Lieferant wird gesperrt“ (nur ein Workflow-Ereignis; die Reaktion darauf liegt nicht im Fall)"
+  ],
+  "processDescription": "In einer Web-Dynpro-Anwendung bewertet der Einkauf Lieferanten. Beim Start erscheinen die 20 jüngsten Bewertungen und ein Zwölfmonatszeitraum. Ohne Lieferant wird nicht berechnet; ein leerer oder verkehrter Zeitraum wird auf die letzten zwölf Monate gesetzt. Grundlage sind die Einteilungen endgelieferter Bestellpositionen des Lieferanten im Zeitraum; gibt es keine, wird nur informiert. Je Einteilung wird gezählt, ob der letzte Wareneingang höchstens zwei Tage nach Termin lag und ob mindestens 95 % der Menge geliefert wurden; die Qualitätsquote ist der Anteil nicht abgelehnter Prüflose (ohne Lose 100). Daraus ergeben sich gewichtete Gesamtpunkte und die Note A, B oder C. Gespeichert werden kann nur nach frischer Berechnung; unter 60 Punkten muss der Einkäufer in einem Dialog bestätigen. Die Bewertung wird eingefügt oder überschrieben und festgeschrieben, bei Fehler zurückgerollt und gemeldet. Bei Note C wird am Lieferanten ein Workflow-Ereignis zur Eskalation ausgelöst. Frühere Bewertungen lassen sich aus der Historie anzeigen, aber nicht erneut speichern."
+}

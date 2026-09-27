@@ -1,0 +1,23 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "lzsd_rmau01.abap:6 (Schnittstellenkommentar)",
+      "before": "VALUE(IT_ITEMS) TYPE  TT_RMA_ITEM",
+      "after": "VALUE(IT_ITEMS) TYPE  ZSD_RMA_ITEM_T",
+      "why": "Parameter eines (RFC-)Funktionsbausteins können nicht mit einem Typ aus dem TOP-Include typisiert werden; nötig ist ein globaler DDIC-Tabellentyp. Keine Zeilenverschiebung.",
+      "category": "Quelltext"
+    },
+    {
+      "where": "lzsd_rmatop.abap:10",
+      "before": "tt_rma_item TYPE STANDARD TABLE OF ty_rma_item WITH DEFAULT KEY.",
+      "after": "tt_rma_item TYPE zsd_rma_item_t.  \" DDIC-Tabellentyp (Zeile wie TY_RMA_ITEM)",
+      "why": "Lokaler Alias auf den DDIC-Typ, damit FORM build_bapi_items (USING … TYPE tt_rma_item) mit dem Schnittstellenparameter kompatibel bleibt. Keine Zeilenverschiebung, kein Anker betroffen.",
+      "category": "Quelltext"
+    }
+  ],
+  "doubts": [
+    "Knoten pd (lv_max = Default 30) und dr (ls_bapi-ref_doc = Rechnung) sind reine Zuweisungen; belassen, weil sie eine fachliche Regel festlegen (Standardfrist, Rechnungsbezug) — Grenzfall."
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "id": "BM-245",
+  "title": "Altersstruktur offener Debitorenposten per AMDP mit ALV-Ausgabe",
+  "domain": "FI-AR Forderungsanalyse",
+  "band": "mittel",
+  "loc": 129,
+  "constructs": [
+    "AMDP BY DATABASE PROCEDURE FOR HDB",
+    "APPLY_FILTER",
+    "cl_shdb_seltab=>combine_seltabs",
+    "AUTHORITY-CHECK in AT SELECTION-SCREEN",
+    "TRY/CATCH cx_amdp_error",
+    "CL_SALV_TABLE",
+    "DELETE itab WHERE"
+  ],
+  "scenario": "Forderungsmanagement-Report aus einem ECC-auf-HANA-System, dessen Rechenteil vor der Konvertierung in eine AMDP-Prozedur verlagert wurde.",
+  "s4_issues": [
+    "BSID ist in S/4 nur Kompatibilitätsview auf ACDOCA; AMDP mit USING bsid muss geprüft werden",
+    "Hauswährung fest als EUR ausgegeben",
+    "KNA1-Name statt Business Partner"
+  ],
+  "wave": 3,
+  "module": "FI",
+  "edge_constructs": [
+    "Ausnahme aus AMDP ohne explizites RAISE",
+    "MESSAGE TYPE 'I' DISPLAY LIKE 'E' mit RETURN",
+    "MESSAGE e in AT SELECTION-SCREEN",
+    "fest codierte Währung"
+  ],
+  "oo": true
+}

@@ -1,0 +1,2457 @@
+{
+  "id": "BM-280",
+  "title": "Zentraler Schnittstellenmonitor mit Nachverarbeitungsklassen",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZCA_IF_LOG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zca_if_monitor_cls.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zca_if_monitor_cls.abap:42"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCA_IF_CUST",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ca_reproc_factory.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ca_reproc_factory.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EDIDC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ca_reproc_sd_idoc.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ca_reproc_sd_idoc.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RBDMANI2",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ca_reproc_sd_idoc.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ca_reproc_sd_idoc.abap:47"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_DOCUMENT_CHECK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ca_reproc_fi_post.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ca_reproc_fi_post.abap:36"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_DOCUMENT_POST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ca_reproc_fi_post.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ca_reproc_fi_post.abap:49"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCA_IF_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zca_if_monitor_cls.abap",
+        "line": 122,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zca_if_monitor_cls.abap:122"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DSP_LOG_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zca_if_monitor_cls.abap",
+        "line": 166,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zca_if_monitor_cls.abap:166"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-280-B01",
+      "text": "Das Selektionsbild schlägt als Zeitraum die letzten sieben Tage vor.",
+      "anchors": [
+        {
+          "file": "zca_if_monitor.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor.abap:20"
+        },
+        {
+          "file": "zca_if_monitor.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-280-B02",
+      "text": "Es werden die Einträge des zentralen Schnittstellenprotokolls zu Schnittstelle, Modul und Zeitraum gelesen, standardmäßig nur fehlerhafte.",
+      "anchors": [
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:42"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:46"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-280-B03",
+      "text": "Einträge aus Modulen, für die der Benutzer keine Anzeigeberechtigung hat, werden ausgeblendet.",
+      "anchors": [
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:52"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:55"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-280-B04",
+      "text": "Gibt es keine Einträge, endet der Monitor mit Hinweis; sonst werden sie als ALV-Liste mit den Funktionen Nachverarbeiten und Protokoll angezeigt.",
+      "anchors": [
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:21"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:22"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:27"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:36"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-280-B05",
+      "text": "Nachverarbeiten verlangt markierte Zeilen; nur fehlerhafte Einträge werden nachverarbeitet, und nur mit Nachverarbeitungsberechtigung für ihr Modul, sonst werden sie übersprungen.",
+      "anchors": [
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:82"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:83"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:89"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:94"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-280-B06",
+      "text": "Jeder Eintrag wird gesperrt; ist er gesperrt, wird er übersprungen.",
+      "anchors": [
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:102"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:108"
+        }
+      ]
+    },
+    {
+      "id": "BM-280-B07",
+      "text": "Die Nachverarbeitungsklasse der Schnittstelle kommt aus dem Customizing und muss die Nachverarbeitungsschnittstelle erfüllen; fehlt sie oder passt sie nicht, gilt der Eintrag als nicht erledigt.",
+      "anchors": [
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:114"
+        },
+        {
+          "file": "zcl_ca_reproc_factory.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_factory.abap:23"
+        },
+        {
+          "file": "zcl_ca_reproc_factory.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_factory.abap:25"
+        },
+        {
+          "file": "zcl_ca_reproc_factory.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_factory.abap:33"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:117"
+        }
+      ]
+    },
+    {
+      "id": "BM-280-B08",
+      "text": "Bei IDoc-Schnittstellen gilt ein inzwischen verbuchtes IDoc als erledigt; ein fehlendes IDoc oder ein Status außer 51/64 verhindert die Nachverarbeitung.",
+      "anchors": [
+        {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:18"
+        },
+        {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:21"
+        },
+        {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:26"
+        },
+        {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-280-B09",
+      "text": "Solange ältere fehlerhafte IDocs desselben Partners und Nachrichtentyps existieren, wird ein IDoc nicht nachverarbeitet, damit die Reihenfolge erhalten bleibt.",
+      "anchors": [
+        {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:37"
+        },
+        {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-280-B10",
+      "text": "Sonst wird die IDoc-Nachverarbeitung für dieses IDoc ausgeführt; erledigt ist es nur, wenn es danach den Status 53 hat.",
+      "anchors": [
+        {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:47"
+        },
+        {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:51"
+        },
+        {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-280-B11",
+      "text": "Bei FI-Buchungen werden die gesicherten Buchungsdaten gelesen, erst geprüft und dann gebucht; jede Fehler- oder Abbruchmeldung macht den Eintrag „nicht erledigt“ mit ihrem Text, nach Buchungsfehler wird zurückgerollt.",
+      "anchors": [
+        {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:26"
+        },
+        {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:36"
+        },
+        {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:44"
+        },
+        {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:49"
+        },
+        {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:59"
+        },
+        {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-280-B12",
+      "text": "Ohne Fehler wird der Beleg festgeschrieben und der Eintrag mit der Belegnummer als erledigt gemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:64"
+        },
+        {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-280-B13",
+      "text": "Erledigte Einträge erhalten Status P, nicht erledigte einen um eins erhöhten Versuchszähler, jeweils mit Text und Bearbeiter; jede Änderung wird sofort festgeschrieben und die Sperre gelöst.",
+      "anchors": [
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:121"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:122"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:128"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:134"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:136"
+        }
+      ]
+    },
+    {
+      "id": "BM-280-B14",
+      "text": "Am Ende wird gemeldet, wie viele Einträge erledigt, fehlerhaft oder übersprungen sind, und die Liste neu gelesen.",
+      "anchors": [
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:141"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:66"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-280-B15",
+      "text": "Für genau eine markierte Zeile wird das Anwendungsprotokoll des Eintrags geladen und angezeigt; hat der Eintrag keines, erscheint ein Hinweis.",
+      "anchors": [
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:150"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:152"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:153"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:158"
+        },
+        {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:166"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "init",
+        "type": "start",
+        "anchor": {
+          "file": "zca_if_monitor.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor.abap:20"
+        },
+        "meaning": "Selektionsbild vorbelegen"
+      },
+      {
+        "id": "ie",
+        "type": "end",
+        "anchor": {
+          "file": "zca_if_monitor.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor.abap:25"
+        },
+        "meaning": "Ende Vorbelegung"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zca_if_monitor.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor.abap:27"
+        },
+        "meaning": "Monitorstart"
+      },
+      {
+        "id": "crun",
+        "type": "call",
+        "anchor": {
+          "file": "zca_if_monitor.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor.abap:29"
+        },
+        "meaning": "Monitor ausführen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zca_if_monitor.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor.abap:29"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:19"
+        },
+        "meaning": "Monitor aufbauen"
+      },
+      {
+        "id": "rsel",
+        "type": "call",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:20"
+        },
+        "meaning": "Einträge selektieren"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:21"
+        },
+        "meaning": "Keine Einträge?"
+      },
+      {
+        "id": "rm",
+        "type": "output",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:22"
+        },
+        "meaning": "Hinweis: keine Einträge"
+      },
+      {
+        "id": "rr1",
+        "type": "end",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:23"
+        },
+        "meaning": "Methode verlassen"
+      },
+      {
+        "id": "rf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:27"
+        },
+        "meaning": "ALV-Liste erzeugen"
+      },
+      {
+        "id": "rme",
+        "type": "output",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:30"
+        },
+        "meaning": "Fehler: Liste nicht erzeugbar"
+      },
+      {
+        "id": "rmx",
+        "type": "end",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:30"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "rh",
+        "type": "action",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:36"
+        },
+        "meaning": "Zusatzfunktionen Nachverarbeiten/Protokoll anmelden"
+      },
+      {
+        "id": "rd",
+        "type": "output",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:37"
+        },
+        "meaning": "Schnittstelleneinträge anzeigen"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:38"
+        },
+        "meaning": "Ende Aufbau"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:41"
+        },
+        "meaning": "Selektion"
+      },
+      {
+        "id": "sq",
+        "type": "read",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:42"
+        },
+        "meaning": "Einträge des zentralen Schnittstellenprotokolls lesen"
+      },
+      {
+        "id": "sg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:46"
+        },
+        "meaning": "Nur Fehler?"
+      },
+      {
+        "id": "sl",
+        "type": "loop",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:51"
+        },
+        "meaning": "Einträge durchlaufen"
+      },
+      {
+        "id": "sa",
+        "type": "action",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:52"
+        },
+        "meaning": "Anzeigeberechtigung für das Modul prüfen"
+      },
+      {
+        "id": "sg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:55"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:59"
+        },
+        "meaning": "Ende Selektion"
+      },
+      {
+        "id": "os",
+        "type": "start",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:62"
+        },
+        "meaning": "Zusatzfunktion gewählt"
+      },
+      {
+        "id": "oc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:63"
+        },
+        "meaning": "Funktion"
+      },
+      {
+        "id": "orp",
+        "type": "call",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:65"
+        },
+        "meaning": "Markierte nachverarbeiten"
+      },
+      {
+        "id": "osel",
+        "type": "call",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:66"
+        },
+        "meaning": "Einträge neu lesen"
+      },
+      {
+        "id": "orf",
+        "type": "output",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:67"
+        },
+        "meaning": "Liste aktualisieren"
+      },
+      {
+        "id": "osl",
+        "type": "call",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:69"
+        },
+        "meaning": "Anwendungsprotokoll zeigen"
+      },
+      {
+        "id": "oe",
+        "type": "end",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:71"
+        },
+        "meaning": "Ende Funktion"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:74"
+        },
+        "meaning": "Nachverarbeitung"
+      },
+      {
+        "id": "pg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:82"
+        },
+        "meaning": "Nichts markiert?"
+      },
+      {
+        "id": "pm1",
+        "type": "output",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:83"
+        },
+        "meaning": "Hinweis: Zeilen markieren"
+      },
+      {
+        "id": "pr1",
+        "type": "end",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:84"
+        },
+        "meaning": "Methode verlassen"
+      },
+      {
+        "id": "pl",
+        "type": "loop",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:87"
+        },
+        "meaning": "Markierte Zeilen durchlaufen"
+      },
+      {
+        "id": "pg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:89"
+        },
+        "meaning": "Eintrag nicht fehlerhaft?"
+      },
+      {
+        "id": "pa",
+        "type": "action",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:94"
+        },
+        "meaning": "Nachverarbeitungsberechtigung für das Modul prüfen"
+      },
+      {
+        "id": "pg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:97"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "penq",
+        "type": "lock",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:102"
+        },
+        "meaning": "Eintrag sperren"
+      },
+      {
+        "id": "pg4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:108"
+        },
+        "meaning": "Gesperrt?"
+      },
+      {
+        "id": "pfac",
+        "type": "call",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:114"
+        },
+        "meaning": "Nachverarbeitungsklasse der Schnittstelle beschaffen"
+      },
+      {
+        "id": "prp",
+        "type": "call",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:115"
+        },
+        "meaning": "Eintrag nachverarbeiten"
+      },
+      {
+        "id": "pg5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:121"
+        },
+        "meaning": "Erledigt?"
+      },
+      {
+        "id": "pu1",
+        "type": "write",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:122"
+        },
+        "meaning": "Eintrag als erledigt (P) mit Text und Bearbeiter"
+      },
+      {
+        "id": "pu2",
+        "type": "write",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:128"
+        },
+        "meaning": "Versuchszähler erhöhen, Text und Bearbeiter"
+      },
+      {
+        "id": "pcw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:134"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "pdeq",
+        "type": "lock",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:136"
+        },
+        "meaning": "Sperre lösen"
+      },
+      {
+        "id": "pms",
+        "type": "output",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:141"
+        },
+        "meaning": "Erledigt/fehlerhaft/übersprungen melden"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:142"
+        },
+        "meaning": "Ende Nachverarbeitung"
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:145"
+        },
+        "meaning": "Protokoll anzeigen"
+      },
+      {
+        "id": "lck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:150"
+        },
+        "meaning": "Genau eine Zeile markiert?"
+      },
+      {
+        "id": "lg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:152"
+        },
+        "meaning": "Kein Protokoll zum Eintrag?"
+      },
+      {
+        "id": "lm",
+        "type": "output",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:153"
+        },
+        "meaning": "Hinweis: kein Protokoll"
+      },
+      {
+        "id": "lr",
+        "type": "end",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:154"
+        },
+        "meaning": "Methode verlassen"
+      },
+      {
+        "id": "lld",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:158"
+        },
+        "meaning": "Protokoll laden"
+      },
+      {
+        "id": "lg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:165"
+        },
+        "meaning": "Geladen?"
+      },
+      {
+        "id": "ldsp",
+        "type": "output",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:166"
+        },
+        "meaning": "Protokoll anzeigen"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "anchor": {
+          "file": "zca_if_monitor_cls.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zca_if_monitor_cls.abap:172"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ca_reproc_factory.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_factory.abap:20"
+        },
+        "meaning": "Nachverarbeitungsklasse bestimmen"
+      },
+      {
+        "id": "fq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ca_reproc_factory.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_factory.abap:23"
+        },
+        "meaning": "Klasse zur Schnittstelle aus Customizing lesen"
+      },
+      {
+        "id": "fg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ca_reproc_factory.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_factory.abap:25"
+        },
+        "meaning": "Keine Klasse gepflegt?"
+      },
+      {
+        "id": "fx1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ca_reproc_factory.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_factory.abap:26"
+        },
+        "meaning": "Ausnahme: kein Handler"
+      },
+      {
+        "id": "fco",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ca_reproc_factory.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_factory.abap:32"
+        },
+        "meaning": "Objekt der Klasse erzeugen"
+      },
+      {
+        "id": "fcast",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ca_reproc_factory.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_factory.abap:33"
+        },
+        "meaning": "Als Nachverarbeiter verwenden (CAST)"
+      },
+      {
+        "id": "fx2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ca_reproc_factory.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_factory.abap:35"
+        },
+        "meaning": "Ausnahme: ungültiger Handler"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ca_reproc_factory.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_factory.abap:39"
+        },
+        "meaning": "Nachverarbeiter zurückgeben"
+      },
+      {
+        "id": "dis",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:14"
+        },
+        "meaning": "IDoc nachverarbeiten"
+      },
+      {
+        "id": "dq1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:18"
+        },
+        "meaning": "IDoc-Kopf lesen"
+      },
+      {
+        "id": "dg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:21"
+        },
+        "meaning": "IDoc existiert nicht?"
+      },
+      {
+        "id": "dr1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:23"
+        },
+        "meaning": "Nicht erledigt: IDoc fehlt"
+      },
+      {
+        "id": "dg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:26"
+        },
+        "meaning": "Bereits verarbeitet / Status unzulässig?"
+      },
+      {
+        "id": "dr2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:30"
+        },
+        "meaning": "Erledigt: war bereits verarbeitet"
+      },
+      {
+        "id": "dr3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:33"
+        },
+        "meaning": "Nicht erledigt: Status erlaubt keine Nachverarbeitung"
+      },
+      {
+        "id": "dq2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:37"
+        },
+        "meaning": "Ältere fehlerhafte IDocs desselben Partners und Nachrichtentyps zählen"
+      },
+      {
+        "id": "dg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:42"
+        },
+        "meaning": "Ältere Fehler vorhanden?"
+      },
+      {
+        "id": "dr4",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:44"
+        },
+        "meaning": "Nicht erledigt: ältere zuerst"
+      },
+      {
+        "id": "dsub",
+        "type": "external_program",
+        "anchor": {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:47"
+        },
+        "meaning": "IDoc-Nachverarbeitung für dieses IDoc ausführen"
+      },
+      {
+        "id": "dq3",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:51"
+        },
+        "meaning": "Neuen IDoc-Status lesen"
+      },
+      {
+        "id": "dg4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:53"
+        },
+        "meaning": "Jetzt verbucht?"
+      },
+      {
+        "id": "die",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ca_reproc_sd_idoc.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_sd_idoc.abap:59"
+        },
+        "meaning": "Ergebnis zurückgeben"
+      },
+      {
+        "id": "fis",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:18"
+        },
+        "meaning": "FI-Buchung nachverarbeiten"
+      },
+      {
+        "id": "fit",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:26"
+        },
+        "meaning": "Gesicherte Buchungsdaten lesen"
+      },
+      {
+        "id": "fir1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:32"
+        },
+        "meaning": "Nicht erledigt: Daten nicht lesbar"
+      },
+      {
+        "id": "fchk",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:36"
+        },
+        "meaning": "Buchung prüfen"
+      },
+      {
+        "id": "ffe1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:43"
+        },
+        "meaning": "Erste Fehlermeldung ermitteln"
+      },
+      {
+        "id": "fig1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:44"
+        },
+        "meaning": "Prüfung fehlerhaft?"
+      },
+      {
+        "id": "fir2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:45"
+        },
+        "meaning": "Nicht erledigt mit Prüffehler"
+      },
+      {
+        "id": "fpost",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:49"
+        },
+        "meaning": "Beleg buchen"
+      },
+      {
+        "id": "ffe2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:58"
+        },
+        "meaning": "Erste Fehlermeldung ermitteln"
+      },
+      {
+        "id": "fig2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:59"
+        },
+        "meaning": "Buchung fehlerhaft?"
+      },
+      {
+        "id": "frb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:60"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "fir3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:61"
+        },
+        "meaning": "Nicht erledigt mit Buchungsfehler"
+      },
+      {
+        "id": "fcm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:64"
+        },
+        "meaning": "Beleg festschreiben"
+      },
+      {
+        "id": "fie",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:69"
+        },
+        "meaning": "Ergebnis zurückgeben"
+      },
+      {
+        "id": "fes",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:72"
+        },
+        "meaning": "Erste Fehlermeldung"
+      },
+      {
+        "id": "fel",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:73"
+        },
+        "meaning": "Fehler- und Abbruchmeldungen durchlaufen"
+      },
+      {
+        "id": "fer",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:75"
+        },
+        "meaning": "Text der ersten Fehlermeldung zurückgeben"
+      },
+      {
+        "id": "fee",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ca_reproc_fi_post.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ca_reproc_fi_post.abap:77"
+        },
+        "meaning": "Kein Fehler (leer)"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "crun",
+        "condition": "always"
+      },
+      {
+        "from": "crun",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "rr1",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "rsel",
+        "condition": "always"
+      },
+      {
+        "from": "rsel",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "sq",
+        "condition": "always"
+      },
+      {
+        "from": "sq",
+        "to": "sg",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "sl",
+        "condition": "else"
+      },
+      {
+        "from": "sl",
+        "to": "sa",
+        "condition": "next row"
+      },
+      {
+        "from": "sa",
+        "to": "sg2",
+        "condition": "always"
+      },
+      {
+        "from": "sg2",
+        "to": "sl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "sl",
+        "to": "se",
+        "condition": "no more rows"
+      },
+      {
+        "from": "se",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rm",
+        "condition": "mt_log IS INITIAL"
+      },
+      {
+        "from": "rm",
+        "to": "rr1",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rf",
+        "condition": "else"
+      },
+      {
+        "from": "rf",
+        "to": "rme",
+        "condition": "cx_salv_msg"
+      },
+      {
+        "from": "rme",
+        "to": "rmx",
+        "condition": "always"
+      },
+      {
+        "from": "rf",
+        "to": "rh",
+        "condition": "always"
+      },
+      {
+        "from": "rh",
+        "to": "rd",
+        "condition": "always"
+      },
+      {
+        "from": "rd",
+        "to": "re",
+        "condition": "always"
+      },
+      {
+        "from": "os",
+        "to": "oc",
+        "condition": "always"
+      },
+      {
+        "from": "oc",
+        "to": "orp",
+        "condition": "WHEN 'REPROC'"
+      },
+      {
+        "from": "orp",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "osel",
+        "condition": "always"
+      },
+      {
+        "from": "pr1",
+        "to": "osel",
+        "condition": "always"
+      },
+      {
+        "from": "osel",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "orf",
+        "condition": "always"
+      },
+      {
+        "from": "orf",
+        "to": "oe",
+        "condition": "always"
+      },
+      {
+        "from": "oc",
+        "to": "osl",
+        "condition": "WHEN 'SHOWLOG'"
+      },
+      {
+        "from": "osl",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "oe",
+        "condition": "always"
+      },
+      {
+        "from": "lr",
+        "to": "oe",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "pg1",
+        "condition": "always"
+      },
+      {
+        "from": "pg1",
+        "to": "pm1",
+        "condition": "lt_rows IS INITIAL"
+      },
+      {
+        "from": "pm1",
+        "to": "pr1",
+        "condition": "always"
+      },
+      {
+        "from": "pg1",
+        "to": "pl",
+        "condition": "else"
+      },
+      {
+        "from": "pl",
+        "to": "pg2",
+        "condition": "next row"
+      },
+      {
+        "from": "pg2",
+        "to": "pl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pg2",
+        "to": "pa",
+        "condition": "else"
+      },
+      {
+        "from": "pa",
+        "to": "pg3",
+        "condition": "always"
+      },
+      {
+        "from": "pg3",
+        "to": "pl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pg3",
+        "to": "penq",
+        "condition": "else"
+      },
+      {
+        "from": "penq",
+        "to": "pg4",
+        "condition": "always"
+      },
+      {
+        "from": "pg4",
+        "to": "pl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pg4",
+        "to": "pfac",
+        "condition": "else"
+      },
+      {
+        "from": "pfac",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "fq",
+        "condition": "always"
+      },
+      {
+        "from": "fq",
+        "to": "fg",
+        "condition": "always"
+      },
+      {
+        "from": "fg",
+        "to": "fx1",
+        "condition": "sy-subrc <> 0 OR lv_class IS INITIAL"
+      },
+      {
+        "from": "fg",
+        "to": "fco",
+        "condition": "else"
+      },
+      {
+        "from": "fco",
+        "to": "fx2",
+        "condition": "cx_sy_create_object_error"
+      },
+      {
+        "from": "fco",
+        "to": "fcast",
+        "condition": "always"
+      },
+      {
+        "from": "fcast",
+        "to": "fx2",
+        "condition": "cx_sy_move_cast_error"
+      },
+      {
+        "from": "fcast",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "prp",
+        "condition": "always"
+      },
+      {
+        "from": "prp",
+        "to": "dis",
+        "condition": "always"
+      },
+      {
+        "from": "prp",
+        "to": "fis",
+        "condition": "always"
+      },
+      {
+        "from": "dis",
+        "to": "dq1",
+        "condition": "always"
+      },
+      {
+        "from": "dq1",
+        "to": "dg1",
+        "condition": "always"
+      },
+      {
+        "from": "dg1",
+        "to": "dr1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "dg1",
+        "to": "dg2",
+        "condition": "else"
+      },
+      {
+        "from": "dg2",
+        "to": "dr2",
+        "condition": "lv_status = '53'"
+      },
+      {
+        "from": "dg2",
+        "to": "dr3",
+        "condition": "lv_status <> '51' AND lv_status <> '64'"
+      },
+      {
+        "from": "dg2",
+        "to": "dq2",
+        "condition": "else"
+      },
+      {
+        "from": "dq2",
+        "to": "dg3",
+        "condition": "always"
+      },
+      {
+        "from": "dg3",
+        "to": "dr4",
+        "condition": "sy-dbcnt > 0"
+      },
+      {
+        "from": "dg3",
+        "to": "dsub",
+        "condition": "else"
+      },
+      {
+        "from": "dsub",
+        "to": "dq3",
+        "condition": "always"
+      },
+      {
+        "from": "dq3",
+        "to": "dg4",
+        "condition": "always"
+      },
+      {
+        "from": "dr1",
+        "to": "pg5",
+        "condition": "always"
+      },
+      {
+        "from": "dr2",
+        "to": "pg5",
+        "condition": "always"
+      },
+      {
+        "from": "dr3",
+        "to": "pg5",
+        "condition": "always"
+      },
+      {
+        "from": "dr4",
+        "to": "pg5",
+        "condition": "always"
+      },
+      {
+        "from": "die",
+        "to": "pg5",
+        "condition": "always"
+      },
+      {
+        "from": "fis",
+        "to": "fit",
+        "condition": "always"
+      },
+      {
+        "from": "fit",
+        "to": "fir1",
+        "condition": "cx_transformation_error"
+      },
+      {
+        "from": "fit",
+        "to": "fchk",
+        "condition": "always"
+      },
+      {
+        "from": "fchk",
+        "to": "ffe1",
+        "condition": "always"
+      },
+      {
+        "from": "ffe1",
+        "to": "fes",
+        "condition": "always"
+      },
+      {
+        "from": "fes",
+        "to": "fel",
+        "condition": "always"
+      },
+      {
+        "from": "fel",
+        "to": "fer",
+        "condition": "next row"
+      },
+      {
+        "from": "fel",
+        "to": "fee",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fer",
+        "to": "fig1",
+        "condition": "always"
+      },
+      {
+        "from": "fee",
+        "to": "fig1",
+        "condition": "always"
+      },
+      {
+        "from": "fig1",
+        "to": "fir2",
+        "condition": "rs_result-message IS NOT INITIAL"
+      },
+      {
+        "from": "fig1",
+        "to": "fpost",
+        "condition": "else"
+      },
+      {
+        "from": "fpost",
+        "to": "ffe2",
+        "condition": "always"
+      },
+      {
+        "from": "ffe2",
+        "to": "fes",
+        "condition": "always"
+      },
+      {
+        "from": "fer",
+        "to": "fig2",
+        "condition": "always"
+      },
+      {
+        "from": "fee",
+        "to": "fig2",
+        "condition": "always"
+      },
+      {
+        "from": "fig2",
+        "to": "frb",
+        "condition": "rs_result-message IS NOT INITIAL"
+      },
+      {
+        "from": "frb",
+        "to": "fir3",
+        "condition": "always"
+      },
+      {
+        "from": "fig2",
+        "to": "fcm",
+        "condition": "else"
+      },
+      {
+        "from": "fir1",
+        "to": "pg5",
+        "condition": "always"
+      },
+      {
+        "from": "fir2",
+        "to": "pg5",
+        "condition": "always"
+      },
+      {
+        "from": "fir3",
+        "to": "pg5",
+        "condition": "always"
+      },
+      {
+        "from": "fie",
+        "to": "pg5",
+        "condition": "always"
+      },
+      {
+        "from": "pg5",
+        "to": "pu1",
+        "condition": "ls_result-ok = abap_true"
+      },
+      {
+        "from": "pg5",
+        "to": "pu2",
+        "condition": "else"
+      },
+      {
+        "from": "pu1",
+        "to": "pcw",
+        "condition": "always"
+      },
+      {
+        "from": "pu2",
+        "to": "pcw",
+        "condition": "always"
+      },
+      {
+        "from": "pcw",
+        "to": "pdeq",
+        "condition": "always"
+      },
+      {
+        "from": "pdeq",
+        "to": "pl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pl",
+        "to": "pms",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pms",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "lck",
+        "condition": "always"
+      },
+      {
+        "from": "lck",
+        "to": "le",
+        "condition": "else"
+      },
+      {
+        "from": "lck",
+        "to": "lg",
+        "condition": "lines( lt_rows ) = 1"
+      },
+      {
+        "from": "lg",
+        "to": "lm",
+        "condition": "ls_log-lognumber IS INITIAL"
+      },
+      {
+        "from": "lm",
+        "to": "lr",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "lld",
+        "condition": "else"
+      },
+      {
+        "from": "lld",
+        "to": "lg2",
+        "condition": "always"
+      },
+      {
+        "from": "lg2",
+        "to": "ldsp",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "lg2",
+        "to": "le",
+        "condition": "else"
+      },
+      {
+        "from": "ldsp",
+        "to": "le",
+        "condition": "always"
+      },
+      {
+        "from": "init",
+        "to": "ie",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "sl",
+        "condition": "p_err = abap_true"
+      },
+      {
+        "from": "fx1",
+        "to": "pg5",
+        "condition": "zcx_ca_reproc"
+      },
+      {
+        "from": "fx2",
+        "to": "pg5",
+        "condition": "zcx_ca_reproc"
+      },
+      {
+        "from": "dg4",
+        "to": "die",
+        "condition": "lv_status = '53'"
+      },
+      {
+        "from": "dg4",
+        "to": "die",
+        "condition": "else"
+      },
+      {
+        "from": "fcm",
+        "to": "fie",
+        "condition": "always"
+      },
+      {
+        "from": "oc",
+        "to": "oe",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_ca_reproc_sd_idoc.abap:47 — kein Fachsatz „der Kundenauftrag wird angelegt“ (es wird nur die Standard-Nachverarbeitung für das IDoc gestartet; was sie bucht, liegt außerhalb des Falls)",
+    "zcl_ca_reproc_sd_idoc.abap:37 — kein Fachsatz „ältere IDocs werden automatisch mit nachverarbeitet“ (der Eintrag wird nur abgelehnt)",
+    "zca_if_monitor_cls.abap:128 — kein Fachsatz „nach n Versuchen wird der Eintrag gesperrt/aufgegeben“ (es gibt keine Obergrenze)",
+    "zcl_ca_reproc_sd_idoc.abap:21 — kein Fachsatz „der Status wird geprüft, bevor feststeht, dass das IDoc existiert“ im Sinne eines Fehlers (die Zuweisung davor ändert sy-subrc nicht; die Prüfung wirkt auf das SELECT)"
+  ],
+  "processDescription": "Der Schnittstellen-Support startet den Monitor, der als Zeitraum die letzten sieben Tage vorschlägt. Er liest die Einträge des zentralen Schnittstellenprotokolls, standardmäßig nur fehlerhafte, blendet Module ohne Anzeigeberechtigung aus und zeigt sie als ALV-Liste; ohne Einträge endet er mit Hinweis. Mit „Nachverarbeiten“ werden markierte fehlerhafte Einträge mit Nachverarbeitungsberechtigung einzeln gesperrt und an die im Customizing hinterlegte Nachverarbeitungsklasse ihrer Schnittstelle gegeben; fehlt sie oder erfüllt sie die Schnittstelle nicht, bleibt der Eintrag unerledigt. Die IDoc-Klasse akzeptiert bereits verbuchte IDocs als erledigt, lehnt unzulässige Status und IDocs mit älteren offenen Fehlern desselben Partners ab und startet sonst die Standard-Nachverarbeitung, erledigt nur bei danach Status 53. Die FI-Klasse prüft und bucht die gesicherten Buchungsdaten und rollt bei Fehler zurück. Erledigte Einträge erhalten Status P, sonst steigt der Versuchszähler; jede Änderung wird festgeschrieben und entsperrt, am Ende eine Summe gemeldet und die Liste neu gelesen. Mit „Protokoll“ wird das Anwendungsprotokoll einer markierten Zeile angezeigt."
+}

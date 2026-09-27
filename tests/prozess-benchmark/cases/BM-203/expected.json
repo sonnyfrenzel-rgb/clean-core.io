@@ -1,0 +1,650 @@
+{
+  "id": "BM-203",
+  "title": "Preissimulation mit Preisstrategien je Kundengruppe",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Polymorpher Aufruf calc_net: Kanten zu allen drei Implementierungen mit „always“; die Auswahl trifft die Fabrik."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "KNVV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 87,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:87"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "A004",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 97,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:97"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KONP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 97,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:97"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_KA_RABATT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-203-B01",
+      "text": "Zum Kunden wird die Kundengruppe im gewählten Vertriebsbereich gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-203-B02",
+      "text": "Ist der Kunde im Vertriebsbereich nicht angelegt, bricht der Report mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        },
+        {
+          "file": "source.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-203-B03",
+      "text": "Der Listenpreis (Konditionsart PR00) des Materials wird zum Tagesdatum aus den Konditionssätzen gelesen; ohne Satz rechnet der Report mit 0 weiter.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-203-B04",
+      "text": "Die Preisstrategie richtet sich nach der Kundengruppe: 01 Key Account, 02 Wiederverkäufer, alle anderen Listenpreis.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-203-B05",
+      "text": "Für Key Accounts wird der kundenindividuelle Rabattsatz aus der Pflegetabelle vom Listenpreis abgezogen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-203-B06",
+      "text": "Wiederverkäufer erhalten ab 100 Stück einen Staffelrabatt von 5 %, darunter den Listenpreis.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-203-B07",
+      "text": "Alle übrigen Kundengruppen erhalten den Listenpreis als Nettopreis.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-203-B08",
+      "text": "Kundengruppe, Listenpreis und Nettopreis werden als Liste ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:113"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:86"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:87"
+        },
+        "meaning": "Kundengruppe im Vertriebsbereich lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        },
+        "meaning": "Kunde im Vertriebsbereich vorhanden?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:93"
+        },
+        "meaning": "Fehler: Kunde nicht im Vertriebsbereich"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:93"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:97"
+        },
+        "meaning": "Listenpreis PR00 des Materials lesen"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:109"
+        },
+        "meaning": "Preisstrategie zur Kundengruppe beschaffen"
+      },
+      {
+        "id": "f",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        "meaning": "Fabrikmethode"
+      },
+      {
+        "id": "fc",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        },
+        "meaning": "Welche Kundengruppe?"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "meaning": "Strategie zurueckgeben",
+        "anchor": {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        }
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:110"
+        },
+        "meaning": "Nettopreis mit Strategie berechnen (polymorph)"
+      },
+      {
+        "id": "m1",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Key-Account-Strategie"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Key-Account-Rabattsatz lesen"
+      },
+      {
+        "id": "a1",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Nettopreis = Listenpreis abzueglich KA-Rabatt"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        }
+      },
+      {
+        "id": "m2",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Wiederverkaeufer-Strategie"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        "meaning": "Staffelmenge erreicht?"
+      },
+      {
+        "id": "a2",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        },
+        "meaning": "5 % Staffelrabatt"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        }
+      },
+      {
+        "id": "m3",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        "meaning": "Listenpreis-Strategie"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        }
+      },
+      {
+        "id": "o3",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:113"
+        },
+        "meaning": "Kundengruppe, Listen- und Nettopreis ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:113"
+        },
+        "meaning": "Reportende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "o1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o1",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "q2",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "f",
+        "condition": "always"
+      },
+      {
+        "from": "f",
+        "to": "fc",
+        "condition": "always"
+      },
+      {
+        "from": "fc",
+        "to": "fe",
+        "condition": "WHEN '01'"
+      },
+      {
+        "from": "fc",
+        "to": "fe",
+        "condition": "WHEN '02'"
+      },
+      {
+        "from": "fc",
+        "to": "fe",
+        "condition": "else"
+      },
+      {
+        "from": "fe",
+        "to": "c2",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "m1",
+        "condition": "always"
+      },
+      {
+        "from": "e1",
+        "to": "o3",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "m2",
+        "condition": "always"
+      },
+      {
+        "from": "e2",
+        "to": "o3",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "m3",
+        "condition": "always"
+      },
+      {
+        "from": "e3",
+        "to": "o3",
+        "condition": "always"
+      },
+      {
+        "from": "m1",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "a1",
+        "condition": "always"
+      },
+      {
+        "from": "a1",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "m2",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "a2",
+        "condition": "iv_menge >= 100"
+      },
+      {
+        "from": "a2",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "e2",
+        "condition": "else"
+      },
+      {
+        "from": "m3",
+        "to": "e3",
+        "condition": "always"
+      },
+      {
+        "from": "o3",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:113 — kein Fachsatz „Preis wird im Auftrag gespeichert“ — die Simulation schreibt nichts.",
+    "source.abap:97 — kein Fachsatz „ohne Listenpreis wird abgebrochen“ — sy-subrc wird nach diesem SELECT nicht ausgewertet.",
+    "source.abap:27 — kein Fachsatz „ohne gepflegten KA-Rabatt wird abgebrochen“ — fehlt der Satz, bleibt der Rabatt 0 und der Listenpreis gilt."
+  ],
+  "processDescription": "Ein Innendienst-Mitarbeiter startet die Simulation mit Kunde, Material, Vertriebsbereich und Menge. Zuerst wird die Kundengruppe des Kunden gelesen; ist der Kunde im Vertriebsbereich nicht angelegt, endet der Report mit einer Fehlermeldung. Danach wird der gültige Listenpreis PR00 gelesen, ohne Treffer gilt 0. Eine Fabrik wählt anhand der Kundengruppe die Preisstrategie: Key Accounts erhalten ihren individuellen Rabatt aus einer Z-Tabelle, Wiederverkäufer ab 100 Stück 5 % Staffelrabatt, alle anderen den Listenpreis. Das Ergebnis wird mit Kundengruppe und Listenpreis als Liste ausgegeben; gespeichert wird nichts."
+}

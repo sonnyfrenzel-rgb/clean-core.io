@@ -1,0 +1,566 @@
+{
+  "id": "BM-284",
+  "title": "Verkaufsschalter: offene Tagesaufträge im ALV-Grid mit Absprung in die Auftragsanzeige",
+  "classes": [
+    "K07",
+    "K01",
+    "K17"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:49"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:49"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_GUI_ALV_GRID",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:79"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VA03",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:42"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-284-B01",
+      "text": "Es werden die am Stichtag angelegten Kundenaufträge der Verkaufsorganisation und des Verkaufsbüros (Schalter) selektiert, deren Gesamtstatus nicht erledigt ist.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-284-B02",
+      "text": "Gibt es keinen offenen Auftrag, wird dies als Statusmeldung in Fehleroptik angezeigt und die Verarbeitung beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-284-B03",
+      "text": "Sonst wird das Schalterbild 0100 aufgerufen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-284-B04",
+      "text": "Beim ersten Aufbau des Bildes wird das ALV-Grid im Container angelegt, der Doppelklick-Behandler registriert und die Auftragsliste angezeigt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        },
+        {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        },
+        {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        }
+      ]
+    },
+    {
+      "id": "BM-284-B05",
+      "text": "Mit Zurück, Beenden oder Abbrechen verlässt der Mitarbeiter das Schalterbild.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:91"
+        },
+        {
+          "file": "source.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-284-B06",
+      "text": "Ein Doppelklick auf eine Zeile übergibt die Auftragsnummer als Parameter AUN und öffnet die Auftragsanzeige VA03 unter Überspringen des Einstiegsbildes.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s0",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "rd",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        },
+        "meaning": "Offene Tagesaufträge lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        "meaning": "Keine Aufträge?"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Meldung keine offenen Aufträge"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "cs",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        },
+        "meaning": "Schalterbild aufrufen"
+      },
+      {
+        "id": "e0b",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        },
+        "meaning": "Ende Report nach Verlassen des Bildes"
+      },
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        "meaning": "PBO Schalterbild"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        },
+        "meaning": "Grid noch nicht angelegt?"
+      },
+      {
+        "id": "sh",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        },
+        "meaning": "Doppelklick-Behandler registrieren"
+      },
+      {
+        "id": "disp",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        },
+        "meaning": "Auftragsliste im Grid anzeigen"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:85"
+        },
+        "meaning": "Ende PBO"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:90"
+        },
+        "meaning": "PAI Schalterbild"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:91"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "lv",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:93"
+        },
+        "meaning": "Bild verlassen"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:96"
+        },
+        "meaning": "Ende PAI"
+      },
+      {
+        "id": "s3",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Doppelklick auf Auftragszeile"
+      },
+      {
+        "id": "sp",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Auftragsnummer als SPA-Parameter setzen"
+      },
+      {
+        "id": "ct",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Auftragsanzeige aufrufen"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        "meaning": "Ende Behandler"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s0",
+        "to": "rd",
+        "condition": "always"
+      },
+      {
+        "from": "rd",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "ms",
+        "condition": "gt_auftr IS INITIAL"
+      },
+      {
+        "from": "ms",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "cs",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "e0b",
+        "condition": "always"
+      },
+      {
+        "from": "s1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "sh",
+        "condition": "go_grid IS INITIAL"
+      },
+      {
+        "from": "sh",
+        "to": "disp",
+        "condition": "always"
+      },
+      {
+        "from": "disp",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "s2",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "lv",
+        "condition": "WHEN 'BACK' OR 'EXIT' OR 'CANC'"
+      },
+      {
+        "from": "g2",
+        "to": "e2",
+        "condition": "else"
+      },
+      {
+        "from": "s3",
+        "to": "sp",
+        "condition": "always"
+      },
+      {
+        "from": "sp",
+        "to": "ct",
+        "condition": "always"
+      },
+      {
+        "from": "ct",
+        "to": "e3",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:58 — kein Abbruch durch die Meldung selbst; es ist Typ S in Fehleroptik, den Pfad beendet erst RETURN.",
+    "source.abap:42 — kein Fachsatz „Auftrag wird geändert oder freigegeben“; VA03 ist die Anzeige.",
+    "source.abap:49 — kein Fachsatz „nur freigegebene/kreditgeprüfte Aufträge“; gefiltert wird nur Gesamtstatus ungleich C."
+  ],
+  "processDescription": "Der Report selektiert für Verkaufsorganisation, Verkaufsbüro und Tag die Kundenaufträge, deren Gesamtstatus in VBUK nicht erledigt ist. Ohne Treffer erscheint eine Statusmeldung in Fehleroptik und der Report endet. Sonst wird Bild 0100 aufgerufen; dessen PBO legt beim ersten Durchlauf Container und ALV-Grid an, registriert einen Behandler für Doppelklick und zeigt die Liste. Das PAI verlässt das Bild bei Zurück, Beenden oder Abbrechen. Ein Doppelklick setzt die Auftragsnummer als Parameter AUN und springt mit Überspringen des Einstiegsbildes in die Auftragsanzeige VA03. Der Behandler wird vom Grid ausgelöst und ist daher ein eigener Einstieg."
+}

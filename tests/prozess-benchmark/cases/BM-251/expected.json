@@ -1,0 +1,1258 @@
+{
+  "id": "BM-251",
+  "title": "Eigener Mahnvorschlag aus CDS-View mit Mahnsperre, Stufenlogik und Ersetzen des Vorschlags",
+  "classes": [
+    "K01",
+    "K02",
+    "K12",
+    "K15"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZI_OFFENEPOSTEN",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_fi_mahnvorschlag.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_mahnvorschlag.abap:64"
+      },
+      "identity": {
+        "objectType": "DDLS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "I_CUSTOMERCOMPANY",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_fi_mahnvorschlag.abap",
+        "line": 80,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_mahnvorschlag.abap:80"
+      },
+      "identity": {
+        "objectType": "DDLS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_MAHN_VS",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_fi_mahnvorschlag.abap",
+        "line": 162,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_mahnvorschlag.abap:162"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZFI_MAHN_VS",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_fi_mahnvorschlag.abap",
+        "line": 144,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_mahnvorschlag.abap:144"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCX_FI_MAHN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_fi_mahnvorschlag.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_mahnvorschlag.abap:52"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-251-B01",
+      "text": "Wer den Mahnvorschlag erstellt, braucht die Berechtigung zum Ändern von Mahndaten im Buchungskreis; ohne sie bricht der Lauf mit der Meldung ZFI_MAHN 001 ab.",
+      "anchors": [
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:48"
+        },
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:51"
+        },
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:52"
+        },
+        {
+          "file": "zfi_mahn_report.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahn_report.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-251-B02",
+      "text": "Aus der Sicht offener Posten werden zum Stichtag die überfälligen, nicht von der Mahnung ausgenommenen Posten des Buchungskreises mit Betrag, Verzugstagen und letzter Mahnstufe gelesen.",
+      "anchors": [
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-251-B03",
+      "text": "Gibt es keine solchen Posten, endet der Lauf mit der Meldung ZFI_MAHN 002.",
+      "anchors": [
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:72"
+        },
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-251-B04",
+      "text": "Posten von Kunden mit Mahnsperre im Buchungskreis werden nicht vorgeschlagen.",
+      "anchors": [
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:80"
+        },
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:91"
+        },
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-251-B05",
+      "text": "Die Mahnstufe richtet sich nach den Verzugstagen: bis 13 Tage keine Mahnung, ab 14 Tagen Stufe 1, ab 30 Tagen Stufe 2, ab 45 Tagen Stufe 3.",
+      "anchors": [
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:97"
+        },
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:122"
+        },
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:126"
+        }
+      ]
+    },
+    {
+      "id": "BM-251-B06",
+      "text": "Ein Posten wird nur vorgeschlagen, wenn seine neue Stufe höher ist als die letzte Mahnstufe.",
+      "anchors": [
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:100"
+        }
+      ]
+    },
+    {
+      "id": "BM-251-B07",
+      "text": "Vorgeschlagene Posten erhalten eine Mahngebühr von 25 in Stufe 3, 10 in Stufe 2 und keine in Stufe 1.",
+      "anchors": [
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:104"
+        }
+      ]
+    },
+    {
+      "id": "BM-251-B08",
+      "text": "Im Testlauf wird der Vorschlag nur angezeigt, nicht gespeichert.",
+      "anchors": [
+        {
+          "file": "zfi_mahn_report.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahn_report.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-251-B09",
+      "text": "Im Echtlauf wird ein nicht leerer Vorschlag unter Sperre des Buchungskreises gespeichert; ist die Sperre belegt, bricht der Lauf mit der Meldung ZFI_MAHN 003 ab.",
+      "anchors": [
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:140"
+        },
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:144"
+        },
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:150"
+        },
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:151"
+        }
+      ]
+    },
+    {
+      "id": "BM-251-B10",
+      "text": "Ein bereits vorhandener Vorschlag desselben Buchungskreises zum selben Stichtag wird gelöscht und durch den neuen ersetzt und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:161"
+        },
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:162"
+        },
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:172"
+        }
+      ]
+    },
+    {
+      "id": "BM-251-B11",
+      "text": "Scheitert das Schreiben, wird zurückgerollt und der Lauf mit der Meldung ZFI_MAHN 004 abgebrochen.",
+      "anchors": [
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:164"
+        },
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:165"
+        }
+      ]
+    },
+    {
+      "id": "BM-251-B12",
+      "text": "Nach dem Speichern wird die Sperre aufgehoben; anschließend wird der Vorschlag als Liste angezeigt.",
+      "anchors": [
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:174"
+        },
+        {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:185"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "r_s",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_mahn_report.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahn_report.abap:14"
+        },
+        "meaning": "Mahnvorschlag starten"
+      },
+      {
+        "id": "r_n",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_mahn_report.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahn_report.abap:16"
+        },
+        "meaning": "Vorschlag für Buchungskreis und Stichtag anlegen"
+      },
+      {
+        "id": "r_c1",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_mahn_report.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahn_report.abap:18"
+        },
+        "meaning": "Vorschlag ermitteln"
+      },
+      {
+        "id": "r_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_mahn_report.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahn_report.abap:20"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "r_c2",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_mahn_report.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahn_report.abap:21"
+        },
+        "meaning": "Vorschlag speichern"
+      },
+      {
+        "id": "r_c3",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_mahn_report.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahn_report.abap:24"
+        },
+        "meaning": "Vorschlag anzeigen"
+      },
+      {
+        "id": "r_o",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_mahn_report.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahn_report.abap:27"
+        },
+        "meaning": "Fehlertext der Ausnahme anzeigen"
+      },
+      {
+        "id": "r_e",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_mahn_report.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahn_report.abap:28"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "k_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:47"
+        },
+        "meaning": "Vorschlagsobjekt anlegen"
+      },
+      {
+        "id": "k_a",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:48"
+        },
+        "meaning": "Berechtigung Mahnen ändern im Buchungskreis prüfen"
+      },
+      {
+        "id": "k_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:51"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "k_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:52"
+        },
+        "meaning": "Ausnahme „keine Berechtigung“"
+      },
+      {
+        "id": "k_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:59"
+        },
+        "meaning": "Buchungskreis und Stichtag übernommen"
+      },
+      {
+        "id": "m_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:62"
+        },
+        "meaning": "Mahnvorschlag ermitteln"
+      },
+      {
+        "id": "m_r1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:64"
+        },
+        "meaning": "Überfällige, mahnbare offene Posten zum Stichtag lesen"
+      },
+      {
+        "id": "m_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:72"
+        },
+        "meaning": "Keine Posten?"
+      },
+      {
+        "id": "m_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:73"
+        },
+        "meaning": "Ausnahme „keine Posten“"
+      },
+      {
+        "id": "m_r2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:80"
+        },
+        "meaning": "Mahnsperren der Kunden im Buchungskreis lesen"
+      },
+      {
+        "id": "m_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:89"
+        },
+        "meaning": "Jeden Posten bewerten"
+      },
+      {
+        "id": "m_rt",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:91"
+        },
+        "meaning": "Mahnsperre des Kunden nachschlagen"
+      },
+      {
+        "id": "m_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:93"
+        },
+        "meaning": "Kunde mahngesperrt?"
+      },
+      {
+        "id": "m_c",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:97"
+        },
+        "meaning": "Mahnstufe aus Verzugstagen bestimmen"
+      },
+      {
+        "id": "m_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:100"
+        },
+        "meaning": "Keine Stufe oder nicht höher als letzte Mahnung?"
+      },
+      {
+        "id": "m_a",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:104"
+        },
+        "meaning": "Posten mit neuer Stufe und Mahngebühr (25/10/0) vorschlagen"
+      },
+      {
+        "id": "m_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:118"
+        },
+        "meaning": "Vorschlag ermittelt"
+      },
+      {
+        "id": "b_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:121"
+        },
+        "meaning": "Mahnstufe bestimmen"
+      },
+      {
+        "id": "b_c",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:122"
+        },
+        "meaning": "Innerhalb der Karenz von 13 Tagen?"
+      },
+      {
+        "id": "b_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:126"
+        },
+        "meaning": "Verzugstage ab 45 / ab 30?"
+      },
+      {
+        "id": "b_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:134"
+        },
+        "meaning": "Stufe zurückgeben"
+      },
+      {
+        "id": "v_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:137"
+        },
+        "meaning": "Vorschlag speichern"
+      },
+      {
+        "id": "v_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:140"
+        },
+        "meaning": "Leerer Vorschlag?"
+      },
+      {
+        "id": "v_x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:141"
+        },
+        "meaning": "Nichts speichern"
+      },
+      {
+        "id": "v_q",
+        "type": "lock",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:144"
+        },
+        "meaning": "Mahnvorschlag des Buchungskreises sperren"
+      },
+      {
+        "id": "v_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:150"
+        },
+        "meaning": "Sperre fehlgeschlagen?"
+      },
+      {
+        "id": "v_x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:151"
+        },
+        "meaning": "Ausnahme „gesperrt“"
+      },
+      {
+        "id": "v_d",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:161"
+        },
+        "meaning": "Alten Vorschlag zum selben Stichtag löschen"
+      },
+      {
+        "id": "v_i",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:162"
+        },
+        "meaning": "Neuen Vorschlag schreiben"
+      },
+      {
+        "id": "v_rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:164"
+        },
+        "meaning": "Datenbankfehler: zurückrollen"
+      },
+      {
+        "id": "v_x3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:165"
+        },
+        "meaning": "Ausnahme „Speichern fehlgeschlagen“"
+      },
+      {
+        "id": "v_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:172"
+        },
+        "meaning": "Vorschlag festschreiben"
+      },
+      {
+        "id": "v_dq",
+        "type": "lock",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:174"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "v_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:177"
+        },
+        "meaning": "Gespeichert"
+      },
+      {
+        "id": "a_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:180"
+        },
+        "meaning": "Vorschlag anzeigen"
+      },
+      {
+        "id": "a_f",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:182"
+        },
+        "meaning": "ALV-Liste erzeugen"
+      },
+      {
+        "id": "a_o",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:185"
+        },
+        "meaning": "Mahnvorschlag als Liste anzeigen"
+      },
+      {
+        "id": "a_m",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 187,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:187"
+        },
+        "meaning": "Hinweis „Ausgabe nicht möglich“"
+      },
+      {
+        "id": "a_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_mahnvorschlag.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_mahnvorschlag.abap:189"
+        },
+        "meaning": "Ende Anzeige"
+      }
+    ],
+    "edges": [
+      {
+        "from": "r_s",
+        "to": "r_n",
+        "condition": "always"
+      },
+      {
+        "from": "r_n",
+        "to": "k_s",
+        "condition": "always"
+      },
+      {
+        "from": "k_s",
+        "to": "k_a",
+        "condition": "always"
+      },
+      {
+        "from": "k_a",
+        "to": "k_g",
+        "condition": "always"
+      },
+      {
+        "from": "k_g",
+        "to": "k_x",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "k_g",
+        "to": "k_e",
+        "condition": "else"
+      },
+      {
+        "from": "k_x",
+        "to": "r_o",
+        "condition": "zcx_fi_mahn"
+      },
+      {
+        "from": "k_e",
+        "to": "r_c1",
+        "condition": "always"
+      },
+      {
+        "from": "r_c1",
+        "to": "m_s",
+        "condition": "always"
+      },
+      {
+        "from": "m_s",
+        "to": "m_r1",
+        "condition": "always"
+      },
+      {
+        "from": "m_r1",
+        "to": "m_g1",
+        "condition": "always"
+      },
+      {
+        "from": "m_g1",
+        "to": "m_x",
+        "condition": "lt_op IS INITIAL"
+      },
+      {
+        "from": "m_x",
+        "to": "r_o",
+        "condition": "zcx_fi_mahn"
+      },
+      {
+        "from": "m_g1",
+        "to": "m_r2",
+        "condition": "else"
+      },
+      {
+        "from": "m_r2",
+        "to": "m_l",
+        "condition": "always"
+      },
+      {
+        "from": "m_l",
+        "to": "m_rt",
+        "condition": "next row"
+      },
+      {
+        "from": "m_rt",
+        "to": "m_g2",
+        "condition": "always"
+      },
+      {
+        "from": "m_g2",
+        "to": "m_l",
+        "condition": "sy-subrc = 0 AND ls_sperre-dunningblock IS NOT INITIAL"
+      },
+      {
+        "from": "m_g2",
+        "to": "m_c",
+        "condition": "else"
+      },
+      {
+        "from": "m_c",
+        "to": "b_s",
+        "condition": "always"
+      },
+      {
+        "from": "b_s",
+        "to": "b_c",
+        "condition": "always"
+      },
+      {
+        "from": "b_c",
+        "to": "b_e",
+        "condition": "WHEN 1 OR 2 OR 3 OR 4 OR 5 OR 6 OR 7 OR 8 OR 9 OR 10 OR 11 OR 12 OR 13"
+      },
+      {
+        "from": "b_c",
+        "to": "b_g",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "b_g",
+        "to": "b_e",
+        "condition": "iv_tage >= 45"
+      },
+      {
+        "from": "b_g",
+        "to": "b_e",
+        "condition": "iv_tage >= 30"
+      },
+      {
+        "from": "b_g",
+        "to": "b_e",
+        "condition": "else"
+      },
+      {
+        "from": "b_e",
+        "to": "m_g3",
+        "condition": "always"
+      },
+      {
+        "from": "m_g3",
+        "to": "m_l",
+        "condition": "lv_stufe = 0 OR lv_stufe <= ls_op-lastdunninglevel"
+      },
+      {
+        "from": "m_g3",
+        "to": "m_a",
+        "condition": "else"
+      },
+      {
+        "from": "m_a",
+        "to": "m_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "m_l",
+        "to": "m_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "m_e",
+        "to": "r_g",
+        "condition": "always"
+      },
+      {
+        "from": "r_g",
+        "to": "r_c2",
+        "condition": "p_test = abap_false"
+      },
+      {
+        "from": "r_g",
+        "to": "r_c3",
+        "condition": "else"
+      },
+      {
+        "from": "r_c2",
+        "to": "v_s",
+        "condition": "always"
+      },
+      {
+        "from": "v_s",
+        "to": "v_g1",
+        "condition": "always"
+      },
+      {
+        "from": "v_g1",
+        "to": "v_x1",
+        "condition": "mt_vorschlag IS INITIAL"
+      },
+      {
+        "from": "v_g1",
+        "to": "v_q",
+        "condition": "else"
+      },
+      {
+        "from": "v_q",
+        "to": "v_g2",
+        "condition": "always"
+      },
+      {
+        "from": "v_g2",
+        "to": "v_x2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "v_x2",
+        "to": "r_o",
+        "condition": "zcx_fi_mahn"
+      },
+      {
+        "from": "v_g2",
+        "to": "v_d",
+        "condition": "else"
+      },
+      {
+        "from": "v_d",
+        "to": "v_i",
+        "condition": "always"
+      },
+      {
+        "from": "v_i",
+        "to": "v_cm",
+        "condition": "always"
+      },
+      {
+        "from": "v_d",
+        "to": "v_rb",
+        "condition": "cx_sy_open_sql_db"
+      },
+      {
+        "from": "v_i",
+        "to": "v_rb",
+        "condition": "cx_sy_open_sql_db"
+      },
+      {
+        "from": "v_rb",
+        "to": "v_x3",
+        "condition": "always"
+      },
+      {
+        "from": "v_x3",
+        "to": "r_o",
+        "condition": "zcx_fi_mahn"
+      },
+      {
+        "from": "v_cm",
+        "to": "v_dq",
+        "condition": "always"
+      },
+      {
+        "from": "v_dq",
+        "to": "v_e",
+        "condition": "always"
+      },
+      {
+        "from": "v_x1",
+        "to": "r_c3",
+        "condition": "always"
+      },
+      {
+        "from": "v_e",
+        "to": "r_c3",
+        "condition": "always"
+      },
+      {
+        "from": "r_c3",
+        "to": "a_s",
+        "condition": "always"
+      },
+      {
+        "from": "a_s",
+        "to": "a_f",
+        "condition": "always"
+      },
+      {
+        "from": "a_f",
+        "to": "a_o",
+        "condition": "always"
+      },
+      {
+        "from": "a_o",
+        "to": "a_e",
+        "condition": "always"
+      },
+      {
+        "from": "a_f",
+        "to": "a_m",
+        "condition": "cx_salv_msg"
+      },
+      {
+        "from": "a_m",
+        "to": "a_e",
+        "condition": "always"
+      },
+      {
+        "from": "a_e",
+        "to": "r_e",
+        "condition": "always"
+      },
+      {
+        "from": "r_o",
+        "to": "r_e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_fi_mahnvorschlag.abap:164 — kein Fachsatz „nach einem Speicherfehler ist der alte Vorschlag zum Stichtag gelöscht“ (ROLLBACK WORK nimmt das DELETE zusammen mit dem INSERT zurück; der alte Vorschlag bleibt erhalten)",
+    "zcl_fi_mahnvorschlag.abap:161 — kein Fachsatz „ältere Mahnvorschläge werden gelöscht“ (nur der Vorschlag zum selben Stichtag)",
+    "zcl_fi_mahnvorschlag.abap:140 — kein Fachsatz „leerer Vorschlag wird gemeldet“ (RETURN ohne Meldung; danach wird eine leere Liste angezeigt)",
+    "gesamte Scheibe — kein Fachsatz „Mahnbriefe werden gedruckt oder Mahnstufen in den Belegen fortgeschrieben“; es entsteht nur ein Vorschlag in einer Kundentabelle"
+  ],
+  "processDescription": "Ein Sachbearbeiter startet den Mahnvorschlag für einen Buchungskreis und Stichtag, standardmäßig als Testlauf. Zuerst wird die Berechtigung zum Ändern von Mahndaten geprüft; fehlt sie, bricht der Lauf mit Meldung ab. Aus einer CDS-Sicht werden die überfälligen, mahnbaren offenen Posten gelesen; ohne Posten endet der Lauf mit Meldung. Posten mahngesperrter Kunden fallen heraus. Für die übrigen wird die Stufe aus den Verzugstagen bestimmt (bis 13 Tage keine, ab 14 Stufe 1, ab 30 Stufe 2, ab 45 Stufe 3); vorgeschlagen wird ein Posten nur, wenn die Stufe über der letzten Mahnung liegt, mit Gebühr 25, 10 oder 0. Im Echtlauf wird ein nicht leerer Vorschlag unter einer Sperre des Buchungskreises gespeichert: ein alter Vorschlag zum selben Stichtag wird ersetzt und festgeschrieben, bei Datenbankfehler zurückgerollt und abgebrochen. Danach wird die Sperre aufgehoben und der Vorschlag als Liste angezeigt. Alle Abbrüche erscheinen als Meldung im Report."
+}

@@ -1,0 +1,506 @@
+{
+  "id": "BM-286",
+  "title": "QM-Endkontrolle: Messwerte im Table Control bewerten, verwerfen und sichern",
+  "classes": [
+    "K07"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZQM_MESSWERT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:56"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-286-B01",
+      "text": "Für jede geänderte Messwertzeile wird die Bewertung aus den Toleranzen abgeleitet: liegt der Istwert über der oberen oder unter der unteren Toleranz, gilt der Wert als zurückgewiesen, sonst als angenommen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-286-B02",
+      "text": "Mit Zurück oder Abbrechen verlässt der Prüfer die Messwerterfassung.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-286-B03",
+      "text": "Markierte Messwerte werden nur aus der Erfassung entfernt und ihre Anzahl als Statusmeldung angezeigt; in der Datenbank ändert sich dabei nichts.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-286-B04",
+      "text": "Beim Sichern werden die bisherigen Messwerte zu Prüflos und Vorgang gelöscht und die erfassten Werte vollständig neu geschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-286-B05",
+      "text": "Schlägt das Einfügen fehl, wird die Änderung zurückgerollt und das Sichern mit einer Fehlermeldung zum Prüflos abgebrochen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-286-B06",
+      "text": "Sonst werden die Messwerte festgeschrieben und Prüflos und Anzahl der gesicherten Werte gemeldet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "sm",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Zeilenänderung im Table Control"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Istwert außerhalb Toleranz?"
+      },
+      {
+        "id": "ar",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Bewertung zurückgewiesen"
+      },
+      {
+        "id": "aa",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Bewertung angenommen"
+      },
+      {
+        "id": "em",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Ende Zeilenmodul"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "PAI Messwertbild"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "lv",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Erfassung verlassen"
+      },
+      {
+        "id": "md",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        "meaning": "Anzahl entfernter Messwerte melden"
+      },
+      {
+        "id": "wd",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "Alte Messwerte löschen"
+      },
+      {
+        "id": "wi",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Messwerte neu schreiben"
+      },
+      {
+        "id": "gs",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Einfügen fehlgeschlagen?"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "me",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        },
+        "meaning": "Fehler Sichern"
+      },
+      {
+        "id": "mee",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        "meaning": "Erfolgsmeldung"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        },
+        "meaning": "Ende PAI"
+      }
+    ],
+    "edges": [
+      {
+        "from": "sm",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "ar",
+        "condition": "gs_erg-istwert > gs_erg-otol OR gs_erg-istwert < gs_erg-utol"
+      },
+      {
+        "from": "gt",
+        "to": "aa",
+        "condition": "else"
+      },
+      {
+        "from": "ar",
+        "to": "em",
+        "condition": "always"
+      },
+      {
+        "from": "aa",
+        "to": "em",
+        "condition": "always"
+      },
+      {
+        "from": "s",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "lv",
+        "condition": "WHEN 'BACK' OR 'CANC'"
+      },
+      {
+        "from": "g",
+        "to": "md",
+        "condition": "WHEN 'DELE'"
+      },
+      {
+        "from": "md",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "wd",
+        "condition": "WHEN 'SAVE'"
+      },
+      {
+        "from": "g",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "wd",
+        "to": "wi",
+        "condition": "always"
+      },
+      {
+        "from": "wi",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "rb",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rb",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "mee",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:48 — kein write-Knoten und kein Fachsatz „Messwerte werden in der Datenbank gelöscht“; gelöscht wird nur die interne Tabelle.",
+    "source.abap:69 — kein Fachsatz „Verwendungsentscheid wird getroffen“; der Zweig existiert nur als Kommentar.",
+    "source.abap:56 — kein Fachsatz „Löschfehler wird gemeldet“; nur das INSERT wird über sy-subrc geprüft."
+  ],
+  "processDescription": "Zwei PAI-Module des Messwertbilds 0300 mit Table Control. Für jede geänderte Zeile wird die Bewertung aus den Toleranzgrenzen abgeleitet (R außerhalb, sonst A), Erfasser und Änderungskennzeichen werden gesetzt. Im Benutzerkommando verlässt Zurück/Abbrechen das Bild. DELE entfernt markierte Zeilen nur aus der internen Tabelle und meldet ihre Anzahl. SAVE löscht alle bisherigen Messwerte zu Prüflos und Vorgang in ZQM_MESSWERT und schreibt die erfassten Werte neu; scheitert das Einfügen, wird zurückgerollt und mit Fehlermeldung abgebrochen, sonst festgeschrieben und die Anzahl gemeldet. Andere Codes, etwa das Blättern, bleiben hier ohne Wirkung."
+}

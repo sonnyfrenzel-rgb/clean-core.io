@@ -1,0 +1,40 @@
+{
+  "id": "BM-279",
+  "title": "Inbound-Proxy Lageraufgabenquittierung mit Fehlerqueue und Wiederholungsjob",
+  "domain": "EWM",
+  "band": "sehr komplex",
+  "loc": 406,
+  "constructs": [
+    "ABAP-Inbound-Proxy (asynchron)",
+    "Verarbeitungsklasse",
+    "Queue-Klasse",
+    "Ausnahmeklassenhierarchie",
+    "CATCH-Reihenfolge Unterklasse vor Oberklasse",
+    "/SCWM/TO_CONFIRM",
+    "/SCWM/CL_TM",
+    "ROLLBACK/COMMIT WORK AND WAIT",
+    "CALL TRANSFORMATION id",
+    "INSERT/UPDATE/DELETE",
+    "ENQUEUE/DEQUEUE",
+    "LOOP ... TO n",
+    "Report als Job"
+  ],
+  "scenario": "Staplerleitsystem quittiert Lageraufgaben im dezentralen EWM über PI; Sperrkonflikte im Hochbetrieb werden über eine eigene Fehlerqueue und einen 5-Minuten-Job nachgeholt.",
+  "s4_issues": [
+    "/SCWM/TO_CONFIRM nicht freigegeben (Zielbild RAP-API Warehouse Task)",
+    "PI/PO-Proxy – Zielbild Integration Suite",
+    "Eigene Fehlerqueue statt AIF",
+    "Direktzugriff /SCWM/ORDIM_O/_C"
+  ],
+  "wave": 3,
+  "module": "EWM",
+  "edge_constructs": [
+    "Idempotenz bei Wiederholung (RETURN)",
+    "Methode, die nur über Ausnahmen endet",
+    "Exponentielles Backoff",
+    "Methode ruft Methode derselben Klasse",
+    "Fehler nicht als Fault zurück",
+    "COMMIT in Proxy-Verarbeitung"
+  ],
+  "oo": true
+}

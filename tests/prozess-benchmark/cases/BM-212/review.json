@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "Knoten a1/a2 (<gs_item>-action = 'POST'/'HOLD') sind reine Zuweisungen; belassen, weil sie die Buchungsentscheidung festhalten, die später post_differences steuert."
+  ]
+}

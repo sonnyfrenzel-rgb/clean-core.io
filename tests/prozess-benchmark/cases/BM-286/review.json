@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "Knoten ar/aa ist action auf einer reinen Zuweisung (Bewertung R/A); belassen, weil die Zuweisung ein fachliches Ergebnis festlegt – je nach Auslegung von „reine Zuweisung ist kein Knoten“ entbehrlich."
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten np",
+      "before": "action zmm_po_idoc_out.abap:22 (Ergebnis: kein Partnerprofil); Kanten g2->np [gv_partner_ok = abap_false], np->l [next iteration]",
+      "after": "entfernt",
+      "why": "zmm_po_idoc_out.abap:22 (gs_result-status = ...) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante g2->l",
+      "before": "—",
+      "after": "[next iteration]",
+      "why": "Ersatz für np: der CONTINUE-Zweig führt zurück in die Schleife.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten gd",
+      "before": "action zmm_po_idoc_out_f01.abap:13 (Delta ab gestern); Kanten gg->gd [sy-subrc <> 0], gd->ge [always]",
+      "after": "entfernt",
+      "why": "f01:13 (gv_from = sy-datum - 1) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante gg->ge",
+      "before": "—",
+      "after": "[sy-subrc <> 0]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten gd.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten cok",
+      "before": "action zmm_po_idoc_out_f01.abap:45 (Lieferant ist IDoc-fähig); Kanten cg->cok [sy-subrc = 0], cok->ce [always]",
+      "after": "entfernt",
+      "why": "f01:45 (pv_ok = abap_true) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante cg->ce",
+      "before": "—",
+      "after": "[sy-subrc = 0]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten cok.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten nit",
+      "before": "action zmm_po_idoc_out_f01.abap:85 (Positionssegment mit Material, Menge und Preis aufbauen); Kanten nck->nit [ls_ekpo-loekz = space], nit->nl [next iteration]",
+      "after": "entfernt",
+      "why": "f01:85 (ls_item-menge = ...) ist eine reine Zuweisung in die Segmentstruktur, danach nur APPEND in eine interne Tabelle - kein Knoten.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten ntr",
+      "before": "action zmm_po_idoc_out_f01.abap:94 (Ergebnis: Testlauf, nicht gesendet); Kanten nt->ntr [p_test = abap_true], ntr->nr [always]",
+      "after": "entfernt",
+      "why": "f01:94 (gs_result-status = ...) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante nt->nr",
+      "before": "—",
+      "after": "[p_test = abap_true]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten ntr.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

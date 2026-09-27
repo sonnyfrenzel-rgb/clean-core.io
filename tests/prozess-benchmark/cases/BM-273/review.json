@@ -1,0 +1,35 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten cma",
+      "before": "action zsd_inv_export_f01.abap:19 (Fortsetzen nach letzter exportierter Faktura, Datei anhängen); Kanten cg2->cma [else], cma->cms [always]",
+      "after": "entfernt",
+      "why": "f01:19 (gv_mode = 'A') ist eine reine Zuweisung - laut Brief kein Knoten; Fachsatz B03 bleibt.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante cg2->cms",
+      "before": "—",
+      "after": "[else]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten cma.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten cmn",
+      "before": "action zsd_inv_export_f01.abap:23 (Neuer Lauf, neue Datei); Kanten cg1->cmn [else], cmn->ce [always]",
+      "after": "entfernt",
+      "why": "f01:23 (gv_mode = 'N') ist eine reine Zuweisung - kein Knoten.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante cg1->ce",
+      "before": "—",
+      "after": "[else]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten cmn.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

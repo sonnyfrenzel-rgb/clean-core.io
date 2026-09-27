@@ -1,0 +1,9 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "MESSAGE W im PAI außerhalb FIELD/CHAIN: Verarbeitung stoppt bis Enter, Felder sind dann nicht eingabebereit; Fortsetzung nach Bestätigung ist korrekt modelliert.",
+    "L_INV_COUNT_EXT (Schnittstelle i_lgnum/i_ivnum/i_commit/t_linv mit LINV_VB) nicht sicher verifizierbar – nicht geändert."
+  ]
+}

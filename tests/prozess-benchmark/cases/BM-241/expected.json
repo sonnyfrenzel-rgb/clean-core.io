@@ -1,0 +1,244 @@
+{
+  "id": "BM-241",
+  "title": "RAP-Validierung der Retourenmenge gegen die fakturierte Menge",
+  "classes": [
+    "K02"
+  ],
+  "classic_level": "A",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZI_RETOURE",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 10,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:10"
+      },
+      "identity": {
+        "objectType": "DDLS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-241-B01",
+      "text": "Beim Sichern werden für die betroffenen Retourenpositionen Retourenmenge, fakturierte Menge und Mengeneinheit aus dem Transaktionspuffer des BOs gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        }
+      ]
+    },
+    {
+      "id": "BM-241-B02",
+      "text": "Jede Position mit einer Retourenmenge kleiner oder gleich null oder größer als die fakturierte Menge wird als fehlerhaft gekennzeichnet, sodass das Sichern abgelehnt wird.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-241-B03",
+      "text": "Für jede abgelehnte Position wird die Fehlermeldung ZSD_RET 012 mit Retouren- und fakturierter Menge am Feld Retourenmenge ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-241-B04",
+      "text": "Positionen mit zulässiger Menge bleiben ohne Meldung und koennen gesichert werden.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:8"
+        },
+        "meaning": "Validierung beim Sichern der Retourenpositionen (vom RAP-Laufzeitsystem aufgerufen)"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        "meaning": "Retourenmenge, fakturierte Menge und Mengeneinheit der zu prüfenden Positionen lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Jede gelesene Retourenposition prüfen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Retourenmenge nicht positiv oder größer als fakturierte Menge?"
+      },
+      {
+        "id": "a",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Position als fehlerhaft kennzeichnen - Sichern wird abgelehnt"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Fehlermeldung ZSD_RET 012 mit Retouren- und Fakturamenge am Feld RetMenge melden"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Ende der Validierung"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "r",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "g",
+        "condition": "next row"
+      },
+      {
+        "from": "g",
+        "to": "a",
+        "condition": "ls_pos-RetMenge <= 0 OR ls_pos-RetMenge > ls_pos-FaktMenge"
+      },
+      {
+        "from": "a",
+        "to": "o",
+        "condition": "always"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:17 — kein Fachsatz „Retourenmenge wird auf die fakturierte Menge korrigiert“ (die Validierung ändert keine Daten, sie lehnt nur ab)",
+    "source.abap:10 — kein Fachsatz „fakturierte Menge wird aus VBRP gelesen“ (gelesen wird nur das Feld FaktMenge des Kunden-BOs; seine Herkunft liegt nicht im Fall)",
+    "gesamte Scheibe — kein Schluss, dass die Mengeneinheit geprüft oder umgerechnet wird (sie wird gelesen, aber nicht ausgewertet)"
+  ],
+  "processDescription": "Beim Sichern einer Retourenanforderung ruft das RAP-Laufzeitsystem die Validierung validate_menge für alle geänderten Retourenpositionen auf. Die Validierung liest Retourenmenge, fakturierte Menge und Mengeneinheit dieser Positionen im lokalen Modus aus dem Transaktionspuffer. Für jede Position wird geprüft, ob die Retourenmenge größer als null ist und die fakturierte Menge nicht übersteigt. Verletzt eine Position diese Regel, wird sie als fehlerhaft gekennzeichnet, womit das Sichern der Transaktion abgelehnt wird, und am Feld Retourenmenge erscheint die Fehlermeldung ZSD_RET 012 mit beiden Mengen. Positionen mit zulässiger Menge bleiben unbeanstandet. Die Mengeneinheit wird mitgelesen, aber nicht ausgewertet; Daten werden nicht verändert."
+}

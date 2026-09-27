@@ -1,0 +1,611 @@
+{
+  "id": "BM-204",
+  "title": "Warenausgangsprüfung im Liefer-User-Exit über globale Prüfklasse",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBUP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_deliv_gi_check.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_deliv_gi_check.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_deliv_gi_check.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_deliv_gi_check.abap:49"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_SD_DELIV_GI_CHECK",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "mv50afz1_save_prepare.abap",
+        "line": 14,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mv50afz1_save_prepare.abap:14"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "USEREXIT_SAVE_DOCUMENT_PREPARE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mv50afz1_save_prepare.abap",
+        "line": 7,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mv50afz1_save_prepare.abap:7"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-204-B01",
+      "text": "Die Prüfung greift nur beim Ändern einer Auslieferung; andere Belegtypen und das Anlegen werden durchgelassen.",
+      "anchors": [
+        {
+          "file": "mv50afz1_save_prepare.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1_save_prepare.abap:10"
+        },
+        {
+          "file": "mv50afz1_save_prepare.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1_save_prepare.abap:11"
+        }
+      ]
+    },
+    {
+      "id": "BM-204-B02",
+      "text": "Ist der Warenausgang bereits gebucht, wird nicht mehr geprüft.",
+      "anchors": [
+        {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:24"
+        },
+        {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-204-B03",
+      "text": "Für jede nicht gelöschte Lieferposition wird der Kommissionierstatus gelesen; eine noch nicht kommissionierte Position verhindert das Sichern.",
+      "anchors": [
+        {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:28"
+        },
+        {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:30"
+        },
+        {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:33"
+        },
+        {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-204-B04",
+      "text": "Eine chargenpflichtige Position ohne Charge verhindert das Sichern.",
+      "anchors": [
+        {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:40"
+        },
+        {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-204-B05",
+      "text": "Liegt der Warenempfänger außerhalb Deutschlands und ist keine Route gepflegt, wird das Sichern verhindert.",
+      "anchors": [
+        {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:49"
+        },
+        {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:51"
+        },
+        {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-204-B06",
+      "text": "Jeder Prüffehler wird als Fehlermeldung mit dem Text der Ausnahme ausgegeben, wodurch das Sichern der Lieferung abgebrochen wird.",
+      "anchors": [
+        {
+          "file": "mv50afz1_save_prepare.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1_save_prepare.abap:18"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "mv50afz1_save_prepare.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1_save_prepare.abap:7"
+        },
+        "meaning": "User-Exit vor dem Sichern der Lieferung"
+      },
+      {
+        "id": "k1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv50afz1_save_prepare.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1_save_prepare.abap:10"
+        },
+        "meaning": "Nur Auslieferungen"
+      },
+      {
+        "id": "k2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv50afz1_save_prepare.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1_save_prepare.abap:11"
+        },
+        "meaning": "Nur im Aendern-Modus"
+      },
+      {
+        "id": "cc",
+        "type": "call",
+        "anchor": {
+          "file": "mv50afz1_save_prepare.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1_save_prepare.abap:14"
+        },
+        "meaning": "Warenausgangspruefung aufrufen"
+      },
+      {
+        "id": "co",
+        "type": "output",
+        "anchor": {
+          "file": "mv50afz1_save_prepare.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1_save_prepare.abap:18"
+        },
+        "meaning": "Fehlermeldung aus der Ausnahme, Sichern verhindert"
+      },
+      {
+        "id": "cx",
+        "type": "end",
+        "anchor": {
+          "file": "mv50afz1_save_prepare.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1_save_prepare.abap:18"
+        },
+        "meaning": "Abbruch des Sicherns"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "meaning": "Exit-Ende, Sichern laeuft weiter",
+        "anchor": {
+          "file": "mv50afz1_save_prepare.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1_save_prepare.abap:21"
+        }
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:19"
+        },
+        "meaning": "Pruefmethode"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:24"
+        },
+        "meaning": "Warenausgang schon gebucht?"
+      },
+      {
+        "id": "r0",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:25"
+        },
+        "meaning": "Keine Pruefung noetig"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:28"
+        },
+        "meaning": "Lieferpositionen (ohne geloeschte)"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:30"
+        },
+        "meaning": "Kommissionierstatus der Position lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:33"
+        },
+        "meaning": "Position nicht kommissioniert?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:34"
+        },
+        "meaning": "Ausnahme: nicht kommissioniert"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:40"
+        },
+        "meaning": "Charge fehlt?"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:41"
+        },
+        "meaning": "Ausnahme: Charge fehlt"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:49"
+        },
+        "meaning": "Land des Warenempfaengers lesen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:51"
+        },
+        "meaning": "Exportlieferung ohne Route?"
+      },
+      {
+        "id": "x3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:52"
+        },
+        "meaning": "Ausnahme: Route fehlt"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "meaning": "Pruefung bestanden",
+        "anchor": {
+          "file": "zcl_sd_deliv_gi_check.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_deliv_gi_check.abap:56"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "fs",
+        "to": "k1",
+        "condition": "always"
+      },
+      {
+        "from": "k1",
+        "to": "k2",
+        "condition": "likp-vbtyp = 'J'"
+      },
+      {
+        "from": "k1",
+        "to": "xe",
+        "condition": "else"
+      },
+      {
+        "from": "k2",
+        "to": "cc",
+        "condition": "t180-trtyp = 'V'"
+      },
+      {
+        "from": "k2",
+        "to": "xe",
+        "condition": "else"
+      },
+      {
+        "from": "cc",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "r0",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "r0",
+        "condition": "is_likp-wadat_ist IS NOT INITIAL"
+      },
+      {
+        "from": "g0",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "lp",
+        "to": "q",
+        "condition": "next row"
+      },
+      {
+        "from": "q",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "x1",
+        "condition": "sy-subrc = 0 AND ls_vbup-kosta = 'A'"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "x2",
+        "condition": "ls_lips-xchpf = abap_true AND ls_lips-charg IS INITIAL"
+      },
+      {
+        "from": "g2",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "q2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "q2",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "x3",
+        "condition": "lv_land <> 'DE' AND is_likp-route IS INITIAL"
+      },
+      {
+        "from": "g3",
+        "to": "me",
+        "condition": "else"
+      },
+      {
+        "from": "x1",
+        "to": "co",
+        "condition": "zcx_sd_deliv_check"
+      },
+      {
+        "from": "x2",
+        "to": "co",
+        "condition": "zcx_sd_deliv_check"
+      },
+      {
+        "from": "x3",
+        "to": "co",
+        "condition": "zcx_sd_deliv_check"
+      },
+      {
+        "from": "co",
+        "to": "cx",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_sd_deliv_gi_check.abap:24 — kein Fachsatz „Warenausgang wird gebucht“ — der Exit prüft nur; gebucht wird im Standard.",
+    "zcl_sd_deliv_gi_check.abap:33 — kein Fachsatz „ohne Statussatz gilt die Position als nicht kommissioniert“ — ohne VBUP-Treffer greift die Bedingung nicht.",
+    "mv50afz1_save_prepare.abap:11 — kein Fachsatz „auch beim Anlegen wird geprüft“ — nur Transaktionstyp V (Ändern)."
+  ],
+  "processDescription": "Beim Sichern einer geänderten Auslieferung ruft der Standard den User-Exit auf. Andere Belegtypen und das Anlegen werden über CHECK sofort durchgelassen. Die Prüfklasse endet ohne Prüfung, wenn der Warenausgang schon gebucht ist. Sonst liest sie je nicht gelöschter Position den Kommissionierstatus aus VBUP und bricht bei nicht kommissionierten Positionen mit einer Ausnahme ab; ebenso bei chargenpflichtigen Positionen ohne Charge. Abschließend prüft sie für Empfänger außerhalb Deutschlands, ob eine Route gepflegt ist. Jede Ausnahme wird im Exit gefangen und als Fehlermeldung ausgegeben, was das Sichern verhindert; ohne Befund läuft das Sichern normal weiter."
+}

@@ -1,0 +1,30 @@
+{
+  "id": "BM-246",
+  "title": "Gateway CREATE_ENTITY: Störmeldung aus der Instandhaltungs-App anlegen",
+  "domain": "PM Instandhaltung / Störmeldung",
+  "band": "mittel",
+  "loc": 90,
+  "constructs": [
+    "SAP Gateway DPC_EXT CREATE_ENTITY",
+    "io_data_provider->read_entry_data",
+    "/iwbep/if_message_container",
+    "add_messages_from_bapi",
+    "RAISE EXCEPTION ... message_container",
+    "BAPI_ALM_NOTIF_CREATE/SAVE",
+    "line_exists",
+    "COND"
+  ],
+  "scenario": "OData-Service einer Tablet-App für Instandhalter; ein Techniker meldet eine Störung an einem Equipment, der Service legt eine M2-Meldung an.",
+  "s4_issues": [
+    "BAPI_ALM_NOTIF_* nicht für Cloud freigegeben; Nachfolger API_MAINTNOTIFICATION",
+    "SEGW-Service statt RAP"
+  ],
+  "wave": 3,
+  "module": "PM",
+  "edge_constructs": [
+    "drei Abbruchpfade über Geschäftsausnahme",
+    "Rückgabe von BAPI_ALM_NOTIF_SAVE ungeprüft",
+    "Erfolgsmeldung im Response-Header"
+  ],
+  "oo": true
+}

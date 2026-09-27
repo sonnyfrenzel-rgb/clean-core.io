@@ -1,0 +1,477 @@
+{
+  "id": "BM-265",
+  "title": "Abfahrtsmeldung an Spediteur mit Wiederholung",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZEWM_IF_CUST",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "z_ewm_tu_notify_carrier.abap",
+        "line": 24,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ewm_tu_notify_carrier.abap:24"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_CARRIER_TU_DEPARTURE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ewm_tu_notify_carrier.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ewm_tu_notify_carrier.abap:39"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEWM_RETRYQ",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_ewm_tu_notify_carrier.abap",
+        "line": 70,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ewm_tu_notify_carrier.abap:70"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-265-B01",
+      "text": "Zu Lagernummer und Spediteur wird die Schnittstellenkonfiguration für die Abfahrtsmeldung (RFC-Destination, Versuchszahl, Wartezeit) gelesen.",
+      "anchors": [
+        {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-265-B02",
+      "text": "Fehlt die Konfiguration oder die Destination, endet der Baustein mit der Ausnahme NO_DESTINATION, ohne zu senden.",
+      "anchors": [
+        {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:28"
+        },
+        {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-265-B03",
+      "text": "Ist keine Wartezeit gepflegt, wird mit fünf Sekunden begonnen.",
+      "anchors": [
+        {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:33"
+        },
+        {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-265-B04",
+      "text": "Die Abfahrt der Transporteinheit wird synchron an das Speditionssystem gemeldet, höchstens so oft wie konfiguriert.",
+      "anchors": [
+        {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:37"
+        },
+        {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-265-B05",
+      "text": "Nimmt die Gegenstelle die Meldung an, ist die Zustellung erfolgreich und es wird nicht weiter versucht.",
+      "anchors": [
+        {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:49"
+        },
+        {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-265-B06",
+      "text": "Bei einem Kommunikationsfehler wird gewartet und erneut gesendet, wobei sich die Wartezeit mit jedem Versuch verdoppelt.",
+      "anchors": [
+        {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-265-B07",
+      "text": "Bei einem Systemfehler oder Anwendungsfehler der Gegenstelle wird nicht wiederholt.",
+      "anchors": [
+        {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-265-B08",
+      "text": "Konnte die Meldung nicht zugestellt werden, wird sie mit Versuchszahl und Fehlertext in die Retry-Queue für die spätere Nachverarbeitung eingetragen und der Baustein endet mit SEND_FAILED.",
+      "anchors": [
+        {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:63"
+        },
+        {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:70"
+        },
+        {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:71"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:1"
+        },
+        "meaning": "Abfahrtsmeldung Transporteinheit an Spediteur"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:24"
+        },
+        "meaning": "Schnittstellen-Customizing je Lagernummer und Spediteur lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:28"
+        },
+        "meaning": "Kein Customizing oder keine Destination?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:29"
+        },
+        "meaning": "Ausnahme NO_DESTINATION"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:33"
+        },
+        "meaning": "Keine Wartezeit gepflegt?"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:37"
+        },
+        "meaning": "Bis zur maximalen Versuchszahl senden"
+      },
+      {
+        "id": "rfc",
+        "type": "rfc",
+        "anchor": {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:39"
+        },
+        "meaning": "Abfahrt synchron an Speditionssystem melden"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:49"
+        },
+        "meaning": "Ergebnis des Aufrufs"
+      },
+      {
+        "id": "wt",
+        "type": "action",
+        "anchor": {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:55"
+        },
+        "meaning": "Warten und Wartezeit verdoppeln"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:63"
+        },
+        "meaning": "Meldung nicht zugestellt?"
+      },
+      {
+        "id": "ins",
+        "type": "write",
+        "anchor": {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:70"
+        },
+        "meaning": "Eintrag in Retry-Queue für Nachverarbeitung"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:71"
+        },
+        "meaning": "Ausnahme SEND_FAILED"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "z_ewm_tu_notify_carrier.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ewm_tu_notify_carrier.abap:74"
+        },
+        "meaning": "Ende (zugestellt)"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "x1",
+        "condition": "sy-subrc <> 0 OR ls_cust-rfcdest IS INITIAL"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "lp",
+        "to": "rfc",
+        "condition": "next row"
+      },
+      {
+        "from": "rfc",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "wt",
+        "condition": "WHEN 1"
+      },
+      {
+        "from": "wt",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cs",
+        "to": "g3",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "lp",
+        "to": "g3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g3",
+        "to": "ins",
+        "condition": "lv_ok = abap_false"
+      },
+      {
+        "from": "ins",
+        "to": "x2",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "lp",
+        "condition": "lv_wait IS INITIAL"
+      },
+      {
+        "from": "cs",
+        "to": "g3",
+        "condition": "WHEN 0"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "z_ewm_tu_notify_carrier.abap:70 — kein Fachsatz „Retry-Eintrag ist dauerhaft gespeichert“ (kein COMMIT im Baustein; ob er festgeschrieben wird, entscheidet der Aufrufer)",
+    "z_ewm_tu_notify_carrier.abap:49 — kein Fachsatz „jeder Fehler wird wiederholt“ (nur communication_failure führt zu Wartezeit und neuem Versuch)",
+    "z_ewm_tu_notify_carrier.abap:71 — kein Fachsatz „Transporteinheit wird gesperrt oder Abfahrt storniert“ (nur Ausnahme an den Aufrufer)"
+  ],
+  "processDescription": "Beim Abfahrtsbuchen einer Transporteinheit wird der Baustein gerufen, um die Abfahrt an das Speditionssystem zu melden. Er liest die Schnittstellenkonfiguration je Lagernummer und Spediteur; fehlt sie oder die RFC-Destination, endet er mit NO_DESTINATION. Die Wartezeit beginnt mit dem Customizingwert oder fünf Sekunden. Dann wird die Meldung bis zur konfigurierten Versuchszahl synchron gesendet: Erfolg beendet die Schleife, ein Kommunikationsfehler führt zu Warten mit verdoppelter Wartezeit und neuem Versuch, ein System- oder Anwendungsfehler beendet die Versuche sofort. Wurde nicht zugestellt, wird ein Eintrag mit Versuchszahl und Fehlertext in die Retry-Queue geschrieben (ohne eigenes COMMIT) und die Ausnahme SEND_FAILED ausgelöst."
+}

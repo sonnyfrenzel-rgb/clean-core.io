@@ -1,0 +1,40 @@
+{
+  "id": "BM-260",
+  "title": "RAP-Angebot mit Draft: Feature-Steuerung, Preisfindung, Freigabe mit Genehmigungsgrenze, Kopieren, Business Event und Ablauf-Job",
+  "domain": "SD Angebotsbearbeitung",
+  "band": "sehr komplex",
+  "loc": 460,
+  "constructs": [
+    "RAP managed with draft and additional save",
+    "FOR INSTANCE FEATURES",
+    "FOR VALIDATE ON SAVE / FOR DETERMINE ON MODIFY",
+    "Aktion mit RESULT, Aktion ohne Ergebnis",
+    "Kopieraktion mit CREATE BY \\_Positionen und %cid_ref",
+    "READ ENTITIES ... BY \\_Kopf / BY \\_Positionen",
+    "REDUCE",
+    "RAISE ENTITY EVENT",
+    "INSERT im save_modified",
+    "SELECT mit JOIN A304/KONP",
+    "SELECT ... ENDSELECT UP TO 1 ROWS auf PRCD_ELEMENTS",
+    "Application Job if_apj_rt_exec_object",
+    "MODIFY ENTITIES ... EXECUTE",
+    "COMMIT/ROLLBACK ENTITIES",
+    "BALI-Protokoll",
+    "CHECK"
+  ],
+  "scenario": "Kundeneigenes Angebots-BO in S/4 Private Cloud: Vertriebsinnendienst erstellt Angebote in einer Fiori-Elements-App mit Entwurf; große Angebote gehen per Business Event in eine Genehmigung, ein nächtlicher Job setzt abgelaufene Angebote auf „abgelaufen“.",
+  "s4_issues": [
+    "Direktes Lesen von A304/KONP/PRCD_ELEMENTS/VBAK/VBAP statt freigegebener Preis- und Auftrags-APIs",
+    "Parallelwelt zum SD-Standardangebot (VBAK-Typ B)"
+  ],
+  "wave": 3,
+  "module": "SD",
+  "edge_constructs": [
+    "Framework-Einstiege ohne Aufrufkanten (auch EML EXECUTE aus dem Job)",
+    "frühes RETURN vor dem Sichern des Protokolls",
+    "sy-tabix nach APPEND verfälscht die Paketlogik",
+    "Preis 0 nur als Warnung",
+    "Status G statt F oberhalb der Grenze"
+  ],
+  "oo": true
+}

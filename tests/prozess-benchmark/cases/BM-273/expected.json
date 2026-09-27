@@ -1,0 +1,1236 @@
+{
+  "id": "BM-273",
+  "title": "Faktura-Export mit Wiederaufsetzpunkten",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZSD_EXP_CHKPT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_inv_export_f01.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_inv_export_f01.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBRK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_inv_export_f01.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_inv_export_f01.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBRP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_inv_export_f01.abap",
+        "line": 66,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_inv_export_f01.abap:66"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KONV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_inv_export_f01.abap",
+        "line": 70,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_inv_export_f01.abap:70"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_EXP_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zsd_inv_export_f01.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_inv_export_f01.abap:83"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_EXP_CHKPT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zsd_inv_export_f01.abap",
+        "line": 96,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_inv_export_f01.abap:96"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-273-B01",
+      "text": "Für die Lauf-ID wird geprüft, ob ein abgebrochener Lauf einen Wiederaufsetzpunkt hinterlassen hat.",
+      "anchors": [
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:12"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:14"
+        }
+      ]
+    },
+    {
+      "id": "BM-273-B02",
+      "text": "Existiert der Lauf und ist kein Restart-Kennzeichen gesetzt, bricht der Export mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:15"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:16"
+        }
+      ]
+    },
+    {
+      "id": "BM-273-B03",
+      "text": "Mit Restart-Kennzeichen wird nach der letzten exportierten Faktura fortgesetzt und an die vorhandene Datei angehängt, was gemeldet wird; ohne vorhandenen Lauf beginnt eine neue Datei.",
+      "anchors": [
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:19"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:20"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:23"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:31"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:32"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-273-B04",
+      "text": "Lässt sich die Datei nicht öffnen, bricht der Export mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:36"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-273-B05",
+      "text": "Eine neue Datei erhält eine Kopfzeile mit den Spaltennamen.",
+      "anchors": [
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:39"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-273-B06",
+      "text": "Es werden nicht stornierte, an die Buchhaltung übergebene Fakturen des Fakturadatums und der Verkaufsorganisationen nach der letzten exportierten Nummer in Nummernfolge selektiert.",
+      "anchors": [
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-273-B07",
+      "text": "Je Faktura wird der Steuerbetrag aus den Steuerkonditionen summiert und für jede Position eine Zeile mit Faktura, Datum, Regulierer, Position, Material, Menge, Nettowert, Steuer und Währung in die Datei geschrieben.",
+      "anchors": [
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:66"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:70"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:74"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-273-B08",
+      "text": "Jede exportierte Faktura wird mit Lauf-ID und Datum im Exportprotokoll vermerkt.",
+      "anchors": [
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-273-B09",
+      "text": "Nach jeder im Commit-Intervall liegenden Faktura wird deren Nummer als Wiederaufsetzpunkt gespeichert und alles bis dahin festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zsd_inv_export.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export.abap:16"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:96"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-273-B10",
+      "text": "Nach der letzten Faktura wird die Datei geschlossen, der Wiederaufsetzpunkt gelöscht, festgeschrieben und die Zahl exportierter Fakturen mit dem Dateinamen ausgegeben.",
+      "anchors": [
+        {
+          "file": "zsd_inv_export.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export.abap:21"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:104"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:105"
+        },
+        {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:106"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_inv_export.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export.abap:9"
+        },
+        "meaning": "Exportstart"
+      },
+      {
+        "id": "p1",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_inv_export.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export.abap:10"
+        },
+        "meaning": "Wiederaufsetzen prüfen"
+      },
+      {
+        "id": "p2",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_inv_export.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export.abap:11"
+        },
+        "meaning": "Exportdatei öffnen"
+      },
+      {
+        "id": "p3",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_inv_export.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export.abap:12"
+        },
+        "meaning": "Fakturen selektieren"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_inv_export.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export.abap:14"
+        },
+        "meaning": "Fakturen durchlaufen"
+      },
+      {
+        "id": "p4",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_inv_export.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export.abap:15"
+        },
+        "meaning": "Faktura exportieren"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_inv_export.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export.abap:16"
+        },
+        "meaning": "Commit-Intervall erreicht?"
+      },
+      {
+        "id": "p5",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_inv_export.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export.abap:17"
+        },
+        "meaning": "Wiederaufsetzpunkt setzen"
+      },
+      {
+        "id": "cd",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_inv_export.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export.abap:21"
+        },
+        "meaning": "Exportdatei schließen"
+      },
+      {
+        "id": "p6",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_inv_export.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export.abap:22"
+        },
+        "meaning": "Lauf abschließen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_inv_export.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export.abap:22"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "cs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:8"
+        },
+        "meaning": "Wiederaufsetzen prüfen"
+      },
+      {
+        "id": "cq",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:12"
+        },
+        "meaning": "Wiederaufsetzpunkt der Lauf-ID lesen"
+      },
+      {
+        "id": "cg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:14"
+        },
+        "meaning": "Lauf-ID schon vorhanden?"
+      },
+      {
+        "id": "cg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:15"
+        },
+        "meaning": "Kein Restart-Kennzeichen?"
+      },
+      {
+        "id": "cme",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:16"
+        },
+        "meaning": "Fehler: Lauf existiert, Restart-Kennzeichen nötig"
+      },
+      {
+        "id": "cxe",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:16"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "cms",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:20"
+        },
+        "meaning": "Hinweis: Restart ab Faktura"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:25"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "os",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:30"
+        },
+        "meaning": "Datei öffnen"
+      },
+      {
+        "id": "og1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:31"
+        },
+        "meaning": "Restart?"
+      },
+      {
+        "id": "oa",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:32"
+        },
+        "meaning": "Vorhandene Datei zum Anhängen öffnen"
+      },
+      {
+        "id": "oo",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:34"
+        },
+        "meaning": "Neue Datei anlegen"
+      },
+      {
+        "id": "og2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:36"
+        },
+        "meaning": "Datei nicht zu öffnen?"
+      },
+      {
+        "id": "ome",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:37"
+        },
+        "meaning": "Fehler: Datei kann nicht geöffnet werden"
+      },
+      {
+        "id": "oxe",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:37"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "og3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:39"
+        },
+        "meaning": "Neue Datei?"
+      },
+      {
+        "id": "oh",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:40"
+        },
+        "meaning": "Kopfzeile schreiben"
+      },
+      {
+        "id": "oe",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:42"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:47"
+        },
+        "meaning": "Selektion"
+      },
+      {
+        "id": "sq",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:48"
+        },
+        "meaning": "Gebuchte, nicht stornierte Fakturen nach letzter exportierter Nummer lesen"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:55"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:60"
+        },
+        "meaning": "Faktura exportieren"
+      },
+      {
+        "id": "eq1",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:66"
+        },
+        "meaning": "Fakturapositionen lesen"
+      },
+      {
+        "id": "eq2",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:70"
+        },
+        "meaning": "Steuerbetrag der Faktura aus Konditionen summieren"
+      },
+      {
+        "id": "el",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:74"
+        },
+        "meaning": "Positionen durchlaufen"
+      },
+      {
+        "id": "et",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:77"
+        },
+        "meaning": "Zeile je Position schreiben"
+      },
+      {
+        "id": "ei",
+        "type": "write",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:83"
+        },
+        "meaning": "Faktura als exportiert protokollieren"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:85"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "ks",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:90"
+        },
+        "meaning": "Wiederaufsetzpunkt setzen"
+      },
+      {
+        "id": "km",
+        "type": "write",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:96"
+        },
+        "meaning": "Letzte exportierte Faktura speichern"
+      },
+      {
+        "id": "kc",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:97"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:98"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:103"
+        },
+        "meaning": "Lauf abschließen"
+      },
+      {
+        "id": "fd",
+        "type": "write",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:104"
+        },
+        "meaning": "Wiederaufsetzpunkt löschen"
+      },
+      {
+        "id": "fc",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:105"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "fw",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:106"
+        },
+        "meaning": "Anzahl und Dateiname ausgeben"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_inv_export_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_inv_export_f01.abap:108"
+        },
+        "meaning": "Ende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "p1",
+        "condition": "always"
+      },
+      {
+        "from": "p1",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "cq",
+        "condition": "always"
+      },
+      {
+        "from": "cq",
+        "to": "cg1",
+        "condition": "always"
+      },
+      {
+        "from": "cg1",
+        "to": "cg2",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "cg2",
+        "to": "cme",
+        "condition": "p_restrt = abap_false"
+      },
+      {
+        "from": "cme",
+        "to": "cxe",
+        "condition": "always"
+      },
+      {
+        "from": "cms",
+        "to": "ce",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "p2",
+        "condition": "always"
+      },
+      {
+        "from": "p2",
+        "to": "os",
+        "condition": "always"
+      },
+      {
+        "from": "os",
+        "to": "og1",
+        "condition": "always"
+      },
+      {
+        "from": "og1",
+        "to": "oa",
+        "condition": "gv_mode = 'A'"
+      },
+      {
+        "from": "og1",
+        "to": "oo",
+        "condition": "else"
+      },
+      {
+        "from": "oa",
+        "to": "og2",
+        "condition": "always"
+      },
+      {
+        "from": "oo",
+        "to": "og2",
+        "condition": "always"
+      },
+      {
+        "from": "og2",
+        "to": "ome",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ome",
+        "to": "oxe",
+        "condition": "always"
+      },
+      {
+        "from": "og2",
+        "to": "og3",
+        "condition": "else"
+      },
+      {
+        "from": "og3",
+        "to": "oh",
+        "condition": "gv_mode = 'N'"
+      },
+      {
+        "from": "oh",
+        "to": "oe",
+        "condition": "always"
+      },
+      {
+        "from": "og3",
+        "to": "oe",
+        "condition": "else"
+      },
+      {
+        "from": "oe",
+        "to": "p3",
+        "condition": "always"
+      },
+      {
+        "from": "p3",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "sq",
+        "condition": "always"
+      },
+      {
+        "from": "sq",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "p4",
+        "condition": "next row"
+      },
+      {
+        "from": "p4",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "eq1",
+        "condition": "always"
+      },
+      {
+        "from": "eq1",
+        "to": "eq2",
+        "condition": "always"
+      },
+      {
+        "from": "eq2",
+        "to": "el",
+        "condition": "always"
+      },
+      {
+        "from": "el",
+        "to": "et",
+        "condition": "next row"
+      },
+      {
+        "from": "et",
+        "to": "el",
+        "condition": "next iteration"
+      },
+      {
+        "from": "el",
+        "to": "ei",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ei",
+        "to": "ee",
+        "condition": "always"
+      },
+      {
+        "from": "ee",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "p5",
+        "condition": "gv_count MOD p_commit = 0"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "p5",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "ks",
+        "to": "km",
+        "condition": "always"
+      },
+      {
+        "from": "km",
+        "to": "kc",
+        "condition": "always"
+      },
+      {
+        "from": "kc",
+        "to": "ke",
+        "condition": "always"
+      },
+      {
+        "from": "ke",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "cd",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cd",
+        "to": "p6",
+        "condition": "always"
+      },
+      {
+        "from": "p6",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "fd",
+        "condition": "always"
+      },
+      {
+        "from": "fd",
+        "to": "fc",
+        "condition": "always"
+      },
+      {
+        "from": "fc",
+        "to": "fw",
+        "condition": "always"
+      },
+      {
+        "from": "fw",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "cg2",
+        "to": "cms",
+        "condition": "else"
+      },
+      {
+        "from": "cg1",
+        "to": "ce",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zsd_inv_export_f01.abap:96 — kein Fachsatz „nach einem Abbruch enthält die Datei jede Faktura genau einmal“ (Zeilen, die nach dem letzten Wiederaufsetzpunkt übertragen wurden, können bereits in der Datei stehen und werden beim Anhängen erneut geschrieben)",
+    "zsd_inv_export_f01.abap:70 — kein Fachsatz „Steuer je Position“ (der Steuerbetrag der ganzen Faktura steht in jeder Positionszeile)",
+    "zsd_inv_export_f01.abap:83 — kein Fachsatz „Faktura wird als exportiert gekennzeichnet und nicht mehr selektiert“ (die Selektion prüft das Protokoll nicht; ein neuer Lauf exportiert dieselben Fakturen erneut)"
+  ],
+  "processDescription": "Der Export läuft je Lauf-ID. Zuerst wird geprüft, ob die Lauf-ID einen Wiederaufsetzpunkt hat; dann ist ein Restart-Kennzeichen nötig, sonst bricht der Export ab. Beim Restart wird nach der zuletzt gespeicherten Faktura fortgesetzt und an die vorhandene Datei angehängt, sonst eine neue Datei mit Kopfzeile begonnen; lässt sich die Datei nicht öffnen, bricht der Export ab. Selektiert werden nicht stornierte, an die Buchhaltung übergebene Fakturen des Zeitraums nach der letzten exportierten Nummer. Je Faktura werden die Positionen gelesen, der Steuerbetrag summiert, je Position eine Zeile geschrieben und die Faktura im Exportprotokoll vermerkt. Im Commit-Intervall wird die aktuelle Faktura als Wiederaufsetzpunkt gespeichert und festgeschrieben. Am Ende wird die Datei geschlossen, der Wiederaufsetzpunkt gelöscht und eine Summe ausgegeben."
+}

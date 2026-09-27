@@ -1,0 +1,2381 @@
+{
+  "id": "BM-300",
+  "title": "Fertigungs-Mini-Leitstand: Belastungsampel, Vorgangsaktionen über Klassenhierarchie mit Sperre, CLEANUP, Verbucherprotokoll und asynchronem Druck",
+  "classes": [
+    "K07",
+    "K09",
+    "K01",
+    "K04",
+    "K12",
+    "K11"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "CRHD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_leitstand_f01.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_leitstand_f01.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_leitstand_f01.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_leitstand_f01.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_leitstand_f01.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_leitstand_f01.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFVV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_leitstand_f01.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_leitstand_f01.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JEST",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_leitstand_f01.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_leitstand_f01.abap:41"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AUFK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_leitstand_c02.abap",
+        "line": 71,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_leitstand_c02.abap:71"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_ESORDER",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_leitstand_c02.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_leitstand_c02.abap:82"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_ESORDER",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_leitstand_c02.abap",
+        "line": 110,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_leitstand_c02.abap:110"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_PP_LEITSTAND_LOG",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_leitstand_c02.abap",
+        "line": 102,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_leitstand_c02.abap:102"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PRODORD_CHANGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_leitstand_c03.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_leitstand_c03.abap:25"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PRODORD_RELEASE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_leitstand_c03.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_leitstand_c03.abap:50"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_PP_ARBEITSPAPIERE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_leitstand_c03.abap",
+        "line": 72,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_leitstand_c03.abap:72"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_GUI_ALV_GRID",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_leitstand.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_leitstand.abap:64"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-300-B01",
+      "text": "Ohne Anzeigeberechtigung für Fertigungsaufträge im Werk wird der Leitstand mit einer Abbruchmeldung beendet.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:24"
+        },
+        {
+          "file": "zpp_leitstand.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:27"
+        },
+        {
+          "file": "zpp_leitstand.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B02",
+      "text": "Es werden die Arbeitsplätze des verantwortlichen Meisters im Werk gelesen; hat er keine, entfällt das weitere Lesen.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:31"
+        },
+        {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:18"
+        },
+        {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:24"
+        },
+        {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B03",
+      "text": "Zu diesen Arbeitsplätzen werden die Fertigungsvorgänge gelesen, deren spätester Starttermin im Planungshorizont von heute plus der eingegebenen Tage liegt.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B04",
+      "text": "Vorgänge mit aktivem Status rückgemeldet werden aus dem Arbeitsvorrat entfernt.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:39"
+        },
+        {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:41"
+        },
+        {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:47"
+        },
+        {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B05",
+      "text": "Je Arbeitsplatz wird die Belastung als Summe der Maschinenzeit seiner Vorgänge gebildet und gegen eine Kapazität von 16 Stunden je Horizonttag als Ampel bewertet: rot über 100 %, gelb über 80 %, sonst grün.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:53"
+        },
+        {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:55"
+        },
+        {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B06",
+      "text": "Gibt es keinen offenen Vorgang, erhält der Meister einen Hinweis und der Leitstand endet.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:32"
+        },
+        {
+          "file": "zpp_leitstand.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:33"
+        },
+        {
+          "file": "zpp_leitstand.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B07",
+      "text": "Sonst zeigt der Leitstand oben die Arbeitsplätze mit Ampel und unten die Vorgänge in zwei Grids, mit Doppelklick oben und eigenen Drucktasten unten.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:37"
+        },
+        {
+          "file": "zpp_leitstand.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:63"
+        },
+        {
+          "file": "zpp_leitstand.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:64"
+        },
+        {
+          "file": "zpp_leitstand.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:70"
+        },
+        {
+          "file": "zpp_leitstand.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:71"
+        },
+        {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B08",
+      "text": "Ein Doppelklick auf einen Arbeitsplatz zeigt unten dessen Vorgänge nach Starttermin sortiert.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:21"
+        },
+        {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:23"
+        },
+        {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B09",
+      "text": "Eine Aktion verlangt einen markierten Vorgang, sonst erhält der Meister einen Hinweis; es wird nur der erste markierte Vorgang bearbeitet.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:43"
+        },
+        {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:44"
+        },
+        {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:45"
+        },
+        {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B10",
+      "text": "Die Fabrik ordnet der Drucktaste die Aktion und die zu prüfende Aktivität zu: Vorziehen (ändern), Freigeben, Arbeitspapiere drucken; andere Funktionen werden abgewiesen.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:52"
+        },
+        {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:52"
+        },
+        {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B11",
+      "text": "Jede Aktion prüft die Berechtigung für Werk, Auftragsart und Aktivität und sperrt den Auftrag; fehlt die Berechtigung oder ist der Auftrag gesperrt, wird die Aktion abgewiesen.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:53"
+        },
+        {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:71"
+        },
+        {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:73"
+        },
+        {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:78"
+        },
+        {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:82"
+        },
+        {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:89"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B12",
+      "text": "Vorziehen setzt den Eckstarttermin des Auftrags einen Tag vor den Vorgangsstart; läge er in der Vergangenheit oder lehnt die Auftragsänderung ab, wird die Aktion abgewiesen.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:17"
+        },
+        {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:18"
+        },
+        {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:25"
+        },
+        {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B13",
+      "text": "Freigeben gibt den Fertigungsauftrag frei; ein Fehler der Freigabe weist die Aktion ab.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:50"
+        },
+        {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B14",
+      "text": "Drucken stößt den Druck der Arbeitspapiere asynchron in einem anderen Workprozess an, ohne zu warten; meldet die Rückkehr einen Fehler oder keine Spoolnummer, erhält der Meister eine Information.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:72"
+        },
+        {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:86"
+        },
+        {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:89"
+        },
+        {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:96"
+        },
+        {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B15",
+      "text": "Wird eine Aktion während der Durchführung abgewiesen, wird der Auftrag vorher noch entsperrt.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:94"
+        },
+        {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:96"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B16",
+      "text": "Nach erfolgreicher Durchführung wird die Aktion für die Schichtübergabe zur Verbuchung vorgemerkt, alles festgeschrieben und der Auftrag entsperrt.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:102"
+        },
+        {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:108"
+        },
+        {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:110"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B17",
+      "text": "Erfolg wird mit Auftrag und Funktion gemeldet, jede Abweisung als Statusmeldung in Fehleroptik; danach wird die Vorgangsliste aufgefrischt.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:54"
+        },
+        {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:56"
+        },
+        {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-300-B18",
+      "text": "Zurück, Beenden oder Abbrechen beendet den Leitstand.",
+      "anchors": [
+        {
+          "file": "zpp_leitstand.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:84"
+        },
+        {
+          "file": "zpp_leitstand.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:86"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s0",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:21"
+        },
+        "meaning": "Leitstand starten"
+      },
+      {
+        "id": "ac",
+        "type": "action",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:24"
+        },
+        "meaning": "Anzeigeberechtigung Werk"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:27"
+        },
+        "meaning": "Nicht berechtigt?"
+      },
+      {
+        "id": "ma",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:28"
+        },
+        "meaning": "Abbruchmeldung"
+      },
+      {
+        "id": "mae",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:28"
+        },
+        "meaning": "Programm abgebrochen"
+      },
+      {
+        "id": "pd",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:31"
+        },
+        "meaning": "Daten lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:32"
+        },
+        "meaning": "Keine Vorgänge?"
+      },
+      {
+        "id": "mi",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:33"
+        },
+        "meaning": "Hinweis nichts eingeplant"
+      },
+      {
+        "id": "r0",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:34"
+        },
+        "meaning": "Beenden"
+      },
+      {
+        "id": "cs",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:37"
+        },
+        "meaning": "Leitstandsbild"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:37"
+        },
+        "meaning": "Ende nach Verlassen"
+      },
+      {
+        "id": "so",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:42"
+        },
+        "meaning": "PBO Leitstand"
+      },
+      {
+        "id": "gg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:46"
+        },
+        "meaning": "Oberfläche angelegt?"
+      },
+      {
+        "id": "sh1",
+        "type": "action",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:63"
+        },
+        "meaning": "Doppelklick oben anmelden"
+      },
+      {
+        "id": "d1",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:64"
+        },
+        "meaning": "Arbeitsplätze anzeigen"
+      },
+      {
+        "id": "sh2",
+        "type": "action",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:70"
+        },
+        "meaning": "Toolbar und Kommando unten anmelden"
+      },
+      {
+        "id": "d2",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:71"
+        },
+        "meaning": "Vorgänge anzeigen"
+      },
+      {
+        "id": "eo",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:78"
+        },
+        "meaning": "Ende PBO"
+      },
+      {
+        "id": "su",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:83"
+        },
+        "meaning": "PAI Leitstand"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:84"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "lp",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:86"
+        },
+        "meaning": "Leitstand beenden"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand.abap:91"
+        },
+        "meaning": "Ende PAI"
+      },
+      {
+        "id": "sd",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:11"
+        },
+        "meaning": "Daten lesen"
+      },
+      {
+        "id": "ra",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:18"
+        },
+        "meaning": "Arbeitsplätze des Meisters"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:24"
+        },
+        "meaning": "Keine Arbeitsplätze?"
+      },
+      {
+        "id": "rr",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:25"
+        },
+        "meaning": "Ohne Vorgänge zurück"
+      },
+      {
+        "id": "rv",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:28"
+        },
+        "meaning": "Vorgänge im Horizont (FOR ALL ENTRIES)"
+      },
+      {
+        "id": "gv",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:39"
+        },
+        "meaning": "Vorgänge gefunden?"
+      },
+      {
+        "id": "rj",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:41"
+        },
+        "meaning": "Status rückgemeldet lesen"
+      },
+      {
+        "id": "lj",
+        "type": "loop",
+        "anchor": {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:47"
+        },
+        "meaning": "Rückgemeldete Vorgänge"
+      },
+      {
+        "id": "adel",
+        "type": "action",
+        "anchor": {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:48"
+        },
+        "meaning": "Aus Arbeitsvorrat entfernen"
+      },
+      {
+        "id": "lpa",
+        "type": "loop",
+        "anchor": {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:53"
+        },
+        "meaning": "Arbeitsplätze"
+      },
+      {
+        "id": "al",
+        "type": "action",
+        "anchor": {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:55"
+        },
+        "meaning": "Belastung summieren"
+      },
+      {
+        "id": "aamp",
+        "type": "action",
+        "anchor": {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:58"
+        },
+        "meaning": "Ampel bewerten"
+      },
+      {
+        "id": "ed",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_f01.abap:63"
+        },
+        "meaning": "Ende Daten lesen"
+      },
+      {
+        "id": "sdc",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:21"
+        },
+        "meaning": "Doppelklick Arbeitsplatz"
+      },
+      {
+        "id": "rf",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:25"
+        },
+        "meaning": "Vorgänge des Arbeitsplatzes zeigen"
+      },
+      {
+        "id": "edc",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:26"
+        },
+        "meaning": "Ende Doppelklick"
+      },
+      {
+        "id": "stb",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:28"
+        },
+        "meaning": "Drucktasten aufbauen"
+      },
+      {
+        "id": "etb",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:36"
+        },
+        "meaning": "Ende Toolbar"
+      },
+      {
+        "id": "suc",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:38"
+        },
+        "meaning": "Aktion am Vorgang"
+      },
+      {
+        "id": "gsr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:43"
+        },
+        "meaning": "Markierte Zeilen holen"
+      },
+      {
+        "id": "gsel",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:44"
+        },
+        "meaning": "Nichts markiert?"
+      },
+      {
+        "id": "msel",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:45"
+        },
+        "meaning": "Hinweis markieren"
+      },
+      {
+        "id": "rsel",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:46"
+        },
+        "meaning": "Ohne Aktion zurück"
+      },
+      {
+        "id": "cf",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:52"
+        },
+        "meaning": "Aktion bestimmen (Fabrik)"
+      },
+      {
+        "id": "cx",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:53"
+        },
+        "meaning": "Aktion ausführen"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:54"
+        },
+        "meaning": "Erfolgsmeldung"
+      },
+      {
+        "id": "mc",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:56"
+        },
+        "meaning": "Abweisung in Fehleroptik"
+      },
+      {
+        "id": "rf2",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:58"
+        },
+        "meaning": "Vorgangsliste auffrischen"
+      },
+      {
+        "id": "euc",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_c01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c01.abap:59"
+        },
+        "meaning": "Ende Aktion"
+      },
+      {
+        "id": "sf",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:51"
+        },
+        "meaning": "Aktionsfabrik"
+      },
+      {
+        "id": "gf",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:52"
+        },
+        "meaning": "Welche Funktion?"
+      },
+      {
+        "id": "rzf",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:63"
+        },
+        "meaning": "Ausnahme unbekannte Funktion"
+      },
+      {
+        "id": "ef",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:66"
+        },
+        "meaning": "Aktion zurück"
+      },
+      {
+        "id": "sa",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:68"
+        },
+        "meaning": "Aktionsablauf"
+      },
+      {
+        "id": "rau",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:71"
+        },
+        "meaning": "Auftragsart lesen"
+      },
+      {
+        "id": "ac2",
+        "type": "action",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:73"
+        },
+        "meaning": "Berechtigung Aktivität prüfen"
+      },
+      {
+        "id": "ga2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:77"
+        },
+        "meaning": "Nicht berechtigt?"
+      },
+      {
+        "id": "rza",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:78"
+        },
+        "meaning": "Ausnahme Berechtigung"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:82"
+        },
+        "meaning": "Auftrag sperren"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:88"
+        },
+        "meaning": "Gesperrt?"
+      },
+      {
+        "id": "rzl",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:89"
+        },
+        "meaning": "Ausnahme gesperrt"
+      },
+      {
+        "id": "cdf",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:94"
+        },
+        "meaning": "Durchführen (Redefinition)"
+      },
+      {
+        "id": "dq2",
+        "type": "lock",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:96"
+        },
+        "meaning": "Entsperren im CLEANUP"
+      },
+      {
+        "id": "ut",
+        "type": "update_task",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:102"
+        },
+        "meaning": "Protokoll zur Verbuchung"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:108"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "dq",
+        "type": "lock",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:110"
+        },
+        "meaning": "Auftrag entsperren"
+      },
+      {
+        "id": "ea",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_c02.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c02.abap:113"
+        },
+        "meaning": "Ende Ablauf"
+      },
+      {
+        "id": "sv",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:11"
+        },
+        "meaning": "Vorziehen"
+      },
+      {
+        "id": "av",
+        "type": "action",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:17"
+        },
+        "meaning": "Neuen Starttermin berechnen"
+      },
+      {
+        "id": "gv2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:18"
+        },
+        "meaning": "In der Vergangenheit?"
+      },
+      {
+        "id": "rzv",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:19"
+        },
+        "meaning": "Ausnahme Vergangenheit"
+      },
+      {
+        "id": "bc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:25"
+        },
+        "meaning": "Eckstarttermin ändern"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:32"
+        },
+        "meaning": "Änderung abgelehnt?"
+      },
+      {
+        "id": "rzb",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:33"
+        },
+        "meaning": "Ausnahme Änderung"
+      },
+      {
+        "id": "ev",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:37"
+        },
+        "meaning": "Ende Vorziehen"
+      },
+      {
+        "id": "sfr",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:44"
+        },
+        "meaning": "Freigeben"
+      },
+      {
+        "id": "bfr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:50"
+        },
+        "meaning": "Auftrag freigeben"
+      },
+      {
+        "id": "gfr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:56"
+        },
+        "meaning": "Freigabe abgelehnt?"
+      },
+      {
+        "id": "rzfr",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:57"
+        },
+        "meaning": "Ausnahme Freigabe"
+      },
+      {
+        "id": "efr",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:61"
+        },
+        "meaning": "Ende Freigeben"
+      },
+      {
+        "id": "sdr",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:68"
+        },
+        "meaning": "Drucken"
+      },
+      {
+        "id": "asy",
+        "type": "async",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:72"
+        },
+        "meaning": "Druck asynchron anstoßen"
+      },
+      {
+        "id": "edr",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:83"
+        },
+        "meaning": "Ende Drucken"
+      },
+      {
+        "id": "sdf",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:86"
+        },
+        "meaning": "Rückkehr der Drucktask"
+      },
+      {
+        "id": "rres",
+        "type": "async",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:89"
+        },
+        "meaning": "Druckergebnis abholen"
+      },
+      {
+        "id": "gdf",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:96"
+        },
+        "meaning": "Druck fehlgeschlagen?"
+      },
+      {
+        "id": "mdf",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:97"
+        },
+        "meaning": "Information Druckfehler"
+      },
+      {
+        "id": "edf",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_leitstand_c03.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_leitstand_c03.abap:100"
+        },
+        "meaning": "Ende Rückkehr"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s0",
+        "to": "ac",
+        "condition": "always"
+      },
+      {
+        "from": "ac",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "ma",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ma",
+        "to": "mae",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "pd",
+        "condition": "else"
+      },
+      {
+        "from": "pd",
+        "to": "sd",
+        "condition": "always"
+      },
+      {
+        "from": "ed",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "rr",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "mi",
+        "condition": "gt_vorg IS INITIAL"
+      },
+      {
+        "from": "mi",
+        "to": "r0",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "cs",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "so",
+        "to": "gg",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "sh1",
+        "condition": "go_cont IS INITIAL"
+      },
+      {
+        "from": "sh1",
+        "to": "d1",
+        "condition": "always"
+      },
+      {
+        "from": "d1",
+        "to": "sh2",
+        "condition": "always"
+      },
+      {
+        "from": "sh2",
+        "to": "d2",
+        "condition": "always"
+      },
+      {
+        "from": "d2",
+        "to": "eo",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "eo",
+        "condition": "else"
+      },
+      {
+        "from": "su",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "lp",
+        "condition": "WHEN 'BACK' OR 'EXIT' OR 'CANC'"
+      },
+      {
+        "from": "g3",
+        "to": "e3",
+        "condition": "else"
+      },
+      {
+        "from": "sd",
+        "to": "ra",
+        "condition": "always"
+      },
+      {
+        "from": "ra",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "rr",
+        "condition": "gt_arbpl IS INITIAL"
+      },
+      {
+        "from": "ga",
+        "to": "rv",
+        "condition": "else"
+      },
+      {
+        "from": "rv",
+        "to": "gv",
+        "condition": "always"
+      },
+      {
+        "from": "gv",
+        "to": "rj",
+        "condition": "gt_vorg IS NOT INITIAL"
+      },
+      {
+        "from": "gv",
+        "to": "lpa",
+        "condition": "else"
+      },
+      {
+        "from": "rj",
+        "to": "lj",
+        "condition": "always"
+      },
+      {
+        "from": "lj",
+        "to": "adel",
+        "condition": "next row"
+      },
+      {
+        "from": "adel",
+        "to": "lj",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lj",
+        "to": "lpa",
+        "condition": "no more rows"
+      },
+      {
+        "from": "lpa",
+        "to": "al",
+        "condition": "next row"
+      },
+      {
+        "from": "al",
+        "to": "aamp",
+        "condition": "always"
+      },
+      {
+        "from": "aamp",
+        "to": "lpa",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lpa",
+        "to": "ed",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sdc",
+        "to": "rf",
+        "condition": "always"
+      },
+      {
+        "from": "rf",
+        "to": "edc",
+        "condition": "always"
+      },
+      {
+        "from": "stb",
+        "to": "etb",
+        "condition": "always"
+      },
+      {
+        "from": "suc",
+        "to": "gsr",
+        "condition": "always"
+      },
+      {
+        "from": "gsr",
+        "to": "gsel",
+        "condition": "always"
+      },
+      {
+        "from": "gsel",
+        "to": "msel",
+        "condition": "lt_rows IS INITIAL"
+      },
+      {
+        "from": "msel",
+        "to": "rsel",
+        "condition": "always"
+      },
+      {
+        "from": "gsel",
+        "to": "cf",
+        "condition": "else"
+      },
+      {
+        "from": "cf",
+        "to": "sf",
+        "condition": "always"
+      },
+      {
+        "from": "ef",
+        "to": "cx",
+        "condition": "always"
+      },
+      {
+        "from": "cx",
+        "to": "sa",
+        "condition": "always"
+      },
+      {
+        "from": "ea",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "rf2",
+        "condition": "always"
+      },
+      {
+        "from": "mc",
+        "to": "rf2",
+        "condition": "always"
+      },
+      {
+        "from": "rf2",
+        "to": "euc",
+        "condition": "always"
+      },
+      {
+        "from": "rzf",
+        "to": "mc",
+        "condition": "lcx_leit"
+      },
+      {
+        "from": "rza",
+        "to": "mc",
+        "condition": "lcx_leit"
+      },
+      {
+        "from": "rzl",
+        "to": "mc",
+        "condition": "lcx_leit"
+      },
+      {
+        "from": "dq2",
+        "to": "mc",
+        "condition": "lcx_leit"
+      },
+      {
+        "from": "sf",
+        "to": "gf",
+        "condition": "always"
+      },
+      {
+        "from": "gf",
+        "to": "ef",
+        "condition": "WHEN 'VORZ'"
+      },
+      {
+        "from": "gf",
+        "to": "ef",
+        "condition": "WHEN 'FREI'"
+      },
+      {
+        "from": "gf",
+        "to": "ef",
+        "condition": "WHEN 'DRUCK'"
+      },
+      {
+        "from": "gf",
+        "to": "rzf",
+        "condition": "else"
+      },
+      {
+        "from": "sa",
+        "to": "rau",
+        "condition": "always"
+      },
+      {
+        "from": "rau",
+        "to": "ac2",
+        "condition": "always"
+      },
+      {
+        "from": "ac2",
+        "to": "ga2",
+        "condition": "always"
+      },
+      {
+        "from": "ga2",
+        "to": "rza",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ga2",
+        "to": "lk",
+        "condition": "else"
+      },
+      {
+        "from": "lk",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "rzl",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gl",
+        "to": "cdf",
+        "condition": "else"
+      },
+      {
+        "from": "cdf",
+        "to": "sv",
+        "condition": "always"
+      },
+      {
+        "from": "cdf",
+        "to": "sfr",
+        "condition": "always"
+      },
+      {
+        "from": "cdf",
+        "to": "sdr",
+        "condition": "always"
+      },
+      {
+        "from": "ev",
+        "to": "ut",
+        "condition": "always"
+      },
+      {
+        "from": "efr",
+        "to": "ut",
+        "condition": "always"
+      },
+      {
+        "from": "edr",
+        "to": "ut",
+        "condition": "always"
+      },
+      {
+        "from": "rzv",
+        "to": "dq2",
+        "condition": "lcx_leit"
+      },
+      {
+        "from": "rzb",
+        "to": "dq2",
+        "condition": "lcx_leit"
+      },
+      {
+        "from": "rzfr",
+        "to": "dq2",
+        "condition": "lcx_leit"
+      },
+      {
+        "from": "ut",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "dq",
+        "to": "ea",
+        "condition": "always"
+      },
+      {
+        "from": "sv",
+        "to": "av",
+        "condition": "always"
+      },
+      {
+        "from": "av",
+        "to": "gv2",
+        "condition": "always"
+      },
+      {
+        "from": "gv2",
+        "to": "rzv",
+        "condition": "lv_neu < sy-datum"
+      },
+      {
+        "from": "gv2",
+        "to": "bc",
+        "condition": "else"
+      },
+      {
+        "from": "bc",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "rzb",
+        "condition": "ls_return-type CA 'EA'"
+      },
+      {
+        "from": "gb",
+        "to": "ev",
+        "condition": "else"
+      },
+      {
+        "from": "sfr",
+        "to": "bfr",
+        "condition": "always"
+      },
+      {
+        "from": "bfr",
+        "to": "gfr",
+        "condition": "always"
+      },
+      {
+        "from": "gfr",
+        "to": "rzfr",
+        "condition": "ls_return-type CA 'EA'"
+      },
+      {
+        "from": "gfr",
+        "to": "efr",
+        "condition": "else"
+      },
+      {
+        "from": "sdr",
+        "to": "asy",
+        "condition": "always"
+      },
+      {
+        "from": "asy",
+        "to": "edr",
+        "condition": "always"
+      },
+      {
+        "from": "sdf",
+        "to": "rres",
+        "condition": "always"
+      },
+      {
+        "from": "rres",
+        "to": "gdf",
+        "condition": "always"
+      },
+      {
+        "from": "gdf",
+        "to": "mdf",
+        "condition": "sy-subrc <> 0 OR lv_spool IS INITIAL"
+      },
+      {
+        "from": "gdf",
+        "to": "edf",
+        "condition": "else"
+      },
+      {
+        "from": "mdf",
+        "to": "edf",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zpp_leitstand_c03.abap:72 — kein Fachsatz „Arbeitspapiere sind gedruckt“ bei der Erfolgsmeldung; der Druck läuft asynchron, sein Ergebnis kommt erst in DRUCK_FERTIG an.",
+    "zpp_leitstand_c02.abap:102 — kein Fachsatz „Protokoll ist geschrieben“ vor dem COMMIT WORK; der Aufruf wird nur zur Verbuchung vorgemerkt.",
+    "zpp_leitstand_c03.abap:25 — kein Fachsatz „Vorgang wird umgeplant“; geändert wird nur der Eckstarttermin des Auftrags.",
+    "zpp_leitstand.abap:87 — kein Fachsatz „Leitstand kann neu gelesen werden“; der Zweig ist auskommentiert."
+  ],
+  "processDescription": "Der Mini-Leitstand bricht ohne Anzeigeberechtigung im Werk mit einer A-Meldung ab. Er liest die Arbeitsplätze des Meisters, per FOR ALL ENTRIES deren Vorgänge im Horizont (nur wenn Arbeitsplätze da sind), entfernt rückgemeldete Vorgänge über den Status in JEST und bildet je Arbeitsplatz Belastung und Ampel. Ohne Vorgänge endet er mit einem Hinweis, sonst zeigt Bild 0100 in einem Splitter oben die Arbeitsplätze und unten die Vorgänge. Doppelklick oben filtert unten. Die Drucktasten unten führen für den ersten markierten Vorgang eine Aktion aus: eine Fabrik wählt Vorziehen, Freigeben oder Drucken (sonst Abweisung), die Basisklasse prüft Berechtigung und sperrt den Auftrag, ruft die Redefinition (Eckstart einen Tag früher per BAPI_PRODORD_CHANGE, Freigabe per BAPI_PRODORD_RELEASE, asynchroner Druck mit Rückruf) und entsperrt im CLEANUP, wenn eine Ausnahme sie verlässt; sonst merkt sie ein Protokoll im Verbucher vor, schreibt fest und entsperrt. Erfolg und Abweisung werden gemeldet, die Liste aufgefrischt. Der Rückruf des Drucks meldet nur Fehler. Zurück beendet den Leitstand."
+}

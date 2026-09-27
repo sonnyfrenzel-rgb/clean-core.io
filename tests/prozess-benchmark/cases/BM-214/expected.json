@@ -1,0 +1,2412 @@
+{
+  "id": "BM-214",
+  "title": "EDI-Auftragseingang mit Handlerklassen je Bestellart",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Polymorphe Aufrufe check/enrich: Kanten zu allen drei Implementierungen mit „always“.",
+    "Ausnahmen über mehrere Ebenen (Handler → process → FM) direkt in den CATCH-Zweig des Bausteins."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_ord_inf01.abap",
+        "line": 9,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_ord_inf01.abap:9"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNVV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_ord_inc01.abap",
+        "line": 157,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_ord_inc01.abap:157"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MVKE",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_ord_inc01.abap",
+        "line": 168,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_ord_inc01.abap:168"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNMT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_cust_mat_map.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_cust_mat_map.abap:36"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MEAN",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_cust_mat_map.abap",
+        "line": 43,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_cust_mat_map.abap:43"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_SALESORDER_CREATEFROMDAT2",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzsd_ord_inc01.abap",
+        "line": 226,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_ord_inc01.abap:226"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzsd_ord_inc01.abap",
+        "line": 244,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_ord_inc01.abap:244"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_ORD_TYPEMAP",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_ord_inc01.abap",
+        "line": 299,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_ord_inc01.abap:299"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_PLANT_DET",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_ord_inc01.abap",
+        "line": 186,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_ord_inc01.abap:186"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_CONSI_AGR",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_ord_inc01.abap",
+        "line": 270,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_ord_inc01.abap:270"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_SD_CUST_MAT_MAP",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "lzsd_ord_inc01.abap",
+        "line": 91,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_ord_inc01.abap:91"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-214-B01",
+      "text": "Jedes eingehende Auftrags-IDoc wird einzeln verarbeitet; ein Fehler betrifft nur dieses IDoc.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inu01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inu01.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B02",
+      "text": "Fehlt das Kopfsegment, erhält das IDoc Status 51.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:43"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:46"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:47"
+        },
+        {
+          "file": "lzsd_ord_inu01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inu01.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B03",
+      "text": "Auftraggeber und Warenempfänger werden aus den Partnersegmenten übernommen; ohne Warenempfänger gilt der Auftraggeber, ohne Auftraggeber wird abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:73"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B04",
+      "text": "Kundenbestellnummer, Bestelldatum und Wunschlieferdatum kommen aus den Kopfsegmenten; der Vertriebsbereich ist fest 1000/20/00.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:65"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B05",
+      "text": "Je Positionssegment wird das Kundenmaterial in eine eigene Materialnummer umgeschlüsselt; ist es unbekannt, wird das IDoc abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:78"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:91"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:95"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:96"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B06",
+      "text": "Die Umschlüsselung nutzt zuerst die Kunden-Material-Info und ersatzweise die EAN; Ergebnisse, auch erfolglose, werden gepuffert.",
+      "anchors": [
+        {
+          "file": "zcl_sd_cust_mat_map.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_cust_mat_map.abap:28"
+        },
+        {
+          "file": "zcl_sd_cust_mat_map.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_cust_mat_map.abap:30"
+        },
+        {
+          "file": "zcl_sd_cust_mat_map.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_cust_mat_map.abap:36"
+        },
+        {
+          "file": "zcl_sd_cust_mat_map.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_cust_mat_map.abap:41"
+        },
+        {
+          "file": "zcl_sd_cust_mat_map.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_cust_mat_map.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B07",
+      "text": "Ein IDoc ohne Positionen wird abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:102"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:103"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B08",
+      "text": "Existiert beim Auftraggeber bereits ein Auftrag mit derselben Kundenbestellnummer, wird das IDoc als Doppelsendung abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inf01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inf01.abap:9"
+        },
+        {
+          "file": "lzsd_ord_inf01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inf01.abap:13"
+        },
+        {
+          "file": "lzsd_ord_inf01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inf01.abap:14"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B09",
+      "text": "Welcher Handler den Auftrag verarbeitet, ist je Sendepartner und Bestellart gepflegt: Eilauftrag, Konsignationsauffüllung oder sonst Standard.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 299,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:299"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 302,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:302"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B10",
+      "text": "Jeder Auftrag wird in fester Reihenfolge geprüft, angereichert und angelegt.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:150"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:151"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:152"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B11",
+      "text": "Standard- und Eilaufträge werden abgelehnt, wenn der Kunde im Vertriebsbereich fehlt oder eine Auftragssperre hat.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:157"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:162"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:163"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B12",
+      "text": "Ebenso werden sie abgelehnt, wenn ein Material einen Vertriebsstatus hat.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:167"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:168"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:172"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:173"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B13",
+      "text": "Eilaufträge werden nach 14:00 Uhr zusätzlich abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 252,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:252"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 254,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:254"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 255,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:255"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B14",
+      "text": "Standardaufträge erhalten die Auftragsart ZOR und ohne Wunschlieferdatum heute plus zwei Tage.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:180"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 181,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:181"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:182"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B15",
+      "text": "Das Auslieferwerk wird je Warenempfänger und Material aus einer Pflegetabelle bestimmt, ersatzweise aus dem Materialstamm.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:185"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:186"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:189"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 190,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:190"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B16",
+      "text": "Eilaufträge erhalten nach der Standardanreicherung die Versandbedingung „sofort“ und das Lieferdatum heute.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 261,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:261"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 262,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:262"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B17",
+      "text": "Konsignationsaufträge werden statt der Kundenprüfung gegen einen gültigen Konsignationsvertrag geprüft und ohne Vertrag abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 270,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:270"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 273,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:273"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 274,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:274"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B18",
+      "text": "Konsignationsaufträge erhalten die Auftragsart KB und das Werk aus dem Vertrag.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 280,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:280"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 281,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:281"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B19",
+      "text": "Der Kundenauftrag wird mit Auftraggeber, Warenempfänger, Positionen und Einteilungen angelegt; ohne Auftragsnummer wird zurückgerollt und mit dem BAPI-Fehlertext abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 226,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:226"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 237,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:237"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 238,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:238"
+        },
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 239,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:239"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B20",
+      "text": "Ein angelegter Auftrag wird im Baustein festgeschrieben, und das IDoc erhält Status 53 mit der Auftragsnummer.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 244,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:244"
+        },
+        {
+          "file": "lzsd_ord_inu01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inu01.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-214-B21",
+      "text": "Jede Ablehnung setzt das IDoc mit dem Fehlertext auf Status 51.",
+      "anchors": [
+        {
+          "file": "lzsd_ord_inu01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inu01.abap:44"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_ord_inu01.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inu01.abap:1"
+        },
+        "meaning": "IDoc-Eingang Kundenauftraege (EDI)"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "lzsd_ord_inu01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inu01.abap:31"
+        },
+        "meaning": "Je IDoc"
+      },
+      {
+        "id": "cm",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_ord_inu01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inu01.abap:34"
+        },
+        "meaning": "Segmente in Auftragsdaten umsetzen"
+      },
+      {
+        "id": "cd",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_ord_inu01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inu01.abap:37"
+        },
+        "meaning": "Doppelsendung pruefen"
+      },
+      {
+        "id": "cf",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_ord_inu01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inu01.abap:38"
+        },
+        "meaning": "Handler je Partner/Bestellart"
+      },
+      {
+        "id": "cp",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_ord_inu01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inu01.abap:39"
+        },
+        "meaning": "Auftrag pruefen, anreichern, anlegen"
+      },
+      {
+        "id": "s53",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_ord_inu01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inu01.abap:40"
+        },
+        "meaning": "Status 53 mit Auftragsnummer"
+      },
+      {
+        "id": "s51",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_ord_inu01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inu01.abap:44"
+        },
+        "meaning": "Status 51 mit Fehlertext"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "meaning": "Status an ALE zurueckgeben",
+        "anchor": {
+          "file": "lzsd_ord_inu01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inu01.abap:54"
+        }
+      },
+      {
+        "id": "ds",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_ord_inf01.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inf01.abap:4"
+        },
+        "meaning": "Doppelpruefung"
+      },
+      {
+        "id": "dq",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_ord_inf01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inf01.abap:9"
+        },
+        "meaning": "Auftrag mit gleicher Kundenbestellnummer suchen"
+      },
+      {
+        "id": "dg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_ord_inf01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inf01.abap:13"
+        },
+        "meaning": "Bereits erfasst?"
+      },
+      {
+        "id": "dx",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_ord_inf01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inf01.abap:14"
+        },
+        "meaning": "Ausnahme: Doppelsendung"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_ord_inf01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inf01.abap:17"
+        }
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_ord_inf01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inf01.abap:19"
+        },
+        "meaning": "IDoc-Status vormerken"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_ord_inf01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inf01.abap:30"
+        }
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:31"
+        },
+        "meaning": "Mapping"
+      },
+      {
+        "id": "mr",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:43"
+        },
+        "meaning": "Kopfsegment E1EDK01 suchen"
+      },
+      {
+        "id": "mg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:46"
+        },
+        "meaning": "Kopfsegment fehlt?"
+      },
+      {
+        "id": "mx1",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:47"
+        },
+        "meaning": "Ausnahme: Kopf fehlt"
+      },
+      {
+        "id": "mg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:73"
+        },
+        "meaning": "Auftraggeber fehlt?"
+      },
+      {
+        "id": "mx2",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:74"
+        },
+        "meaning": "Ausnahme: AG fehlt"
+      },
+      {
+        "id": "ml",
+        "type": "loop",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:78"
+        },
+        "meaning": "Je Positionssegment E1EDP01"
+      },
+      {
+        "id": "mc",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:91"
+        },
+        "meaning": "Kundenmaterial in Material umschluesseln"
+      },
+      {
+        "id": "mg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:95"
+        },
+        "meaning": "Material unbekannt?"
+      },
+      {
+        "id": "mx3",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:96"
+        },
+        "meaning": "Ausnahme: Material unbekannt"
+      },
+      {
+        "id": "mg4",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:102"
+        },
+        "meaning": "Keine Positionen?"
+      },
+      {
+        "id": "mx4",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:103"
+        },
+        "meaning": "Ausnahme: keine Positionen"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "meaning": "Auftragsdaten zurueckgeben",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:106"
+        }
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:149"
+        },
+        "meaning": "Schablone Auftragsverarbeitung"
+      },
+      {
+        "id": "pc1",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:150"
+        },
+        "meaning": "Pruefen (polymorph)"
+      },
+      {
+        "id": "pc2",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:151"
+        },
+        "meaning": "Anreichern (polymorph)"
+      },
+      {
+        "id": "pc3",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:152"
+        },
+        "meaning": "Auftrag anlegen"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "meaning": "Auftragsnummer zurueckgeben",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:153"
+        }
+      },
+      {
+        "id": "cs",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:155"
+        },
+        "meaning": "Standardpruefung"
+      },
+      {
+        "id": "cq",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:157"
+        },
+        "meaning": "Auftragssperre des Kunden lesen"
+      },
+      {
+        "id": "cg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:162"
+        },
+        "meaning": "Kunde fehlt oder gesperrt?"
+      },
+      {
+        "id": "cx",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:163"
+        },
+        "meaning": "Ausnahme: Kunde gesperrt"
+      },
+      {
+        "id": "cl",
+        "type": "loop",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:167"
+        },
+        "meaning": "Je Position"
+      },
+      {
+        "id": "cq2",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:168"
+        },
+        "meaning": "Vertriebsstatus des Materials lesen"
+      },
+      {
+        "id": "cg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:172"
+        },
+        "meaning": "Material gesperrt?"
+      },
+      {
+        "id": "cx2",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:173"
+        },
+        "meaning": "Ausnahme: Material gesperrt"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:177"
+        }
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 179,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:179"
+        },
+        "meaning": "Standardanreicherung"
+      },
+      {
+        "id": "ea",
+        "type": "action",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:180"
+        },
+        "meaning": "Auftragsart ZOR"
+      },
+      {
+        "id": "eg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 181,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:181"
+        },
+        "meaning": "Kein Wunschlieferdatum?"
+      },
+      {
+        "id": "ev",
+        "type": "action",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:182"
+        },
+        "meaning": "Wunschlieferdatum heute + 2"
+      },
+      {
+        "id": "el",
+        "type": "loop",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:185"
+        },
+        "meaning": "Je Position"
+      },
+      {
+        "id": "eq",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:186"
+        },
+        "meaning": "Auslieferwerk je Warenempfaenger/Material"
+      },
+      {
+        "id": "eg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:189"
+        },
+        "meaning": "Keine Werksfindung?"
+      },
+      {
+        "id": "eq2",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 190,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:190"
+        },
+        "meaning": "Auslieferwerk aus Materialstamm"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:196"
+        }
+      },
+      {
+        "id": "ks",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 198,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:198"
+        },
+        "meaning": "Auftragsanlage"
+      },
+      {
+        "id": "kb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 226,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:226"
+        },
+        "meaning": "Kundenauftrag anlegen"
+      },
+      {
+        "id": "kg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 237,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:237"
+        },
+        "meaning": "Kein Auftrag?"
+      },
+      {
+        "id": "krb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 238,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:238"
+        },
+        "meaning": "Verwerfen"
+      },
+      {
+        "id": "kx",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 239,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:239"
+        },
+        "meaning": "Ausnahme mit BAPI-Fehlertext"
+      },
+      {
+        "id": "kc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 244,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:244"
+        },
+        "meaning": "Auftrag festschreiben"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 247,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:247"
+        }
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 251,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:251"
+        },
+        "meaning": "Pruefung Eilauftrag"
+      },
+      {
+        "id": "rsup",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 252,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:252"
+        },
+        "meaning": "Standardpruefung"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 254,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:254"
+        },
+        "meaning": "Nach Annahmeschluss?"
+      },
+      {
+        "id": "rx",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 255,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:255"
+        },
+        "meaning": "Ausnahme: Annahmeschluss"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 258,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:258"
+        }
+      },
+      {
+        "id": "ns",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 260,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:260"
+        },
+        "meaning": "Anreicherung Eilauftrag"
+      },
+      {
+        "id": "nsup",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 261,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:261"
+        },
+        "meaning": "Standardanreicherung"
+      },
+      {
+        "id": "na",
+        "type": "action",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 262,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:262"
+        },
+        "meaning": "Versandbedingung sofort, Lieferdatum heute"
+      },
+      {
+        "id": "ne",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 264,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:264"
+        }
+      },
+      {
+        "id": "qs",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 268,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:268"
+        },
+        "meaning": "Pruefung Konsignation"
+      },
+      {
+        "id": "qq",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 270,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:270"
+        },
+        "meaning": "Gueltigen Konsignationsvertrag lesen"
+      },
+      {
+        "id": "qg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 273,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:273"
+        },
+        "meaning": "Kein Vertrag?"
+      },
+      {
+        "id": "qx",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 274,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:274"
+        },
+        "meaning": "Ausnahme: kein Vertrag"
+      },
+      {
+        "id": "qe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 277,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:277"
+        }
+      },
+      {
+        "id": "ws",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 279,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:279"
+        },
+        "meaning": "Anreicherung Konsignation"
+      },
+      {
+        "id": "wa",
+        "type": "action",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 280,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:280"
+        },
+        "meaning": "Auftragsart KB (Konsignationsbeschickung)"
+      },
+      {
+        "id": "wm",
+        "type": "action",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 281,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:281"
+        },
+        "meaning": "Werk des Konsignationsvertrags je Position"
+      },
+      {
+        "id": "we",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 283,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:283"
+        }
+      },
+      {
+        "id": "gs",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 297,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:297"
+        },
+        "meaning": "Handlerfabrik"
+      },
+      {
+        "id": "gq",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 299,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:299"
+        },
+        "meaning": "Handler je Partner und Bestellart lesen"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 302,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:302"
+        },
+        "meaning": "Welcher Handler?"
+      },
+      {
+        "id": "ge",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_ord_inc01.abap",
+          "line": 310,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_ord_inc01.abap:310"
+        }
+      },
+      {
+        "id": "ts",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_cust_mat_map.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_cust_mat_map.abap:27"
+        },
+        "meaning": "Materialumschluesselung"
+      },
+      {
+        "id": "tr",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_cust_mat_map.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_cust_mat_map.abap:28"
+        },
+        "meaning": "Puffer pruefen"
+      },
+      {
+        "id": "tg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_cust_mat_map.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_cust_mat_map.abap:30"
+        },
+        "meaning": "Im Puffer?"
+      },
+      {
+        "id": "tret",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_cust_mat_map.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_cust_mat_map.abap:32"
+        },
+        "meaning": "Gepuffertes Ergebnis"
+      },
+      {
+        "id": "tq1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_cust_mat_map.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_cust_mat_map.abap:36"
+        },
+        "meaning": "Kunden-Material-Info lesen"
+      },
+      {
+        "id": "tg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_cust_mat_map.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_cust_mat_map.abap:41"
+        },
+        "meaning": "Keine Kunden-Material-Info?"
+      },
+      {
+        "id": "tq2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_cust_mat_map.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_cust_mat_map.abap:43"
+        },
+        "meaning": "Material ueber EAN suchen"
+      },
+      {
+        "id": "te",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_sd_cust_mat_map.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_cust_mat_map.abap:50"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "fs",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "lp",
+        "to": "cm",
+        "condition": "next row"
+      },
+      {
+        "from": "cm",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "cd",
+        "condition": "always"
+      },
+      {
+        "from": "cd",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "de",
+        "to": "cf",
+        "condition": "always"
+      },
+      {
+        "from": "cf",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "cp",
+        "condition": "always"
+      },
+      {
+        "from": "cp",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "s53",
+        "condition": "always"
+      },
+      {
+        "from": "s53",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "s51",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "fe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ds",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "dq",
+        "to": "dg",
+        "condition": "always"
+      },
+      {
+        "from": "dg",
+        "to": "dx",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "dg",
+        "to": "de",
+        "condition": "else"
+      },
+      {
+        "from": "ms",
+        "to": "mr",
+        "condition": "always"
+      },
+      {
+        "from": "mr",
+        "to": "mg1",
+        "condition": "always"
+      },
+      {
+        "from": "mg1",
+        "to": "mx1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mg1",
+        "to": "mg2",
+        "condition": "else"
+      },
+      {
+        "from": "mg2",
+        "to": "mx2",
+        "condition": "rs_order-kunag IS INITIAL"
+      },
+      {
+        "from": "mg2",
+        "to": "ml",
+        "condition": "else"
+      },
+      {
+        "from": "ml",
+        "to": "mc",
+        "condition": "next row"
+      },
+      {
+        "from": "mc",
+        "to": "ts",
+        "condition": "always"
+      },
+      {
+        "from": "te",
+        "to": "mg3",
+        "condition": "always"
+      },
+      {
+        "from": "tret",
+        "to": "mg3",
+        "condition": "always"
+      },
+      {
+        "from": "mg3",
+        "to": "mx3",
+        "condition": "ls_item-matnr IS INITIAL"
+      },
+      {
+        "from": "mg3",
+        "to": "ml",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ml",
+        "to": "mg4",
+        "condition": "no more rows"
+      },
+      {
+        "from": "mg4",
+        "to": "mx4",
+        "condition": "rs_order-items IS INITIAL"
+      },
+      {
+        "from": "mg4",
+        "to": "me",
+        "condition": "else"
+      },
+      {
+        "from": "ts",
+        "to": "tr",
+        "condition": "always"
+      },
+      {
+        "from": "tr",
+        "to": "tg",
+        "condition": "always"
+      },
+      {
+        "from": "tg",
+        "to": "tret",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "tg",
+        "to": "tq1",
+        "condition": "else"
+      },
+      {
+        "from": "tq1",
+        "to": "tg2",
+        "condition": "always"
+      },
+      {
+        "from": "tg2",
+        "to": "tq2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "tg2",
+        "to": "te",
+        "condition": "else"
+      },
+      {
+        "from": "tq2",
+        "to": "te",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "gq",
+        "condition": "always"
+      },
+      {
+        "from": "gq",
+        "to": "gc",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "ge",
+        "condition": "WHEN 'RUSH'"
+      },
+      {
+        "from": "gc",
+        "to": "ge",
+        "condition": "WHEN 'CONSI'"
+      },
+      {
+        "from": "gc",
+        "to": "ge",
+        "condition": "else"
+      },
+      {
+        "from": "ps",
+        "to": "pc1",
+        "condition": "always"
+      },
+      {
+        "from": "pc1",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "pc2",
+        "condition": "always"
+      },
+      {
+        "from": "pc1",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "pc2",
+        "condition": "always"
+      },
+      {
+        "from": "pc1",
+        "to": "qs",
+        "condition": "always"
+      },
+      {
+        "from": "qe",
+        "to": "pc2",
+        "condition": "always"
+      },
+      {
+        "from": "pc2",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "ee",
+        "to": "pc3",
+        "condition": "always"
+      },
+      {
+        "from": "pc2",
+        "to": "ns",
+        "condition": "always"
+      },
+      {
+        "from": "ne",
+        "to": "pc3",
+        "condition": "always"
+      },
+      {
+        "from": "pc2",
+        "to": "ws",
+        "condition": "always"
+      },
+      {
+        "from": "we",
+        "to": "pc3",
+        "condition": "always"
+      },
+      {
+        "from": "pc3",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "ke",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "cq",
+        "condition": "always"
+      },
+      {
+        "from": "cq",
+        "to": "cg",
+        "condition": "always"
+      },
+      {
+        "from": "cg",
+        "to": "cx",
+        "condition": "sy-subrc <> 0 OR lv_aufsd IS NOT INITIAL"
+      },
+      {
+        "from": "cg",
+        "to": "cl",
+        "condition": "else"
+      },
+      {
+        "from": "cl",
+        "to": "cq2",
+        "condition": "next row"
+      },
+      {
+        "from": "cq2",
+        "to": "cg2",
+        "condition": "always"
+      },
+      {
+        "from": "cg2",
+        "to": "cx2",
+        "condition": "lv_vmsta IS NOT INITIAL"
+      },
+      {
+        "from": "cg2",
+        "to": "cl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cl",
+        "to": "ce",
+        "condition": "no more rows"
+      },
+      {
+        "from": "es",
+        "to": "ea",
+        "condition": "always"
+      },
+      {
+        "from": "ea",
+        "to": "eg",
+        "condition": "always"
+      },
+      {
+        "from": "eg",
+        "to": "ev",
+        "condition": "cs_order-vdatu IS INITIAL"
+      },
+      {
+        "from": "eg",
+        "to": "el",
+        "condition": "else"
+      },
+      {
+        "from": "ev",
+        "to": "el",
+        "condition": "always"
+      },
+      {
+        "from": "el",
+        "to": "eq",
+        "condition": "next row"
+      },
+      {
+        "from": "eq",
+        "to": "eg2",
+        "condition": "always"
+      },
+      {
+        "from": "eg2",
+        "to": "eq2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "eg2",
+        "to": "el",
+        "condition": "next iteration"
+      },
+      {
+        "from": "eq2",
+        "to": "el",
+        "condition": "next iteration"
+      },
+      {
+        "from": "el",
+        "to": "ee",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ks",
+        "to": "kb",
+        "condition": "always"
+      },
+      {
+        "from": "kb",
+        "to": "kg",
+        "condition": "always"
+      },
+      {
+        "from": "kg",
+        "to": "krb",
+        "condition": "rv_vbeln IS INITIAL"
+      },
+      {
+        "from": "krb",
+        "to": "kx",
+        "condition": "always"
+      },
+      {
+        "from": "kg",
+        "to": "kc",
+        "condition": "else"
+      },
+      {
+        "from": "kc",
+        "to": "ke",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "rsup",
+        "condition": "always"
+      },
+      {
+        "from": "rsup",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rx",
+        "condition": "sy-uzeit > gc_cutoff"
+      },
+      {
+        "from": "rg",
+        "to": "re",
+        "condition": "else"
+      },
+      {
+        "from": "ns",
+        "to": "nsup",
+        "condition": "always"
+      },
+      {
+        "from": "nsup",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "ee",
+        "to": "na",
+        "condition": "always"
+      },
+      {
+        "from": "na",
+        "to": "ne",
+        "condition": "always"
+      },
+      {
+        "from": "qs",
+        "to": "qq",
+        "condition": "always"
+      },
+      {
+        "from": "qq",
+        "to": "qg",
+        "condition": "always"
+      },
+      {
+        "from": "qg",
+        "to": "qx",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "qg",
+        "to": "qe",
+        "condition": "else"
+      },
+      {
+        "from": "ws",
+        "to": "wa",
+        "condition": "always"
+      },
+      {
+        "from": "wa",
+        "to": "wm",
+        "condition": "always"
+      },
+      {
+        "from": "wm",
+        "to": "we",
+        "condition": "always"
+      },
+      {
+        "from": "mx1",
+        "to": "s51",
+        "condition": "lcx_order_in"
+      },
+      {
+        "from": "mx2",
+        "to": "s51",
+        "condition": "lcx_order_in"
+      },
+      {
+        "from": "mx3",
+        "to": "s51",
+        "condition": "lcx_order_in"
+      },
+      {
+        "from": "mx4",
+        "to": "s51",
+        "condition": "lcx_order_in"
+      },
+      {
+        "from": "dx",
+        "to": "s51",
+        "condition": "lcx_order_in"
+      },
+      {
+        "from": "cx",
+        "to": "s51",
+        "condition": "lcx_order_in"
+      },
+      {
+        "from": "cx2",
+        "to": "s51",
+        "condition": "lcx_order_in"
+      },
+      {
+        "from": "kx",
+        "to": "s51",
+        "condition": "lcx_order_in"
+      },
+      {
+        "from": "rx",
+        "to": "s51",
+        "condition": "lcx_order_in"
+      },
+      {
+        "from": "qx",
+        "to": "s51",
+        "condition": "lcx_order_in"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "lzsd_ord_inc01.abap:268 — kein Fachsatz „auch Konsignationsaufträge werden auf Kundensperre geprüft“ — die Redefinition ruft super->check nicht auf.",
+    "lzsd_ord_inc01.abap:172 — kein Fachsatz „jede Position wird unabhängig geprüft“ — findet der SELECT nichts, bleibt der Status der vorherigen Position in lv_vmsta stehen.",
+    "gesamte Scheibe — kein Fachsatz „EDI-Preise werden gegen die Preisfindung geprüft“ — die Preisprüfung ist auskommentiert.",
+    "lzsd_ord_inc01.abap:244 — kein Fachsatz „das Festschreiben übernimmt die ALE-Schicht“ — der Handler ruft selbst BAPI_TRANSACTION_COMMIT."
+  ],
+  "processDescription": "Die ALE-Schicht übergibt Auftrags-IDocs der Handelspartner. Für jedes IDoc setzt ein Mapper Kopf-, Partner- und Positionssegmente in Auftragsdaten um; fehlende Kopfdaten, fehlender Auftraggeber, unbekannte Kundenmaterialien oder fehlende Positionen führen zur Ablehnung. Kundenmaterialien werden über die Kunden-Material-Info, ersatzweise über die EAN umgeschlüsselt. Eine Doppelsendung mit gleicher Kundenbestellnummer wird abgelehnt. Eine Fabrik wählt je Sendepartner und Bestellart den Handler. Der Standardhandler prüft Kundensperre und Materialstatus, setzt Auftragsart ZOR, Wunschlieferdatum und Auslieferwerk und legt den Auftrag per BAPI an. Der Eilhandler lehnt zusätzlich nach 14:00 Uhr ab und setzt Versand sofort. Der Konsignationshandler prüft nur den Konsignationsvertrag und legt eine KB-Auffüllung mit dem Vertragswerk an. Ein angelegter Auftrag wird festgeschrieben und das IDoc auf Status 53 gesetzt; jede Ablehnung setzt Status 51 mit Fehlertext."
+}

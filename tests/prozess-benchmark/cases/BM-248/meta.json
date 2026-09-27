@@ -1,0 +1,33 @@
+{
+  "id": "BM-248",
+  "title": "Gateway GET_ENTITYSET: Lagerbestand je Werk mit Filter, Berechtigung, Reservierung und Paging",
+  "domain": "MM Bestandsführung",
+  "band": "komplex",
+  "loc": 199,
+  "constructs": [
+    "SAP Gateway DPC_EXT GET_ENTITYSET",
+    "get_filter_select_options",
+    "$orderby / $top / $skip / $inlinecount",
+    "/iwbep/cl_mgw_data_util",
+    "/iwbep/cx_mgw_tech_exception",
+    "AUTHORITY-CHECK in Schleife",
+    "SELECT mit JOIN über MARD/MARA/MAKT",
+    "SELECT SUM auf RESB",
+    "gepufferte Hilfsmethode"
+  ],
+  "scenario": "OData-Service für eine Lagerleiter-App aus einer Fiori-Einführung auf ECC, die ohne Umbau in die S/4-Konvertierung ging.",
+  "s4_issues": [
+    "MARD-Bestandsfelder werden in S/4 aus MATDOC berechnet (Kompatibilitätsview NSDM_V_MARD), Lesen teuer",
+    "MATNR 40 Zeichen",
+    "SEGW/DPC_EXT statt RAP"
+  ],
+  "wave": 3,
+  "module": "MM",
+  "edge_constructs": [
+    "CASE mit WHEN OTHERS als Ausnahme",
+    "frühes RETURN aus Puffer",
+    "funktionale Methode in Bedingungsvorbereitung",
+    "inlinecount vor Paging"
+  ],
+  "oo": true
+}

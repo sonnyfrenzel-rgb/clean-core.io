@@ -1,0 +1,1271 @@
+{
+  "id": "BM-209",
+  "title": "Liefersammelgang mit Builder- und Protokollklasse",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_delivery_builder.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_delivery_builder.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_delivery_builder.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_delivery_builder.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBEP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_delivery_builder.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_delivery_builder.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_delivery_builder.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_delivery_builder.abap:52"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_delivery_builder.abap",
+        "line": 62,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_delivery_builder.abap:62"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_OUTB_DELIVERY_CREATE_SLS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_delivery_builder.abap",
+        "line": 68,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_delivery_builder.abap:68"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_app_log.abap",
+        "line": 33,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_app_log.abap:33"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_app_log.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_app_log.abap:79"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-209-B01",
+      "text": "Zu Beginn wird ein Anwendungsprotokoll ZSD/DELIVERY eröffnet.",
+      "anchors": [
+        {
+          "file": "zcl_sd_app_log.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-209-B02",
+      "text": "Selektiert werden Aufträge der gewählten Verkaufsorganisationen ohne Liefersperre, deren Positionen noch nicht voll beliefert sind und eine bis zum Lieferdatum fällige, bestätigte Einteilung haben.",
+      "anchors": [
+        {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-209-B03",
+      "text": "Gibt es keine lieferfälligen Aufträge, meldet der Lauf das und endet ohne Protokoll zu sichern.",
+      "anchors": [
+        {
+          "file": "zsd_delivery_run.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:36"
+        },
+        {
+          "file": "zsd_delivery_run.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:37"
+        },
+        {
+          "file": "zsd_delivery_run.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-209-B04",
+      "text": "Ein Auftrag mit Kreditsperre wird nicht beliefert, sondern als Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:52"
+        },
+        {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:54"
+        },
+        {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:55"
+        },
+        {
+          "file": "zsd_delivery_run.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-209-B05",
+      "text": "Für alle nicht abgesagten Positionen eines Auftrags wird eine Auslieferung mit Fälligkeit heute angelegt; die Meldungen der Anlage werden protokolliert.",
+      "anchors": [
+        {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:62"
+        },
+        {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:68"
+        },
+        {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:77"
+        },
+        {
+          "file": "zcl_sd_app_log.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-209-B06",
+      "text": "Entsteht keine Lieferung, wird die Anlage verworfen und der Auftrag als Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:79"
+        },
+        {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:80"
+        },
+        {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-209-B07",
+      "text": "Im Testmodus wird die angelegte Lieferung wieder verworfen.",
+      "anchors": [
+        {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:88"
+        },
+        {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:89"
+        }
+      ]
+    },
+    {
+      "id": "BM-209-B08",
+      "text": "Außerhalb des Testmodus wird die Lieferung festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-209-B09",
+      "text": "Nach allen Aufträgen wird das Protokoll gesichert und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zsd_delivery_run.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:53"
+        },
+        {
+          "file": "zcl_sd_app_log.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:79"
+        },
+        {
+          "file": "zcl_sd_app_log.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-209-B10",
+      "text": "Im Dialog wird das Protokoll anschließend angezeigt, im Hintergrund nicht.",
+      "anchors": [
+        {
+          "file": "zsd_delivery_run.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:54"
+        },
+        {
+          "file": "zcl_sd_app_log.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:93"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_delivery_run.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:28"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "cl",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_delivery_run.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:29"
+        },
+        "meaning": "Anwendungsprotokoll anlegen (Konstruktor)"
+      },
+      {
+        "id": "cd",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_delivery_run.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:33"
+        },
+        "meaning": "Lieferfaellige Auftraege ermitteln"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_delivery_run.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:36"
+        },
+        "meaning": "Keine Auftraege?"
+      },
+      {
+        "id": "o0",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_delivery_run.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:37"
+        },
+        "meaning": "Keine Auftraege melden"
+      },
+      {
+        "id": "r0",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_delivery_run.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:38"
+        },
+        "meaning": "Ende ohne Arbeit"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_delivery_run.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:41"
+        },
+        "meaning": "Je Auftrag"
+      },
+      {
+        "id": "cc",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_delivery_run.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:43"
+        },
+        "meaning": "Lieferung zum Auftrag anlegen"
+      },
+      {
+        "id": "ce",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_delivery_run.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:49"
+        },
+        "meaning": "Fehler ins Protokoll"
+      },
+      {
+        "id": "cs",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_delivery_run.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:53"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_delivery_run.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:54"
+        },
+        "meaning": "Dialogbetrieb?"
+      },
+      {
+        "id": "ch",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_delivery_run.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:55"
+        },
+        "meaning": "Protokoll anzeigen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_delivery_run.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_delivery_run.abap:56"
+        },
+        "meaning": "Reportende"
+      },
+      {
+        "id": "ds",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:28"
+        },
+        "meaning": "Selektion faelliger Auftraege"
+      },
+      {
+        "id": "dq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:30"
+        },
+        "meaning": "Auftraege mit offenem Lieferstatus und faelliger bestaetigter Einteilung lesen"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:42"
+        }
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:45"
+        },
+        "meaning": "Lieferung zu einem Auftrag"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:52"
+        },
+        "meaning": "Kreditstatus des Auftrags lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:54"
+        },
+        "meaning": "Kreditgesperrt?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:55"
+        },
+        "meaning": "Ausnahme: Kreditsperre"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:62"
+        },
+        "meaning": "Nicht abgesagte Positionen als Lieferreferenz lesen"
+      },
+      {
+        "id": "b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:68"
+        },
+        "meaning": "Auslieferung mit Faelligkeit heute anlegen"
+      },
+      {
+        "id": "ca",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:77"
+        },
+        "meaning": "BAPI-Meldungen protokollieren"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:79"
+        },
+        "meaning": "Keine Lieferung entstanden?"
+      },
+      {
+        "id": "rb1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:80"
+        },
+        "meaning": "Verwerfen"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:81"
+        },
+        "meaning": "Ausnahme: nicht angelegt"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:88"
+        },
+        "meaning": "Testmodus?"
+      },
+      {
+        "id": "rb2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:89"
+        },
+        "meaning": "Lieferung im Test verwerfen"
+      },
+      {
+        "id": "r3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:90"
+        },
+        "meaning": "Ende Testmodus"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:93"
+        },
+        "meaning": "Lieferung festschreiben"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_sd_delivery_builder.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_delivery_builder.abap:96"
+        }
+      },
+      {
+        "id": "ks",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:25"
+        },
+        "meaning": "Protokoll anlegen"
+      },
+      {
+        "id": "kc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:33"
+        },
+        "meaning": "Protokoll ZSD/DELIVERY eroeffnen"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:40"
+        }
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:43"
+        },
+        "meaning": "BAPI-Meldungen uebernehmen"
+      },
+      {
+        "id": "al",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:45"
+        },
+        "meaning": "Je Meldung"
+      },
+      {
+        "id": "am",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:53"
+        },
+        "meaning": "Meldung ins Protokoll"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:60"
+        }
+      },
+      {
+        "id": "xs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:63"
+        },
+        "meaning": "Ausnahme uebernehmen"
+      },
+      {
+        "id": "xm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:67"
+        },
+        "meaning": "Ausnahme als Fehler ins Protokoll"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:73"
+        }
+      },
+      {
+        "id": "vs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:76"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "vm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:79"
+        },
+        "meaning": "Protokoll in DB schreiben"
+      },
+      {
+        "id": "vg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:84"
+        },
+        "meaning": "Gesichert?"
+      },
+      {
+        "id": "vc",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:85"
+        },
+        "meaning": "Protokoll festschreiben"
+      },
+      {
+        "id": "ve",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:87"
+        }
+      },
+      {
+        "id": "hs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:90"
+        },
+        "meaning": "Protokoll anzeigen"
+      },
+      {
+        "id": "hd",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:93"
+        },
+        "meaning": "Protokollanzeige"
+      },
+      {
+        "id": "he",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_sd_app_log.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_app_log.abap:98"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "cl",
+        "condition": "always"
+      },
+      {
+        "from": "cl",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "ke",
+        "to": "cd",
+        "condition": "always"
+      },
+      {
+        "from": "ks",
+        "to": "kc",
+        "condition": "always"
+      },
+      {
+        "from": "kc",
+        "to": "ke",
+        "condition": "always"
+      },
+      {
+        "from": "cd",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "de",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "ds",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "dq",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "o0",
+        "condition": "gt_orders IS INITIAL"
+      },
+      {
+        "from": "o0",
+        "to": "r0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "lp",
+        "to": "cc",
+        "condition": "next row"
+      },
+      {
+        "from": "cc",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "r3",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ms",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "x1",
+        "condition": "lv_cmgst CA 'BC'"
+      },
+      {
+        "from": "g1",
+        "to": "q2",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "b",
+        "condition": "always"
+      },
+      {
+        "from": "b",
+        "to": "ca",
+        "condition": "always"
+      },
+      {
+        "from": "ca",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "as",
+        "to": "al",
+        "condition": "always"
+      },
+      {
+        "from": "al",
+        "to": "am",
+        "condition": "next row"
+      },
+      {
+        "from": "am",
+        "to": "al",
+        "condition": "next iteration"
+      },
+      {
+        "from": "al",
+        "to": "ae",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g2",
+        "to": "rb1",
+        "condition": "lv_deliv IS INITIAL"
+      },
+      {
+        "from": "rb1",
+        "to": "x2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "g3",
+        "condition": "else"
+      },
+      {
+        "from": "g3",
+        "to": "rb2",
+        "condition": "iv_test = abap_true"
+      },
+      {
+        "from": "rb2",
+        "to": "r3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "x1",
+        "to": "ce",
+        "condition": "zcx_sd_delivery"
+      },
+      {
+        "from": "x2",
+        "to": "ce",
+        "condition": "zcx_sd_delivery"
+      },
+      {
+        "from": "ce",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "xs",
+        "to": "xm",
+        "condition": "always"
+      },
+      {
+        "from": "xm",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "cs",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cs",
+        "to": "vs",
+        "condition": "always"
+      },
+      {
+        "from": "ve",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "vs",
+        "to": "vm",
+        "condition": "always"
+      },
+      {
+        "from": "vm",
+        "to": "vg",
+        "condition": "always"
+      },
+      {
+        "from": "vg",
+        "to": "vc",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "vg",
+        "to": "ve",
+        "condition": "else"
+      },
+      {
+        "from": "vc",
+        "to": "ve",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "ch",
+        "condition": "sy-batch IS INITIAL"
+      },
+      {
+        "from": "gb",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "ch",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "he",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "hs",
+        "to": "hd",
+        "condition": "always"
+      },
+      {
+        "from": "hd",
+        "to": "he",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_sd_delivery_builder.abap:88 — kein Fachsatz „im Testmodus wird nur simuliert, ohne den BAPI zu rufen“ — die Lieferung wird angelegt und erst danach per Rollback verworfen.",
+    "zcl_sd_delivery_builder.abap:62 — kein Fachsatz „nur fällige Positionen werden beliefert“ — die Referenz umfasst alle nicht abgesagten Positionen; die Fälligkeit filtert nur die Auftragsauswahl.",
+    "zsd_delivery_run.abap:38 — kein Fachsatz „das Protokoll wird immer gesichert“ — ohne Aufträge endet der Lauf vor dem Sichern."
+  ],
+  "processDescription": "Der Job eröffnet ein Anwendungsprotokoll und selektiert Aufträge der gewählten Verkaufsorganisationen ohne Liefersperre mit offenen Positionen und einer fälligen bestätigten Einteilung. Gibt es keine, endet er mit einer Meldung. Je Auftrag prüft die Builder-Klasse den Kreditstatus und protokolliert kreditgesperrte Aufträge als Fehler. Sonst legt sie über den BAPI eine Auslieferung für alle nicht abgesagten Positionen an und übernimmt die Meldungen ins Protokoll. Entsteht keine Lieferung, wird zurückgerollt und ein Fehler protokolliert. Im Testmodus wird die Lieferung verworfen, sonst festgeschrieben. Am Ende wird das Protokoll gesichert und im Dialog angezeigt."
+}

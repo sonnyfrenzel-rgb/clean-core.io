@@ -1,0 +1,35 @@
+{
+  "id": "BM-256",
+  "title": "Compliance-Prüfung offener Bestellungen vor der Freigabe: Regelklassen über CDS, Ereignisse, Protokoll, Workflow",
+  "domain": "MM Einkauf / Bestellfreigabe",
+  "band": "sehr komplex",
+  "loc": 407,
+  "constructs": [
+    "released CDS I_PurchaseOrderAPI01 / I_PurchaseOrderItemAPI01 / I_Supplier / I_SupplierPurchasingOrg / Infosatz-CDS",
+    "abstrakte Basisklasse mit Schablonenmethode (FINAL)",
+    "INHERITING FROM mit REDEFINITION",
+    "CREATE OBJECT TYPE (dynamisch) aus Customizing",
+    "EVENTS / RAISE EVENT / SET HANDLER FOR ALL INSTANCES",
+    "lokale Handlerklasse im Report",
+    "funktionaler Aufruf in IF",
+    "BAL_LOG_CREATE / BAL_LOG_MSG_ADD_FREE_TEXT / BAL_DB_SAVE",
+    "SAP_WAPI_CREATE_EVENT",
+    "COMMIT WORK",
+    "ELSEIF"
+  ],
+  "scenario": "Einkaufscontrolling prüft vor der Freigabe alle offenen Bestellungen gegen konfigurierbare Regeln (Preis gegen Infosatz, Lieferantensperren); bestandene Bestellungen stoßen per Workflow-Ereignis die Freigabe an.",
+  "s4_issues": [
+    "Workflow-Ereignis auf BUS2012 statt Business Event / Flexible Workflow-API",
+    "Dynamische Objekterzeugung aus Customizing – Ziele zur Entwurfszeit nicht sichtbar"
+  ],
+  "wave": 3,
+  "module": "MM",
+  "edge_constructs": [
+    "polymorphe Aufrufe mit mehreren Zielen im Fall",
+    "Ereignis ruft Handler im Report",
+    "still übergangene Fehlkonfiguration (CATCH mit CONTINUE)",
+    "MESSAGE E nach START-OF-SELECTION",
+    "frühes RETURN in Unterklasse"
+  ],
+  "oo": true
+}

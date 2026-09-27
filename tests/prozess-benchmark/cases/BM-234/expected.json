@@ -1,0 +1,2405 @@
+{
+  "id": "BM-234",
+  "title": "Monatsabschluss: Vorprüfungen und Schließen der Buchungsperiode",
+  "classes": [
+    "K01",
+    "K03",
+    "K12",
+    "K15",
+    "K18"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "T001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_periodenabschluss.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_periodenabschluss.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBKPF",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_periodenabschluss_f01.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_periodenabschluss_f01.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_ABSCHL_CUST",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_periodenabschluss_f01.abap",
+        "line": 92,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_periodenabschluss_f01.abap:92"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BSIS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_periodenabschluss_f01.abap",
+        "line": 99,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_periodenabschluss_f01.abap:99"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T001B",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_periodenabschluss_f02.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_periodenabschluss_f02.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T001B",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "zfi_periodenabschluss_f02.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_periodenabschluss_f02.abap:49"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_periodenabschluss_f03.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_periodenabschluss_f03.abap:19"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_periodenabschluss_f03.abap",
+        "line": 67,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_periodenabschluss_f03.abap:67"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-234-B01",
+      "text": "Auf dem Selektionsbild wird die Periodenvariante des Buchungskreises gelesen; fehlt sie, wird die Eingabe mit einer Fehlermeldung zurückgewiesen.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:30"
+        },
+        {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:32"
+        },
+        {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B02",
+      "text": "Der Periodenzeitraum ist der Kalendermonat der eingegebenen Periode im eingegebenen Geschäftsjahr, vom Ersten bis zum Monatsletzten.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:39"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:13"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:14"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B03",
+      "text": "Für den Lauf wird ein Anwendungslog mit Buchungskreis, Jahr und Periode als externer Nummer angelegt; gelingt das nicht, bricht das Programm ab.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:40"
+        },
+        {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:19"
+        },
+        {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:26"
+        },
+        {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B04",
+      "text": "Nur im Echtlauf wird die Pflegeberechtigung für die Periodensteuerung geprüft.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:41"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:30"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B05",
+      "text": "Fehlt die Berechtigung, wird das im Log vermerkt, das Log gesichert und das Programm mit Fehlermeldung beendet.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:35"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:36"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:37"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B06",
+      "text": "Es werden die geparkten Belege des Buchungskreises mit Buchungsdatum in der Periode gezählt; gibt es keine, wird das als Erfolg vermerkt.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:43"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:48"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:52"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B07",
+      "text": "Gibt es geparkte Belege, gelten sie im strengen Modus als Fehler, sonst als Warnung.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:58"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:59"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B08",
+      "text": "Das WE/RE-Verrechnungskonto kommt aus dem kundeneigenen Abschluss-Customizing; ist es nicht gepflegt, entfällt die Prüfung mit einem Hinweis.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:45"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:92"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:94"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:95"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B09",
+      "text": "Aus den Soll- und Habensummen der offenen Posten des Kontos bis Periodenende wird der Saldo gebildet.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:99"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:107"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:108"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B10",
+      "text": "Liegt der Saldo betragsmäßig über der Toleranz, wird eine Warnung vermerkt; das verhindert den Abschluss nicht.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:113"
+        },
+        {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:114"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B11",
+      "text": "Jede als Fehler vermerkte Meldung wird gezählt; diese Fehlerzahl entscheidet, ob abgeschlossen wird.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:39"
+        },
+        {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:47"
+        },
+        {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B12",
+      "text": "Gibt es Prüffehler und ist Erzwingen nicht gewählt, wird der Abschluss verweigert und das vermerkt.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:48"
+        },
+        {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B13",
+      "text": "Im Testlauf ohne Fehler wird nur vermerkt, dass die Periode nicht geschlossen wird.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B14",
+      "text": "Sonst wird die Periodensteuerung der Variante gesperrt; ist sie gesperrt, wird das als Fehler vermerkt und nicht geschlossen.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:53"
+        },
+        {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:19"
+        },
+        {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:27"
+        },
+        {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:28"
+        },
+        {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B15",
+      "text": "Es werden alle Periodenintervalle der Variante gelesen.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B16",
+      "text": "Steht das erste Intervall einer Kontoart nicht auf der abzuschließenden Periode, wird das als Warnung vermerkt und die Kontoart nicht geändert.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:36"
+        },
+        {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:37"
+        },
+        {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B17",
+      "text": "Sonst wird die Von-Periode des ersten Intervalls auf die Folgeperiode gesetzt, bei Periode 12 auf Periode 1 des Folgejahres, und direkt in die Periodensteuerung geschrieben.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:42"
+        },
+        {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B18",
+      "text": "Wurde mindestens eine Kontoart geändert, wird festgeschrieben und der Abschluss vermerkt; sonst wird gewarnt, dass nichts geändert wurde.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:53"
+        },
+        {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:54"
+        },
+        {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:55"
+        },
+        {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B19",
+      "text": "Danach wird die Sperre der Periodensteuerung freigegeben.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B20",
+      "text": "Zum Abschluss wird das Log gesichert, außer im Testlauf.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:59"
+        },
+        {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:62"
+        },
+        {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:63"
+        },
+        {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-234-B21",
+      "text": "Im Dialog wird das Log angezeigt, im Hintergrund nicht.",
+      "anchors": [
+        {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:60"
+        },
+        {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:79"
+        },
+        {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:81"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:28"
+        },
+        "meaning": "Prüfung Selektionsbild"
+      },
+      {
+        "id": "aq",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:30"
+        },
+        "meaning": "Periodenvariante des Buchungskreises lesen"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:32"
+        },
+        "meaning": "Buchungskreis mit Periodenvariante?"
+      },
+      {
+        "id": "am",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:33"
+        },
+        "meaning": "Fehler: keine Periodenvariante"
+      },
+      {
+        "id": "ame",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:33"
+        },
+        "meaning": "Zurück zum Selektionsbild"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:34"
+        },
+        "meaning": "Ende Selektionsbildprüfung"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:37"
+        },
+        "meaning": "Abschlusslauf starten"
+      },
+      {
+        "id": "cz",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:39"
+        },
+        "meaning": "Periodenzeitraum bestimmen"
+      },
+      {
+        "id": "cla",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:40"
+        },
+        "meaning": "Anwendungslog anlegen"
+      },
+      {
+        "id": "cb",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:41"
+        },
+        "meaning": "Berechtigung prüfen"
+      },
+      {
+        "id": "cp1",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:43"
+        },
+        "meaning": "Parkbelege prüfen"
+      },
+      {
+        "id": "cp3",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:45"
+        },
+        "meaning": "WE/RE-Konto prüfen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:48"
+        },
+        "meaning": "Prüffehler ohne Erzwingen?"
+      },
+      {
+        "id": "clm1",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:49"
+        },
+        "meaning": "Abschluss verweigert protokollieren"
+      },
+      {
+        "id": "clm2",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:51"
+        },
+        "meaning": "Testlauf protokollieren"
+      },
+      {
+        "id": "cps",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:53"
+        },
+        "meaning": "Periode schließen"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:54"
+        },
+        "meaning": "Ende Verarbeitungsblock"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:57"
+        },
+        "meaning": "Abschlussereignis"
+      },
+      {
+        "id": "cls",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:59"
+        },
+        "meaning": "Log sichern"
+      },
+      {
+        "id": "clz",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:60"
+        },
+        "meaning": "Log anzeigen"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss.abap:60"
+        },
+        "meaning": "Programmende"
+      },
+      {
+        "id": "zs",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:12"
+        },
+        "meaning": "Zeitraumbestimmung"
+      },
+      {
+        "id": "zc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:14"
+        },
+        "meaning": "Letzten Tag der Periode ermitteln"
+      },
+      {
+        "id": "ze",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:22"
+        },
+        "meaning": "Ende Zeitraumbestimmung"
+      },
+      {
+        "id": "bs",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:29"
+        },
+        "meaning": "Berechtigungsprüfung"
+      },
+      {
+        "id": "bck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:30"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "bau",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:32"
+        },
+        "meaning": "Pflegeberechtigung Periodensteuerung prüfen"
+      },
+      {
+        "id": "bg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:35"
+        },
+        "meaning": "Berechtigung fehlt?"
+      },
+      {
+        "id": "bl",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:36"
+        },
+        "meaning": "Fehlende Berechtigung protokollieren"
+      },
+      {
+        "id": "bsv",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:37"
+        },
+        "meaning": "Log vor Abbruch sichern"
+      },
+      {
+        "id": "bm",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:38"
+        },
+        "meaning": "Fehler: keine Berechtigung"
+      },
+      {
+        "id": "bme",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:38"
+        },
+        "meaning": "Programmabbruch"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:40"
+        },
+        "meaning": "Ende Berechtigungsprüfung"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:45"
+        },
+        "meaning": "Prüfung Parkbelege"
+      },
+      {
+        "id": "pq",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:48"
+        },
+        "meaning": "Geparkte Belege der Periode zählen"
+      },
+      {
+        "id": "pg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:52"
+        },
+        "meaning": "Keine Parkbelege?"
+      },
+      {
+        "id": "pl1",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:53"
+        },
+        "meaning": "Erfolg protokollieren"
+      },
+      {
+        "id": "pr",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:54"
+        },
+        "meaning": "Prüfung bestanden"
+      },
+      {
+        "id": "pg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:58"
+        },
+        "meaning": "Strenger Modus?"
+      },
+      {
+        "id": "pl2",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:59"
+        },
+        "meaning": "Parkbelege als Fehler protokollieren"
+      },
+      {
+        "id": "pl3",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:61"
+        },
+        "meaning": "Parkbelege als Warnung protokollieren"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:63"
+        },
+        "meaning": "Ende Prüfung Parkbelege"
+      },
+      {
+        "id": "ws",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:86"
+        },
+        "meaning": "Prüfung WE/RE-Konto"
+      },
+      {
+        "id": "wq",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:92"
+        },
+        "meaning": "WE/RE-Konto aus Abschluss-Customizing lesen"
+      },
+      {
+        "id": "wg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:94"
+        },
+        "meaning": "Konto gepflegt?"
+      },
+      {
+        "id": "wl1",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:95"
+        },
+        "meaning": "Entfallen der Prüfung protokollieren"
+      },
+      {
+        "id": "wr",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:96"
+        },
+        "meaning": "Prüfung entfällt"
+      },
+      {
+        "id": "wq2",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:99"
+        },
+        "meaning": "Soll- und Habensummen des Kontos bis Periodenende lesen"
+      },
+      {
+        "id": "wlp",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:107"
+        },
+        "meaning": "Summen durchlaufen"
+      },
+      {
+        "id": "wa",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:108"
+        },
+        "meaning": "Saldo bilden"
+      },
+      {
+        "id": "wg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:113"
+        },
+        "meaning": "Saldo über Toleranz?"
+      },
+      {
+        "id": "wl2",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:114"
+        },
+        "meaning": "Warnung Saldo protokollieren"
+      },
+      {
+        "id": "we",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f01.abap:116"
+        },
+        "meaning": "Ende Prüfung WE/RE-Konto"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:12"
+        },
+        "meaning": "Periode schließen"
+      },
+      {
+        "id": "sen",
+        "type": "lock",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:19"
+        },
+        "meaning": "Periodensteuerung der Variante sperren"
+      },
+      {
+        "id": "sg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:27"
+        },
+        "meaning": "Sperre fehlgeschlagen?"
+      },
+      {
+        "id": "sl1",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:28"
+        },
+        "meaning": "Sperrfehler protokollieren"
+      },
+      {
+        "id": "sr",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:29"
+        },
+        "meaning": "Schließen abbrechen"
+      },
+      {
+        "id": "sq",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:32"
+        },
+        "meaning": "Periodenintervalle der Variante lesen"
+      },
+      {
+        "id": "sl",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:36"
+        },
+        "meaning": "Kontoarten durchlaufen"
+      },
+      {
+        "id": "sg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:37"
+        },
+        "meaning": "Intervall 1 steht nicht auf der Periode?"
+      },
+      {
+        "id": "sl2",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:38"
+        },
+        "meaning": "Abweichendes Intervall protokollieren"
+      },
+      {
+        "id": "sg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:42"
+        },
+        "meaning": "Jahreswechsel?"
+      },
+      {
+        "id": "smod",
+        "type": "write",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:49"
+        },
+        "meaning": "Von-Periode weitersetzen"
+      },
+      {
+        "id": "sg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:53"
+        },
+        "meaning": "Kontoarten geändert?"
+      },
+      {
+        "id": "scm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:54"
+        },
+        "meaning": "Periodensteuerung festschreiben"
+      },
+      {
+        "id": "sl3",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:55"
+        },
+        "meaning": "Abschluss protokollieren"
+      },
+      {
+        "id": "sl4",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:57"
+        },
+        "meaning": "Warnung: nichts geändert"
+      },
+      {
+        "id": "sdq",
+        "type": "lock",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:60"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "se2",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f02.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f02.abap:64"
+        },
+        "meaning": "Ende Periode schließen"
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:9"
+        },
+        "meaning": "Log anlegen"
+      },
+      {
+        "id": "lcr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:19"
+        },
+        "meaning": "Anwendungslog ZFI/ABSCHLUSS anlegen"
+      },
+      {
+        "id": "lg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:26"
+        },
+        "meaning": "Anlegen fehlgeschlagen?"
+      },
+      {
+        "id": "lm",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:27"
+        },
+        "meaning": "Abbruchmeldung"
+      },
+      {
+        "id": "lme",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:27"
+        },
+        "meaning": "Programmabbruch"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:29"
+        },
+        "meaning": "Ende Log anlegen"
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:37"
+        },
+        "meaning": "Meldung protokollieren"
+      },
+      {
+        "id": "madd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:39"
+        },
+        "meaning": "Meldung ins Log schreiben"
+      },
+      {
+        "id": "mc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:47"
+        },
+        "meaning": "Meldungstyp"
+      },
+      {
+        "id": "ma1",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:49"
+        },
+        "meaning": "Fehler zählen"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:53"
+        },
+        "meaning": "Ende Meldung"
+      },
+      {
+        "id": "vs",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:58"
+        },
+        "meaning": "Log sichern"
+      },
+      {
+        "id": "vg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:62"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "vr",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:63"
+        },
+        "meaning": "Testlauf nicht sichern"
+      },
+      {
+        "id": "vsave",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:67"
+        },
+        "meaning": "Log in Datenbank sichern"
+      },
+      {
+        "id": "ve",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:72"
+        },
+        "meaning": "Ende Log sichern"
+      },
+      {
+        "id": "zs2",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:77"
+        },
+        "meaning": "Log anzeigen"
+      },
+      {
+        "id": "zck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:79"
+        },
+        "meaning": "Dialogbetrieb?"
+      },
+      {
+        "id": "zd",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:81"
+        },
+        "meaning": "Log am Bildschirm anzeigen"
+      },
+      {
+        "id": "ze2",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_periodenabschluss_f03.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_periodenabschluss_f03.abap:84"
+        },
+        "meaning": "Ende Log anzeigen"
+      }
+    ],
+    "edges": [
+      {
+        "from": "as",
+        "to": "aq",
+        "condition": "always"
+      },
+      {
+        "from": "aq",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "am",
+        "condition": "sy-subrc <> 0 OR gv_opvar IS INITIAL"
+      },
+      {
+        "from": "am",
+        "to": "ame",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "ae",
+        "condition": "else"
+      },
+      {
+        "from": "ae",
+        "to": "s",
+        "condition": "always"
+      },
+      {
+        "from": "s",
+        "to": "cz",
+        "condition": "always"
+      },
+      {
+        "from": "cz",
+        "to": "zs",
+        "condition": "always"
+      },
+      {
+        "from": "zs",
+        "to": "zc",
+        "condition": "always"
+      },
+      {
+        "from": "zc",
+        "to": "ze",
+        "condition": "always"
+      },
+      {
+        "from": "ze",
+        "to": "cla",
+        "condition": "always"
+      },
+      {
+        "from": "cla",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "lcr",
+        "condition": "always"
+      },
+      {
+        "from": "lcr",
+        "to": "lg",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "lm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "lm",
+        "to": "lme",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "le",
+        "condition": "else"
+      },
+      {
+        "from": "le",
+        "to": "cb",
+        "condition": "always"
+      },
+      {
+        "from": "cb",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "bs",
+        "to": "bck",
+        "condition": "always"
+      },
+      {
+        "from": "bck",
+        "to": "bau",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "bck",
+        "to": "be",
+        "condition": "else"
+      },
+      {
+        "from": "bau",
+        "to": "bg",
+        "condition": "always"
+      },
+      {
+        "from": "bg",
+        "to": "bl",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "bl",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "bsv",
+        "condition": "always"
+      },
+      {
+        "from": "bsv",
+        "to": "vs",
+        "condition": "always"
+      },
+      {
+        "from": "ve",
+        "to": "bm",
+        "condition": "always"
+      },
+      {
+        "from": "vr",
+        "to": "bm",
+        "condition": "always"
+      },
+      {
+        "from": "bm",
+        "to": "bme",
+        "condition": "always"
+      },
+      {
+        "from": "bg",
+        "to": "be",
+        "condition": "else"
+      },
+      {
+        "from": "be",
+        "to": "cp1",
+        "condition": "always"
+      },
+      {
+        "from": "cp1",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "pq",
+        "condition": "always"
+      },
+      {
+        "from": "pq",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pl1",
+        "condition": "lv_anz = 0"
+      },
+      {
+        "from": "pl1",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "pr",
+        "condition": "always"
+      },
+      {
+        "from": "pr",
+        "to": "cp3",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pg2",
+        "condition": "else"
+      },
+      {
+        "from": "pg2",
+        "to": "pl2",
+        "condition": "p_streng = 'X'"
+      },
+      {
+        "from": "pl2",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "pg2",
+        "to": "pl3",
+        "condition": "else"
+      },
+      {
+        "from": "pl3",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "cp3",
+        "condition": "always"
+      },
+      {
+        "from": "cp3",
+        "to": "ws",
+        "condition": "always"
+      },
+      {
+        "from": "ws",
+        "to": "wq",
+        "condition": "always"
+      },
+      {
+        "from": "wq",
+        "to": "wg",
+        "condition": "always"
+      },
+      {
+        "from": "wg",
+        "to": "wl1",
+        "condition": "sy-subrc <> 0 OR lv_hkont IS INITIAL"
+      },
+      {
+        "from": "wl1",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "wr",
+        "condition": "always"
+      },
+      {
+        "from": "wr",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "wg",
+        "to": "wq2",
+        "condition": "else"
+      },
+      {
+        "from": "wq2",
+        "to": "wlp",
+        "condition": "always"
+      },
+      {
+        "from": "wlp",
+        "to": "wa",
+        "condition": "next row"
+      },
+      {
+        "from": "wa",
+        "to": "wlp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "wlp",
+        "to": "wg3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "wg3",
+        "to": "wl2",
+        "condition": "abs( lv_saldo ) > p_toler"
+      },
+      {
+        "from": "wl2",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "we",
+        "condition": "always"
+      },
+      {
+        "from": "wg3",
+        "to": "we",
+        "condition": "else"
+      },
+      {
+        "from": "we",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "clm1",
+        "condition": "gv_fehler > 0 AND p_force IS INITIAL"
+      },
+      {
+        "from": "clm1",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "clm2",
+        "condition": "p_test = 'X'"
+      },
+      {
+        "from": "clm2",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "cps",
+        "condition": "else"
+      },
+      {
+        "from": "cps",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "sen",
+        "condition": "always"
+      },
+      {
+        "from": "sen",
+        "to": "sg",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "sl1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sl1",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "sr",
+        "condition": "always"
+      },
+      {
+        "from": "sr",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "sq",
+        "condition": "else"
+      },
+      {
+        "from": "sq",
+        "to": "sl",
+        "condition": "always"
+      },
+      {
+        "from": "sl",
+        "to": "sg1",
+        "condition": "next row"
+      },
+      {
+        "from": "sg1",
+        "to": "sl2",
+        "condition": "ls_t001b-frye1 <> p_gjahr OR ls_t001b-frpe1 <> p_monat"
+      },
+      {
+        "from": "sl2",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "sl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "sg1",
+        "to": "sg2",
+        "condition": "else"
+      },
+      {
+        "from": "sg2",
+        "to": "smod",
+        "condition": "p_monat = 12"
+      },
+      {
+        "from": "sg2",
+        "to": "smod",
+        "condition": "else"
+      },
+      {
+        "from": "smod",
+        "to": "sl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "sl",
+        "to": "sg3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sg3",
+        "to": "scm",
+        "condition": "lv_cnt > 0"
+      },
+      {
+        "from": "scm",
+        "to": "sl3",
+        "condition": "always"
+      },
+      {
+        "from": "sl3",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "sdq",
+        "condition": "always"
+      },
+      {
+        "from": "sg3",
+        "to": "sl4",
+        "condition": "else"
+      },
+      {
+        "from": "sl4",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "sdq",
+        "to": "se2",
+        "condition": "always"
+      },
+      {
+        "from": "se2",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "cls",
+        "condition": "always"
+      },
+      {
+        "from": "cls",
+        "to": "vs",
+        "condition": "always"
+      },
+      {
+        "from": "ve",
+        "to": "clz",
+        "condition": "always"
+      },
+      {
+        "from": "vr",
+        "to": "clz",
+        "condition": "always"
+      },
+      {
+        "from": "clz",
+        "to": "zs2",
+        "condition": "always"
+      },
+      {
+        "from": "zs2",
+        "to": "zck",
+        "condition": "always"
+      },
+      {
+        "from": "zck",
+        "to": "zd",
+        "condition": "sy-batch IS INITIAL"
+      },
+      {
+        "from": "zck",
+        "to": "ze2",
+        "condition": "else"
+      },
+      {
+        "from": "zd",
+        "to": "ze2",
+        "condition": "always"
+      },
+      {
+        "from": "ze2",
+        "to": "ee",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "madd",
+        "condition": "always"
+      },
+      {
+        "from": "madd",
+        "to": "mc",
+        "condition": "always"
+      },
+      {
+        "from": "mc",
+        "to": "ma1",
+        "condition": "WHEN 'E'"
+      },
+      {
+        "from": "ma1",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "mc",
+        "to": "me",
+        "condition": "WHEN 'W'"
+      },
+      {
+        "from": "mc",
+        "to": "me",
+        "condition": "else"
+      },
+      {
+        "from": "vs",
+        "to": "vg",
+        "condition": "always"
+      },
+      {
+        "from": "vg",
+        "to": "vr",
+        "condition": "p_test = 'X'"
+      },
+      {
+        "from": "vg",
+        "to": "vsave",
+        "condition": "else"
+      },
+      {
+        "from": "vsave",
+        "to": "ve",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zfi_periodenabschluss.abap:45 — kein Fachsatz „offene Periodenabgrenzungen verhindern den Abschluss“ (Aufruf auskommentiert; die FORM pruefung_abgrenzungen wird nie erreicht, obwohl der Programmkopf sie nennt)",
+    "zfi_periodenabschluss_f01.abap:113 — kein Fachsatz „WE/RE-Saldo über Toleranz verhindert den Abschluss“ (nur Warnung; gezählt werden nur Fehler)",
+    "zfi_periodenabschluss_f02.abap:49 — kein Fachsatz „Periode wird über die Standardpflege OB52 mit Änderungsprotokoll geschlossen“ (direktes MODIFY; die OB52-Variante ist auskommentiert)",
+    "zfi_periodenabschluss_f01.abap:38 — kein Fachsatz „das Log wird am Programmende angezeigt“ (MESSAGE E in START-OF-SELECTION beendet das Programm, END-OF-SELECTION läuft nicht; das Log wird vorher nur gesichert)"
+  ],
+  "processDescription": "Der Abschlussreport prüft vor dem Monatsabschluss eines Buchungskreises und schließt dann die Buchungsperiode. Das Selektionsbild weist einen Buchungskreis ohne Periodenvariante ab. Der Lauf bestimmt den Kalendermonat als Zeitraum und legt ein Anwendungslog an; misslingt das, bricht er ab. Im Echtlauf prüft er die Pflegeberechtigung für die Periodensteuerung; ohne sie vermerkt er das, sichert das Log und endet mit Fehlermeldung, ohne dass END-OF-SELECTION läuft. Dann prüft er geparkte Belege der Periode (Fehler im strengen Modus, sonst Warnung) und den Saldo des WE/RE-Kontos aus dem Kunden-Customizing gegen eine Toleranz (nur Warnung). Die Protokollroutine zählt jede Fehlermeldung mit, und diese Zahl steuert den Abschluss: bei Fehlern ohne Erzwingen wird nicht abgeschlossen, im Testlauf auch nicht. Sonst sperrt er die Periodensteuerung, setzt für jede Kontoart, deren erstes Intervall auf der Periode steht, die Von-Periode direkt in T001B weiter (mit Jahreswechsel), warnt bei abweichenden Intervallen, schreibt fest und gibt die Sperre frei. Im END-OF-SELECTION sichert er das Log außer im Testlauf und zeigt es im Dialog an. Die im Kopf genannte Prüfung offener Abgrenzungen ist abgeschaltet."
+}

@@ -1,0 +1,39 @@
+{
+  "id": "BM-300",
+  "title": "Fertigungs-Mini-Leitstand: Belastungsampel, Vorgangsaktionen über Klassenhierarchie mit Sperre, CLEANUP, Verbucherprotokoll und asynchronem Druck",
+  "domain": "PP Shopfloor / Fertigungssteuerung",
+  "band": "sehr komplex",
+  "loc": 481,
+  "constructs": [
+    "abstrakte Klasse mit Fabrik und drei Redefinitionen",
+    "TRY ... CLEANUP",
+    "RAISE EXCEPTION MESSAGE",
+    "SELECT FOR ALL ENTRIES mit Leerprüfung",
+    "Joins AFKO/AFVC/AFVV",
+    "REDUCE/COND",
+    "Splitter mit zwei CL_GUI_ALV_GRID",
+    "double_click/toolbar/user_command",
+    "STARTING NEW TASK CALLING ... ON END OF TASK",
+    "RECEIVE RESULTS",
+    "IN UPDATE TASK",
+    "ENQUEUE/DEQUEUE_ESORDER",
+    "AUTHORITY-CHECK",
+    "MESSAGE A/I/S"
+  ],
+  "scenario": "Leitstand für Fertigungsmeister, der CM01-Auswertungen ersetzt und direkt vorziehen, freigeben und Arbeitspapiere drucken lässt.",
+  "s4_issues": [
+    "Direktlesen CRHD/AFKO/AFVC/AFVV/JEST statt released CDS",
+    "SAP-GUI-Controls statt Fiori (Manage Production Orders)",
+    "Z_PP_ARBEITSPAPIERE und Z_PP_LEITSTAND_LOG nicht geliefert"
+  ],
+  "wave": 3,
+  "module": "PP",
+  "edge_constructs": [
+    "Ausnahmen aus Redefinitionen laufen über CLEANUP zum CATCH",
+    "polymorpher Aufruf mit drei Zielen",
+    "asynchroner Rückruf als eigener Einstieg",
+    "FOR ALL ENTRIES mit frühem RETURN",
+    "auskommentierter WHEN-Zweig"
+  ],
+  "oo": true
+}

@@ -1,0 +1,18 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante asy → sdf",
+      "before": "{\"from\":\"asy\",\"to\":\"sdf\",\"condition\":\"ON END OF TASK\"}",
+      "after": "entfernt",
+      "why": "Konvention: STARTING NEW TASK behält nur die Direktkante zum nächsten Schritt (asy → edr); der Callback DRUCK_FERTIG ist ein eigener Einstieg (bzw. hinge an einem Bausteinende von Z_PP_ARBEITSPAPIERE, das nicht im Fall liegt). ‚ON END OF TASK‘ ist zudem keine zulässige Bedingungsform. sdf bleibt start-Knoten ohne eingehende Kante.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "PBO/PAI-Module und Grid-Behandler sind eigene Einstiege ohne eingehende Kante (Ablauflogik nicht im Fall) – geprüft, korrekt.",
+    "AUTHORITY-CHECK C_AFKO_ATY mit Feld WERK: ob das Objekt ein Feld WERK hat (Werk gehört eher zu C_AFKO_AWK), nicht sicher – nicht geändert.",
+    "Knoten adel ist action auf einer reinen Zuweisung (DELETE gt_vorg – interne Tabelle); belassen, weil die Zuweisung ein fachliches Ergebnis festlegt – je nach Auslegung von „reine Zuweisung ist kein Knoten“ entbehrlich."
+  ]
+}

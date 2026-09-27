@@ -1,0 +1,1356 @@
+{
+  "id": "BM-252",
+  "title": "Web Dynpro Wareneingang zur Bestellung: Bestellung prüfen, offene Mengen anbieten, WE buchen",
+  "classes": [
+    "K02",
+    "K03",
+    "K09"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EKKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_we_assist.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_we_assist.abap:21"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MSEG",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_we_assist.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_we_assist.abap:52"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PO_GETDETAIL1",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zwd_mm_we_compctrl.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwd_mm_we_compctrl.abap:23"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_GOODSMVT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zwd_mm_we_compctrl.abap",
+        "line": 89,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwd_mm_we_compctrl.abap:89"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zwd_mm_we_compctrl.abap",
+        "line": 100,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwd_mm_we_compctrl.abap:100"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zwd_mm_we_compctrl.abap",
+        "line": 109,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwd_mm_we_compctrl.abap:109"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-252-B01",
+      "text": "Ohne Bestellnummer erhält der Lagerarbeiter den Feldfehler „Bitte Bestellnummer eingeben“ und es wird nichts geladen.",
+      "anchors": [
+        {
+          "file": "zwd_mm_we_view.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:12"
+        },
+        {
+          "file": "zwd_mm_we_view.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:13"
+        },
+        {
+          "file": "zwd_mm_we_view.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-252-B02",
+      "text": "Eine unbekannte, gelöschte oder noch nicht freigegebene Bestellung wird mit einer entsprechenden Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:17"
+        },
+        {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:21"
+        },
+        {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:25"
+        },
+        {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:30"
+        },
+        {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:36"
+        },
+        {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-252-B03",
+      "text": "Für eine gültige Bestellung werden Kopf und Positionen gelesen.",
+      "anchors": [
+        {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-252-B04",
+      "text": "Angeboten werden nur nicht gelöschte Positionen mit Wareneingangskennzeichen.",
+      "anchors": [
+        {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:32"
+        },
+        {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-252-B05",
+      "text": "Die offene Menge einer Position ist die Bestellmenge abzüglich der bisherigen Wareneingänge (101) nach Abzug der Stornos (102).",
+      "anchors": [
+        {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:38"
+        },
+        {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:52"
+        },
+        {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:58"
+        },
+        {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-252-B06",
+      "text": "Positionen mit offener Menge werden mit dieser Menge als Erfassungsvorschlag angezeigt, zusammen mit dem Lieferanten.",
+      "anchors": [
+        {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:40"
+        },
+        {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-252-B07",
+      "text": "Ist keine Position mehr offen, erscheint die Information ZMM_WE 010.",
+      "anchors": [
+        {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:52"
+        },
+        {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-252-B08",
+      "text": "Beim Buchen werden nur Positionen mit erfasster Menge berücksichtigt; ist keine übrig, gibt es eine Warnung und keine Buchung.",
+      "anchors": [
+        {
+          "file": "zwd_mm_we_view.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:35"
+        },
+        {
+          "file": "zwd_mm_we_view.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:36"
+        },
+        {
+          "file": "zwd_mm_we_view.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:37"
+        },
+        {
+          "file": "zwd_mm_we_view.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-252-B09",
+      "text": "Der Wareneingang wird als Bewegungsart 101 zur Bestellung mit Tagesdatum als Buchungs- und Belegdatum gebucht.",
+      "anchors": [
+        {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:89"
+        }
+      ]
+    },
+    {
+      "id": "BM-252-B10",
+      "text": "Entsteht kein Materialbeleg, wird verworfen und jede Fehlermeldung des BAPIs angezeigt.",
+      "anchors": [
+        {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:99"
+        },
+        {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:100"
+        },
+        {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:102"
+        }
+      ]
+    },
+    {
+      "id": "BM-252-B11",
+      "text": "Sonst wird synchron festgeschrieben, der Lagerarbeiter erhält die Materialbelegnummer als Erfolgsmeldung und gelangt auf die Bestätigungsseite.",
+      "anchors": [
+        {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:109"
+        },
+        {
+          "file": "zwd_mm_we_view.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:44"
+        },
+        {
+          "file": "zwd_mm_we_view.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:45"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "v1_s",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_mm_we_view.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:5"
+        },
+        "meaning": "Lagerarbeiter lädt eine Bestellung"
+      },
+      {
+        "id": "v1_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_mm_we_view.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:12"
+        },
+        "meaning": "Bestellnummer leer?"
+      },
+      {
+        "id": "v1_o",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_we_view.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:13"
+        },
+        "meaning": "Feldfehler „Bitte Bestellnummer eingeben“"
+      },
+      {
+        "id": "v1_x",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_we_view.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:17"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "v1_c",
+        "type": "call",
+        "anchor": {
+          "file": "zwd_mm_we_view.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:20"
+        },
+        "meaning": "Bestellung laden"
+      },
+      {
+        "id": "v1_e",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_we_view.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:21"
+        },
+        "meaning": "Ende Aktion Laden"
+      },
+      {
+        "id": "v2_s",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_mm_we_view.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:24"
+        },
+        "meaning": "Lagerarbeiter bucht den Wareneingang"
+      },
+      {
+        "id": "v2_d",
+        "type": "action",
+        "anchor": {
+          "file": "zwd_mm_we_view.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:35"
+        },
+        "meaning": "Positionen ohne erfasste Menge verwerfen"
+      },
+      {
+        "id": "v2_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_mm_we_view.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:36"
+        },
+        "meaning": "Nichts zu buchen?"
+      },
+      {
+        "id": "v2_o",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_we_view.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:37"
+        },
+        "meaning": "Warnung „Keine Menge erfasst“"
+      },
+      {
+        "id": "v2_x",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_we_view.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:38"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "v2_c",
+        "type": "call",
+        "anchor": {
+          "file": "zwd_mm_we_view.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:41"
+        },
+        "meaning": "Wareneingang buchen"
+      },
+      {
+        "id": "v2_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_mm_we_view.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:43"
+        },
+        "meaning": "Materialbeleg entstanden?"
+      },
+      {
+        "id": "v2_o2",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_we_view.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:44"
+        },
+        "meaning": "Erfolgsmeldung mit Materialbelegnummer"
+      },
+      {
+        "id": "v2_p",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_we_view.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:45"
+        },
+        "meaning": "Zur Bestätigungsseite navigieren"
+      },
+      {
+        "id": "v2_e",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_we_view.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_view.abap:47"
+        },
+        "meaning": "Ende Aktion Buchen"
+      },
+      {
+        "id": "c1_s",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:5"
+        },
+        "meaning": "Bestellung laden"
+      },
+      {
+        "id": "c1_c",
+        "type": "call",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:17"
+        },
+        "meaning": "Bestellung prüfen"
+      },
+      {
+        "id": "c1_o",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:19"
+        },
+        "meaning": "Prüffehler anzeigen"
+      },
+      {
+        "id": "c1_x",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:20"
+        },
+        "meaning": "Laden abbrechen"
+      },
+      {
+        "id": "c1_b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:23"
+        },
+        "meaning": "Bestellkopf und -positionen lesen"
+      },
+      {
+        "id": "c1_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:32"
+        },
+        "meaning": "Jede nicht gelöschte Position"
+      },
+      {
+        "id": "c1_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:34"
+        },
+        "meaning": "Kein Wareneingang vorgesehen?"
+      },
+      {
+        "id": "c1_cc",
+        "type": "call",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:38"
+        },
+        "meaning": "Offene Menge = Bestellmenge minus bereits geliefert"
+      },
+      {
+        "id": "c1_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:40"
+        },
+        "meaning": "Noch offen? (dann Position mit offener Menge als Vorschlag anbieten)"
+      },
+      {
+        "id": "c1_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:52"
+        },
+        "meaning": "Keine offene Position?"
+      },
+      {
+        "id": "c1_o2",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:53"
+        },
+        "meaning": "Info ZMM_WE 010: nichts mehr offen"
+      },
+      {
+        "id": "c1_bd",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:56"
+        },
+        "meaning": "Offene Positionen und Lieferant anzeigen"
+      },
+      {
+        "id": "c1_e",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:59"
+        },
+        "meaning": "Ende Laden"
+      },
+      {
+        "id": "c2_s",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:62"
+        },
+        "meaning": "Wareneingang buchen"
+      },
+      {
+        "id": "c2_b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:89"
+        },
+        "meaning": "Wareneingang zur Bestellung (Bewegungsart 101) buchen"
+      },
+      {
+        "id": "c2_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:99"
+        },
+        "meaning": "Kein Materialbeleg?"
+      },
+      {
+        "id": "c2_rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:100"
+        },
+        "meaning": "Buchung verwerfen"
+      },
+      {
+        "id": "c2_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:101"
+        },
+        "meaning": "Jede Fehlermeldung"
+      },
+      {
+        "id": "c2_o",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:102"
+        },
+        "meaning": "BAPI-Fehler anzeigen"
+      },
+      {
+        "id": "c2_x",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:106"
+        },
+        "meaning": "Ohne Beleg zurück"
+      },
+      {
+        "id": "c2_cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:109"
+        },
+        "meaning": "Buchung festschreiben (synchron)"
+      },
+      {
+        "id": "c2_e",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_mm_we_compctrl.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_mm_we_compctrl.abap:113"
+        },
+        "meaning": "Materialbelegnummer zurückgeben"
+      },
+      {
+        "id": "a1_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:20"
+        },
+        "meaning": "Bestellung prüfen"
+      },
+      {
+        "id": "a1_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:21"
+        },
+        "meaning": "Bestellkopf lesen"
+      },
+      {
+        "id": "a1_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:25"
+        },
+        "meaning": "Bestellung unbekannt?"
+      },
+      {
+        "id": "a1_x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:26"
+        },
+        "meaning": "Ausnahme „Bestellung unbekannt“"
+      },
+      {
+        "id": "a1_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:30"
+        },
+        "meaning": "Bestellung gelöscht?"
+      },
+      {
+        "id": "a1_x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:31"
+        },
+        "meaning": "Ausnahme „Bestellung gelöscht“"
+      },
+      {
+        "id": "a1_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:36"
+        },
+        "meaning": "Freigabe offen?"
+      },
+      {
+        "id": "a1_x3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:37"
+        },
+        "meaning": "Ausnahme „nicht freigegeben“"
+      },
+      {
+        "id": "a1_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:44"
+        },
+        "meaning": "Bestellung in Ordnung"
+      },
+      {
+        "id": "a2_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:47"
+        },
+        "meaning": "Gelieferte Menge ermitteln"
+      },
+      {
+        "id": "a2_r1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:52"
+        },
+        "meaning": "Summe der Wareneingänge (101) zur Position"
+      },
+      {
+        "id": "a2_r2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:58"
+        },
+        "meaning": "Summe der WE-Stornos (102) zur Position"
+      },
+      {
+        "id": "a2_a",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:64"
+        },
+        "meaning": "Gelieferte Menge = Eingänge minus Stornos"
+      },
+      {
+        "id": "a2_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_we_assist.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_we_assist.abap:65"
+        },
+        "meaning": "Menge zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "v1_s",
+        "to": "v1_g",
+        "condition": "always"
+      },
+      {
+        "from": "v1_g",
+        "to": "v1_o",
+        "condition": "lv_ebeln IS INITIAL"
+      },
+      {
+        "from": "v1_o",
+        "to": "v1_x",
+        "condition": "always"
+      },
+      {
+        "from": "v1_g",
+        "to": "v1_c",
+        "condition": "else"
+      },
+      {
+        "from": "v1_c",
+        "to": "c1_s",
+        "condition": "always"
+      },
+      {
+        "from": "c1_s",
+        "to": "c1_c",
+        "condition": "always"
+      },
+      {
+        "from": "c1_c",
+        "to": "a1_s",
+        "condition": "always"
+      },
+      {
+        "from": "a1_s",
+        "to": "a1_r",
+        "condition": "always"
+      },
+      {
+        "from": "a1_r",
+        "to": "a1_g1",
+        "condition": "always"
+      },
+      {
+        "from": "a1_g1",
+        "to": "a1_x1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "a1_g1",
+        "to": "a1_g2",
+        "condition": "else"
+      },
+      {
+        "from": "a1_g2",
+        "to": "a1_x2",
+        "condition": "ls_ekko-loekz IS NOT INITIAL"
+      },
+      {
+        "from": "a1_g2",
+        "to": "a1_g3",
+        "condition": "else"
+      },
+      {
+        "from": "a1_g3",
+        "to": "a1_x3",
+        "condition": "ls_ekko-frgke = 'B'"
+      },
+      {
+        "from": "a1_g3",
+        "to": "a1_e",
+        "condition": "else"
+      },
+      {
+        "from": "a1_x1",
+        "to": "c1_o",
+        "condition": "zcx_mm_we"
+      },
+      {
+        "from": "a1_x2",
+        "to": "c1_o",
+        "condition": "zcx_mm_we"
+      },
+      {
+        "from": "a1_x3",
+        "to": "c1_o",
+        "condition": "zcx_mm_we"
+      },
+      {
+        "from": "c1_o",
+        "to": "c1_x",
+        "condition": "always"
+      },
+      {
+        "from": "a1_e",
+        "to": "c1_b",
+        "condition": "always"
+      },
+      {
+        "from": "c1_b",
+        "to": "c1_l",
+        "condition": "always"
+      },
+      {
+        "from": "c1_l",
+        "to": "c1_g",
+        "condition": "next row"
+      },
+      {
+        "from": "c1_g",
+        "to": "c1_l",
+        "condition": "ls_item-gr_ind = abap_false"
+      },
+      {
+        "from": "c1_g",
+        "to": "c1_cc",
+        "condition": "else"
+      },
+      {
+        "from": "c1_cc",
+        "to": "a2_s",
+        "condition": "always"
+      },
+      {
+        "from": "a2_s",
+        "to": "a2_r1",
+        "condition": "always"
+      },
+      {
+        "from": "a2_r1",
+        "to": "a2_r2",
+        "condition": "always"
+      },
+      {
+        "from": "a2_r2",
+        "to": "a2_a",
+        "condition": "always"
+      },
+      {
+        "from": "a2_a",
+        "to": "a2_e",
+        "condition": "always"
+      },
+      {
+        "from": "a2_e",
+        "to": "c1_g2",
+        "condition": "always"
+      },
+      {
+        "from": "c1_g2",
+        "to": "c1_l",
+        "condition": "lv_offen > 0"
+      },
+      {
+        "from": "c1_l",
+        "to": "c1_g3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "c1_g3",
+        "to": "c1_o2",
+        "condition": "lt_pos IS INITIAL"
+      },
+      {
+        "from": "c1_g3",
+        "to": "c1_bd",
+        "condition": "else"
+      },
+      {
+        "from": "c1_o2",
+        "to": "c1_bd",
+        "condition": "always"
+      },
+      {
+        "from": "c1_bd",
+        "to": "c1_e",
+        "condition": "always"
+      },
+      {
+        "from": "c1_x",
+        "to": "v1_e",
+        "condition": "always"
+      },
+      {
+        "from": "c1_e",
+        "to": "v1_e",
+        "condition": "always"
+      },
+      {
+        "from": "v2_s",
+        "to": "v2_d",
+        "condition": "always"
+      },
+      {
+        "from": "v2_d",
+        "to": "v2_g",
+        "condition": "always"
+      },
+      {
+        "from": "v2_g",
+        "to": "v2_o",
+        "condition": "lt_pos IS INITIAL"
+      },
+      {
+        "from": "v2_o",
+        "to": "v2_x",
+        "condition": "always"
+      },
+      {
+        "from": "v2_g",
+        "to": "v2_c",
+        "condition": "else"
+      },
+      {
+        "from": "v2_c",
+        "to": "c2_s",
+        "condition": "always"
+      },
+      {
+        "from": "c2_s",
+        "to": "c2_b",
+        "condition": "always"
+      },
+      {
+        "from": "c2_b",
+        "to": "c2_g",
+        "condition": "always"
+      },
+      {
+        "from": "c2_g",
+        "to": "c2_rb",
+        "condition": "ls_head_r-mat_doc IS INITIAL"
+      },
+      {
+        "from": "c2_rb",
+        "to": "c2_l",
+        "condition": "always"
+      },
+      {
+        "from": "c2_l",
+        "to": "c2_o",
+        "condition": "next row"
+      },
+      {
+        "from": "c2_o",
+        "to": "c2_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "c2_l",
+        "to": "c2_x",
+        "condition": "no more rows"
+      },
+      {
+        "from": "c2_g",
+        "to": "c2_cm",
+        "condition": "else"
+      },
+      {
+        "from": "c2_cm",
+        "to": "c2_e",
+        "condition": "always"
+      },
+      {
+        "from": "c2_x",
+        "to": "v2_g2",
+        "condition": "always"
+      },
+      {
+        "from": "c2_e",
+        "to": "v2_g2",
+        "condition": "always"
+      },
+      {
+        "from": "v2_g2",
+        "to": "v2_o2",
+        "condition": "lv_mblnr IS NOT INITIAL"
+      },
+      {
+        "from": "v2_g2",
+        "to": "v2_e",
+        "condition": "else"
+      },
+      {
+        "from": "v2_o2",
+        "to": "v2_p",
+        "condition": "always"
+      },
+      {
+        "from": "v2_p",
+        "to": "v2_e",
+        "condition": "always"
+      },
+      {
+        "from": "c1_g2",
+        "to": "c1_l",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_mm_we_assist.abap:52 — kein Fachsatz „die offene Menge ist in Bestellmengeneinheit korrekt“ (summiert wird MENGE in Basismengeneinheit, abgezogen von der Bestellmenge in Bestellmengeneinheit)",
+    "zcl_mm_we_assist.abap:36 — kein Fachsatz „Umlagerungsbestellungen werden abgewiesen“ (die Prüfung ist auskommentiert)",
+    "zwd_mm_we_compctrl.abap:99 — kein Fachsatz „Warnungen des BAPIs werden angezeigt“ (nur Meldungen vom Typ E/A und nur im Fehlerfall)",
+    "gesamte Scheibe — kein Fachsatz „Qualitätsprüfung oder Einlagerung wird angestoßen“; gebucht wird nur der Wareneingang"
+  ],
+  "processDescription": "Am Wareneingangstor gibt ein Lagerarbeiter in einer Web-Dynpro-Anwendung eine Bestellnummer ein; ohne Nummer erhält er einen Feldfehler. Die Assistenzklasse prüft, ob die Bestellung existiert, nicht gelöscht und freigegeben ist; andernfalls wird der Prüffehler angezeigt und nichts geladen. Für gültige Bestellungen werden Kopf und Positionen gelesen. Nicht gelöschte Positionen mit Wareneingangskennzeichen erhalten als offene Menge die Bestellmenge abzüglich der bisherigen Eingänge nach Abzug der Stornos; Positionen mit offener Menge werden mit dieser Menge als Vorschlag angezeigt, ist keine offen, erscheint eine Information. Beim Buchen werden Positionen ohne Menge verworfen; bleibt keine, gibt es eine Warnung. Sonst wird der Wareneingang mit Bewegungsart 101 gebucht. Entsteht kein Materialbeleg, wird zurückgerollt und die Fehler werden angezeigt; andernfalls wird festgeschrieben, die Belegnummer gemeldet und auf die Bestätigungsseite navigiert."
+}

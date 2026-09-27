@@ -1,0 +1,2126 @@
+{
+  "id": "BM-260",
+  "title": "RAP-Angebot mit Draft: Feature-Steuerung, Preisfindung, Freigabe mit Genehmigungsgrenze, Kopieren, Business Event und Ablauf-Job",
+  "classes": [
+    "K01",
+    "K02",
+    "K04",
+    "K09",
+    "K12"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZI_ANGEBOT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zbp_i_angebot_kopf.abap",
+        "line": 86,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zbp_i_angebot_kopf.abap:86"
+      },
+      "identity": {
+        "objectType": "DDLS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_ANGEBOT_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zbp_i_angebot_lsc.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zbp_i_angebot_lsc.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "A304",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_angebot_preis.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_angebot_preis.abap:29"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KONP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_angebot_preis.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_angebot_preis.abap:29"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_angebot_preis.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_angebot_preis.abap:47"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_angebot_preis.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_angebot_preis.abap:47"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PRCD_ELEMENTS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_angebot_preis.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_angebot_preis.abap:47"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_BALI_LOG",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_angebot_ablauf_job.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_angebot_ablauf_job.abap:34"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-260-B01",
+      "text": "Ein Angebot lässt sich nur im Status neu ändern; freigeben lässt es sich nur im Status neu und mit einem Gesamtwert über null.",
+      "anchors": [
+        {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-260-B02",
+      "text": "Beim Sichern wird ein Angebot abgelehnt, dessen Gültig-bis-Datum in der Vergangenheit liegt oder nicht nach dem Angebotsdatum liegt (ZSD_ANG 001).",
+      "anchors": [
+        {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:45"
+        },
+        {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:47"
+        },
+        {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-260-B03",
+      "text": "Ändert der Anwender Material oder Menge einer Position, wird ein Preis je Einheit vorgeschlagen und Nettopreis sowie Nettowert (Preis mal Menge) der Position gesetzt.",
+      "anchors": [
+        {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:26"
+        },
+        {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-260-B04",
+      "text": "Vorrang hat der heute gültige Listenpreis PR00 der Verkaufsorganisation und des Vertriebswegs, sofern er in Angebotswährung gepflegt ist.",
+      "anchors": [
+        {
+          "file": "zcl_sd_angebot_preis.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_preis.abap:29"
+        },
+        {
+          "file": "zcl_sd_angebot_preis.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_preis.abap:41"
+        },
+        {
+          "file": "zcl_sd_angebot_preis.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_preis.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-260-B05",
+      "text": "Sonst gilt der PR00-Preis aus dem jüngsten Kundenauftrag des Kunden für dieses Material, wenn die Währung übereinstimmt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_angebot_preis.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_preis.abap:47"
+        },
+        {
+          "file": "zcl_sd_angebot_preis.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_preis.abap:60"
+        },
+        {
+          "file": "zcl_sd_angebot_preis.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_preis.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-260-B06",
+      "text": "Findet sich kein Preis, bleibt er 0 und die App zeigt die Warnung ZSD_ANG 020.",
+      "anchors": [
+        {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:30"
+        },
+        {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-260-B07",
+      "text": "Nach jeder Preisermittlung wird der Gesamtwert des Angebots als Summe aller Positionsnettowerte neu gesetzt.",
+      "anchors": [
+        {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:48"
+        },
+        {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-260-B08",
+      "text": "Positionen ohne positive Menge oder ohne Mengeneinheit verhindern das Sichern (ZSD_ANG 021).",
+      "anchors": [
+        {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:71"
+        },
+        {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-260-B09",
+      "text": "Die Freigabe eines Angebots, das nicht im Status neu ist, wird mit ZSD_ANG 010 abgelehnt.",
+      "anchors": [
+        {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:65"
+        },
+        {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-260-B10",
+      "text": "Liegt der Gesamtwert über 50.000, wird das Angebot nicht freigegeben, sondern auf „Genehmigung angefordert“ gesetzt und der Anwender informiert; sonst ist es freigegeben.",
+      "anchors": [
+        {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:75"
+        },
+        {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:76"
+        },
+        {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:77"
+        },
+        {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-260-B11",
+      "text": "Der neue Status wird fortgeschrieben und die Angebote werden als Ergebnis der Aktion zurückgegeben.",
+      "anchors": [
+        {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:86"
+        },
+        {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:92"
+        }
+      ]
+    },
+    {
+      "id": "BM-260-B12",
+      "text": "Kopieren legt je Vorlage einen neuen Entwurf mit Kunde, Vertriebsbereich, Währung, heutigem Angebotsdatum, 30 Tagen Gültigkeit, Status neu und den Positionen mit Material, Menge und Einheit an – ohne Preise.",
+      "anchors": [
+        {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:110"
+        },
+        {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:117"
+        }
+      ]
+    },
+    {
+      "id": "BM-260-B13",
+      "text": "Beim Sichern wird jeder Statuswechsel mit Benutzer und Datum protokolliert; bei „Genehmigung angefordert“ wird zusätzlich das Business Event GenehmigungAngefordert mit Gesamtwert und Anforderer ausgelöst.",
+      "anchors": [
+        {
+          "file": "zbp_i_angebot_lsc.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_lsc.abap:12"
+        },
+        {
+          "file": "zbp_i_angebot_lsc.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_lsc.abap:20"
+        },
+        {
+          "file": "zbp_i_angebot_lsc.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_lsc.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-260-B14",
+      "text": "Ein nächtlicher Job liest die freigegebenen Angebote mit abgelaufener Gültigkeit; gibt es keine, endet er.",
+      "anchors": [
+        {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:42"
+        },
+        {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:47"
+        },
+        {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-260-B15",
+      "text": "Der Job setzt die Angebote paketweise über die Aktion Ablaufen auf den Status abgelaufen; die Aktion selbst prüft nichts.",
+      "anchors": [
+        {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:59"
+        },
+        {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:101"
+        }
+      ]
+    },
+    {
+      "id": "BM-260-B16",
+      "text": "Wird ein Paket abgelehnt oder scheitert sein Sichern, wird es verworfen und als fehlerhaft protokolliert; sonst zählt es als abgelaufen.",
+      "anchors": [
+        {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:65"
+        },
+        {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:66"
+        },
+        {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:70"
+        },
+        {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-260-B17",
+      "text": "Am Ende protokolliert der Job die Zahl abgelaufener und fehlerhafter Angebote und sichert das Protokoll zum Job.",
+      "anchors": [
+        {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:83"
+        },
+        {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:87"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "f_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:18"
+        },
+        "meaning": "Laufzeit fragt Änderbarkeit und Aktion Freigeben ab"
+      },
+      {
+        "id": "f_r",
+        "type": "read",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:19"
+        },
+        "meaning": "Status und Gesamtwert lesen"
+      },
+      {
+        "id": "f_a",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:24"
+        },
+        "meaning": "Freigeben nur bei Status neu und Gesamtwert > 0; Ändern nur bei Status neu"
+      },
+      {
+        "id": "f_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:33"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "v_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:36"
+        },
+        "meaning": "Prüfung der Gültigkeit beim Sichern"
+      },
+      {
+        "id": "v_r",
+        "type": "read",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:37"
+        },
+        "meaning": "Angebotsdatum und Gültig-bis lesen"
+      },
+      {
+        "id": "v_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:42"
+        },
+        "meaning": "Jedes Angebot"
+      },
+      {
+        "id": "v_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:45"
+        },
+        "meaning": "Gültig-bis in der Vergangenheit oder nicht nach dem Angebotsdatum?"
+      },
+      {
+        "id": "v_f",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:47"
+        },
+        "meaning": "Sichern ablehnen"
+      },
+      {
+        "id": "v_o",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:48"
+        },
+        "meaning": "Fehler ZSD_ANG 001 am Feld Gültig-bis"
+      },
+      {
+        "id": "v_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:55"
+        },
+        "meaning": "Ende Prüfung"
+      },
+      {
+        "id": "fr_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:58"
+        },
+        "meaning": "Aktion Freigeben"
+      },
+      {
+        "id": "fr_r",
+        "type": "read",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:59"
+        },
+        "meaning": "Status und Gesamtwert lesen"
+      },
+      {
+        "id": "fr_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:64"
+        },
+        "meaning": "Jedes Angebot"
+      },
+      {
+        "id": "fr_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:65"
+        },
+        "meaning": "Nicht im Status neu?"
+      },
+      {
+        "id": "fr_f",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:66"
+        },
+        "meaning": "Freigabe ablehnen"
+      },
+      {
+        "id": "fr_o",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:67"
+        },
+        "meaning": "Fehler ZSD_ANG 010"
+      },
+      {
+        "id": "fr_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:75"
+        },
+        "meaning": "Gesamtwert über 50.000?"
+      },
+      {
+        "id": "fr_a1",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:76"
+        },
+        "meaning": "Status G: Genehmigung angefordert"
+      },
+      {
+        "id": "fr_o2",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:77"
+        },
+        "meaning": "Information ZSD_ANG 011: Genehmigung nötig"
+      },
+      {
+        "id": "fr_a2",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:82"
+        },
+        "meaning": "Status F: freigegeben"
+      },
+      {
+        "id": "fr_m",
+        "type": "write",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:86"
+        },
+        "meaning": "Neuen Status der bearbeiteten Angebote fortschreiben"
+      },
+      {
+        "id": "fr_rr",
+        "type": "read",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:92"
+        },
+        "meaning": "Angebote als Aktionsergebnis lesen"
+      },
+      {
+        "id": "fr_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:96"
+        },
+        "meaning": "Ergebnis zurückgeben"
+      },
+      {
+        "id": "ab_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:99"
+        },
+        "meaning": "Aktion Ablaufen"
+      },
+      {
+        "id": "ab_m",
+        "type": "write",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:101"
+        },
+        "meaning": "Status A (abgelaufen) setzen, ohne Prüfung"
+      },
+      {
+        "id": "ab_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:106"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "ko_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:109"
+        },
+        "meaning": "Aktion Kopieren"
+      },
+      {
+        "id": "ko_r",
+        "type": "read",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:110"
+        },
+        "meaning": "Kopf und Positionen der Vorlage lesen"
+      },
+      {
+        "id": "ko_m",
+        "type": "write",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:117"
+        },
+        "meaning": "Neuen Entwurf mit Kunde, Vertriebsbereich, Währung, heute + 30 Tage, Status neu und Positionen (Material, Menge, Einheit) anlegen"
+      },
+      {
+        "id": "ko_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_i_angebot_kopf.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_kopf.abap:144"
+        },
+        "meaning": "Neue Entwürfe zurückmelden"
+      },
+      {
+        "id": "p_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:12"
+        },
+        "meaning": "Determination bei Änderung einer Position"
+      },
+      {
+        "id": "p_r",
+        "type": "read",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:15"
+        },
+        "meaning": "Position und zugehörigen Kopf lesen"
+      },
+      {
+        "id": "p_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:23"
+        },
+        "meaning": "Jede geänderte Position"
+      },
+      {
+        "id": "p_c",
+        "type": "call",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:26"
+        },
+        "meaning": "Preis vorschlagen"
+      },
+      {
+        "id": "p_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:30"
+        },
+        "meaning": "Kein Preis gefunden?"
+      },
+      {
+        "id": "p_o",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:31"
+        },
+        "meaning": "Warnung ZSD_ANG 020 mit Material"
+      },
+      {
+        "id": "p_m",
+        "type": "write",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:44"
+        },
+        "meaning": "Nettopreis und Nettowert (Preis × Menge) der Positionen setzen"
+      },
+      {
+        "id": "p_r2",
+        "type": "read",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:48"
+        },
+        "meaning": "Alle Positionen der betroffenen Köpfe lesen"
+      },
+      {
+        "id": "p_m2",
+        "type": "write",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:53"
+        },
+        "meaning": "Gesamtwert = Summe der Nettowerte im Kopf setzen"
+      },
+      {
+        "id": "p_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:61"
+        },
+        "meaning": "Ende Determination"
+      },
+      {
+        "id": "pv_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:64"
+        },
+        "meaning": "Mengenprüfung beim Sichern"
+      },
+      {
+        "id": "pv_r",
+        "type": "read",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:65"
+        },
+        "meaning": "Menge und Einheit lesen"
+      },
+      {
+        "id": "pv_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:70"
+        },
+        "meaning": "Jede Position"
+      },
+      {
+        "id": "pv_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:71"
+        },
+        "meaning": "Menge nicht positiv oder Einheit fehlt?"
+      },
+      {
+        "id": "pv_f",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:72"
+        },
+        "meaning": "Sichern ablehnen"
+      },
+      {
+        "id": "pv_o",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:73"
+        },
+        "meaning": "Fehler ZSD_ANG 021 am Feld Menge"
+      },
+      {
+        "id": "pv_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_i_angebot_pos.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_pos.abap:79"
+        },
+        "meaning": "Ende Prüfung"
+      },
+      {
+        "id": "s_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_i_angebot_lsc.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_lsc.abap:9"
+        },
+        "meaning": "Zusätzliches Sichern"
+      },
+      {
+        "id": "s_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zbp_i_angebot_lsc.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_lsc.abap:12"
+        },
+        "meaning": "Jede Statusänderung protokollieren"
+      },
+      {
+        "id": "s_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_i_angebot_lsc.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_lsc.abap:19"
+        },
+        "meaning": "Genehmigung angefordert?"
+      },
+      {
+        "id": "s_ev",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_i_angebot_lsc.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_lsc.abap:20"
+        },
+        "meaning": "Business Event mit Gesamtwert und Anforderer auslösen"
+      },
+      {
+        "id": "s_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_i_angebot_lsc.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_lsc.abap:27"
+        },
+        "meaning": "Protokollsätze vorhanden?"
+      },
+      {
+        "id": "s_w",
+        "type": "write",
+        "anchor": {
+          "file": "zbp_i_angebot_lsc.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_lsc.abap:28"
+        },
+        "meaning": "Statuswechsel in ZSD_ANGEBOT_LOG schreiben"
+      },
+      {
+        "id": "s_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_i_angebot_lsc.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_angebot_lsc.abap:30"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "pr_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_angebot_preis.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_preis.abap:26"
+        },
+        "meaning": "Preisvorschlag"
+      },
+      {
+        "id": "pr_r1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_angebot_preis.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_preis.abap:29"
+        },
+        "meaning": "Heute gültigen Listenpreis PR00 zu Verkaufsorg., Vertriebsweg und Material lesen"
+      },
+      {
+        "id": "pr_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_angebot_preis.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_preis.abap:41"
+        },
+        "meaning": "Listenpreis in Angebotswährung gefunden?"
+      },
+      {
+        "id": "pr_a1",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_angebot_preis.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_preis.abap:42"
+        },
+        "meaning": "Preis je Einheit aus dem Listenpreis"
+      },
+      {
+        "id": "pr_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_angebot_preis.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_preis.abap:43"
+        },
+        "meaning": "Listenpreis zurückgeben"
+      },
+      {
+        "id": "pr_r2",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_angebot_preis.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_preis.abap:47"
+        },
+        "meaning": "Jüngsten PR00-Preis des Kunden für das Material aus Kundenaufträgen lesen"
+      },
+      {
+        "id": "pr_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_angebot_preis.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_preis.abap:60"
+        },
+        "meaning": "Preis in Angebotswährung gefunden?"
+      },
+      {
+        "id": "pr_a2",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_angebot_preis.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_preis.abap:61"
+        },
+        "meaning": "Preis je Einheit aus dem letzten Auftrag"
+      },
+      {
+        "id": "pr_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_angebot_preis.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_preis.abap:63"
+        },
+        "meaning": "Preis (ggf. 0) zurückgeben"
+      },
+      {
+        "id": "j_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:28"
+        },
+        "meaning": "Nächtlicher Ablauf-Job"
+      },
+      {
+        "id": "j_lg",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:34"
+        },
+        "meaning": "Anwendungsprotokoll ZSD/ANGEBOT_ABLAUF anlegen"
+      },
+      {
+        "id": "j_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:42"
+        },
+        "meaning": "Freigegebene Angebote mit abgelaufener Gültigkeit lesen"
+      },
+      {
+        "id": "j_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:47"
+        },
+        "meaning": "Keine abgelaufenen Angebote?"
+      },
+      {
+        "id": "j_p1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:48"
+        },
+        "meaning": "„Keine abgelaufenen Angebote“ protokollieren"
+      },
+      {
+        "id": "j_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:49"
+        },
+        "meaning": "Job beenden"
+      },
+      {
+        "id": "j_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:52"
+        },
+        "meaning": "Angebote zu Paketen sammeln"
+      },
+      {
+        "id": "j_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:55"
+        },
+        "meaning": "Paket noch nicht voll und nicht letztes Angebot?"
+      },
+      {
+        "id": "j_m",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:59"
+        },
+        "meaning": "Aktion Ablaufen für das Paket ausführen"
+      },
+      {
+        "id": "j_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:65"
+        },
+        "meaning": "Abgelehnt?"
+      },
+      {
+        "id": "j_rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:66"
+        },
+        "meaning": "Paket verwerfen"
+      },
+      {
+        "id": "j_p2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:68"
+        },
+        "meaning": "Fehler „Paket verworfen“ protokollieren"
+      },
+      {
+        "id": "j_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:70"
+        },
+        "meaning": "Paket sichern"
+      },
+      {
+        "id": "j_g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:73"
+        },
+        "meaning": "Sichern fehlgeschlagen? (sonst als abgelaufen zählen)"
+      },
+      {
+        "id": "j_p3",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:75"
+        },
+        "meaning": "Fehler protokollieren"
+      },
+      {
+        "id": "j_p4",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:83"
+        },
+        "meaning": "Summe protokollieren"
+      },
+      {
+        "id": "j_g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:85"
+        },
+        "meaning": "Protokoll vorhanden?"
+      },
+      {
+        "id": "j_sv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:87"
+        },
+        "meaning": "Protokoll sichern und dem Job zuordnen"
+      },
+      {
+        "id": "j_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:91"
+        },
+        "meaning": "Ende Job"
+      },
+      {
+        "id": "pl_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:94"
+        },
+        "meaning": "Protokollieren"
+      },
+      {
+        "id": "pl_ck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:95"
+        },
+        "meaning": "Protokoll vorhanden?"
+      },
+      {
+        "id": "pl_a",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:97"
+        },
+        "meaning": "Freitext mit Schwere ins Protokoll"
+      },
+      {
+        "id": "pl_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_angebot_ablauf_job.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_angebot_ablauf_job.abap:100"
+        },
+        "meaning": "Rückkehr"
+      }
+    ],
+    "edges": [
+      {
+        "from": "f_s",
+        "to": "f_r",
+        "condition": "always"
+      },
+      {
+        "from": "f_r",
+        "to": "f_a",
+        "condition": "always"
+      },
+      {
+        "from": "f_a",
+        "to": "f_e",
+        "condition": "always"
+      },
+      {
+        "from": "v_s",
+        "to": "v_r",
+        "condition": "always"
+      },
+      {
+        "from": "v_r",
+        "to": "v_l",
+        "condition": "always"
+      },
+      {
+        "from": "v_l",
+        "to": "v_g",
+        "condition": "next row"
+      },
+      {
+        "from": "v_g",
+        "to": "v_f",
+        "condition": "ls_kopf-GueltigBis < cl_abap_context_info=>get_system_date( ) OR ls_kopf-GueltigBis <= ls_kopf-Angebotsdatum"
+      },
+      {
+        "from": "v_g",
+        "to": "v_l",
+        "condition": "else"
+      },
+      {
+        "from": "v_f",
+        "to": "v_o",
+        "condition": "always"
+      },
+      {
+        "from": "v_o",
+        "to": "v_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "v_l",
+        "to": "v_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fr_s",
+        "to": "fr_r",
+        "condition": "always"
+      },
+      {
+        "from": "fr_r",
+        "to": "fr_l",
+        "condition": "always"
+      },
+      {
+        "from": "fr_l",
+        "to": "fr_g1",
+        "condition": "next row"
+      },
+      {
+        "from": "fr_g1",
+        "to": "fr_f",
+        "condition": "<ls_kopf>-Status <> zbp_i_angebot=>gc_status-neu"
+      },
+      {
+        "from": "fr_f",
+        "to": "fr_o",
+        "condition": "always"
+      },
+      {
+        "from": "fr_o",
+        "to": "fr_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fr_g1",
+        "to": "fr_g2",
+        "condition": "else"
+      },
+      {
+        "from": "fr_g2",
+        "to": "fr_a1",
+        "condition": "<ls_kopf>-Gesamtwert > zbp_i_angebot=>gc_genehmigungsgrenze"
+      },
+      {
+        "from": "fr_a1",
+        "to": "fr_o2",
+        "condition": "always"
+      },
+      {
+        "from": "fr_o2",
+        "to": "fr_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fr_g2",
+        "to": "fr_a2",
+        "condition": "else"
+      },
+      {
+        "from": "fr_a2",
+        "to": "fr_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fr_l",
+        "to": "fr_m",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fr_m",
+        "to": "fr_rr",
+        "condition": "always"
+      },
+      {
+        "from": "fr_rr",
+        "to": "fr_e",
+        "condition": "always"
+      },
+      {
+        "from": "ab_s",
+        "to": "ab_m",
+        "condition": "always"
+      },
+      {
+        "from": "ab_m",
+        "to": "ab_e",
+        "condition": "always"
+      },
+      {
+        "from": "ko_s",
+        "to": "ko_r",
+        "condition": "always"
+      },
+      {
+        "from": "ko_r",
+        "to": "ko_m",
+        "condition": "always"
+      },
+      {
+        "from": "ko_m",
+        "to": "ko_e",
+        "condition": "always"
+      },
+      {
+        "from": "p_s",
+        "to": "p_r",
+        "condition": "always"
+      },
+      {
+        "from": "p_r",
+        "to": "p_l",
+        "condition": "always"
+      },
+      {
+        "from": "p_l",
+        "to": "p_c",
+        "condition": "next row"
+      },
+      {
+        "from": "p_c",
+        "to": "pr_s",
+        "condition": "always"
+      },
+      {
+        "from": "pr_s",
+        "to": "pr_r1",
+        "condition": "always"
+      },
+      {
+        "from": "pr_r1",
+        "to": "pr_g1",
+        "condition": "always"
+      },
+      {
+        "from": "pr_g1",
+        "to": "pr_a1",
+        "condition": "sy-subrc = 0 AND ls_pr00-konwa = iv_waehrung"
+      },
+      {
+        "from": "pr_a1",
+        "to": "pr_x",
+        "condition": "always"
+      },
+      {
+        "from": "pr_g1",
+        "to": "pr_r2",
+        "condition": "else"
+      },
+      {
+        "from": "pr_r2",
+        "to": "pr_g2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pr_g2",
+        "to": "pr_a2",
+        "condition": "sy-subrc = 0 AND ls_letzter-waerk = iv_waehrung"
+      },
+      {
+        "from": "pr_g2",
+        "to": "pr_e",
+        "condition": "else"
+      },
+      {
+        "from": "pr_a2",
+        "to": "pr_e",
+        "condition": "always"
+      },
+      {
+        "from": "pr_x",
+        "to": "p_g",
+        "condition": "always"
+      },
+      {
+        "from": "pr_e",
+        "to": "p_g",
+        "condition": "always"
+      },
+      {
+        "from": "p_g",
+        "to": "p_o",
+        "condition": "lv_preis IS INITIAL"
+      },
+      {
+        "from": "p_o",
+        "to": "p_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "p_g",
+        "to": "p_l",
+        "condition": "else"
+      },
+      {
+        "from": "p_l",
+        "to": "p_m",
+        "condition": "no more rows"
+      },
+      {
+        "from": "p_m",
+        "to": "p_r2",
+        "condition": "always"
+      },
+      {
+        "from": "p_r2",
+        "to": "p_m2",
+        "condition": "always"
+      },
+      {
+        "from": "p_m2",
+        "to": "p_e",
+        "condition": "always"
+      },
+      {
+        "from": "pv_s",
+        "to": "pv_r",
+        "condition": "always"
+      },
+      {
+        "from": "pv_r",
+        "to": "pv_l",
+        "condition": "always"
+      },
+      {
+        "from": "pv_l",
+        "to": "pv_g",
+        "condition": "next row"
+      },
+      {
+        "from": "pv_g",
+        "to": "pv_f",
+        "condition": "ls_pos-Menge <= 0 OR ls_pos-Mengeneinheit IS INITIAL"
+      },
+      {
+        "from": "pv_f",
+        "to": "pv_o",
+        "condition": "always"
+      },
+      {
+        "from": "pv_o",
+        "to": "pv_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pv_g",
+        "to": "pv_l",
+        "condition": "else"
+      },
+      {
+        "from": "pv_l",
+        "to": "pv_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_s",
+        "to": "s_l",
+        "condition": "always"
+      },
+      {
+        "from": "s_l",
+        "to": "s_g",
+        "condition": "next row"
+      },
+      {
+        "from": "s_g",
+        "to": "s_ev",
+        "condition": "ls_kopf-Status = zbp_i_angebot=>gc_status-genehmigung"
+      },
+      {
+        "from": "s_g",
+        "to": "s_l",
+        "condition": "else"
+      },
+      {
+        "from": "s_ev",
+        "to": "s_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "s_l",
+        "to": "s_g2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_g2",
+        "to": "s_w",
+        "condition": "lt_log IS NOT INITIAL"
+      },
+      {
+        "from": "s_g2",
+        "to": "s_e",
+        "condition": "else"
+      },
+      {
+        "from": "s_w",
+        "to": "s_e",
+        "condition": "always"
+      },
+      {
+        "from": "j_s",
+        "to": "j_lg",
+        "condition": "always"
+      },
+      {
+        "from": "j_lg",
+        "to": "j_r",
+        "condition": "always"
+      },
+      {
+        "from": "j_r",
+        "to": "j_g",
+        "condition": "always"
+      },
+      {
+        "from": "j_g",
+        "to": "j_p1",
+        "condition": "lt_abgelaufen IS INITIAL"
+      },
+      {
+        "from": "j_p1",
+        "to": "pl_s",
+        "condition": "always"
+      },
+      {
+        "from": "pl_e",
+        "to": "j_x",
+        "condition": "always"
+      },
+      {
+        "from": "j_g",
+        "to": "j_l",
+        "condition": "else"
+      },
+      {
+        "from": "j_l",
+        "to": "j_g2",
+        "condition": "next row"
+      },
+      {
+        "from": "j_g2",
+        "to": "j_l",
+        "condition": "lines( lt_keys ) < gc_paket AND sy-tabix < lines( lt_abgelaufen )"
+      },
+      {
+        "from": "j_g2",
+        "to": "j_m",
+        "condition": "else"
+      },
+      {
+        "from": "j_m",
+        "to": "j_g3",
+        "condition": "always"
+      },
+      {
+        "from": "j_g3",
+        "to": "j_rb",
+        "condition": "ls_failed IS NOT INITIAL"
+      },
+      {
+        "from": "j_rb",
+        "to": "j_p2",
+        "condition": "always"
+      },
+      {
+        "from": "j_p2",
+        "to": "pl_s",
+        "condition": "always"
+      },
+      {
+        "from": "pl_e",
+        "to": "j_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "j_g3",
+        "to": "j_cm",
+        "condition": "else"
+      },
+      {
+        "from": "j_cm",
+        "to": "j_g4",
+        "condition": "always"
+      },
+      {
+        "from": "j_g4",
+        "to": "j_p3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "j_p3",
+        "to": "pl_s",
+        "condition": "always"
+      },
+      {
+        "from": "j_g4",
+        "to": "j_l",
+        "condition": "else"
+      },
+      {
+        "from": "j_l",
+        "to": "j_p4",
+        "condition": "no more rows"
+      },
+      {
+        "from": "j_p4",
+        "to": "pl_s",
+        "condition": "always"
+      },
+      {
+        "from": "pl_e",
+        "to": "j_g5",
+        "condition": "always"
+      },
+      {
+        "from": "j_g5",
+        "to": "j_sv",
+        "condition": "mo_log IS BOUND"
+      },
+      {
+        "from": "j_g5",
+        "to": "j_e",
+        "condition": "else"
+      },
+      {
+        "from": "j_sv",
+        "to": "j_e",
+        "condition": "always"
+      },
+      {
+        "from": "pl_s",
+        "to": "pl_ck",
+        "condition": "always"
+      },
+      {
+        "from": "pl_ck",
+        "to": "pl_a",
+        "condition": "mo_log IS BOUND"
+      },
+      {
+        "from": "pl_ck",
+        "to": "pl_e",
+        "condition": "else"
+      },
+      {
+        "from": "pl_a",
+        "to": "pl_e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_sd_angebot_ablauf_job.abap:55 — kein Fachsatz „alle abgelaufenen Angebote werden auf abgelaufen gesetzt“ (sy-tabix stammt nach APPEND aus lt_keys; bei mehr als 200 Angeboten bleibt ein Restpaket unbearbeitet)",
+    "zcl_sd_angebot_ablauf_job.abap:49 — kein Fachsatz „auch ein Lauf ohne Treffer hinterlässt ein Protokoll“ (RETURN vor dem Sichern des Protokolls)",
+    "zbp_i_angebot_lsc.abap:20 — kein Fachsatz „das Angebot wird genehmigt oder eine Genehmigungsaufgabe angelegt“ (nur ein Business Event; der Verbraucher liegt laut Kommentar außerhalb des Pakets)",
+    "zbp_i_angebot_kopf.abap:117 — kein Fachsatz „die Kopie übernimmt die Preise der Vorlage“ (Nettopreis/-wert werden nicht kopiert)",
+    "zbp_i_angebot_pos.abap:30 — kein Fachsatz „Positionen ohne Preis werden abgelehnt“ (nur Warnung; der Preis 0 wird gesetzt)"
+  ],
+  "processDescription": "Der Vertriebsinnendienst erstellt Angebote in einer Fiori-Elements-App mit Entwurf. Ändern ist nur im Status neu möglich, Freigeben nur im Status neu mit Gesamtwert über null. Bei jeder Änderung von Material oder Menge wird ein Preis vorgeschlagen: zuerst der heute gültige Listenpreis PR00 in Angebotswährung, sonst der PR00-Preis aus dem jüngsten Kundenauftrag des Kunden; ohne Preis bleibt er 0 mit Warnung. Nettowerte der Positionen und der Gesamtwert des Kopfes werden neu gebildet. Beim Sichern werden Angebote mit unzulässigem Gültig-bis-Datum und Positionen ohne Menge oder Einheit abgelehnt. Die Freigabe lehnt Angebote außerhalb des Status neu ab; über 50.000 wird statt freigegeben eine Genehmigung angefordert. Kopieren erzeugt einen neuen Entwurf mit 30 Tagen Gültigkeit ohne Preise. Beim Sichern wird jeder Statuswechsel protokolliert und bei angeforderter Genehmigung ein Business Event ausgelöst. Nachts setzt ein Job abgelaufene freigegebene Angebote paketweise per Aktion auf abgelaufen, verwirft fehlerhafte Pakete und protokolliert das Ergebnis."
+}

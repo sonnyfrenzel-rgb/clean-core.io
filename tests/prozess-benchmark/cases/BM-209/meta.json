@@ -1,0 +1,34 @@
+{
+  "id": "BM-209",
+  "title": "Liefersammelgang mit Builder- und Protokollklasse",
+  "domain": "SD",
+  "band": "komplex",
+  "loc": 254,
+  "constructs": [
+    "REPORT",
+    "globale Klassen",
+    "Konstruktor mit BAL",
+    "SELECT JOIN VBUP/VBEP",
+    "BAPI_OUTB_DELIVERY_CREATE_SLS",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "RAISE EXCEPTION",
+    "TRY/CATCH in LOOP",
+    "Application Log",
+    "sy-batch"
+  ],
+  "scenario": "Eigener Liefersammelgang, der in einem ECC-System die VL10 für ein Werk ersetzt und im Job zweimal täglich läuft.",
+  "s4_issues": [
+    "VBUK/VBUP entfallen in S/4 (Status in VBAK/VBAP)",
+    "CMGST in S/4 aus SAP Credit Management",
+    "Direktzugriff VBAK/VBAP/VBEP"
+  ],
+  "wave": 3,
+  "module": "LE-SHP",
+  "edge_constructs": [
+    "RETURN im Testmodus zurück in die Schleife",
+    "Ausnahme in LOOP gefangen",
+    "Rollback vor RAISE",
+    "Protokollmethoden als Hilfsroutinen"
+  ],
+  "oo": true
+}

@@ -1,0 +1,37 @@
+{
+  "id": "BM-271",
+  "title": "Outbound-Proxy Mitarbeiterstamm mit Warteschlange",
+  "domain": "HR",
+  "band": "komplex",
+  "loc": 220,
+  "constructs": [
+    "REPORT",
+    "ABAP-Outbound-Proxy",
+    "CX_AI_SYSTEM_FAULT",
+    "Ausnahmeklassenhierarchie mit Redefinition",
+    "TRY/CATCH",
+    "RAISE EXCEPTION",
+    "funktionaler Methodenaufruf in IF",
+    "HR_READ_INFOTYPE",
+    "SELECT SINGLE PA0001",
+    "MODIFY",
+    "DELETE",
+    "COMMIT WORK"
+  ],
+  "scenario": "Anbindung eines externen Payroll-Dienstleisters über SAP PI: Mitarbeiterstammdaten werden täglich per asynchronem Outbound-Proxy gesendet, technische Ausfälle über eine Z-Warteschlange nachgesendet.",
+  "s4_issues": [
+    "PA0000/PA0001 direkt gelesen",
+    "PI/PO-Proxy – Zielbild SAP Integration Suite/Employee Central",
+    "HR_READ_INFOTYPE nicht in ABAP Cloud"
+  ],
+  "wave": 3,
+  "module": "HR",
+  "edge_constructs": [
+    "polymorpher Aufruf is_retryable (Redefinition)",
+    "Ausnahmeübersetzung CX_AI_SYSTEM_FAULT → Z-Ausnahme",
+    "Lazy-Instanziierung des Proxys",
+    "COMMIT erst nach der Schleife",
+    "Warteschlange ohne sy-subrc-Prüfung"
+  ],
+  "oo": true
+}

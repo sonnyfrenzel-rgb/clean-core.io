@@ -1,0 +1,1928 @@
+{
+  "id": "BM-275",
+  "title": "Massenänderung Infosatzpreise über generische Parallelisierung",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZMM_PRICE_STG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_infrec_price_upd.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_infrec_price_upd.abap:42"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SPBT_INITIALIZE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_par_processor.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_par_processor.abap:58"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_PAR_GENERIC_TASK",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_par_processor.abap",
+        "line": 100,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_par_processor.abap:100"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EINA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_infrec_price_handler.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_infrec_price_handler.abap:37"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ME12",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_infrec_price_handler.abap",
+        "line": 93,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_infrec_price_handler.abap:93"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_PRICE_STG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_mm_infrec_price_handler.abap",
+        "line": 57,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_infrec_price_handler.abap:57"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REUSE_ALV_GRID_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_infrec_price_upd.abap",
+        "line": 106,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_infrec_price_upd.abap:106"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-275-B01",
+      "text": "Nur wer Einkaufsinfosätze der Einkaufsorganisation ändern darf, kann die Preisrunde starten; sonst bricht der Report ab.",
+      "anchors": [
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:35"
+        },
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:38"
+        },
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-275-B02",
+      "text": "Es werden die hochgeladenen, noch offenen Preisänderungen der Selektion gelesen; gibt es keine, endet der Report mit Hinweis.",
+      "anchors": [
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:42"
+        },
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:47"
+        },
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:48"
+        },
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-275-B03",
+      "text": "Die Preisänderungen werden je Lieferant zu einem Paket gebündelt, damit parallele Tasks nicht dieselben Infosätze sperren.",
+      "anchors": [
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:57"
+        },
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-275-B04",
+      "text": "Im Fehlersuchlauf werden die Pakete nacheinander im eigenen Prozess verarbeitet, sonst über die generische Parallelisierung mit Servergruppe und Taskgrenze.",
+      "anchors": [
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:66"
+        },
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:68"
+        },
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:69"
+        },
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:73"
+        },
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-275-B05",
+      "text": "Ist die Servergruppe nicht nutzbar, werden alle Pakete sequentiell verarbeitet; sind weniger Workprozesse frei als erlaubt, wird die Taskgrenze abgesenkt.",
+      "anchors": [
+        {
+          "file": "zcl_par_processor.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:58"
+        },
+        {
+          "file": "zcl_par_processor.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:71"
+        },
+        {
+          "file": "zcl_par_processor.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:73"
+        },
+        {
+          "file": "zcl_par_processor.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-275-B06",
+      "text": "Jedes Paket wird als asynchroner Task gestartet, sobald weniger Tasks als die Grenze laufen; bei Ressourcenmangel wird kurz gewartet und bis zu dreimal versucht.",
+      "anchors": [
+        {
+          "file": "zcl_par_processor.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:95"
+        },
+        {
+          "file": "zcl_par_processor.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:97"
+        },
+        {
+          "file": "zcl_par_processor.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:100"
+        },
+        {
+          "file": "zcl_par_processor.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:113"
+        },
+        {
+          "file": "zcl_par_processor.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:117"
+        }
+      ]
+    },
+    {
+      "id": "BM-275-B07",
+      "text": "Scheitert der Start dreimal oder ist die Gruppe gestört, wird das Paket im eigenen Prozess verarbeitet.",
+      "anchors": [
+        {
+          "file": "zcl_par_processor.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:124"
+        }
+      ]
+    },
+    {
+      "id": "BM-275-B08",
+      "text": "Task und lokale Verarbeitung erzeugen den Paket-Handler über seinen Klassennamen; ist er nicht instanziierbar, wird das Paket als fehlerhaft gemeldet, ohne verarbeitet zu werden.",
+      "anchors": [
+        {
+          "file": "zcl_par_processor.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:132"
+        },
+        {
+          "file": "zcl_par_processor.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:138"
+        },
+        {
+          "file": "z_par_generic_task.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_par_generic_task.abap:17"
+        },
+        {
+          "file": "z_par_generic_task.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_par_generic_task.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-275-B09",
+      "text": "Endet ein Task, wird sein Ergebnis abgeholt; bei System- oder Kommunikationsfehler entsteht ein Fehlerergebnis ohne Paketbezug.",
+      "anchors": [
+        {
+          "file": "zcl_par_processor.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:149"
+        },
+        {
+          "file": "zcl_par_processor.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:157"
+        },
+        {
+          "file": "zcl_par_processor.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:159"
+        }
+      ]
+    },
+    {
+      "id": "BM-275-B10",
+      "text": "Nach dem letzten Paket wird gewartet, bis alle Tasks beendet sind.",
+      "anchors": [
+        {
+          "file": "zcl_par_processor.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:86"
+        }
+      ]
+    },
+    {
+      "id": "BM-275-B11",
+      "text": "Für jede Preisänderung wird der nicht gelöschte Einkaufsinfosatz zu Material und Lieferant gesucht; fehlt er, ist die Änderung fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:37"
+        },
+        {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:41"
+        },
+        {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-275-B12",
+      "text": "Eine Preisänderung um mehr als 20 % gegenüber dem bisherigen Preis wird ohne Freigabe des Einkaufsleiters abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:44"
+        },
+        {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-275-B13",
+      "text": "Sonst wird im Infosatz eine neue Preiskondition ab dem Gültigkeitsdatum per Batch-Input der Infosatzänderung im Hintergrund angelegt; eine Fehlermeldung des Batch-Inputs macht die Änderung fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:51"
+        },
+        {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:80"
+        },
+        {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:93"
+        },
+        {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:99"
+        },
+        {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:100"
+        }
+      ]
+    },
+    {
+      "id": "BM-275-B14",
+      "text": "Erfolgreiche Änderungen werden im Staging auf P gesetzt, fehlerhafte mit Fehlertext auf E; am Paketende wird festgeschrieben und die Zahl geänderter und fehlerhafter Sätze zurückgegeben.",
+      "anchors": [
+        {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:56"
+        },
+        {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:57"
+        },
+        {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:61"
+        },
+        {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-275-B15",
+      "text": "Zum Schluss wird je Lieferant angezeigt, wie viele Preise geändert wurden und wie viele fehlerhaft sind; Pakete ohne Ergebnis werden als offen gebliebene gekennzeichnet.",
+      "anchors": [
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:87"
+        },
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:90"
+        },
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:96"
+        },
+        {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:106"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:34"
+        },
+        "meaning": "Reportstart Preisrunde"
+      },
+      {
+        "id": "auth",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:35"
+        },
+        "meaning": "Änderungsberechtigung Infosatz je Einkaufsorganisation prüfen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:38"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "me",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:39"
+        },
+        "meaning": "Fehler: keine Berechtigung"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:39"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:42"
+        },
+        "meaning": "Offene Preisänderungen (Status N) lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:47"
+        },
+        "meaning": "Keine offenen Preisänderungen?"
+      },
+      {
+        "id": "m2",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:48"
+        },
+        "meaning": "Hinweis: nichts zu tun"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:49"
+        },
+        "meaning": "Report verlassen"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:57"
+        },
+        "meaning": "Je Lieferant ein Paket bilden"
+      },
+      {
+        "id": "ser",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:60"
+        },
+        "meaning": "Preisänderungen des Lieferanten als Paket serialisieren"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:66"
+        },
+        "meaning": "Sequentieller Fehlersuchlauf?"
+      },
+      {
+        "id": "l3",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:68"
+        },
+        "meaning": "Pakete nacheinander verarbeiten"
+      },
+      {
+        "id": "hp",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:69"
+        },
+        "meaning": "Paket im eigenen Prozess verarbeiten"
+      },
+      {
+        "id": "pnew",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:73"
+        },
+        "meaning": "Parallelisierung mit Servergruppe, Taskgrenze und Handler anlegen"
+      },
+      {
+        "id": "prun",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:76"
+        },
+        "meaning": "Pakete parallel verarbeiten"
+      },
+      {
+        "id": "pf",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:79"
+        },
+        "meaning": "Ergebnis anzeigen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:79"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:84"
+        },
+        "meaning": "Ergebnis je Lieferant"
+      },
+      {
+        "id": "fl",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:87"
+        },
+        "meaning": "Pakete/Lieferanten durchlaufen"
+      },
+      {
+        "id": "fg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:90"
+        },
+        "meaning": "Ergebnis zum Paket vorhanden?"
+      },
+      {
+        "id": "falv",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:106"
+        },
+        "meaning": "Ergebnisliste je Lieferant anzeigen"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_infrec_price_upd.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_infrec_price_upd.abap:114"
+        },
+        "meaning": "Ende Anzeige"
+      },
+      {
+        "id": "cs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:46"
+        },
+        "meaning": "Parallelisierung anlegen"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:50"
+        },
+        "meaning": "Ende Konstruktor"
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:53"
+        },
+        "meaning": "Pakete verarbeiten"
+      },
+      {
+        "id": "rspbt",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:58"
+        },
+        "meaning": "Servergruppe initialisieren"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:71"
+        },
+        "meaning": "Servergruppe nicht nutzbar / zu wenig frei?"
+      },
+      {
+        "id": "rl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:78"
+        },
+        "meaning": "Pakete durchlaufen"
+      },
+      {
+        "id": "rgp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:79"
+        },
+        "meaning": "Parallel?"
+      },
+      {
+        "id": "rd",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:80"
+        },
+        "meaning": "Paket als Task starten"
+      },
+      {
+        "id": "rpl",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:82"
+        },
+        "meaning": "Paket lokal verarbeiten"
+      },
+      {
+        "id": "rw",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:86"
+        },
+        "meaning": "Auf Ende aller Tasks warten"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:88"
+        },
+        "meaning": "Ergebnisse zurückgeben"
+      },
+      {
+        "id": "ds",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:91"
+        },
+        "meaning": "Paket starten"
+      },
+      {
+        "id": "dw",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:95"
+        },
+        "meaning": "Warten, bis unter der Taskgrenze (max. 60 s)"
+      },
+      {
+        "id": "dl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:97"
+        },
+        "meaning": "Bis zu drei Startversuche"
+      },
+      {
+        "id": "da",
+        "type": "async",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:100"
+        },
+        "meaning": "Paket asynchron in der Servergruppe verarbeiten lassen"
+      },
+      {
+        "id": "dg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:113"
+        },
+        "meaning": "Task gestartet?"
+      },
+      {
+        "id": "dr",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:115"
+        },
+        "meaning": "Methode verlassen"
+      },
+      {
+        "id": "dw2",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:117"
+        },
+        "meaning": "Bei Ressourcenmangel kurz warten"
+      },
+      {
+        "id": "dpl",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:124"
+        },
+        "meaning": "Paket lokal verarbeiten"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:125"
+        },
+        "meaning": "Ende Start"
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:128"
+        },
+        "meaning": "Lokale Verarbeitung"
+      },
+      {
+        "id": "lco",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:132"
+        },
+        "meaning": "Handler per Klassennamen erzeugen"
+      },
+      {
+        "id": "lr",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:138"
+        },
+        "meaning": "Fehlerergebnis „Handler nicht instanziierbar“ und verlassen"
+      },
+      {
+        "id": "lp",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:140"
+        },
+        "meaning": "Paket durch Handler verarbeiten, Ergebnis sammeln"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:142"
+        },
+        "meaning": "Ende lokal"
+      },
+      {
+        "id": "os",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:145"
+        },
+        "meaning": "Task beendet (Callback)"
+      },
+      {
+        "id": "orr",
+        "type": "async",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:149"
+        },
+        "meaning": "Ergebnis des Tasks abholen"
+      },
+      {
+        "id": "og",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:157"
+        },
+        "meaning": "Task mit System-/Kommunikationsfehler?"
+      },
+      {
+        "id": "oe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_par_processor.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_par_processor.abap:163"
+        },
+        "meaning": "Ergebnis gesammelt"
+      },
+      {
+        "id": "ts",
+        "type": "start",
+        "anchor": {
+          "file": "z_par_generic_task.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_par_generic_task.abap:1"
+        },
+        "meaning": "Task-Rahmen"
+      },
+      {
+        "id": "tco",
+        "type": "action",
+        "anchor": {
+          "file": "z_par_generic_task.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_par_generic_task.abap:17"
+        },
+        "meaning": "Handler per Klassennamen erzeugen"
+      },
+      {
+        "id": "tr",
+        "type": "end",
+        "anchor": {
+          "file": "z_par_generic_task.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_par_generic_task.abap:22"
+        },
+        "meaning": "Task verlassen"
+      },
+      {
+        "id": "tp",
+        "type": "call",
+        "anchor": {
+          "file": "z_par_generic_task.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_par_generic_task.abap:25"
+        },
+        "meaning": "Paket durch Handler verarbeiten"
+      },
+      {
+        "id": "te",
+        "type": "end",
+        "anchor": {
+          "file": "z_par_generic_task.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_par_generic_task.abap:28"
+        },
+        "meaning": "Ergebnis zurückgeben"
+      },
+      {
+        "id": "hs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:26"
+        },
+        "meaning": "Preispaket verarbeiten"
+      },
+      {
+        "id": "hct",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:33"
+        },
+        "meaning": "Preisänderungen aus Paket lesen"
+      },
+      {
+        "id": "hl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:35"
+        },
+        "meaning": "Preisänderungen durchlaufen"
+      },
+      {
+        "id": "hq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:37"
+        },
+        "meaning": "Nicht gelöschten Einkaufsinfosatz Material/Lieferant suchen"
+      },
+      {
+        "id": "hg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:41"
+        },
+        "meaning": "Infosatz fehlt / große Änderung ohne Freigabe?"
+      },
+      {
+        "id": "hup",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:51"
+        },
+        "meaning": "Preis im Infosatz ändern"
+      },
+      {
+        "id": "hg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:56"
+        },
+        "meaning": "Änderung erfolgreich?"
+      },
+      {
+        "id": "hu1",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:57"
+        },
+        "meaning": "Staging-Satz auf P"
+      },
+      {
+        "id": "hu2",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:61"
+        },
+        "meaning": "Staging-Satz auf E mit Fehlertext"
+      },
+      {
+        "id": "hcw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:67"
+        },
+        "meaning": "Statusänderungen festschreiben"
+      },
+      {
+        "id": "he",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:68"
+        },
+        "meaning": "Zähler geändert/fehlerhaft zurückgeben"
+      },
+      {
+        "id": "us",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:71"
+        },
+        "meaning": "Preis per Batch-Input ändern"
+      },
+      {
+        "id": "uct",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:93"
+        },
+        "meaning": "Infosatz ändern (ME12) im Hintergrund, synchron verbucht"
+      },
+      {
+        "id": "ug",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:99"
+        },
+        "meaning": "Fehlermeldung im Batch-Input?"
+      },
+      {
+        "id": "ue",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_infrec_price_handler.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_infrec_price_handler.abap:107"
+        },
+        "meaning": "Ende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "auth",
+        "condition": "always"
+      },
+      {
+        "from": "auth",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "me",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "me",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "q",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "m2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m2",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "l2",
+        "to": "ser",
+        "condition": "next row"
+      },
+      {
+        "from": "ser",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l2",
+        "to": "g3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g3",
+        "to": "l3",
+        "condition": "p_seq = abap_true"
+      },
+      {
+        "from": "l3",
+        "to": "hp",
+        "condition": "next row"
+      },
+      {
+        "from": "hp",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "he",
+        "to": "l3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l3",
+        "to": "pf",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g3",
+        "to": "pnew",
+        "condition": "else"
+      },
+      {
+        "from": "pnew",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "ce",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "prun",
+        "condition": "always"
+      },
+      {
+        "from": "prun",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "pf",
+        "condition": "always"
+      },
+      {
+        "from": "pf",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "fl",
+        "condition": "always"
+      },
+      {
+        "from": "fl",
+        "to": "fg",
+        "condition": "next row"
+      },
+      {
+        "from": "fl",
+        "to": "falv",
+        "condition": "no more rows"
+      },
+      {
+        "from": "falv",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "rspbt",
+        "condition": "always"
+      },
+      {
+        "from": "rspbt",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rl",
+        "condition": "else"
+      },
+      {
+        "from": "rl",
+        "to": "rgp",
+        "condition": "next row"
+      },
+      {
+        "from": "rgp",
+        "to": "rd",
+        "condition": "mv_parallel = abap_true"
+      },
+      {
+        "from": "rgp",
+        "to": "rpl",
+        "condition": "else"
+      },
+      {
+        "from": "rd",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "de",
+        "to": "rl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "dr",
+        "to": "rl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rpl",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "rl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lr",
+        "to": "rl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rl",
+        "to": "rw",
+        "condition": "no more rows"
+      },
+      {
+        "from": "rw",
+        "to": "re",
+        "condition": "always"
+      },
+      {
+        "from": "ds",
+        "to": "dw",
+        "condition": "always"
+      },
+      {
+        "from": "dw",
+        "to": "dl",
+        "condition": "always"
+      },
+      {
+        "from": "dl",
+        "to": "da",
+        "condition": "next row"
+      },
+      {
+        "from": "da",
+        "to": "dg",
+        "condition": "always"
+      },
+      {
+        "from": "da",
+        "to": "ts",
+        "condition": "always"
+      },
+      {
+        "from": "dg",
+        "to": "dw2",
+        "condition": "sy-subrc = 1"
+      },
+      {
+        "from": "dw2",
+        "to": "dl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "dg",
+        "to": "dpl",
+        "condition": "else"
+      },
+      {
+        "from": "dl",
+        "to": "dpl",
+        "condition": "no more rows"
+      },
+      {
+        "from": "dpl",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "lr",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "lco",
+        "condition": "always"
+      },
+      {
+        "from": "lco",
+        "to": "lr",
+        "condition": "cx_sy_create_object_error"
+      },
+      {
+        "from": "lco",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "lp",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "he",
+        "to": "le",
+        "condition": "always"
+      },
+      {
+        "from": "os",
+        "to": "orr",
+        "condition": "always"
+      },
+      {
+        "from": "orr",
+        "to": "og",
+        "condition": "always"
+      },
+      {
+        "from": "og",
+        "to": "oe",
+        "condition": "else"
+      },
+      {
+        "from": "ts",
+        "to": "tco",
+        "condition": "always"
+      },
+      {
+        "from": "tco",
+        "to": "tp",
+        "condition": "always"
+      },
+      {
+        "from": "tp",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "he",
+        "to": "te",
+        "condition": "always"
+      },
+      {
+        "from": "hs",
+        "to": "hct",
+        "condition": "always"
+      },
+      {
+        "from": "hct",
+        "to": "hl",
+        "condition": "always"
+      },
+      {
+        "from": "hl",
+        "to": "hq",
+        "condition": "next row"
+      },
+      {
+        "from": "hq",
+        "to": "hg",
+        "condition": "always"
+      },
+      {
+        "from": "hg",
+        "to": "hup",
+        "condition": "else"
+      },
+      {
+        "from": "hup",
+        "to": "us",
+        "condition": "always"
+      },
+      {
+        "from": "uct",
+        "to": "ug",
+        "condition": "always"
+      },
+      {
+        "from": "ue",
+        "to": "hg2",
+        "condition": "always"
+      },
+      {
+        "from": "hg2",
+        "to": "hu1",
+        "condition": "lv_ok = abap_true"
+      },
+      {
+        "from": "hg2",
+        "to": "hu2",
+        "condition": "else"
+      },
+      {
+        "from": "hu1",
+        "to": "hl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "hu2",
+        "to": "hl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "hl",
+        "to": "hcw",
+        "condition": "no more rows"
+      },
+      {
+        "from": "hcw",
+        "to": "he",
+        "condition": "always"
+      },
+      {
+        "from": "fg",
+        "to": "fl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rg",
+        "to": "rl",
+        "condition": "sy-subrc <> 0 AND sy-subrc <> 3"
+      },
+      {
+        "from": "rg",
+        "to": "rl",
+        "condition": "lv_free < mv_max_tasks"
+      },
+      {
+        "from": "dg",
+        "to": "dr",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "og",
+        "to": "oe",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "tco",
+        "to": "tr",
+        "condition": "cx_sy_create_object_error"
+      },
+      {
+        "from": "hg",
+        "to": "hg2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "hg",
+        "to": "hg2",
+        "condition": "ls_stg-old_price > 0 AND abs( ls_stg-new_price - ls_stg-old_price ) * 100 / ls_stg-old_price > gc_max_change_pct AND ls_stg-approved = abap_false"
+      },
+      {
+        "from": "us",
+        "to": "uct",
+        "condition": "always"
+      },
+      {
+        "from": "ug",
+        "to": "ue",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "ug",
+        "to": "ue",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_mm_infrec_price_handler.abap:93 — kein Fachsatz „nur erfolgreich gebuchte Preise werden auf P gesetzt“ im strengen Sinn (geprüft wird nur auf Meldungen vom Typ E; Abbruchmeldungen oder ein sy-subrc ungleich 0 ohne E-Meldung zählen als Erfolg)",
+    "zcl_par_processor.abap:86 — kein Fachsatz „alle Pakete sind verbucht, wenn der Report endet“ (Tasks mit Systemfehler liefern nur ein Fehlerergebnis, ihre Sätze bleiben im Status N)",
+    "zcl_mm_infrec_price_handler.abap:37 — kein Fachsatz „fehlende Infosätze werden angelegt“ (die Änderung wird nur als fehlerhaft markiert)",
+    "zmm_infrec_price_upd.abap:57 — kein Fachsatz „Pakete haben eine feste Größe“ (ein Paket je Lieferant, beliebig groß)"
+  ],
+  "processDescription": "Der Einkauf startet die Preisrunde für Einkaufsorganisationen, deren Infosätze er ändern darf; ohne Berechtigung bricht der Report ab. Er liest die hochgeladenen offenen Preisänderungen und endet mit Hinweis, wenn es keine gibt. Die Änderungen werden je Lieferant zu einem Paket gebündelt. Im Fehlersuchlauf verarbeitet der Report die Pakete nacheinander selbst, sonst übergibt er sie einer generischen Parallelisierung: Diese initialisiert die Servergruppe (bei Störung sequentiell, bei wenigen freien Prozessen mit gesenkter Taskgrenze), startet jedes Paket als asynchronen Task unter Einhaltung der Taskgrenze, versucht es bei Ressourcenmangel bis zu dreimal und verarbeitet es sonst lokal; beendete Tasks liefern ihr Ergebnis über einen Callback, am Ende wird auf alle gewartet. Im Paket-Handler wird je Preisänderung der Infosatz gesucht, eine Änderung über 20 % ohne Freigabe abgelehnt und sonst per Batch-Input ein neuer Preis ab Gültigkeitsdatum angelegt; der Staging-Satz geht auf P oder mit Fehlertext auf E, festgeschrieben wird am Paketende. Zum Schluss zeigt eine ALV-Liste je Lieferant geänderte und fehlerhafte Sätze sowie Pakete ohne Ergebnis."
+}

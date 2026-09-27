@@ -1,0 +1,2001 @@
+{
+  "id": "BM-218",
+  "title": "Automatische Bestellerzeugung mit Bezugsquellen-Strategien",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Polymorpher Aufruf find: Kanten zu allen drei Strategien mit „always“.",
+    "STOP und das Ende von START-OF-SELECTION führen beide in END-OF-SELECTION (Kanten st→eos, e→eos).",
+    "Kante cil→cl: Ausstieg aus der inneren Gruppenschleife (CONTINUE der äußeren) als „no more rows“."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EBAN",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "zmm_auto_po_f01.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_auto_po_f01.abap:25"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_auto_po_c01.abap",
+        "line": 33,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_auto_po_c01.abap:33"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_auto_po_c01.abap",
+        "line": 33,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_auto_po_c01.abap:33"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EQUK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_auto_po_c01.abap",
+        "line": 71,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_auto_po_c01.abap:71"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EQUP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_auto_po_c01.abap",
+        "line": 80,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_auto_po_c01.abap:80"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EORD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_auto_po_c01.abap",
+        "line": 106,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_auto_po_c01.abap:106"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EINA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_auto_po_c01.abap",
+        "line": 114,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_auto_po_c01.abap:114"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EINE",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_auto_po_c01.abap",
+        "line": 114,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_auto_po_c01.abap:114"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LFM1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_auto_po_c01.abap",
+        "line": 201,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_auto_po_c01.abap:201"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PO_CREATE1",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_auto_po_c01.abap",
+        "line": 241,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_auto_po_c01.abap:241"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_AUTOPO_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zmm_auto_po_c01.abap",
+        "line": 293,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_auto_po_c01.abap:293"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-218-B01",
+      "text": "Der Job selektiert freigegebene, noch nicht bestellte, nicht gelöschte und nicht als fehlerhaft markierte Bestellanforderungen der gewählten Werke, Einkäufergruppen, Warengruppen und Liefertermine.",
+      "anchors": [
+        {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:7"
+        }
+      ]
+    },
+    {
+      "id": "BM-218-B02",
+      "text": "Gibt es keine, wird das ausgegeben und die Verarbeitung beendet.",
+      "anchors": [
+        {
+          "file": "zmm_auto_po.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:21"
+        },
+        {
+          "file": "zmm_auto_po.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:22"
+        },
+        {
+          "file": "zmm_auto_po.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-218-B03",
+      "text": "Für jede Banf-Position wird die Bezugsquelle in fester Reihenfolge gesucht: Kontrakt, Quotierung, Orderbuch oder Infosatz; der erste gefundene Lieferant gilt.",
+      "anchors": [
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:162"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:163"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:164"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:165"
+        }
+      ]
+    },
+    {
+      "id": "BM-218-B04",
+      "text": "Ein gültiger Kontrakt zu Material und Werk wird als Quelle mit Kontraktposition und Preis übernommen.",
+      "anchors": [
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:33"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:44"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-218-B05",
+      "text": "Bei einer zum Liefertermin gültigen Quotierung wird der Lieferant mit der niedrigsten Quotenzahl aus zugeordneter Menge und Basismenge je Quote gewählt.",
+      "anchors": [
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:71"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:76"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:80"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:85"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:86"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-218-B06",
+      "text": "Ist im Orderbuch ein fester Lieferant gepflegt, wird dessen Infosatz genommen, sonst der erste gültige Infosatz zum Material im Werk.",
+      "anchors": [
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:106"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:113"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:114"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:124"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:132"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:133"
+        }
+      ]
+    },
+    {
+      "id": "BM-218-B07",
+      "text": "Findet keine Strategie einen Lieferanten, wird die Banf als fehlerhaft markiert.",
+      "anchors": [
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:168"
+        },
+        {
+          "file": "zmm_auto_po.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-218-B08",
+      "text": "Ist der gefundene Lieferant für die Einkaufsorganisation gesperrt, wird die Banf ebenfalls als fehlerhaft markiert.",
+      "anchors": [
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 201,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:201"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 204,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:204"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 205,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:205"
+        }
+      ]
+    },
+    {
+      "id": "BM-218-B09",
+      "text": "Fehlerhafte Banf erhalten ein Fehlerkennzeichen mit Text in Kundenfeldern der Banf und werden in Folgeläufen nicht mehr selektiert.",
+      "anchors": [
+        {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-218-B10",
+      "text": "Je Lieferant, Einkaufsorganisation und Einkäufergruppe wird eine Normalbestellung mit Bezug auf Banf, Kontrakt und Infosatz angelegt, im Testlauf nur simuliert.",
+      "anchors": [
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 221,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:221"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 241,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:241"
+        }
+      ]
+    },
+    {
+      "id": "BM-218-B11",
+      "text": "Meldet die Anlage einen Fehler, wird verworfen und jede Banf der Gruppe als fehlerhaft markiert.",
+      "anchors": [
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 253,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:253"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 254,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:254"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 255,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:255"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 256,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:256"
+        }
+      ]
+    },
+    {
+      "id": "BM-218-B12",
+      "text": "Im Echtlauf wird jede Bestellung festgeschrieben und mit Lieferant und Positionszahl im Laufprotokoll vermerkt.",
+      "anchors": [
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 261,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:261"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 262,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:262"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 266,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:266"
+        },
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 293,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:293"
+        }
+      ]
+    },
+    {
+      "id": "BM-218-B13",
+      "text": "Am Ende werden die im Lauf erzeugten Bestellungen ausgegeben, im Testlauf mit einem Hinweis.",
+      "anchors": [
+        {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:32"
+        },
+        {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:35"
+        },
+        {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:36"
+        },
+        {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:38"
+        },
+        {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-218-B14",
+      "text": "Positionen mit gültiger Bezugsquelle werden je Lieferant und Einkaufsorganisation für die Bestellung gesammelt.",
+      "anchors": [
+        {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 208,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:208"
+        }
+      ]
+    },
+    {
+      "id": "BM-218-B15",
+      "text": "Eine Laufkennung aus Datum und Uhrzeit ordnet die Protokolleinträge dem Lauf zu.",
+      "anchors": [
+        {
+          "file": "zmm_auto_po.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:19"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_auto_po.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:18"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "cs",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_auto_po.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:20"
+        },
+        "meaning": "Offene Banf selektieren"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_auto_po.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:21"
+        },
+        "meaning": "Keine Banf?"
+      },
+      {
+        "id": "w0",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_auto_po.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:22"
+        },
+        "meaning": "Keine Banf ausgeben"
+      },
+      {
+        "id": "st",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_auto_po.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:23"
+        },
+        "meaning": "Verarbeitung beenden, weiter mit END-OF-SELECTION"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_auto_po.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:30"
+        },
+        "meaning": "Je Banf-Position"
+      },
+      {
+        "id": "cd",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_auto_po.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:32"
+        },
+        "meaning": "Bezugsquelle finden"
+      },
+      {
+        "id": "ca",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_auto_po.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:33"
+        },
+        "meaning": "Position fuer Bestellung vormerken"
+      },
+      {
+        "id": "cm",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_auto_po.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:36"
+        },
+        "meaning": "Banf als fehlerhaft markieren"
+      },
+      {
+        "id": "cc",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_auto_po.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:40"
+        },
+        "meaning": "Bestellungen erzeugen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_auto_po.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:40"
+        },
+        "meaning": "Ende START-OF-SELECTION"
+      },
+      {
+        "id": "eos",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_auto_po.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:42"
+        },
+        "meaning": "Protokollausgabe"
+      },
+      {
+        "id": "cw",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_auto_po.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:43"
+        },
+        "meaning": "Protokoll ausgeben"
+      },
+      {
+        "id": "eoe",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_auto_po.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po.abap:43"
+        },
+        "meaning": "Reportende"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:4"
+        },
+        "meaning": "Selektion"
+      },
+      {
+        "id": "sq",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:7"
+        },
+        "meaning": "Freigegebene, offene, nicht fehlerhafte Banf lesen"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:20"
+        }
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:22"
+        },
+        "meaning": "Fehler markieren"
+      },
+      {
+        "id": "mu",
+        "type": "write",
+        "anchor": {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:25"
+        },
+        "meaning": "Fehlerkennzeichen und Text in Banf-Kundenfeldern setzen"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:29"
+        }
+      },
+      {
+        "id": "ws",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:31"
+        },
+        "meaning": "Protokoll"
+      },
+      {
+        "id": "wq",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:32"
+        },
+        "meaning": "Protokoll dieses Laufs lesen"
+      },
+      {
+        "id": "wl",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:35"
+        },
+        "meaning": "Je erzeugte Bestellung"
+      },
+      {
+        "id": "wo",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:36"
+        },
+        "meaning": "Bestellung, Lieferant, Positionszahl ausgeben"
+      },
+      {
+        "id": "wg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:38"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "wo2",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:39"
+        },
+        "meaning": "Hinweis Testlauf"
+      },
+      {
+        "id": "we",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_auto_po_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_f01.abap:41"
+        }
+      },
+      {
+        "id": "ds",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:161"
+        },
+        "meaning": "Bezugsquellenfindung"
+      },
+      {
+        "id": "dl",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:162"
+        },
+        "meaning": "Strategien in Reihenfolge Kontrakt, Quote, Infosatz"
+      },
+      {
+        "id": "dc",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:163"
+        },
+        "meaning": "Strategie anwenden (polymorph)"
+      },
+      {
+        "id": "dg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:164"
+        },
+        "meaning": "Lieferant gefunden?"
+      },
+      {
+        "id": "dr",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:165"
+        },
+        "meaning": "Erster Treffer gewinnt"
+      },
+      {
+        "id": "dx",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:168"
+        },
+        "meaning": "Ausnahme: keine Bezugsquelle"
+      },
+      {
+        "id": "ks",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:32"
+        },
+        "meaning": "Strategie Kontrakt"
+      },
+      {
+        "id": "kq",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:33"
+        },
+        "meaning": "Gueltigen Kontrakt zu Material/Werk lesen"
+      },
+      {
+        "id": "kg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:44"
+        },
+        "meaning": "Kontrakt gefunden?"
+      },
+      {
+        "id": "ka",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:45"
+        },
+        "meaning": "Quelle Kontrakt uebernehmen"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:49"
+        }
+      },
+      {
+        "id": "qs",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:61"
+        },
+        "meaning": "Strategie Quotierung"
+      },
+      {
+        "id": "qq1",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:71"
+        },
+        "meaning": "Gueltige Quotierung zum Liefertermin lesen"
+      },
+      {
+        "id": "qg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:76"
+        },
+        "meaning": "Keine Quotierung?"
+      },
+      {
+        "id": "qr",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:77"
+        },
+        "meaning": "Ohne Ergebnis"
+      },
+      {
+        "id": "ql",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:80"
+        },
+        "meaning": "Quotierungspositionen mit Quote > 0"
+      },
+      {
+        "id": "qa",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:85"
+        },
+        "meaning": "Quotenzahl berechnen"
+      },
+      {
+        "id": "qg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:86"
+        },
+        "meaning": "Niedrigste Quotenzahl bisher?"
+      },
+      {
+        "id": "qa2",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:88"
+        },
+        "meaning": "Lieferant als Quelle merken"
+      },
+      {
+        "id": "qe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:91"
+        }
+      },
+      {
+        "id": "is",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:103"
+        },
+        "meaning": "Strategie Orderbuch/Infosatz"
+      },
+      {
+        "id": "iq1",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:106"
+        },
+        "meaning": "Festen Lieferanten im Orderbuch lesen"
+      },
+      {
+        "id": "ig",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:113"
+        },
+        "meaning": "Fester Lieferant?"
+      },
+      {
+        "id": "iq2",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:114"
+        },
+        "meaning": "Infosatz des festen Lieferanten lesen"
+      },
+      {
+        "id": "iq3",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:124"
+        },
+        "meaning": "Ersten gueltigen Infosatz lesen"
+      },
+      {
+        "id": "ig2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:132"
+        },
+        "meaning": "Infosatz gefunden?"
+      },
+      {
+        "id": "ia",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:133"
+        },
+        "meaning": "Quelle Infosatz uebernehmen"
+      },
+      {
+        "id": "ie",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:137"
+        }
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:199"
+        },
+        "meaning": "Position vormerken"
+      },
+      {
+        "id": "aq",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 201,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:201"
+        },
+        "meaning": "Einkaufssperre des Lieferanten lesen"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 204,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:204"
+        },
+        "meaning": "Lieferant gesperrt?"
+      },
+      {
+        "id": "ax",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 205,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:205"
+        },
+        "meaning": "Ausnahme: Lieferant gesperrt"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 210,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:210"
+        }
+      },
+      {
+        "id": "cs2",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 212,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:212"
+        },
+        "meaning": "Bestellungen erzeugen"
+      },
+      {
+        "id": "cl",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 221,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:221"
+        },
+        "meaning": "Je Lieferant/EkOrg/Einkaeufergruppe"
+      },
+      {
+        "id": "cb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 241,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:241"
+        },
+        "meaning": "Bestellung NB mit Banf-, Kontrakt- und Infosatzbezug anlegen"
+      },
+      {
+        "id": "cg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 253,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:253"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "crb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 254,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:254"
+        },
+        "meaning": "Verwerfen"
+      },
+      {
+        "id": "cil",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 255,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:255"
+        },
+        "meaning": "Je Banf der Gruppe"
+      },
+      {
+        "id": "cme",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 256,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:256"
+        },
+        "meaning": "Banf als fehlerhaft markieren"
+      },
+      {
+        "id": "cg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 261,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:261"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "ccm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 262,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:262"
+        },
+        "meaning": "Bestellung festschreiben"
+      },
+      {
+        "id": "cev",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 266,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:266"
+        },
+        "meaning": "Ereignis Bestellung angelegt"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 273,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:273"
+        }
+      },
+      {
+        "id": "hs",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 286,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:286"
+        },
+        "meaning": "Protokoll-Handler (statisch)"
+      },
+      {
+        "id": "hw",
+        "type": "write",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 293,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:293"
+        },
+        "meaning": "Bestellung im Laufprotokoll vermerken"
+      },
+      {
+        "id": "he",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_auto_po_c01.abap",
+          "line": 294,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_auto_po_c01.abap:294"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "sq",
+        "condition": "always"
+      },
+      {
+        "from": "sq",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "w0",
+        "condition": "gt_eban IS INITIAL"
+      },
+      {
+        "from": "w0",
+        "to": "st",
+        "condition": "always"
+      },
+      {
+        "from": "st",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "lp",
+        "to": "cd",
+        "condition": "next row"
+      },
+      {
+        "from": "cd",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "dr",
+        "to": "ca",
+        "condition": "always"
+      },
+      {
+        "from": "ca",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "dx",
+        "to": "cm",
+        "condition": "lcx_no_source"
+      },
+      {
+        "from": "ax",
+        "to": "cm",
+        "condition": "lcx_no_source"
+      },
+      {
+        "from": "cm",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "cme",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "mu",
+        "condition": "always"
+      },
+      {
+        "from": "mu",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "me",
+        "to": "cil",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "cc",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cc",
+        "to": "cs2",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "e",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "eos",
+        "to": "cw",
+        "condition": "always"
+      },
+      {
+        "from": "cw",
+        "to": "ws",
+        "condition": "always"
+      },
+      {
+        "from": "we",
+        "to": "eoe",
+        "condition": "always"
+      },
+      {
+        "from": "ws",
+        "to": "wq",
+        "condition": "always"
+      },
+      {
+        "from": "wq",
+        "to": "wl",
+        "condition": "always"
+      },
+      {
+        "from": "wl",
+        "to": "wo",
+        "condition": "next row"
+      },
+      {
+        "from": "wo",
+        "to": "wl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "wl",
+        "to": "wg",
+        "condition": "no more rows"
+      },
+      {
+        "from": "wg",
+        "to": "wo2",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "wg",
+        "to": "we",
+        "condition": "else"
+      },
+      {
+        "from": "wo2",
+        "to": "we",
+        "condition": "always"
+      },
+      {
+        "from": "ds",
+        "to": "dl",
+        "condition": "always"
+      },
+      {
+        "from": "dl",
+        "to": "dc",
+        "condition": "next row"
+      },
+      {
+        "from": "dc",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "ke",
+        "to": "dg",
+        "condition": "always"
+      },
+      {
+        "from": "dc",
+        "to": "qs",
+        "condition": "always"
+      },
+      {
+        "from": "qe",
+        "to": "dg",
+        "condition": "always"
+      },
+      {
+        "from": "dc",
+        "to": "is",
+        "condition": "always"
+      },
+      {
+        "from": "ie",
+        "to": "dg",
+        "condition": "always"
+      },
+      {
+        "from": "qr",
+        "to": "dg",
+        "condition": "always"
+      },
+      {
+        "from": "dg",
+        "to": "dr",
+        "condition": "rs_src-lifnr IS NOT INITIAL"
+      },
+      {
+        "from": "dg",
+        "to": "dl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "dl",
+        "to": "dx",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ks",
+        "to": "kq",
+        "condition": "always"
+      },
+      {
+        "from": "kq",
+        "to": "kg",
+        "condition": "always"
+      },
+      {
+        "from": "kg",
+        "to": "ka",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "kg",
+        "to": "ke",
+        "condition": "else"
+      },
+      {
+        "from": "ka",
+        "to": "ke",
+        "condition": "always"
+      },
+      {
+        "from": "qs",
+        "to": "qq1",
+        "condition": "always"
+      },
+      {
+        "from": "qq1",
+        "to": "qg",
+        "condition": "always"
+      },
+      {
+        "from": "qg",
+        "to": "qr",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "qg",
+        "to": "ql",
+        "condition": "else"
+      },
+      {
+        "from": "ql",
+        "to": "qa",
+        "condition": "next row"
+      },
+      {
+        "from": "qa",
+        "to": "qg2",
+        "condition": "always"
+      },
+      {
+        "from": "qg2",
+        "to": "qa2",
+        "condition": "lv_rating < lv_best"
+      },
+      {
+        "from": "qg2",
+        "to": "ql",
+        "condition": "next iteration"
+      },
+      {
+        "from": "qa2",
+        "to": "ql",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ql",
+        "to": "qe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "is",
+        "to": "iq1",
+        "condition": "always"
+      },
+      {
+        "from": "iq1",
+        "to": "ig",
+        "condition": "always"
+      },
+      {
+        "from": "ig",
+        "to": "iq2",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "ig",
+        "to": "iq3",
+        "condition": "else"
+      },
+      {
+        "from": "iq2",
+        "to": "ig2",
+        "condition": "always"
+      },
+      {
+        "from": "iq3",
+        "to": "ig2",
+        "condition": "always"
+      },
+      {
+        "from": "ig2",
+        "to": "ia",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "ig2",
+        "to": "ie",
+        "condition": "else"
+      },
+      {
+        "from": "ia",
+        "to": "ie",
+        "condition": "always"
+      },
+      {
+        "from": "as",
+        "to": "aq",
+        "condition": "always"
+      },
+      {
+        "from": "aq",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "ax",
+        "condition": "lv_sperm IS NOT INITIAL"
+      },
+      {
+        "from": "ag",
+        "to": "ae",
+        "condition": "else"
+      },
+      {
+        "from": "cs2",
+        "to": "cl",
+        "condition": "always"
+      },
+      {
+        "from": "cl",
+        "to": "cb",
+        "condition": "next row"
+      },
+      {
+        "from": "cb",
+        "to": "cg",
+        "condition": "always"
+      },
+      {
+        "from": "cg",
+        "to": "crb",
+        "condition": "line_exists( lt_return[ type = 'E' ] )"
+      },
+      {
+        "from": "crb",
+        "to": "cil",
+        "condition": "always"
+      },
+      {
+        "from": "cil",
+        "to": "cme",
+        "condition": "next row"
+      },
+      {
+        "from": "cil",
+        "to": "cl",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cg",
+        "to": "cg2",
+        "condition": "else"
+      },
+      {
+        "from": "cg2",
+        "to": "ccm",
+        "condition": "iv_test = abap_false"
+      },
+      {
+        "from": "cg2",
+        "to": "cl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ccm",
+        "to": "cev",
+        "condition": "always"
+      },
+      {
+        "from": "cev",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "he",
+        "to": "cl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "hs",
+        "to": "hw",
+        "condition": "always"
+      },
+      {
+        "from": "hw",
+        "to": "he",
+        "condition": "always"
+      },
+      {
+        "from": "cl",
+        "to": "ce",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zmm_auto_po_c01.abap:124 — kein Fachsatz „der günstigste Infosatz wird gewählt“ — ohne Orderbuch wird der erste gefundene Infosatz genommen, ohne Preisvergleich.",
+    "zmm_auto_po_c01.abap:261 — kein Fachsatz „der Testlauf protokolliert die simulierten Bestellungen“ — im Testlauf wird kein Ereignis ausgelöst und nichts protokolliert.",
+    "zmm_auto_po_f01.abap:25 — kein Fachsatz „die Banf wird abgelehnt oder gelöscht“ — gesetzt werden nur Z-Kundenfelder.",
+    "zmm_auto_po_c01.abap:85 — kein Fachsatz „die Quotierung wird fortgeschrieben“ — die zugeordnete Menge wird nur gelesen, nicht erhöht."
+  ],
+  "processDescription": "Der Job selektiert freigegebene, noch nicht bestellte Bestellanforderungen; gibt es keine, gibt er das aus und springt zum Protokoll. Für jede Position sucht eine Kette von Strategien die Bezugsquelle: zuerst einen gültigen Kontrakt, dann bei gültiger Quotierung den Lieferanten mit der niedrigsten Quotenzahl, dann den festen Lieferanten aus dem Orderbuch oder den ersten Infosatz. Ohne Quelle oder bei gesperrtem Lieferanten wird die Banf über Kundenfelder als fehlerhaft markiert. Die übrigen Positionen werden je Lieferant, Einkaufsorganisation und Einkäufergruppe zu einer Bestellung zusammengefasst und über den BAPI angelegt, im Testlauf nur simuliert. Bei Fehlern werden alle Banf der Gruppe markiert. Im Echtlauf wird jede Bestellung festgeschrieben und im Laufprotokoll vermerkt, das am Ende ausgegeben wird."
+}

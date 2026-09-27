@@ -1,0 +1,39 @@
+{
+  "id": "BM-276",
+  "title": "Kontoauszugsimport mit Wiederaufsetzen und Wiederholung",
+  "domain": "FI",
+  "band": "sehr komplex",
+  "loc": 411,
+  "constructs": [
+    "REPORT mit TOP/SEL/F01/F02",
+    "AT SELECTION-SCREEN ON",
+    "EPS2_GET_DIRECTORY_LISTING",
+    "OPEN/READ/TRANSFER/CLOSE/DELETE DATASET",
+    "ENQUEUE/DEQUEUE (eigenes Sperrobjekt)",
+    "BAPI_ACC_DOCUMENT_POST",
+    "DO n TIMES mit WAIT UP TO",
+    "MODIFY",
+    "DELETE",
+    "COMMIT WORK je Zeile",
+    "TRY/CATCH Konvertierung"
+  ],
+  "scenario": "Täglich mehrfach laufender Import der Hausbank-Umsatzdateien, der Bankumsätze gegen ein Verrechnungskonto bucht; im Monatsabschluss um Sperrwiederholung erweitert.",
+  "s4_issues": [
+    "Dateischnittstelle auf Applikationsserver",
+    "BKPF-Direktzugriff (ACDOCA/I_JournalEntry)",
+    "Zielbild Standard-Kontoauszugsverarbeitung (FF_5/Bank Statement Monitor)",
+    "COMMIT WORK je Zeile"
+  ],
+  "wave": 3,
+  "module": "FI",
+  "edge_constructs": [
+    "Wiederaufsetzen am ersten Fehler",
+    "Dublettenprüfung nach Absturz",
+    "Retry nur für gepflegte Meldungen",
+    "EXIT aus LOOP und DO",
+    "CHECK in Schleife",
+    "RETURN mit Misserfolgskennzeichen in FORMs",
+    "Archivieren trotz fehlgeschlagenem Verschieben"
+  ],
+  "oo": false
+}

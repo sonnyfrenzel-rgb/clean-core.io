@@ -1,0 +1,1217 @@
+{
+  "id": "BM-229",
+  "title": "Dienstjubiläen eines Monats mit Prämie ermitteln",
+  "classes": [
+    "K01",
+    "K09",
+    "K14"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PA0000",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_jubilaeum_f01.abap",
+        "line": 10,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_jubilaeum_f01.abap:10"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_jubilaeum_f01.abap",
+        "line": 10,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_jubilaeum_f01.abap:10"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0041",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_jubilaeum_cls.abap",
+        "line": 33,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_jubilaeum_cls.abap:33"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZHR_JUB_PRAEMIE",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_jubilaeum_cls.abap",
+        "line": 67,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_jubilaeum_cls.abap:67"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REUSE_ALV_GRID_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zhr_jubilaeum_f01.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_jubilaeum_f01.abap:79"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-229-B01",
+      "text": "Liegt der gewählte Auswertungsmonat vor dem aktuellen Monat, wird auf dem Selektionsbild gewarnt; die Auswertung bleibt möglich.",
+      "anchors": [
+        {
+          "file": "zhr_jubilaeum.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:17"
+        },
+        {
+          "file": "zhr_jubilaeum.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-229-B02",
+      "text": "Es werden die aktiven Mitarbeiter mit ihrer aktuellen organisatorischen Zuordnung in den gewählten Personalbereichen gelesen.",
+      "anchors": [
+        {
+          "file": "zhr_jubilaeum.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:22"
+        },
+        {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:10"
+        }
+      ]
+    },
+    {
+      "id": "BM-229-B03",
+      "text": "Für jeden Mitarbeiter wird das Konzerneintrittsdatum aus den heute gültigen Datumsangaben (Datumsart 01) ermittelt.",
+      "anchors": [
+        {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:34"
+        },
+        {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:33"
+        },
+        {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:41"
+        },
+        {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:43"
+        },
+        {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-229-B04",
+      "text": "Fehlen die Datumsangaben oder die Datumsart 01, wird der Mitarbeiter mit „kein Eintrittsdatum gepflegt“ ausgegeben und übersprungen.",
+      "anchors": [
+        {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:37"
+        },
+        {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:38"
+        },
+        {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:49"
+        },
+        {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:36"
+        },
+        {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-229-B05",
+      "text": "Nur Mitarbeiter, deren Eintrittsmonat dem Auswertungsmonat entspricht, werden weiter betrachtet.",
+      "anchors": [
+        {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-229-B06",
+      "text": "Die Dienstjahre ergeben sich aus der Differenz von Auswertungsjahr und Eintrittsjahr.",
+      "anchors": [
+        {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-229-B07",
+      "text": "Ein Jubiläum liegt nur bei genau 10, 25 oder 40 Dienstjahren vor; sonst wird der Mitarbeiter nicht aufgenommen.",
+      "anchors": [
+        {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:44"
+        },
+        {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:53"
+        },
+        {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-229-B08",
+      "text": "Für Jubilare wird die Prämie je Stufe und Personalbereich aus der Kundentabelle gelesen und der Jubilar mit Eintritt, Jahren, Stufe und Prämie in die Liste aufgenommen.",
+      "anchors": [
+        {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:53"
+        },
+        {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:67"
+        },
+        {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-229-B09",
+      "text": "Gibt es keinen Jubilar, erscheint ein Hinweis mit dem Monat und die Verarbeitung endet.",
+      "anchors": [
+        {
+          "file": "zhr_jubilaeum.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:28"
+        },
+        {
+          "file": "zhr_jubilaeum.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:29"
+        },
+        {
+          "file": "zhr_jubilaeum.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-229-B10",
+      "text": "Die Jubilare werden absteigend nach Dienstjahren sortiert und als ALV-Liste angezeigt; scheitert die Anzeige, erscheint eine Fehlermeldung.",
+      "anchors": [
+        {
+          "file": "zhr_jubilaeum.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:33"
+        },
+        {
+          "file": "zhr_jubilaeum.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:34"
+        },
+        {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:79"
+        },
+        {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:88"
+        },
+        {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:89"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_jubilaeum.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:16"
+        },
+        "meaning": "Prüfung Auswertungsmonat"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_jubilaeum.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:17"
+        },
+        "meaning": "Monat in der Vergangenheit?"
+      },
+      {
+        "id": "aw",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_jubilaeum.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:18"
+        },
+        "meaning": "Warnung: Monat liegt zurück"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_jubilaeum.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:19"
+        },
+        "meaning": "Ende Selektionsbildprüfung"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_jubilaeum.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:21"
+        },
+        "meaning": "Verarbeitungsstart"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_jubilaeum.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:22"
+        },
+        "meaning": "Aktive Mitarbeiter lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zhr_jubilaeum.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:24"
+        },
+        "meaning": "Mitarbeiter durchlaufen"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_jubilaeum.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:25"
+        },
+        "meaning": "Jubiläum prüfen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_jubilaeum.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:28"
+        },
+        "meaning": "Jubilare gefunden?"
+      },
+      {
+        "id": "mi",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_jubilaeum.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:29"
+        },
+        "meaning": "Hinweis: keine Jubilare"
+      },
+      {
+        "id": "r",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_jubilaeum.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:30"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_jubilaeum.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:34"
+        },
+        "meaning": "Jubilarliste anzeigen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_jubilaeum.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum.abap:34"
+        },
+        "meaning": "Programmende"
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:8"
+        },
+        "meaning": "Mitarbeiterselektion"
+      },
+      {
+        "id": "mq",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:10"
+        },
+        "meaning": "Aktive Mitarbeiter mit Org-Zuordnung lesen"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:22"
+        },
+        "meaning": "Ende Mitarbeiterselektion"
+      },
+      {
+        "id": "js",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:27"
+        },
+        "meaning": "Jubiläumsprüfung je Mitarbeiter"
+      },
+      {
+        "id": "ce",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:34"
+        },
+        "meaning": "Eintrittsdatum ermitteln"
+      },
+      {
+        "id": "wo",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:36"
+        },
+        "meaning": "Fehlendes Eintrittsdatum ausgeben"
+      },
+      {
+        "id": "jr",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:37"
+        },
+        "meaning": "Mitarbeiter überspringen"
+      },
+      {
+        "id": "ck1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:41"
+        },
+        "meaning": "Eintrittsmonat = Auswertungsmonat?"
+      },
+      {
+        "id": "ja",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:43"
+        },
+        "meaning": "Dienstjahre berechnen"
+      },
+      {
+        "id": "cst",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:44"
+        },
+        "meaning": "Jubiläumsstufe bestimmen"
+      },
+      {
+        "id": "ck2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:45"
+        },
+        "meaning": "Jubiläumsstufe erreicht?"
+      },
+      {
+        "id": "cp",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:53"
+        },
+        "meaning": "Prämie ermitteln"
+      },
+      {
+        "id": "je",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:56"
+        },
+        "meaning": "Ende Jubiläumsprüfung"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:27"
+        },
+        "meaning": "Eintrittsdatum lesen"
+      },
+      {
+        "id": "eq",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:33"
+        },
+        "meaning": "Datumsangaben lesen"
+      },
+      {
+        "id": "eg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:37"
+        },
+        "meaning": "Datumsangaben vorhanden?"
+      },
+      {
+        "id": "er1",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:38"
+        },
+        "meaning": "Ausnahme: kein Datum"
+      },
+      {
+        "id": "ed",
+        "type": "loop",
+        "anchor": {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:41"
+        },
+        "meaning": "Datumsarten durchlaufen"
+      },
+      {
+        "id": "eg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:43"
+        },
+        "meaning": "Datumsart Eintritt?"
+      },
+      {
+        "id": "eret",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:45"
+        },
+        "meaning": "Eintrittsdatum zurückgeben"
+      },
+      {
+        "id": "er2",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:49"
+        },
+        "meaning": "Ausnahme: Eintritt nicht gepflegt"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:52"
+        },
+        "meaning": "Stufenermittlung"
+      },
+      {
+        "id": "sc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:53"
+        },
+        "meaning": "Dienstjahre 10, 25 oder 40?"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:63"
+        },
+        "meaning": "Ende Stufenermittlung"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:65"
+        },
+        "meaning": "Prämienermittlung"
+      },
+      {
+        "id": "pq",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:67"
+        },
+        "meaning": "Prämie je Stufe und Personalbereich lesen"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_jubilaeum_cls.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_cls.abap:70"
+        },
+        "meaning": "Ende Prämienermittlung"
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:61"
+        },
+        "meaning": "Listenausgabe"
+      },
+      {
+        "id": "la",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:79"
+        },
+        "meaning": "Jubilarliste als ALV anzeigen"
+      },
+      {
+        "id": "lg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:88"
+        },
+        "meaning": "Anzeige fehlgeschlagen?"
+      },
+      {
+        "id": "lm",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:89"
+        },
+        "meaning": "Fehlermeldung Anzeige"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_jubilaeum_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_jubilaeum_f01.abap:91"
+        },
+        "meaning": "Ende Listenausgabe"
+      }
+    ],
+    "edges": [
+      {
+        "from": "as",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "aw",
+        "condition": "p_monat < sy-datum(6)"
+      },
+      {
+        "from": "aw",
+        "to": "ae",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "ae",
+        "condition": "else"
+      },
+      {
+        "from": "ae",
+        "to": "s",
+        "condition": "always"
+      },
+      {
+        "from": "s",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "mq",
+        "condition": "always"
+      },
+      {
+        "from": "mq",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "c2",
+        "condition": "next row"
+      },
+      {
+        "from": "c2",
+        "to": "js",
+        "condition": "always"
+      },
+      {
+        "from": "js",
+        "to": "ce",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "eq",
+        "condition": "always"
+      },
+      {
+        "from": "eq",
+        "to": "eg",
+        "condition": "always"
+      },
+      {
+        "from": "eg",
+        "to": "er1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "er1",
+        "to": "wo",
+        "condition": "lcx_kein_datum"
+      },
+      {
+        "from": "eg",
+        "to": "ed",
+        "condition": "else"
+      },
+      {
+        "from": "ed",
+        "to": "eg2",
+        "condition": "next row"
+      },
+      {
+        "from": "eg2",
+        "to": "eret",
+        "condition": "lv_dar = '01'"
+      },
+      {
+        "from": "eret",
+        "to": "ck1",
+        "condition": "always"
+      },
+      {
+        "from": "eg2",
+        "to": "ed",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ed",
+        "to": "er2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "er2",
+        "to": "wo",
+        "condition": "lcx_kein_datum"
+      },
+      {
+        "from": "wo",
+        "to": "jr",
+        "condition": "always"
+      },
+      {
+        "from": "jr",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ck1",
+        "to": "ja",
+        "condition": "lv_eintritt+4(2) = p_monat+4(2)"
+      },
+      {
+        "from": "ck1",
+        "to": "je",
+        "condition": "else"
+      },
+      {
+        "from": "ja",
+        "to": "cst",
+        "condition": "always"
+      },
+      {
+        "from": "cst",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "sc",
+        "condition": "always"
+      },
+      {
+        "from": "sc",
+        "to": "se",
+        "condition": "WHEN 10"
+      },
+      {
+        "from": "sc",
+        "to": "se",
+        "condition": "WHEN 25"
+      },
+      {
+        "from": "sc",
+        "to": "se",
+        "condition": "WHEN 40"
+      },
+      {
+        "from": "sc",
+        "to": "se",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "se",
+        "to": "ck2",
+        "condition": "always"
+      },
+      {
+        "from": "ck2",
+        "to": "cp",
+        "condition": "lv_stufe IS NOT INITIAL"
+      },
+      {
+        "from": "ck2",
+        "to": "je",
+        "condition": "else"
+      },
+      {
+        "from": "cp",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "pq",
+        "condition": "always"
+      },
+      {
+        "from": "pq",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "je",
+        "condition": "always"
+      },
+      {
+        "from": "je",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "g",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g",
+        "to": "mi",
+        "condition": "gt_out IS INITIAL"
+      },
+      {
+        "from": "mi",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "c3",
+        "condition": "else"
+      },
+      {
+        "from": "c3",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "la",
+        "condition": "always"
+      },
+      {
+        "from": "la",
+        "to": "lg",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "lm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "lm",
+        "to": "le",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "le",
+        "condition": "else"
+      },
+      {
+        "from": "le",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zhr_jubilaeum.abap:18 — kein Fachsatz „Auswertung für vergangene Monate wird verhindert“ (Warnung, nach Bestätigung läuft der Report)",
+    "zhr_jubilaeum_f01.abap:43 — kein Fachsatz „Dienstjahre taggenau berechnet“ (nur Jahresdifferenz, Unterbrechungen bleiben unberücksichtigt)",
+    "zhr_jubilaeum_cls.abap:67 — kein Fachsatz „Prämie wird ausgezahlt oder als Entgeltbeleg angelegt“ (nur gelesen und angezeigt)",
+    "gesamte Scheibe — kein Fachsatz „Vorgesetzte werden per Mail informiert“ (Mailteil nur als auskommentierte Deklaration)"
+  ],
+  "processDescription": "Der Report ermittelt Dienstjubiläen eines Auswertungsmonats. Liegt der Monat in der Vergangenheit, warnt das Selektionsbild, die Auswertung bleibt aber möglich. Er liest die aktiven Mitarbeiter mit aktueller organisatorischer Zuordnung und prüft jeden in einer FORM. Eine statische Methode der lokalen Hilfsklasse sucht in den heute gültigen Datumsangaben die Datumsart 01; fehlt sie, löst sie eine lokale Ausnahme aus, die FORM gibt „kein Eintrittsdatum gepflegt“ aus und überspringt den Mitarbeiter. Weiter betrachtet werden nur Mitarbeiter mit Eintrittsmonat gleich Auswertungsmonat; die Dienstjahre sind die Jahresdifferenz. Nur bei 10, 25 oder 40 Jahren liegt ein Jubiläum vor; dann liest die Klasse die Prämie je Stufe und Personalbereich aus einer Kundentabelle, und der Jubilar kommt auf die Liste. Ohne Jubilar endet der Report mit einem Hinweis, sonst zeigt er die nach Dienstjahren sortierte Liste als ALV an und meldet einen Anzeigefehler."
+}

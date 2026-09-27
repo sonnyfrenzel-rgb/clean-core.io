@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "ENQUEUE_EZSD_KASSLIM ohne _scope (Default 2): mit dem COMMIT WORK in SICHERN geht die Sperre an den Verbucher und endet mit der Verbuchung; ein zweites Sichern im selben Bild läuft dann ohne Sperre. Kein Fachsatz behauptet das Gegenteil, daher nur Hinweis."
+  ]
+}

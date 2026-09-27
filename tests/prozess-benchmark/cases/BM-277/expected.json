@@ -1,0 +1,2474 @@
+{
+  "id": "BM-277",
+  "title": "Dispositions-Jobkette mit Schritthierarchie und Neustart",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZPP_CHAIN_STEP",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pp_chain_orchestrator.abap",
+        "line": 55,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pp_chain_orchestrator.abap:55"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPP_CHAIN_PLANT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pp_step_mrp.abap",
+        "line": 24,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pp_step_mrp.abap:24"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T399D",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pp_step_mrp.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pp_step_mrp.abap:41"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RMMRP000",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_pp_step_mrp.abap",
+        "line": 60,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pp_step_mrp.abap:60"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_OPEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_pp_chain_step.abap",
+        "line": 68,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pp_chain_step.abap:68"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_CLOSE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_pp_chain_step.abap",
+        "line": 93,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pp_chain_step.abap:93"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BP_JOB_STATUS_GET",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_pp_chain_orchestrator.abap",
+        "line": 104,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pp_chain_orchestrator.abap:104"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BP_JOB_DELETE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_pp_chain_orchestrator.abap",
+        "line": 145,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pp_chain_orchestrator.abap:145"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPP_CHAIN_RUN",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_pp_chain_orchestrator.abap",
+        "line": 89,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pp_chain_orchestrator.abap:89"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-277-B01",
+      "text": "Einplanen und Neustarten der Dispositionskette verlangt die Berechtigung zur Jobfreigabe; nur die Überwachung geht ohne sie.",
+      "anchors": [
+        {
+          "file": "zpp_mrp_chain.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:22"
+        },
+        {
+          "file": "zpp_mrp_chain.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:25"
+        },
+        {
+          "file": "zpp_mrp_chain.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-277-B02",
+      "text": "Je nach Modus wird die Kette eingeplant, ein Lauf überwacht oder ein abgebrochener Lauf neu gestartet; ein unbekannter Modus bricht mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zpp_mrp_chain.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:32"
+        },
+        {
+          "file": "zpp_mrp_chain.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-277-B03",
+      "text": "Beim Einplanen werden die aktiven Schritte der Kette in ihrer Reihenfolge gelesen; hat die Kette keine, scheitert die Einplanung.",
+      "anchors": [
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:55"
+        },
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:60"
+        },
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-277-B04",
+      "text": "Jeder Schritt wird als eigener Hintergrundjob eingeplant: der erste zum gewählten Starttermin, jeder weitere als Nachfolger des vorherigen, auf Wunsch nur bei dessen erfolgreichem Ende.",
+      "anchors": [
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:73"
+        },
+        {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:68"
+        },
+        {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:83"
+        },
+        {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:84"
+        },
+        {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-277-B05",
+      "text": "Report-Schritte planen ihren Report mit Variante ein, MRP-Schritte je aktivem Werk der Kette einen MRP-Lauf als Veränderungsplanung; ein unbekannter Schritttyp scheitert.",
+      "anchors": [
+        {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:46"
+        },
+        {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:52"
+        },
+        {
+          "file": "zcl_pp_step_report.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_report.abap:16"
+        },
+        {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:24"
+        },
+        {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-277-B06",
+      "text": "Ein MRP-Schritt setzt voraus, dass die Kette aktive Werke hat und jedes davon für die Disposition eingerichtet ist; sonst scheitert die Einplanung.",
+      "anchors": [
+        {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:30"
+        },
+        {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:33"
+        },
+        {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:41"
+        },
+        {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-277-B07",
+      "text": "Lässt sich ein Job nicht anlegen, ein Report nicht einplanen oder ein Job nicht freigeben, scheitert die Einplanung.",
+      "anchors": [
+        {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:75"
+        },
+        {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:103"
+        },
+        {
+          "file": "zcl_pp_step_report.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_report.abap:20"
+        },
+        {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-277-B08",
+      "text": "Scheitert ein Schritt, werden alle in diesem Lauf bereits eingeplanten Jobs gelöscht, damit die Kette nie halb eingeplant stehen bleibt, und der Fehler wird angezeigt.",
+      "anchors": [
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:78"
+        },
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:163"
+        },
+        {
+          "file": "zpp_mrp_chain.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-277-B09",
+      "text": "Jeder eingeplante Schritt wird unter einer Lauf-ID aus Datum und Uhrzeit mit Jobname, Jobnummer und Status P im Laufprotokoll vermerkt; nach dem letzten Schritt wird festgeschrieben und die Lauf-ID gemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:89"
+        },
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:91"
+        },
+        {
+          "file": "zpp_mrp_chain.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-277-B10",
+      "text": "Bei der Überwachung wird für jeden Schritt des Laufs der aktuelle Jobstatus abgefragt, bei Änderung im Laufprotokoll fortgeschrieben und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:99"
+        },
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:104"
+        },
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:115"
+        },
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:116"
+        },
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:124"
+        }
+      ]
+    },
+    {
+      "id": "BM-277-B11",
+      "text": "Lässt sich der Status eines Jobs nicht ermitteln, gilt er als unbekannt.",
+      "anchors": [
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:112"
+        },
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:113"
+        }
+      ]
+    },
+    {
+      "id": "BM-277-B12",
+      "text": "Die Überwachung listet je Schritt Job und Status und hebt abgebrochene Schritte mit dem Hinweis auf Neustart hervor.",
+      "anchors": [
+        {
+          "file": "zpp_mrp_chain.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:38"
+        },
+        {
+          "file": "zpp_mrp_chain.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:39"
+        },
+        {
+          "file": "zpp_mrp_chain.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:40"
+        },
+        {
+          "file": "zpp_mrp_chain.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-277-B13",
+      "text": "Ein Neustart ermittelt den ersten abgebrochenen Schritt; gibt es keinen, scheitert er.",
+      "anchors": [
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:131"
+        },
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:133"
+        },
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:134"
+        }
+      ]
+    },
+    {
+      "id": "BM-277-B14",
+      "text": "Noch als eingeplant gemeldete Folgejobs des alten Laufs werden gelöscht und ab dem abgebrochenen Schritt ein neuer Lauf mit sofortigem Start eingeplant.",
+      "anchors": [
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:140"
+        },
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:142"
+        },
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:145"
+        },
+        {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:155"
+        },
+        {
+          "file": "zpp_mrp_chain.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:48"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:21"
+        },
+        "meaning": "Start Dispositionskette"
+      },
+      {
+        "id": "auth",
+        "type": "action",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:22"
+        },
+        "meaning": "Berechtigung zur Jobfreigabe prüfen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:25"
+        },
+        "meaning": "Keine Berechtigung und nicht nur Überwachung?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:26"
+        },
+        "meaning": "Fehler: keine Berechtigung"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:26"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "new",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:29"
+        },
+        "meaning": "Steuerung für die Kette anlegen"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:32"
+        },
+        "meaning": "Modus"
+      },
+      {
+        "id": "cp",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:34"
+        },
+        "meaning": "Kette einplanen"
+      },
+      {
+        "id": "mp",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:35"
+        },
+        "meaning": "Meldung: Kette mit Lauf-ID eingeplant"
+      },
+      {
+        "id": "cmon",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:37"
+        },
+        "meaning": "Status des Laufs ermitteln"
+      },
+      {
+        "id": "ml",
+        "type": "loop",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:38"
+        },
+        "meaning": "Schritte des Laufs durchlaufen"
+      },
+      {
+        "id": "mw",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:39"
+        },
+        "meaning": "Schritt, Job und Status ausgeben"
+      },
+      {
+        "id": "mg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:40"
+        },
+        "meaning": "Schritt abgebrochen?"
+      },
+      {
+        "id": "mwa",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:42"
+        },
+        "meaning": "Rot: abgebrochen, Neustart empfehlen"
+      },
+      {
+        "id": "crs",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:47"
+        },
+        "meaning": "Kette ab abgebrochenem Schritt neu starten"
+      },
+      {
+        "id": "mr",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:48"
+        },
+        "meaning": "Meldung: Neustart eingeplant"
+      },
+      {
+        "id": "mo",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:50"
+        },
+        "meaning": "Fehler: unbekannter Modus"
+      },
+      {
+        "id": "mox",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:50"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "cat",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:53"
+        },
+        "meaning": "Fehlertext der Kette anzeigen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mrp_chain.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mrp_chain.abap:54"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "cs0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:45"
+        },
+        "meaning": "Schritt zum Schritttyp erzeugen"
+      },
+      {
+        "id": "ccs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:46"
+        },
+        "meaning": "Schritttyp"
+      },
+      {
+        "id": "cnr",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:48"
+        },
+        "meaning": "Report-Schritt erzeugen"
+      },
+      {
+        "id": "cnm",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:50"
+        },
+        "meaning": "MRP-Schritt erzeugen"
+      },
+      {
+        "id": "cx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:52"
+        },
+        "meaning": "Fehler: unbekannter Schritttyp"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:56"
+        },
+        "meaning": "Schritt zurückgeben"
+      },
+      {
+        "id": "bcs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:59"
+        },
+        "meaning": "Schrittdefinition übernehmen"
+      },
+      {
+        "id": "bce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:61"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:64"
+        },
+        "meaning": "Schritt als Job einplanen (Schablone)"
+      },
+      {
+        "id": "scp",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:65"
+        },
+        "meaning": "Voraussetzung des Schritts prüfen"
+      },
+      {
+        "id": "sjo",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:68"
+        },
+        "meaning": "Job ZPP_<Kette>_<Schritt> anlegen"
+      },
+      {
+        "id": "sg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:75"
+        },
+        "meaning": "Anlegen fehlgeschlagen?"
+      },
+      {
+        "id": "sx1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:76"
+        },
+        "meaning": "Fehler: Job nicht angelegt"
+      },
+      {
+        "id": "sas",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:81"
+        },
+        "meaning": "Jobschritte des Schritttyps einplanen"
+      },
+      {
+        "id": "sgp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:83"
+        },
+        "meaning": "Erster Schritt (kein Vorgänger)?"
+      },
+      {
+        "id": "sjc1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:84"
+        },
+        "meaning": "Job zum Starttermin freigeben"
+      },
+      {
+        "id": "sjc2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:93"
+        },
+        "meaning": "Job als Nachfolger freigeben (ggf. nur bei Erfolg des Vorgängers)"
+      },
+      {
+        "id": "sg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:103"
+        },
+        "meaning": "Freigabe fehlgeschlagen?"
+      },
+      {
+        "id": "sx2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:104"
+        },
+        "meaning": "Fehler: Job nicht freigegeben"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:109"
+        },
+        "meaning": "Jobname/-nummer zurückgeben"
+      },
+      {
+        "id": "cps",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:112"
+        },
+        "meaning": "Standardvoraussetzung"
+      },
+      {
+        "id": "cpr",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_chain_step.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_step.abap:114"
+        },
+        "meaning": "Keine Voraussetzung"
+      },
+      {
+        "id": "ras",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_step_report.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_report.abap:15"
+        },
+        "meaning": "Report-Jobschritt"
+      },
+      {
+        "id": "rsub",
+        "type": "external_program",
+        "anchor": {
+          "file": "zcl_pp_step_report.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_report.abap:16"
+        },
+        "meaning": "Report des Schritts mit Variante einplanen (dynamisch)"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_step_report.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_report.abap:20"
+        },
+        "meaning": "Einplanen fehlgeschlagen?"
+      },
+      {
+        "id": "rx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_step_report.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_report.abap:21"
+        },
+        "meaning": "Fehler: Report nicht eingeplant"
+      },
+      {
+        "id": "rae",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_step_report.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_report.abap:25"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "mcs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:22"
+        },
+        "meaning": "MRP-Schritt anlegen"
+      },
+      {
+        "id": "msup",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:23"
+        },
+        "meaning": "Schrittdefinition übernehmen"
+      },
+      {
+        "id": "msq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:24"
+        },
+        "meaning": "Aktive Werke der Kette lesen"
+      },
+      {
+        "id": "mce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:27"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "mps",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:30"
+        },
+        "meaning": "Voraussetzung MRP-Lauf (Redefinition)"
+      },
+      {
+        "id": "mpg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:33"
+        },
+        "meaning": "Keine aktiven Werke?"
+      },
+      {
+        "id": "mpx1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:34"
+        },
+        "meaning": "Fehler: keine Werke"
+      },
+      {
+        "id": "mpl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:40"
+        },
+        "meaning": "Werke durchlaufen"
+      },
+      {
+        "id": "mpq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:41"
+        },
+        "meaning": "Dispositionssteuerung des Werks lesen"
+      },
+      {
+        "id": "mpg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:43"
+        },
+        "meaning": "Werk nicht für Disposition eingerichtet?"
+      },
+      {
+        "id": "mpx2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:44"
+        },
+        "meaning": "Fehler: Werk nicht geplant"
+      },
+      {
+        "id": "mpe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:49"
+        },
+        "meaning": "Voraussetzung erfüllt"
+      },
+      {
+        "id": "mas",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:52"
+        },
+        "meaning": "MRP-Jobschritte"
+      },
+      {
+        "id": "mal",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:55"
+        },
+        "meaning": "Werke durchlaufen"
+      },
+      {
+        "id": "masub",
+        "type": "external_program",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:60"
+        },
+        "meaning": "MRP-Lauf (Veränderungsplanung) des Werks als Jobschritt einplanen"
+      },
+      {
+        "id": "mag",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:64"
+        },
+        "meaning": "Einplanen fehlgeschlagen?"
+      },
+      {
+        "id": "max",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:65"
+        },
+        "meaning": "Fehler: MRP-Schritt nicht eingeplant"
+      },
+      {
+        "id": "mae",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_step_mrp.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_step_mrp.abap:70"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "ocs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:43"
+        },
+        "meaning": "Steuerung anlegen"
+      },
+      {
+        "id": "oce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:45"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:48"
+        },
+        "meaning": "Kette einplanen"
+      },
+      {
+        "id": "pq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:55"
+        },
+        "meaning": "Aktive Schritte ab Startschritt in Reihenfolge lesen"
+      },
+      {
+        "id": "pg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:60"
+        },
+        "meaning": "Keine Schritte?"
+      },
+      {
+        "id": "px",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:61"
+        },
+        "meaning": "Fehler: keine Schritte"
+      },
+      {
+        "id": "pl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:70"
+        },
+        "meaning": "Schritte durchlaufen"
+      },
+      {
+        "id": "pcr",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:72"
+        },
+        "meaning": "Schrittobjekt erzeugen"
+      },
+      {
+        "id": "psch",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:73"
+        },
+        "meaning": "Schritt nach dem Vorgänger einplanen"
+      },
+      {
+        "id": "pcl",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:78"
+        },
+        "meaning": "Bei Fehler bereits eingeplante Jobs löschen (CLEANUP)"
+      },
+      {
+        "id": "pins",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:89"
+        },
+        "meaning": "Schritt im Laufprotokoll mit Status P vermerken"
+      },
+      {
+        "id": "pcw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:91"
+        },
+        "meaning": "Laufprotokoll festschreiben"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:92"
+        },
+        "meaning": "Lauf-ID zurückgeben"
+      },
+      {
+        "id": "mons",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:95"
+        },
+        "meaning": "Lauf überwachen"
+      },
+      {
+        "id": "monq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:99"
+        },
+        "meaning": "Schritte des Laufs lesen"
+      },
+      {
+        "id": "monl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:103"
+        },
+        "meaning": "Schritte durchlaufen"
+      },
+      {
+        "id": "mbs",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:104"
+        },
+        "meaning": "Aktuellen Jobstatus abfragen"
+      },
+      {
+        "id": "mong1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:112"
+        },
+        "meaning": "Status nicht ermittelbar?"
+      },
+      {
+        "id": "mong2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:115"
+        },
+        "meaning": "Status geändert?"
+      },
+      {
+        "id": "monu",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:116"
+        },
+        "meaning": "Neuen Status im Laufprotokoll vermerken"
+      },
+      {
+        "id": "moncw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:124"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "mone",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:125"
+        },
+        "meaning": "Status je Schritt zurückgeben"
+      },
+      {
+        "id": "rss",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:128"
+        },
+        "meaning": "Neustart ab Fehlerschritt"
+      },
+      {
+        "id": "rsm",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:131"
+        },
+        "meaning": "Aktuellen Status ermitteln"
+      },
+      {
+        "id": "rsg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:133"
+        },
+        "meaning": "Kein abgebrochener Schritt?"
+      },
+      {
+        "id": "rsx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:134"
+        },
+        "meaning": "Fehler: nichts neu zu starten"
+      },
+      {
+        "id": "rsl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:140"
+        },
+        "meaning": "Noch eingeplante Folgeschritte durchlaufen"
+      },
+      {
+        "id": "rsq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:142"
+        },
+        "meaning": "Jobnummer des Folgeschritts lesen"
+      },
+      {
+        "id": "rsd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:145"
+        },
+        "meaning": "Wartenden Folgejob löschen"
+      },
+      {
+        "id": "rsp",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:155"
+        },
+        "meaning": "Neuen Lauf ab abgebrochenem Schritt sofort einplanen"
+      },
+      {
+        "id": "rse",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:158"
+        },
+        "meaning": "Ende Neustart"
+      },
+      {
+        "id": "cns",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:161"
+        },
+        "meaning": "Eingeplante Jobs verwerfen"
+      },
+      {
+        "id": "cnl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:162"
+        },
+        "meaning": "Eingeplante Jobs durchlaufen"
+      },
+      {
+        "id": "cnd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:163"
+        },
+        "meaning": "Job löschen (Fehler ignoriert)"
+      },
+      {
+        "id": "cne",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_chain_orchestrator.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_chain_orchestrator.abap:172"
+        },
+        "meaning": "Ende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "auth",
+        "condition": "always"
+      },
+      {
+        "from": "auth",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "sy-subrc <> 0 AND p_mode <> 'M'"
+      },
+      {
+        "from": "m1",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "new",
+        "condition": "else"
+      },
+      {
+        "from": "new",
+        "to": "ocs",
+        "condition": "always"
+      },
+      {
+        "from": "ocs",
+        "to": "oce",
+        "condition": "always"
+      },
+      {
+        "from": "oce",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "cp",
+        "condition": "WHEN 'P'"
+      },
+      {
+        "from": "cp",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "mp",
+        "condition": "always"
+      },
+      {
+        "from": "mp",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "cmon",
+        "condition": "WHEN 'M'"
+      },
+      {
+        "from": "cmon",
+        "to": "mons",
+        "condition": "always"
+      },
+      {
+        "from": "mone",
+        "to": "ml",
+        "condition": "always"
+      },
+      {
+        "from": "ml",
+        "to": "mw",
+        "condition": "next row"
+      },
+      {
+        "from": "mw",
+        "to": "mg",
+        "condition": "always"
+      },
+      {
+        "from": "mg",
+        "to": "mwa",
+        "condition": "gs_state-status = 'A'"
+      },
+      {
+        "from": "mwa",
+        "to": "ml",
+        "condition": "next iteration"
+      },
+      {
+        "from": "mg",
+        "to": "ml",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ml",
+        "to": "e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cs",
+        "to": "crs",
+        "condition": "WHEN 'R'"
+      },
+      {
+        "from": "crs",
+        "to": "rss",
+        "condition": "always"
+      },
+      {
+        "from": "rse",
+        "to": "mr",
+        "condition": "always"
+      },
+      {
+        "from": "mr",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "mo",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "mo",
+        "to": "mox",
+        "condition": "always"
+      },
+      {
+        "from": "cat",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "pq",
+        "condition": "always"
+      },
+      {
+        "from": "pq",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "px",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pg",
+        "to": "pl",
+        "condition": "else"
+      },
+      {
+        "from": "pl",
+        "to": "pcr",
+        "condition": "next row"
+      },
+      {
+        "from": "pcr",
+        "to": "cs0",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "psch",
+        "condition": "always"
+      },
+      {
+        "from": "psch",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "pins",
+        "condition": "always"
+      },
+      {
+        "from": "pins",
+        "to": "pl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pl",
+        "to": "pcw",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pcw",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "px",
+        "to": "cat",
+        "condition": "zcx_pp_chain"
+      },
+      {
+        "from": "cx",
+        "to": "pcl",
+        "condition": "zcx_pp_chain"
+      },
+      {
+        "from": "sx1",
+        "to": "pcl",
+        "condition": "zcx_pp_chain"
+      },
+      {
+        "from": "sx2",
+        "to": "pcl",
+        "condition": "zcx_pp_chain"
+      },
+      {
+        "from": "rx",
+        "to": "pcl",
+        "condition": "zcx_pp_chain"
+      },
+      {
+        "from": "mpx1",
+        "to": "pcl",
+        "condition": "zcx_pp_chain"
+      },
+      {
+        "from": "mpx2",
+        "to": "pcl",
+        "condition": "zcx_pp_chain"
+      },
+      {
+        "from": "max",
+        "to": "pcl",
+        "condition": "zcx_pp_chain"
+      },
+      {
+        "from": "pcl",
+        "to": "cns",
+        "condition": "always"
+      },
+      {
+        "from": "cne",
+        "to": "cat",
+        "condition": "zcx_pp_chain"
+      },
+      {
+        "from": "cs0",
+        "to": "ccs",
+        "condition": "always"
+      },
+      {
+        "from": "ccs",
+        "to": "cnr",
+        "condition": "WHEN 'R'"
+      },
+      {
+        "from": "ccs",
+        "to": "cnm",
+        "condition": "WHEN 'M'"
+      },
+      {
+        "from": "ccs",
+        "to": "cx",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "cnr",
+        "to": "bcs",
+        "condition": "always"
+      },
+      {
+        "from": "bcs",
+        "to": "bce",
+        "condition": "always"
+      },
+      {
+        "from": "bce",
+        "to": "ce",
+        "condition": "always"
+      },
+      {
+        "from": "cnm",
+        "to": "mcs",
+        "condition": "always"
+      },
+      {
+        "from": "mcs",
+        "to": "msup",
+        "condition": "always"
+      },
+      {
+        "from": "msup",
+        "to": "bcs",
+        "condition": "always"
+      },
+      {
+        "from": "bce",
+        "to": "msq",
+        "condition": "always"
+      },
+      {
+        "from": "msq",
+        "to": "mce",
+        "condition": "always"
+      },
+      {
+        "from": "mce",
+        "to": "ce",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "scp",
+        "condition": "always"
+      },
+      {
+        "from": "scp",
+        "to": "cps",
+        "condition": "always"
+      },
+      {
+        "from": "scp",
+        "to": "mps",
+        "condition": "always"
+      },
+      {
+        "from": "cps",
+        "to": "cpr",
+        "condition": "always"
+      },
+      {
+        "from": "cpr",
+        "to": "sjo",
+        "condition": "always"
+      },
+      {
+        "from": "mpe",
+        "to": "sjo",
+        "condition": "always"
+      },
+      {
+        "from": "sjo",
+        "to": "sg1",
+        "condition": "always"
+      },
+      {
+        "from": "sg1",
+        "to": "sx1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sg1",
+        "to": "sas",
+        "condition": "else"
+      },
+      {
+        "from": "sas",
+        "to": "ras",
+        "condition": "always"
+      },
+      {
+        "from": "sas",
+        "to": "mas",
+        "condition": "always"
+      },
+      {
+        "from": "rae",
+        "to": "sgp",
+        "condition": "always"
+      },
+      {
+        "from": "mae",
+        "to": "sgp",
+        "condition": "always"
+      },
+      {
+        "from": "sgp",
+        "to": "sjc1",
+        "condition": "is_pred IS INITIAL"
+      },
+      {
+        "from": "sgp",
+        "to": "sjc2",
+        "condition": "else"
+      },
+      {
+        "from": "sjc1",
+        "to": "sg2",
+        "condition": "always"
+      },
+      {
+        "from": "sjc2",
+        "to": "sg2",
+        "condition": "always"
+      },
+      {
+        "from": "sg2",
+        "to": "sx2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sg2",
+        "to": "se",
+        "condition": "else"
+      },
+      {
+        "from": "ras",
+        "to": "rsub",
+        "condition": "always"
+      },
+      {
+        "from": "rsub",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rx",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rg",
+        "to": "rae",
+        "condition": "else"
+      },
+      {
+        "from": "mps",
+        "to": "mpg",
+        "condition": "always"
+      },
+      {
+        "from": "mpg",
+        "to": "mpx1",
+        "condition": "mt_werks IS INITIAL"
+      },
+      {
+        "from": "mpg",
+        "to": "mpl",
+        "condition": "else"
+      },
+      {
+        "from": "mpl",
+        "to": "mpq",
+        "condition": "next row"
+      },
+      {
+        "from": "mpq",
+        "to": "mpg2",
+        "condition": "always"
+      },
+      {
+        "from": "mpg2",
+        "to": "mpx2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mpg2",
+        "to": "mpl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "mpl",
+        "to": "mpe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "mas",
+        "to": "mal",
+        "condition": "always"
+      },
+      {
+        "from": "mal",
+        "to": "masub",
+        "condition": "next row"
+      },
+      {
+        "from": "masub",
+        "to": "mag",
+        "condition": "always"
+      },
+      {
+        "from": "mag",
+        "to": "max",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mag",
+        "to": "mal",
+        "condition": "next iteration"
+      },
+      {
+        "from": "mal",
+        "to": "mae",
+        "condition": "no more rows"
+      },
+      {
+        "from": "mons",
+        "to": "monq",
+        "condition": "always"
+      },
+      {
+        "from": "monq",
+        "to": "monl",
+        "condition": "always"
+      },
+      {
+        "from": "monl",
+        "to": "mbs",
+        "condition": "next row"
+      },
+      {
+        "from": "mbs",
+        "to": "mong1",
+        "condition": "always"
+      },
+      {
+        "from": "mong1",
+        "to": "mong2",
+        "condition": "else"
+      },
+      {
+        "from": "mong2",
+        "to": "monu",
+        "condition": "lv_status <> <ls_run>-status"
+      },
+      {
+        "from": "monu",
+        "to": "monl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "mong2",
+        "to": "monl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "monl",
+        "to": "moncw",
+        "condition": "no more rows"
+      },
+      {
+        "from": "moncw",
+        "to": "mone",
+        "condition": "always"
+      },
+      {
+        "from": "rss",
+        "to": "rsm",
+        "condition": "always"
+      },
+      {
+        "from": "rsm",
+        "to": "mons",
+        "condition": "always"
+      },
+      {
+        "from": "mone",
+        "to": "rsg",
+        "condition": "always"
+      },
+      {
+        "from": "rsg",
+        "to": "rsx",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rsx",
+        "to": "cat",
+        "condition": "zcx_pp_chain"
+      },
+      {
+        "from": "rsg",
+        "to": "rsl",
+        "condition": "else"
+      },
+      {
+        "from": "rsl",
+        "to": "rsq",
+        "condition": "next row"
+      },
+      {
+        "from": "rsq",
+        "to": "rsd",
+        "condition": "always"
+      },
+      {
+        "from": "rsd",
+        "to": "rsl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rsl",
+        "to": "rsp",
+        "condition": "no more rows"
+      },
+      {
+        "from": "rsp",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "rse",
+        "condition": "always"
+      },
+      {
+        "from": "cns",
+        "to": "cnl",
+        "condition": "always"
+      },
+      {
+        "from": "cnl",
+        "to": "cnd",
+        "condition": "next row"
+      },
+      {
+        "from": "cnd",
+        "to": "cnl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cnl",
+        "to": "cne",
+        "condition": "no more rows"
+      },
+      {
+        "from": "mong1",
+        "to": "mong2",
+        "condition": "sy-subrc <> 0"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_pp_chain_orchestrator.abap:78 — kein Fachsatz „bei Fehler wird auch das Laufprotokoll verworfen“ (es gibt kein ROLLBACK; bereits eingefügte Protokollzeilen des abgebrochenen Einplanens werden nicht zurückgenommen)",
+    "zcl_pp_chain_orchestrator.abap:155 — kein Fachsatz „der abgebrochene Lauf wird fortgesetzt“ (es entsteht ein neuer Lauf mit neuer Lauf-ID ab dem Fehlerschritt)",
+    "zcl_pp_step_mrp.abap:60 — kein Fachsatz „die Disposition wird ausgeführt“ an dieser Stelle (der MRP-Lauf wird nur als Jobschritt eingeplant)",
+    "zcl_pp_chain_orchestrator.abap:140 — kein Fachsatz „alle Folgejobs des alten Laufs werden gelöscht“ (nur solche mit Status P)"
+  ],
+  "processDescription": "Der Report steuert die nächtliche Dispositionskette. Einplanen und Neustart verlangen die Berechtigung zur Jobfreigabe. Im Einplanmodus liest die Steuerung die aktiven Schritte der Kette und erzeugt je Schritt über eine Fabrik ein Schrittobjekt: Report-Schritte planen ihren Report mit Variante, MRP-Schritte je aktivem und für die Disposition eingerichtetem Werk einen MRP-Lauf ein. Jeder Schritt wird als Job angelegt, der erste zum Starttermin, weitere als Nachfolger des vorigen freigegeben, und im Laufprotokoll unter einer neuen Lauf-ID vermerkt. Scheitert ein Schritt, werden die schon eingeplanten Jobs gelöscht und der Fehler angezeigt. Im Überwachungsmodus werden die Jobstatus abgefragt, im Protokoll fortgeschrieben und aufgelistet, Abbrüche hervorgehoben. Im Neustartmodus wird der erste abgebrochene Schritt bestimmt, wartende Folgejobs werden gelöscht und ab diesem Schritt ein neuer Lauf mit sofortigem Start eingeplant."
+}

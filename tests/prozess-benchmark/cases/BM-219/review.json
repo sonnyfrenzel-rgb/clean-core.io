@@ -1,0 +1,31 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten des Dynpro-Ablaufs",
+      "before": "cs→p1s, p1e→vs, p1e→us, ve→us, ult→p2s, ue→p1s, p2e→ws, wb→p1s, we→p2s (alle „always“)",
+      "after": "entfernt; PBO-/PAI-Module sind eigene Einstiege; Bedeutung von ue/we von „Dynpro … erneut“ auf „Blockende (Folgebild laut Dynpro-Attribut, nicht im Fall)“",
+      "why": "Die Ablauflogik der Dynpros 0100/0200 ist nicht Teil des Falls (nur ein Kopfkommentar); welches Modul nach CALL SCREEN, LEAVE TO SCREEN oder am Modulende läuft und ob FIELD … ON REQUEST greift, ist aus dem ABAP-Code nicht belegbar.",
+      "category": "Kante"
+    },
+    {
+      "where": "neuer Knoten se0",
+      "before": "START-OF-SELECTION ohne end-Knoten",
+      "after": "se0 end zsd_credit_release.abap:41 mit Kante cs→se0 [always]",
+      "why": "Jeder auslaufende Verarbeitungsblock braucht ein end (implizites Ende = letzte Anweisung). Ob die Dynprofolge zurückkehrt, hängt an der nicht vorhandenen Ablauflogik. openReviewerQuestions[0..1] angepasst.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz BM-219-B15",
+      "before": "Nach einer Entscheidung bleibt das Detailbild stehen und zeigt die neu ermittelte Kreditsituation.",
+      "after": "Nach einer Entscheidung endet die Eingabeverarbeitung des Detailbilds ohne Bildwechsel; beim erneuten Aufbau des Detailbilds wird die Kreditsituation neu ermittelt.",
+      "why": "Dass das Detailbild „stehen bleibt“, legt das Folgebild-Attribut fest, das nicht im Fall steht; belegbar ist nur, dass PAI 0200 kein LEAVE TO SCREEN ausführt und PBO 0200 neu ermittelt.",
+      "category": "Fachsatz"
+    }
+  ],
+  "doubts": [
+    "Der Kopfkommentar (zsd_credit_release.abap:15–21) beschreibt die Ablauflogik; wer Kommentare als Beleg zulässt, käme auf die ursprünglichen Kanten zurück. Entschieden nach der Vorgabe „ohne Ablauflogik im Fall nur belegbare Kanten“.",
+    "Knoten lwa (gv_vbeln = gt_work[ 1 ]) ist eine reine Zuweisung (Vorschlag im Dynprofeld); belassen, weil B02 den Vorschlag als fachlichen Schritt trägt — Grenzfall."
+  ]
+}

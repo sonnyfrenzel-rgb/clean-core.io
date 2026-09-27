@@ -1,0 +1,36 @@
+{
+  "id": "BM-297",
+  "title": "QM-Ergebniserfassung im Grid: Sofortbewertung über Bewerter-Interface, Buchung mit CLEANUP-Rollback und asynchroner Mängelmeldung",
+  "domain": "QM Labor / Ergebniserfassung",
+  "band": "sehr komplex",
+  "loc": 404,
+  "constructs": [
+    "Interface mit zwei Implementierungen",
+    "Fabrikmethode",
+    "TRY ... CLEANUP",
+    "RAISE EXCEPTION MESSAGE",
+    "CL_GUI_ALV_GRID data_changed mit modify_cell/add_protocol_entry",
+    "CALL FUNCTION STARTING NEW TASK",
+    "BAPI_INSPOPER_RECORDRESULTS",
+    "AT EXIT-COMMAND",
+    "Konvertierungsausnahme CX_SY_CONVERSION_NO_NUMBER",
+    "MODIFY itab TRANSPORTING WHERE",
+    "reine Protokollmethode"
+  ],
+  "scenario": "Laborerfassung, die QE51N ersetzt: alle Merkmale eines Vorgangs in einem Grid mit Sofortbewertung, Buchung per BAPI und Mängelmeldung im Hintergrund.",
+  "s4_issues": [
+    "Direktlesen QAMV/QAMR/QPAC statt released CDS",
+    "SAP-GUI-Grid nicht in Fiori",
+    "asynchroner RFC auf Z-Baustein (nicht geliefert)"
+  ],
+  "wave": 3,
+  "module": "QM",
+  "edge_constructs": [
+    "CLEANUP zwischen Ausnahme und CATCH des Aufrufers",
+    "Ausnahmen aus zwei Implementierungen im selben CATCH",
+    "STARTING NEW TASK mit Direktkante",
+    "Protokollmethode mit zwei Aufrufern, einer im CLEANUP",
+    "CONTINUE nach Protokolleintrag"
+  ],
+  "oo": true
+}

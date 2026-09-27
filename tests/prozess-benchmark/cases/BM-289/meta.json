@@ -1,0 +1,35 @@
+{
+  "id": "BM-289",
+  "title": "WM-Packtisch: Transportauftrag im modalen Dialog mit Sperre und Differenzmengen quittieren",
+  "domain": "WM Kommissionierung / Packtisch",
+  "band": "komplex",
+  "loc": 226,
+  "constructs": [
+    "Funktionsgruppe LTOP/U01/I01/F01",
+    "CALL SCREEN STARTING AT (modal)",
+    "Table Control",
+    "ENQUEUE/DEQUEUE mit _SCOPE",
+    "RAISE klassische Ausnahme",
+    "L_TO_CONFIRM",
+    "COMMIT WORK AND WAIT",
+    "ROLLBACK WORK",
+    "CHECK im Modul und in FORM",
+    "GET CURSOR LINE"
+  ],
+  "scenario": "Quittierdialog, den RF-Menü und ein Z-Monitor für Kommissionier-TAs am Packtisch aufrufen.",
+  "s4_issues": [
+    "LE-WM nur Compatibility Pack, Nachfolger EWM",
+    "MATNR 40 Zeichen",
+    "Dynpro-Dialog nicht in Fiori"
+  ],
+  "wave": 3,
+  "module": "LE-WM",
+  "edge_constructs": [
+    "MESSAGE E in Schleife",
+    "CHECK als Pfadende im Modul",
+    "RAISE in Funktionsbaustein",
+    "FORM ohne erreichbares ENDFORM (LEAVE TO SCREEN)",
+    "Sperre vor und nach CALL SCREEN"
+  ],
+  "oo": false
+}

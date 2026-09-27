@@ -1,0 +1,35 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante c1_g -> c1_l",
+      "before": "next iteration",
+      "after": "ls_item-gr_ind = abap_false",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist bzw. per CONTINUE direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c1_g2 -> c1_l",
+      "before": "next iteration",
+      "after": "lv_offen > 0",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist bzw. per CONTINUE direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten. Der Ja-Zweig (Position anbieten, APPEND) führt direkt zurück.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c1_g2 -> c1_l",
+      "before": "fehlt",
+      "after": "c1_g2 -> c1_l [else]",
+      "why": "Sonst-Zweig des IF ohne ELSE fehlte: eine Position ohne offene Menge wird nicht angeboten, die Schleife läuft weiter.",
+      "category": "Kante"
+    },
+    {
+      "where": "zwd_mm_we_compctrl.abap:26",
+      "before": "      items         = abap_true",
+      "after": "Zeile entfernt",
+      "why": "BAPI_PO_GETDETAIL1 hat keinen Importparameter ITEMS (den hat nur das alte BAPI_PO_GETDETAIL); die Übergabe führt zu CALL_FUNCTION_PARM_UNKNOWN. Positionen liefert GETDETAIL1 immer. (alle Anker ab Zeile 27 um 1 zurückgezogen)",
+      "category": "Quelltext"
+    }
+  ],
+  "doubts": []
+}

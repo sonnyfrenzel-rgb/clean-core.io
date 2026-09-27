@@ -1,0 +1,23 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante b_g -> b_l",
+      "before": "next iteration",
+      "after": "else",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway trägt ihre Bedingung (Sonst-Zweig des IF ohne ELSE); next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante p_g -> p_l",
+      "before": "next iteration",
+      "after": "else",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway trägt ihre Bedingung (Sonst-Zweig des IF ohne ELSE); next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "f_a1 (dlv_block = space), f_a2 (lv_updkz = COND …), a_f/t_f (mv_error = abap_true) sind Zuweisungen; sie bleiben als action, weil sie den einzigen fachlichen Gehalt ihres Verzweigungsasts festlegen (Sperre zurücknehmen, Ändern/Anlegen, spätere Ablehnung). Wer Zuweisungen strikt ausschließt, müsste sie entfernen."
+  ]
+}

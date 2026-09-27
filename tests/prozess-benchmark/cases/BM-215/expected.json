@@ -1,0 +1,2263 @@
+{
+  "id": "BM-215",
+  "title": "Banf-Freigabeprozess mit Zustandsklassen, BAdI-Start und Entscheidungsreport",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Polymorpher Aufruf on_decision: Kanten zu allen drei Zustandsklassen mit „always“.",
+    "Rückkanten aus transition: eine je aufrufendem Block (start, Zustand OPEN, Zustand LEVEL2).",
+    "Die leeren Pflichtmethoden des BAdI-Interfaces sind nicht im Skelett, da sie am Prozess nicht teilnehmen."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EBAN",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_pr_approval.abap",
+        "line": 90,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_pr_approval.abap:90"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_REQUISITION_RELEASE_GEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_pr_approval.abap",
+        "line": 151,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_pr_approval.abap:151"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SO_NEW_DOCUMENT_SEND_API1",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_pr_notifier.abap",
+        "line": 54,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_pr_notifier.abap:54"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ME_PROCESS_REQ_CUST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_im_mm_pr_approval.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_mm_pr_approval.abap:20"
+      },
+      "identity": {
+        "objectType": "BADI"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_PR_APPR",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_mm_pr_approval.abap",
+        "line": 116,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_pr_approval.abap:116"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_PR_HIST",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_mm_pr_approval.abap",
+        "line": 188,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_pr_approval.abap:188"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_PR_MATRIX",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_pr_approval.abap",
+        "line": 99,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_pr_approval.abap:99"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-215-B01",
+      "text": "Beim Sichern einer Bestellanforderung wird ihr Gesamtwert aus Preis, Menge und Preiseinheit aller Positionen ermittelt.",
+      "anchors": [
+        {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:27"
+        },
+        {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:28"
+        },
+        {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:29"
+        },
+        {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B02",
+      "text": "Ohne Wert oder wenn für die Banf bereits ein Freigabeprozess existiert, wird kein Prozess gestartet.",
+      "anchors": [
+        {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:33"
+        },
+        {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:36"
+        },
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:57"
+        },
+        {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B03",
+      "text": "Anforderer und Werk werden aus der Banf gelesen.",
+      "anchors": [
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:90"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B04",
+      "text": "Aus der Wertmatrix des Werks werden zum Gesamtwert die Anzahl der Stufen und die Genehmiger bestimmt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:99"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B05",
+      "text": "Passt keine Matrixzeile, wird der Grund als Statusmeldung ausgegeben; die Banf wird trotzdem gesichert, aber ohne Freigabeprozess.",
+      "anchors": [
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:103"
+        },
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:104"
+        },
+        {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B06",
+      "text": "Sonst wird ein Freigabeprozess mit Stufen, Genehmigern und Anforderer angelegt und in den Zustand OPEN gesetzt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:116"
+        },
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:118"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B07",
+      "text": "Bei jedem Zustandswechsel wird ein Ereignis ausgelöst, das eine SAPoffice-Mail verschickt: an den Genehmiger bei OPEN und LEVEL2, an den Anforderer bei Freigabe oder Ablehnung.",
+      "anchors": [
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:170"
+        },
+        {
+          "file": "zcl_mm_pr_notifier.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_notifier.abap:26"
+        },
+        {
+          "file": "zcl_mm_pr_notifier.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_notifier.abap:28"
+        },
+        {
+          "file": "zcl_mm_pr_notifier.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_notifier.abap:32"
+        },
+        {
+          "file": "zcl_mm_pr_notifier.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_notifier.abap:36"
+        },
+        {
+          "file": "zcl_mm_pr_notifier.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_notifier.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B08",
+      "text": "Der Genehmiger startet die Entscheidung mit A (freigeben) oder R (ablehnen); andere Eingaben werden am Selektionsbild abgewiesen.",
+      "anchors": [
+        {
+          "file": "zmm_pr_decide.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:16"
+        },
+        {
+          "file": "zmm_pr_decide.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B09",
+      "text": "Ohne Freigabeberechtigung für den Freigabecode ZA bricht die Entscheidung ab.",
+      "anchors": [
+        {
+          "file": "zmm_pr_decide.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:21"
+        },
+        {
+          "file": "zmm_pr_decide.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:23"
+        },
+        {
+          "file": "zmm_pr_decide.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B10",
+      "text": "Der Prozess zur Banf wird geladen; existiert keiner, wird die Entscheidung abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:65"
+        },
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:67"
+        },
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B11",
+      "text": "Nur der aktuell zuständige Genehmiger darf entscheiden.",
+      "anchors": [
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:123"
+        },
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:124"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B12",
+      "text": "In Stufe 1 führt eine Genehmigung bei zweistufigen Prozessen zur Stufe 2, sonst zur Freigabe; eine Ablehnung beendet den Prozess.",
+      "anchors": [
+        {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:15"
+        },
+        {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:17"
+        },
+        {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:18"
+        },
+        {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:20"
+        },
+        {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B13",
+      "text": "Beim Wechsel in Stufe 2 wird der zweite Genehmiger zuständig.",
+      "anchors": [
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:147"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B14",
+      "text": "In Stufe 2 führt eine Genehmigung zur Freigabe, eine Ablehnung beendet den Prozess.",
+      "anchors": [
+        {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:35"
+        },
+        {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:36"
+        },
+        {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B15",
+      "text": "Bei Freigabe wird die Banf im Standard mit dem Freigabecode ZA freigegeben; schlägt das fehl, wird die ganze Entscheidung zurückgerollt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:151"
+        },
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:157"
+        },
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:158"
+        },
+        {
+          "file": "zmm_pr_decide.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B16",
+      "text": "Auf einen freigegebenen oder abgelehnten Prozess ist keine Entscheidung mehr möglich.",
+      "anchors": [
+        {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B17",
+      "text": "Der neue Prozessstand wird gesichert und die Entscheidung mit Anwender, Zeitpunkt und Kommentar in der Historie vermerkt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:180"
+        },
+        {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 188,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:188"
+        }
+      ]
+    },
+    {
+      "id": "BM-215-B18",
+      "text": "Die Entscheidung wird festgeschrieben und der neue Status gemeldet; Fehler werden zurückgerollt und als Information angezeigt.",
+      "anchors": [
+        {
+          "file": "zmm_pr_decide.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:33"
+        },
+        {
+          "file": "zmm_pr_decide.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:34"
+        },
+        {
+          "file": "zmm_pr_decide.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:36"
+        },
+        {
+          "file": "zmm_pr_decide.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:37"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "bs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:20"
+        },
+        "meaning": "BAdI beim Sichern der Banf"
+      },
+      {
+        "id": "bgi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:27"
+        },
+        "meaning": "Positionen der Banf holen"
+      },
+      {
+        "id": "bl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:28"
+        },
+        "meaning": "Je Position"
+      },
+      {
+        "id": "bgd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:29"
+        },
+        "meaning": "Positionsdaten holen"
+      },
+      {
+        "id": "ba",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:30"
+        },
+        "meaning": "Gesamtwert aufsummieren"
+      },
+      {
+        "id": "bck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:33"
+        },
+        "meaning": "Wert vorhanden?"
+      },
+      {
+        "id": "bce",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:36"
+        },
+        "meaning": "Laufenden Prozess suchen"
+      },
+      {
+        "id": "bg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:36"
+        },
+        "meaning": "Prozess existiert schon?"
+      },
+      {
+        "id": "br",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:37"
+        },
+        "meaning": "Kein neuer Prozess"
+      },
+      {
+        "id": "bnc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:42"
+        },
+        "meaning": "Prozessobjekt erzeugen (Konstruktor)"
+      },
+      {
+        "id": "bst",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:42"
+        },
+        "meaning": "Freigabeprozess starten"
+      },
+      {
+        "id": "bm",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:45"
+        },
+        "meaning": "Grund als Statusmeldung, Sichern laeuft weiter"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_im_mm_pr_approval.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_mm_pr_approval.abap:47"
+        }
+      },
+      {
+        "id": "xs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:56"
+        },
+        "meaning": "Existenzpruefung"
+      },
+      {
+        "id": "xq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:57"
+        },
+        "meaning": "Prozesssatz zur Banf suchen"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:60"
+        }
+      },
+      {
+        "id": "ks",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:87"
+        },
+        "meaning": "Konstruktor"
+      },
+      {
+        "id": "kq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:90"
+        },
+        "meaning": "Anforderer und Werk der Banf lesen"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:92"
+        }
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:95"
+        },
+        "meaning": "Prozessstart"
+      },
+      {
+        "id": "sq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:99"
+        },
+        "meaning": "Wertmatrix des Werks zum Gesamtwert lesen"
+      },
+      {
+        "id": "sg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:103"
+        },
+        "meaning": "Keine Matrixzeile?"
+      },
+      {
+        "id": "sx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:104"
+        },
+        "meaning": "Ausnahme: keine Matrix"
+      },
+      {
+        "id": "sw",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:116"
+        },
+        "meaning": "Prozesssatz mit Stufen und Genehmigern anlegen"
+      },
+      {
+        "id": "stc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:118"
+        },
+        "meaning": "In Zustand OPEN wechseln"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:119"
+        }
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:63"
+        },
+        "meaning": "Prozess laden"
+      },
+      {
+        "id": "lq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:65"
+        },
+        "meaning": "Prozesssatz lesen"
+      },
+      {
+        "id": "lg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:67"
+        },
+        "meaning": "Kein Prozess?"
+      },
+      {
+        "id": "lx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:68"
+        },
+        "meaning": "Ausnahme: kein Prozess"
+      },
+      {
+        "id": "lnc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:73"
+        },
+        "meaning": "Prozessobjekt erzeugen (Konstruktor)"
+      },
+      {
+        "id": "lc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:76"
+        },
+        "meaning": "Gespeicherter Zustand?"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:84"
+        }
+      },
+      {
+        "id": "ds",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:122"
+        },
+        "meaning": "Entscheidung verarbeiten"
+      },
+      {
+        "id": "dg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:123"
+        },
+        "meaning": "Anwender nicht der aktuelle Genehmiger?"
+      },
+      {
+        "id": "dx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:124"
+        },
+        "meaning": "Ausnahme: nicht Genehmiger"
+      },
+      {
+        "id": "dcs",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:129"
+        },
+        "meaning": "Entscheidung an Zustand (polymorph)"
+      },
+      {
+        "id": "dsv",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:131"
+        },
+        "meaning": "Prozess und Historie sichern"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:133"
+        }
+      },
+      {
+        "id": "ts",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:136"
+        },
+        "meaning": "Zustandswechsel"
+      },
+      {
+        "id": "tc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:141"
+        },
+        "meaning": "Zielzustand?"
+      },
+      {
+        "id": "tb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:151"
+        },
+        "meaning": "Banf im Standard mit Code ZA freigeben"
+      },
+      {
+        "id": "tg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:157"
+        },
+        "meaning": "Freigabe fehlgeschlagen?"
+      },
+      {
+        "id": "tx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:158"
+        },
+        "meaning": "Ausnahme: Freigabe fehlgeschlagen"
+      },
+      {
+        "id": "tev",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:170"
+        },
+        "meaning": "Zustandswechsel melden (Empfaenger je Zustand)"
+      },
+      {
+        "id": "te",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:175"
+        }
+      },
+      {
+        "id": "vs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:178"
+        },
+        "meaning": "Sichern"
+      },
+      {
+        "id": "vu",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:180"
+        },
+        "meaning": "Prozesssatz aktualisieren"
+      },
+      {
+        "id": "vi",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 188,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:188"
+        },
+        "meaning": "Entscheidung in Historie"
+      },
+      {
+        "id": "ve",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_mm_pr_approval.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval.abap:189"
+        }
+      },
+      {
+        "id": "os",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:14"
+        },
+        "meaning": "Zustand OPEN (Stufe 1)"
+      },
+      {
+        "id": "og",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:15"
+        },
+        "meaning": "Genehmigt?"
+      },
+      {
+        "id": "og2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:17"
+        },
+        "meaning": "Zweistufig?"
+      },
+      {
+        "id": "ot1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:18"
+        },
+        "meaning": "Weiter zu Stufe 2"
+      },
+      {
+        "id": "ot2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:20"
+        },
+        "meaning": "Freigeben"
+      },
+      {
+        "id": "ot3",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:23"
+        },
+        "meaning": "Ablehnen"
+      },
+      {
+        "id": "oe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:25"
+        }
+      },
+      {
+        "id": "ws",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:34"
+        },
+        "meaning": "Zustand LEVEL2"
+      },
+      {
+        "id": "wg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:35"
+        },
+        "meaning": "Genehmigt?"
+      },
+      {
+        "id": "wt1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:36"
+        },
+        "meaning": "Freigeben"
+      },
+      {
+        "id": "wt2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:38"
+        },
+        "meaning": "Ablehnen"
+      },
+      {
+        "id": "we",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:40"
+        }
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:49"
+        },
+        "meaning": "Endzustand"
+      },
+      {
+        "id": "fx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_pr_approval_ccimp.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_approval_ccimp.abap:51"
+        },
+        "meaning": "Ausnahme: Prozess abgeschlossen"
+      },
+      {
+        "id": "hs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_pr_notifier.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_notifier.abap:25"
+        },
+        "meaning": "Ereignisbehandler (statisch)"
+      },
+      {
+        "id": "hc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_pr_notifier.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_notifier.abap:26"
+        },
+        "meaning": "Neuer Zustand?"
+      },
+      {
+        "id": "hm1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_pr_notifier.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_notifier.abap:28"
+        },
+        "meaning": "Mail an Genehmiger"
+      },
+      {
+        "id": "hm2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_pr_notifier.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_notifier.abap:32"
+        },
+        "meaning": "Mail an Anforderer: freigegeben"
+      },
+      {
+        "id": "hm3",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_pr_notifier.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_notifier.abap:36"
+        },
+        "meaning": "Mail an Anforderer: abgelehnt"
+      },
+      {
+        "id": "he",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_mm_pr_notifier.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_notifier.abap:40"
+        }
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_pr_notifier.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_notifier.abap:43"
+        },
+        "meaning": "Mailversand"
+      },
+      {
+        "id": "m1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_pr_notifier.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_notifier.abap:54"
+        },
+        "meaning": "SAPoffice-Mail an SAP-Benutzer"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_mm_pr_notifier.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_pr_notifier.abap:71"
+        }
+      },
+      {
+        "id": "as0",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:15"
+        },
+        "meaning": "Eingabepruefung"
+      },
+      {
+        "id": "ag0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:16"
+        },
+        "meaning": "Entscheidung ungueltig?"
+      },
+      {
+        "id": "am0",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:17"
+        },
+        "meaning": "Fehler: A oder R"
+      },
+      {
+        "id": "amx0",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:17"
+        },
+        "meaning": "Zurueck zum Selektionsbild"
+      },
+      {
+        "id": "ae0",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:18"
+        },
+        "meaning": "Eingabe gueltig"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:20"
+        },
+        "meaning": "Entscheidung ausfuehren"
+      },
+      {
+        "id": "au",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:21"
+        },
+        "meaning": "Freigabeberechtigung fuer Code ZA pruefen"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:23"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "am",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:24"
+        },
+        "meaning": "Fehler: keine Berechtigung"
+      },
+      {
+        "id": "amx",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:24"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "cl",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:30"
+        },
+        "meaning": "Prozess laden"
+      },
+      {
+        "id": "cdc",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:31"
+        },
+        "meaning": "Entscheidung verarbeiten"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:33"
+        },
+        "meaning": "Festschreiben (inkl. Mailversand)"
+      },
+      {
+        "id": "cm",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:34"
+        },
+        "meaning": "Neuen Status melden"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:36"
+        },
+        "meaning": "Zurueckrollen"
+      },
+      {
+        "id": "mi",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:37"
+        },
+        "meaning": "Fehler als Information"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_pr_decide.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pr_decide.abap:38"
+        },
+        "meaning": "Reportende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "bs",
+        "to": "bgi",
+        "condition": "always"
+      },
+      {
+        "from": "bgi",
+        "to": "bl",
+        "condition": "always"
+      },
+      {
+        "from": "bl",
+        "to": "bgd",
+        "condition": "next row"
+      },
+      {
+        "from": "bgd",
+        "to": "ba",
+        "condition": "always"
+      },
+      {
+        "from": "ba",
+        "to": "bl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "bl",
+        "to": "bck",
+        "condition": "no more rows"
+      },
+      {
+        "from": "bck",
+        "to": "bce",
+        "condition": "lv_total > 0"
+      },
+      {
+        "from": "bck",
+        "to": "be",
+        "condition": "else"
+      },
+      {
+        "from": "bce",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "bg",
+        "condition": "always"
+      },
+      {
+        "from": "xs",
+        "to": "xq",
+        "condition": "always"
+      },
+      {
+        "from": "xq",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "bg",
+        "to": "br",
+        "condition": "zcl_mm_pr_approval=>exists( im_banfn ) = abap_true"
+      },
+      {
+        "from": "bg",
+        "to": "bnc",
+        "condition": "else"
+      },
+      {
+        "from": "bnc",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "ke",
+        "to": "bst",
+        "condition": "always"
+      },
+      {
+        "from": "ks",
+        "to": "kq",
+        "condition": "always"
+      },
+      {
+        "from": "kq",
+        "to": "ke",
+        "condition": "always"
+      },
+      {
+        "from": "bst",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "be",
+        "condition": "always"
+      },
+      {
+        "from": "bm",
+        "to": "be",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "sq",
+        "condition": "always"
+      },
+      {
+        "from": "sq",
+        "to": "sg",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "sx",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sg",
+        "to": "sw",
+        "condition": "else"
+      },
+      {
+        "from": "sw",
+        "to": "stc",
+        "condition": "always"
+      },
+      {
+        "from": "stc",
+        "to": "ts",
+        "condition": "always"
+      },
+      {
+        "from": "te",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "sx",
+        "to": "bm",
+        "condition": "zcx_mm_pr_approval"
+      },
+      {
+        "from": "ts",
+        "to": "tc",
+        "condition": "always"
+      },
+      {
+        "from": "tc",
+        "to": "tev",
+        "condition": "WHEN 'OPEN'"
+      },
+      {
+        "from": "tc",
+        "to": "tev",
+        "condition": "WHEN 'LEVEL2'"
+      },
+      {
+        "from": "tc",
+        "to": "tb",
+        "condition": "WHEN 'RELEASED'"
+      },
+      {
+        "from": "tc",
+        "to": "tev",
+        "condition": "WHEN 'REJECTED'"
+      },
+      {
+        "from": "tc",
+        "to": "tev",
+        "condition": "else"
+      },
+      {
+        "from": "tb",
+        "to": "tg",
+        "condition": "always"
+      },
+      {
+        "from": "tg",
+        "to": "tx",
+        "condition": "line_exists( lt_return[ type = 'E' ] )"
+      },
+      {
+        "from": "tg",
+        "to": "tev",
+        "condition": "else"
+      },
+      {
+        "from": "tev",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "he",
+        "to": "te",
+        "condition": "always"
+      },
+      {
+        "from": "hs",
+        "to": "hc",
+        "condition": "always"
+      },
+      {
+        "from": "hc",
+        "to": "hm1",
+        "condition": "WHEN 'OPEN' OR 'LEVEL2'"
+      },
+      {
+        "from": "hc",
+        "to": "hm2",
+        "condition": "WHEN 'RELEASED'"
+      },
+      {
+        "from": "hc",
+        "to": "hm3",
+        "condition": "WHEN 'REJECTED'"
+      },
+      {
+        "from": "hc",
+        "to": "he",
+        "condition": "else"
+      },
+      {
+        "from": "hm1",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "hm2",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "hm3",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "he",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "m1",
+        "condition": "always"
+      },
+      {
+        "from": "m1",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "as0",
+        "to": "ag0",
+        "condition": "always"
+      },
+      {
+        "from": "ag0",
+        "to": "am0",
+        "condition": "p_dec NA 'AR'"
+      },
+      {
+        "from": "am0",
+        "to": "amx0",
+        "condition": "always"
+      },
+      {
+        "from": "ag0",
+        "to": "ae0",
+        "condition": "else"
+      },
+      {
+        "from": "s",
+        "to": "au",
+        "condition": "always"
+      },
+      {
+        "from": "au",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "am",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "am",
+        "to": "amx",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "cl",
+        "condition": "else"
+      },
+      {
+        "from": "cl",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "cdc",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "lq",
+        "condition": "always"
+      },
+      {
+        "from": "lq",
+        "to": "lg",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "lx",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "lg",
+        "to": "lnc",
+        "condition": "else"
+      },
+      {
+        "from": "lnc",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "ke",
+        "to": "lc",
+        "condition": "always"
+      },
+      {
+        "from": "lc",
+        "to": "le",
+        "condition": "WHEN 'OPEN'"
+      },
+      {
+        "from": "lc",
+        "to": "le",
+        "condition": "WHEN 'LEVEL2'"
+      },
+      {
+        "from": "lc",
+        "to": "le",
+        "condition": "else"
+      },
+      {
+        "from": "cdc",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "de",
+        "to": "cw",
+        "condition": "always"
+      },
+      {
+        "from": "ds",
+        "to": "dg",
+        "condition": "always"
+      },
+      {
+        "from": "dg",
+        "to": "dx",
+        "condition": "ms_appr-approver <> sy-uname"
+      },
+      {
+        "from": "dg",
+        "to": "dcs",
+        "condition": "else"
+      },
+      {
+        "from": "dcs",
+        "to": "os",
+        "condition": "always"
+      },
+      {
+        "from": "dcs",
+        "to": "ws",
+        "condition": "always"
+      },
+      {
+        "from": "dcs",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "oe",
+        "to": "dsv",
+        "condition": "always"
+      },
+      {
+        "from": "we",
+        "to": "dsv",
+        "condition": "always"
+      },
+      {
+        "from": "dsv",
+        "to": "vs",
+        "condition": "always"
+      },
+      {
+        "from": "ve",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "vs",
+        "to": "vu",
+        "condition": "always"
+      },
+      {
+        "from": "vu",
+        "to": "vi",
+        "condition": "always"
+      },
+      {
+        "from": "vi",
+        "to": "ve",
+        "condition": "always"
+      },
+      {
+        "from": "cw",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "rb",
+        "to": "mi",
+        "condition": "always"
+      },
+      {
+        "from": "mi",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "os",
+        "to": "og",
+        "condition": "always"
+      },
+      {
+        "from": "og",
+        "to": "og2",
+        "condition": "iv_decision = 'A'"
+      },
+      {
+        "from": "og",
+        "to": "ot3",
+        "condition": "else"
+      },
+      {
+        "from": "og2",
+        "to": "ot1",
+        "condition": "io_ctx->ms_appr-levels > 1"
+      },
+      {
+        "from": "og2",
+        "to": "ot2",
+        "condition": "else"
+      },
+      {
+        "from": "ot1",
+        "to": "ts",
+        "condition": "always"
+      },
+      {
+        "from": "ot2",
+        "to": "ts",
+        "condition": "always"
+      },
+      {
+        "from": "ot3",
+        "to": "ts",
+        "condition": "always"
+      },
+      {
+        "from": "wt1",
+        "to": "ts",
+        "condition": "always"
+      },
+      {
+        "from": "wt2",
+        "to": "ts",
+        "condition": "always"
+      },
+      {
+        "from": "te",
+        "to": "oe",
+        "condition": "always"
+      },
+      {
+        "from": "te",
+        "to": "we",
+        "condition": "always"
+      },
+      {
+        "from": "ws",
+        "to": "wg",
+        "condition": "always"
+      },
+      {
+        "from": "wg",
+        "to": "wt1",
+        "condition": "iv_decision = 'A'"
+      },
+      {
+        "from": "wg",
+        "to": "wt2",
+        "condition": "else"
+      },
+      {
+        "from": "fs",
+        "to": "fx",
+        "condition": "always"
+      },
+      {
+        "from": "lx",
+        "to": "rb",
+        "condition": "zcx_mm_pr_approval"
+      },
+      {
+        "from": "dx",
+        "to": "rb",
+        "condition": "zcx_mm_pr_approval"
+      },
+      {
+        "from": "fx",
+        "to": "rb",
+        "condition": "zcx_mm_pr_approval"
+      },
+      {
+        "from": "tx",
+        "to": "rb",
+        "condition": "zcx_mm_pr_approval"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_im_mm_pr_approval.abap:45 — kein Fachsatz „ohne Wertmatrix wird das Sichern der Banf verhindert“ — die Ausnahme wird gefangen und nur als Statusmeldung ausgegeben.",
+    "zcl_mm_pr_notifier.abap:54 — kein Fachsatz „ein Mailfehler bricht den Prozess ab“ — die Ausnahmen des Mailbausteins werden nicht ausgewertet.",
+    "zcl_mm_pr_approval.abap:76 — kein Fachsatz „beim Laden wird erneut gemailt oder freigegeben“ — der Zustand wird nur wiederhergestellt, ohne transition().",
+    "zcl_mm_pr_approval.abap:90 — kein Fachsatz „Anforderer ist der Anleger der ersten Position“ — SELECT SINGLE ohne Positionsbedingung liefert irgendeine Position."
+  ],
+  "processDescription": "Beim Sichern einer Bestellanforderung summiert das BAdI den Positionswert. Ohne Wert oder bei bereits laufendem Prozess passiert nichts. Sonst liest das Prozessobjekt Anforderer und Werk und bestimmt aus der Wertmatrix des Werks Stufen und Genehmiger; fehlt eine passende Zeile, erscheint nur eine Statusmeldung und die Banf wird ohne Z-Freigabe gesichert. Andernfalls wird ein Prozesssatz angelegt und der Zustand OPEN gesetzt, worauf ein Ereignis den ersten Genehmiger per Mail informiert. Der Genehmiger ruft einen Report mit Entscheidung A oder R auf; geprüft werden Eingabe, Freigabeberechtigung, Existenz des Prozesses und dass er der zuständige Genehmiger ist. In Stufe 1 führt eine Genehmigung je nach Matrix zu Stufe 2 oder zur Freigabe, in Stufe 2 zur Freigabe; eine Ablehnung beendet den Prozess. Die Freigabe setzt die Banf im Standard mit Code ZA frei. Jeder Wechsel mailt den Nächsten, jede Entscheidung wird mit Historie gesichert und festgeschrieben; Fehler werden zurückgerollt."
+}

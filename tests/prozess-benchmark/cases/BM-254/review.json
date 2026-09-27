@@ -1,0 +1,37 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante pm_c -> pm_l",
+      "before": "next iteration",
+      "after": "WHEN gc_vmsta_auslauf",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist bzw. per CONTINUE direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten. Je WHEN-Zweig eine Kante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante pm_c -> pm_l",
+      "before": "fehlt",
+      "after": "pm_c -> pm_l [WHEN OTHERS]",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist bzw. per CONTINUE direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten. Je WHEN-Zweig eine Kante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante mp_g3 -> mp_l",
+      "before": "next iteration",
+      "after": "sy-subrc <> 0",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist bzw. per CONTINUE direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante mp_g3 -> mp_l",
+      "before": "fehlt",
+      "after": "mp_g3 -> mp_l [else]",
+      "why": "Sonst-Zweig des IF ohne ELSE fehlte: mit gültiger Einheit werden die Positionsdaten ebenso angehängt und die Schleife läuft weiter.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "d_pn (<ls_pos>-posnr = sy-tabix * 10) ist eine Zuweisung in die Antwortstruktur; bleibt als action, weil sie die an den Shop zurückgegebenen Positionsnummern festlegt (B17). Bei strikter Auslegung „keine Zuweisungen“ wäre sie samt Schleife d_l zu entfernen."
+  ]
+}

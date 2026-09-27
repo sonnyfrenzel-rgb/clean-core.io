@@ -1,0 +1,1550 @@
+{
+  "id": "BM-210",
+  "title": "RFC-Retourenanlage mit konfigurierbarer Validator-Kette",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Polymorpher Aufruf check: Kanten zu beiden Implementierungen mit „always“.",
+    "Rückkanten aus add_message: eine je Aufrufer (drei Pfadenden, einmal zurück in die Schleife)."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBRK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_rmau01.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_rmau01.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBRP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_rmac01.abap",
+        "line": 53,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_rmac01.abap:53"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_rmac01.abap",
+        "line": 57,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_rmac01.abap:57"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_rmac01.abap",
+        "line": 57,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_rmac01.abap:57"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_CUSTOMERRETURN_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzsd_rmau01.abap",
+        "line": 73,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_rmau01.abap:73"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_RMA_VALCFG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_rmac01.abap",
+        "line": 91,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_rmac01.abap:91"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_RMA_PERIOD",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_rmac01.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_rmac01.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-210-B01",
+      "text": "Der aufrufende Portalbenutzer muss Retourenaufträge (Auftragsart RE) anlegen dürfen; sonst wird ein Fehler zurückgegeben und nichts angelegt.",
+      "anchors": [
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:23"
+        },
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:26"
+        },
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:27"
+        },
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-210-B02",
+      "text": "Die Referenzrechnung wird gelesen; existiert sie nicht, wird ein Fehler zurückgegeben.",
+      "anchors": [
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:32"
+        },
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:34"
+        },
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:35"
+        },
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-210-B03",
+      "text": "Welche Prüfungen in welcher Reihenfolge laufen, bestimmt eine Konfigurationstabelle je Verkaufsorganisation; unbekannte Einträge werden übergangen.",
+      "anchors": [
+        {
+          "file": "lzsd_rmac01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:91"
+        },
+        {
+          "file": "lzsd_rmac01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:95"
+        },
+        {
+          "file": "lzsd_rmac01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:97"
+        },
+        {
+          "file": "lzsd_rmac01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:99"
+        }
+      ]
+    },
+    {
+      "id": "BM-210-B04",
+      "text": "Jede Retourenposition durchläuft alle aktiven Prüfungen der Kette.",
+      "anchors": [
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:42"
+        },
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:44"
+        },
+        {
+          "file": "lzsd_rmac01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:111"
+        },
+        {
+          "file": "lzsd_rmac01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:112"
+        }
+      ]
+    },
+    {
+      "id": "BM-210-B05",
+      "text": "Die Rückgabefrist ist je Verkaufsorganisation gepflegt, ersatzweise 30 Tage; wird sie seit dem Fakturadatum überschritten, wird die Position abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzsd_rmac01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:32"
+        },
+        {
+          "file": "lzsd_rmac01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:34"
+        },
+        {
+          "file": "lzsd_rmac01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:35"
+        },
+        {
+          "file": "lzsd_rmac01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:37"
+        },
+        {
+          "file": "lzsd_rmac01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-210-B06",
+      "text": "Die Rückgabemenge darf die fakturierte Menge des Materials abzüglich bereits angelegter, nicht abgesagter Retouren zur Rechnung nicht übersteigen.",
+      "anchors": [
+        {
+          "file": "lzsd_rmac01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:53"
+        },
+        {
+          "file": "lzsd_rmac01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:57"
+        },
+        {
+          "file": "lzsd_rmac01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:64"
+        },
+        {
+          "file": "lzsd_rmac01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-210-B07",
+      "text": "Jede Ablehnung wird mit ihrem Grund als Fehlermeldung gesammelt; die übrigen Positionen werden trotzdem geprüft.",
+      "anchors": [
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-210-B08",
+      "text": "Ist mindestens eine Position abgelehnt, wird kein Retourenauftrag angelegt.",
+      "anchors": [
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:52"
+        },
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-210-B09",
+      "text": "Im Simulationsmodus wird nur die Zulässigkeit gemeldet.",
+      "anchors": [
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:57"
+        },
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:58"
+        },
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-210-B10",
+      "text": "Für die Anlage wird je Position die passende Rechnungsposition als Referenz gesucht und gesetzt.",
+      "anchors": [
+        {
+          "file": "lzsd_rmaf01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmaf01.abap:17"
+        },
+        {
+          "file": "lzsd_rmaf01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmaf01.abap:25"
+        },
+        {
+          "file": "lzsd_rmaf01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmaf01.abap:28"
+        },
+        {
+          "file": "lzsd_rmaf01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmaf01.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-210-B11",
+      "text": "Der Retourenauftrag wird mit Rechnungsbezug und dem Auftraggeber der Rechnung angelegt; die Meldungen des BAPI gehen an den Aufrufer zurück.",
+      "anchors": [
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-210-B12",
+      "text": "Entsteht kein Auftrag, wird zurückgerollt, sonst festgeschrieben.",
+      "anchors": [
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:84"
+        },
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:85"
+        },
+        {
+          "file": "lzsd_rmau01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:87"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:1"
+        },
+        "meaning": "RFC-Baustein Retourenanlage aus dem Portal"
+      },
+      {
+        "id": "au",
+        "type": "action",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:23"
+        },
+        "meaning": "Anlageberechtigung Auftragsart RE pruefen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:26"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "pm1",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:27"
+        },
+        "meaning": "Fehlermeldung Berechtigung"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:29"
+        },
+        "meaning": "Ende ohne Anlage"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:32"
+        },
+        "meaning": "Referenzrechnung lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:34"
+        },
+        "meaning": "Rechnung fehlt?"
+      },
+      {
+        "id": "pm2",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:35"
+        },
+        "meaning": "Fehlermeldung Rechnung"
+      },
+      {
+        "id": "r2",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:37"
+        },
+        "meaning": "Ende ohne Anlage"
+      },
+      {
+        "id": "cb",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:40"
+        },
+        "meaning": "Validator-Kette je Verkaufsorganisation aufbauen"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:42"
+        },
+        "meaning": "Je Retourenposition"
+      },
+      {
+        "id": "cv",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:44"
+        },
+        "meaning": "Position gegen Kette pruefen"
+      },
+      {
+        "id": "pm4",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:47"
+        },
+        "meaning": "Ablehnungsgrund melden"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:52"
+        },
+        "meaning": "Position abgelehnt?"
+      },
+      {
+        "id": "r3",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:54"
+        },
+        "meaning": "Ende ohne Anlage"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:57"
+        },
+        "meaning": "Simulation?"
+      },
+      {
+        "id": "pm5",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:58"
+        },
+        "meaning": "Simulationsergebnis melden"
+      },
+      {
+        "id": "r4",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:60"
+        },
+        "meaning": "Ende Simulation"
+      },
+      {
+        "id": "pb",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:63"
+        },
+        "meaning": "Positionsdaten fuer BAPI aufbauen"
+      },
+      {
+        "id": "ba",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:73"
+        },
+        "meaning": "Retourenauftrag RE mit Rechnungsbezug anlegen"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:84"
+        },
+        "meaning": "Kein Auftrag entstanden?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:85"
+        },
+        "meaning": "Verwerfen"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:87"
+        },
+        "meaning": "Retourenauftrag festschreiben"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "meaning": "Meldungen zurueckgeben",
+        "anchor": {
+          "file": "lzsd_rmau01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmau01.abap:92"
+        }
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_rmaf01.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmaf01.abap:4"
+        },
+        "meaning": "Meldung sammeln"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_rmaf01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmaf01.abap:8"
+        }
+      },
+      {
+        "id": "ds",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_rmaf01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmaf01.abap:10"
+        },
+        "meaning": "Positionsaufbau"
+      },
+      {
+        "id": "dl",
+        "type": "loop",
+        "anchor": {
+          "file": "lzsd_rmaf01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmaf01.abap:17"
+        },
+        "meaning": "Je Position"
+      },
+      {
+        "id": "dq",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_rmaf01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmaf01.abap:25"
+        },
+        "meaning": "Rechnungsposition zum Material lesen"
+      },
+      {
+        "id": "dg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_rmaf01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmaf01.abap:28"
+        },
+        "meaning": "Rechnungsposition gefunden?"
+      },
+      {
+        "id": "dr",
+        "type": "action",
+        "anchor": {
+          "file": "lzsd_rmaf01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmaf01.abap:29"
+        },
+        "meaning": "Rechnung als Referenz der Retourenposition setzen"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_rmaf01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmaf01.abap:34"
+        }
+      },
+      {
+        "id": "bs",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:87"
+        },
+        "meaning": "Kette aufbauen"
+      },
+      {
+        "id": "bl",
+        "type": "loop",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:91"
+        },
+        "meaning": "Aktive Pruefungen der VkOrg in Reihenfolge"
+      },
+      {
+        "id": "bc",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:95"
+        },
+        "meaning": "Welche Pruefung?"
+      },
+      {
+        "id": "ca1",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:97"
+        },
+        "meaning": "Fristpruefung aufnehmen"
+      },
+      {
+        "id": "ca2",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:99"
+        },
+        "meaning": "Mengenpruefung aufnehmen"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:104"
+        }
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:106"
+        },
+        "meaning": "Validator anhaengen"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:108"
+        }
+      },
+      {
+        "id": "vs",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:110"
+        },
+        "meaning": "Kette ausfuehren"
+      },
+      {
+        "id": "vl",
+        "type": "loop",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:111"
+        },
+        "meaning": "Je Validator"
+      },
+      {
+        "id": "vc",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:112"
+        },
+        "meaning": "Pruefung ausfuehren (polymorph)"
+      },
+      {
+        "id": "ve",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:115"
+        }
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:30"
+        },
+        "meaning": "Fristpruefung"
+      },
+      {
+        "id": "pq",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:32"
+        },
+        "meaning": "Rueckgabefrist der VkOrg lesen"
+      },
+      {
+        "id": "pg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:34"
+        },
+        "meaning": "Keine Frist gepflegt?"
+      },
+      {
+        "id": "pd",
+        "type": "action",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:35"
+        },
+        "meaning": "Standardfrist 30 Tage"
+      },
+      {
+        "id": "pg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:37"
+        },
+        "meaning": "Frist ueberschritten?"
+      },
+      {
+        "id": "px",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:38"
+        },
+        "meaning": "Ablehnung: Frist"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:41"
+        }
+      },
+      {
+        "id": "qs",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:50"
+        },
+        "meaning": "Mengenpruefung"
+      },
+      {
+        "id": "qq1",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:53"
+        },
+        "meaning": "Fakturierte Menge des Materials"
+      },
+      {
+        "id": "qq2",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:57"
+        },
+        "meaning": "Bereits retournierte Menge zu dieser Rechnung"
+      },
+      {
+        "id": "qg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:64"
+        },
+        "meaning": "Offene Menge reicht nicht?"
+      },
+      {
+        "id": "qx",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:65"
+        },
+        "meaning": "Ablehnung: Menge"
+      },
+      {
+        "id": "qe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzsd_rmac01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_rmac01.abap:68"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "fs",
+        "to": "au",
+        "condition": "always"
+      },
+      {
+        "from": "au",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "pm1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "q",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "pm2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "cb",
+        "condition": "else"
+      },
+      {
+        "from": "pm1",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "pm2",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "r2",
+        "condition": "always"
+      },
+      {
+        "from": "pm5",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "r4",
+        "condition": "always"
+      },
+      {
+        "from": "pm4",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ms",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "cb",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "bs",
+        "to": "bl",
+        "condition": "always"
+      },
+      {
+        "from": "bl",
+        "to": "bc",
+        "condition": "next row"
+      },
+      {
+        "from": "bc",
+        "to": "ca1",
+        "condition": "WHEN 'PERIOD'"
+      },
+      {
+        "from": "bc",
+        "to": "ca2",
+        "condition": "WHEN 'QUANTITY'"
+      },
+      {
+        "from": "bc",
+        "to": "bl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ca1",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "ca2",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "bl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "as",
+        "to": "ae",
+        "condition": "always"
+      },
+      {
+        "from": "bl",
+        "to": "be",
+        "condition": "no more rows"
+      },
+      {
+        "from": "lp",
+        "to": "cv",
+        "condition": "next row"
+      },
+      {
+        "from": "cv",
+        "to": "vs",
+        "condition": "always"
+      },
+      {
+        "from": "ve",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "vs",
+        "to": "vl",
+        "condition": "always"
+      },
+      {
+        "from": "vl",
+        "to": "vc",
+        "condition": "next row"
+      },
+      {
+        "from": "vc",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "vc",
+        "to": "qs",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "vl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "qe",
+        "to": "vl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "vl",
+        "to": "ve",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ps",
+        "to": "pq",
+        "condition": "always"
+      },
+      {
+        "from": "pq",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pd",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pg",
+        "to": "pg2",
+        "condition": "else"
+      },
+      {
+        "from": "pd",
+        "to": "pg2",
+        "condition": "always"
+      },
+      {
+        "from": "pg2",
+        "to": "px",
+        "condition": "sy-datum - is_vbrk-fkdat > lv_max"
+      },
+      {
+        "from": "pg2",
+        "to": "pe",
+        "condition": "else"
+      },
+      {
+        "from": "qs",
+        "to": "qq1",
+        "condition": "always"
+      },
+      {
+        "from": "qq1",
+        "to": "qq2",
+        "condition": "always"
+      },
+      {
+        "from": "qq2",
+        "to": "qg",
+        "condition": "always"
+      },
+      {
+        "from": "qg",
+        "to": "qx",
+        "condition": "lv_billed - lv_returned < is_item-menge"
+      },
+      {
+        "from": "qg",
+        "to": "qe",
+        "condition": "else"
+      },
+      {
+        "from": "px",
+        "to": "pm4",
+        "condition": "lcx_rma_rejected"
+      },
+      {
+        "from": "qx",
+        "to": "pm4",
+        "condition": "lcx_rma_rejected"
+      },
+      {
+        "from": "lp",
+        "to": "g3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g3",
+        "to": "r3",
+        "condition": "lv_rejected = abap_true"
+      },
+      {
+        "from": "g3",
+        "to": "g4",
+        "condition": "else"
+      },
+      {
+        "from": "g4",
+        "to": "pm5",
+        "condition": "iv_simulate = abap_true"
+      },
+      {
+        "from": "g4",
+        "to": "pb",
+        "condition": "else"
+      },
+      {
+        "from": "pb",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "de",
+        "to": "ba",
+        "condition": "always"
+      },
+      {
+        "from": "ds",
+        "to": "dl",
+        "condition": "always"
+      },
+      {
+        "from": "dl",
+        "to": "dq",
+        "condition": "next row"
+      },
+      {
+        "from": "dq",
+        "to": "dg",
+        "condition": "always"
+      },
+      {
+        "from": "dg",
+        "to": "dr",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "dg",
+        "to": "dl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "dr",
+        "to": "dl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "dl",
+        "to": "de",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ba",
+        "to": "g5",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "rb",
+        "condition": "ev_vbeln IS INITIAL"
+      },
+      {
+        "from": "g5",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "fe",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "lzsd_rmau01.abap:42 — kein Fachsatz „die Prüfung bricht bei der ersten abgelehnten Position ab“ — die Ausnahme wird je Position gefangen, die Schleife läuft weiter.",
+    "lzsd_rmac01.abap:95 — kein Fachsatz „Seriennummern werden geprüft“ — ein Eintrag SERIAL fällt in WHEN OTHERS und wird ignoriert.",
+    "lzsd_rmau01.abap:73 — kein Fachsatz „Retourenlieferung/Gutschrift wird erzeugt“ — angelegt wird nur der Retourenauftrag."
+  ],
+  "processDescription": "Ein Kundenportal ruft den Baustein mit Rechnung, Positionen und Simulationskennzeichen auf. Zuerst wird geprüft, ob der Portalbenutzer Retourenaufträge anlegen darf, dann ob die Rechnung existiert; in beiden Fehlerfällen kommt nur eine Fehlermeldung zurück. Eine Konfigurationstabelle bestimmt je Verkaufsorganisation, welche Prüfungen in welcher Reihenfolge laufen. Jede Position wird gegen Rückgabefrist und offene fakturierte Menge geprüft; jede Ablehnung wird mit Grund gesammelt, die Prüfung der übrigen Positionen läuft weiter. Gibt es eine Ablehnung, wird nichts angelegt; im Simulationsmodus wird nur die Zulässigkeit gemeldet. Sonst werden die Positionen mit Rechnungsbezug aufgebaut und ein Retourenauftrag RE angelegt, der festgeschrieben oder bei Misserfolg zurückgerollt wird."
+}

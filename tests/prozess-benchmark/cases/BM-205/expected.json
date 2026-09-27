@@ -1,0 +1,665 @@
+{
+  "id": "BM-205",
+  "title": "Weiche Bestandsreservierung mit Sperr-Manager-Klasse",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "MARD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 60,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:60"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_SOFT_RESV",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 77,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:77"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZMM_SOFTRESV",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 26,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:26"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZMM_SOFTRESV",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:41"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-205-B01",
+      "text": "Vor der Reservierung wird Material, Werk und Lagerort über eine eigene Sperre gegen parallele Reservierungen gesperrt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-205-B02",
+      "text": "Ist die Kombination bereits gesperrt, erhält der Anwender die Information, dass sie gerade bearbeitet wird, und es wird nichts reserviert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        {
+          "file": "source.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:91"
+        }
+      ]
+    },
+    {
+      "id": "BM-205-B03",
+      "text": "Der frei verwendbare Lagerortbestand und die Summe der offenen weichen Reservierungen werden gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-205-B04",
+      "text": "Reicht der Restbestand nicht für die gewünschte Menge, wird nicht reserviert und der Anwender informiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:66"
+        },
+        {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        {
+          "file": "source.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-205-B05",
+      "text": "Sonst wird eine weiche Reservierung mit Auftrag, Menge, Anleger und Datum angelegt und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        {
+          "file": "source.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-205-B06",
+      "text": "Nach erfolgreicher Reservierung erscheint eine Erfolgsmeldung mit der Auftragsnummer.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:89"
+        }
+      ]
+    },
+    {
+      "id": "BM-205-B07",
+      "text": "In jedem Fall wird die Sperre am Ende wieder freigegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:96"
+        },
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:86"
+        },
+        "meaning": "Sperre anfordern"
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Sperre setzen"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Material/Werk/Lagerort sperren"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Sperre nicht erhalten?"
+      },
+      {
+        "id": "ar",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Ausnahme: gesperrt"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        }
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:87"
+        },
+        "meaning": "Reservierung durchfuehren"
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        "meaning": "Reservierung"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Frei verwendbaren Bestand lesen"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        },
+        "meaning": "Offene weiche Reservierungen summieren"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:66"
+        },
+        "meaning": "Restbestand reicht nicht?"
+      },
+      {
+        "id": "rr",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        "meaning": "Ausnahme: zu wenig Bestand"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Weiche Reservierung anlegen"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        }
+      },
+      {
+        "id": "t",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:88"
+        },
+        "meaning": "Reservierung festschreiben"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:89"
+        },
+        "meaning": "Erfolg melden"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:91"
+        },
+        "meaning": "Info: gesperrt"
+      },
+      {
+        "id": "o3",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:93"
+        },
+        "meaning": "Info: Bestand reicht nicht"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:96"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        "meaning": "Sperre loesen"
+      },
+      {
+        "id": "dq",
+        "type": "lock",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Entsperren"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        }
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:96"
+        },
+        "meaning": "Reportende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "c2",
+        "condition": "always"
+      },
+      {
+        "from": "as",
+        "to": "lk",
+        "condition": "always"
+      },
+      {
+        "from": "lk",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "ar",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ag",
+        "to": "ae",
+        "condition": "else"
+      },
+      {
+        "from": "ar",
+        "to": "o2",
+        "condition": "lcx_locked"
+      },
+      {
+        "from": "c2",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "t",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "q2",
+        "condition": "always"
+      },
+      {
+        "from": "q2",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rr",
+        "condition": "lv_labst - lv_resv < p_menge"
+      },
+      {
+        "from": "rg",
+        "to": "w",
+        "condition": "else"
+      },
+      {
+        "from": "w",
+        "to": "re",
+        "condition": "always"
+      },
+      {
+        "from": "rr",
+        "to": "o3",
+        "condition": "lcx_insufficient"
+      },
+      {
+        "from": "t",
+        "to": "o1",
+        "condition": "always"
+      },
+      {
+        "from": "o1",
+        "to": "c3",
+        "condition": "always"
+      },
+      {
+        "from": "o2",
+        "to": "c3",
+        "condition": "always"
+      },
+      {
+        "from": "o3",
+        "to": "c3",
+        "condition": "always"
+      },
+      {
+        "from": "c3",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "dq",
+        "to": "le",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:77 — kein Fachsatz „Reservierung (RESB) wird angelegt“ — geschrieben wird nur die Z-Tabelle, keine SAP-Reservierung.",
+    "source.abap:77 — kein Fachsatz „Fehler beim Anlegen wird gemeldet“ — sy-subrc nach INSERT wird nicht ausgewertet; die Erfolgsmeldung kommt auch bei Doppelschlüssel.",
+    "source.abap:60 — kein Fachsatz „Bestand wird umgebucht“ — MARD wird nur gelesen."
+  ],
+  "processDescription": "Ein Disponent startet den Report mit Material, Werk, Lagerort, Auftrag und Menge. Eine Sperr-Manager-Klasse sperrt die Kombination über einen eigenen Sperrbaustein; ist sie gesperrt, gibt es eine Information und keine Reservierung. Sonst liest die Reservierungsklasse den frei verwendbaren Bestand und die offenen weichen Reservierungen. Reicht der Rest nicht, wird der Anwender informiert. Andernfalls legt sie einen Satz in der Z-Reservierungstabelle an, der Report schreibt ihn mit COMMIT WORK fest und meldet Erfolg. Auf allen Pfaden wird die Sperre am Ende freigegeben. Ein Fehlschlag des INSERT wird nicht erkannt."
+}

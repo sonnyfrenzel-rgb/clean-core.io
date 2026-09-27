@@ -1,0 +1,42 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten map",
+      "before": "action zcl_mm_gr_in.abap:63 (WE-Position zur Bestellposition mit Bewegungsart 101 aufbauen); Kanten g3->map [else], map->l1 [next iteration]",
+      "after": "entfernt",
+      "why": "Zeile 63 ist eine reine Zuweisung in die BAPI-Positionsstruktur (danach nur APPEND in interne Tabelle) - laut Brief kein Knoten.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten dup",
+      "before": "action zcl_mm_gr_in.abap:38 (Antwort: Duplikat mit vorhandenem Materialbeleg); Kanten g1->dup [sy-subrc = 0], dup->r1 [always]",
+      "after": "entfernt",
+      "why": "Zeile 38 ist eine reine Zuweisung an den Antwortparameter - kein Knoten; der Fachsatz B02 trägt die Antwort weiter.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante g1->r1",
+      "before": "—",
+      "after": "[sy-subrc = 0]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten dup.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten ok",
+      "before": "action zcl_mm_gr_in.abap:104 (Antwort: gebucht mit Materialbelegnummer); Kanten w->ok [always], ok->e [always]",
+      "after": "entfernt",
+      "why": "Zeile 104 ist eine reine Zuweisung an den Antwortparameter - kein Knoten; Fachsatz B07 bleibt.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante w->e",
+      "before": "—",
+      "after": "[always]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten ok.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

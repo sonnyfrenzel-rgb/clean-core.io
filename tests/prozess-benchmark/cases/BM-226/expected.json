@@ -1,0 +1,551 @@
+{
+  "id": "BM-226",
+  "title": "Prüfliste fehlender Bankverbindungen vor der Abrechnung",
+  "classes": [
+    "K01",
+    "K03"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PA0001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_READ_INFOTYPE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 59,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:59"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:44"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-226-B01",
+      "text": "Es werden die zum Stichtag gültigen organisatorischen Zuordnungen der Mitarbeiter in den gewählten Personalbereichen gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-226-B02",
+      "text": "Für jeden Mitarbeiter werden die zum Stichtag gültigen Bankverbindungen gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-226-B03",
+      "text": "Fehlt die Hauptbankverbindung, wird der Mitarbeiter mit dem Befund „Keine Hauptbankverbindung“ in die Prüfliste aufgenommen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-226-B04",
+      "text": "Hat die Hauptbankverbindung keine IBAN, wird der Mitarbeiter mit Bankschlüssel und dem Befund „IBAN fehlt“ aufgenommen; sonst nicht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:83"
+        },
+        {
+          "file": "source.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-226-B05",
+      "text": "Gibt es keinen Befund, erscheint eine Erfolgsmeldung und der Report endet ohne Liste.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-226-B06",
+      "text": "Die Befunde werden als ALV-Liste angezeigt; scheitert der Listenaufbau, wird der Fehler als Information gemeldet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        },
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Organisatorische Zuordnung zum Stichtag lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Mitarbeiter durchlaufen"
+      },
+      {
+        "id": "c",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Bankverbindung prüfen"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        "meaning": "Prüfroutine Bankverbindung"
+      },
+      {
+        "id": "fr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Bankverbindungen (IT0009) zum Stichtag lesen"
+      },
+      {
+        "id": "frt",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        "meaning": "Hauptbankverbindung suchen"
+      },
+      {
+        "id": "fg",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Hauptbankverbindung fehlt?"
+      },
+      {
+        "id": "fret",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        },
+        "meaning": "Befund „keine Hauptbankverbindung“ erfasst"
+      },
+      {
+        "id": "fck",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:83"
+        },
+        "meaning": "IBAN leer?"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:87"
+        },
+        "meaning": "Ende Prüfroutine"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Befunde vorhanden?"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Meldung: keine Befunde"
+      },
+      {
+        "id": "r",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "fac",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        "meaning": "ALV-Liste erzeugen"
+      },
+      {
+        "id": "disp",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        },
+        "meaning": "Befundliste anzeigen"
+      },
+      {
+        "id": "cx",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "ALV-Fehler als Information melden"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        },
+        "meaning": "Reportende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "c",
+        "condition": "next row"
+      },
+      {
+        "from": "c",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "fr",
+        "condition": "always"
+      },
+      {
+        "from": "fr",
+        "to": "frt",
+        "condition": "always"
+      },
+      {
+        "from": "frt",
+        "to": "fg",
+        "condition": "always"
+      },
+      {
+        "from": "fg",
+        "to": "fret",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "fg",
+        "to": "fck",
+        "condition": "else"
+      },
+      {
+        "from": "fck",
+        "to": "fe",
+        "condition": "ls_p0009-iban IS INITIAL"
+      },
+      {
+        "from": "fck",
+        "to": "fe",
+        "condition": "else"
+      },
+      {
+        "from": "fret",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fe",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "g",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g",
+        "to": "ms",
+        "condition": "gt_out IS INITIAL"
+      },
+      {
+        "from": "ms",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "fac",
+        "condition": "else"
+      },
+      {
+        "from": "fac",
+        "to": "disp",
+        "condition": "always"
+      },
+      {
+        "from": "fac",
+        "to": "cx",
+        "condition": "cx_salv_msg"
+      },
+      {
+        "from": "disp",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "cx",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:59 — kein Fachsatz „Mitarbeiter ohne Leseberechtigung werden gesondert gemeldet“ (Ausnahmen des Bausteins werden nicht ausgewertet; ein Lesefehler erscheint als „Keine Hauptbankverbindung“)",
+    "source.abap:83 — kein Fachsatz „IBAN wird auf Gültigkeit geprüft“ (nur leer oder nicht leer)",
+    "gesamte Scheibe — kein Fachsatz „fehlende Bankverbindung wird angelegt oder Abrechnung gesperrt“ (reine Prüfliste)"
+  ],
+  "processDescription": "Der Report wird vor der Entgeltabrechnung mit Personalbereichen, optionalen Personalnummern und Stichtag gestartet. Er liest die zum Stichtag gültigen Sätze der organisatorischen Zuordnung und ruft je Mitarbeiter eine Prüfroutine. Diese liest über HR_READ_INFOTYPE die Bankverbindungen zum Stichtag und sucht die Hauptbankverbindung (Subtyp 0). Fehlt sie, kommt der Mitarbeiter mit „Keine Hauptbankverbindung“ auf die Prüfliste und die Routine endet vorzeitig. Ist sie vorhanden, aber ohne IBAN, kommt er mit Bankschlüssel und „IBAN fehlt“ auf die Liste; mit IBAN verlässt die Routine über CHECK ohne Eintrag. Ist die Liste leer, meldet der Report das und endet; sonst zeigt er sie als ALV an und meldet einen Fehler beim Listenaufbau als Information."
+}

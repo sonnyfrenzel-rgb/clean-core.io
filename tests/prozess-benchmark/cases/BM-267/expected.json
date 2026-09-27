@@ -1,0 +1,1299 @@
+{
+  "id": "BM-267",
+  "title": "IDoc-Eingang Kundenauftrag mit Segment-Mapper-Klassen",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EDIDC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_idoc_input_zorders.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_idoc_input_zorders.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_IDOC_AUART",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_map_header.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_map_header.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_map_header.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_map_header.abap:41"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNMT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_map_item.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_map_item.abap:42"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_map_item.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_map_item.abap:50"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_SALESORDER_CREATEFROMDAT2",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_idoc_input_zorders.abap",
+        "line": 59,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_idoc_input_zorders.abap:59"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_idoc_input_zorders.abap",
+        "line": 72,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_idoc_input_zorders.abap:72"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_idoc_input_zorders.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_idoc_input_zorders.abap:83"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_SD_SEG_MAP_FACTORY",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_idoc_input_zorders.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_idoc_input_zorders.abap:37"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-267-B01",
+      "text": "Eingehende Kundenaufträge (Nachrichtentyp ZORDERS) werden IDoc für IDoc verarbeitet, jedes Segment über einen zum Segmenttyp passenden Mapper.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:32"
+        },
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:36"
+        },
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:37"
+        },
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-267-B02",
+      "text": "Kopfsegment und Partnersegment gehen an den Kopf-Mapper, Positions- und Materialsegment an den Positions-Mapper; für alle anderen Segmente gibt es keinen Mapper, sie werden übergangen.",
+      "anchors": [
+        {
+          "file": "zcl_sd_seg_map_factory.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_map_factory.abap:18"
+        },
+        {
+          "file": "zcl_sd_seg_map_factory.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_map_factory.abap:20"
+        },
+        {
+          "file": "zcl_sd_seg_map_factory.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_map_factory.abap:22"
+        },
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-267-B03",
+      "text": "Aus der Bestellart des Kunden werden über eine Zuordnungstabelle Auftragsart, Verkaufsorganisation, Vertriebsweg und Sparte bestimmt; Währung und Kundenbestellnummer werden übernommen.",
+      "anchors": [
+        {
+          "file": "zcl_sd_map_header.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-267-B04",
+      "text": "Ist der Bestellart keine Auftragsart zugeordnet, ist das IDoc fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zcl_sd_map_header.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:27"
+        },
+        {
+          "file": "zcl_sd_map_header.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-267-B05",
+      "text": "Von den Partnern werden nur Auftraggeber und Warenempfänger übernommen, und nur wenn sie als nicht gelöschte Kunden existieren; sonst ist das IDoc fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zcl_sd_map_header.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:38"
+        },
+        {
+          "file": "zcl_sd_map_header.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:41"
+        },
+        {
+          "file": "zcl_sd_map_header.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:44"
+        },
+        {
+          "file": "zcl_sd_map_header.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-267-B06",
+      "text": "Jede Position wird mit Positionsnummer, Menge, Mengeneinheit und einer Einteilung über dieselbe Menge aufgenommen; eine Position ohne Menge macht das IDoc fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zcl_sd_map_item.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:24"
+        },
+        {
+          "file": "zcl_sd_map_item.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:25"
+        },
+        {
+          "file": "zcl_sd_map_item.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-267-B07",
+      "text": "Das Material einer Position wird aus der Kunden-Material-Info zur Kundenmaterialnummer des Auftraggebers ermittelt; andere Identifikationsarten werden übergangen.",
+      "anchors": [
+        {
+          "file": "zcl_sd_map_item.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:40"
+        },
+        {
+          "file": "zcl_sd_map_item.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-267-B08",
+      "text": "Fehlt die Kunden-Material-Info, wird die Kundenmaterialnummer als eigene Materialnummer versucht; existiert auch diese nicht, ist das IDoc fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zcl_sd_map_item.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:47"
+        },
+        {
+          "file": "zcl_sd_map_item.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:50"
+        },
+        {
+          "file": "zcl_sd_map_item.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:52"
+        },
+        {
+          "file": "zcl_sd_map_item.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-267-B09",
+      "text": "Das ermittelte Material wird in die zuletzt aufgenommene Position eingetragen.",
+      "anchors": [
+        {
+          "file": "zcl_sd_map_item.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-267-B10",
+      "text": "Ein Mappingfehler bricht das Abbilden des IDocs ab und setzt es mit dem Fehlertext auf Status 51; der Auftrag wird dann nicht angelegt.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:48"
+        },
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-267-B11",
+      "text": "Aus den abgebildeten Kopf-, Positions-, Partner- und Einteilungsdaten wird ein Kundenauftrag angelegt.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-267-B12",
+      "text": "Meldet die Anlage einen Fehler oder liefert sie keine Auftragsnummer, wird zurückgerollt und das IDoc mit der Meldung auf Status 51 gesetzt.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:70"
+        },
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:71"
+        },
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:72"
+        },
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-267-B13",
+      "text": "Sonst wird der Auftrag festgeschrieben, das IDoc mit der Auftragsnummer auf Status 53 gesetzt und der Auftrag als Anwendungsobjekt mit dem IDoc verknüpft.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:83"
+        },
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-267-B14",
+      "text": "Ist mindestens ein IDoc des Pakets fehlerhaft, meldet der Baustein dem Workflow ein Fehlerergebnis.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:104"
+        },
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:105"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:1"
+        },
+        "meaning": "Eingang Auftrags-IDocs (ZORDERS)"
+      },
+      {
+        "id": "lc",
+        "type": "loop",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:32"
+        },
+        "meaning": "IDocs des Pakets durchlaufen"
+      },
+      {
+        "id": "ld",
+        "type": "loop",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:36"
+        },
+        "meaning": "Segmente des IDocs durchlaufen"
+      },
+      {
+        "id": "fac",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:37"
+        },
+        "meaning": "Mapper zum Segmenttyp beschaffen"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:38"
+        },
+        "meaning": "Segment nicht relevant?"
+      },
+      {
+        "id": "mp",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:41"
+        },
+        "meaning": "Segment auf Auftragsstruktur abbilden"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:55"
+        },
+        "meaning": "Mappingfehler aufgetreten?"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:59"
+        },
+        "meaning": "Kundenauftrag anlegen"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:70"
+        },
+        "meaning": "Fehlermeldung in der Rückgabe suchen"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:71"
+        },
+        "meaning": "Fehler oder keine Auftragsnummer?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:72"
+        },
+        "meaning": "Anlage zurückrollen"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:83"
+        },
+        "meaning": "Auftrag festschreiben"
+      },
+      {
+        "id": "gw",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:104"
+        },
+        "meaning": "Irgendein IDoc fehlerhaft?"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:109"
+        },
+        "meaning": "Ende Eingangsverarbeitung"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_seg_map_factory.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_map_factory.abap:16"
+        },
+        "meaning": "Mapper zum Segmenttyp wählen"
+      },
+      {
+        "id": "fcs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_seg_map_factory.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_map_factory.abap:18"
+        },
+        "meaning": "Segmenttyp"
+      },
+      {
+        "id": "fnh",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_seg_map_factory.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_map_factory.abap:20"
+        },
+        "meaning": "Kopf-Mapper erzeugen"
+      },
+      {
+        "id": "fni",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_seg_map_factory.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_map_factory.abap:22"
+        },
+        "meaning": "Positions-Mapper erzeugen"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_seg_map_factory.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_seg_map_factory.abap:28"
+        },
+        "meaning": "Mapper (oder keinen) zurückgeben"
+      },
+      {
+        "id": "hs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_map_header.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:14"
+        },
+        "meaning": "Kopf- und Partnersegment abbilden"
+      },
+      {
+        "id": "hcs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_map_header.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:19"
+        },
+        "meaning": "Segmenttyp"
+      },
+      {
+        "id": "hq1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_map_header.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:23"
+        },
+        "meaning": "Auftragsart und Vertriebsbereich zur Kunden-Bestellart lesen"
+      },
+      {
+        "id": "hg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_map_header.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:27"
+        },
+        "meaning": "Bestellart nicht zugeordnet?"
+      },
+      {
+        "id": "hx1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_map_header.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:28"
+        },
+        "meaning": "Mappingfehler: keine Auftragsart"
+      },
+      {
+        "id": "hck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_map_header.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:38"
+        },
+        "meaning": "Auftraggeber oder Warenempfänger?"
+      },
+      {
+        "id": "hq2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_map_header.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:41"
+        },
+        "meaning": "Partner als nicht gelöschten Kunden prüfen"
+      },
+      {
+        "id": "hg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_map_header.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:44"
+        },
+        "meaning": "Kunde unbekannt?"
+      },
+      {
+        "id": "hx2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_map_header.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:45"
+        },
+        "meaning": "Mappingfehler: unbekannter Partner"
+      },
+      {
+        "id": "he",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_map_header.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_header.abap:52"
+        },
+        "meaning": "Ende Kopf-Mapping"
+      },
+      {
+        "id": "is",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_map_item.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:14"
+        },
+        "meaning": "Positions- und Materialsegment abbilden"
+      },
+      {
+        "id": "ics",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_map_item.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:21"
+        },
+        "meaning": "Segmenttyp"
+      },
+      {
+        "id": "ig1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_map_item.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:24"
+        },
+        "meaning": "Keine Menge?"
+      },
+      {
+        "id": "ix1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_map_item.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:25"
+        },
+        "meaning": "Mappingfehler: Position ohne Menge"
+      },
+      {
+        "id": "ick",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_map_item.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:40"
+        },
+        "meaning": "Kundenmaterialnummer?"
+      },
+      {
+        "id": "iq1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_map_item.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:42"
+        },
+        "meaning": "Material zur Kundenmaterialnummer lesen"
+      },
+      {
+        "id": "ig2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_map_item.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:47"
+        },
+        "meaning": "Keine Kunden-Material-Info?"
+      },
+      {
+        "id": "iq2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_map_item.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:50"
+        },
+        "meaning": "Kundenmaterial als eigene Materialnummer prüfen"
+      },
+      {
+        "id": "ig3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_map_item.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:52"
+        },
+        "meaning": "Material unbekannt?"
+      },
+      {
+        "id": "ix2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_map_item.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:53"
+        },
+        "meaning": "Mappingfehler: unbekanntes Material"
+      },
+      {
+        "id": "ie",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_map_item.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_map_item.abap:61"
+        },
+        "meaning": "Ende Positions-Mapping"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "lc",
+        "condition": "always"
+      },
+      {
+        "from": "lc",
+        "to": "ld",
+        "condition": "next row"
+      },
+      {
+        "from": "ld",
+        "to": "fac",
+        "condition": "next row"
+      },
+      {
+        "from": "fac",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "fcs",
+        "condition": "always"
+      },
+      {
+        "from": "fcs",
+        "to": "fnh",
+        "condition": "WHEN 'E1EDK01' OR 'E1EDKA1'"
+      },
+      {
+        "from": "fcs",
+        "to": "fni",
+        "condition": "WHEN 'E1EDP01' OR 'E1EDP19'"
+      },
+      {
+        "from": "fcs",
+        "to": "fe",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "fnh",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "fni",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "ld",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gb",
+        "to": "mp",
+        "condition": "else"
+      },
+      {
+        "from": "mp",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "mp",
+        "to": "is",
+        "condition": "always"
+      },
+      {
+        "from": "hs",
+        "to": "hcs",
+        "condition": "always"
+      },
+      {
+        "from": "hcs",
+        "to": "hq1",
+        "condition": "WHEN 'E1EDK01'"
+      },
+      {
+        "from": "hq1",
+        "to": "hg1",
+        "condition": "always"
+      },
+      {
+        "from": "hg1",
+        "to": "hx1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "hg1",
+        "to": "he",
+        "condition": "else"
+      },
+      {
+        "from": "hcs",
+        "to": "hck",
+        "condition": "WHEN 'E1EDKA1'"
+      },
+      {
+        "from": "hck",
+        "to": "he",
+        "condition": "else"
+      },
+      {
+        "from": "hck",
+        "to": "hq2",
+        "condition": "ls_ka1-parvw = 'AG' OR ls_ka1-parvw = 'WE'"
+      },
+      {
+        "from": "hq2",
+        "to": "hg2",
+        "condition": "always"
+      },
+      {
+        "from": "hg2",
+        "to": "hx2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "hg2",
+        "to": "he",
+        "condition": "else"
+      },
+      {
+        "from": "is",
+        "to": "ics",
+        "condition": "always"
+      },
+      {
+        "from": "ics",
+        "to": "ig1",
+        "condition": "WHEN 'E1EDP01'"
+      },
+      {
+        "from": "ig1",
+        "to": "ix1",
+        "condition": "ls_p01-menge IS INITIAL OR ls_p01-menge CO ' 0.'"
+      },
+      {
+        "from": "ics",
+        "to": "ick",
+        "condition": "WHEN 'E1EDP19'"
+      },
+      {
+        "from": "ick",
+        "to": "ie",
+        "condition": "else"
+      },
+      {
+        "from": "ick",
+        "to": "iq1",
+        "condition": "ls_p19-qualf = '001'"
+      },
+      {
+        "from": "iq1",
+        "to": "ig2",
+        "condition": "always"
+      },
+      {
+        "from": "ig2",
+        "to": "iq2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "iq2",
+        "to": "ig3",
+        "condition": "always"
+      },
+      {
+        "from": "ig3",
+        "to": "ix2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "he",
+        "to": "ld",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ie",
+        "to": "ld",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ld",
+        "to": "ge",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ge",
+        "to": "lc",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ge",
+        "to": "bapi",
+        "condition": "else"
+      },
+      {
+        "from": "bapi",
+        "to": "rt",
+        "condition": "always"
+      },
+      {
+        "from": "rt",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "rb",
+        "condition": "sy-subrc = 0 OR lv_vbeln IS INITIAL"
+      },
+      {
+        "from": "gr",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "lc",
+        "to": "gw",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gw",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "hx1",
+        "to": "ge",
+        "condition": "zcx_sd_idoc_map"
+      },
+      {
+        "from": "hx2",
+        "to": "ge",
+        "condition": "zcx_sd_idoc_map"
+      },
+      {
+        "from": "ix1",
+        "to": "ge",
+        "condition": "zcx_sd_idoc_map"
+      },
+      {
+        "from": "ix2",
+        "to": "ge",
+        "condition": "zcx_sd_idoc_map"
+      },
+      {
+        "from": "rb",
+        "to": "lc",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cm",
+        "to": "lc",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gw",
+        "to": "e",
+        "condition": "line_exists( idoc_status[ status = '51' ] )"
+      },
+      {
+        "from": "ig1",
+        "to": "ie",
+        "condition": "else"
+      },
+      {
+        "from": "ig3",
+        "to": "ie",
+        "condition": "else"
+      },
+      {
+        "from": "ig2",
+        "to": "ie",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "z_idoc_input_zorders.abap:41 — kein Fachsatz „alle Segmente des IDocs werden abgebildet“ (Segmente ohne Mapper werden übergangen)",
+    "z_idoc_input_zorders.abap:70 — kein Fachsatz „Abbruchmeldungen (Typ A) führen zu Status 51“ (gesucht wird nur Typ E; A zählt nur, wenn keine Auftragsnummer geliefert wird)",
+    "zcl_sd_map_item.abap:50 — kein Fachsatz „unbekannte Kundenmaterialien werden automatisch angelegt“ (es wird nur die Nummer als eigenes Material geprüft)",
+    "zcl_sd_map_header.abap:38 — kein Fachsatz „Rechnungsempfänger/Regulierer werden übernommen“ (nur AG und WE)"
+  ],
+  "processDescription": "Der ALE-Eingang ruft den Baustein für ein Paket von ZORDERS-IDocs. Für jedes IDoc werden die Segmente durchlaufen; eine Fabrik liefert zum Segmenttyp einen Kopf- oder Positions-Mapper oder keinen, dann wird das Segment übergangen. Der Kopf-Mapper bestimmt aus der Kunden-Bestellart über eine Zuordnungstabelle Auftragsart und Vertriebsbereich, übernimmt Währung und Bestellnummer und nimmt Auftraggeber und Warenempfänger auf, sofern sie als nicht gelöschte Kunden existieren. Der Positions-Mapper nimmt Positionen mit Menge und Einteilung auf und ermittelt das Material über die Kunden-Material-Info, ersatzweise über die eigene Materialnummer. Jeder Mappingfehler bricht die Abbildung ab und setzt das IDoc mit Text auf Status 51. Fehlerfreie IDocs führen zur Anlage eines Kundenauftrags; bei Fehlermeldung oder fehlender Nummer wird zurückgerollt und Status 51 gesetzt, sonst festgeschrieben, Status 53 gesetzt und der Auftrag mit dem IDoc verknüpft. Enthält das Paket einen Fehler, erhält der Workflow ein Fehlerergebnis."
+}

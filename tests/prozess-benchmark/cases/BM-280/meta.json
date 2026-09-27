@@ -1,0 +1,45 @@
+{
+  "id": "BM-280",
+  "title": "Zentraler Schnittstellenmonitor mit Nachverarbeitungsklassen",
+  "domain": "SD/FI",
+  "band": "sehr komplex",
+  "loc": 406,
+  "constructs": [
+    "REPORT mit Klassen-Include",
+    "INITIALIZATION",
+    "lokale Klasse mit Ereignisbehandler",
+    "CL_SALV_TABLE",
+    "AUTHORITY-CHECK je Zeile",
+    "ENQUEUE/DEQUEUE",
+    "Fabrik mit CREATE OBJECT TYPE (dynamisch) und CAST",
+    "Interface mit zwei Implementierungen",
+    "SUBMIT RBDMANI2",
+    "SELECT COUNT(*)",
+    "BAPI_ACC_DOCUMENT_CHECK/POST",
+    "CALL TRANSFORMATION",
+    "UPDATE",
+    "COMMIT WORK",
+    "BAL_DB_LOAD/BAL_DSP_LOG_DISPLAY"
+  ],
+  "scenario": "Zentraler Monitor, der sieben modulspezifische Fehlerlisten ablöst; jede Schnittstelle hinterlegt ihre Nachverarbeitungsklasse im Customizing (hier: IDoc-Eingang SD und FI-Buchungen).",
+  "s4_issues": [
+    "Eigenes Schnittstellenprotokoll statt AIF/Message Monitoring",
+    "SUBMIT RBDMANI2 aus Dialog",
+    "dynamische Instanziierung aus Customizing",
+    "SAP-GUI-ALV-Monitor – Zielbild Fiori",
+    "BAPI_ACC_DOCUMENT_POST (Zielbild Journal Entry API)"
+  ],
+  "wave": 3,
+  "module": "CA (SD/FI)",
+  "edge_constructs": [
+    "CAST mit cx_sy_move_cast_error",
+    "mehrere Ausnahmen in einem CATCH",
+    "viele frühe RETURN in einer Methode",
+    "IF/ELSEIF mit Rückgabe",
+    "sy-subrc nach Zuweisung ausgewertet",
+    "RETURN aus LOOP in Hilfsmethode",
+    "CHECK in Methode",
+    "MESSAGE oref TYPE E"
+  ],
+  "oo": true
+}

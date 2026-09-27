@@ -1,0 +1,1374 @@
+{
+  "id": "BM-213",
+  "title": "Fakturierungslauf mit Intercompany-Unterklasse und RFC-Übergabe",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Polymorphe Aufrufe select_due/post_process: Kanten zu Basis- und Unterklassenimplementierung mit „always“.",
+    "Rückkanten be→rg und be→sg sowie ke→cr und ke→iq: je Aufrufer eine."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "LIKP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_billing_run.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_billing_run.abap:75"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_billing_run.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_billing_run.abap:75"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_BILLINGDOC_CREATEMULTIPLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_billing_run.abap",
+        "line": 104,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_billing_run.abap:104"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_FI_IC_INVOICE_RECEIVE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_billing_run_ic.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_billing_run_ic.abap:56"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_BILL_CFG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_billing_run.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_billing_run.abap:50"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_IC_DEST",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_billing_run_ic.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_billing_run_ic.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-213-B01",
+      "text": "Je nach Auswahl wird ein normaler oder ein Intercompany-Fakturierungslauf aufgebaut.",
+      "anchors": [
+        {
+          "file": "zsd_billing_run.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:24"
+        },
+        {
+          "file": "zsd_billing_run.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:25"
+        },
+        {
+          "file": "zsd_billing_run.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-213-B02",
+      "text": "Der Lauf liest die gepflegte Fakturaart je Verkaufsorganisation für seine Laufart (normal oder Intercompany); ist keine gepflegt, bricht der Report mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:50"
+        },
+        {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:54"
+        },
+        {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:55"
+        },
+        {
+          "file": "zsd_billing_run.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-213-B03",
+      "text": "Für den Intercompany-Lauf muss außerdem ein RFC-Ziel des Partnersystems gepflegt sein, sonst Abbruch mit Fehlermeldung.",
+      "anchors": [
+        {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:28"
+        },
+        {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:30"
+        },
+        {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-213-B04",
+      "text": "Fällig sind Lieferungen der gewählten Verkaufsorganisationen und Warenausgangsdaten mit vollständigem Warenausgang und offenem Fakturastatus.",
+      "anchors": [
+        {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-213-B05",
+      "text": "Im Intercompany-Lauf werden davon nur Lieferungen mit offener Intercompany-Faktura berücksichtigt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:41"
+        },
+        {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:43"
+        },
+        {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-213-B06",
+      "text": "Ist nichts fällig, meldet der Lauf null angelegte Fakturen.",
+      "anchors": [
+        {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:64"
+        },
+        {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:65"
+        },
+        {
+          "file": "zsd_billing_run.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-213-B07",
+      "text": "Lieferungen einer Verkaufsorganisation ohne gepflegte Fakturaart werden übergangen.",
+      "anchors": [
+        {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:92"
+        },
+        {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:94"
+        }
+      ]
+    },
+    {
+      "id": "BM-213-B08",
+      "text": "Für die übrigen Lieferungen werden Fakturen der gepflegten Art mit Fakturadatum heute angelegt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:104"
+        }
+      ]
+    },
+    {
+      "id": "BM-213-B09",
+      "text": "Entsteht dabei keine einzige Faktura und gibt es Fehler, wird verworfen und mit Fehlermeldung abgebrochen; sonst wird festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:110"
+        },
+        {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:111"
+        },
+        {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:112"
+        },
+        {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:117"
+        }
+      ]
+    },
+    {
+      "id": "BM-213-B10",
+      "text": "Im Intercompany-Lauf wird jede angelegte Faktura per RFC an das Partnersystem übergeben; scheitert die Übergabe, erscheint eine Informationsmeldung und der Lauf geht weiter.",
+      "anchors": [
+        {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:55"
+        },
+        {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:56"
+        },
+        {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:64"
+        },
+        {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-213-B11",
+      "text": "Am Ende wird die Anzahl der angelegten Fakturen ausgegeben.",
+      "anchors": [
+        {
+          "file": "zsd_billing_run.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:30"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:22"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:24"
+        },
+        "meaning": "Intercompany-Lauf?"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:25"
+        },
+        "meaning": "IC-Lauf erzeugen (Konstruktor)"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:27"
+        },
+        "meaning": "Normalen Lauf erzeugen (Konstruktor)"
+      },
+      {
+        "id": "cr",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:29"
+        },
+        "meaning": "Fakturierungslauf ausfuehren"
+      },
+      {
+        "id": "w",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:30"
+        },
+        "meaning": "Anzahl Fakturen ausgeben"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:32"
+        },
+        "meaning": "Fehler aus Ausnahme"
+      },
+      {
+        "id": "mx",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:32"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:33"
+        },
+        "meaning": "Reportende"
+      },
+      {
+        "id": "ks",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:47"
+        },
+        "meaning": "Konstruktor Basis"
+      },
+      {
+        "id": "kq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:50"
+        },
+        "meaning": "Fakturaart je VkOrg und Laufart lesen"
+      },
+      {
+        "id": "kg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:54"
+        },
+        "meaning": "Keine Konfiguration?"
+      },
+      {
+        "id": "kx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:55"
+        },
+        "meaning": "Ausnahme: keine Konfiguration"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:59"
+        }
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:62"
+        },
+        "meaning": "Lauf"
+      },
+      {
+        "id": "rsel",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:63"
+        },
+        "meaning": "Faellige Lieferungen ermitteln (polymorph)"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:64"
+        },
+        "meaning": "Nichts faellig?"
+      },
+      {
+        "id": "rr",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:65"
+        },
+        "meaning": "Lauf ohne Fakturen beenden"
+      },
+      {
+        "id": "rc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:67"
+        },
+        "meaning": "Fakturen anlegen"
+      },
+      {
+        "id": "rp",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:68"
+        },
+        "meaning": "Nachbearbeitung (polymorph)"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "meaning": "Anzahl zurueckgeben",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:70"
+        }
+      },
+      {
+        "id": "bs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:73"
+        },
+        "meaning": "Selektion Basis"
+      },
+      {
+        "id": "bq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:75"
+        },
+        "meaning": "WA-gebuchte Lieferungen mit offenem Fakturastatus lesen"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:83"
+        }
+      },
+      {
+        "id": "cs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:86"
+        },
+        "meaning": "Fakturaanlage"
+      },
+      {
+        "id": "cl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:91"
+        },
+        "meaning": "Je faellige Lieferung"
+      },
+      {
+        "id": "crd",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:92"
+        },
+        "meaning": "Fakturaart der VkOrg nachschlagen"
+      },
+      {
+        "id": "cg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:94"
+        },
+        "meaning": "Keine Fakturaart?"
+      },
+      {
+        "id": "cb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:104"
+        },
+        "meaning": "Fakturen zu den Lieferungen anlegen"
+      },
+      {
+        "id": "cg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:110"
+        },
+        "meaning": "Nur Fehler, keine Faktura?"
+      },
+      {
+        "id": "crb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:111"
+        },
+        "meaning": "Verwerfen"
+      },
+      {
+        "id": "cx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:112"
+        },
+        "meaning": "Ausnahme: nichts fakturiert"
+      },
+      {
+        "id": "ccm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:117"
+        },
+        "meaning": "Fakturen festschreiben"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "meaning": "Angelegte Fakturen zurueckgeben",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:121"
+        }
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:124"
+        },
+        "meaning": "Nachbearbeitung Basis (leer)"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_sd_billing_run.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run.abap:126"
+        }
+      },
+      {
+        "id": "is",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:24"
+        },
+        "meaning": "Konstruktor Intercompany"
+      },
+      {
+        "id": "isup",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:25"
+        },
+        "meaning": "Basiskonstruktor mit Laufart I"
+      },
+      {
+        "id": "iq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:28"
+        },
+        "meaning": "RFC-Ziel des Partnersystems lesen"
+      },
+      {
+        "id": "ig",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:30"
+        },
+        "meaning": "Kein RFC-Ziel?"
+      },
+      {
+        "id": "ix",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:31"
+        },
+        "meaning": "Ausnahme: kein Ziel"
+      },
+      {
+        "id": "ie",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:35"
+        }
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:38"
+        },
+        "meaning": "Selektion Intercompany"
+      },
+      {
+        "id": "ssup",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:40"
+        },
+        "meaning": "Basisselektion"
+      },
+      {
+        "id": "sg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:41"
+        },
+        "meaning": "Lieferungen gefunden?"
+      },
+      {
+        "id": "sq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:43"
+        },
+        "meaning": "Lieferungen mit offener IC-Faktura lesen"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:50"
+        }
+      },
+      {
+        "id": "qs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:53"
+        },
+        "meaning": "Nachbearbeitung Intercompany"
+      },
+      {
+        "id": "ql",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:55"
+        },
+        "meaning": "Je IC-Faktura"
+      },
+      {
+        "id": "qr",
+        "type": "rfc",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:56"
+        },
+        "meaning": "IC-Faktura an Partnersystem uebergeben"
+      },
+      {
+        "id": "qg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:64"
+        },
+        "meaning": "Uebergabe fehlgeschlagen?"
+      },
+      {
+        "id": "qm",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:65"
+        },
+        "meaning": "Information mit Faktura und Fehlertext"
+      },
+      {
+        "id": "qe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_sd_billing_run_ic.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_billing_run_ic.abap:68"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "c1",
+        "condition": "p_ic = abap_true"
+      },
+      {
+        "from": "g",
+        "to": "c2",
+        "condition": "else"
+      },
+      {
+        "from": "c1",
+        "to": "is",
+        "condition": "always"
+      },
+      {
+        "from": "is",
+        "to": "isup",
+        "condition": "always"
+      },
+      {
+        "from": "isup",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "ke",
+        "to": "iq",
+        "condition": "always"
+      },
+      {
+        "from": "iq",
+        "to": "ig",
+        "condition": "always"
+      },
+      {
+        "from": "ig",
+        "to": "ix",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ig",
+        "to": "ie",
+        "condition": "else"
+      },
+      {
+        "from": "ie",
+        "to": "cr",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "ke",
+        "to": "cr",
+        "condition": "always"
+      },
+      {
+        "from": "ks",
+        "to": "kq",
+        "condition": "always"
+      },
+      {
+        "from": "kq",
+        "to": "kg",
+        "condition": "always"
+      },
+      {
+        "from": "kg",
+        "to": "kx",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "kg",
+        "to": "ke",
+        "condition": "else"
+      },
+      {
+        "from": "cr",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "w",
+        "condition": "always"
+      },
+      {
+        "from": "rr",
+        "to": "w",
+        "condition": "always"
+      },
+      {
+        "from": "w",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "rsel",
+        "condition": "always"
+      },
+      {
+        "from": "rsel",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "rsel",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "bs",
+        "to": "bq",
+        "condition": "always"
+      },
+      {
+        "from": "bq",
+        "to": "be",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "ssup",
+        "condition": "always"
+      },
+      {
+        "from": "ssup",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "sg",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "sq",
+        "condition": "rt_due IS NOT INITIAL"
+      },
+      {
+        "from": "sg",
+        "to": "se",
+        "condition": "else"
+      },
+      {
+        "from": "sq",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rr",
+        "condition": "lt_due IS INITIAL"
+      },
+      {
+        "from": "rg",
+        "to": "rc",
+        "condition": "else"
+      },
+      {
+        "from": "rc",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "rp",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "cl",
+        "condition": "always"
+      },
+      {
+        "from": "cl",
+        "to": "crd",
+        "condition": "next row"
+      },
+      {
+        "from": "crd",
+        "to": "cg",
+        "condition": "always"
+      },
+      {
+        "from": "cg",
+        "to": "cl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cl",
+        "to": "cb",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cb",
+        "to": "cg2",
+        "condition": "always"
+      },
+      {
+        "from": "cg2",
+        "to": "crb",
+        "condition": "line_exists( lt_return[ type = 'E' ] ) AND lt_success IS INITIAL"
+      },
+      {
+        "from": "crb",
+        "to": "cx",
+        "condition": "always"
+      },
+      {
+        "from": "cg2",
+        "to": "ccm",
+        "condition": "else"
+      },
+      {
+        "from": "ccm",
+        "to": "ce",
+        "condition": "always"
+      },
+      {
+        "from": "rp",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "rp",
+        "to": "qs",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "re",
+        "condition": "always"
+      },
+      {
+        "from": "qe",
+        "to": "re",
+        "condition": "always"
+      },
+      {
+        "from": "qs",
+        "to": "ql",
+        "condition": "always"
+      },
+      {
+        "from": "ql",
+        "to": "qr",
+        "condition": "next row"
+      },
+      {
+        "from": "qr",
+        "to": "qg",
+        "condition": "always"
+      },
+      {
+        "from": "qg",
+        "to": "qm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "qg",
+        "to": "ql",
+        "condition": "next iteration"
+      },
+      {
+        "from": "qm",
+        "to": "ql",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ql",
+        "to": "qe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "kx",
+        "to": "m",
+        "condition": "zcx_sd_billing"
+      },
+      {
+        "from": "ix",
+        "to": "m",
+        "condition": "zcx_sd_billing"
+      },
+      {
+        "from": "cx",
+        "to": "m",
+        "condition": "zcx_sd_billing"
+      },
+      {
+        "from": "m",
+        "to": "mx",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_sd_billing_run_ic.abap:65 — kein Fachsatz „bei fehlgeschlagener Übergabe wird die Faktura storniert“ — es gibt nur eine Informationsmeldung, die Faktura bleibt festgeschrieben.",
+    "zcl_sd_billing_run.abap:110 — kein Fachsatz „jeder Fehler verhindert die Fakturierung“ — abgebrochen wird nur, wenn gar keine Faktura entstanden ist.",
+    "zcl_sd_billing_run_ic.abap:56 — kein Fachsatz „das Partnersystem bucht die Eingangsrechnung“ — was der Zielbaustein tut, liegt außerhalb des Falls."
+  ],
+  "processDescription": "Der Anwender startet den Lauf für Verkaufsorganisationen und Warenausgangsdaten, wahlweise als Intercompany-Lauf. Der Lauf liest die Fakturaart je Verkaufsorganisation für seine Laufart; der Intercompany-Lauf braucht zusätzlich ein RFC-Ziel. Fehlt eines davon, bricht der Report mit einer Fehlermeldung ab. Fällig sind Lieferungen mit vollständigem Warenausgang und offenem Fakturastatus, im Intercompany-Lauf nur solche mit offener IC-Faktura. Ist nichts fällig, wird null ausgegeben. Sonst werden Fakturen der gepflegten Art angelegt; Lieferungen ohne Fakturaart werden übergangen. Entsteht keine Faktura, wird verworfen und abgebrochen, sonst festgeschrieben. Im Intercompany-Lauf wird jede Faktura per RFC an das Partnersystem übergeben, Fehler erzeugen nur eine Informationsmeldung. Zum Schluss erscheint die Anzahl der Fakturen."
+}

@@ -1,0 +1,28 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante v_g2 -> v_l",
+      "before": "next iteration",
+      "after": "else",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway trägt ihre Bedingung (Sonst-Zweig des IF ohne ELSE); next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante s_g -> s_l2",
+      "before": "next iteration",
+      "after": "else",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway trägt ihre Bedingung (Sonst-Zweig des IF ohne ELSE); next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten k_st",
+      "before": "action zbp_i_reklamation_lhc.abap:129: Status Eskaliert setzen; Kanten ['g_e->k_st[always]', 'k_st->k_l[next iteration]']",
+      "after": "entfernt; neue Kanten ['g_e -> k_l [next iteration]']",
+      "why": "Reine Zuweisung an ein Feld der internen Tabelle (Feldsymbol); die fachliche Wirkung (Status Eskaliert) trägt erst MODIFY ENTITIES (k_m). Der Fachsatz B09 bleibt auf Zeile 129 verankert.",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": []
+}

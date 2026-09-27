@@ -1,0 +1,122 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten cat",
+      "before": "action z_idoc_input_zorders.abap:48 (Mappingfehler: IDoc-Status 51 mit Fehlertext); Kanten hx1->cat [zcx_sd_idoc_map], hx2->cat [zcx_sd_idoc_map], ix1->cat [zcx_sd_idoc_map], ix2->cat [zcx_sd_idoc_map], cat->ge [always]",
+      "after": "entfernt",
+      "why": "Zeile 48 (idoc_status-status = '51') ist eine reine Zuweisung (danach nur APPEND in eine interne Tabelle) - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante hx1->ge",
+      "before": "—",
+      "after": "[zcx_sd_idoc_map]",
+      "why": "Der CATCH-Zweig enthält nur Zuweisungen; die Ausnahme führt zur nächsten Anweisung nach ENDTRY (Zeile 55).",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante hx2->ge",
+      "before": "—",
+      "after": "[zcx_sd_idoc_map]",
+      "why": "Der CATCH-Zweig enthält nur Zuweisungen; die Ausnahme führt zur nächsten Anweisung nach ENDTRY (Zeile 55).",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante ix1->ge",
+      "before": "—",
+      "after": "[zcx_sd_idoc_map]",
+      "why": "Der CATCH-Zweig enthält nur Zuweisungen; die Ausnahme führt zur nächsten Anweisung nach ENDTRY (Zeile 55).",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante ix2->ge",
+      "before": "—",
+      "after": "[zcx_sd_idoc_map]",
+      "why": "Der CATCH-Zweig enthält nur Zuweisungen; die Ausnahme führt zur nächsten Anweisung nach ENDTRY (Zeile 55).",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten st51",
+      "before": "action z_idoc_input_zorders.abap:75 (IDoc-Status 51 mit BAPI-Meldung); Kanten rb->st51 [always], st51->lc [next iteration]",
+      "after": "entfernt",
+      "why": "Zeile 75 ist eine reine Zuweisung (danach nur APPEND in eine interne Tabelle) - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante rb->lc",
+      "before": "—",
+      "after": "[next iteration]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten st51.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten st53",
+      "before": "action z_idoc_input_zorders.abap:88 (IDoc-Status 53 mit Auftragsnummer, Auftrag als Anwendungsobjekt verknüpfen); Kanten cm->st53 [always], st53->lc [next iteration]",
+      "after": "entfernt",
+      "why": "Zeile 88 ist eine reine Zuweisung (danach nur APPEND in eine interne Tabelle) - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante cm->lc",
+      "before": "—",
+      "after": "[next iteration]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten st53.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten wf",
+      "before": "action z_idoc_input_zorders.abap:105 (Workflow-Ergebnis Fehler setzen); Kanten gw->wf [line_exists( idoc_status[ status = '51' ] )], wf->e [always]",
+      "after": "entfernt",
+      "why": "Zeile 105 (workflow_result = '99999') ist eine reine Zuweisung an einen Exportparameter - kein Knoten.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante gw->e",
+      "before": "—",
+      "after": "[line_exists( idoc_status[ status = '51' ] )]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten wf.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten itm",
+      "before": "action zcl_sd_map_item.abap:31 (Position mit Menge und Einteilung aufnehmen); Kanten ig1->itm [else], itm->ie [always]",
+      "after": "entfernt",
+      "why": "Zeile 31 (ls_item-target_qty = ...) ist eine reine Zuweisung in eine Arbeitsstruktur - kein Knoten.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante ig1->ie",
+      "before": "—",
+      "after": "[else]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten itm.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten imat",
+      "before": "action zcl_sd_map_item.abap:59 (Material in letzte Position übernehmen); Kanten ig3->imat [else], ig2->imat [else], imat->ie [always]",
+      "after": "entfernt",
+      "why": "Zeile 59 (Material in die letzte Position eintragen) ist eine reine Zuweisung - kein Knoten.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante ig3->ie",
+      "before": "—",
+      "after": "[else]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten imat.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante ig2->ie",
+      "before": "—",
+      "after": "[else]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten imat.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "Objekt EDIDC (usage read, TABL) ist auf LOOP AT idoc_contrl verankert - das ist ein TABLES-Parameter, kein DB-Lesezugriff. Nicht geändert.",
+    "CASE is_edidd-segnam in beiden Mappern hat kein WHEN OTHERS; der implizite Durchfall zum ENDMETHOD ist wegen der Fabrik nicht erreichbar und daher nicht als Kante modelliert."
+  ]
+}

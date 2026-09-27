@@ -1,0 +1,37 @@
+{
+  "id": "BM-250",
+  "title": "Gateway-$batch-Changeset: Preisfreigabe von Auftragspositionen mit Nachrichtencontainer und Anwendungsprotokoll",
+  "domain": "SD Preisfindung / Preisfreigabe",
+  "band": "komplex",
+  "loc": 313,
+  "constructs": [
+    "CHANGESET_BEGIN/PROCESS/END",
+    "Deferred Mode",
+    "it_changeset_request / ct_changeset_response",
+    "copy_data_to_ref",
+    "/iwbep/if_message_container",
+    "add_messages_from_bapi / add_message_text_only",
+    "BAL_LOG_CREATE / BAL_LOG_MSG_ADD / BAL_DB_SAVE",
+    "ENQUEUE_EVVBAKE/DEQUEUE_EVVBAKE",
+    "BAPI_SALESORDER_CHANGE conditions_in",
+    "FOR GROUPS ... GROUP BY",
+    "CHECK",
+    "CONTINUE"
+  ],
+  "scenario": "Fiori-App für Preisprüfer: mehrere Auftragspositionen mit geprüftem Preis werden in einem $batch-Changeset freigegeben; der Auftrag stand dafür mit einer Liefersperre für Preisprüfung.",
+  "s4_issues": [
+    "VBUP entfällt in S/4 (Status in VBAP)",
+    "KONV durch PRCD_ELEMENTS ersetzt",
+    "BAPI_SALESORDER_CHANGE nicht für Cloud freigegeben"
+  ],
+  "wave": 3,
+  "module": "SD",
+  "edge_constructs": [
+    "Ausnahme propagiert ohne TRY an das Framework",
+    "kein Commit im Code (Framework)",
+    "Fehlerkennzeichen führt erst später zur Ausnahme",
+    "nicht zurückgesetzte Variable nach SELECT SINGLE",
+    "auskommentierter Protokollteil"
+  ],
+  "oo": true
+}

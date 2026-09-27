@@ -1,0 +1,114 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten ida",
+      "before": "action zca_if_monitor.abap:21 (Zeitraum: letzte sieben Tage); Kanten init->ida [always], ida->ie [always]",
+      "after": "entfernt",
+      "why": "zca_if_monitor.abap:21 (s_date-low = sy-datum - 7) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante init->ie",
+      "before": "—",
+      "after": "[always]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten ida.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten sdel",
+      "before": "action zca_if_monitor_cls.abap:47 (Nicht fehlerhafte Einträge ausblenden); Kanten sg->sdel [p_err = abap_true], sdel->sl [always]",
+      "after": "entfernt",
+      "why": "zca_if_monitor_cls.abap:47 (DELETE mt_log WHERE ...) löscht nur in einer internen Tabelle - wie APPEND/CLEAR laut Brief kein Knoten; die Entscheidung trägt das Gateway sg, Fachsatz B02 bleibt.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante sg->sl",
+      "before": "—",
+      "after": "[p_err = abap_true]",
+      "why": "Ersatz für den entfernten Knoten sdel.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten sd",
+      "before": "action zca_if_monitor_cls.abap:56 (Eintrag ausblenden); Kanten sg2->sd [sy-subrc <> 0], sd->sl [next iteration]",
+      "after": "entfernt",
+      "why": "zca_if_monitor_cls.abap:56 (DELETE mt_log) löscht nur die aktuelle Zeile der internen Tabelle - kein Knoten; Fachsatz B03 bleibt. Beide Zweige von sg2 führen damit in die nächste Iteration (Kante sg2 -> sl besteht).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten pcat",
+      "before": "action zca_if_monitor_cls.abap:117 (Ergebnis: nicht erledigt, Text der Ausnahme); Kanten fx1->pcat [zcx_ca_reproc], fx2->pcat [zcx_ca_reproc], pcat->pg5 [always]",
+      "after": "entfernt",
+      "why": "zca_if_monitor_cls.abap:117 (ls_result-ok = abap_false) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante fx1->pg5",
+      "before": "—",
+      "after": "[zcx_ca_reproc]",
+      "why": "Ersatz für pcat: der CATCH-Zweig enthält nur Zuweisungen, danach folgt die Prüfung in Zeile 121.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fx2->pg5",
+      "before": "—",
+      "after": "[zcx_ca_reproc]",
+      "why": "Ersatz für pcat: der CATCH-Zweig enthält nur Zuweisungen, danach folgt die Prüfung in Zeile 121.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten dok",
+      "before": "action zcl_ca_reproc_sd_idoc.abap:54 (Erledigt: nachverarbeitet); Kanten dg4->dok [lv_status = '53'], dok->die [always]",
+      "after": "entfernt",
+      "why": "zcl_ca_reproc_sd_idoc.abap:54 (rs_result-ok = abap_true) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante dg4->die",
+      "before": "—",
+      "after": "[lv_status = '53']",
+      "why": "Ersatz für den entfernten Zuweisungsknoten dok.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten dnok",
+      "before": "action zcl_ca_reproc_sd_idoc.abap:57 (Nicht erledigt: Status weiterhin fehlerhaft); Kanten dg4->dnok [else], dnok->die [always]",
+      "after": "entfernt",
+      "why": "zcl_ca_reproc_sd_idoc.abap:57 (rs_result-message = |...|) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante dg4->die",
+      "before": "—",
+      "after": "[else]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten dnok.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fok",
+      "before": "action zcl_ca_reproc_fi_post.abap:67 (Erledigt mit Belegnummer); Kanten fcm->fok [always], fok->fie [always]",
+      "after": "entfernt",
+      "why": "zcl_ca_reproc_fi_post.abap:67 (rs_result-ok = abap_true) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante fcm->fie",
+      "before": "—",
+      "after": "[always]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten fok.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante oc->oe",
+      "before": "—",
+      "after": "[else]",
+      "why": "CASE e_salv_function hat kein WHEN OTHERS: jede andere Zusatzfunktion des Status ZIF_MON fällt ohne Aktion zum ENDMETHOD durch; dieser Pfad fehlte.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "fcast (zcl_ca_reproc_factory.abap:33, CAST) ist formal eine Zuweisung, trägt aber die Typprüfung (cx_sy_move_cast_error -> ungültiger Handler); daher als action belassen."
+  ]
+}

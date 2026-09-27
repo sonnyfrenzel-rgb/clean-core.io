@@ -1,0 +1,30 @@
+{
+  "id": "BM-203",
+  "title": "Preissimulation mit Preisstrategien je Kundengruppe",
+  "domain": "SD",
+  "band": "mittel",
+  "loc": 115,
+  "constructs": [
+    "REPORT",
+    "lokales Interface",
+    "drei Implementierungen",
+    "Fabrikmethode",
+    "CASE",
+    "SELECT JOIN",
+    "MESSAGE E"
+  ],
+  "scenario": "Innendienst-Report zur Preisauskunft am Telefon; die Preisfindung der Auftragserfassung wird vereinfacht nachgebildet.",
+  "s4_issues": [
+    "Kundenstamm über Business Partner/CVI",
+    "Materialnummer 40 Zeichen",
+    "Preislogik außerhalb der SD-Preisfindung (Konditionstechnik) dupliziert"
+  ],
+  "wave": 3,
+  "module": "SD",
+  "edge_constructs": [
+    "polymorpher Interface-Aufruf",
+    "Fabrik mit CASE",
+    "sy-subrc nur nach erstem SELECT ausgewertet"
+  ],
+  "oo": true
+}

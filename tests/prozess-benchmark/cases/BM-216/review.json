@@ -1,0 +1,9 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "Feld PLANT in BAPI2093_RES_HEAD (lzmm_kitf01.abap:22) nicht sicher belegt; ohne Einfluss auf das Skelett.",
+    "CLEANUP → release_all → Rückkante in den äußeren CATCH (re2→pl3) semantisch richtig."
+  ]
+}

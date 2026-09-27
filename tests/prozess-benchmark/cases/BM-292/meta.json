@@ -1,0 +1,33 @@
+{
+  "id": "BM-292",
+  "title": "Retourenannahme am Schalter: Fakturaprüfung, Positionsauswahl im Popup und Retourenauftrag per Batch-Input",
+  "domain": "Vertrieb am Schalter / Retouren",
+  "band": "komplex",
+  "loc": 193,
+  "constructs": [
+    "CALL TRANSACTION USING bdcdata MODE N UPDATE S MESSAGES INTO",
+    "BDC-Tabelle per VALUE/BASE/FOR",
+    "REUSE_ALV_POPUP_TO_SELECT",
+    "MESSAGE E/W/S/I",
+    "MESSAGE ID ... DISPLAY LIKE",
+    "SELECT SINGLE VBUK",
+    "PERFORM-Kette",
+    "COMMIT WORK"
+  ],
+  "scenario": "Retourenannahme in Filialen, die Rückgaben mit Fakturabezug per Batch-Input über VA01 als Retourenauftrag erfasst.",
+  "s4_issues": [
+    "VBUK entfallen (RFBSK in VBRK)",
+    "Batch-Input auf VA01 bricht bei Bildänderungen",
+    "SAP-GUI-Dynpro nicht in Fiori"
+  ],
+  "wave": 3,
+  "module": "SD",
+  "edge_constructs": [
+    "mehrere MESSAGE E als getrennte Pfadenden",
+    "W-Meldung setzt fort",
+    "Popup-Abbruch per RETURN",
+    "Erfolg aus Batch-Input-Meldungen abgeleitet",
+    "auskommentierter WHEN-Zweig"
+  ],
+  "oo": false
+}

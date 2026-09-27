@@ -1,0 +1,33 @@
+{
+  "id": "BM-208",
+  "title": "Bestellfreigabe-Job mit Zustandsklassen und Freigabeereignis",
+  "domain": "MM",
+  "band": "komplex",
+  "loc": 245,
+  "constructs": [
+    "REPORT mit TOP/C01/F01",
+    "lokales Interface",
+    "Zustandsmuster",
+    "WHILE mit polymorphem Aufruf",
+    "EVENTS/SET HANDLER",
+    "RAISE EXCEPTION",
+    "BAPI_PO_RELEASE",
+    "SWE_EVENT_CREATE",
+    "UPDATE/MODIFY Z-Tabelle"
+  ],
+  "scenario": "Nächtlicher Job eines Einkaufsprojekts, der die Freigabestrategie für Standardbestellungen durch eine budgetbasierte Automatik ersetzt.",
+  "s4_issues": [
+    "EKKO/EKPO-Direktzugriffe (Released-APIs I_PurchaseOrderAPI01)",
+    "Freigabe über BAPI_PO_RELEASE statt Flexible Workflow",
+    "SWE_EVENT_CREATE/BUS2012 statt Flexible Workflow"
+  ],
+  "wave": 3,
+  "module": "MM-PUR",
+  "edge_constructs": [
+    "Zustandswechsel durch Attributzuweisung",
+    "Ausnahme aus Zustand über run() in FORM gefangen",
+    "Commit im Folgezustand schreibt früheres UPDATE mit fest",
+    "Hilfs-FORM, die nur protokolliert"
+  ],
+  "oo": true
+}

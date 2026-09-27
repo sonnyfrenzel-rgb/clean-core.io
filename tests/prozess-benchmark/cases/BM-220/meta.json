@@ -1,0 +1,39 @@
+{
+  "id": "BM-220",
+  "title": "Filialnachschub mit paralleler UB-Anlage, Auslieferung und EWM-Meldung",
+  "domain": "MM",
+  "band": "sehr komplex",
+  "loc": 400,
+  "constructs": [
+    "REPORT mit TOP/C01/F01",
+    "RFC-Funktionsbaustein im Fall",
+    "CALL FUNCTION STARTING NEW TASK DESTINATION IN GROUP",
+    "PERFORMING … ON END OF TASK",
+    "RECEIVE RESULTS",
+    "WAIT FOR ASYNCHRONOUS TASKS UNTIL",
+    "CALL FUNCTION DESTINATION (synchron)",
+    "LOOP … GROUP BY",
+    "statischer Ereignisbehandler",
+    "BAPI_PO_CREATE1",
+    "BAPI_OUTB_DELIVERY_CREATE_STO",
+    "INSERT FROM @( VALUE … )"
+  ],
+  "scenario": "Nächtlicher Filialnachschub eines Handelsunternehmens: aus dem Zentrallager werden Umlagerungsbestellungen, Auslieferungen und EWM-Ankündigungen für bis zu 140 Filialen erzeugt.",
+  "s4_issues": [
+    "MARD-Bestände aus MATDOC",
+    "EKKO/EKPO/EKET-Direktzugriff",
+    "aRFC-Parallelisierung statt bgRFC/Application Jobs",
+    "EWM-Kopplung per Z-RFC statt Standard-Integration",
+    "Materialnummer 40 Zeichen"
+  ],
+  "wave": 3,
+  "module": "MM-PUR/LE",
+  "edge_constructs": [
+    "aRFC mit synchronem Rückfall",
+    "Rückmelde-FORM läuft während WAIT",
+    "RETURN im synchronen Pfad",
+    "Ausnahme im Schleifen-CATCH",
+    "sy-subrc nach Zuweisung ausgewertet"
+  ],
+  "oo": true
+}

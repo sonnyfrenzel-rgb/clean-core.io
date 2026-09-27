@@ -1,0 +1,38 @@
+{
+  "id": "BM-217",
+  "title": "Retourendisposition mit SALV-Oberfläche, Dispositionsstrategien und Gutschrift",
+  "domain": "SD",
+  "band": "sehr komplex",
+  "loc": 406,
+  "constructs": [
+    "REPORT mit TOP/C01/F01",
+    "globale Regelklasse",
+    "AT SELECTION-SCREEN mit AUTHORITY-CHECK in LOOP",
+    "CL_SALV_TABLE mit added_function-Ereignis",
+    "lokales Interface mit drei Strategien",
+    "Fabrik mit CASE/RAISE",
+    "FORM RAISING",
+    "CHECK in LOOP",
+    "BAPI_GOODSMVT_CREATE",
+    "BAPI_BILLINGDOC_CREATEMULTIPLE",
+    "VALUE FOR GROUPS",
+    "LEAVE LIST-PROCESSING"
+  ],
+  "scenario": "Werkzeug des Retourenmanagements: nach Wareneingang der Retoure entscheidet der Sachbearbeiter per Knopfdruck über Wiedereinlagerung, Verschrottung oder Reparatur und erzeugt die Gutschrift.",
+  "s4_issues": [
+    "VBUK entfällt in S/4",
+    "Retourenabwicklung in S/4 über Advanced Returns Management",
+    "VBFA-Struktur in S/4 geändert",
+    "Materialnummer 40 Zeichen"
+  ],
+  "wave": 3,
+  "module": "SD-SLS/MM-IM",
+  "edge_constructs": [
+    "Ereignisbehandler aus ALV-Benutzeraktion",
+    "Ausnahme aus FORM über Strategie in CATCH der Schleife",
+    "Methodenketten auf SALV",
+    "Commit je Warenbewegung",
+    "unbeachtete BAPI-Rückgabe"
+  ],
+  "oo": true
+}

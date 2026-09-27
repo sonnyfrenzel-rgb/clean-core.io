@@ -1,0 +1,1227 @@
+{
+  "id": "BM-291",
+  "title": "QM-Verwendungsentscheid im Wareneingang: Regelvorschlag über Interface-Implementierungen und Buchung per BAPI",
+  "classes": [
+    "K07",
+    "K01",
+    "K03",
+    "K09"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "QALS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zqm_ud_schnell.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_ud_schnell.abap:19"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QAVE",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zqm_ud_schnell.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_ud_schnell.abap:19"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZQM_LIEF_SPERRE",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zqm_ud_schnell_c01.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_ud_schnell_c01.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QAMR",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zqm_ud_schnell_c01.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_ud_schnell_c01.abap:51"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_ud_schnell_c01.abap",
+        "line": 105,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_ud_schnell_c01.abap:105"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_INSPLOT_SETUSAGEDECISION",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_ud_schnell_c01.abap",
+        "line": 125,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_ud_schnell_c01.abap:125"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_ud_schnell_c01.abap",
+        "line": 138,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_ud_schnell_c01.abap:138"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-291-B01",
+      "text": "Das gescannte Prüflos wird nur gelesen, wenn zu ihm noch kein Verwendungsentscheid existiert.",
+      "anchors": [
+        {
+          "file": "zqm_ud_schnell.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-291-B02",
+      "text": "Ist das Los unbekannt oder schon entschieden, wird das als Statusmeldung in Fehleroptik angezeigt und nichts weiter getan; sonst wird das Entscheidungsbild aufgerufen.",
+      "anchors": [
+        {
+          "file": "zqm_ud_schnell.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:25"
+        },
+        {
+          "file": "zqm_ud_schnell.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:26"
+        },
+        {
+          "file": "zqm_ud_schnell.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-291-B03",
+      "text": "Zurück oder Abbrechen verlässt das Entscheidungsbild ohne Entscheid.",
+      "anchors": [
+        {
+          "file": "zqm_ud_schnell.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:37"
+        },
+        {
+          "file": "zqm_ud_schnell.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-291-B04",
+      "text": "Auf Anforderung wird ein Entscheidungsvorschlag ermittelt: vorbelegt ist Annahme mit der Codegruppe WE01.",
+      "anchors": [
+        {
+          "file": "zqm_ud_schnell.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:42"
+        },
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:86"
+        },
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-291-B05",
+      "text": "Die anzuwendenden Regeln hängen von der Prüfart ab: die Lieferanten-Sperrlistenregel gilt immer, die Merkmalsregel nur bei Wareneingangsprüfung (Prüfart 01).",
+      "anchors": [
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:89"
+        },
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:78"
+        },
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-291-B06",
+      "text": "Die Regeln werden der Reihe nach angewandt; die erste, die Zurückweisung ergibt, setzt den Vorschlag auf Zurückweisung und beendet die Bewertung.",
+      "anchors": [
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:90"
+        },
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:91"
+        },
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:92"
+        }
+      ]
+    },
+    {
+      "id": "BM-291-B07",
+      "text": "Die Lieferantenregel weist zurück, wenn der Lieferant des Loses mit noch gültigem Datum auf der QM-Sperrliste steht.",
+      "anchors": [
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:32"
+        },
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-291-B08",
+      "text": "Die Merkmalsregel weist zurück, wenn im Los mindestens ein Merkmal mit Bewertung zurückgewiesen erfasst ist.",
+      "anchors": [
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:51"
+        },
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-291-B09",
+      "text": "Beim Entscheiden muss der Prüfer bestätigen, dass der nicht rücknehmbare Entscheid gebucht werden soll; ohne Bestätigung bleibt er auf dem Bild und es wird nichts gebucht.",
+      "anchors": [
+        {
+          "file": "zqm_ud_schnell.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:46"
+        },
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:105"
+        },
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:113"
+        },
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:114"
+        }
+      ]
+    },
+    {
+      "id": "BM-291-B10",
+      "text": "Der Verwendungsentscheid wird mit Werk, Codegruppe, Code, Erfasser und Datum zum Prüflos per BAPI gesetzt, mit erzwungenem Abschluss.",
+      "anchors": [
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:125"
+        }
+      ]
+    },
+    {
+      "id": "BM-291-B11",
+      "text": "Meldet der BAPI einen Fehler oder Abbruch, wird dessen Meldung als Fehlermeldung ausgegeben und der Prüfer bleibt auf dem Bild.",
+      "anchors": [
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:131"
+        },
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:132"
+        },
+        {
+          "file": "zqm_ud_schnell.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-291-B12",
+      "text": "Sonst wird synchron festgeschrieben, Los und Entscheidungscode werden als Erfolgsmeldung angezeigt und das Bild wird verlassen.",
+      "anchors": [
+        {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:138"
+        },
+        {
+          "file": "zqm_ud_schnell.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:47"
+        },
+        {
+          "file": "zqm_ud_schnell.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:48"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s0",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:16"
+        },
+        "meaning": "Los scannen"
+      },
+      {
+        "id": "rd",
+        "type": "read",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:19"
+        },
+        "meaning": "Offenes Prüflos lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:25"
+        },
+        "meaning": "Los unbekannt oder entschieden?"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:26"
+        },
+        "meaning": "Meldung in Fehleroptik"
+      },
+      {
+        "id": "cs",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:29"
+        },
+        "meaning": "Entscheidungsbild aufrufen"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:30"
+        },
+        "meaning": "Ende Report"
+      },
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:35"
+        },
+        "meaning": "PAI Entscheidungsbild"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:37"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "lv",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:39"
+        },
+        "meaning": "Bild verlassen"
+      },
+      {
+        "id": "cv",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:42"
+        },
+        "meaning": "Vorschlag ermitteln"
+      },
+      {
+        "id": "ce",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:46"
+        },
+        "meaning": "Entscheid buchen"
+      },
+      {
+        "id": "gd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:46"
+        },
+        "meaning": "Entscheid gebucht?"
+      },
+      {
+        "id": "ms2",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:47"
+        },
+        "meaning": "Erfolgsmeldung"
+      },
+      {
+        "id": "lv2",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:48"
+        },
+        "meaning": "Bild verlassen"
+      },
+      {
+        "id": "me",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:51"
+        },
+        "meaning": "Fehlermeldung aus Ausnahme"
+      },
+      {
+        "id": "mee",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:51"
+        },
+        "meaning": "Abbruch, zurück aufs Bild"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_ud_schnell.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell.abap:58"
+        },
+        "meaning": "Ende PAI"
+      },
+      {
+        "id": "sr",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:78"
+        },
+        "meaning": "Regelfabrik"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:81"
+        },
+        "meaning": "WE-Prüfung?"
+      },
+      {
+        "id": "er",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:84"
+        },
+        "meaning": "Regeln zurückgeben"
+      },
+      {
+        "id": "sv",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:86"
+        },
+        "meaning": "Vorschlag ermitteln"
+      },
+      {
+        "id": "cr",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:89"
+        },
+        "meaning": "Regeln holen"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:90"
+        },
+        "meaning": "Regeln"
+      },
+      {
+        "id": "cb",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:91"
+        },
+        "meaning": "Regel bewerten (polymorph)"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:91"
+        },
+        "meaning": "Zurückweisung?"
+      },
+      {
+        "id": "ar",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:92"
+        },
+        "meaning": "Vorschlag Zurückweisung"
+      },
+      {
+        "id": "ev",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:96"
+        },
+        "meaning": "Ende Vorschlag"
+      },
+      {
+        "id": "sl",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:31"
+        },
+        "meaning": "Lieferantenregel"
+      },
+      {
+        "id": "rl",
+        "type": "read",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:32"
+        },
+        "meaning": "Sperrliste lesen"
+      },
+      {
+        "id": "al",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:36"
+        },
+        "meaning": "Ergebnis R oder A"
+      },
+      {
+        "id": "el",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:38"
+        },
+        "meaning": "Ende Lieferantenregel"
+      },
+      {
+        "id": "sk",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:50"
+        },
+        "meaning": "Merkmalsregel"
+      },
+      {
+        "id": "rk",
+        "type": "read",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:51"
+        },
+        "meaning": "Zurückgewiesene Merkmale zählen"
+      },
+      {
+        "id": "ak",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:55"
+        },
+        "meaning": "Ergebnis R oder A"
+      },
+      {
+        "id": "ek",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:57"
+        },
+        "meaning": "Ende Merkmalsregel"
+      },
+      {
+        "id": "se",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:98"
+        },
+        "meaning": "Entscheid buchen"
+      },
+      {
+        "id": "pop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:105"
+        },
+        "meaning": "Rückfrage Entscheid"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:113"
+        },
+        "meaning": "Nicht bestätigt?"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:114"
+        },
+        "meaning": "Ohne Buchung zurück"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:125"
+        },
+        "meaning": "Verwendungsentscheid setzen"
+      },
+      {
+        "id": "gb2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:131"
+        },
+        "meaning": "BAPI-Fehler?"
+      },
+      {
+        "id": "rz2",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:132"
+        },
+        "meaning": "Ausnahme mit BAPI-Meldung"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:138"
+        },
+        "meaning": "Festschreiben mit Warten"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_ud_schnell_c01.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_ud_schnell_c01.abap:142"
+        },
+        "meaning": "Ende Entscheid"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s0",
+        "to": "rd",
+        "condition": "always"
+      },
+      {
+        "from": "rd",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "ms",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ms",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "cs",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "s1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "lv",
+        "condition": "WHEN 'BACK' OR 'CANC'"
+      },
+      {
+        "from": "g1",
+        "to": "cv",
+        "condition": "WHEN 'VORS'"
+      },
+      {
+        "from": "g1",
+        "to": "ce",
+        "condition": "WHEN 'UD'"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "cv",
+        "to": "sv",
+        "condition": "always"
+      },
+      {
+        "from": "ev",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "ee",
+        "to": "gd",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "gd",
+        "condition": "always"
+      },
+      {
+        "from": "rz2",
+        "to": "me",
+        "condition": "lcx_ud"
+      },
+      {
+        "from": "gd",
+        "to": "ms2",
+        "condition": "go_ctrl->entscheiden( gs_los ) = abap_true"
+      },
+      {
+        "from": "ms2",
+        "to": "lv2",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "me",
+        "to": "mee",
+        "condition": "always"
+      },
+      {
+        "from": "sr",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "er",
+        "condition": "iv_art = '01'"
+      },
+      {
+        "from": "gr",
+        "to": "er",
+        "condition": "else"
+      },
+      {
+        "from": "sv",
+        "to": "cr",
+        "condition": "always"
+      },
+      {
+        "from": "cr",
+        "to": "sr",
+        "condition": "always"
+      },
+      {
+        "from": "er",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "lp",
+        "to": "cb",
+        "condition": "next row"
+      },
+      {
+        "from": "cb",
+        "to": "sl",
+        "condition": "always"
+      },
+      {
+        "from": "cb",
+        "to": "sk",
+        "condition": "always"
+      },
+      {
+        "from": "el",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "ek",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "ar",
+        "condition": "lo_regel->bewerten( cs_los ) = gc_rueckw"
+      },
+      {
+        "from": "ar",
+        "to": "ev",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "ev",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sl",
+        "to": "rl",
+        "condition": "always"
+      },
+      {
+        "from": "rl",
+        "to": "al",
+        "condition": "always"
+      },
+      {
+        "from": "al",
+        "to": "el",
+        "condition": "always"
+      },
+      {
+        "from": "sk",
+        "to": "rk",
+        "condition": "always"
+      },
+      {
+        "from": "rk",
+        "to": "ak",
+        "condition": "always"
+      },
+      {
+        "from": "ak",
+        "to": "ek",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "pop",
+        "condition": "always"
+      },
+      {
+        "from": "pop",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "r1",
+        "condition": "lv_answer <> '1'"
+      },
+      {
+        "from": "ga",
+        "to": "bapi",
+        "condition": "else"
+      },
+      {
+        "from": "bapi",
+        "to": "gb2",
+        "condition": "always"
+      },
+      {
+        "from": "gb2",
+        "to": "rz2",
+        "condition": "ls_return-type CA 'EA'"
+      },
+      {
+        "from": "gb2",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "ee",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zqm_ud_schnell_c01.abap:125 — kein Fachsatz „Bestand wird in den frei verwendbaren oder Sperrbestand umgebucht“; Bestandsbuchungsdaten werden nicht übergeben, eine Umbuchung ist aus dem Code nicht belegbar.",
+    "zqm_ud_schnell_c01.abap:90 — kein Fachsatz „alle Regeln werden immer ausgewertet“; die Schleife endet bei der ersten Zurückweisung.",
+    "zqm_ud_schnell.abap:42 — kein Fachsatz „der Vorschlag wird gebucht“; er setzt nur die Bildfelder, gebucht wird erst mit UD.",
+    "zqm_ud_schnell.abap:54 — kein Fachsatz „Prüfbericht wird gedruckt“; der Zweig ist auskommentiert."
+  ],
+  "processDescription": "Der Report liest das gescannte Prüflos nur, wenn es noch keinen Verwendungsentscheid hat; sonst meldet er das in Fehleroptik, andernfalls ruft er Bild 0100. Im PAI verlässt Zurück das Bild. VORS ermittelt einen Vorschlag: Codegruppe WE01 und Annahme als Vorbelegung, dann holt eine Fabrikmethode die Regeln – Lieferanten-Sperrliste immer, Merkmalsregel nur bei Prüfart 01 – und wendet sie polymorph über das Interface an; die erste Zurückweisung setzt den Vorschlag auf R und beendet die Schleife. Die Lieferantenregel prüft die Z-Sperrliste, die Merkmalsregel zählt zurückgewiesene Merkmale in QAMR. UD fragt nach Bestätigung (ohne Ja: zurück ohne Buchung), setzt den Entscheid per BAPI mit erzwungenem Abschluss, wirft bei Fehler eine Ausnahme, die im PAI als Fehlermeldung erscheint, und schreibt sonst fest; dann folgen Erfolgsmeldung und Verlassen des Bildes."
+}

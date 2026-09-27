@@ -1,0 +1,52 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante j_g2 -> j_l",
+      "before": "next iteration",
+      "after": "lines( lt_keys ) < gc_paket AND sy-tabix < lines( lt_abgelaufen )",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway trägt ihre Bedingung wörtlich (CONTINUE-Zweig bzw. Sonst-Zweig des IF ohne ELSE); next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante j_g4 -> j_l",
+      "before": "next iteration",
+      "after": "else",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway trägt ihre Bedingung wörtlich (CONTINUE-Zweig bzw. Sonst-Zweig des IF ohne ELSE); next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante v_g -> v_l",
+      "before": "next iteration",
+      "after": "else",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway trägt ihre Bedingung wörtlich (CONTINUE-Zweig bzw. Sonst-Zweig des IF ohne ELSE); next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante pv_g -> pv_l",
+      "before": "next iteration",
+      "after": "else",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway trägt ihre Bedingung wörtlich (CONTINUE-Zweig bzw. Sonst-Zweig des IF ohne ELSE); next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante p_g -> p_l",
+      "before": "next iteration",
+      "after": "else",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway trägt ihre Bedingung wörtlich (CONTINUE-Zweig bzw. Sonst-Zweig des IF ohne ELSE); next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante s_g -> s_l",
+      "before": "next iteration",
+      "after": "else",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway trägt ihre Bedingung wörtlich (CONTINUE-Zweig bzw. Sonst-Zweig des IF ohne ELSE); next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "save_modified liest ls_kopf-Gesamtwert aus update-kopf; ohne „with full data“ in der Verhaltensdefinition (nicht im Fall) sind unveränderte Felder dort initial, das Event trüge dann Gesamtwert 0. Der Fachsatz B13 („mit Gesamtwert“) ist deshalb nur unter dieser Annahme sicher; nicht geändert.",
+    "freigeben schreibt per WHERE ( Status <> neu ) auch die abgelehnten Angebote (Status F/G/A unverändert) zurück; je nach Umgang des Frameworks mit failed entstehen dabei Protokollsätze ohne echten Statuswechsel. B13 („jeder Statuswechsel“) blendet das aus; nicht geändert, da die Framework-Reaktion auf failed im Fall nicht festgelegt ist."
+  ]
+}

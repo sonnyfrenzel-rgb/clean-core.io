@@ -1,0 +1,2014 @@
+{
+  "id": "BM-259",
+  "title": "Gateway-Service Zeitgenehmigung: offene CATS-Zeiten der Mitarbeiter lesen, korrigieren, genehmigen oder ablehnen",
+  "classes": [
+    "K01",
+    "K02",
+    "K12",
+    "K15"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "CATSDB",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "z_hr_cats_status_upd.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_hr_cats_status_upd.abap:15"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0105",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_hr_zeit_service.abap",
+        "line": 46,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_zeit_service.abap:46"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_HR_MITARBEITER_DER_FK",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_hr_zeit_service.abap",
+        "line": 57,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_zeit_service.abap:57"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZCATSDB",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_hr_zeit_service.abap",
+        "line": 106,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_zeit_service.abap:106"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_HR_CATS_STATUS_UPD",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_hr_zeit_service.abap",
+        "line": 118,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_zeit_service.abap:118"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_hr_zeit_service.abap",
+        "line": 183,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_zeit_service.abap:183"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-259-B01",
+      "text": "Eine Führungskraft sieht nur Zeiten ihrer eigenen Mitarbeiter; die Zuordnung ergibt sich aus der Personalnummer ihres Benutzers und einem Kundenbaustein der HR-IT.",
+      "anchors": [
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:34"
+        },
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:46"
+        },
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-259-B02",
+      "text": "Sind ihr keine Mitarbeiter zugeordnet, wird die Liste mit „Ihnen sind keine Mitarbeiter zugeordnet“ abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:35"
+        },
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-259-B03",
+      "text": "Angezeigt werden die Zeiten dieser Mitarbeiter im Status 20 (wartet auf Genehmigung), auf Wunsch eingeschränkt auf einen Datumsbereich, sortiert nach Mitarbeiter und Tag, mit Gesamtanzahl und seitenweise.",
+      "anchors": [
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:42"
+        },
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:49"
+        },
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:57"
+        },
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-259-B04",
+      "text": "Stunden lassen sich nur an vorhandenen, noch offenen Zeilen korrigieren, und nur auf mehr als 0 bis höchstens 12 Stunden.",
+      "anchors": [
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:69"
+        },
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:140"
+        },
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:145"
+        }
+      ]
+    },
+    {
+      "id": "BM-259-B05",
+      "text": "Eine zulässige Korrektur überschreibt die Stunden mit Änderer und Datum direkt in der Zeiterfassungstabelle und wird festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:150"
+        },
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:154"
+        }
+      ]
+    },
+    {
+      "id": "BM-259-B06",
+      "text": "Genehmigen setzt den Zielstatus 30, Ablehnen den Status 40; eine Ablehnung ohne Begründung wird abgewiesen, jede andere Aktion ist ein technischer Fehler.",
+      "anchors": [
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:88"
+        },
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:90"
+        },
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:92"
+        },
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:98"
+        },
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:100"
+        }
+      ]
+    },
+    {
+      "id": "BM-259-B07",
+      "text": "Ohne gewählte Zeile oder ohne Genehmigungsberechtigung wird die Aktion abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:76"
+        },
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:80"
+        },
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-259-B08",
+      "text": "Jede gewählte Zeile muss einem eigenen Mitarbeiter gehören und noch offen sein; sonst wird die ganze Aktion abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:88"
+        },
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:95"
+        },
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:99"
+        }
+      ]
+    },
+    {
+      "id": "BM-259-B09",
+      "text": "Die Zeiten jedes betroffenen Mitarbeiters werden gesperrt; ist ein Mitarbeiter gesperrt, wird abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:106"
+        },
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:112"
+        }
+      ]
+    },
+    {
+      "id": "BM-259-B10",
+      "text": "Die Statusänderung wird beim Verbucher registriert; der Verbucher setzt Status, Genehmiger, Datum und Begründung für jede Zeile, die noch im Status 20 steht, und bricht sonst die gesamte Verbuchung ab.",
+      "anchors": [
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:118"
+        },
+        {
+          "file": "z_hr_cats_status_upd.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_hr_cats_status_upd.abap:15"
+        },
+        {
+          "file": "z_hr_cats_status_upd.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_hr_cats_status_upd.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-259-B11",
+      "text": "Bei einer Ablehnung erhält jeder betroffene Mitarbeiter mit hinterlegter E-Mail-Adresse eine Mail mit der Begründung; Mailfehler verhindern die Ablehnung nicht.",
+      "anchors": [
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:125"
+        },
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:127"
+        },
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:164"
+        },
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 183,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:183"
+        }
+      ]
+    },
+    {
+      "id": "BM-259-B12",
+      "text": "Anschließend wird festgeschrieben und auf die Verbuchung gewartet; die App erhält die Zahl der gelesenen Zeilen.",
+      "anchors": [
+        {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:131"
+        },
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:113"
+        }
+      ]
+    },
+    {
+      "id": "BM-259-B13",
+      "text": "Jeder fachliche Fehler aus der Genehmigungslogik wird mit seinem Meldungstext als Geschäftsfehler an die App zurückgegeben.",
+      "anchors": [
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:110"
+        },
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:120"
+        },
+        {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:122"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "g_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:29"
+        },
+        "meaning": "Führungskraft öffnet die Liste offener Zeiten"
+      },
+      {
+        "id": "g_c",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:34"
+        },
+        "meaning": "Eigene Mitarbeiter ermitteln"
+      },
+      {
+        "id": "g_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:35"
+        },
+        "meaning": "Keine Mitarbeiter?"
+      },
+      {
+        "id": "g_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:36"
+        },
+        "meaning": "Abweisen: „Ihnen sind keine Mitarbeiter zugeordnet“"
+      },
+      {
+        "id": "g_rt",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:42"
+        },
+        "meaning": "Datumsfilter der Anfrage nachschlagen"
+      },
+      {
+        "id": "g_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:44"
+        },
+        "meaning": "Datumsfilter vorhanden? (dann übernehmen)"
+      },
+      {
+        "id": "g_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:49"
+        },
+        "meaning": "Zeiten im Status 20 (wartet auf Genehmigung) der Mitarbeiter lesen"
+      },
+      {
+        "id": "g_ic",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:57"
+        },
+        "meaning": "Gesamtanzahl vor dem Blättern setzen"
+      },
+      {
+        "id": "g_p",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:58"
+        },
+        "meaning": "Angefragte Seite ausschneiden"
+      },
+      {
+        "id": "g_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:60"
+        },
+        "meaning": "Zeiten zurückgeben"
+      },
+      {
+        "id": "up_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:63"
+        },
+        "meaning": "Führungskraft korrigiert Stunden einer Zeile"
+      },
+      {
+        "id": "up_in",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:66"
+        },
+        "meaning": "Geänderte Zeile übernehmen"
+      },
+      {
+        "id": "up_c",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:69"
+        },
+        "meaning": "Stunden korrigieren"
+      },
+      {
+        "id": "up_ge",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:72"
+        },
+        "meaning": "Fehler an die App melden"
+      },
+      {
+        "id": "up_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:76"
+        },
+        "meaning": "Korrigierte Zeile zurückgeben"
+      },
+      {
+        "id": "ea_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:79"
+        },
+        "meaning": "Funktionsimport Genehmigen/Ablehnen"
+      },
+      {
+        "id": "ea_cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:88"
+        },
+        "meaning": "Genehmigen / Ablehnen / sonstiges?"
+      },
+      {
+        "id": "ea_a1",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:90"
+        },
+        "meaning": "Zielstatus 30 (genehmigt)"
+      },
+      {
+        "id": "ea_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:92"
+        },
+        "meaning": "Ablehnung ohne Begründung?"
+      },
+      {
+        "id": "ea_x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:93"
+        },
+        "meaning": "Abweisen: „Ablehnung nur mit Begründung“"
+      },
+      {
+        "id": "ea_a2",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:98"
+        },
+        "meaning": "Zielstatus 40 (abgelehnt)"
+      },
+      {
+        "id": "ea_x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:100"
+        },
+        "meaning": "Unbekannte Aktion: technischer Fehler"
+      },
+      {
+        "id": "ea_c",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:106"
+        },
+        "meaning": "Status der gewählten Zeilen setzen"
+      },
+      {
+        "id": "ea_ge",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:110"
+        },
+        "meaning": "Fehler an die App melden"
+      },
+      {
+        "id": "ea_o",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:113"
+        },
+        "meaning": "Anzahl bearbeiteter Zeilen zurückgeben"
+      },
+      {
+        "id": "ea_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:115"
+        },
+        "meaning": "Ende Funktionsimport"
+      },
+      {
+        "id": "gf_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:118"
+        },
+        "meaning": "Fehler aufbereiten"
+      },
+      {
+        "id": "gf_o",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:120"
+        },
+        "meaning": "Fehlertext in den Nachrichtencontainer"
+      },
+      {
+        "id": "gf_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zhr_zeit_dpc_ext.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zhr_zeit_dpc_ext.abap:122"
+        },
+        "meaning": "Geschäftsausnahme: Anfrage abgewiesen"
+      },
+      {
+        "id": "u_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:42"
+        },
+        "meaning": "Mitarbeiter der Führungskraft ermitteln"
+      },
+      {
+        "id": "u_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:46"
+        },
+        "meaning": "Personalnummer zum Benutzer lesen"
+      },
+      {
+        "id": "u_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:52"
+        },
+        "meaning": "Keine Personalnummer?"
+      },
+      {
+        "id": "u_x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:53"
+        },
+        "meaning": "Keine Mitarbeiter"
+      },
+      {
+        "id": "u_f",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:57"
+        },
+        "meaning": "Mitarbeiter der geleiteten Organisationseinheiten ermitteln"
+      },
+      {
+        "id": "u_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:65"
+        },
+        "meaning": "Ermittlung fehlgeschlagen?"
+      },
+      {
+        "id": "u_x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:66"
+        },
+        "meaning": "Keine Mitarbeiter"
+      },
+      {
+        "id": "u_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:70"
+        },
+        "meaning": "Personalnummern zurückgeben"
+      },
+      {
+        "id": "st_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:73"
+        },
+        "meaning": "Status setzen"
+      },
+      {
+        "id": "st_g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:76"
+        },
+        "meaning": "Keine Zeile gewählt?"
+      },
+      {
+        "id": "st_x0",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:77"
+        },
+        "meaning": "Ausnahme „keine Auswahl“"
+      },
+      {
+        "id": "st_a",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:80"
+        },
+        "meaning": "Genehmigungsberechtigung prüfen"
+      },
+      {
+        "id": "st_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:82"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "st_x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:83"
+        },
+        "meaning": "Ausnahme „keine Berechtigung“"
+      },
+      {
+        "id": "st_c",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:86"
+        },
+        "meaning": "Eigene Mitarbeiter ermitteln"
+      },
+      {
+        "id": "st_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:88"
+        },
+        "meaning": "Gewählte Zeiten lesen"
+      },
+      {
+        "id": "st_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:94"
+        },
+        "meaning": "Jede Zeile prüfen"
+      },
+      {
+        "id": "st_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:95"
+        },
+        "meaning": "Fremder Mitarbeiter?"
+      },
+      {
+        "id": "st_x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:96"
+        },
+        "meaning": "Ausnahme „fremder Mitarbeiter“"
+      },
+      {
+        "id": "st_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:99"
+        },
+        "meaning": "Zeile nicht offen?"
+      },
+      {
+        "id": "st_x3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:100"
+        },
+        "meaning": "Ausnahme „nicht offen“"
+      },
+      {
+        "id": "st_l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:105"
+        },
+        "meaning": "Je Mitarbeiter sperren"
+      },
+      {
+        "id": "st_q",
+        "type": "lock",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:106"
+        },
+        "meaning": "Zeiten des Mitarbeiters sperren"
+      },
+      {
+        "id": "st_g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:112"
+        },
+        "meaning": "Gesperrt?"
+      },
+      {
+        "id": "st_x4",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:113"
+        },
+        "meaning": "Ausnahme „gesperrt“"
+      },
+      {
+        "id": "st_u",
+        "type": "update_task",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:118"
+        },
+        "meaning": "Statusänderung beim Verbucher registrieren"
+      },
+      {
+        "id": "st_g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:125"
+        },
+        "meaning": "Ablehnung?"
+      },
+      {
+        "id": "st_l3",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:126"
+        },
+        "meaning": "Je betroffenem Mitarbeiter"
+      },
+      {
+        "id": "st_b",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:127"
+        },
+        "meaning": "Mitarbeiter benachrichtigen"
+      },
+      {
+        "id": "st_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:131"
+        },
+        "meaning": "Festschreiben und Verbuchung abwarten"
+      },
+      {
+        "id": "st_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:133"
+        },
+        "meaning": "Anzahl gelesener Zeilen zurückgeben"
+      },
+      {
+        "id": "sk_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:136"
+        },
+        "meaning": "Stunden korrigieren"
+      },
+      {
+        "id": "sk_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:137"
+        },
+        "meaning": "Zeile lesen"
+      },
+      {
+        "id": "sk_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:140"
+        },
+        "meaning": "Nicht vorhanden oder nicht offen?"
+      },
+      {
+        "id": "sk_x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:141"
+        },
+        "meaning": "Ausnahme „nicht offen“"
+      },
+      {
+        "id": "sk_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:145"
+        },
+        "meaning": "Stunden nicht zwischen 0 und 12?"
+      },
+      {
+        "id": "sk_x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:146"
+        },
+        "meaning": "Ausnahme „Stunden ungültig“"
+      },
+      {
+        "id": "sk_w",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:150"
+        },
+        "meaning": "Stunden mit Änderer und Datum direkt überschreiben"
+      },
+      {
+        "id": "sk_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:154"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "sk_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:155"
+        },
+        "meaning": "Rückkehr"
+      },
+      {
+        "id": "b_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:158"
+        },
+        "meaning": "Ablehnung mitteilen"
+      },
+      {
+        "id": "b_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:164"
+        },
+        "meaning": "E-Mail-Adresse des Mitarbeiters lesen"
+      },
+      {
+        "id": "b_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:170"
+        },
+        "meaning": "Keine Adresse?"
+      },
+      {
+        "id": "b_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:171"
+        },
+        "meaning": "Keine Nachricht"
+      },
+      {
+        "id": "b_d",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:178"
+        },
+        "meaning": "Mail „Zeiterfassung: Ablehnung“ mit Begründung erstellen"
+      },
+      {
+        "id": "b_snd",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 183,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:183"
+        },
+        "meaning": "Mail an den Mitarbeiter senden"
+      },
+      {
+        "id": "b_x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:186"
+        },
+        "meaning": "Mailfehler ignorieren"
+      },
+      {
+        "id": "b_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_zeit_service.abap",
+          "line": 188,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_zeit_service.abap:188"
+        },
+        "meaning": "Rückkehr"
+      },
+      {
+        "id": "us_s",
+        "type": "start",
+        "anchor": {
+          "file": "z_hr_cats_status_upd.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_hr_cats_status_upd.abap:1"
+        },
+        "meaning": "Verbuchung Statusänderung"
+      },
+      {
+        "id": "us_l",
+        "type": "loop",
+        "anchor": {
+          "file": "z_hr_cats_status_upd.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_hr_cats_status_upd.abap:14"
+        },
+        "meaning": "Jede Zeile"
+      },
+      {
+        "id": "us_w",
+        "type": "write",
+        "anchor": {
+          "file": "z_hr_cats_status_upd.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_hr_cats_status_upd.abap:15"
+        },
+        "meaning": "Status, Genehmiger, Datum und Begründung setzen, nur wenn noch Status 20"
+      },
+      {
+        "id": "us_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_hr_cats_status_upd.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_hr_cats_status_upd.abap:21"
+        },
+        "meaning": "Zeile nicht (mehr) offen?"
+      },
+      {
+        "id": "us_o",
+        "type": "output",
+        "anchor": {
+          "file": "z_hr_cats_status_upd.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_hr_cats_status_upd.abap:23"
+        },
+        "meaning": "Abbruchmeldung ZHR_CATS 031"
+      },
+      {
+        "id": "us_x",
+        "type": "end",
+        "anchor": {
+          "file": "z_hr_cats_status_upd.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_hr_cats_status_upd.abap:23"
+        },
+        "meaning": "Verbuchung abgebrochen, alle Statusänderungen zurückgerollt"
+      },
+      {
+        "id": "us_e",
+        "type": "end",
+        "anchor": {
+          "file": "z_hr_cats_status_upd.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_hr_cats_status_upd.abap:27"
+        },
+        "meaning": "Verbuchung beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "g_s",
+        "to": "g_c",
+        "condition": "always"
+      },
+      {
+        "from": "g_c",
+        "to": "u_s",
+        "condition": "always"
+      },
+      {
+        "from": "u_s",
+        "to": "u_r",
+        "condition": "always"
+      },
+      {
+        "from": "u_r",
+        "to": "u_g1",
+        "condition": "always"
+      },
+      {
+        "from": "u_g1",
+        "to": "u_x1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "u_g1",
+        "to": "u_f",
+        "condition": "else"
+      },
+      {
+        "from": "u_f",
+        "to": "u_g2",
+        "condition": "always"
+      },
+      {
+        "from": "u_g2",
+        "to": "u_x2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "u_g2",
+        "to": "u_e",
+        "condition": "else"
+      },
+      {
+        "from": "u_x1",
+        "to": "g_g",
+        "condition": "always"
+      },
+      {
+        "from": "u_x2",
+        "to": "g_g",
+        "condition": "always"
+      },
+      {
+        "from": "u_e",
+        "to": "g_g",
+        "condition": "always"
+      },
+      {
+        "from": "g_g",
+        "to": "g_x",
+        "condition": "lt_r_pernr IS INITIAL"
+      },
+      {
+        "from": "g_g",
+        "to": "g_rt",
+        "condition": "else"
+      },
+      {
+        "from": "g_rt",
+        "to": "g_g2",
+        "condition": "always"
+      },
+      {
+        "from": "g_g2",
+        "to": "g_r",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_g2",
+        "to": "g_r",
+        "condition": "else"
+      },
+      {
+        "from": "g_r",
+        "to": "g_ic",
+        "condition": "always"
+      },
+      {
+        "from": "g_ic",
+        "to": "g_p",
+        "condition": "always"
+      },
+      {
+        "from": "g_p",
+        "to": "g_e",
+        "condition": "always"
+      },
+      {
+        "from": "up_s",
+        "to": "up_in",
+        "condition": "always"
+      },
+      {
+        "from": "up_in",
+        "to": "up_c",
+        "condition": "always"
+      },
+      {
+        "from": "up_c",
+        "to": "sk_s",
+        "condition": "always"
+      },
+      {
+        "from": "sk_s",
+        "to": "sk_r",
+        "condition": "always"
+      },
+      {
+        "from": "sk_r",
+        "to": "sk_g1",
+        "condition": "always"
+      },
+      {
+        "from": "sk_g1",
+        "to": "sk_x1",
+        "condition": "sy-subrc <> 0 OR ls_zeit-status <> gc_freigegeben"
+      },
+      {
+        "from": "sk_g1",
+        "to": "sk_g2",
+        "condition": "else"
+      },
+      {
+        "from": "sk_g2",
+        "to": "sk_x2",
+        "condition": "iv_stunden <= 0 OR iv_stunden > gc_max_stunden"
+      },
+      {
+        "from": "sk_g2",
+        "to": "sk_w",
+        "condition": "else"
+      },
+      {
+        "from": "sk_w",
+        "to": "sk_cm",
+        "condition": "always"
+      },
+      {
+        "from": "sk_cm",
+        "to": "sk_e",
+        "condition": "always"
+      },
+      {
+        "from": "sk_x1",
+        "to": "up_ge",
+        "condition": "zcx_hr_zeit"
+      },
+      {
+        "from": "sk_x2",
+        "to": "up_ge",
+        "condition": "zcx_hr_zeit"
+      },
+      {
+        "from": "up_ge",
+        "to": "gf_s",
+        "condition": "always"
+      },
+      {
+        "from": "sk_e",
+        "to": "up_e",
+        "condition": "always"
+      },
+      {
+        "from": "ea_s",
+        "to": "ea_cs",
+        "condition": "always"
+      },
+      {
+        "from": "ea_cs",
+        "to": "ea_a1",
+        "condition": "WHEN 'Genehmigen'"
+      },
+      {
+        "from": "ea_cs",
+        "to": "ea_g",
+        "condition": "WHEN 'Ablehnen'"
+      },
+      {
+        "from": "ea_cs",
+        "to": "ea_x2",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "ea_g",
+        "to": "ea_x1",
+        "condition": "lv_grund IS INITIAL"
+      },
+      {
+        "from": "ea_g",
+        "to": "ea_a2",
+        "condition": "else"
+      },
+      {
+        "from": "ea_a1",
+        "to": "ea_c",
+        "condition": "always"
+      },
+      {
+        "from": "ea_a2",
+        "to": "ea_c",
+        "condition": "always"
+      },
+      {
+        "from": "ea_c",
+        "to": "st_s",
+        "condition": "always"
+      },
+      {
+        "from": "st_s",
+        "to": "st_g0",
+        "condition": "always"
+      },
+      {
+        "from": "st_g0",
+        "to": "st_x0",
+        "condition": "it_counter IS INITIAL"
+      },
+      {
+        "from": "st_g0",
+        "to": "st_a",
+        "condition": "else"
+      },
+      {
+        "from": "st_a",
+        "to": "st_g1",
+        "condition": "always"
+      },
+      {
+        "from": "st_g1",
+        "to": "st_x1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "st_g1",
+        "to": "st_c",
+        "condition": "else"
+      },
+      {
+        "from": "st_c",
+        "to": "u_s",
+        "condition": "always"
+      },
+      {
+        "from": "u_x1",
+        "to": "st_r",
+        "condition": "always"
+      },
+      {
+        "from": "u_x2",
+        "to": "st_r",
+        "condition": "always"
+      },
+      {
+        "from": "u_e",
+        "to": "st_r",
+        "condition": "always"
+      },
+      {
+        "from": "st_r",
+        "to": "st_l",
+        "condition": "always"
+      },
+      {
+        "from": "st_l",
+        "to": "st_g2",
+        "condition": "next row"
+      },
+      {
+        "from": "st_g2",
+        "to": "st_x2",
+        "condition": "ls_zeit-pernr NOT IN lt_r_pernr OR lt_r_pernr IS INITIAL"
+      },
+      {
+        "from": "st_g2",
+        "to": "st_g3",
+        "condition": "else"
+      },
+      {
+        "from": "st_g3",
+        "to": "st_x3",
+        "condition": "ls_zeit-status <> gc_freigegeben"
+      },
+      {
+        "from": "st_g3",
+        "to": "st_l",
+        "condition": "else"
+      },
+      {
+        "from": "st_l",
+        "to": "st_l2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "st_l2",
+        "to": "st_q",
+        "condition": "next row"
+      },
+      {
+        "from": "st_q",
+        "to": "st_g4",
+        "condition": "always"
+      },
+      {
+        "from": "st_g4",
+        "to": "st_x4",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "st_g4",
+        "to": "st_l2",
+        "condition": "else"
+      },
+      {
+        "from": "st_l2",
+        "to": "st_u",
+        "condition": "no more rows"
+      },
+      {
+        "from": "st_u",
+        "to": "st_g5",
+        "condition": "always"
+      },
+      {
+        "from": "st_g5",
+        "to": "st_l3",
+        "condition": "iv_status = gc_abgelehnt"
+      },
+      {
+        "from": "st_g5",
+        "to": "st_cm",
+        "condition": "else"
+      },
+      {
+        "from": "st_l3",
+        "to": "st_b",
+        "condition": "next row"
+      },
+      {
+        "from": "st_b",
+        "to": "b_s",
+        "condition": "always"
+      },
+      {
+        "from": "b_s",
+        "to": "b_r",
+        "condition": "always"
+      },
+      {
+        "from": "b_r",
+        "to": "b_g",
+        "condition": "always"
+      },
+      {
+        "from": "b_g",
+        "to": "b_x",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "b_g",
+        "to": "b_d",
+        "condition": "else"
+      },
+      {
+        "from": "b_d",
+        "to": "b_snd",
+        "condition": "always"
+      },
+      {
+        "from": "b_snd",
+        "to": "b_e",
+        "condition": "always"
+      },
+      {
+        "from": "b_d",
+        "to": "b_x2",
+        "condition": "cx_bcs"
+      },
+      {
+        "from": "b_snd",
+        "to": "b_x2",
+        "condition": "cx_bcs"
+      },
+      {
+        "from": "b_x",
+        "to": "st_l3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "b_x2",
+        "to": "st_l3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "b_e",
+        "to": "st_l3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "st_l3",
+        "to": "st_cm",
+        "condition": "no more rows"
+      },
+      {
+        "from": "st_cm",
+        "to": "st_e",
+        "condition": "always"
+      },
+      {
+        "from": "st_x0",
+        "to": "ea_ge",
+        "condition": "zcx_hr_zeit"
+      },
+      {
+        "from": "st_x1",
+        "to": "ea_ge",
+        "condition": "zcx_hr_zeit"
+      },
+      {
+        "from": "st_x2",
+        "to": "ea_ge",
+        "condition": "zcx_hr_zeit"
+      },
+      {
+        "from": "st_x3",
+        "to": "ea_ge",
+        "condition": "zcx_hr_zeit"
+      },
+      {
+        "from": "st_x4",
+        "to": "ea_ge",
+        "condition": "zcx_hr_zeit"
+      },
+      {
+        "from": "ea_ge",
+        "to": "gf_s",
+        "condition": "always"
+      },
+      {
+        "from": "st_e",
+        "to": "ea_o",
+        "condition": "always"
+      },
+      {
+        "from": "ea_o",
+        "to": "ea_e",
+        "condition": "always"
+      },
+      {
+        "from": "gf_s",
+        "to": "gf_o",
+        "condition": "always"
+      },
+      {
+        "from": "gf_o",
+        "to": "gf_x",
+        "condition": "always"
+      },
+      {
+        "from": "us_s",
+        "to": "us_l",
+        "condition": "always"
+      },
+      {
+        "from": "us_l",
+        "to": "us_w",
+        "condition": "next row"
+      },
+      {
+        "from": "us_w",
+        "to": "us_g",
+        "condition": "always"
+      },
+      {
+        "from": "us_g",
+        "to": "us_o",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "us_o",
+        "to": "us_x",
+        "condition": "always"
+      },
+      {
+        "from": "us_g",
+        "to": "us_l",
+        "condition": "else"
+      },
+      {
+        "from": "us_l",
+        "to": "us_e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_hr_zeit_service.abap:131 — kein Fachsatz „die App erhält die Zahl erfolgreich genehmigter Zeilen“ (das Ergebnis der Verbuchung wird nicht ausgewertet; gezählt werden die gelesenen Zeilen, auch wenn der Verbucher abbricht)",
+    "zcl_hr_zeit_service.abap:88 — kein Fachsatz „unbekannte Zeilennummern werden abgewiesen“ (sie fehlen einfach im Leseergebnis und fallen erst im Verbucher auf)",
+    "zcl_hr_zeit_service.abap:150 — kein Fachsatz „die Korrektur wird mit Änderungsbeleg/CATS-Verbuchung gebucht“ (direktes UPDATE ohne Sperre und ohne Prüfung der Zugehörigkeit zum eigenen Mitarbeiter)",
+    "z_hr_cats_status_upd.abap:15 — kein Fachsatz „die Zeiten werden in die Lohnabrechnung übertragen“ (nur der Status wird gesetzt; der Transfer liegt, laut Kommentar, in CAT6/CAT7/CATM)"
+  ],
+  "processDescription": "Führungskräfte genehmigen in einer eigenen Fiori-App die erfassten Zeiten ihrer Mitarbeiter. Welche Mitarbeiter das sind, ergibt sich aus der Personalnummer des Benutzers und einem Kundenbaustein; ohne Mitarbeiter wird die Liste abgewiesen. Angezeigt werden die Zeiten im Status 20, auf Wunsch nach Datum gefiltert, mit Gesamtanzahl und seitenweise. Stunden lassen sich an offenen Zeilen auf mehr als 0 bis 12 Stunden korrigieren; die Korrektur wird direkt in die Zeiterfassungstabelle geschrieben. Genehmigen setzt Status 30, Ablehnen Status 40 und verlangt eine Begründung. Vor der Statusänderung werden Auswahl, Genehmigungsberechtigung, Zugehörigkeit jeder Zeile zu eigenen Mitarbeitern und der offene Status geprüft und die betroffenen Mitarbeiter gesperrt; jede Verletzung weist die ganze Aktion mit Meldung ab. Die Statusänderung läuft über einen Verbuchungsbaustein, der bei einer nicht mehr offenen Zeile die gesamte Verbuchung abbricht. Bei Ablehnung erhalten die Mitarbeiter eine Mail mit Begründung. Danach wird festgeschrieben und die Zahl der Zeilen zurückgemeldet."
+}

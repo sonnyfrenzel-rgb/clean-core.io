@@ -1,0 +1,1098 @@
+{
+  "id": "BM-248",
+  "title": "Gateway GET_ENTITYSET: Lagerbestand je Werk mit Filter, Berechtigung, Reservierung und Paging",
+  "classes": [
+    "K01",
+    "K04",
+    "K15"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "MARD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_zmm_bestand_dpc_ext.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zmm_bestand_dpc_ext.abap:75"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_zmm_bestand_dpc_ext.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zmm_bestand_dpc_ext.abap:75"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MAKT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_zmm_bestand_dpc_ext.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zmm_bestand_dpc_ext.abap:75"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T001W",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_zmm_bestand_dpc_ext.abap",
+        "line": 128,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zmm_bestand_dpc_ext.abap:128"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RESB",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_bestand_helper.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_bestand_helper.abap:40"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "/IWBEP/CL_MGW_DATA_UTIL",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_zmm_bestand_dpc_ext.abap",
+        "line": 109,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zmm_bestand_dpc_ext.abap:109"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-248-B01",
+      "text": "Die App kann die Bestandsliste nach Werk, Material, Lagerort und „nur positive Bestände“ filtern; jeder andere Filter wird als technischer Fehler abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:39"
+        },
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:42"
+        },
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-248-B02",
+      "text": "Ohne Werksfilter wird die Anfrage mit der Meldung „Bitte mindestens ein Werk filtern“ abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:59"
+        },
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-248-B03",
+      "text": "Die gefilterten Werke werden aufgelöst und auf die Werke reduziert, für die der Benutzer Materialbelege anzeigen darf.",
+      "anchors": [
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:66"
+        },
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:128"
+        },
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:133"
+        },
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:136"
+        }
+      ]
+    },
+    {
+      "id": "BM-248-B04",
+      "text": "Bleibt kein berechtigtes Werk übrig, wird die Anfrage mit „Keine Berechtigung für die gewählten Werke“ abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:67"
+        },
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-248-B05",
+      "text": "Gelesen werden je Material, Werk und Lagerort frei verwendbarer, Qualitätsprüf- und gesperrter Bestand mit Materialkurztext in Anmeldesprache und Basismengeneinheit, ohne zum Löschen vorgemerkte Lagerortsegmente.",
+      "anchors": [
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-248-B06",
+      "text": "Auf Wunsch werden Lagerorte ohne jeden positiven Bestand entfernt.",
+      "anchors": [
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:87"
+        },
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-248-B07",
+      "text": "Je Zeile wird der Gesamtbestand als Summe der drei Bestandsarten gebildet.",
+      "anchors": [
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-248-B08",
+      "text": "Die reservierte Menge ist die Summe offener Reservierungen (Bedarf minus Entnahme) der Bedarfsarten AR und SB ohne gelöschte und endausgefasste Positionen, nie negativ, und wird je Material/Werk/Lagerort nur einmal gelesen.",
+      "anchors": [
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:94"
+        },
+        {
+          "file": "zcl_mm_bestand_helper.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_bestand_helper.abap:31"
+        },
+        {
+          "file": "zcl_mm_bestand_helper.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_bestand_helper.abap:40"
+        },
+        {
+          "file": "zcl_mm_bestand_helper.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_bestand_helper.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-248-B09",
+      "text": "Verfügbar ist der frei verwendbare Bestand abzüglich der Reservierung; die Ampel ist rot ohne verfügbare Menge, gelb unter einem Fünftel des freien Bestands, sonst grün.",
+      "anchors": [
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:97"
+        },
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:98"
+        }
+      ]
+    },
+    {
+      "id": "BM-248-B10",
+      "text": "Wird die Gesamtanzahl angefragt, wird sie vor dem Blättern über alle Treffer ermittelt.",
+      "anchors": [
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:104"
+        },
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:105"
+        }
+      ]
+    },
+    {
+      "id": "BM-248-B11",
+      "text": "Die Liste wird nach der angefragten Reihenfolge sortiert und bei $top/$skip auf die angefragte Seite beschnitten.",
+      "anchors": [
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:109"
+        },
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:116"
+        },
+        {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:117"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:21"
+        },
+        "meaning": "App fragt die Bestandsliste an (OData GET auf Entitätsmenge)"
+      },
+      {
+        "id": "f",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:39"
+        },
+        "meaning": "Filterbedingungen der Anfrage übernehmen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:41"
+        },
+        "meaning": "Jede Filtereigenschaft auswerten"
+      },
+      {
+        "id": "c1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:42"
+        },
+        "meaning": "Welche Filtereigenschaft?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:52"
+        },
+        "meaning": "Nicht unterstützter Filter: technischer Fehler"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:59"
+        },
+        "meaning": "Kein Werk gefiltert?"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:60"
+        },
+        "meaning": "Abweisen: mindestens ein Werk filtern"
+      },
+      {
+        "id": "cw",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:66"
+        },
+        "meaning": "Werke auf berechtigte reduzieren"
+      },
+      {
+        "id": "ws",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:126"
+        },
+        "meaning": "Berechtigungsfilter Werke"
+      },
+      {
+        "id": "wr",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:128"
+        },
+        "meaning": "Werke zum Filter auflösen"
+      },
+      {
+        "id": "wl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:132"
+        },
+        "meaning": "Jedes Werk prüfen"
+      },
+      {
+        "id": "wa",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:133"
+        },
+        "meaning": "Anzeigeberechtigung Materialbelege im Werk prüfen"
+      },
+      {
+        "id": "wg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:136"
+        },
+        "meaning": "Berechtigt? (dann Werk übernehmen)"
+      },
+      {
+        "id": "we",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:140"
+        },
+        "meaning": "Berechtigte Werke zurückgeben"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:67"
+        },
+        "meaning": "Kein berechtigtes Werk?"
+      },
+      {
+        "id": "x3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:68"
+        },
+        "meaning": "Abweisen: keine Berechtigung für die Werke"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:75"
+        },
+        "meaning": "Lagerortbestände (frei, Qualität, gesperrt) mit Text und Basiseinheit lesen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:87"
+        },
+        "meaning": "Nur positive Bestände gewünscht?"
+      },
+      {
+        "id": "d",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:88"
+        },
+        "meaning": "Lagerorte ohne positiven Bestand entfernen"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:92"
+        },
+        "meaning": "Jede Bestandszeile anreichern"
+      },
+      {
+        "id": "a1",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:93"
+        },
+        "meaning": "Gesamtbestand bilden"
+      },
+      {
+        "id": "hc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:94"
+        },
+        "meaning": "Offene Reservierungsmenge ermitteln"
+      },
+      {
+        "id": "hs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_bestand_helper.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_bestand_helper.abap:30"
+        },
+        "meaning": "Reservierungsmenge je Material/Werk/Lagerort"
+      },
+      {
+        "id": "hr",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_bestand_helper.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_bestand_helper.abap:31"
+        },
+        "meaning": "Bereits ermittelte Menge nachschlagen"
+      },
+      {
+        "id": "hg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_bestand_helper.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_bestand_helper.abap:33"
+        },
+        "meaning": "Schon ermittelt?"
+      },
+      {
+        "id": "he1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_bestand_helper.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_bestand_helper.abap:35"
+        },
+        "meaning": "Gepufferte Menge zurückgeben"
+      },
+      {
+        "id": "hq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_bestand_helper.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_bestand_helper.abap:40"
+        },
+        "meaning": "Offene Reservierungen (Bedarf minus Entnahme) summieren"
+      },
+      {
+        "id": "hg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_bestand_helper.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_bestand_helper.abap:49"
+        },
+        "meaning": "Negative Summe?"
+      },
+      {
+        "id": "ha",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_bestand_helper.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_bestand_helper.abap:50"
+        },
+        "meaning": "Auf null begrenzen"
+      },
+      {
+        "id": "he",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_bestand_helper.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_bestand_helper.abap:55"
+        },
+        "meaning": "Menge zurückgeben"
+      },
+      {
+        "id": "a2",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:97"
+        },
+        "meaning": "Verfügbare Menge = frei verwendbar minus reserviert"
+      },
+      {
+        "id": "a3",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:98"
+        },
+        "meaning": "Ampel: rot ohne Verfügbarkeit, gelb unter 20 % des freien Bestands, sonst grün"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:104"
+        },
+        "meaning": "Gesamtanzahl angefragt?"
+      },
+      {
+        "id": "a4",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:105"
+        },
+        "meaning": "Gesamtanzahl vor dem Blättern setzen"
+      },
+      {
+        "id": "ob",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:109"
+        },
+        "meaning": "Nach angefragter Sortierung ordnen"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:116"
+        },
+        "meaning": "Blättern angefragt?"
+      },
+      {
+        "id": "pg",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:117"
+        },
+        "meaning": "Seite ausschneiden ($skip/$top)"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zmm_bestand_dpc_ext.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zmm_bestand_dpc_ext.abap:123"
+        },
+        "meaning": "Bestandsliste an die App zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "f",
+        "condition": "always"
+      },
+      {
+        "from": "f",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "c1",
+        "condition": "next row"
+      },
+      {
+        "from": "c1",
+        "to": "l1",
+        "condition": "WHEN 'WERKS'"
+      },
+      {
+        "from": "c1",
+        "to": "x1",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "l1",
+        "to": "g1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g1",
+        "to": "x2",
+        "condition": "lt_r_werks IS INITIAL"
+      },
+      {
+        "from": "g1",
+        "to": "cw",
+        "condition": "else"
+      },
+      {
+        "from": "cw",
+        "to": "ws",
+        "condition": "always"
+      },
+      {
+        "from": "ws",
+        "to": "wr",
+        "condition": "always"
+      },
+      {
+        "from": "wr",
+        "to": "wl",
+        "condition": "always"
+      },
+      {
+        "from": "wl",
+        "to": "wa",
+        "condition": "next row"
+      },
+      {
+        "from": "wa",
+        "to": "wg",
+        "condition": "always"
+      },
+      {
+        "from": "wg",
+        "to": "wl",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "wl",
+        "to": "we",
+        "condition": "no more rows"
+      },
+      {
+        "from": "we",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "x3",
+        "condition": "lt_r_werks IS INITIAL"
+      },
+      {
+        "from": "g2",
+        "to": "r",
+        "condition": "else"
+      },
+      {
+        "from": "r",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "d",
+        "condition": "lv_nur_pos = abap_true"
+      },
+      {
+        "from": "g3",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "d",
+        "to": "l2",
+        "condition": "always"
+      },
+      {
+        "from": "l2",
+        "to": "a1",
+        "condition": "next row"
+      },
+      {
+        "from": "a1",
+        "to": "hc",
+        "condition": "always"
+      },
+      {
+        "from": "hc",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "hs",
+        "to": "hr",
+        "condition": "always"
+      },
+      {
+        "from": "hr",
+        "to": "hg",
+        "condition": "always"
+      },
+      {
+        "from": "hg",
+        "to": "he1",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "hg",
+        "to": "hq",
+        "condition": "else"
+      },
+      {
+        "from": "hq",
+        "to": "hg2",
+        "condition": "always"
+      },
+      {
+        "from": "hg2",
+        "to": "ha",
+        "condition": "rv_menge < 0"
+      },
+      {
+        "from": "hg2",
+        "to": "he",
+        "condition": "else"
+      },
+      {
+        "from": "ha",
+        "to": "he",
+        "condition": "always"
+      },
+      {
+        "from": "he1",
+        "to": "a2",
+        "condition": "always"
+      },
+      {
+        "from": "he",
+        "to": "a2",
+        "condition": "always"
+      },
+      {
+        "from": "a2",
+        "to": "a3",
+        "condition": "always"
+      },
+      {
+        "from": "a3",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l2",
+        "to": "g4",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g4",
+        "to": "a4",
+        "condition": "io_tech_request_context->has_inlinecount( ) = abap_true"
+      },
+      {
+        "from": "g4",
+        "to": "ob",
+        "condition": "else"
+      },
+      {
+        "from": "a4",
+        "to": "ob",
+        "condition": "always"
+      },
+      {
+        "from": "ob",
+        "to": "g5",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "pg",
+        "condition": "lv_top > 0 OR lv_skip > 0"
+      },
+      {
+        "from": "g5",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "pg",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "l1",
+        "condition": "WHEN 'MATNR'"
+      },
+      {
+        "from": "c1",
+        "to": "l1",
+        "condition": "WHEN 'LGORT'"
+      },
+      {
+        "from": "c1",
+        "to": "l1",
+        "condition": "WHEN 'NURPOSITIV'"
+      },
+      {
+        "from": "wg",
+        "to": "wl",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_mm_bestand_helper.abap:31 — kein Fachsatz „Reservierungen werden in einer Tabelle gespeichert“ (der Puffer ist eine interne Tabelle der Instanz; es wird nichts auf die Datenbank geschrieben)",
+    "zcl_zmm_bestand_dpc_ext.abap:97 — kein Fachsatz „verfügbar enthält Qualitäts- und Sperrbestand“ (nur LABST minus Reservierung)",
+    "zcl_zmm_bestand_dpc_ext.abap:105 — kein Fachsatz „Anzahl der angezeigten Seite“ (gezählt wird vor dem Paging, also alle Treffer)",
+    "gesamte Scheibe — kein Fachsatz „Bestand wird umgebucht oder reserviert“; der Service liest nur"
+  ],
+  "processDescription": "Ein Lagerleiter ruft in einer Fiori-App die Bestandsliste ab. Der Service wertet die Filter aus: Werk, Material, Lagerort und „nur positive Bestände“ sind erlaubt, jeder andere Filter führt zu einem technischen Fehler. Ohne Werksfilter wird die Anfrage abgewiesen. Die gefilterten Werke werden aufgelöst und auf jene reduziert, für die der Benutzer Materialbelege anzeigen darf; bleibt keines, wird ebenfalls abgewiesen. Dann werden je Lagerort frei verwendbarer, Qualitäts- und gesperrter Bestand mit Kurztext und Basiseinheit gelesen und auf Wunsch Zeilen ohne positiven Bestand entfernt. Jede Zeile erhält Gesamtbestand, die offene Reservierungsmenge (gepuffert je Material/Werk/Lagerort), die verfügbare Menge und eine Ampel. Abschließend wird bei Bedarf die Gesamtanzahl gesetzt, sortiert und die angefragte Seite ausgeschnitten."
+}

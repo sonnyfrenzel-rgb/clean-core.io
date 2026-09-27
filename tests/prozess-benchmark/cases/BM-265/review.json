@@ -1,0 +1,35 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten dw",
+      "before": "action z_ewm_tu_notify_carrier.abap:34 (Standard-Wartezeit 5 Sekunden); Kanten g2->dw [lv_wait IS INITIAL], dw->lp [always]",
+      "after": "entfernt",
+      "why": "Zeile 34 (lv_wait = 5) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz B03 bleibt auf IF und Zuweisung.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante g2->lp",
+      "before": "—",
+      "after": "[lv_wait IS INITIAL]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten dw.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten ok",
+      "before": "action z_ewm_tu_notify_carrier.abap:51 (Meldung erfolgreich); Kanten cs->ok [WHEN 0], ok->g3 [always]",
+      "after": "entfernt",
+      "why": "Zeile 51 (lv_ok = abap_true) ist eine reine Zuweisung - kein Knoten.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante cs->g3",
+      "before": "—",
+      "after": "[WHEN 0]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten ok: EXIT verlässt die DO-Schleife zur Prüfung in Zeile 63.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

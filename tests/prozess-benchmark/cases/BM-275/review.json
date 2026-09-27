@@ -1,0 +1,177 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten fok",
+      "before": "action zmm_infrec_price_upd.abap:91 (Anzahl geändert/fehlerhaft übernehmen); Kanten fg->fok [sy-subrc = 0], fok->fl [next iteration]",
+      "after": "entfernt",
+      "why": "zmm_infrec_price_upd.abap:91 ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten fno",
+      "before": "action zmm_infrec_price_upd.abap:96 (Vermerk: kein Ergebnis, Sätze bleiben offen); Kanten fg->fno [else], fno->fl [next iteration]",
+      "after": "entfernt",
+      "why": "zmm_infrec_price_upd.abap:96 ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante fg->fl",
+      "before": "—",
+      "after": "[next iteration]",
+      "why": "Ersatz für fok/fno: beide Zweige enthalten nur Zuweisungen und führen zurück in die Schleife.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten rseq",
+      "before": "action zcl_par_processor.abap:73 (Auf sequentielle Verarbeitung umschalten); Kanten rg->rseq [sy-subrc <> 0 AND sy-subrc <> 3], rseq->rl [always]",
+      "after": "entfernt",
+      "why": "zcl_par_processor.abap:73 (mv_parallel = abap_false) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten rmax",
+      "before": "action zcl_par_processor.abap:75 (Taskgrenze auf freie Workprozesse senken); Kanten rg->rmax [lv_free < mv_max_tasks], rmax->rl [always]",
+      "after": "entfernt",
+      "why": "zcl_par_processor.abap:75 (mv_max_tasks = nmax( ... )) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante rg->rl",
+      "before": "—",
+      "after": "[sy-subrc <> 0 AND sy-subrc <> 3]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten rseq.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante rg->rl",
+      "before": "—",
+      "after": "[lv_free < mv_max_tasks]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten rmax (ELSEIF-Kante des Gateways rg).",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten dcnt",
+      "before": "action zcl_par_processor.abap:114 (Laufende Tasks zählen); Kanten dg->dcnt [sy-subrc = 0], dcnt->dr [always]",
+      "after": "entfernt",
+      "why": "zcl_par_processor.abap:114 (mv_running = mv_running + 1) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante dg->dr",
+      "before": "—",
+      "after": "[sy-subrc = 0]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten dcnt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten oerr",
+      "before": "action zcl_par_processor.abap:159 (Fehlerergebnis ohne Paketbezug mit Taskname); Kanten og->oerr [sy-subrc <> 0], oerr->oe [always]",
+      "after": "entfernt",
+      "why": "zcl_par_processor.abap:159 (ls_result-err_count = 1) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante og->oe",
+      "before": "—",
+      "after": "[sy-subrc <> 0]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten oerr.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten terr",
+      "before": "action z_par_generic_task.abap:20 (Fehlerergebnis „Handler nicht instanziierbar“); Kanten tco->terr [cx_sy_create_object_error], terr->tr [always]",
+      "after": "entfernt",
+      "why": "z_par_generic_task.abap:20 (es_result-err_count = 1) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante tco->tr",
+      "before": "—",
+      "after": "[cx_sy_create_object_error]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten terr.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten hno",
+      "before": "action zcl_mm_infrec_price_handler.abap:43 (Fehler: kein Infosatz); Kanten hg->hno [sy-subrc <> 0], hno->hg2 [always]",
+      "after": "entfernt",
+      "why": "zcl_mm_infrec_price_handler.abap:43 (lv_msg = 'Kein Einkaufsinfosatz') ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten hfr",
+      "before": "action zcl_mm_infrec_price_handler.abap:49 (Fehler: Änderung über 20 % ohne Freigabe); Kanten hg->hfr [ls_stg-old_price > 0 AND abs( ls_stg-new_price - ls_stg-old_price ) * 100 / ls_stg-old_price > gc_max_change_pct AND ls_stg-approved = abap_false], hfr->hg2 [always]",
+      "after": "entfernt",
+      "why": "zcl_mm_infrec_price_handler.abap:49 (lv_msg = ...) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante hg->hg2",
+      "before": "—",
+      "after": "[sy-subrc <> 0]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten hno.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante hg->hg2",
+      "before": "—",
+      "after": "[ls_stg-old_price > 0 AND abs( ls_stg-new_price - ls_stg-old_price ) * 100 / ls_stg-old_price > gc_max_change_pct AND ls_stg-approved = abap_false]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten hfr (ELSEIF-Kante).",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten ubdc",
+      "before": "action zcl_mm_infrec_price_handler.abap:80 (Batch-Input für ME12: Konditionsbild, neuer Preis ab Gültigkeitsdatum); Kanten us->ubdc [always], ubdc->uct [always]",
+      "after": "entfernt",
+      "why": "zcl_mm_infrec_price_handler.abap:80 (lt_bdc = VALUE #( ... )) ist eine reine Zuweisung an eine interne Tabelle - kein Knoten; Fachsatz B13 bleibt.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante us->uct",
+      "before": "—",
+      "after": "[always]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten ubdc.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten uno",
+      "before": "action zcl_mm_infrec_price_handler.abap:100 (Misserfolg mit Meldungstext); Kanten ug->uno [sy-subrc = 0], uno->ue [always]",
+      "after": "entfernt",
+      "why": "zcl_mm_infrec_price_handler.abap:100 (ev_ok = abap_false) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten uok",
+      "before": "action zcl_mm_infrec_price_handler.abap:105 (Erfolg); Kanten ug->uok [else], uok->ue [always]",
+      "after": "entfernt",
+      "why": "zcl_mm_infrec_price_handler.abap:105 (ev_ok = abap_true) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante ug->ue",
+      "before": "—",
+      "after": "[sy-subrc = 0]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten uno.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante ug->ue",
+      "before": "—",
+      "after": "[else]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten uok.",
+      "category": "Kante"
+    },
+    {
+      "where": "Fachsatz BM-275-B12",
+      "before": "Eine Preisänderung um mehr als 20 % gegenüber dem bisherigen Preis wird ohne Freigabe des Einkaufsleiters abgelehnt. ['zcl_mm_infrec_price_handler.abap:49']",
+      "after": "Eine Preisänderung um mehr als 20 % gegenüber dem bisherigen Preis wird ohne Freigabe des Einkaufsleiters abgelehnt. ['zcl_mm_infrec_price_handler.abap:44', 'zcl_mm_infrec_price_handler.abap:49']",
+      "why": "Die Entscheidung über die 20-%-Grenze steht in der ELSEIF-Bedingung (Zeile 44); der Fachsatz war nur auf der Zuweisung des Meldungstexts verankert.",
+      "category": "Fachsatz"
+    }
+  ],
+  "doubts": [
+    "Z_PAR_GENERIC_TASK ist RFC-fähig, typisiert ES_RESULT aber mit ZIF_PAR_PACKAGE_HANDLER=>TY_RESULT (Typ aus einem Interface). RFC-Schnittstellen verlangen üblicherweise Dictionary-Typen; das könnte in SE37 abgelehnt werden. Nicht geändert (Skelett unberührt)."
+  ]
+}

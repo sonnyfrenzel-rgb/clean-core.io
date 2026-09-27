@@ -1,0 +1,29 @@
+{
+  "id": "BM-225",
+  "title": "Vorgemerkte Sachkontenumbuchungen per BAPI buchen",
+  "domain": "FI",
+  "band": "mittel",
+  "loc": 106,
+  "constructs": [
+    "REPORT",
+    "STOP",
+    "PERFORM",
+    "BAPI_ACC_DOCUMENT_CHECK/POST",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "READ TABLE WITH KEY",
+    "UPDATE Z-Tabelle"
+  ],
+  "scenario": "Abschlussreport einer FI-Buchhaltung, der Umbuchungen aus einer Excel-befüllten Vormerktabelle bucht.",
+  "s4_issues": [
+    "UPDATE auf Z-Tabelle ohne eigenes COMMIT nach BAPI-Commit",
+    "BAPI_ACC_DOCUMENT_POST bleibt in S/4 nutzbar, aber nicht released für Cloud"
+  ],
+  "wave": 3,
+  "module": "FI-GL",
+  "edge_constructs": [
+    "auskommentierter Nachlauf",
+    "CONTINUE nach Prüffehler",
+    "READ TABLE ... TRANSPORTING NO FIELDS vor sy-subrc"
+  ],
+  "oo": false
+}

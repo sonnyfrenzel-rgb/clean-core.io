@@ -1,0 +1,33 @@
+{
+  "id": "BM-264",
+  "title": "Zeitdatei-Import mit Wiederaufsetzpunkt",
+  "domain": "HR",
+  "band": "mittel",
+  "loc": 80,
+  "constructs": [
+    "OPEN/READ/CLOSE DATASET",
+    "DO/EXIT/CONTINUE",
+    "SELECT SINGLE",
+    "INSERT",
+    "MODIFY",
+    "DELETE",
+    "COMMIT WORK",
+    "MESSAGE I/E"
+  ],
+  "scenario": "Nächtlicher Import der Zeiterfassungsterminal-Exporte in eine Staging-Tabelle, die ein Folgeprogramm in die Zeitwirtschaft überführt.",
+  "s4_issues": [
+    "Dateizugriff auf Applikationsserver (OPEN DATASET) in ABAP Cloud nicht erlaubt",
+    "Direktlesen PA0001 statt HCM-API",
+    "COMMIT WORK in Schleife"
+  ],
+  "wave": 3,
+  "module": "HR",
+  "edge_constructs": [
+    "Wiederaufsetzpunkt über Zeilenzähler",
+    "CONTINUE in DO",
+    "EXIT am Dateiende",
+    "COMMIT je Paket mit MOD",
+    "MESSAGE E als Abbruch"
+  ],
+  "oo": false
+}

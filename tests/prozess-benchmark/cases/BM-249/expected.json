@@ -1,0 +1,1371 @@
+{
+  "id": "BM-249",
+  "title": "BOPF-Massenfreigabe von Laborproben: Query, Aktion mit Aktionsvalidierung, Sichern oder Testlauf",
+  "classes": [
+    "K02",
+    "K09",
+    "K12"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZQM_PROBE",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zqm_probe_freigabe.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_probe_freigabe.abap:41"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "/BOBF/CL_TRA_SERV_MGR_FACTORY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_probe_freigabe.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_probe_freigabe.abap:30"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "/BOBF/CL_TRA_TRANS_MGR_FACTORY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_probe_freigabe.abap",
+        "line": 31,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_probe_freigabe.abap:31"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-249-B01",
+      "text": "Der Lauf selektiert alle Proben im Status gemessen zu den gewählten Werken und Probedaten.",
+      "anchors": [
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-249-B02",
+      "text": "Gibt es keine, wird ein Hinweis ausgegeben und der Lauf endet.",
+      "anchors": [
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:48"
+        },
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:49"
+        },
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-249-B03",
+      "text": "Für alle gefundenen Proben wird die Aktion Freigeben ausgeführt; welche Klassen das Framework dafür aufruft, legt die BO-Modellierung fest, die nicht im Fall liegt.",
+      "anchors": [
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-249-B04",
+      "text": "Alle Meldungen der Aktion werden ins Protokoll geschrieben.",
+      "anchors": [
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:62"
+        },
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:64"
+        },
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-249-B05",
+      "text": "Im Testlauf werden alle Änderungen verworfen und nur die Zahl geprüfter und nicht freigebbarer Proben ausgegeben.",
+      "anchors": [
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:73"
+        },
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:74"
+        },
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:75"
+        },
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-249-B06",
+      "text": "Im Echtlauf wird die Transaktion gesichert; lehnt das Framework das Sichern ab, werden alle Änderungen verworfen und „keine Probe freigegeben“ gemeldet.",
+      "anchors": [
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:80"
+        },
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:85"
+        },
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:86"
+        },
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-249-B07",
+      "text": "Nach erfolgreichem Sichern wird die Zahl bearbeiteter Proben (freigegeben oder zurückgewiesen) und abgelehnter Proben ausgegeben.",
+      "anchors": [
+        {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:90"
+        }
+      ]
+    },
+    {
+      "id": "BM-249-B08",
+      "text": "Vor der Freigabe wird jede Probe ohne Prüfer oder ohne Probenahmezeitpunkt mit der Meldung ZQM_PROBE 020 von der Aktion ausgeschlossen.",
+      "anchors": [
+        {
+          "file": "zcl_zqm_v_probe_vollst.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_v_probe_vollst.abap:27"
+        },
+        {
+          "file": "zcl_zqm_v_probe_vollst.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_v_probe_vollst.abap:28"
+        },
+        {
+          "file": "zcl_zqm_v_probe_vollst.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_v_probe_vollst.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-249-B09",
+      "text": "Ist der Prüfer derselbe Benutzer, der die Freigabe ausführt, wird die Probe nach dem Vier-Augen-Prinzip mit der Meldung ZQM_PROBE 021 ausgeschlossen.",
+      "anchors": [
+        {
+          "file": "zcl_zqm_v_probe_vollst.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_v_probe_vollst.abap:27"
+        },
+        {
+          "file": "zcl_zqm_v_probe_vollst.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_v_probe_vollst.abap:37"
+        },
+        {
+          "file": "zcl_zqm_v_probe_vollst.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_v_probe_vollst.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-249-B10",
+      "text": "Die Aktion liest die Proben mit ihren Messwerten.",
+      "anchors": [
+        {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:35"
+        },
+        {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-249-B11",
+      "text": "Eine Probe, die nicht im Status gemessen ist, wird mit der Meldung ZQM_PROBE 030 abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:50"
+        },
+        {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:51"
+        },
+        {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-249-B12",
+      "text": "Je Probe werden noch nicht erfasste Messwerte und Messwerte außerhalb der Unter- oder Obergrenze gezählt.",
+      "anchors": [
+        {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:59"
+        },
+        {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-249-B13",
+      "text": "Fehlt noch ein Messwert, wird die Probe mit der Meldung ZQM_PROBE 031 abgelehnt und bleibt unverändert.",
+      "anchors": [
+        {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:67"
+        },
+        {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:69"
+        },
+        {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-249-B14",
+      "text": "Liegt mindestens ein Messwert außerhalb der Toleranz, wird die Probe zurückgewiesen und die Warnung ZQM_PROBE 032 ausgegeben; sonst wird sie freigegeben.",
+      "anchors": [
+        {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:76"
+        },
+        {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:77"
+        },
+        {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:78"
+        },
+        {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-249-B15",
+      "text": "In beiden Fällen werden neuer Status, Freigeber und Datum in der Probe fortgeschrieben und ein Historieneintrag mit Status und Anzahl der Toleranzverletzungen angelegt.",
+      "anchors": [
+        {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:87"
+        },
+        {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:99"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "r_s",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:29"
+        },
+        "meaning": "Freigabelauf startet (Job oder Dialog)"
+      },
+      {
+        "id": "r_q",
+        "type": "read",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:41"
+        },
+        "meaning": "Gemessene Proben (Status G) zu Werk und Probedatum selektieren"
+      },
+      {
+        "id": "r_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:48"
+        },
+        "meaning": "Keine Proben gefunden?"
+      },
+      {
+        "id": "r_o1",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:49"
+        },
+        "meaning": "Hinweis „keine gemessenen Proben“"
+      },
+      {
+        "id": "r_e1",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:50"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "r_a",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:53"
+        },
+        "meaning": "Aktion FREIGEBEN für alle gefundenen Proben ausführen"
+      },
+      {
+        "id": "r_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:62"
+        },
+        "meaning": "Meldungen vorhanden?"
+      },
+      {
+        "id": "r_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:64"
+        },
+        "meaning": "Jede Meldung ausgeben"
+      },
+      {
+        "id": "r_o2",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:66"
+        },
+        "meaning": "Meldungstext ins Protokoll"
+      },
+      {
+        "id": "r_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:73"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "r_c1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:74"
+        },
+        "meaning": "Alle Änderungen verwerfen"
+      },
+      {
+        "id": "r_o3",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:75"
+        },
+        "meaning": "Testlaufstatistik ausgeben"
+      },
+      {
+        "id": "r_e2",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:77"
+        },
+        "meaning": "Testlauf beenden, nichts gesichert"
+      },
+      {
+        "id": "r_sv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:80"
+        },
+        "meaning": "Transaktion sichern (Framework prüft und schreibt fest)"
+      },
+      {
+        "id": "r_g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:85"
+        },
+        "meaning": "Sichern abgelehnt?"
+      },
+      {
+        "id": "r_c2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:86"
+        },
+        "meaning": "Änderungen verwerfen"
+      },
+      {
+        "id": "r_o4",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:87"
+        },
+        "meaning": "Ablehnung melden"
+      },
+      {
+        "id": "r_o5",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:90"
+        },
+        "meaning": "Anzahl bearbeiteter und abgelehnter Proben ausgeben"
+      },
+      {
+        "id": "r_e3",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_probe_freigabe.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_probe_freigabe.abap:91"
+        },
+        "meaning": "Ende des Laufs"
+      },
+      {
+        "id": "a_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:25"
+        },
+        "meaning": "Aktion FREIGEBEN (vom Framework aufgerufen)"
+      },
+      {
+        "id": "a_r1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:35"
+        },
+        "meaning": "Probenköpfe lesen"
+      },
+      {
+        "id": "a_r2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:40"
+        },
+        "meaning": "Messwerte der Proben lesen"
+      },
+      {
+        "id": "a_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:48"
+        },
+        "meaning": "Jede Probe bewerten"
+      },
+      {
+        "id": "a_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:50"
+        },
+        "meaning": "Probe nicht im Status gemessen?"
+      },
+      {
+        "id": "a_m1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:51"
+        },
+        "meaning": "Fehler ZQM_PROBE 030 melden"
+      },
+      {
+        "id": "a_f1",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:54"
+        },
+        "meaning": "Aktion für diese Probe ablehnen"
+      },
+      {
+        "id": "a_l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:59"
+        },
+        "meaning": "Messwerte der Probe zählen: offen / außerhalb Toleranz"
+      },
+      {
+        "id": "a_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:60"
+        },
+        "meaning": "Messwert offen? / außerhalb der Toleranz?"
+      },
+      {
+        "id": "a_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:67"
+        },
+        "meaning": "Offene Messwerte?"
+      },
+      {
+        "id": "a_m2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:69"
+        },
+        "meaning": "Fehler ZQM_PROBE 031 melden"
+      },
+      {
+        "id": "a_f2",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:72"
+        },
+        "meaning": "Aktion für diese Probe ablehnen"
+      },
+      {
+        "id": "a_g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:76"
+        },
+        "meaning": "Messwerte außerhalb der Toleranz?"
+      },
+      {
+        "id": "a_st1",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:77"
+        },
+        "meaning": "Probe zurückweisen (Status R)"
+      },
+      {
+        "id": "a_m3",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:78"
+        },
+        "meaning": "Warnung ZQM_PROBE 032 melden"
+      },
+      {
+        "id": "a_st2",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:82"
+        },
+        "meaning": "Probe freigeben (Status F)"
+      },
+      {
+        "id": "a_u",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:87"
+        },
+        "meaning": "Status, Freigeber und Datum fortschreiben"
+      },
+      {
+        "id": "a_cr",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:99"
+        },
+        "meaning": "Historieneintrag mit neuem Status anlegen"
+      },
+      {
+        "id": "a_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:106"
+        },
+        "meaning": "Ende Aktion"
+      },
+      {
+        "id": "m_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:109"
+        },
+        "meaning": "Meldung zur Probe erzeugen"
+      },
+      {
+        "id": "m_o",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:113"
+        },
+        "meaning": "Meldung ZQM_PROBE mit Probennummer an die Probe hängen"
+      },
+      {
+        "id": "m_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zqm_a_probe_freigeben.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_a_probe_freigeben.abap:117"
+        },
+        "meaning": "Rückkehr"
+      },
+      {
+        "id": "v_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_zqm_v_probe_vollst.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_v_probe_vollst.abap:15"
+        },
+        "meaning": "Aktionsvalidierung vor FREIGEBEN (vom Framework aufgerufen)"
+      },
+      {
+        "id": "v_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_zqm_v_probe_vollst.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_v_probe_vollst.abap:21"
+        },
+        "meaning": "Probenköpfe lesen"
+      },
+      {
+        "id": "v_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_zqm_v_probe_vollst.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_v_probe_vollst.abap:26"
+        },
+        "meaning": "Jede Probe prüfen"
+      },
+      {
+        "id": "v_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zqm_v_probe_vollst.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_v_probe_vollst.abap:27"
+        },
+        "meaning": "Prüfer oder Probenahmezeitpunkt fehlt? / Prüfer = Freigebender?"
+      },
+      {
+        "id": "v_f1",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zqm_v_probe_vollst.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_v_probe_vollst.abap:28"
+        },
+        "meaning": "Probe von der Aktion ausschließen"
+      },
+      {
+        "id": "v_o1",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_zqm_v_probe_vollst.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_v_probe_vollst.abap:32"
+        },
+        "meaning": "Fehler ZQM_PROBE 020: Angaben unvollständig"
+      },
+      {
+        "id": "v_f2",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zqm_v_probe_vollst.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_v_probe_vollst.abap:37"
+        },
+        "meaning": "Probe von der Aktion ausschließen"
+      },
+      {
+        "id": "v_o2",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_zqm_v_probe_vollst.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_v_probe_vollst.abap:41"
+        },
+        "meaning": "Fehler ZQM_PROBE 021: Vier-Augen-Prinzip verletzt"
+      },
+      {
+        "id": "v_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zqm_v_probe_vollst.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zqm_v_probe_vollst.abap:47"
+        },
+        "meaning": "Ende Validierung"
+      }
+    ],
+    "edges": [
+      {
+        "from": "r_s",
+        "to": "r_q",
+        "condition": "always"
+      },
+      {
+        "from": "r_q",
+        "to": "r_g1",
+        "condition": "always"
+      },
+      {
+        "from": "r_g1",
+        "to": "r_o1",
+        "condition": "gt_key IS INITIAL"
+      },
+      {
+        "from": "r_o1",
+        "to": "r_e1",
+        "condition": "always"
+      },
+      {
+        "from": "r_g1",
+        "to": "r_a",
+        "condition": "else"
+      },
+      {
+        "from": "r_a",
+        "to": "r_g2",
+        "condition": "always"
+      },
+      {
+        "from": "r_g2",
+        "to": "r_l",
+        "condition": "go_message IS BOUND"
+      },
+      {
+        "from": "r_g2",
+        "to": "r_g3",
+        "condition": "else"
+      },
+      {
+        "from": "r_l",
+        "to": "r_o2",
+        "condition": "next row"
+      },
+      {
+        "from": "r_o2",
+        "to": "r_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "r_l",
+        "to": "r_g3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "r_g3",
+        "to": "r_c1",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "r_c1",
+        "to": "r_o3",
+        "condition": "always"
+      },
+      {
+        "from": "r_o3",
+        "to": "r_e2",
+        "condition": "always"
+      },
+      {
+        "from": "r_g3",
+        "to": "r_sv",
+        "condition": "else"
+      },
+      {
+        "from": "r_sv",
+        "to": "r_g4",
+        "condition": "always"
+      },
+      {
+        "from": "r_g4",
+        "to": "r_c2",
+        "condition": "gv_rejected = abap_true"
+      },
+      {
+        "from": "r_c2",
+        "to": "r_o4",
+        "condition": "always"
+      },
+      {
+        "from": "r_o4",
+        "to": "r_e3",
+        "condition": "always"
+      },
+      {
+        "from": "r_g4",
+        "to": "r_o5",
+        "condition": "else"
+      },
+      {
+        "from": "r_o5",
+        "to": "r_e3",
+        "condition": "always"
+      },
+      {
+        "from": "a_s",
+        "to": "a_r1",
+        "condition": "always"
+      },
+      {
+        "from": "a_r1",
+        "to": "a_r2",
+        "condition": "always"
+      },
+      {
+        "from": "a_r2",
+        "to": "a_l",
+        "condition": "always"
+      },
+      {
+        "from": "a_l",
+        "to": "a_g1",
+        "condition": "next row"
+      },
+      {
+        "from": "a_g1",
+        "to": "a_m1",
+        "condition": "lr_root->status <> 'G'"
+      },
+      {
+        "from": "a_m1",
+        "to": "m_s",
+        "condition": "always"
+      },
+      {
+        "from": "m_s",
+        "to": "m_o",
+        "condition": "always"
+      },
+      {
+        "from": "m_o",
+        "to": "m_e",
+        "condition": "always"
+      },
+      {
+        "from": "m_e",
+        "to": "a_f1",
+        "condition": "always"
+      },
+      {
+        "from": "a_f1",
+        "to": "a_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "a_g1",
+        "to": "a_l2",
+        "condition": "else"
+      },
+      {
+        "from": "a_l2",
+        "to": "a_g2",
+        "condition": "next row"
+      },
+      {
+        "from": "a_g2",
+        "to": "a_l2",
+        "condition": "ls_mw-istwert_erfasst = abap_false"
+      },
+      {
+        "from": "a_l2",
+        "to": "a_g3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "a_g3",
+        "to": "a_m2",
+        "condition": "lv_offen > 0"
+      },
+      {
+        "from": "a_m2",
+        "to": "m_s",
+        "condition": "always"
+      },
+      {
+        "from": "m_e",
+        "to": "a_f2",
+        "condition": "always"
+      },
+      {
+        "from": "a_f2",
+        "to": "a_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "a_g3",
+        "to": "a_g4",
+        "condition": "else"
+      },
+      {
+        "from": "a_g4",
+        "to": "a_st1",
+        "condition": "lv_ausser > 0"
+      },
+      {
+        "from": "a_st1",
+        "to": "a_m3",
+        "condition": "always"
+      },
+      {
+        "from": "a_m3",
+        "to": "m_s",
+        "condition": "always"
+      },
+      {
+        "from": "m_e",
+        "to": "a_u",
+        "condition": "always"
+      },
+      {
+        "from": "a_g4",
+        "to": "a_st2",
+        "condition": "else"
+      },
+      {
+        "from": "a_st2",
+        "to": "a_u",
+        "condition": "always"
+      },
+      {
+        "from": "a_u",
+        "to": "a_cr",
+        "condition": "always"
+      },
+      {
+        "from": "a_cr",
+        "to": "a_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "a_l",
+        "to": "a_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "v_s",
+        "to": "v_r",
+        "condition": "always"
+      },
+      {
+        "from": "v_r",
+        "to": "v_l",
+        "condition": "always"
+      },
+      {
+        "from": "v_l",
+        "to": "v_g",
+        "condition": "next row"
+      },
+      {
+        "from": "v_g",
+        "to": "v_f1",
+        "condition": "ls_root-pruefer IS INITIAL OR ls_root-probenahme_ts IS INITIAL"
+      },
+      {
+        "from": "v_f1",
+        "to": "v_o1",
+        "condition": "always"
+      },
+      {
+        "from": "v_o1",
+        "to": "v_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "v_g",
+        "to": "v_f2",
+        "condition": "ls_root-pruefer = sy-uname"
+      },
+      {
+        "from": "v_f2",
+        "to": "v_o2",
+        "condition": "always"
+      },
+      {
+        "from": "v_o2",
+        "to": "v_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "v_g",
+        "to": "v_l",
+        "condition": "else"
+      },
+      {
+        "from": "v_l",
+        "to": "v_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "a_g2",
+        "to": "a_l2",
+        "condition": "ls_mw-istwert < ls_mw-untergrenze OR ls_mw-istwert > ls_mw-obergrenze"
+      },
+      {
+        "from": "a_g2",
+        "to": "a_l2",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zqm_probe_freigabe.abap:90 — kein Fachsatz „die ausgegebene Zahl sind freigegebene Proben“ (sie enthält auch zurückgewiesene Proben mit Status R)",
+    "zcl_zqm_a_probe_freigeben.abap:77 — kein Fachsatz „zurückgewiesene Proben werden abgelehnt/nicht gesichert“ (Status R wird geschrieben und gesichert; nur die Meldung ist eine Warnung)",
+    "zqm_probe_freigabe.abap:53 — kein Fachsatz „die Validierung ZCL_ZQM_V_PROBE_VOLLST läuft sicher vor der Aktion“ (die Zuordnung steht im BO-Modell, nicht im Fall; nur der Kommentar behauptet sie)",
+    "zqm_probe_freigabe.abap:80 — kein Fachsatz „jede Probe wird einzeln gesichert“ (ein Sichern für alle; bei Ablehnung wird alles verworfen)"
+  ],
+  "processDescription": "Ein nächtlicher Job gibt Laborproben frei. Er selektiert über das BOPF-Geschäftsobjekt alle gemessenen Proben zu Werk und Probedatum; ohne Treffer endet er mit einem Hinweis. Für alle Treffer wird die Aktion Freigeben ausgeführt. Laut Kommentar prüft zuvor eine Aktionsvalidierung, ob Prüfer und Probenahmezeitpunkt erfasst sind und der Prüfer nicht selbst freigibt; betroffene Proben werden mit Fehlermeldung ausgeschlossen. Die Aktion lehnt Proben ab, die nicht im Status gemessen sind oder noch offene Messwerte haben. Proben mit Messwerten außerhalb der Toleranz werden zurückgewiesen (mit Warnung), alle anderen freigegeben; Status, Freigeber und Datum werden fortgeschrieben und ein Historieneintrag angelegt. Der Report gibt alle Meldungen aus. Im Testlauf verwirft er alle Änderungen und nennt nur Zahlen; im Echtlauf sichert er die Transaktion, verwirft bei Ablehnung alles und meldet sonst die Zahl bearbeiteter und abgelehnter Proben."
+}

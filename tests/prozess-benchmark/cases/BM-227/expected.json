@@ -1,0 +1,1171 @@
+{
+  "id": "BM-227",
+  "title": "Mahnsperre auf fällige Posten mit offenem Streitfall setzen",
+  "classes": [
+    "K01",
+    "K03",
+    "K15",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "KNB5",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_mahnsperre_f01.abap",
+        "line": 10,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_mahnsperre_f01.abap:10"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BSID",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_mahnsperre_f01.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_mahnsperre_f01.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_STREITFALL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_mahnsperre_f01.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_mahnsperre_f01.abap:45"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FI_DOCUMENT_CHANGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_mahnsperre_f01.abap",
+        "line": 81,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_mahnsperre_f01.abap:81"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-227-B01",
+      "text": "Ohne Änderungsberechtigung für den Buchungskreis bricht der Lauf mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zfi_mahnsperre.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:20"
+        },
+        {
+          "file": "zfi_mahnsperre.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:23"
+        },
+        {
+          "file": "zfi_mahnsperre.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-227-B02",
+      "text": "Es werden die Debitoren des Buchungskreises mit Mahndaten ohne Mahnbereich gelesen, eingeschränkt auf die gewählten Debitoren.",
+      "anchors": [
+        {
+          "file": "zfi_mahnsperre.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:27"
+        },
+        {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:10"
+        }
+      ]
+    },
+    {
+      "id": "BM-227-B03",
+      "text": "Gibt es keinen solchen Debitor, erscheint eine Meldung in Fehleroptik; die Verarbeitung endet, das Protokoll wird trotzdem ausgegeben.",
+      "anchors": [
+        {
+          "file": "zfi_mahnsperre.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:28"
+        },
+        {
+          "file": "zfi_mahnsperre.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:29"
+        },
+        {
+          "file": "zfi_mahnsperre.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:30"
+        },
+        {
+          "file": "zfi_mahnsperre.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-227-B04",
+      "text": "Je Debitor werden seine offenen Posten ohne Mahnsperre gelesen; ohne solche Posten ist der Debitor erledigt.",
+      "anchors": [
+        {
+          "file": "zfi_mahnsperre.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:34"
+        },
+        {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:28"
+        },
+        {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-227-B05",
+      "text": "Die Fälligkeit eines Postens ergibt sich aus Basisdatum plus Tagen der ersten Skontofrist; Posten, die zum Stichtag noch nicht fällig sind, bleiben unberührt.",
+      "anchors": [
+        {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:38"
+        },
+        {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-227-B06",
+      "text": "Für fällige Posten wird der Streitfall zum Beleg in der Kundentabelle gesucht; ohne Streitfall oder bei geschlossenem Streitfall bleibt der Posten unberührt.",
+      "anchors": [
+        {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:45"
+        },
+        {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-227-B07",
+      "text": "Im Testlauf wird für einen Posten mit offenem Streitfall nur protokolliert, dass die Mahnsperre gesetzt würde.",
+      "anchors": [
+        {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:53"
+        },
+        {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-227-B08",
+      "text": "Im Echtlauf wird die eingegebene Mahnsperre in der Belegzeile gesetzt.",
+      "anchors": [
+        {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:58"
+        },
+        {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-227-B09",
+      "text": "Gelingt die Änderung, wird sie gezählt und als Erfolg protokolliert; sonst wird ein Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:59"
+        },
+        {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:61"
+        },
+        {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-227-B10",
+      "text": "Nach allen Debitoren werden die Belegänderungen nur im Echtlauf und nur bei mindestens einer erfolgreichen Änderung festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zfi_mahnsperre.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:37"
+        },
+        {
+          "file": "zfi_mahnsperre.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-227-B11",
+      "text": "Zum Abschluss wird jede gesammelte Protokollzeile mit Typ, Debitor, Beleg, Jahr, Position und Text ausgegeben.",
+      "anchors": [
+        {
+          "file": "zfi_mahnsperre.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:42"
+        },
+        {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:121"
+        },
+        {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:122"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:19"
+        },
+        "meaning": "Verarbeitungsstart"
+      },
+      {
+        "id": "au",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:20"
+        },
+        "meaning": "Änderungsberechtigung Buchungskreis prüfen"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:23"
+        },
+        "meaning": "Berechtigung fehlt?"
+      },
+      {
+        "id": "ma",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:24"
+        },
+        "meaning": "Fehler: keine Berechtigung"
+      },
+      {
+        "id": "mae",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:24"
+        },
+        "meaning": "Programmabbruch"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:27"
+        },
+        "meaning": "Debitoren mit Mahndaten lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:28"
+        },
+        "meaning": "Debitoren gefunden?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:29"
+        },
+        "meaning": "Meldung: keine Debitoren"
+      },
+      {
+        "id": "r",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:30"
+        },
+        "meaning": "Selektionsblock verlassen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:33"
+        },
+        "meaning": "Debitoren durchlaufen"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:34"
+        },
+        "meaning": "Posten des Debitors prüfen"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:37"
+        },
+        "meaning": "Echtlauf mit Änderungen?"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:38"
+        },
+        "meaning": "Belegänderungen festschreiben"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:39"
+        },
+        "meaning": "Ende Selektionsblock"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:41"
+        },
+        "meaning": "Abschlussereignis"
+      },
+      {
+        "id": "ec",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:42"
+        },
+        "meaning": "Protokoll ausgeben"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_mahnsperre.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre.abap:42"
+        },
+        "meaning": "Programmende"
+      },
+      {
+        "id": "ds",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:8"
+        },
+        "meaning": "Debitorenselektion"
+      },
+      {
+        "id": "dq",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:10"
+        },
+        "meaning": "Mahndaten der Debitoren im Buchungskreis lesen"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:16"
+        },
+        "meaning": "Ende Debitorenselektion"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:21"
+        },
+        "meaning": "Postenprüfung je Debitor"
+      },
+      {
+        "id": "pq",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:28"
+        },
+        "meaning": "Offene Posten ohne Mahnsperre lesen"
+      },
+      {
+        "id": "pck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:34"
+        },
+        "meaning": "Offene Posten vorhanden?"
+      },
+      {
+        "id": "pl",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:36"
+        },
+        "meaning": "Posten durchlaufen"
+      },
+      {
+        "id": "pa",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:38"
+        },
+        "meaning": "Fälligkeit berechnen"
+      },
+      {
+        "id": "pg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:39"
+        },
+        "meaning": "Noch nicht fällig?"
+      },
+      {
+        "id": "pq2",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:45"
+        },
+        "meaning": "Streitfall zum Beleg lesen"
+      },
+      {
+        "id": "pg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:49"
+        },
+        "meaning": "Kein offener Streitfall?"
+      },
+      {
+        "id": "pg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:53"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "pc1",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:54"
+        },
+        "meaning": "Testlaufzeile protokollieren"
+      },
+      {
+        "id": "pc2",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:58"
+        },
+        "meaning": "Mahnsperre setzen"
+      },
+      {
+        "id": "pg4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:59"
+        },
+        "meaning": "Änderung erfolgreich?"
+      },
+      {
+        "id": "pc3",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:61"
+        },
+        "meaning": "Erfolg protokollieren"
+      },
+      {
+        "id": "pc4",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:63"
+        },
+        "meaning": "Fehler protokollieren"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:66"
+        },
+        "meaning": "Ende Postenprüfung"
+      },
+      {
+        "id": "xs",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:71"
+        },
+        "meaning": "Mahnsperre im Beleg ändern"
+      },
+      {
+        "id": "xc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:81"
+        },
+        "meaning": "Mahnsperre der Belegzeile ändern"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:98"
+        },
+        "meaning": "Ende Belegänderung"
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:103"
+        },
+        "meaning": "Protokollzeile sammeln"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:114"
+        },
+        "meaning": "Ende Protokollsammlung"
+      },
+      {
+        "id": "os",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:119"
+        },
+        "meaning": "Protokollausgabe"
+      },
+      {
+        "id": "ol",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:121"
+        },
+        "meaning": "Protokollzeilen durchlaufen"
+      },
+      {
+        "id": "ow",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:122"
+        },
+        "meaning": "Protokollzeile ausgeben"
+      },
+      {
+        "id": "oe",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_mahnsperre_f01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_mahnsperre_f01.abap:125"
+        },
+        "meaning": "Ende Protokollausgabe"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "au",
+        "condition": "always"
+      },
+      {
+        "from": "au",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "ma",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ma",
+        "to": "mae",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "c1",
+        "condition": "else"
+      },
+      {
+        "from": "c1",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "ds",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "dq",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "de",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "m",
+        "condition": "gt_knb5 IS INITIAL"
+      },
+      {
+        "from": "m",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "r",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "c2",
+        "condition": "next row"
+      },
+      {
+        "from": "c2",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "pq",
+        "condition": "always"
+      },
+      {
+        "from": "pq",
+        "to": "pck",
+        "condition": "always"
+      },
+      {
+        "from": "pck",
+        "to": "pl",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "pck",
+        "to": "pe",
+        "condition": "else"
+      },
+      {
+        "from": "pl",
+        "to": "pa",
+        "condition": "next row"
+      },
+      {
+        "from": "pa",
+        "to": "pg1",
+        "condition": "always"
+      },
+      {
+        "from": "pg1",
+        "to": "pl",
+        "condition": "lv_faellig >= p_stich"
+      },
+      {
+        "from": "pg1",
+        "to": "pq2",
+        "condition": "else"
+      },
+      {
+        "from": "pq2",
+        "to": "pg2",
+        "condition": "always"
+      },
+      {
+        "from": "pg2",
+        "to": "pl",
+        "condition": "sy-subrc <> 0 OR lv_status = 'G'"
+      },
+      {
+        "from": "pg2",
+        "to": "pg3",
+        "condition": "else"
+      },
+      {
+        "from": "pg3",
+        "to": "pc1",
+        "condition": "p_test = 'X'"
+      },
+      {
+        "from": "pc1",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "pg3",
+        "to": "pc2",
+        "condition": "else"
+      },
+      {
+        "from": "pc2",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "xs",
+        "to": "xc",
+        "condition": "always"
+      },
+      {
+        "from": "xc",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "pg4",
+        "condition": "always"
+      },
+      {
+        "from": "pg4",
+        "to": "pc3",
+        "condition": "lv_rc = 0"
+      },
+      {
+        "from": "pc3",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "pg4",
+        "to": "pc4",
+        "condition": "else"
+      },
+      {
+        "from": "pc4",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "le",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "pl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pl",
+        "to": "pe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pe",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "gc",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gc",
+        "to": "cm",
+        "condition": "p_test IS INITIAL AND gv_geaendert > 0"
+      },
+      {
+        "from": "cm",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "se",
+        "condition": "else"
+      },
+      {
+        "from": "se",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "ec",
+        "condition": "always"
+      },
+      {
+        "from": "ec",
+        "to": "os",
+        "condition": "always"
+      },
+      {
+        "from": "os",
+        "to": "ol",
+        "condition": "always"
+      },
+      {
+        "from": "ol",
+        "to": "ow",
+        "condition": "next row"
+      },
+      {
+        "from": "ow",
+        "to": "ol",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ol",
+        "to": "oe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "oe",
+        "to": "ee",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zfi_mahnsperre_f01.abap:38 — kein Fachsatz „Nettofälligkeit“ (nur erste Skontofrist, laut Kommentar vereinfacht)",
+    "zfi_mahnsperre_f01.abap:81 — kein Fachsatz „Mahnsperre ist nach dem Aufruf gebucht“ (erst das COMMIT WORK im Hauptprogramm schreibt fest)",
+    "zfi_mahnsperre.abap:30 — kein Fachsatz „Programm endet sofort ohne Protokoll“ (RETURN verlässt nur START-OF-SELECTION, END-OF-SELECTION läuft)",
+    "gesamte Scheibe — kein Fachsatz „Mahnlauf wird gestartet“ (der Report bereitet F150 nur vor)"
+  ],
+  "processDescription": "Der Report läuft als Vorlauf zum Mahnlauf und wird mit Buchungskreis, Debitorenbereich, Stichtag, Mahnsperrgrund und Testlaufkennzeichen gestartet. Zuerst prüft er die Änderungsberechtigung für den Buchungskreis und bricht ohne sie mit Fehlermeldung ab. Dann liest er die Debitoren mit Mahndaten ohne Mahnbereich; findet er keine, meldet er das in Fehleroptik und verlässt den Selektionsblock, wobei das Abschlussereignis das leere Protokoll trotzdem ausgibt. Je Debitor liest eine FORM die offenen Posten ohne Mahnsperre und berechnet ihre Fälligkeit aus Basisdatum und erster Skontofrist. Nicht fällige Posten und Posten ohne offenen Streitfall in der Kundentabelle ZFI_STREITFALL werden übersprungen. Im Testlauf protokolliert der Report nur; im Echtlauf setzt er die Mahnsperre über FI_DOCUMENT_CHANGE und protokolliert Erfolg oder Fehler. Nach allen Debitoren schreibt er die Änderungen mit COMMIT WORK fest, sofern es ein Echtlauf mit mindestens einer Änderung war. Im END-OF-SELECTION gibt er alle Protokollzeilen als Liste aus."
+}

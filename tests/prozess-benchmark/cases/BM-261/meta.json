@@ -1,0 +1,27 @@
+{
+  "id": "BM-261",
+  "title": "Zählliste fehlerhafter Auftrags-IDocs",
+  "domain": "SD",
+  "band": "einfach",
+  "loc": 29,
+  "constructs": [
+    "REPORT",
+    "SELECT INTO TABLE",
+    "MESSAGE TYPE S",
+    "RETURN",
+    "LOOP AT",
+    "WRITE"
+  ],
+  "scenario": "Kleine Morgenliste des Vertriebsinnendiensts für fehlerhafte ORDERS-IDocs vor der Nachbearbeitung in BD87.",
+  "s4_issues": [
+    "Direktzugriff auf EDIDC statt Monitor-API",
+    "Klassische Liste (WRITE) nicht Fiori-fähig"
+  ],
+  "wave": 3,
+  "module": "SD",
+  "edge_constructs": [
+    "RETURN nach MESSAGE TYPE S",
+    "auskommentierter Rest"
+  ],
+  "oo": false
+}

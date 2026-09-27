@@ -1,0 +1,33 @@
+{
+  "id": "BM-283",
+  "title": "WM-Handscanner: Umlagerung Platz an Platz mit quittierter Transportauftragsanlage",
+  "domain": "WM Lagerlogistik / RF",
+  "band": "mittel",
+  "loc": 89,
+  "constructs": [
+    "MODULE INPUT",
+    "FIELD ... MODULE ON REQUEST (Kommentar)",
+    "SELECT SINGLE",
+    "SELECT SUM",
+    "CASE ok_code",
+    "MESSAGE E/W/S",
+    "MESSAGE ID sy-msgid",
+    "LEAVE TO SCREEN",
+    "L_TO_CREATE_SINGLE"
+  ],
+  "scenario": "RF-Transaktion eines Lagers auf klassischem WM, mit der Staplerfahrer Platz-zu-Platz-Umlagerungen per Handscanner quittiert buchen.",
+  "s4_issues": [
+    "LE-WM ist in S/4HANA nur Compatibility Pack, Nachfolger EWM",
+    "MATNR-Länge 40 in LQUA-Selektion",
+    "SAP-GUI-RF-Dynpro nicht in Fiori weiterverwendbar"
+  ],
+  "wave": 3,
+  "module": "LE-WM",
+  "edge_constructs": [
+    "MESSAGE W im PAI setzt nach Bestätigung fort",
+    "MESSAGE E im Feldmodul",
+    "LEAVE TO SCREEN auf dasselbe Bild",
+    "auskommentierter WHEN-Zweig"
+  ],
+  "oo": false
+}

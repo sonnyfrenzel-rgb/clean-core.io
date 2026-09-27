@@ -1,0 +1,37 @@
+{
+  "id": "BM-215",
+  "title": "Banf-Freigabeprozess mit Zustandsklassen, BAdI-Start und Entscheidungsreport",
+  "domain": "MM",
+  "band": "sehr komplex",
+  "loc": 444,
+  "constructs": [
+    "BAdI ME_PROCESS_REQ_CUST~POST",
+    "globale Klasse mit lokalen Zustandsklassen (CCDEF/CCIMP)",
+    "Zustandsmuster",
+    "statischer Ereignisbehandler FOR ALL INSTANCES",
+    "RAISE EVENT",
+    "NEW …( )->methode( )",
+    "AUTHORITY-CHECK",
+    "AT SELECTION-SCREEN mit MESSAGE E",
+    "BAPI_REQUISITION_RELEASE_GEN",
+    "SO_NEW_DOCUMENT_SEND_API1",
+    "COMMIT/ROLLBACK WORK"
+  ],
+  "scenario": "Eigener Freigabeprozess für Bestellanforderungen nach Wertmatrix, der die klassische Freigabestrategie ersetzt; Start im BAdI, Entscheidung per Report aus dem Mail-Link.",
+  "s4_issues": [
+    "Z-Freigabeprozess statt Flexible Workflow für Banf",
+    "SO_NEW_DOCUMENT_SEND_API1 veraltet (CL_BCS)",
+    "EBAN-Direktzugriff"
+  ],
+  "wave": 3,
+  "module": "MM-PUR-REQ",
+  "edge_constructs": [
+    "Methodenkette mit Konstruktor",
+    "Ausnahme über drei Aufrufebenen",
+    "CASE ohne WHEN OTHERS",
+    "Zustand, der nur eine Ausnahme wirft",
+    "zwei Einstiege in dieselbe Klasse",
+    "gefangene Ausnahme im BAdI ohne Abbruch"
+  ],
+  "oo": true
+}

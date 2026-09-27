@@ -1,0 +1,1093 @@
+{
+  "id": "BM-211",
+  "title": "IDoc-Wareneingang mit Buchungsklasse und Ereignis-Journal",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EKKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_gr_poster.abap",
+        "line": 43,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_gr_poster.abap:43"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_gr_poster.abap",
+        "line": 55,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_gr_poster.abap:55"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKBE",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_gr_poster.abap",
+        "line": 60,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_gr_poster.abap:60"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_GOODSMVT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_gr_poster.abap",
+        "line": 85,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_gr_poster.abap:85"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_GR_JOURNAL",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_mm_gr_notifier.abap",
+        "line": 24,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_gr_notifier.abap:24"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_MM_NOTIFY_BUYER",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_gr_notifier.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_gr_notifier.abap:39"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-211-B01",
+      "text": "Der Baustein verarbeitet jedes eingehende Wareneingangs-IDoc des Logistikdienstleisters einzeln.",
+      "anchors": [
+        {
+          "file": "lzmm_grconfu01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconfu01.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-211-B02",
+      "text": "Fehlt das Kopfsegment, erhält das IDoc Status 51 und wird übersprungen.",
+      "anchors": [
+        {
+          "file": "lzmm_grconfu01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconfu01.abap:35"
+        },
+        {
+          "file": "lzmm_grconfu01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconfu01.abap:38"
+        },
+        {
+          "file": "lzmm_grconfu01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconfu01.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-211-B03",
+      "text": "Existiert die Bestellung nicht oder ist sie gelöscht, wird der Wareneingang mit Fehlercode NOPO abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:43"
+        },
+        {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:46"
+        },
+        {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-211-B04",
+      "text": "Ist die Bestellung noch nicht freigegeben, wird mit Fehlercode BLCK abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:50"
+        },
+        {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-211-B05",
+      "text": "Je gemeldeter Position wird die offene Menge aus Bestellmenge zuzüglich Überlieferungstoleranz abzüglich bisheriger Wareneingänge ermittelt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:55"
+        },
+        {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:60"
+        },
+        {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-211-B06",
+      "text": "Übersteigt die gemeldete Menge die offene Menge, wird mit Fehlercode OVER abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:67"
+        },
+        {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-211-B07",
+      "text": "Sonst wird ein Wareneingang zur Bestellung (Bewegungsart 101) mit Buchungsdatum und Lieferscheinnummer des Dienstleisters gebucht.",
+      "anchors": [
+        {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-211-B08",
+      "text": "Entsteht kein Materialbeleg, wird mit Fehlercode BAPI abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:94"
+        },
+        {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:95"
+        }
+      ]
+    },
+    {
+      "id": "BM-211-B09",
+      "text": "Jede Ablehnung wird mit Fehlercode im WE-Journal vermerkt, und das IDoc erhält Status 51.",
+      "anchors": [
+        {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:103"
+        },
+        {
+          "file": "zcl_mm_gr_notifier.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_notifier.abap:35"
+        },
+        {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:107"
+        },
+        {
+          "file": "lzmm_grconfu01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconfu01.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-211-B10",
+      "text": "Bei Überlieferung wird zusätzlich der Einkäufer benachrichtigt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_gr_notifier.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_notifier.abap:38"
+        },
+        {
+          "file": "zcl_mm_gr_notifier.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_notifier.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-211-B11",
+      "text": "Eine erfolgreiche Buchung wird mit Materialbeleg im WE-Journal vermerkt, und das IDoc erhält Status 53.",
+      "anchors": [
+        {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:98"
+        },
+        {
+          "file": "zcl_mm_gr_notifier.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_notifier.abap:24"
+        },
+        {
+          "file": "lzmm_grconfu01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconfu01.abap:57"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "lzmm_grconfu01.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconfu01.abap:1"
+        },
+        "meaning": "IDoc-Eingang Wareneingangsbestaetigung"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "lzmm_grconfu01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconfu01.abap:34"
+        },
+        "meaning": "Je IDoc"
+      },
+      {
+        "id": "rd",
+        "type": "read",
+        "anchor": {
+          "file": "lzmm_grconfu01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconfu01.abap:35"
+        },
+        "meaning": "Kopfsegment E1ZGR_HDR suchen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmm_grconfu01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconfu01.abap:38"
+        },
+        "meaning": "Kopfsegment fehlt?"
+      },
+      {
+        "id": "ps1",
+        "type": "call",
+        "anchor": {
+          "file": "lzmm_grconfu01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconfu01.abap:39"
+        },
+        "meaning": "Status 51: Kopfsegment fehlt"
+      },
+      {
+        "id": "cp",
+        "type": "call",
+        "anchor": {
+          "file": "lzmm_grconfu01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconfu01.abap:54"
+        },
+        "meaning": "Wareneingang buchen"
+      },
+      {
+        "id": "ps2",
+        "type": "call",
+        "anchor": {
+          "file": "lzmm_grconfu01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconfu01.abap:57"
+        },
+        "meaning": "Status 53 mit Materialbeleg"
+      },
+      {
+        "id": "ps3",
+        "type": "call",
+        "anchor": {
+          "file": "lzmm_grconfu01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconfu01.abap:60"
+        },
+        "meaning": "Status 51: nicht gebucht"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "meaning": "Ende, Commit durch ALE-Schicht",
+        "anchor": {
+          "file": "lzmm_grconfu01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconfu01.abap:72"
+        }
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "lzmm_grconff01.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconff01.abap:4"
+        },
+        "meaning": "IDoc-Status vormerken"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "lzmm_grconff01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmm_grconff01.abap:18"
+        }
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:36"
+        },
+        "meaning": "WE-Buchung zur Bestellung"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:43"
+        },
+        "meaning": "Bestellkopf lesen"
+      },
+      {
+        "id": "pg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:46"
+        },
+        "meaning": "Bestellung fehlt oder geloescht?"
+      },
+      {
+        "id": "cf1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:47"
+        },
+        "meaning": "Fehler NOPO"
+      },
+      {
+        "id": "pg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:50"
+        },
+        "meaning": "Bestellung nicht freigegeben?"
+      },
+      {
+        "id": "cf2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:51"
+        },
+        "meaning": "Fehler BLCK"
+      },
+      {
+        "id": "il",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:54"
+        },
+        "meaning": "Je gemeldete Position"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:55"
+        },
+        "meaning": "Bestellposition lesen"
+      },
+      {
+        "id": "q3",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:60"
+        },
+        "meaning": "Bisherige WE-Menge summieren"
+      },
+      {
+        "id": "ao",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:66"
+        },
+        "meaning": "Offene Menge inkl. Ueberlieferungstoleranz"
+      },
+      {
+        "id": "pg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:67"
+        },
+        "meaning": "Ueberlieferung?"
+      },
+      {
+        "id": "cf3",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:68"
+        },
+        "meaning": "Fehler OVER"
+      },
+      {
+        "id": "b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:85"
+        },
+        "meaning": "Wareneingang 101 zur Bestellung buchen"
+      },
+      {
+        "id": "pg4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:94"
+        },
+        "meaning": "Kein Materialbeleg?"
+      },
+      {
+        "id": "cf4",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:95"
+        },
+        "meaning": "Fehler BAPI"
+      },
+      {
+        "id": "ev",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:98"
+        },
+        "meaning": "Ereignis gebucht"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "meaning": "Materialbeleg zurueckgeben",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:99"
+        }
+      },
+      {
+        "id": "xs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:102"
+        },
+        "meaning": "Fehlerbehandlung"
+      },
+      {
+        "id": "xe",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:103"
+        },
+        "meaning": "Ereignis fehlgeschlagen"
+      },
+      {
+        "id": "xx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_gr_poster.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_poster.abap:107"
+        },
+        "meaning": "Ausnahme"
+      },
+      {
+        "id": "hps",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_gr_notifier.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_notifier.abap:17"
+        },
+        "meaning": "Handler gebucht"
+      },
+      {
+        "id": "hpw",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_mm_gr_notifier.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_notifier.abap:24"
+        },
+        "meaning": "Journal: OK mit Materialbeleg"
+      },
+      {
+        "id": "hpe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_mm_gr_notifier.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_notifier.abap:25"
+        }
+      },
+      {
+        "id": "hfs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_gr_notifier.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_notifier.abap:28"
+        },
+        "meaning": "Handler fehlgeschlagen"
+      },
+      {
+        "id": "hfw",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_mm_gr_notifier.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_notifier.abap:35"
+        },
+        "meaning": "Journal: Fehlercode"
+      },
+      {
+        "id": "hfg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_gr_notifier.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_notifier.abap:38"
+        },
+        "meaning": "Ueberlieferung?"
+      },
+      {
+        "id": "hfc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_gr_notifier.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_notifier.abap:39"
+        },
+        "meaning": "Einkaeufer benachrichtigen"
+      },
+      {
+        "id": "hfe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_mm_gr_notifier.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_notifier.abap:44"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "fs",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "lp",
+        "to": "rd",
+        "condition": "next row"
+      },
+      {
+        "from": "rd",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "ps1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "cp",
+        "condition": "else"
+      },
+      {
+        "from": "ps1",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "ps2",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "ps3",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "fe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cp",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "ps2",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "pg1",
+        "condition": "always"
+      },
+      {
+        "from": "pg1",
+        "to": "cf1",
+        "condition": "sy-subrc <> 0 OR ls_ekko-loekz IS NOT INITIAL"
+      },
+      {
+        "from": "pg1",
+        "to": "pg2",
+        "condition": "else"
+      },
+      {
+        "from": "pg2",
+        "to": "cf2",
+        "condition": "ls_ekko-frgke = 'B'"
+      },
+      {
+        "from": "pg2",
+        "to": "il",
+        "condition": "else"
+      },
+      {
+        "from": "il",
+        "to": "q2",
+        "condition": "next row"
+      },
+      {
+        "from": "q2",
+        "to": "q3",
+        "condition": "always"
+      },
+      {
+        "from": "q3",
+        "to": "ao",
+        "condition": "always"
+      },
+      {
+        "from": "ao",
+        "to": "pg3",
+        "condition": "always"
+      },
+      {
+        "from": "pg3",
+        "to": "cf3",
+        "condition": "ls_itm-menge > lv_open"
+      },
+      {
+        "from": "pg3",
+        "to": "il",
+        "condition": "next iteration"
+      },
+      {
+        "from": "il",
+        "to": "b",
+        "condition": "no more rows"
+      },
+      {
+        "from": "b",
+        "to": "pg4",
+        "condition": "always"
+      },
+      {
+        "from": "pg4",
+        "to": "cf4",
+        "condition": "rv_mblnr IS INITIAL"
+      },
+      {
+        "from": "pg4",
+        "to": "ev",
+        "condition": "else"
+      },
+      {
+        "from": "ev",
+        "to": "hps",
+        "condition": "always"
+      },
+      {
+        "from": "hpe",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "hps",
+        "to": "hpw",
+        "condition": "always"
+      },
+      {
+        "from": "hpw",
+        "to": "hpe",
+        "condition": "always"
+      },
+      {
+        "from": "cf1",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "cf2",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "cf3",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "cf4",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "xs",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "hfs",
+        "condition": "always"
+      },
+      {
+        "from": "hfe",
+        "to": "xx",
+        "condition": "always"
+      },
+      {
+        "from": "hfs",
+        "to": "hfw",
+        "condition": "always"
+      },
+      {
+        "from": "hfw",
+        "to": "hfg",
+        "condition": "always"
+      },
+      {
+        "from": "hfg",
+        "to": "hfc",
+        "condition": "ev_code = 'OVER'"
+      },
+      {
+        "from": "hfg",
+        "to": "hfe",
+        "condition": "else"
+      },
+      {
+        "from": "hfc",
+        "to": "hfe",
+        "condition": "always"
+      },
+      {
+        "from": "xx",
+        "to": "ps3",
+        "condition": "zcx_mm_gr"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_mm_gr_poster.abap:85 — kein Fachsatz „die Buchung wird im Baustein festgeschrieben“ — es gibt weder COMMIT WORK noch BAPI_TRANSACTION_COMMIT; das übernimmt die ALE-Schicht.",
+    "zcl_mm_gr_poster.abap:67 — kein Fachsatz „nur die überlieferte Position wird abgelehnt“ — eine Überlieferung bricht das ganze IDoc ab.",
+    "zcl_mm_gr_poster.abap:60 — kein Fachsatz „Stornos werden gegengerechnet“ — summiert werden nur Soll-Buchungen des Vorgangs 1.",
+    "zcl_mm_gr_notifier.abap:39 — kein Fachsatz „der Einkäufer erhält eine E-Mail“ — Z_MM_NOTIFY_BUYER liegt nicht im Fall; was er tut, ist offen."
+  ],
+  "processDescription": "Die ALE-Schicht übergibt Wareneingangs-IDocs des Logistikdienstleisters. Für jedes IDoc wird das Kopfsegment gesucht; fehlt es, bekommt das IDoc Status 51. Die Buchungsklasse prüft, ob die Bestellung existiert, nicht gelöscht und freigegeben ist. Je Position ermittelt sie die offene Menge aus Bestellmenge, Überlieferungstoleranz und bisherigen Wareneingängen und lehnt Überlieferungen ab. Danach bucht sie den Wareneingang 101 über den BAPI. Jede Ablehnung löst ein Ereignis aus, das einen Journaleintrag mit Fehlercode schreibt und bei Überlieferung den Einkäufer benachrichtigt, und dann eine Ausnahme, die das IDoc auf Status 51 setzt. Eine erfolgreiche Buchung wird im Journal vermerkt, das IDoc bekommt Status 53 mit Materialbeleg. Festgeschrieben wird durch die ALE-Schicht."
+}

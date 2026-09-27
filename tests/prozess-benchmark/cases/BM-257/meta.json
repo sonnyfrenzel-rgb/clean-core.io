@@ -1,0 +1,38 @@
+{
+  "id": "BM-257",
+  "title": "Web-Dynpro-Lieferantenbewertung: Kennzahlen aus Bestellungen, WE und Prüflosen, Note, Bestätigungsdialog und Eskalation",
+  "domain": "MM Einkauf / Lieferantenbewertung",
+  "band": "sehr komplex",
+  "loc": 403,
+  "constructs": [
+    "Web Dynpro View- und Component-Controller",
+    "WDDOINIT / WDDOMODIFYVIEW",
+    "create_popup_to_confirm / subscribe_to_button_event",
+    "Assistenzklasse",
+    "SELECT mit JOIN EKKO/EKPO/EKET",
+    "SELECT MAX/SUM auf EKBE",
+    "SELECT COUNT(*) auf QALS/QAVE",
+    "INSERT, bei Fehler UPDATE",
+    "COMMIT/ROLLBACK WORK in Assistenzklasse",
+    "SAP_WAPI_CREATE_EVENT",
+    "Ausnahmeklasse mit TRY/CATCH",
+    "IF/ELSEIF-Notenlogik"
+  ],
+  "scenario": "Web-Dynpro-Anwendung des strategischen Einkaufs zur jährlichen Lieferantenbewertung; eine Note C löst per Workflow-Ereignis ein Eskalationsverfahren aus.",
+  "s4_issues": [
+    "EKBE/EKET direkt gelesen statt über CDS",
+    "LFA1-Workflowobjekt statt Business Partner",
+    "SAP-Standard-Lieferantenbewertung (ME61ff.) parallel ungenutzt",
+    "Web Dynpro statt Fiori"
+  ],
+  "wave": 3,
+  "module": "MM",
+  "edge_constructs": [
+    "Bestätigungsdialog löst spätere Aktion aus (keine direkte Kante)",
+    "fünf frühe RETURN",
+    "Kennzahlen je Einteilung statt je Position",
+    "Stornos erhöhen die WE-Menge",
+    "ohne Prüflose 100 % Qualität"
+  ],
+  "oo": true
+}

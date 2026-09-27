@@ -1,0 +1,36 @@
+{
+  "id": "BM-270",
+  "title": "Jobkette elektronischer Kontoauszug",
+  "domain": "FI",
+  "band": "komplex",
+  "loc": 218,
+  "constructs": [
+    "JOB_OPEN",
+    "SUBMIT (dynamisch) VIA JOB USING SELECTION-SET",
+    "JOB_CLOSE mit PRED_JOBNAME/PREDJOB_CHECKSTAT",
+    "BP_JOB_DELETE",
+    "RS_VARIANT_EXISTS",
+    "AUTHORITY-CHECK",
+    "SELECT COUNT(*)",
+    "Klasse mit Konstruktor",
+    "TRY/CATCH",
+    "RAISE EXCEPTION"
+  ],
+  "scenario": "Treasury-Nachtverarbeitung: Kontoauszugsimport, kundeneigener Ausgleich und Status-Mail werden täglich als Kette eingeplant, weil SM36-Ketten mehrfach falsch gepflegt wurden.",
+  "s4_issues": [
+    "JOB_OPEN/JOB_CLOSE/BP_JOB_DELETE nicht in ABAP Cloud (Application Jobs mit Job-Katalog)",
+    "RFEBKA00 – in S/4 Zielbild App „Kontoauszüge verwalten“/Bank Statement Monitor",
+    "TBTCO-Direktzugriff"
+  ],
+  "wave": 3,
+  "module": "FI",
+  "edge_constructs": [
+    "Ausnahme aus privater Methode läuft durch zum Report-CATCH",
+    "dreifacher Aufruf derselben Methode",
+    "optionaler Schritt",
+    "Kompensation (Jobs löschen) im CATCH",
+    "LOOP über funktionalen Methodenaufruf",
+    "MESSAGE E als Pfadende"
+  ],
+  "oo": true
+}

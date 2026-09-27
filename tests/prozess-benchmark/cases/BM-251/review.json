@@ -1,0 +1,32 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante m_g2 -> m_l",
+      "before": "next iteration",
+      "after": "sy-subrc = 0 AND ls_sperre-dunningblock IS NOT INITIAL",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway (hier der CONTINUE-Zweig) trägt ihre Bedingung wörtlich; next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante m_g3 -> m_l",
+      "before": "next iteration",
+      "after": "lv_stufe = 0 OR lv_stufe <= ls_op-lastdunninglevel",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway (hier der CONTINUE-Zweig) trägt ihre Bedingung wörtlich; next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    },
+    {
+      "where": "forbiddenConclusions[0]",
+      "before": "zcl_fi_mahnvorschlag.abap:164 — kein Fachsatz „nach einem Speicherfehler wird der Mahnvorschlag entsperrt“ (DEQUEUE steht nur im Erfolgspfad; die Sperre fällt erst mit Programmende)",
+      "after": "zcl_fi_mahnvorschlag.abap:164 — kein Fachsatz „nach einem Speicherfehler ist der alte Vorschlag zum Stichtag gelöscht“ (ROLLBACK WORK nimmt das DELETE zusammen mit dem INSERT zurück; der alte Vorschlag bleibt erhalten)",
+      "why": "Der bisherige verbotene Schluss war selbst falsch: ROLLBACK WORK hebt alle SAP-Sperren mit _SCOPE = 2 (Standard der ENQUEUE-Bausteine) auf; die Sperre fällt also nicht erst mit Programmende. Ersetzt durch einen tragfähigen Schluss zur Rücknahme des DELETE.",
+      "category": "verbotener Schluss"
+    }
+  ],
+  "doubts": [
+    "m_a (APPEND … TO mt_vorschlag) ist formal ein APPEND in eine interne Tabelle; bleibt als action, weil die Anweisung die Mahngebühr (SWITCH) festlegt und den Vorschlag bildet, der gespeichert und angezeigt wird.",
+    "Ob I_CustomerCompany ein Feld DunningBlock führt, ist ohne System nicht prüfbar (die Mahnsperre liegt klassisch in KNB5 je Mahnbereich); für den Fluss unerheblich, nicht geändert.",
+    "Nach COMMIT WORK sind die Sperren mit _SCOPE = 2 bereits aufgehoben; das DEQUEUE (v_dq) ist fachlich redundant, bleibt aber als Knoten, da es im Code steht."
+  ]
+}

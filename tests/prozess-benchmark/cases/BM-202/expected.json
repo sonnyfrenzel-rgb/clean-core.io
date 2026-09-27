@@ -1,0 +1,308 @@
+{
+  "id": "BM-202",
+  "title": "Freier Lagerortbestand mit lokaler Ausnahmeklasse",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Einfaches Band mit 10 Knoten: Ausnahmepfad benötigt eigenen end- und output-Knoten."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "MARD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:25"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LCL_STOCK",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:37"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-202-B01",
+      "text": "Für Material, Werk und Lagerort wird der frei verwendbare Bestand gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-202-B02",
+      "text": "Fehlt der Lagerortsatz oder ist der Bestand nicht positiv, wird die Ausnahme „kein Bestand“ ausgelöst.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-202-B03",
+      "text": "Bei positivem Bestand werden Material, Lagerort und frei verwendbare Menge ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-202-B04",
+      "text": "Ohne Bestand erscheint die Statusmeldung „Kein frei verwendbarer Bestand am Lagerort“; der Report bricht nicht ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "c",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "Freien Bestand ermitteln"
+      },
+      {
+        "id": "m",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Methode Bestandsermittlung"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Frei verwendbaren Lagerortbestand lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Kein Satz oder kein positiver Bestand?"
+      },
+      {
+        "id": "r",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Ausnahme: kein Bestand"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "meaning": "Bestand zurueckgeben",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        }
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        "meaning": "Freien Bestand ausgeben"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Kein Bestand melden (Status, als Fehler dargestellt)"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        "meaning": "Reportende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c",
+        "condition": "always"
+      },
+      {
+        "from": "c",
+        "to": "m",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "o1",
+        "condition": "always"
+      },
+      {
+        "from": "m",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "r",
+        "condition": "sy-subrc <> 0 OR rv_labst <= 0"
+      },
+      {
+        "from": "g",
+        "to": "me",
+        "condition": "else"
+      },
+      {
+        "from": "r",
+        "to": "o2",
+        "condition": "lcx_no_stock"
+      },
+      {
+        "from": "o1",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "o2",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:42 — kein Fachsatz „Fehlermeldung bricht die Verarbeitung ab“ — TYPE 'S' DISPLAY LIKE 'E' ist eine Statusmeldung, der Report läuft zu Ende.",
+    "source.abap:25 — kein Fachsatz „Bestand wird reserviert“ — es wird nur gelesen."
+  ],
+  "processDescription": "Der Lagerleitstand startet den Report mit Material, Werk und Lagerort. Eine lokale Klasse liest den frei verwendbaren Bestand aus MARD. Fehlt der Lagerortsatz oder ist die Menge nicht positiv, löst sie eine eigene Ausnahme aus. Der Aufrufer fängt sie und zeigt eine Statusmeldung im Fehlerlayout; ansonsten gibt er Material, Lagerort und Menge als Liste aus. Es wird nichts gebucht oder reserviert."
+}

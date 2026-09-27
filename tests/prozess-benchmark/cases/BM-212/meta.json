@@ -1,0 +1,34 @@
+{
+  "id": "BM-212",
+  "title": "Inventurdifferenzen buchen mit wertabhängigen Freigaberegeln",
+  "domain": "MM",
+  "band": "komplex",
+  "loc": 222,
+  "constructs": [
+    "REPORT mit C01/F01",
+    "lokales Interface",
+    "zwei Regelklassen",
+    "Fabrik mit CASE",
+    "funktionaler Aufruf in IF",
+    "LEAVE LIST-PROCESSING",
+    "CL_SALV_TABLE",
+    "BAPI_MATPHYSINV_POSTDIFF",
+    "VALUE FOR GROUPS",
+    "MODIFY Z-Tabelle"
+  ],
+  "scenario": "Sammellauf eines Handelsunternehmens für Inventurdifferenzen, der kleine Differenzen direkt bucht und größere dem Werkscontrolling vorlegt.",
+  "s4_issues": [
+    "ISEG/IKPF-Direktzugriff",
+    "MBEW-Bewertung in S/4 über Material Ledger",
+    "Materialnummer 40 Zeichen"
+  ],
+  "wave": 3,
+  "module": "MM-IM-PI",
+  "edge_constructs": [
+    "RETURN in Regelmethode",
+    "Ausnahme aus opakem SALV-Aufruf",
+    "Gruppierung per Ausdruck statt Schleife",
+    "WHEN OTHERS als Default-Regel"
+  ],
+  "oo": true
+}

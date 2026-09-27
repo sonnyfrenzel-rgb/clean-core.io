@@ -1,0 +1,49 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten rd",
+      "before": "output",
+      "after": "action",
+      "why": "READ DATASET liest eine Datei ein - keine Ausgabe (vereinheitlichte Konvention: READ DATASET = action).",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten rp",
+      "before": "action source.abap:27 (Letzte festgeschriebene Zeile als Aufsetzpunkt übernehmen); Kanten g1->rp [sy-subrc = 0], rp->mi [always]",
+      "after": "entfernt",
+      "why": "Zeile 27 ist eine reine Zuweisung (lv_last = ls_chkpt-lineno) - laut Brief kein Knoten.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante g1->mi",
+      "before": "—",
+      "after": "[sy-subrc = 0]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten rp.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten cd",
+      "before": "—",
+      "after": "output source.abap:74 (Eingangsdatei schließen)",
+      "why": "CLOSE DATASET nach dem EXIT aus der DO-Schleife fehlte; OPEN/CLOSE DATASET = output.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante g3->del",
+      "before": "g3->del [sy-subrc <> 0]",
+      "after": "g3->cd [sy-subrc <> 0]",
+      "why": "EXIT verlässt die DO-Schleife zur nächsten Anweisung CLOSE DATASET (Zeile 74), nicht direkt zum DELETE.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante cd->del",
+      "before": "—",
+      "after": "[always]",
+      "why": "Nach dem Schließen der Datei folgt das Löschen des Wiederaufsetzpunkts.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

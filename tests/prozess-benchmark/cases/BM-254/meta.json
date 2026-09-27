@@ -1,0 +1,41 @@
+{
+  "id": "BM-254",
+  "title": "Gateway Deep Insert: Kundenauftrag mit Positionen aus dem B2B-Webshop anlegen",
+  "domain": "SD Auftragserfassung (B2B)",
+  "band": "sehr komplex",
+  "loc": 490,
+  "constructs": [
+    "CREATE_DEEP_ENTITY",
+    "MPC_EXT tiefe Struktur / bind_structure",
+    "io_data_provider->read_entry_data",
+    "copy_data_to_ref",
+    "Nachrichtencontainer add_message / add_messages_from_bapi / add_message_text_only",
+    "AUTHORITY-CHECK V_VBAK_VKO",
+    "Ausnahmeklasse mit IF_T100_MESSAGE",
+    "RAISE EXCEPTION aus privater Hilfsmethode",
+    "TRY/CATCH über zwei Aufrufebenen",
+    "REDUCE",
+    "funktionaler Aufruf in IF-Bedingung",
+    "BAPI_SALESORDER_CREATEFROMDAT2",
+    "STARTING NEW TASK DESTINATION 'NONE'",
+    "CONVERSION_EXIT_MATN1_INPUT / CUNIT_INPUT",
+    "CASE mit CONTINUE"
+  ],
+  "scenario": "B2B-Webshop legt Kundenaufträge per OData-Deep-Insert (Kopf mit Positionen) in S/4 an; der Service prüft Stammdaten und Kredit, legt über BAPI an und informiert bei Eilaufträgen den Versand.",
+  "s4_issues": [
+    "KNKK/klassisches Kreditmanagement entfällt, Nachfolger SAP Credit Management",
+    "KNA1/KNVV-Leselogik statt Business Partner",
+    "BAPI_SALESORDER_CREATEFROMDAT2 nicht für Cloud freigegeben (Nachfolger API_SALES_ORDER_SRV / I_SalesOrderTP)",
+    "Materialnummer 40 Zeichen über MATERIAL_LONG korrekt, aber MATN1-Konvertierung"
+  ],
+  "wave": 3,
+  "module": "SD",
+  "edge_constructs": [
+    "Hilfsmethode, die immer eine Ausnahme wirft (kein Rücksprung)",
+    "Ausnahme propagiert aus Prüfklasse in CATCH des Aufrufers",
+    "Geschäftsausnahme ohne CATCH an das Framework",
+    "kein Limit = Kredit ok",
+    "ungenutzte Fabrikmethode in der Ausnahmeklasse"
+  ],
+  "oo": true
+}

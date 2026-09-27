@@ -1,0 +1,30 @@
+{
+  "id": "BM-243",
+  "title": "BOPF-Determination: geplante Frachtkosten einer Sendung aus Kundentarif",
+  "domain": "TM Frachtkostenplanung",
+  "band": "mittel",
+  "loc": 94,
+  "constructs": [
+    "BOPF Determination",
+    "/bobf/if_frw_determination~execute",
+    "io_read->retrieve",
+    "io_modify->update",
+    "/bobf/if_frw_message",
+    "SELECT SINGLE mit Gültigkeitszeitraum",
+    "CONTINUE",
+    "COND"
+  ],
+  "scenario": "Kundeneigenes BOPF-Geschäftsobjekt „Sendung“ in einer TM-nahen Eigenentwicklung; die Determination läuft nach jeder Änderung von Gewicht oder Route.",
+  "s4_issues": [
+    "BOPF ist in S/4 weiterhin lauffähig, aber kein Clean-Core-Modell; Nachfolger RAP",
+    "Kundentabelle ZTM_TARIF unkritisch"
+  ],
+  "wave": 3,
+  "module": "TM",
+  "edge_constructs": [
+    "CONTINUE in zwei Zweigen",
+    "Warnung ohne Abbruch",
+    "auskommentierter Bruttoaufschlag"
+  ],
+  "oo": true
+}

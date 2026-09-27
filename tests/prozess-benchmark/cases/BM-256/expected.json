@@ -1,0 +1,2203 @@
+{
+  "id": "BM-256",
+  "title": "Compliance-Prüfung offener Bestellungen vor der Freigabe: Regelklassen über CDS, Ereignisse, Protokoll, Workflow",
+  "classes": [
+    "K01",
+    "K02",
+    "K06",
+    "K09",
+    "K10"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "I_PURCHASEORDERAPI01",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_po_pruefung.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_po_pruefung.abap:51"
+      },
+      "identity": {
+        "objectType": "DDLS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "I_PURCHASEORDERITEMAPI01",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_po_regel_preis.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_po_regel_preis.abap:23"
+      },
+      "identity": {
+        "objectType": "DDLS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "I_PURGINFORECDORGPLNTDATAAPI01",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_po_regel_preis.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_po_regel_preis.abap:32"
+      },
+      "identity": {
+        "objectType": "DDLS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "I_PURCHASINGINFORECORDAPI01",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_po_regel_preis.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_po_regel_preis.abap:32"
+      },
+      "identity": {
+        "objectType": "DDLS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "I_SUPPLIER",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_po_regel_lieferant.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_po_regel_lieferant.abap:27"
+      },
+      "identity": {
+        "objectType": "DDLS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "I_SUPPLIERPURCHASINGORG",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_po_regel_lieferant.abap",
+        "line": 46,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_po_regel_lieferant.abap:46"
+      },
+      "identity": {
+        "objectType": "DDLS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_PO_REGEL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_po_regel_base.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_po_regel_base.abap:52"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SAP_WAPI_CREATE_EVENT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_po_pruefung.abap",
+        "line": 87,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_po_pruefung.abap:87"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_po_protokoll.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_po_protokoll.abap:56"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_po_protokoll.abap",
+        "line": 80,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_po_protokoll.abap:80"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-256-B01",
+      "text": "Geprüft werden alle nicht gelöschten Bestellungen der gewählten Einkaufsorganisationen, deren Freigabe noch nicht abgeschlossen ist; gibt es keine, endet der Lauf mit einem Hinweis.",
+      "anchors": [
+        {
+          "file": "zmm_po_pruefung.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:51"
+        },
+        {
+          "file": "zmm_po_pruefung.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:60"
+        },
+        {
+          "file": "zmm_po_pruefung.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-256-B02",
+      "text": "Welche Prüfregeln gelten, steht in der Kundentabelle ZMM_PO_REGEL: aktive Regelklassen werden in der gepflegten Reihenfolge dynamisch erzeugt, falsch gepflegte still übergangen.",
+      "anchors": [
+        {
+          "file": "zmm_po_pruefung.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:65"
+        },
+        {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:52"
+        },
+        {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-256-B03",
+      "text": "Ist keine Regel aktiv, bricht der Lauf mit der Meldung ZMM_PO 002 ab.",
+      "anchors": [
+        {
+          "file": "zmm_po_pruefung.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:66"
+        },
+        {
+          "file": "zmm_po_pruefung.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-256-B04",
+      "text": "Jede Bestellung wird nacheinander mit jeder aktiven Regel geprüft; eine Regel, die für die Bestellung nicht relevant ist, wird übersprungen.",
+      "anchors": [
+        {
+          "file": "zmm_po_pruefung.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:73"
+        },
+        {
+          "file": "zmm_po_pruefung.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:76"
+        },
+        {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:73"
+        },
+        {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-256-B05",
+      "text": "Die Preisregel vergleicht für jede Materialposition den Nettopreis je Preiseinheit mit dem Preis des Einkaufsinfosatzes zu Lieferant, Material, Einkaufsorganisation und Werk.",
+      "anchors": [
+        {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:23"
+        },
+        {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:32"
+        },
+        {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-256-B06",
+      "text": "Fehlt der Infosatz, gibt es eine Warnung; liegt der Bestellpreis mehr als 5 % über dem Infosatzpreis, einen Fehler.",
+      "anchors": [
+        {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:42"
+        },
+        {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:43"
+        },
+        {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:52"
+        },
+        {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-256-B07",
+      "text": "Die Lieferantenregel gilt nicht für Umlagerungsbestellungen der Art UB.",
+      "anchors": [
+        {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-256-B08",
+      "text": "Ein unbekannter Lieferant ist ein Fehler und beendet die Lieferantenregel.",
+      "anchors": [
+        {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:27"
+        },
+        {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:31"
+        },
+        {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:32"
+        },
+        {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-256-B09",
+      "text": "Eine zentrale Einkaufssperre des Lieferanten ist ein Fehler, eine reine Buchungssperre nur eine Warnung.",
+      "anchors": [
+        {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:37"
+        },
+        {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:38"
+        },
+        {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-256-B10",
+      "text": "Ist der Lieferant in der Einkaufsorganisation der Bestellung nicht angelegt oder dort gesperrt, ist das ein Fehler.",
+      "anchors": [
+        {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:46"
+        },
+        {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:51"
+        },
+        {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:52"
+        },
+        {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-256-B11",
+      "text": "Jeder Verstoß wird im Protokoll der Bestellung festgehalten und sofort mit Bestellnummer, Schwere und Text in der Liste ausgegeben, Fehler rot, Warnungen gelb.",
+      "anchors": [
+        {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:88"
+        },
+        {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:90"
+        },
+        {
+          "file": "zmm_po_pruefung.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:32"
+        },
+        {
+          "file": "zmm_po_pruefung.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-256-B12",
+      "text": "Eine Bestellung besteht die Prüfung, wenn keine Regel einen Fehler gemeldet hat; Warnungen verhindern das nicht.",
+      "anchors": [
+        {
+          "file": "zmm_po_pruefung.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:81"
+        },
+        {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-256-B13",
+      "text": "Für bestandene Bestellungen wird nur bei gesetztem Kennzeichen das Workflow-Ereignis PRUEFUNG_OK zur Bestellung ausgelöst, das laut Kopfkommentar die Freigabe startet.",
+      "anchors": [
+        {
+          "file": "zmm_po_pruefung.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:85"
+        },
+        {
+          "file": "zmm_po_pruefung.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-256-B14",
+      "text": "Bestellungen mit mindestens einem Verstoß erhalten ein Anwendungsprotokoll mit der Bestellnummer als externer Nummer, das 180 Tage aufbewahrt wird.",
+      "anchors": [
+        {
+          "file": "zmm_po_pruefung.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:96"
+        },
+        {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:52"
+        },
+        {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:56"
+        },
+        {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:71"
+        },
+        {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-256-B15",
+      "text": "Am Ende werden Ereignisse und Protokolle festgeschrieben und die Zahl bestandener und nicht bestandener Bestellungen sowie aller Verstöße ausgegeben.",
+      "anchors": [
+        {
+          "file": "zmm_po_pruefung.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:99"
+        },
+        {
+          "file": "zmm_po_pruefung.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:102"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "h_s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:30"
+        },
+        "meaning": "Verstoß wird gemeldet (Ereignisbehandler)"
+      },
+      {
+        "id": "h_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:32"
+        },
+        "meaning": "Fehler (rot) oder Warnung (gelb)?"
+      },
+      {
+        "id": "h_o",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:37"
+        },
+        "meaning": "Verstoß mit Bestellnummer, Schwere und Text in die Liste"
+      },
+      {
+        "id": "h_e",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:39"
+        },
+        "meaning": "Rückkehr"
+      },
+      {
+        "id": "r_s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:50"
+        },
+        "meaning": "Prüflauf startet"
+      },
+      {
+        "id": "r_q",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:51"
+        },
+        "meaning": "Nicht gelöschte Bestellungen mit offener Freigabe lesen"
+      },
+      {
+        "id": "r_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:60"
+        },
+        "meaning": "Keine Bestellungen?"
+      },
+      {
+        "id": "r_o1",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:61"
+        },
+        "meaning": "Hinweis ZMM_PO 001"
+      },
+      {
+        "id": "r_x1",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:62"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "r_c1",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:65"
+        },
+        "meaning": "Aktive Prüfregeln erzeugen"
+      },
+      {
+        "id": "r_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:66"
+        },
+        "meaning": "Keine aktive Regel?"
+      },
+      {
+        "id": "r_o2",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:67"
+        },
+        "meaning": "Fehler ZMM_PO 002"
+      },
+      {
+        "id": "r_x2",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:67"
+        },
+        "meaning": "Lauf abgebrochen"
+      },
+      {
+        "id": "r_h",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:71"
+        },
+        "meaning": "Listenanzeige für Verstöße aller Regeln registrieren"
+      },
+      {
+        "id": "r_l1",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:73"
+        },
+        "meaning": "Jede Bestellung prüfen"
+      },
+      {
+        "id": "r_n",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:74"
+        },
+        "meaning": "Protokoll für die Bestellung anlegen"
+      },
+      {
+        "id": "r_l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:76"
+        },
+        "meaning": "Jede Regel anwenden"
+      },
+      {
+        "id": "r_p",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:77"
+        },
+        "meaning": "Regel auf die Bestellung anwenden"
+      },
+      {
+        "id": "r_ck",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:81"
+        },
+        "meaning": "Fehler im Protokoll ermitteln"
+      },
+      {
+        "id": "r_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:81"
+        },
+        "meaning": "Mindestens ein Fehler?"
+      },
+      {
+        "id": "r_g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:85"
+        },
+        "meaning": "Freigabe anstoßen gewählt?"
+      },
+      {
+        "id": "r_ev",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:87"
+        },
+        "meaning": "Workflow-Ereignis PRUEFUNG_OK zur Bestellung (BUS2012) auslösen"
+      },
+      {
+        "id": "r_sv",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:96"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "r_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:99"
+        },
+        "meaning": "Ereignisse und Protokolle festschreiben"
+      },
+      {
+        "id": "r_o3",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:102"
+        },
+        "meaning": "Summen bestanden / nicht bestanden / Verstöße"
+      },
+      {
+        "id": "r_e",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_pruefung.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_pruefung.abap:102"
+        },
+        "meaning": "Ende des Laufs"
+      },
+      {
+        "id": "a_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:49"
+        },
+        "meaning": "Regelfabrik"
+      },
+      {
+        "id": "a_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:52"
+        },
+        "meaning": "Aktive Regelklassen in Reihenfolge lesen"
+      },
+      {
+        "id": "a_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:57"
+        },
+        "meaning": "Jede Regelklasse"
+      },
+      {
+        "id": "a_cr",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:59"
+        },
+        "meaning": "Regelobjekt dynamisch erzeugen (bei Fehler still übergehen)"
+      },
+      {
+        "id": "a_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:66"
+        },
+        "meaning": "Regeln zurückgeben"
+      },
+      {
+        "id": "p_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:69"
+        },
+        "meaning": "Regel anwenden (Schablone)"
+      },
+      {
+        "id": "p_c",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:73"
+        },
+        "meaning": "Relevanz der Regel ermitteln"
+      },
+      {
+        "id": "p_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:73"
+        },
+        "meaning": "Regel nicht relevant?"
+      },
+      {
+        "id": "p_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:74"
+        },
+        "meaning": "Regel übersprungen"
+      },
+      {
+        "id": "p_i",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:77"
+        },
+        "meaning": "Regelspezifische Prüfung (je Unterklasse)"
+      },
+      {
+        "id": "p_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:78"
+        },
+        "meaning": "Regel angewendet"
+      },
+      {
+        "id": "ir_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:81"
+        },
+        "meaning": "Standardrelevanz"
+      },
+      {
+        "id": "ir_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:84"
+        },
+        "meaning": "Immer relevant"
+      },
+      {
+        "id": "m_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:87"
+        },
+        "meaning": "Verstoß melden"
+      },
+      {
+        "id": "m_c",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:88"
+        },
+        "meaning": "Verstoß ins Protokoll"
+      },
+      {
+        "id": "m_ev",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:90"
+        },
+        "meaning": "Ereignis Verstoß auslösen"
+      },
+      {
+        "id": "m_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_regel_base.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_base.abap:95"
+        },
+        "meaning": "Rückkehr"
+      },
+      {
+        "id": "pr_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:22"
+        },
+        "meaning": "Preisregel"
+      },
+      {
+        "id": "pr_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:23"
+        },
+        "meaning": "Nicht gelöschte Materialpositionen der Bestellung lesen"
+      },
+      {
+        "id": "pr_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:30"
+        },
+        "meaning": "Jede Position"
+      },
+      {
+        "id": "pr_q",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:32"
+        },
+        "meaning": "Infosatzpreis zu Lieferant, Material, Einkaufsorg. und Werk lesen"
+      },
+      {
+        "id": "pr_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:42"
+        },
+        "meaning": "Kein Infosatz?"
+      },
+      {
+        "id": "pr_m1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:43"
+        },
+        "meaning": "Warnung „kein Infosatz“"
+      },
+      {
+        "id": "pr_a",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:49"
+        },
+        "meaning": "Bestell- und Infosatzpreis je Preiseinheit berechnen"
+      },
+      {
+        "id": "pr_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:52"
+        },
+        "meaning": "Bestellpreis mehr als 5 % über Infosatz?"
+      },
+      {
+        "id": "pr_m2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:54"
+        },
+        "meaning": "Fehler „Preis über Infosatz + 5 %“"
+      },
+      {
+        "id": "pr_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_regel_preis.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_preis.abap:58"
+        },
+        "meaning": "Ende Preisregel"
+      },
+      {
+        "id": "li_rs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:21"
+        },
+        "meaning": "Relevanz Lieferantenregel"
+      },
+      {
+        "id": "li_ra",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:22"
+        },
+        "meaning": "Nur für Bestellungen, die keine Umlagerungsbestellung (UB) sind"
+      },
+      {
+        "id": "li_re",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:23"
+        },
+        "meaning": "Relevanz zurückgeben"
+      },
+      {
+        "id": "li_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:26"
+        },
+        "meaning": "Lieferantenregel"
+      },
+      {
+        "id": "li_r1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:27"
+        },
+        "meaning": "Lieferant mit zentralen Sperren lesen"
+      },
+      {
+        "id": "li_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:31"
+        },
+        "meaning": "Lieferant unbekannt?"
+      },
+      {
+        "id": "li_m1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:32"
+        },
+        "meaning": "Fehler „Lieferant existiert nicht“"
+      },
+      {
+        "id": "li_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:34"
+        },
+        "meaning": "Regel beendet"
+      },
+      {
+        "id": "li_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:37"
+        },
+        "meaning": "Einkaufssperre? / Buchungssperre?"
+      },
+      {
+        "id": "li_m2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:38"
+        },
+        "meaning": "Fehler „zentral für Einkauf gesperrt“"
+      },
+      {
+        "id": "li_m3",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:42"
+        },
+        "meaning": "Warnung „für Buchungen gesperrt“"
+      },
+      {
+        "id": "li_r2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:46"
+        },
+        "meaning": "Einkaufsorganisationsdaten des Lieferanten lesen"
+      },
+      {
+        "id": "li_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:51"
+        },
+        "meaning": "Nicht in der Einkaufsorg. angelegt? / dort gesperrt?"
+      },
+      {
+        "id": "li_m4",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:52"
+        },
+        "meaning": "Fehler „nicht in Einkaufsorg. angelegt“"
+      },
+      {
+        "id": "li_m5",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:55"
+        },
+        "meaning": "Fehler „in Einkaufsorg. gesperrt“"
+      },
+      {
+        "id": "li_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_regel_lieferant.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_regel_lieferant.abap:58"
+        },
+        "meaning": "Ende Lieferantenregel"
+      },
+      {
+        "id": "k_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:33"
+        },
+        "meaning": "Protokoll anlegen"
+      },
+      {
+        "id": "k_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:35"
+        },
+        "meaning": "Rückkehr"
+      },
+      {
+        "id": "hz_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:38"
+        },
+        "meaning": "Meldung aufnehmen"
+      },
+      {
+        "id": "hz_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:40"
+        },
+        "meaning": "Rückkehr"
+      },
+      {
+        "id": "hf_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:43"
+        },
+        "meaning": "Fehlerprüfung"
+      },
+      {
+        "id": "hf_a",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:44"
+        },
+        "meaning": "Fehler, wenn mindestens eine Meldung der Schwere E"
+      },
+      {
+        "id": "hf_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:45"
+        },
+        "meaning": "Ergebnis zurückgeben"
+      },
+      {
+        "id": "sv_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:48"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "sv_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:52"
+        },
+        "meaning": "Keine Meldungen?"
+      },
+      {
+        "id": "sv_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:53"
+        },
+        "meaning": "Kein Protokoll"
+      },
+      {
+        "id": "sv_b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:56"
+        },
+        "meaning": "Protokoll ZMM/PO_PRUEFUNG mit Bestellnummer, Löschdatum in 180 Tagen"
+      },
+      {
+        "id": "sv_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:66"
+        },
+        "meaning": "Protokoll nicht angelegt?"
+      },
+      {
+        "id": "sv_x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:67"
+        },
+        "meaning": "Ohne Protokoll zurück"
+      },
+      {
+        "id": "sv_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:70"
+        },
+        "meaning": "Jede Meldung"
+      },
+      {
+        "id": "sv_a",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:71"
+        },
+        "meaning": "Meldung als Freitext ins Protokoll"
+      },
+      {
+        "id": "sv_d",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:80"
+        },
+        "meaning": "Protokoll auf der Datenbank sichern"
+      },
+      {
+        "id": "sv_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_protokoll.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_protokoll.abap:85"
+        },
+        "meaning": "Rückkehr"
+      }
+    ],
+    "edges": [
+      {
+        "from": "r_s",
+        "to": "r_q",
+        "condition": "always"
+      },
+      {
+        "from": "r_q",
+        "to": "r_g1",
+        "condition": "always"
+      },
+      {
+        "from": "r_g1",
+        "to": "r_o1",
+        "condition": "gt_bestellung IS INITIAL"
+      },
+      {
+        "from": "r_o1",
+        "to": "r_x1",
+        "condition": "always"
+      },
+      {
+        "from": "r_g1",
+        "to": "r_c1",
+        "condition": "else"
+      },
+      {
+        "from": "r_c1",
+        "to": "a_s",
+        "condition": "always"
+      },
+      {
+        "from": "a_s",
+        "to": "a_r",
+        "condition": "always"
+      },
+      {
+        "from": "a_r",
+        "to": "a_l",
+        "condition": "always"
+      },
+      {
+        "from": "a_l",
+        "to": "a_cr",
+        "condition": "next row"
+      },
+      {
+        "from": "a_cr",
+        "to": "a_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "a_l",
+        "to": "a_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "a_e",
+        "to": "r_g2",
+        "condition": "always"
+      },
+      {
+        "from": "r_g2",
+        "to": "r_o2",
+        "condition": "gt_regeln IS INITIAL"
+      },
+      {
+        "from": "r_o2",
+        "to": "r_x2",
+        "condition": "always"
+      },
+      {
+        "from": "r_g2",
+        "to": "r_h",
+        "condition": "else"
+      },
+      {
+        "from": "r_h",
+        "to": "r_l1",
+        "condition": "always"
+      },
+      {
+        "from": "r_l1",
+        "to": "r_n",
+        "condition": "next row"
+      },
+      {
+        "from": "r_n",
+        "to": "k_s",
+        "condition": "always"
+      },
+      {
+        "from": "k_s",
+        "to": "k_e",
+        "condition": "always"
+      },
+      {
+        "from": "k_e",
+        "to": "r_l2",
+        "condition": "always"
+      },
+      {
+        "from": "r_l2",
+        "to": "r_p",
+        "condition": "next row"
+      },
+      {
+        "from": "r_p",
+        "to": "p_s",
+        "condition": "always"
+      },
+      {
+        "from": "p_s",
+        "to": "p_c",
+        "condition": "always"
+      },
+      {
+        "from": "p_c",
+        "to": "ir_s",
+        "condition": "always"
+      },
+      {
+        "from": "p_c",
+        "to": "li_rs",
+        "condition": "always"
+      },
+      {
+        "from": "ir_s",
+        "to": "ir_e",
+        "condition": "always"
+      },
+      {
+        "from": "ir_e",
+        "to": "p_g",
+        "condition": "always"
+      },
+      {
+        "from": "li_rs",
+        "to": "li_ra",
+        "condition": "always"
+      },
+      {
+        "from": "li_ra",
+        "to": "li_re",
+        "condition": "always"
+      },
+      {
+        "from": "li_re",
+        "to": "p_g",
+        "condition": "always"
+      },
+      {
+        "from": "p_g",
+        "to": "p_x",
+        "condition": "ist_relevant( ) = abap_false"
+      },
+      {
+        "from": "p_g",
+        "to": "p_i",
+        "condition": "else"
+      },
+      {
+        "from": "p_i",
+        "to": "pr_s",
+        "condition": "always"
+      },
+      {
+        "from": "p_i",
+        "to": "li_s",
+        "condition": "always"
+      },
+      {
+        "from": "pr_e",
+        "to": "p_e",
+        "condition": "always"
+      },
+      {
+        "from": "li_x",
+        "to": "p_e",
+        "condition": "always"
+      },
+      {
+        "from": "li_e",
+        "to": "p_e",
+        "condition": "always"
+      },
+      {
+        "from": "p_x",
+        "to": "r_l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "p_e",
+        "to": "r_l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "r_l2",
+        "to": "r_ck",
+        "condition": "no more rows"
+      },
+      {
+        "from": "r_ck",
+        "to": "hf_s",
+        "condition": "always"
+      },
+      {
+        "from": "hf_s",
+        "to": "hf_a",
+        "condition": "always"
+      },
+      {
+        "from": "hf_a",
+        "to": "hf_e",
+        "condition": "always"
+      },
+      {
+        "from": "hf_e",
+        "to": "r_g3",
+        "condition": "always"
+      },
+      {
+        "from": "r_g3",
+        "to": "r_sv",
+        "condition": "go_protokoll->hat_fehler( ) = abap_true"
+      },
+      {
+        "from": "r_g3",
+        "to": "r_g4",
+        "condition": "else"
+      },
+      {
+        "from": "r_g4",
+        "to": "r_ev",
+        "condition": "p_frei = abap_true"
+      },
+      {
+        "from": "r_g4",
+        "to": "r_sv",
+        "condition": "else"
+      },
+      {
+        "from": "r_ev",
+        "to": "r_sv",
+        "condition": "always"
+      },
+      {
+        "from": "r_sv",
+        "to": "sv_s",
+        "condition": "always"
+      },
+      {
+        "from": "sv_s",
+        "to": "sv_g",
+        "condition": "always"
+      },
+      {
+        "from": "sv_g",
+        "to": "sv_x",
+        "condition": "mt_msg IS INITIAL"
+      },
+      {
+        "from": "sv_g",
+        "to": "sv_b",
+        "condition": "else"
+      },
+      {
+        "from": "sv_b",
+        "to": "sv_g2",
+        "condition": "always"
+      },
+      {
+        "from": "sv_g2",
+        "to": "sv_x2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sv_g2",
+        "to": "sv_l",
+        "condition": "else"
+      },
+      {
+        "from": "sv_l",
+        "to": "sv_a",
+        "condition": "next row"
+      },
+      {
+        "from": "sv_a",
+        "to": "sv_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "sv_l",
+        "to": "sv_d",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sv_d",
+        "to": "sv_e",
+        "condition": "always"
+      },
+      {
+        "from": "sv_x",
+        "to": "r_l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "sv_x2",
+        "to": "r_l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "sv_e",
+        "to": "r_l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "r_l1",
+        "to": "r_cm",
+        "condition": "no more rows"
+      },
+      {
+        "from": "r_cm",
+        "to": "r_o3",
+        "condition": "always"
+      },
+      {
+        "from": "r_o3",
+        "to": "r_e",
+        "condition": "always"
+      },
+      {
+        "from": "pr_s",
+        "to": "pr_r",
+        "condition": "always"
+      },
+      {
+        "from": "pr_r",
+        "to": "pr_l",
+        "condition": "always"
+      },
+      {
+        "from": "pr_l",
+        "to": "pr_q",
+        "condition": "next row"
+      },
+      {
+        "from": "pr_q",
+        "to": "pr_g1",
+        "condition": "always"
+      },
+      {
+        "from": "pr_g1",
+        "to": "pr_m1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pr_m1",
+        "to": "m_s",
+        "condition": "always"
+      },
+      {
+        "from": "m_e",
+        "to": "pr_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pr_g1",
+        "to": "pr_a",
+        "condition": "else"
+      },
+      {
+        "from": "pr_a",
+        "to": "pr_g2",
+        "condition": "always"
+      },
+      {
+        "from": "pr_g2",
+        "to": "pr_m2",
+        "condition": "lv_preis_info > 0 AND ( lv_preis_best - lv_preis_info ) * 100 / lv_preis_info > gc_toleranz_proz"
+      },
+      {
+        "from": "pr_g2",
+        "to": "pr_l",
+        "condition": "else"
+      },
+      {
+        "from": "pr_m2",
+        "to": "m_s",
+        "condition": "always"
+      },
+      {
+        "from": "pr_l",
+        "to": "pr_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "li_s",
+        "to": "li_r1",
+        "condition": "always"
+      },
+      {
+        "from": "li_r1",
+        "to": "li_g1",
+        "condition": "always"
+      },
+      {
+        "from": "li_g1",
+        "to": "li_m1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "li_m1",
+        "to": "m_s",
+        "condition": "always"
+      },
+      {
+        "from": "m_e",
+        "to": "li_x",
+        "condition": "always"
+      },
+      {
+        "from": "li_g1",
+        "to": "li_g2",
+        "condition": "else"
+      },
+      {
+        "from": "li_g2",
+        "to": "li_m2",
+        "condition": "ls_lief-purchasingisblocked = abap_true"
+      },
+      {
+        "from": "li_g2",
+        "to": "li_m3",
+        "condition": "ls_lief-postingisblocked = abap_true"
+      },
+      {
+        "from": "li_g2",
+        "to": "li_r2",
+        "condition": "else"
+      },
+      {
+        "from": "li_m2",
+        "to": "m_s",
+        "condition": "always"
+      },
+      {
+        "from": "li_m3",
+        "to": "m_s",
+        "condition": "always"
+      },
+      {
+        "from": "m_e",
+        "to": "li_r2",
+        "condition": "always"
+      },
+      {
+        "from": "li_r2",
+        "to": "li_g3",
+        "condition": "always"
+      },
+      {
+        "from": "li_g3",
+        "to": "li_m4",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "li_g3",
+        "to": "li_m5",
+        "condition": "lv_ekorg_sperre = abap_true"
+      },
+      {
+        "from": "li_g3",
+        "to": "li_e",
+        "condition": "else"
+      },
+      {
+        "from": "li_m4",
+        "to": "m_s",
+        "condition": "always"
+      },
+      {
+        "from": "li_m5",
+        "to": "m_s",
+        "condition": "always"
+      },
+      {
+        "from": "m_e",
+        "to": "li_e",
+        "condition": "always"
+      },
+      {
+        "from": "m_s",
+        "to": "m_c",
+        "condition": "always"
+      },
+      {
+        "from": "m_c",
+        "to": "hz_s",
+        "condition": "always"
+      },
+      {
+        "from": "hz_s",
+        "to": "hz_e",
+        "condition": "always"
+      },
+      {
+        "from": "hz_e",
+        "to": "m_ev",
+        "condition": "always"
+      },
+      {
+        "from": "m_ev",
+        "to": "h_s",
+        "condition": "always"
+      },
+      {
+        "from": "h_s",
+        "to": "h_g",
+        "condition": "always"
+      },
+      {
+        "from": "h_g",
+        "to": "h_o",
+        "condition": "iv_schwere = 'E'"
+      },
+      {
+        "from": "h_g",
+        "to": "h_o",
+        "condition": "else"
+      },
+      {
+        "from": "h_o",
+        "to": "h_e",
+        "condition": "always"
+      },
+      {
+        "from": "h_e",
+        "to": "m_e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_mm_po_regel_base.abap:59 — kein Fachsatz „jede Bestellung wird auf Preis und Lieferant geprüft“ (welche Regeln laufen, bestimmt ZMM_PO_REGEL zur Laufzeit; die beiden Regelklassen im Fall sind nur mögliche Ziele)",
+    "zmm_po_pruefung.abap:87 — kein Fachsatz „die Bestellung wird freigegeben“ (ausgelöst wird nur ein Workflow-Ereignis; ob ein Workflow darauf reagiert, liegt nicht im Fall)",
+    "zcl_mm_po_protokoll.abap:52 — kein Fachsatz „jede geprüfte Bestellung erhält ein Prüfprotokoll“ (nur Bestellungen mit Meldungen)",
+    "zmm_po_pruefung.abap:81 — kein Fachsatz „Bestellungen mit Warnungen gelten als nicht bestanden“ (nur Meldungen der Schwere E zählen)"
+  ],
+  "processDescription": "Ein Prüflauf des Einkaufscontrollings liest alle nicht gelöschten Bestellungen der gewählten Einkaufsorganisationen mit noch offener Freigabe; ohne Treffer endet er mit Hinweis. Die aktiven Prüfregeln werden aus einer Kundentabelle gelesen und dynamisch erzeugt; ist keine aktiv, bricht der Lauf ab. Jede Bestellung wird mit jeder Regel geprüft, sofern die Regel für sie relevant ist. Die Preisregel vergleicht den Positionspreis je Preiseinheit mit dem Infosatzpreis: ohne Infosatz gibt es eine Warnung, mehr als 5 % darüber einen Fehler. Die Lieferantenregel gilt nicht für Umlagerungsbestellungen; ein unbekannter Lieferant, eine zentrale Einkaufssperre oder fehlende bzw. gesperrte Einkaufsorganisationsdaten sind Fehler, eine Buchungssperre eine Warnung. Jeder Verstoß wird im Protokoll der Bestellung festgehalten und über ein Ereignis sofort farbig in der Liste ausgegeben. Bestellungen ohne Fehler gelten als bestanden und lösen, wenn gewählt, das Workflow-Ereignis PRUEFUNG_OK aus. Bestellungen mit Meldungen erhalten ein Anwendungsprotokoll. Am Ende wird festgeschrieben und eine Summenzeile ausgegeben."
+}

@@ -1,0 +1,24 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Fachsatz BM-215-B13",
+      "before": "Anker zcl_mm_pr_approval.abap:141 (CASE iv_state)",
+      "after": "Anker zcl_mm_pr_approval.abap:147 (ms_appr-approver = ms_appr-approver2)",
+      "why": "Der Wechsel des zuständigen Genehmigers geschieht in Zeile 147, nicht am CASE.",
+      "category": "Anker"
+    },
+    {
+      "where": "Fachsatz BM-215-B02",
+      "before": "Anker zcl_im_mm_pr_approval.abap:36 doppelt",
+      "after": "einmal",
+      "why": "Doppelter Anker entfernt.",
+      "category": "Anker"
+    }
+  ],
+  "doubts": [
+    "BAPI_REQUISITION_RELEASE_GEN wird ohne NO_COMMIT_WORK gerufen und schreibt dann vermutlich selbst fest; B15 („die ganze Entscheidung wird zurückgerollt“) gilt dann nur für den Fehlerfall vor dem BAPI-Commit — nicht geändert, da das Commit-Verhalten des Bausteins nicht im Fall steht.",
+    "Im BAdI-POST liest der Konstruktor EBAN; bei einer neuen Banf steht sie womöglich noch nicht in der DB (Werk leer → keine Matrix → Statusmeldung). Fachlich plausibel als gewachsener Fehler, Skelett unberührt."
+  ]
+}

@@ -1,0 +1,1318 @@
+{
+  "id": "BM-233",
+  "title": "Zahlungseingänge des Kontoauszugs über die Rechnungsnummer ausgleichen",
+  "classes": [
+    "K01",
+    "K03",
+    "K12",
+    "K14",
+    "K15"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "FEBKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzfi_ebsu01.abap",
+        "line": 22,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzfi_ebsu01.abap:22"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FEBEP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzfi_ebsu01.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzfi_ebsu01.abap:36"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FEBEP",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "lzfi_ebsu01.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzfi_ebsu01.abap:75"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FEBRE",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzfi_ebsf01.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzfi_ebsf01.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BSID",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzfi_ebsf01.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzfi_ebsf01.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POSTING_INTERFACE_CLEARING",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzfi_ebsf01.abap",
+        "line": 85,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzfi_ebsf01.abap:85"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-233-B01",
+      "text": "Der Kopf des angegebenen Kontoauszugs wird gelesen; fehlt er, endet der Baustein mit der Ausnahme AUSZUG_NICHT_GEFUNDEN.",
+      "anchors": [
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:22"
+        },
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:24"
+        },
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-233-B02",
+      "text": "Ohne Berechtigung für Kontoauszüge im Buchungskreis endet der Baustein mit Fehlermeldung und der Ausnahme KEINE_BERECHTIGUNG.",
+      "anchors": [
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:28"
+        },
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:31"
+        },
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-233-B03",
+      "text": "Es werden die Zahlungseingänge (Habenposten) des Auszugs gelesen, deren Nebenbuchbuchung noch aussteht.",
+      "anchors": [
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-233-B04",
+      "text": "Gibt es keine, wird ein Hinweis zurückgegeben und der Baustein verlassen.",
+      "anchors": [
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:40"
+        },
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:41"
+        },
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-233-B05",
+      "text": "Im Echtlauf wird die Buchungsschnittstelle für Buchungen per Transaktion im Hintergrund geöffnet und am Ende geschlossen.",
+      "anchors": [
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:46"
+        },
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:47"
+        },
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:86"
+        },
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-233-B06",
+      "text": "Für jeden Zahlungseingang wird in der ersten Verwendungszweckzeile eine Rechnungsnummer der Form RE plus acht Ziffern gesucht; ohne Treffer gilt kein Posten als gefunden.",
+      "anchors": [
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:56"
+        },
+        {
+          "file": "lzfi_ebsf01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:18"
+        },
+        {
+          "file": "lzfi_ebsf01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:23"
+        },
+        {
+          "file": "lzfi_ebsf01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:25"
+        },
+        {
+          "file": "lzfi_ebsf01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-233-B07",
+      "text": "Mit der Rechnungsnummer werden offene Soll-Posten von Debitoren im Buchungskreis des Auszugs mit dieser Referenz gesucht.",
+      "anchors": [
+        {
+          "file": "lzfi_ebsf01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-233-B08",
+      "text": "Wird kein Posten gefunden, wird eine Warnung protokolliert; werden mehrere gefunden, ebenfalls.",
+      "anchors": [
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:59"
+        },
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:61"
+        },
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-233-B09",
+      "text": "Bei genau einem Posten wird nur ausgeglichen, wenn sein Betrag dem Zahlungsbetrag entspricht; sonst wird eine Betragsdifferenz gemeldet.",
+      "anchors": [
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:65"
+        },
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-233-B10",
+      "text": "Im Testlauf wird nur protokolliert, dass ausgeglichen würde.",
+      "anchors": [
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:69"
+        },
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-233-B11",
+      "text": "Im Echtlauf wird der Zahlungseingang als Beleg der Art DZ auf das Bankkonto des Auszugs gebucht und der Debitorenposten dabei ausgeglichen.",
+      "anchors": [
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:73"
+        },
+        {
+          "file": "lzfi_ebsf01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:69"
+        },
+        {
+          "file": "lzfi_ebsf01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-233-B12",
+      "text": "Scheitert die Buchung, wird ein Fehler protokolliert und keine Belegnummer zurückgegeben; sonst wird die Belegnummer protokolliert.",
+      "anchors": [
+        {
+          "file": "lzfi_ebsf01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:102"
+        },
+        {
+          "file": "lzfi_ebsf01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:103"
+        },
+        {
+          "file": "lzfi_ebsf01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:104"
+        },
+        {
+          "file": "lzfi_ebsf01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:109"
+        }
+      ]
+    },
+    {
+      "id": "BM-233-B13",
+      "text": "Mit Belegnummer wird die Auszugsposition als nachgebucht gekennzeichnet und gezählt.",
+      "anchors": [
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:74"
+        },
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-233-B14",
+      "text": "Die gesammelten Meldungen und die Zahl der Ausgleiche gehen an den Aufrufer zurück.",
+      "anchors": [
+        {
+          "file": "lzfi_ebsu01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:90"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:1"
+        },
+        "meaning": "Bausteinstart"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:22"
+        },
+        "meaning": "Kontoauszugskopf lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:24"
+        },
+        "meaning": "Auszug vorhanden?"
+      },
+      {
+        "id": "rx",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:25"
+        },
+        "meaning": "Ausnahme AUSZUG_NICHT_GEFUNDEN"
+      },
+      {
+        "id": "au",
+        "type": "action",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:28"
+        },
+        "meaning": "Berechtigung Kontoauszug im Buchungskreis prüfen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:31"
+        },
+        "meaning": "Berechtigung fehlt?"
+      },
+      {
+        "id": "m2",
+        "type": "output",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:32"
+        },
+        "meaning": "Fehler: keine Berechtigung"
+      },
+      {
+        "id": "m2e",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:32"
+        },
+        "meaning": "Ausnahme KEINE_BERECHTIGUNG"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:36"
+        },
+        "meaning": "Nicht nachgebuchte Zahlungseingänge lesen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:40"
+        },
+        "meaning": "Offene Zahlungseingänge vorhanden?"
+      },
+      {
+        "id": "cl1",
+        "type": "call",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:41"
+        },
+        "meaning": "Hinweis „nichts zu tun“ protokollieren"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:43"
+        },
+        "meaning": "Baustein verlassen"
+      },
+      {
+        "id": "gt1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:46"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "ps",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:47"
+        },
+        "meaning": "Buchungsschnittstelle öffnen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:55"
+        },
+        "meaning": "Zahlungseingänge durchlaufen"
+      },
+      {
+        "id": "co",
+        "type": "call",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:56"
+        },
+        "meaning": "Offene Posten zur Rechnungsnummer suchen"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:59"
+        },
+        "meaning": "Anzahl gefundener Posten"
+      },
+      {
+        "id": "cl2",
+        "type": "call",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:61"
+        },
+        "meaning": "Warnung: kein Posten gefunden"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:65"
+        },
+        "meaning": "Betrag abweichend?"
+      },
+      {
+        "id": "cl3",
+        "type": "call",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:66"
+        },
+        "meaning": "Warnung: Betragsdifferenz"
+      },
+      {
+        "id": "gt2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:69"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "cl4",
+        "type": "call",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:70"
+        },
+        "meaning": "Hinweis: würde ausgeglichen"
+      },
+      {
+        "id": "ca",
+        "type": "call",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:73"
+        },
+        "meaning": "Posten ausgleichen"
+      },
+      {
+        "id": "gbn",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:74"
+        },
+        "meaning": "Ausgleichsbeleg erzeugt?"
+      },
+      {
+        "id": "up",
+        "type": "write",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:75"
+        },
+        "meaning": "Auszugsposition als nachgebucht mit Belegnummer kennzeichnen"
+      },
+      {
+        "id": "cl5",
+        "type": "call",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:82"
+        },
+        "meaning": "Warnung: mehrere Posten"
+      },
+      {
+        "id": "gt3",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:86"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "pe",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:87"
+        },
+        "meaning": "Buchungsschnittstelle schließen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_ebsu01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsu01.abap:91"
+        },
+        "meaning": "Bausteinende"
+      },
+      {
+        "id": "os",
+        "type": "start",
+        "anchor": {
+          "file": "lzfi_ebsf01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:11"
+        },
+        "meaning": "Postensuche"
+      },
+      {
+        "id": "oq1",
+        "type": "read",
+        "anchor": {
+          "file": "lzfi_ebsf01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:18"
+        },
+        "meaning": "Erste Verwendungszweckzeile lesen"
+      },
+      {
+        "id": "of",
+        "type": "action",
+        "anchor": {
+          "file": "lzfi_ebsf01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:23"
+        },
+        "meaning": "Rechnungsnummer im Verwendungszweck suchen"
+      },
+      {
+        "id": "og",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_ebsf01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:25"
+        },
+        "meaning": "Rechnungsnummer gefunden?"
+      },
+      {
+        "id": "or",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_ebsf01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:26"
+        },
+        "meaning": "Ohne Treffer zurück"
+      },
+      {
+        "id": "oq2",
+        "type": "read",
+        "anchor": {
+          "file": "lzfi_ebsf01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:30"
+        },
+        "meaning": "Offene Soll-Posten mit dieser Referenz lesen"
+      },
+      {
+        "id": "oe",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_ebsf01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:36"
+        },
+        "meaning": "Ende Postensuche"
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "lzfi_ebsf01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:41"
+        },
+        "meaning": "Ausgleich"
+      },
+      {
+        "id": "apc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzfi_ebsf01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:85"
+        },
+        "meaning": "Zahlungseingang mit Ausgleich buchen (FB05)"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_ebsf01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:102"
+        },
+        "meaning": "Buchung fehlgeschlagen?"
+      },
+      {
+        "id": "al1",
+        "type": "call",
+        "anchor": {
+          "file": "lzfi_ebsf01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:103"
+        },
+        "meaning": "Fehler protokollieren"
+      },
+      {
+        "id": "ar",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_ebsf01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:104"
+        },
+        "meaning": "Ohne Belegnummer zurück"
+      },
+      {
+        "id": "al2",
+        "type": "call",
+        "anchor": {
+          "file": "lzfi_ebsf01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:109"
+        },
+        "meaning": "Belegnummer protokollieren"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_ebsf01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:110"
+        },
+        "meaning": "Ende Ausgleich"
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "lzfi_ebsf01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:115"
+        },
+        "meaning": "Protokollzeile sammeln"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_ebsf01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ebsf01.abap:124"
+        },
+        "meaning": "Ende Protokollzeile"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "rx",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "au",
+        "condition": "else"
+      },
+      {
+        "from": "au",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "m2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m2",
+        "to": "m2e",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "q2",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "cl1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "cl1",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "gt1",
+        "condition": "else"
+      },
+      {
+        "from": "gt1",
+        "to": "ps",
+        "condition": "iv_testlauf IS INITIAL"
+      },
+      {
+        "from": "ps",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "gt1",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "co",
+        "condition": "next row"
+      },
+      {
+        "from": "co",
+        "to": "os",
+        "condition": "always"
+      },
+      {
+        "from": "os",
+        "to": "oq1",
+        "condition": "always"
+      },
+      {
+        "from": "oq1",
+        "to": "of",
+        "condition": "always"
+      },
+      {
+        "from": "of",
+        "to": "og",
+        "condition": "always"
+      },
+      {
+        "from": "og",
+        "to": "or",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "og",
+        "to": "oq2",
+        "condition": "else"
+      },
+      {
+        "from": "oq2",
+        "to": "oe",
+        "condition": "always"
+      },
+      {
+        "from": "or",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "oe",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "cl2",
+        "condition": "WHEN 0"
+      },
+      {
+        "from": "cl2",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cs",
+        "to": "gb",
+        "condition": "WHEN 1"
+      },
+      {
+        "from": "gb",
+        "to": "cl3",
+        "condition": "ls_op-wrbtr <> gs_febep-kwbtr"
+      },
+      {
+        "from": "cl3",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "gt2",
+        "condition": "else"
+      },
+      {
+        "from": "gt2",
+        "to": "cl4",
+        "condition": "iv_testlauf = 'X'"
+      },
+      {
+        "from": "cl4",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "gt2",
+        "to": "ca",
+        "condition": "else"
+      },
+      {
+        "from": "ca",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "as",
+        "to": "apc",
+        "condition": "always"
+      },
+      {
+        "from": "apc",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "al1",
+        "condition": "sy-subrc <> 0 OR lv_subrc <> 0"
+      },
+      {
+        "from": "al1",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "ar",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "al2",
+        "condition": "else"
+      },
+      {
+        "from": "al2",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "ae",
+        "condition": "always"
+      },
+      {
+        "from": "ar",
+        "to": "gbn",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "gbn",
+        "condition": "always"
+      },
+      {
+        "from": "gbn",
+        "to": "up",
+        "condition": "lv_belnr IS NOT INITIAL"
+      },
+      {
+        "from": "up",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gbn",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "cl5",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "cl5",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "le",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "gt3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gt3",
+        "to": "pe",
+        "condition": "iv_testlauf IS INITIAL"
+      },
+      {
+        "from": "pe",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "gt3",
+        "to": "e",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "lzfi_ebsf01.abap:18 — kein Fachsatz „der gesamte Verwendungszweck wird durchsucht“ (nur Zeile 001)",
+    "lzfi_ebsu01.abap:65 — kein Fachsatz „Differenzen werden als Restposten gebucht“ (bei Differenz nur Warnung, laut Kommentar Sache der Buchhaltung)",
+    "lzfi_ebsu01.abap:75 — kein Fachsatz „Statusänderung ist mit der Ausgleichsbuchung festgeschrieben“ (die Buchung läuft per Transaktion mit eigener Verbuchung, das UPDATE erst mit einem COMMIT des Aufrufers)"
+  ],
+  "processDescription": "Der Funktionsbaustein bearbeitet Zahlungseingänge eines elektronischen Kontoauszugs nach, die die Standard-Suchmuster nicht zugeordnet haben. Er liest den Auszugskopf (sonst Ausnahme AUSZUG_NICHT_GEFUNDEN) und prüft die Berechtigung für Kontoauszüge im Buchungskreis (sonst Fehlermeldung mit KEINE_BERECHTIGUNG). Dann liest er die Habenposten ohne Nebenbuchbuchung; gibt es keine, gibt er einen Hinweis zurück und endet. Im Echtlauf öffnet er die Buchungsschnittstelle. Je Zahlungseingang sucht eine FORM in der ersten Verwendungszweckzeile eine Rechnungsnummer RE plus acht Ziffern und liest die offenen Soll-Posten mit dieser Referenz. Bei keinem oder mehreren Treffern wird gewarnt; bei genau einem Treffer mit abweichendem Betrag ebenfalls. Im Testlauf wird der Ausgleich nur angekündigt; im Echtlauf bucht eine FORM über POSTING_INTERFACE_CLEARING (FB05) einen DZ-Beleg auf das Bankkonto mit Ausgleich des Postens und protokolliert Belegnummer oder Fehler. Mit Belegnummer kennzeichnet der Baustein die Auszugsposition als nachgebucht. Zum Schluss schließt er im Echtlauf die Schnittstelle und gibt Protokoll und Anzahl zurück."
+}

@@ -1,0 +1,34 @@
+{
+  "id": "BM-211",
+  "title": "IDoc-Wareneingang mit Buchungsklasse und Ereignis-Journal",
+  "domain": "MM",
+  "band": "komplex",
+  "loc": 248,
+  "constructs": [
+    "IDoc-Eingangsbaustein",
+    "EDIDC/EDIDD/BDIDOCSTAT",
+    "READ TABLE WITH KEY",
+    "VALUE FOR WHERE",
+    "globale Klassen",
+    "EVENTS/SET HANDLER",
+    "private Fehlermethode mit RAISE EVENT und RAISE EXCEPTION",
+    "BAPI_GOODSMVT_CREATE",
+    "CONTINUE"
+  ],
+  "scenario": "Eingangsverarbeitung für Wareneingangsbestätigungen eines externen Logistikdienstleisters per IDoc, gebucht gegen Bestellungen.",
+  "s4_issues": [
+    "MKPF/MSEG → MATDOC (BAPI bleibt nutzbar)",
+    "EKKO/EKPO/EKBE-Direktzugriff",
+    "Kundeneigener IDoc-Typ ZGRCONF01",
+    "Materialnummer 40 Zeichen"
+  ],
+  "wave": 3,
+  "module": "MM-IM",
+  "edge_constructs": [
+    "Methode, die nie normal zurückkehrt",
+    "Ereignis vor Ausnahme",
+    "kein Commit im Inbound-Baustein",
+    "CONTINUE nach Status-FORM"
+  ],
+  "oo": true
+}

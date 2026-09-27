@@ -1,0 +1,630 @@
+{
+  "id": "BM-244",
+  "title": "Web-Dynpro-Aktion: markierte Bestellanforderungen mit dem Freigabecode des Genehmigers freigeben",
+  "classes": [
+    "K02",
+    "K03"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZMM_FRG_USER",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:29"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_REQUISITION_RELEASE_GEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:41"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 70,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:70"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 73,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:73"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-244-B01",
+      "text": "Ist keine Bestellanforderung markiert, erhält der Genehmiger die Warnung ZMM_WD 001 und die Aktion endet ohne Wirkung.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-244-B02",
+      "text": "Der Freigabecode des Genehmigers wird aus der kundeneigenen Zuordnung Benutzer → Freigabecode gelesen, nur aktive Einträge.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-244-B03",
+      "text": "Hat der Benutzer keinen aktiven Freigabecode, wird der Fehler ZMM_WD 002 gemeldet und nichts freigegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-244-B04",
+      "text": "Jede markierte Bestellanforderung wird einzeln mit diesem Freigabecode über das Freigabe-BAPI freigegeben, ohne dass das BAPI selbst festschreibt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-244-B05",
+      "text": "Meldet das BAPI eine Ausnahme (z. B. Berechtigung, Sperre, bereits freigegeben), wird die Banf als Fehler gezählt, mit Nummer und Ausnahmenummer gemeldet und die nächste bearbeitet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-244-B06",
+      "text": "Enthält die BAPI-Rückgabe eine Fehlermeldung, wird die Freigabe dieser Banf zurückgerollt und der Fehlertext angezeigt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-244-B07",
+      "text": "Sonst wird die Freigabe je Banf synchron festgeschrieben und der neue Freigabestatus in der Liste angezeigt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        }
+      ]
+    },
+    {
+      "id": "BM-244-B08",
+      "text": "Am Ende meldet die Anwendung die Anzahl erfolgreich freigegebener und fehlerhafter Bestellanforderungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Benutzer drückt „Freigeben“ in der Banf-Liste"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Keine Banf markiert?"
+      },
+      {
+        "id": "o0",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Warnung ZMM_WD 001: nichts markiert"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Aktion ohne Wirkung beenden"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Aktiven Freigabecode des angemeldeten Benutzers lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Freigabecode vorhanden?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Fehler ZMM_WD 002: Benutzer hat keinen Freigabecode"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Aktion abbrechen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "Jede markierte Banf freigeben"
+      },
+      {
+        "id": "b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Banf mit Freigabecode freigeben (ohne eigenen Commit)"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Ausnahme des Freigabe-BAPIs?"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Fehler ZMM_WD 003 mit Banf-Nummer und Ausnahmenummer"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        "meaning": "Fehlermeldung in der BAPI-Rückgabe suchen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        },
+        "meaning": "Fehler in der Rückgabe?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        "meaning": "Freigabe dieser Banf zurückrollen"
+      },
+      {
+        "id": "o3",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        },
+        "meaning": "BAPI-Fehlertext anzeigen"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        "meaning": "Freigabe dieser Banf festschreiben (synchron)"
+      },
+      {
+        "id": "ui",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        },
+        "meaning": "Neuen Freigabestatus in der Liste anzeigen"
+      },
+      {
+        "id": "o4",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        },
+        "meaning": "Erfolgsmeldung ZMM_WD 010 mit Anzahl freigegeben / fehlerhaft"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:87"
+        },
+        "meaning": "Ende der Aktion"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "o0",
+        "condition": "lt_elements IS INITIAL"
+      },
+      {
+        "from": "o0",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "q",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "o1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o1",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "b",
+        "condition": "next row"
+      },
+      {
+        "from": "b",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "o2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g2",
+        "to": "rt",
+        "condition": "else"
+      },
+      {
+        "from": "rt",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "rb",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "rb",
+        "to": "o3",
+        "condition": "always"
+      },
+      {
+        "from": "o3",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g3",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "ui",
+        "condition": "always"
+      },
+      {
+        "from": "ui",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "o4",
+        "condition": "no more rows"
+      },
+      {
+        "from": "o4",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:41 — kein Fachsatz „alle markierten Banfen werden gemeinsam oder gar nicht freigegeben“ (Commit bzw. Rollback erfolgt je Banf in der Schleife)",
+    "source.abap:29 — kein Fachsatz „die Freigabestrategie wird geprüft“ (der Code liest nur eine Kundenzuordnung; die Strategieprüfung liegt, wenn überhaupt, im BAPI)",
+    "source.abap:58 — kein Fachsatz „bei Ausnahme wird zurückgerollt“ (in diesem Zweig wird kein Rollback aufgerufen, nur gemeldet und fortgefahren)"
+  ],
+  "processDescription": "Ein Genehmiger markiert in einer Web-Dynpro-Liste Bestellanforderungen und löst die Aktion „Freigeben“ aus. Ohne Markierung erscheint eine Warnung und die Aktion endet. Danach wird der aktive Freigabecode des Benutzers aus einer Kundentabelle gelesen; fehlt er, wird ein Fehler gemeldet und nichts freigegeben. Jede markierte Banf wird einzeln mit diesem Code über BAPI_REQUISITION_RELEASE_GEN freigegeben, ohne Commit im BAPI. Wirft das BAPI eine Ausnahme, zählt die Banf als Fehler, wird gemeldet und übersprungen, ohne Rollback. Steht in der Rückgabe eine Fehlermeldung, wird zurückgerollt und der Text angezeigt; sonst wird synchron festgeschrieben und der neue Freigabestatus in der Liste gezeigt. Zum Schluss meldet die Anwendung die Zahl erfolgreicher und fehlerhafter Freigaben."
+}

@@ -1,0 +1,2017 @@
+{
+  "id": "BM-238",
+  "title": "Mitarbeiter einer Organisationseinheit zum Stichtag umhängen",
+  "classes": [
+    "K01",
+    "K03",
+    "K09",
+    "K10"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Der Schnittstellenaufruf lo_pruef->pruefen ist als call mit Kanten in alle drei im Fall liegenden Implementierungen modelliert; welche davon laufen, bestimmt zur Laufzeit ZHR_UMH_PRUEF, weitere Implementierungen außerhalb des Falls sind möglich."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PA0001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_org_umhaengen.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_org_umhaengen.abap:75"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZHR_UMH_PRUEF",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_hr_org_umhaengung.abap",
+        "line": 62,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_org_umhaengung.abap:62"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA2001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_hr_pruef_offene_abw.abap",
+        "line": 22,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_pruef_offene_abw.abap:22"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HRP1000",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_hr_pruef_planstelle.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_pruef_planstelle.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HRP1001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_hr_pruef_planstelle.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_pruef_planstelle.abap:40"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T569V",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_hr_pruef_abrechnung.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_pruef_abrechnung.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_INFOTYPE_OPERATION",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_hr_org_umhaengung.abap",
+        "line": 157,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_org_umhaengung.abap:157"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-238-B01",
+      "text": "Sind alte und neue Organisationseinheit gleich, weist das Selektionsbild die Eingabe zurück.",
+      "anchors": [
+        {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:64"
+        },
+        {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-238-B02",
+      "text": "Für den Lauf werden die aktiven Prüfklassen aus der Kundentabelle in gepflegter Reihenfolge dynamisch erzeugt; falsch gepflegte Klassen werden still übergangen.",
+      "anchors": [
+        {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:71"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:62"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:66"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-238-B03",
+      "text": "Jede Umhängemeldung wird mit Personalnummer, Ergebnis und Text für das Protokoll gesammelt.",
+      "anchors": [
+        {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:73"
+        },
+        {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-238-B04",
+      "text": "Es werden die Mitarbeiter gelesen, die zum Stichtag der alten Organisationseinheit zugeordnet sind; gibt es keine, erscheint eine Meldung und der Lauf endet.",
+      "anchors": [
+        {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:75"
+        },
+        {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:79"
+        },
+        {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:80"
+        },
+        {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-238-B05",
+      "text": "Für jeden Mitarbeiter laufen die aktiven Prüfungen der Reihe nach; die erste Prüfung mit Fehler beendet die Prüfreihe.",
+      "anchors": [
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:82"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:106"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:107"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:110"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:111"
+        }
+      ]
+    },
+    {
+      "id": "BM-238-B06",
+      "text": "Die Abwesenheitsprüfung meldet einen Fehler, wenn ab dem Stichtag nicht gesperrte Abwesenheiten erfasst sind.",
+      "anchors": [
+        {
+          "file": "zcl_hr_pruef_offene_abw.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_offene_abw.abap:22"
+        },
+        {
+          "file": "zcl_hr_pruef_offene_abw.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_offene_abw.abap:26"
+        },
+        {
+          "file": "zcl_hr_pruef_offene_abw.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_offene_abw.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-238-B07",
+      "text": "Die Planstellenprüfung entfällt ohne Zielplanstelle; sonst meldet sie einen Fehler, wenn die Planstelle zum Stichtag nicht existiert oder mit einer anderen Person besetzt ist.",
+      "anchors": [
+        {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:24"
+        },
+        {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:25"
+        },
+        {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:28"
+        },
+        {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:34"
+        },
+        {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:35"
+        },
+        {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:40"
+        },
+        {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:49"
+        },
+        {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-238-B08",
+      "text": "Die Abrechnungsprüfung meldet einen Fehler, wenn der Abrechnungskreis des Mitarbeiters zur Abrechnung freigegeben ist; ohne Abrechnungskreis prüft sie nichts.",
+      "anchors": [
+        {
+          "file": "zcl_hr_pruef_abrechnung.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_abrechnung.abap:24"
+        },
+        {
+          "file": "zcl_hr_pruef_abrechnung.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_abrechnung.abap:28"
+        },
+        {
+          "file": "zcl_hr_pruef_abrechnung.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_abrechnung.abap:30"
+        },
+        {
+          "file": "zcl_hr_pruef_abrechnung.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_abrechnung.abap:32"
+        },
+        {
+          "file": "zcl_hr_pruef_abrechnung.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_abrechnung.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-238-B09",
+      "text": "Scheitert eine Prüfung, wird der Mitarbeiter mit dem Fehlertext als nicht umgehängt gemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:84"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-238-B10",
+      "text": "Im Testlauf wird ein Mitarbeiter mit bestandenen Prüfungen nur als bestanden gemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:90"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:91"
+        }
+      ]
+    },
+    {
+      "id": "BM-238-B11",
+      "text": "Im Echtlauf wird der Mitarbeiter gesperrt; ist er gesperrt, wird das als Fehler gemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:96"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:122"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:127"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:128"
+        }
+      ]
+    },
+    {
+      "id": "BM-238-B12",
+      "text": "Die organisatorische Zuordnung zum Stichtag wird gelesen; fehlt sie, wird das als Fehler gemeldet und der Mitarbeiter bleibt gesperrt.",
+      "anchors": [
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:133"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:144"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:145"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:148"
+        }
+      ]
+    },
+    {
+      "id": "BM-238-B13",
+      "text": "Ab dem Stichtag wird ein neuer Satz der organisatorischen Zuordnung mit neuer Organisationseinheit und Zielplanstelle angelegt.",
+      "anchors": [
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:154"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:157"
+        }
+      ]
+    },
+    {
+      "id": "BM-238-B14",
+      "text": "Das Ergebnis des Anlegens wird als Fehler oder als „umgehängt“ gemeldet und danach die Sperre aufgehoben.",
+      "anchors": [
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:167"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:168"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:171"
+        },
+        {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:175"
+        }
+      ]
+    },
+    {
+      "id": "BM-238-B15",
+      "text": "Zum Schluss werden alle Meldungen ausgegeben, erfolgreiche und fehlerhafte farblich unterschieden.",
+      "anchors": [
+        {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:88"
+        },
+        {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:49"
+        },
+        {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:55"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:62"
+        },
+        "meaning": "Prüfung Selektionsbild"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:64"
+        },
+        "meaning": "Alte gleich neue Organisationseinheit?"
+      },
+      {
+        "id": "am",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:65"
+        },
+        "meaning": "Fehler: gleiche Organisationseinheit"
+      },
+      {
+        "id": "ame",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:65"
+        },
+        "meaning": "Zurück zum Selektionsbild"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:66"
+        },
+        "meaning": "Ende Selektionsbildprüfung"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:69"
+        },
+        "meaning": "Umhängelauf starten"
+      },
+      {
+        "id": "co",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:71"
+        },
+        "meaning": "Umhängeobjekt mit Stichtag und Testlauf anlegen"
+      },
+      {
+        "id": "sh",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:73"
+        },
+        "meaning": "Protokoll für Umhängemeldungen registrieren"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:75"
+        },
+        "meaning": "Mitarbeiter der alten Organisationseinheit zum Stichtag lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:79"
+        },
+        "meaning": "Mitarbeiter gefunden?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:80"
+        },
+        "meaning": "Meldung: keine Mitarbeiter"
+      },
+      {
+        "id": "r",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:81"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "ca",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:84"
+        },
+        "meaning": "Umhängung ausführen"
+      },
+      {
+        "id": "cz",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:88"
+        },
+        "meaning": "Protokoll ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:88"
+        },
+        "meaning": "Programmende"
+      },
+      {
+        "id": "hs",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:43"
+        },
+        "meaning": "Umhängemeldung sammeln"
+      },
+      {
+        "id": "he",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:45"
+        },
+        "meaning": "Ende Meldung sammeln"
+      },
+      {
+        "id": "os",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:47"
+        },
+        "meaning": "Protokollausgabe"
+      },
+      {
+        "id": "ol",
+        "type": "loop",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:49"
+        },
+        "meaning": "Meldungen durchlaufen"
+      },
+      {
+        "id": "ow",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:55"
+        },
+        "meaning": "Meldung farbig ausgeben"
+      },
+      {
+        "id": "oe",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_org_umhaengen.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_org_umhaengen.abap:58"
+        },
+        "meaning": "Ende Protokollausgabe"
+      },
+      {
+        "id": "cs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:53"
+        },
+        "meaning": "Umhängeobjekt anlegen"
+      },
+      {
+        "id": "cq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:62"
+        },
+        "meaning": "Aktive Prüfklassen in Reihenfolge lesen"
+      },
+      {
+        "id": "cl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:66"
+        },
+        "meaning": "Prüfklassen durchlaufen"
+      },
+      {
+        "id": "cc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:68"
+        },
+        "meaning": "Prüfobjekt dynamisch erzeugen"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:74"
+        },
+        "meaning": "Ende Anlegen"
+      },
+      {
+        "id": "xs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:77"
+        },
+        "meaning": "Umhängung aller Mitarbeiter"
+      },
+      {
+        "id": "xl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:81"
+        },
+        "meaning": "Mitarbeiter durchlaufen"
+      },
+      {
+        "id": "xp",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:82"
+        },
+        "meaning": "Prüfungen ausführen"
+      },
+      {
+        "id": "xg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:84"
+        },
+        "meaning": "Prüfung fehlgeschlagen?"
+      },
+      {
+        "id": "xe1",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:85"
+        },
+        "meaning": "Fehlschlag melden"
+      },
+      {
+        "id": "xg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:90"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "xe2",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:91"
+        },
+        "meaning": "Bestandene Prüfung im Testlauf melden"
+      },
+      {
+        "id": "xu",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:96"
+        },
+        "meaning": "Mitarbeiter umhängen"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:100"
+        },
+        "meaning": "Ende Umhängung aller Mitarbeiter"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:103"
+        },
+        "meaning": "Prüfungen je Mitarbeiter"
+      },
+      {
+        "id": "pl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:106"
+        },
+        "meaning": "Prüfobjekte durchlaufen"
+      },
+      {
+        "id": "pc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:107"
+        },
+        "meaning": "Prüfung ausführen"
+      },
+      {
+        "id": "pg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:110"
+        },
+        "meaning": "Fehler gemeldet?"
+      },
+      {
+        "id": "pr",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:111"
+        },
+        "meaning": "Mit erstem Fehler zurück"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:114"
+        },
+        "meaning": "Ende Prüfungen"
+      },
+      {
+        "id": "us",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:117"
+        },
+        "meaning": "Umhängen eines Mitarbeiters"
+      },
+      {
+        "id": "enq",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:122"
+        },
+        "meaning": "Mitarbeiter sperren"
+      },
+      {
+        "id": "ug1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:127"
+        },
+        "meaning": "Sperre fehlgeschlagen?"
+      },
+      {
+        "id": "uev1",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:128"
+        },
+        "meaning": "Sperrfehler melden"
+      },
+      {
+        "id": "ur1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:130"
+        },
+        "meaning": "Mitarbeiter überspringen"
+      },
+      {
+        "id": "rd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:133"
+        },
+        "meaning": "Organisatorische Zuordnung zum Stichtag lesen"
+      },
+      {
+        "id": "ug2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:144"
+        },
+        "meaning": "Zuordnung vorhanden?"
+      },
+      {
+        "id": "uev2",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:145"
+        },
+        "meaning": "Lesefehler melden"
+      },
+      {
+        "id": "ur2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:148"
+        },
+        "meaning": "Mitarbeiter überspringen"
+      },
+      {
+        "id": "hio",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:157"
+        },
+        "meaning": "Neuen Satz der organisatorischen Zuordnung ab Stichtag anlegen"
+      },
+      {
+        "id": "ug3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:167"
+        },
+        "meaning": "Anlegen fehlgeschlagen?"
+      },
+      {
+        "id": "uev3",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:168"
+        },
+        "meaning": "Anlegefehler melden"
+      },
+      {
+        "id": "uev4",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:171"
+        },
+        "meaning": "Erfolgreiche Umhängung melden"
+      },
+      {
+        "id": "deq",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:175"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "ue",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_org_umhaengung.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_org_umhaengung.abap:178"
+        },
+        "meaning": "Ende Umhängen"
+      },
+      {
+        "id": "as1",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_pruef_offene_abw.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_offene_abw.abap:19"
+        },
+        "meaning": "Prüfung Abwesenheiten"
+      },
+      {
+        "id": "aq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_pruef_offene_abw.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_offene_abw.abap:22"
+        },
+        "meaning": "Abwesenheiten ab Stichtag zählen"
+      },
+      {
+        "id": "ag1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_pruef_offene_abw.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_offene_abw.abap:26"
+        },
+        "meaning": "Abwesenheiten vorhanden?"
+      },
+      {
+        "id": "ae1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_pruef_offene_abw.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_offene_abw.abap:29"
+        },
+        "meaning": "Ende Prüfung Abwesenheiten"
+      },
+      {
+        "id": "ps2",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:20"
+        },
+        "meaning": "Prüfung Zielplanstelle"
+      },
+      {
+        "id": "pg0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:24"
+        },
+        "meaning": "Zielplanstelle angegeben?"
+      },
+      {
+        "id": "pr0",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:25"
+        },
+        "meaning": "Ohne Planstelle keine Prüfung"
+      },
+      {
+        "id": "pq1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:28"
+        },
+        "meaning": "Planstelle zum Stichtag lesen"
+      },
+      {
+        "id": "pg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:34"
+        },
+        "meaning": "Planstelle vorhanden?"
+      },
+      {
+        "id": "pr1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:36"
+        },
+        "meaning": "Mit Fehler zurück"
+      },
+      {
+        "id": "pq2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:40"
+        },
+        "meaning": "Inhaber der Planstelle zum Stichtag lesen"
+      },
+      {
+        "id": "pg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:49"
+        },
+        "meaning": "Mit anderer Person besetzt?"
+      },
+      {
+        "id": "pe2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_pruef_planstelle.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_planstelle.abap:52"
+        },
+        "meaning": "Ende Prüfung Zielplanstelle"
+      },
+      {
+        "id": "bs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_pruef_abrechnung.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_abrechnung.abap:20"
+        },
+        "meaning": "Prüfung Abrechnungsstatus"
+      },
+      {
+        "id": "bq1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_pruef_abrechnung.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_abrechnung.abap:24"
+        },
+        "meaning": "Abrechnungskreis zum Stichtag lesen"
+      },
+      {
+        "id": "bck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_pruef_abrechnung.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_abrechnung.abap:28"
+        },
+        "meaning": "Abrechnungskreis gefunden?"
+      },
+      {
+        "id": "bq2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_pruef_abrechnung.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_abrechnung.abap:30"
+        },
+        "meaning": "Status des Abrechnungsverwaltungssatzes lesen"
+      },
+      {
+        "id": "bg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_pruef_abrechnung.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_abrechnung.abap:32"
+        },
+        "meaning": "Zur Abrechnung freigegeben?"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_pruef_abrechnung.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_pruef_abrechnung.abap:35"
+        },
+        "meaning": "Ende Prüfung Abrechnungsstatus"
+      }
+    ],
+    "edges": [
+      {
+        "from": "as",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "am",
+        "condition": "p_orgalt = p_orgneu"
+      },
+      {
+        "from": "am",
+        "to": "ame",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "ae",
+        "condition": "else"
+      },
+      {
+        "from": "ae",
+        "to": "s",
+        "condition": "always"
+      },
+      {
+        "from": "s",
+        "to": "co",
+        "condition": "always"
+      },
+      {
+        "from": "co",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "cq",
+        "condition": "always"
+      },
+      {
+        "from": "cq",
+        "to": "cl",
+        "condition": "always"
+      },
+      {
+        "from": "cl",
+        "to": "cc",
+        "condition": "next row"
+      },
+      {
+        "from": "cc",
+        "to": "cl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cc",
+        "to": "cl",
+        "condition": "cx_sy_create_object_error"
+      },
+      {
+        "from": "cl",
+        "to": "ce",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ce",
+        "to": "sh",
+        "condition": "always"
+      },
+      {
+        "from": "sh",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "m",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "ca",
+        "condition": "else"
+      },
+      {
+        "from": "ca",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "xs",
+        "to": "xl",
+        "condition": "always"
+      },
+      {
+        "from": "xl",
+        "to": "xp",
+        "condition": "next row"
+      },
+      {
+        "from": "xp",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "pl",
+        "condition": "always"
+      },
+      {
+        "from": "pl",
+        "to": "pc",
+        "condition": "next row"
+      },
+      {
+        "from": "pc",
+        "to": "as1",
+        "condition": "always"
+      },
+      {
+        "from": "pc",
+        "to": "ps2",
+        "condition": "always"
+      },
+      {
+        "from": "pc",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "as1",
+        "to": "aq",
+        "condition": "always"
+      },
+      {
+        "from": "aq",
+        "to": "ag1",
+        "condition": "always"
+      },
+      {
+        "from": "ag1",
+        "to": "ae1",
+        "condition": "else"
+      },
+      {
+        "from": "ps2",
+        "to": "pg0",
+        "condition": "always"
+      },
+      {
+        "from": "pg0",
+        "to": "pr0",
+        "condition": "iv_plans IS INITIAL"
+      },
+      {
+        "from": "pg0",
+        "to": "pq1",
+        "condition": "else"
+      },
+      {
+        "from": "pq1",
+        "to": "pg1",
+        "condition": "always"
+      },
+      {
+        "from": "pg1",
+        "to": "pq2",
+        "condition": "else"
+      },
+      {
+        "from": "pq2",
+        "to": "pg2",
+        "condition": "always"
+      },
+      {
+        "from": "pg2",
+        "to": "pe2",
+        "condition": "else"
+      },
+      {
+        "from": "bs",
+        "to": "bq1",
+        "condition": "always"
+      },
+      {
+        "from": "bq1",
+        "to": "bck",
+        "condition": "always"
+      },
+      {
+        "from": "bck",
+        "to": "bq2",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "bck",
+        "to": "be",
+        "condition": "else"
+      },
+      {
+        "from": "bq2",
+        "to": "bg",
+        "condition": "always"
+      },
+      {
+        "from": "bg",
+        "to": "be",
+        "condition": "else"
+      },
+      {
+        "from": "ae1",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pr0",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pr1",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pe2",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pr",
+        "condition": "rv_fehler IS NOT INITIAL"
+      },
+      {
+        "from": "pg",
+        "to": "pl",
+        "condition": "else"
+      },
+      {
+        "from": "pl",
+        "to": "pe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pr",
+        "to": "xg1",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "xg1",
+        "condition": "always"
+      },
+      {
+        "from": "xg1",
+        "to": "xe1",
+        "condition": "lv_fehler IS NOT INITIAL"
+      },
+      {
+        "from": "xe1",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "he",
+        "to": "xl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "xg1",
+        "to": "xg2",
+        "condition": "else"
+      },
+      {
+        "from": "xg2",
+        "to": "xe2",
+        "condition": "mv_test = abap_true"
+      },
+      {
+        "from": "xe2",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "xg2",
+        "to": "xu",
+        "condition": "else"
+      },
+      {
+        "from": "xu",
+        "to": "us",
+        "condition": "always"
+      },
+      {
+        "from": "us",
+        "to": "enq",
+        "condition": "always"
+      },
+      {
+        "from": "enq",
+        "to": "ug1",
+        "condition": "always"
+      },
+      {
+        "from": "ug1",
+        "to": "uev1",
+        "condition": "ls_return-type = 'E'"
+      },
+      {
+        "from": "uev1",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "he",
+        "to": "ur1",
+        "condition": "always"
+      },
+      {
+        "from": "ur1",
+        "to": "xl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ug1",
+        "to": "rd",
+        "condition": "else"
+      },
+      {
+        "from": "rd",
+        "to": "ug2",
+        "condition": "always"
+      },
+      {
+        "from": "ug2",
+        "to": "uev2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "uev2",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "he",
+        "to": "ur2",
+        "condition": "always"
+      },
+      {
+        "from": "ur2",
+        "to": "xl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ug2",
+        "to": "hio",
+        "condition": "else"
+      },
+      {
+        "from": "hio",
+        "to": "ug3",
+        "condition": "always"
+      },
+      {
+        "from": "ug3",
+        "to": "uev3",
+        "condition": "ls_return-type = 'E'"
+      },
+      {
+        "from": "uev3",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "he",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "ug3",
+        "to": "uev4",
+        "condition": "else"
+      },
+      {
+        "from": "uev4",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "deq",
+        "to": "ue",
+        "condition": "always"
+      },
+      {
+        "from": "ue",
+        "to": "xl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "hs",
+        "to": "he",
+        "condition": "always"
+      },
+      {
+        "from": "xl",
+        "to": "xe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "xe",
+        "to": "cz",
+        "condition": "always"
+      },
+      {
+        "from": "cz",
+        "to": "os",
+        "condition": "always"
+      },
+      {
+        "from": "os",
+        "to": "ol",
+        "condition": "always"
+      },
+      {
+        "from": "ol",
+        "to": "ow",
+        "condition": "next row"
+      },
+      {
+        "from": "ow",
+        "to": "ol",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ol",
+        "to": "oe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "oe",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "ag1",
+        "to": "ae1",
+        "condition": "lv_cnt > 0"
+      },
+      {
+        "from": "pg1",
+        "to": "pr1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pg2",
+        "to": "pe2",
+        "condition": "sy-subrc = 0 AND lv_sobid <> iv_pernr"
+      },
+      {
+        "from": "bg",
+        "to": "be",
+        "condition": "lv_state = '1'"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_hr_org_umhaengung.abap:107 — kein Fachsatz „es laufen immer Abwesenheits-, Planstellen- und Abrechnungsprüfung“ (welche Klassen laufen, steht in ZHR_UMH_PRUEF; die Abrechnungsprüfung ist laut Kommentar zunächst inaktiv)",
+    "zcl_hr_org_umhaengung.abap:148 — kein Fachsatz „die Sperre wird in jedem Fall aufgehoben“ (nach dem Lesefehler bleibt der Mitarbeiter gesperrt, laut Kommentar bekannt)",
+    "zcl_hr_org_umhaengung.abap:157 — kein Fachsatz „die Führungskraft oder der Workflow wird informiert“ (nur Meldung ins Protokoll)",
+    "zcl_hr_org_umhaengung.abap:68 — kein Fachsatz „falsch gepflegte Prüfklassen führen zum Abbruch“ (die Ausnahme wird leer abgefangen)"
+  ],
+  "processDescription": "Der Report hängt alle Mitarbeiter einer Organisationseinheit zum Stichtag in eine neue Organisationseinheit um, optional auf eine Zielplanstelle. Das Selektionsbild lehnt gleiche alte und neue Organisationseinheit ab. Eine globale Klasse erzeugt beim Anlegen die in einer Kundentabelle aktivierten Prüfklassen dynamisch und übergeht falsch gepflegte still; der Report registriert einen lokalen Behandler, der jede Umhängemeldung sammelt. Er liest die Mitarbeiter der alten Organisationseinheit zum Stichtag; ohne Treffer endet er mit einer Meldung. Je Mitarbeiter laufen die Prüfungen über eine gemeinsame Schnittstelle bis zum ersten Fehler: künftige Abwesenheiten, Existenz und Besetzung der Zielplanstelle, Freigabestatus des Abrechnungskreises. Bei Fehler wird der Mitarbeiter als nicht umgehängt gemeldet, im Testlauf als bestanden. Im Echtlauf sperrt die Klasse den Mitarbeiter, liest seine organisatorische Zuordnung zum Stichtag, legt ab Stichtag einen neuen Satz mit neuer Organisationseinheit und Planstelle an, meldet Erfolg oder Fehler und entsperrt; bei Sperr- oder Lesefehler wird nur gemeldet, nach einem Lesefehler bleibt die Sperre bestehen. Am Ende gibt der Report alle Meldungen farbig aus."
+}

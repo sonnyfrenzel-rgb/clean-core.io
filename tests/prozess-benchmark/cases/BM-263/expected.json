@@ -1,0 +1,615 @@
+{
+  "id": "BM-263",
+  "title": "Inbound-Proxy Wareneingang zur Bestellung",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZMM_GR_MSGLOG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_gr_in.abap",
+        "line": 33,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_gr_in.abap:33"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_gr_in.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_gr_in.abap:42"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_GOODSMVT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_gr_in.abap",
+        "line": 72,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_gr_in.abap:72"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_gr_in.abap",
+        "line": 87,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_gr_in.abap:87"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_gr_in.abap",
+        "line": 93,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_gr_in.abap:93"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_GR_MSGLOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_mm_gr_in.abap",
+        "line": 101,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_gr_in.abap:101"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-263-B01",
+      "text": "Das externe Lager meldet einen Wareneingang zu einer Bestellung über einen Inbound-Proxy.",
+      "anchors": [
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-263-B02",
+      "text": "Ist die Nachrichten-ID bereits im Eingangsprotokoll, wird nicht erneut gebucht, sondern der vorhandene Materialbeleg mit Status DUPLICATE zurückgemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:33"
+        },
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:36"
+        },
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:38"
+        },
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-263-B03",
+      "text": "Existiert die Bestellung nicht oder ist sie gelöscht, wird die Nachricht mit einer Fault-Nachricht „Bestellung … unbekannt“ abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:42"
+        },
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:45"
+        },
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-263-B04",
+      "text": "Jede gemeldete Position mit positiver Menge wird als Wareneingang zur Bestellposition (Bewegungsart 101) mit Werk und Lagerort übernommen; Positionen ohne positive Menge werden übergangen.",
+      "anchors": [
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:56"
+        },
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:57"
+        },
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-263-B05",
+      "text": "Der Wareneingang wird mit Buchungsdatum und Lieferscheinnummer als Materialbeleg gebucht.",
+      "anchors": [
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-263-B06",
+      "text": "Meldet die Buchung einen Fehler, wird sie zurückgerollt und die Nachricht mit dem Fehlertext als Fault abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:83"
+        },
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:86"
+        },
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:87"
+        },
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-263-B07",
+      "text": "Sonst wird die Buchung festgeschrieben, die Nachrichten-ID mit Materialbeleg protokolliert und der Materialbeleg mit Status POSTED zurückgemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:93"
+        },
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:101"
+        },
+        {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:104"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:17"
+        },
+        "meaning": "Eingang Wareneingangsmeldung (Inbound-Proxy)"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:33"
+        },
+        "meaning": "Nachrichten-ID im Eingangsprotokoll suchen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:36"
+        },
+        "meaning": "Nachricht bereits verarbeitet?"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:39"
+        },
+        "meaning": "Methode verlassen"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:42"
+        },
+        "meaning": "Nicht gelöschte Bestellung lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:45"
+        },
+        "meaning": "Bestellung unbekannt?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:46"
+        },
+        "meaning": "Fault-Nachricht: Bestellung unbekannt"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:56"
+        },
+        "meaning": "Gemeldete Positionen durchlaufen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:57"
+        },
+        "meaning": "Menge nicht positiv?"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:72"
+        },
+        "meaning": "Wareneingang zur Bestellung buchen"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:83"
+        },
+        "meaning": "Erste Fehler-/Abbruchmeldung suchen"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:86"
+        },
+        "meaning": "Fehlermeldung gefunden?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:87"
+        },
+        "meaning": "Buchung zurückrollen"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:88"
+        },
+        "meaning": "Fault-Nachricht mit BAPI-Fehlertext"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:93"
+        },
+        "meaning": "Buchung festschreiben (synchron)"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:101"
+        },
+        "meaning": "Nachricht mit Materialbeleg protokollieren"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_gr_in.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_gr_in.abap:105"
+        },
+        "meaning": "Ende der Proxy-Methode"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "q2",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "x1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "l1",
+        "to": "g3",
+        "condition": "next row"
+      },
+      {
+        "from": "g3",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l1",
+        "to": "bapi",
+        "condition": "no more rows"
+      },
+      {
+        "from": "bapi",
+        "to": "l2",
+        "condition": "always"
+      },
+      {
+        "from": "l2",
+        "to": "g4",
+        "condition": "next row"
+      },
+      {
+        "from": "l2",
+        "to": "g4",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g4",
+        "to": "rb",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "rb",
+        "to": "x2",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "w",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "r1",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "w",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_mm_gr_in.abap:101 — kein Fachsatz „Protokolleintrag und Materialbeleg werden gemeinsam festgeschrieben“ (der BAPI-Commit liegt vor dem INSERT; der Eintrag wird erst mit der späteren LUW des Proxy-Rahmens festgeschrieben)",
+    "zcl_mm_gr_in.abap:57 — kein Fachsatz „Nachricht mit Nullmengen wird abgelehnt“ (solche Positionen werden nur übergangen)",
+    "zcl_mm_gr_in.abap:39 — kein Fachsatz „Duplikat wird als Fehler gemeldet“ (es wird regulär mit Status DUPLICATE geantwortet)"
+  ],
+  "processDescription": "Ein externer Lagerdienstleister meldet Wareneingänge zu Bestellungen; die Nachricht kommt über einen ABAP-Inbound-Proxy an. Zuerst wird anhand der Nachrichten-ID geprüft, ob sie schon gebucht wurde; dann wird ohne neue Buchung der vorhandene Materialbeleg mit Status DUPLICATE zurückgemeldet. Ist die Bestellung unbekannt oder gelöscht, wird die Nachricht mit einer Fault-Nachricht abgelehnt. Andernfalls werden alle Positionen mit positiver Menge als Wareneingang zur Bestellposition mit Bewegungsart 101 aufgebaut und mit Buchungsdatum und Lieferscheinnummer gebucht. Enthält die Rückmeldung eine Fehler- oder Abbruchmeldung, wird zurückgerollt und mit dem Meldungstext als Fault abgelehnt. Bei Erfolg wird festgeschrieben, die Nachrichten-ID mit dem Materialbeleg protokolliert und die Belegnummer mit Status POSTED zurückgegeben."
+}

@@ -1,0 +1,37 @@
+{
+  "id": "BM-240",
+  "title": "Plankalkulationen prüfen und als Standardpreis übernehmen",
+  "domain": "CO",
+  "band": "sehr komplex",
+  "loc": 401,
+  "constructs": [
+    "REPORT mit TOP/F01",
+    "AT SELECTION-SCREEN ON",
+    "globale Klasse mit Unterklasse",
+    "REDEFINITION/super->",
+    "statische Fabrik mit NEW",
+    "globale Ausnahmeklasse",
+    "TRY/CATCH",
+    "TRY/CLEANUP",
+    "FORM ... RAISING",
+    "RETURN in FORM und Methode",
+    "BAPI_MATVAL_PRICE_CHANGE",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "END-OF-SELECTION"
+  ],
+  "scenario": "Produktkostencontrolling eines Werks mit unterjährigen Preisänderungen; in S/4 wegen Material Ledger (Pflicht) und Preisänderungslogik zu überdenken.",
+  "s4_issues": [
+    "KEKO/CKIS-Direktzugriff",
+    "MBEW ist in S/4HANA Kompatibilitätssicht (Material Ledger Pflicht)",
+    "Standardpreisänderung außerhalb CK24 widerspricht Kalkulationsprozess"
+  ],
+  "wave": 3,
+  "module": "CO-PC",
+  "edge_constructs": [
+    "Ausnahme läuft durch CLEANUP in Aufrufer-CATCH",
+    "Supercall mit Ausnahme",
+    "polymorpher Aufruf",
+    "RETURN mit Rückgabewert null"
+  ],
+  "oo": true
+}

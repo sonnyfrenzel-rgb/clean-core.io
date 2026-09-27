@@ -1,0 +1,1222 @@
+{
+  "id": "BM-293",
+  "title": "Werkerterminal Fertigung: Anmeldung und Zeitereignisse über Schrittfabrik, Interface und Vererbung",
+  "classes": [
+    "K07",
+    "K09",
+    "K01",
+    "K03"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZPP_WERKER",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_terminal_c01.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_terminal_c01.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPP_TERM_SESS",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zpp_terminal_c01.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_terminal_c01.abap:45"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_terminal_c02.abap",
+        "line": 60,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_terminal_c02.abap:60"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_terminal_c02.abap",
+        "line": 60,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_terminal_c02.abap:60"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PRODORDCONF_CREATE_TE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_terminal_c02.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_terminal_c02.abap:41"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_terminal_c02.abap",
+        "line": 54,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_terminal_c02.abap:54"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-293-B01",
+      "text": "Das Terminal startet mit seiner Kennung das Werkerbild.",
+      "anchors": [
+        {
+          "file": "zpp_terminal.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:15"
+        },
+        {
+          "file": "zpp_terminal.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-293-B02",
+      "text": "Abmelden löscht Werker, Ausweis und Vorgang aus der Terminalsitzung und ruft das Werkerbild neu auf; Zurück beendet die Transaktion.",
+      "anchors": [
+        {
+          "file": "zpp_terminal.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:27"
+        },
+        {
+          "file": "zpp_terminal.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:30"
+        },
+        {
+          "file": "zpp_terminal.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-293-B03",
+      "text": "Für alle anderen Funktionscodes bestimmt eine Fabrik den Arbeitsschritt: Anmelden, Vorgang starten oder Vorgang beenden; jeder andere Code wird als unbekannte Funktion abgewiesen.",
+      "anchors": [
+        {
+          "file": "zpp_terminal.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:36"
+        },
+        {
+          "file": "zpp_terminal_c02.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:102"
+        },
+        {
+          "file": "zpp_terminal_c02.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:112"
+        }
+      ]
+    },
+    {
+      "id": "BM-293-B04",
+      "text": "Beim Anmelden wird der aktive Werker zum gelesenen Ausweis mit Werk und Arbeitsplatz gesucht; ist der Ausweis unbekannt oder inaktiv, wird das gemeldet.",
+      "anchors": [
+        {
+          "file": "zpp_terminal_c01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c01.abap:30"
+        },
+        {
+          "file": "zpp_terminal_c01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c01.abap:35"
+        },
+        {
+          "file": "zpp_terminal_c01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c01.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-293-B05",
+      "text": "Nach erfolgreicher Anmeldung werden Personalnummer, Werk und Arbeitsplatz in die Terminalsitzung übernommen und die Sitzung mit Datum und Uhrzeit für die Anwesenheitsauswertung gespeichert.",
+      "anchors": [
+        {
+          "file": "zpp_terminal_c01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c01.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-293-B06",
+      "text": "Start und Ende eines Vorgangs setzen eine Anmeldung voraus; ohne angemeldeten Werker wird der Schritt abgewiesen.",
+      "anchors": [
+        {
+          "file": "zpp_terminal_c02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:26"
+        },
+        {
+          "file": "zpp_terminal_c02.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-293-B07",
+      "text": "Der Fertigungsvorgang muss existieren und am Arbeitsplatz des angemeldeten Werkers eingeplant sein, sonst wird er abgewiesen.",
+      "anchors": [
+        {
+          "file": "zpp_terminal_c02.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:31"
+        },
+        {
+          "file": "zpp_terminal_c02.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:60"
+        },
+        {
+          "file": "zpp_terminal_c02.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:66"
+        },
+        {
+          "file": "zpp_terminal_c02.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-293-B08",
+      "text": "Als Zeitereignis wird beim Starten Bearbeitungsbeginn (B10), beim Beenden Bearbeitungsende (B40) mit Werker, Werk und aktuellem Zeitpunkt zum Vorgang zurückgemeldet.",
+      "anchors": [
+        {
+          "file": "zpp_terminal_c02.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:33"
+        },
+        {
+          "file": "zpp_terminal_c02.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:85"
+        },
+        {
+          "file": "zpp_terminal_c02.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:95"
+        },
+        {
+          "file": "zpp_terminal_c02.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-293-B09",
+      "text": "Meldet der BAPI Fehler oder Abbruch, wird seine Meldung als abgewiesener Schritt angezeigt; sonst wird synchron festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zpp_terminal_c02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:47"
+        },
+        {
+          "file": "zpp_terminal_c02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-293-B10",
+      "text": "Nach einer Anmeldung begrüßt das Terminal den Werker mit seiner Personalnummer, nach einem Zeitereignis bestätigt es Auftrag und Vorgang.",
+      "anchors": [
+        {
+          "file": "zpp_terminal.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:38"
+        },
+        {
+          "file": "zpp_terminal.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:39"
+        },
+        {
+          "file": "zpp_terminal.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-293-B11",
+      "text": "Jeder abgewiesene Schritt wird als Statusmeldung in Fehleroptik angezeigt, ohne das Werkerbild zu verlassen.",
+      "anchors": [
+        {
+          "file": "zpp_terminal.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:44"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s0",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_terminal.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:15"
+        },
+        "meaning": "Terminal starten"
+      },
+      {
+        "id": "cs",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_terminal.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:17"
+        },
+        "meaning": "Werkerbild"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_terminal.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:17"
+        },
+        "meaning": "Ende nach Verlassen"
+      },
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_terminal.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:22"
+        },
+        "meaning": "PAI Werkerbild"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_terminal.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:27"
+        },
+        "meaning": "Abmelden/Zurück?"
+      },
+      {
+        "id": "lv",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_terminal.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:30"
+        },
+        "meaning": "Abgemeldet, Bild neu"
+      },
+      {
+        "id": "lp",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_terminal.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:32"
+        },
+        "meaning": "Transaktion beenden"
+      },
+      {
+        "id": "cf",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_terminal.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:36"
+        },
+        "meaning": "Schritt bestimmen"
+      },
+      {
+        "id": "cx",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_terminal.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:37"
+        },
+        "meaning": "Schritt ausführen (polymorph)"
+      },
+      {
+        "id": "gi",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_terminal.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:38"
+        },
+        "meaning": "War es Anmeldung?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_terminal.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:39"
+        },
+        "meaning": "Begrüßung"
+      },
+      {
+        "id": "m2",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_terminal.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:41"
+        },
+        "meaning": "Zeitereignis bestätigt"
+      },
+      {
+        "id": "mc",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_terminal.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:44"
+        },
+        "meaning": "Abweisung in Fehleroptik"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_terminal.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal.abap:48"
+        },
+        "meaning": "Ende PAI"
+      },
+      {
+        "id": "sf",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:101"
+        },
+        "meaning": "Schrittfabrik"
+      },
+      {
+        "id": "gf",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:102"
+        },
+        "meaning": "Welcher Schritt?"
+      },
+      {
+        "id": "rzf",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:112"
+        },
+        "meaning": "Ausnahme unbekannte Funktion"
+      },
+      {
+        "id": "ef",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:115"
+        },
+        "meaning": "Schritt zurückgeben"
+      },
+      {
+        "id": "sa",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_terminal_c01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c01.abap:29"
+        },
+        "meaning": "Anmelden"
+      },
+      {
+        "id": "ra",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_terminal_c01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c01.abap:30"
+        },
+        "meaning": "Werker zum Ausweis lesen"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_terminal_c01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c01.abap:35"
+        },
+        "meaning": "Ausweis unbekannt?"
+      },
+      {
+        "id": "rza",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_terminal_c01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c01.abap:36"
+        },
+        "meaning": "Ausnahme Ausweis"
+      },
+      {
+        "id": "wa",
+        "type": "write",
+        "anchor": {
+          "file": "zpp_terminal_c01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c01.abap:45"
+        },
+        "meaning": "Terminalsitzung speichern"
+      },
+      {
+        "id": "ea",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_terminal_c01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c01.abap:49"
+        },
+        "meaning": "Ende Anmelden"
+      },
+      {
+        "id": "sz",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:21"
+        },
+        "meaning": "Zeitereignis melden"
+      },
+      {
+        "id": "gz",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:26"
+        },
+        "meaning": "Nicht angemeldet?"
+      },
+      {
+        "id": "rzz",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:27"
+        },
+        "meaning": "Ausnahme nicht angemeldet"
+      },
+      {
+        "id": "cp",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:31"
+        },
+        "meaning": "Vorgang prüfen"
+      },
+      {
+        "id": "csa",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:33"
+        },
+        "meaning": "Satzart bestimmen (Redefinition)"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:41"
+        },
+        "meaning": "Zeitereignis zurückmelden"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:47"
+        },
+        "meaning": "BAPI-Fehler?"
+      },
+      {
+        "id": "rzb",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:49"
+        },
+        "meaning": "Ausnahme mit BAPI-Meldung"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:54"
+        },
+        "meaning": "Festschreiben mit Warten"
+      },
+      {
+        "id": "ez",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:57"
+        },
+        "meaning": "Ende Zeitereignis"
+      },
+      {
+        "id": "sp",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:59"
+        },
+        "meaning": "Vorgang prüfen"
+      },
+      {
+        "id": "rp",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:60"
+        },
+        "meaning": "Arbeitsplatz des Vorgangs lesen"
+      },
+      {
+        "id": "gp1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:66"
+        },
+        "meaning": "Vorgang unbekannt?"
+      },
+      {
+        "id": "rzp1",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:67"
+        },
+        "meaning": "Ausnahme Vorgang unbekannt"
+      },
+      {
+        "id": "gp2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:71"
+        },
+        "meaning": "Anderer Arbeitsplatz?"
+      },
+      {
+        "id": "rzp2",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:72"
+        },
+        "meaning": "Ausnahme falscher Arbeitsplatz"
+      },
+      {
+        "id": "ep",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:75"
+        },
+        "meaning": "Ende Prüfung"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:84"
+        },
+        "meaning": "Satzart Start"
+      },
+      {
+        "id": "es",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:86"
+        },
+        "meaning": "B10 zurück"
+      },
+      {
+        "id": "se",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:94"
+        },
+        "meaning": "Satzart Ende"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_terminal_c02.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_terminal_c02.abap:96"
+        },
+        "meaning": "B40 zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s0",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "s1",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "lv",
+        "condition": "WHEN 'ABME'"
+      },
+      {
+        "from": "g",
+        "to": "lp",
+        "condition": "WHEN 'BACK'"
+      },
+      {
+        "from": "g",
+        "to": "cf",
+        "condition": "else"
+      },
+      {
+        "from": "cf",
+        "to": "sf",
+        "condition": "always"
+      },
+      {
+        "from": "ef",
+        "to": "cx",
+        "condition": "always"
+      },
+      {
+        "from": "rzf",
+        "to": "mc",
+        "condition": "lcx_terminal"
+      },
+      {
+        "from": "cx",
+        "to": "sa",
+        "condition": "always"
+      },
+      {
+        "from": "cx",
+        "to": "sz",
+        "condition": "always"
+      },
+      {
+        "from": "ea",
+        "to": "gi",
+        "condition": "always"
+      },
+      {
+        "from": "ez",
+        "to": "gi",
+        "condition": "always"
+      },
+      {
+        "from": "rza",
+        "to": "mc",
+        "condition": "lcx_terminal"
+      },
+      {
+        "from": "rzz",
+        "to": "mc",
+        "condition": "lcx_terminal"
+      },
+      {
+        "from": "rzp1",
+        "to": "mc",
+        "condition": "lcx_terminal"
+      },
+      {
+        "from": "rzp2",
+        "to": "mc",
+        "condition": "lcx_terminal"
+      },
+      {
+        "from": "rzb",
+        "to": "mc",
+        "condition": "lcx_terminal"
+      },
+      {
+        "from": "gi",
+        "to": "m1",
+        "condition": "lo_schritt IS INSTANCE OF lcl_anmelden"
+      },
+      {
+        "from": "gi",
+        "to": "m2",
+        "condition": "else"
+      },
+      {
+        "from": "m1",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "m2",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "mc",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "sf",
+        "to": "gf",
+        "condition": "always"
+      },
+      {
+        "from": "gf",
+        "to": "ef",
+        "condition": "WHEN 'ANME'"
+      },
+      {
+        "from": "gf",
+        "to": "ef",
+        "condition": "WHEN 'STRT'"
+      },
+      {
+        "from": "gf",
+        "to": "ef",
+        "condition": "WHEN 'ENDE'"
+      },
+      {
+        "from": "gf",
+        "to": "rzf",
+        "condition": "else"
+      },
+      {
+        "from": "sa",
+        "to": "ra",
+        "condition": "always"
+      },
+      {
+        "from": "ra",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "rza",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ga",
+        "to": "wa",
+        "condition": "else"
+      },
+      {
+        "from": "wa",
+        "to": "ea",
+        "condition": "always"
+      },
+      {
+        "from": "sz",
+        "to": "gz",
+        "condition": "always"
+      },
+      {
+        "from": "gz",
+        "to": "rzz",
+        "condition": "cs_term-pernr IS INITIAL"
+      },
+      {
+        "from": "gz",
+        "to": "cp",
+        "condition": "else"
+      },
+      {
+        "from": "cp",
+        "to": "sp",
+        "condition": "always"
+      },
+      {
+        "from": "ep",
+        "to": "csa",
+        "condition": "always"
+      },
+      {
+        "from": "csa",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "csa",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "bapi",
+        "condition": "always"
+      },
+      {
+        "from": "ee",
+        "to": "bapi",
+        "condition": "always"
+      },
+      {
+        "from": "bapi",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "rzb",
+        "condition": "ls_return-type CA 'EA'"
+      },
+      {
+        "from": "gb",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "ez",
+        "condition": "always"
+      },
+      {
+        "from": "sp",
+        "to": "rp",
+        "condition": "always"
+      },
+      {
+        "from": "rp",
+        "to": "gp1",
+        "condition": "always"
+      },
+      {
+        "from": "gp1",
+        "to": "rzp1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gp1",
+        "to": "gp2",
+        "condition": "else"
+      },
+      {
+        "from": "gp2",
+        "to": "rzp2",
+        "condition": "lv_arbid <> is_term-arbid"
+      },
+      {
+        "from": "gp2",
+        "to": "ep",
+        "condition": "else"
+      },
+      {
+        "from": "ss",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "ee",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zpp_terminal_c02.abap:109 — kein Fachsatz „Vorgang kann unterbrochen werden“; der Zweig ist auskommentiert, UNTB landet in WHEN OTHERS und wird abgewiesen.",
+    "zpp_terminal_c02.abap:41 — kein Fachsatz „Menge wird rückgemeldet“ oder „Vorgang wird endrückgemeldet“; übergeben wird nur ein Zeitereignis ohne Mengen.",
+    "zpp_terminal_c01.abap:45 — kein Fachsatz „Werker wird in der Zeitwirtschaft (HR) angemeldet“; geschrieben wird nur die Z-Sitzungstabelle.",
+    "zpp_terminal.abap:44 — kein Pfadende; Typ S in Fehleroptik, das Modul läuft bis ENDMODULE weiter."
+  ],
+  "processDescription": "Das Terminal ruft mit seiner Kennung das Werkerbild. Im PAI setzt Abmelden die Sitzungsfelder zurück und ruft das Bild neu, Zurück beendet die Transaktion. Alle anderen Codes gehen an eine Fabrik, die Anmelden, Start oder Ende als Schrittobjekt liefert und unbekannte Codes mit einer Ausnahme abweist. Der Schritt wird polymorph über das Interface ausgeführt. Anmelden liest den aktiven Werker zum Ausweis (sonst Ausnahme) und speichert die Sitzung. Start und Ende erben von einer abstrakten Zeitereignisklasse: sie verlangen einen angemeldeten Werker, prüfen, dass der Vorgang existiert und am Arbeitsplatz des Werkers eingeplant ist, holen die Satzart aus der Redefinition (B10 bzw. B40), melden das Zeitereignis per BAPI, werfen bei BAPI-Fehler eine Ausnahme und schreiben sonst fest. Das PAI unterscheidet per IS INSTANCE OF die Erfolgsmeldung; jede Ausnahme erscheint als Statusmeldung in Fehleroptik."
+}

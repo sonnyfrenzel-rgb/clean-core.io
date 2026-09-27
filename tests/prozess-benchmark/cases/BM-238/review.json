@@ -1,0 +1,35 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten aa (zcl_hr_pruef_offene_abw.abap:27)",
+      "before": "action „Fehlertext setzen“; Kanten ag1→aa [lv_cnt > 0], aa→ae1",
+      "after": "Knoten entfernt; ag1→ae1 [lv_cnt > 0]",
+      "why": "Reine Zuweisung eines Fehlertextes an den Rückgabeparameter (String-Template) ist keine Berechnung und kein Knoten; das Prüfergebnis trägt die Gateway-Kante. Fachsätze bleiben auf der Zeile.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten pa1 (zcl_hr_pruef_planstelle.abap:35)",
+      "before": "action „Fehlertext setzen“; Kanten pg1→pa1 [sy-subrc <> 0], pa1→pr1",
+      "after": "Knoten entfernt; pg1→pr1 [sy-subrc <> 0]",
+      "why": "Reine Zuweisung eines Fehlertextes an den Rückgabeparameter (String-Template) ist keine Berechnung und kein Knoten; das Prüfergebnis trägt die Gateway-Kante. Fachsätze bleiben auf der Zeile.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten pa2 (zcl_hr_pruef_planstelle.abap:50)",
+      "before": "action „Fehlertext setzen“; Kanten pg2→pa2 [sy-subrc = 0 AND lv_sobid <> iv_pernr], pa2→pe2",
+      "after": "Knoten entfernt; pg2→pe2 [sy-subrc = 0 AND lv_sobid <> iv_pernr]",
+      "why": "Reine Zuweisung eines Fehlertextes an den Rückgabeparameter (String-Template) ist keine Berechnung und kein Knoten; das Prüfergebnis trägt die Gateway-Kante. Fachsätze bleiben auf der Zeile.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten ba (zcl_hr_pruef_abrechnung.abap:33)",
+      "before": "action „Fehlertext setzen“; Kanten bg→ba [lv_state = '1'], ba→be",
+      "after": "Knoten entfernt; bg→be [lv_state = '1']",
+      "why": "Reine Zuweisung eines Fehlertextes an den Rückgabeparameter (String-Template) ist keine Berechnung und kein Knoten; das Prüfergebnis trägt die Gateway-Kante. Fachsätze bleiben auf der Zeile.",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": []
+}

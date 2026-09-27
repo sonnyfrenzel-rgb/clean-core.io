@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "Polymorpher Aufruf calc_net: Laufzeittyp hängt von der gelesenen Kundengruppe ab, Kanten zu allen drei Implementierungen daher richtig."
+  ]
+}

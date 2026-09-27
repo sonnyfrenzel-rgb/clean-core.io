@@ -1,0 +1,32 @@
+{
+  "id": "BM-210",
+  "title": "RFC-Retourenanlage mit konfigurierbarer Validator-Kette",
+  "domain": "SD",
+  "band": "komplex",
+  "loc": 261,
+  "constructs": [
+    "Funktionsgruppe LTOP/U01/C01/F01",
+    "RFC-Funktionsbaustein",
+    "AUTHORITY-CHECK",
+    "lokales Interface",
+    "Validator-Kette",
+    "SELECT ENDSELECT mit CASE",
+    "RAISE EXCEPTION über zwei Ebenen",
+    "BAPI_CUSTOMERRETURN_CREATE"
+  ],
+  "scenario": "RFC-Baustein, über den ein Kundenportal Retouren anmeldet; die Prüfregeln sind je Verkaufsorganisation konfigurierbar.",
+  "s4_issues": [
+    "VBRK/VBRP/VBAK/VBAP-Direktzugriff",
+    "RFC-Schnittstelle statt released API (Customer Return OData)",
+    "Materialnummer 40 Zeichen"
+  ],
+  "wave": 3,
+  "module": "SD-SLS",
+  "edge_constructs": [
+    "RETURN nach Hilfs-FORM",
+    "Ausnahme im LOOP gefangen, Schleife läuft weiter",
+    "WHEN OTHERS leer",
+    "Hilfsroutine sammelt nur Meldungen"
+  ],
+  "oo": true
+}

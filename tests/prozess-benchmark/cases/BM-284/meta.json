@@ -1,0 +1,31 @@
+{
+  "id": "BM-284",
+  "title": "Verkaufsschalter: offene Tagesaufträge im ALV-Grid mit Absprung in die Auftragsanzeige",
+  "domain": "Vertrieb am Schalter",
+  "band": "mittel",
+  "loc": 96,
+  "constructs": [
+    "CL_GUI_ALV_GRID",
+    "CL_GUI_CUSTOM_CONTAINER",
+    "SET HANDLER",
+    "FOR EVENT double_click",
+    "CALL SCREEN",
+    "MODULE OUTPUT/INPUT",
+    "CALL TRANSACTION AND SKIP FIRST SCREEN",
+    "SET PARAMETER ID"
+  ],
+  "scenario": "Schalterliste im Verkaufsbüro, mit der Innendienst am Tresen offene Aufträge des Tages sieht und per Doppelklick öffnet.",
+  "s4_issues": [
+    "VBUK entfallen, Status in VBAK",
+    "CALL TRANSACTION VA03 nicht in Fiori/Cloud",
+    "SAP-GUI-Controls (CL_GUI_ALV_GRID) nicht released"
+  ],
+  "wave": 3,
+  "module": "SD",
+  "edge_constructs": [
+    "MESSAGE S DISPLAY LIKE E ohne Abbruch",
+    "Ereignisbehandler als eigener Einstieg",
+    "Tabellenausdruck ohne sy-subrc"
+  ],
+  "oo": true
+}

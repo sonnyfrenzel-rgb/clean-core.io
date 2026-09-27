@@ -1,0 +1,32 @@
+{
+  "id": "BM-265",
+  "title": "Abfahrtsmeldung an Spediteur mit Wiederholung",
+  "domain": "EWM",
+  "band": "mittel",
+  "loc": 75,
+  "constructs": [
+    "FUNCTION",
+    "SELECT SINGLE",
+    "RAISE (klassisch)",
+    "DO n TIMES",
+    "CALL FUNCTION DESTINATION",
+    "EXCEPTIONS communication_failure/system_failure",
+    "CASE sy-subrc",
+    "WAIT UP TO",
+    "INSERT"
+  ],
+  "scenario": "Dezentrales oder eingebettetes EWM meldet die Abfahrt von Transporteinheiten an ein Speditionssystem; der Baustein wird aus einer PPF-Aktion beim Abfahrtsbuchen gerufen.",
+  "s4_issues": [
+    "Synchroner RFC in Fremdsystem – Zielbild Kommunikationsszenario/Outbound-Service",
+    "WAIT UP TO im Dialog-/Verbuchungskontext blockiert Workprozess"
+  ],
+  "wave": 3,
+  "module": "EWM",
+  "edge_constructs": [
+    "Wiederholung mit exponentiellem Backoff",
+    "EXIT aus DO in CASE-Zweig",
+    "RAISE nach INSERT ohne COMMIT",
+    "Destination aus Customizing"
+  ],
+  "oo": false
+}

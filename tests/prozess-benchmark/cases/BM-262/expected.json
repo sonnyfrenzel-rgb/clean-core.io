@@ -1,0 +1,361 @@
+{
+  "id": "BM-262",
+  "title": "Einplanung des Mahn-Nachlaufjobs",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "JOB_OPEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 10,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:10"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_DUNNING_FOLLOWUP",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:20"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_CLOSE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:25"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-262-B01",
+      "text": "Für den Mahnlauf-Nachlauf wird ein Hintergrundjob ZFI_DUNNING_FOLLOWUP angelegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        }
+      ]
+    },
+    {
+      "id": "BM-262-B02",
+      "text": "Scheitert das Anlegen, bricht der Report mit der Fehlermeldung „Job konnte nicht angelegt werden“ ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-262-B03",
+      "text": "Der Nachlaufreport wird mit Laufdatum und Identifikation des Mahnlaufs als Schritt in diesen Job eingeplant, nicht sofort im Dialog ausgeführt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-262-B04",
+      "text": "Der Job wird geschlossen und zum sofortigen Start freigegeben; bei Erfolg werden Jobname und Jobnummer gemeldet, sonst erscheint der Hinweis, dass der Job angelegt, aber nicht freigegeben ist.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:9"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "jo",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        "meaning": "Hintergrundjob anlegen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Job anlegen fehlgeschlagen?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Fehler: Job nicht angelegt"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "sub",
+        "type": "external_program",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Mahn-Nachlaufreport als Jobschritt einplanen"
+      },
+      {
+        "id": "jc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Job abschließen und sofort freigeben"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Freigabe erfolgreich?"
+      },
+      {
+        "id": "ok",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Jobname und -nummer melden"
+      },
+      {
+        "id": "nok",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Hinweis: Job nicht freigegeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Ende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "jo",
+        "condition": "always"
+      },
+      {
+        "from": "jo",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m1",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "sub",
+        "condition": "else"
+      },
+      {
+        "from": "sub",
+        "to": "jc",
+        "condition": "always"
+      },
+      {
+        "from": "jc",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "ok",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g2",
+        "to": "nok",
+        "condition": "else"
+      },
+      {
+        "from": "ok",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "nok",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:20 — kein Fachsatz „Mahnungen werden erzeugt/versendet“ (der Report plant nur einen fremden Nachlaufreport ein, dessen Inhalt nicht im Fall liegt)",
+    "source.abap:25 — kein Fachsatz „Job wurde erfolgreich ausgeführt“ (JOB_CLOSE gibt den Job nur frei)"
+  ],
+  "processDescription": "Nach einem Mahnlauf startet ein Sachbearbeiter der Debitorenbuchhaltung den Report mit Laufdatum und Laufidentifikation. Der Report legt einen Hintergrundjob an; scheitert das, bricht er mit einer Fehlermeldung ab. Andernfalls plant er den Nachlaufreport ZFI_DUNNING_FOLLOWUP mit den beiden Laufparametern als Jobschritt ein und schließt den Job mit sofortiger Freigabe. Bei erfolgreicher Freigabe meldet er Jobname und Jobnummer, sonst weist er darauf hin, dass der Job zwar angelegt, aber nicht freigegeben ist. Was der Nachlauf tut, liegt außerhalb des Falls."
+}

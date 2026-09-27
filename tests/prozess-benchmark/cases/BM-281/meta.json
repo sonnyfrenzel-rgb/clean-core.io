@@ -1,0 +1,27 @@
+{
+  "id": "BM-281",
+  "title": "Kassenschalter: Bon abschliessen im PAI von Dynpro 0100",
+  "domain": "Kasse / Filialverkauf",
+  "band": "einfach",
+  "loc": 25,
+  "constructs": [
+    "MODULE INPUT",
+    "CASE ok_code",
+    "LEAVE TO SCREEN 0",
+    "MESSAGE TYPE E",
+    "INSERT"
+  ],
+  "scenario": "PAI-Include eines selbst gebauten Kassen-Modulpools in einer Filiale, der Barverkäufe als Bon in einer Z-Tabelle ablegt.",
+  "s4_issues": [
+    "SAP-GUI-Dynpro nicht in Fiori/Cloud weiterverwendbar",
+    "Direktes INSERT ohne Verbuchung und ohne Fehlerbehandlung"
+  ],
+  "wave": 3,
+  "module": "SD-POS",
+  "edge_constructs": [
+    "MESSAGE E im PAI beendet den Pfad",
+    "CASE ohne WHEN OTHERS",
+    "auskommentierter WHEN-Zweig"
+  ],
+  "oo": false
+}

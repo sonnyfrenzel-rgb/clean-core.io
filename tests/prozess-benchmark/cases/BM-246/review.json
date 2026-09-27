@@ -1,0 +1,49 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "source.abap:52",
+      "before": "        notifheader_export = ls_header",
+      "after": "        notifheader_export = ls_hdr_exp",
+      "why": "BAPI_ALM_NOTIF_CREATE (NOTIFHEADER_EXPORT) und BAPI_ALM_NOTIF_SAVE (NOTIFHEADER) exportieren den Typ BAPI2080_NOTHDRE, nicht BAPI2080_NOTHDRI; die Übergabe an ls_header (NOTHDRI) führt zu CALL_FUNCTION_CONFLICT_TYPE, und NOTIF_NO gehört zur Exportstruktur. Eigene Exportvariable eingeführt.",
+      "category": "Quelltext"
+    },
+    {
+      "where": "source.abap:64",
+      "before": "    lv_qmnum = ls_header-notif_no.     \"temporaere Nummer %00000000001",
+      "after": "    lv_qmnum = ls_hdr_exp-notif_no.     \"temporaere Nummer %00000000001",
+      "why": "BAPI_ALM_NOTIF_CREATE (NOTIFHEADER_EXPORT) und BAPI_ALM_NOTIF_SAVE (NOTIFHEADER) exportieren den Typ BAPI2080_NOTHDRE, nicht BAPI2080_NOTHDRI; die Übergabe an ls_header (NOTHDRI) führt zu CALL_FUNCTION_CONFLICT_TYPE, und NOTIF_NO gehört zur Exportstruktur. Eigene Exportvariable eingeführt.",
+      "category": "Quelltext"
+    },
+    {
+      "where": "source.abap:70",
+      "before": "        notifheader = ls_header",
+      "after": "        notifheader = ls_hdr_exp",
+      "why": "BAPI_ALM_NOTIF_CREATE (NOTIFHEADER_EXPORT) und BAPI_ALM_NOTIF_SAVE (NOTIFHEADER) exportieren den Typ BAPI2080_NOTHDRE, nicht BAPI2080_NOTHDRI; die Übergabe an ls_header (NOTHDRI) führt zu CALL_FUNCTION_CONFLICT_TYPE, und NOTIF_NO gehört zur Exportstruktur. Eigene Exportvariable eingeführt.",
+      "category": "Quelltext"
+    },
+    {
+      "where": "source.abap:73",
+      "before": "    lv_qmnum_neu = ls_header-notif_no.",
+      "after": "    lv_qmnum_neu = ls_hdr_exp-notif_no.",
+      "why": "BAPI_ALM_NOTIF_CREATE (NOTIFHEADER_EXPORT) und BAPI_ALM_NOTIF_SAVE (NOTIFHEADER) exportieren den Typ BAPI2080_NOTHDRE, nicht BAPI2080_NOTHDRI; die Übergabe an ls_header (NOTHDRI) führt zu CALL_FUNCTION_CONFLICT_TYPE, und NOTIF_NO gehört zur Exportstruktur. Eigene Exportvariable eingeführt.",
+      "category": "Quelltext"
+    },
+    {
+      "where": "source.abap:88",
+      "before": "    er_entity-prioritaet = ls_header-priority.",
+      "after": "    er_entity-prioritaet = ls_hdr_exp-priority.",
+      "why": "BAPI_ALM_NOTIF_CREATE (NOTIFHEADER_EXPORT) und BAPI_ALM_NOTIF_SAVE (NOTIFHEADER) exportieren den Typ BAPI2080_NOTHDRE, nicht BAPI2080_NOTHDRI; die Übergabe an ls_header (NOTHDRI) führt zu CALL_FUNCTION_CONFLICT_TYPE, und NOTIF_NO gehört zur Exportstruktur. Eigene Exportvariable eingeführt.",
+      "category": "Quelltext"
+    },
+    {
+      "where": "source.abap nach Zeile 8",
+      "before": "—",
+      "after": "          ls_hdr_exp   TYPE bapi2080_nothdre,",
+      "why": "BAPI_ALM_NOTIF_CREATE (NOTIFHEADER_EXPORT) und BAPI_ALM_NOTIF_SAVE (NOTIFHEADER) exportieren den Typ BAPI2080_NOTHDRE, nicht BAPI2080_NOTHDRI; die Übergabe an ls_header (NOTHDRI) führt zu CALL_FUNCTION_CONFLICT_TYPE, und NOTIF_NO gehört zur Exportstruktur. Eigene Exportvariable eingeführt. (eingefügte Zeile; alle Anker ab Zeile 9 um 1 nachgezogen)",
+      "category": "Quelltext"
+    }
+  ],
+  "doubts": []
+}

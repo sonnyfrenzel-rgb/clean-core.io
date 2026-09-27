@@ -1,0 +1,49 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten pdiff",
+      "before": "action zcl_ewm_wt_processor.abap:80 (Differenz über Ausnahmecode DIFF melden); Kanten pg4->pdiff [is_conf-qty < ls_open-vsolm], pdiff->pto [always]",
+      "after": "entfernt",
+      "why": "zcl_ewm_wt_processor.abap:80 (ls_exc-exccode = gc_exc_diff) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert. Danach folgt nur ein APPEND in eine interne Tabelle.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante pg4->pto",
+      "before": "—",
+      "after": "[is_conf-qty < ls_open-vsolm]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten pdiff.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten ee",
+      "before": "action zcl_ewm_wt_queue.abap:51 (Status E, Wiederholung in 5 Minuten); Kanten eg->ee [iv_temporary = abap_true], ee->ei [always]",
+      "after": "entfernt",
+      "why": "zcl_ewm_wt_queue.abap:51 (ls_q-status = 'E') ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante eg->ei",
+      "before": "—",
+      "after": "[iv_temporary = abap_true]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten ee.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten ef",
+      "before": "action zcl_ewm_wt_queue.abap:54 (Status F (manuelle Klärung)); Kanten eg->ef [else], ef->ei [always]",
+      "after": "entfernt",
+      "why": "zcl_ewm_wt_queue.abap:54 (ls_q-status = 'F') ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante eg->ei",
+      "before": "—",
+      "after": "[else]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten ef.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

@@ -1,0 +1,276 @@
+{
+  "id": "BM-201",
+  "title": "Kreditlimit-Schnellprüfung über lokale Klasse",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "KNKK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:20"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LCL_CREDIT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:30"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-201-B01",
+      "text": "Für den eingegebenen Debitor und Kreditkontrollbereich werden die Kreditstammdaten gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-201-B02",
+      "text": "Das Limit gilt als überschritten, wenn ein Kreditstammsatz existiert und offene Aufträge plus Forderungen das Kreditlimit übersteigen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-201-B03",
+      "text": "Bei Überschreitung wird der Debitor mit dem Hinweis „Kreditlimit überschritten“ ausgegeben; sonst endet der Report ohne Ausgabe.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "c",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Kreditlimitpruefung aufrufen"
+      },
+      {
+        "id": "m",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Methode Kreditlimitpruefung"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Kreditstammdaten des Debitors im Kreditkontrollbereich lesen"
+      },
+      {
+        "id": "a",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Ueberschreitung = offene Auftraege + Forderungen > Limit"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "meaning": "Ergebnis zurueckgeben",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        }
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Limit ueberschritten?"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Ueberschreitung melden"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Reportende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c",
+        "condition": "always"
+      },
+      {
+        "from": "c",
+        "to": "m",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "m",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "a",
+        "condition": "always"
+      },
+      {
+        "from": "a",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "o",
+        "condition": "lcl_credit=>is_over_limit( iv_kunnr = p_kunnr iv_kkber = p_kkber ) = abap_true"
+      },
+      {
+        "from": "o",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "e",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:20 — kein Fachsatz „Auftrag wird gesperrt“ — der Report liest und meldet nur, er ändert keinen Beleg.",
+    "source.abap:24 — kein Fachsatz „ohne Kreditstammsatz ist das Limit überschritten“ — ohne Treffer ist das Ergebnis abap_false."
+  ],
+  "processDescription": "Der Innendienst startet den Report mit Debitor und Kreditkontrollbereich. Eine lokale Klasse liest den klassischen Kreditstammsatz aus KNKK. Überschritten ist das Limit, wenn der Satz existiert und die Summe aus offenen Aufträgen und Forderungen das Kreditlimit übersteigt. Nur in diesem Fall gibt der Report eine Warnzeile mit der Debitorennummer aus; sonst endet er ohne Ausgabe. Belege werden weder geprüft noch gesperrt."
+}

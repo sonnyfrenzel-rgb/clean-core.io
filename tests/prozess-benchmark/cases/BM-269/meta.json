@@ -1,0 +1,36 @@
+{
+  "id": "BM-269",
+  "title": "Parallele Buchung von MES-Rückmeldungen per aRFC",
+  "domain": "PP",
+  "band": "komplex",
+  "loc": 205,
+  "constructs": [
+    "REPORT mit F01-Include",
+    "SPBT_INITIALIZE",
+    "STARTING NEW TASK DESTINATION IN GROUP",
+    "PERFORMING ON END OF TASK",
+    "RECEIVE RESULTS",
+    "WAIT UNTIL",
+    "Paketierung",
+    "BAPI_PRODORDCONF_CREATE_TT",
+    "UPDATE",
+    "COMMIT WORK"
+  ],
+  "scenario": "Nachtjob, der MES-Rückmeldungen aus einer Staging-Tabelle bucht; nach Laufzeitproblemen auf parallele aRFC-Verarbeitung umgestellt.",
+  "s4_issues": [
+    "aRFC/SPBT in ABAP Cloud nicht freigegeben (bgPF/Application Jobs)",
+    "BAPI_PRODORDCONF_CREATE_TT – Zielbild API Production Order Confirmation",
+    "COMMIT WORK je Satz in RFC-Baustein"
+  ],
+  "wave": 3,
+  "module": "PP",
+  "edge_constructs": [
+    "aRFC mit Ressourcen-Wiederholung",
+    "synchroner Fallback desselben Bausteins",
+    "Callback-FORM ohne Aufrufer im Code",
+    "RETURN im Callback",
+    "ROLLBACK verwirft vorherige Fehlerstatus",
+    "MESSAGE E als Abbruch"
+  ],
+  "oo": false
+}

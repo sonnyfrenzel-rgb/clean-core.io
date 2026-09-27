@@ -1,0 +1,40 @@
+{
+  "id": "BM-274",
+  "title": "IDoc-Eingang Versandbestätigung mit Segment-Handler-Hierarchie",
+  "domain": "SD",
+  "band": "sehr komplex",
+  "loc": 460,
+  "constructs": [
+    "IDoc-Eingangsbaustein",
+    "abstrakte Klasse mit Schablonenmethode",
+    "INHERITING FROM / REDEFINITION",
+    "super->",
+    "statische Fabrikmethode",
+    "Ausnahmeklasse mit OTR-Texten",
+    "TRY/CATCH",
+    "ENQUEUE/DEQUEUE_EVVBLKE",
+    "WS_DELIVERY_UPDATE",
+    "ROLLBACK/COMMIT WORK AND WAIT",
+    "BAL_LOG_CREATE/MSG_ADD_FREE_TEXT/DB_SAVE",
+    "VBUK"
+  ],
+  "scenario": "Logistikdienstleister meldet Kommissionierung und Warenausgang von Auslieferungen per kundeneigenem IDoc; das Projekt hat die Eingangsverarbeitung als Handler-Hierarchie gebaut.",
+  "s4_issues": [
+    "VBUK entfällt in S/4 (Status in LIKP/LIPS)",
+    "WS_DELIVERY_UPDATE nicht freigegeben",
+    "BAL_* nicht in ABAP Cloud",
+    "COMMIT im IDoc-Eingangsbaustein",
+    "Materialnummer 40 Zeichen in Z1SHPI"
+  ],
+  "wave": 3,
+  "module": "SD",
+  "edge_constructs": [
+    "polymorpher Aufruf validate/apply über Basisklasse",
+    "Ausnahmen aus Unterklassen landen im CATCH des Bausteins",
+    "CHECK in Schleife und Methode",
+    "RETURN in save",
+    "Statusprüfung ohne sy-subrc (VBUK)",
+    "stiller Protokollausfall"
+  ],
+  "oo": true
+}

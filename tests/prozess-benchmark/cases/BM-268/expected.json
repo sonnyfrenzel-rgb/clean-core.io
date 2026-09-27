@@ -1,0 +1,1242 @@
+{
+  "id": "BM-268",
+  "title": "Bestell-IDoc-Ausgang an Lieferantenportal",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZMM_IF_LASTRUN",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_po_idoc_out_f01.abap",
+        "line": 9,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_po_idoc_out_f01.abap:9"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_po_idoc_out_f01.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_po_idoc_out_f01.abap:21"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_po_idoc_out_f01.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_po_idoc_out_f01.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EDP13",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_po_idoc_out_f01.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_po_idoc_out_f01.abap:40"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MASTER_IDOC_DISTRIBUTE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_po_idoc_out_f01.abap",
+        "line": 99,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_po_idoc_out_f01.abap:99"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_IF_LASTRUN",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zmm_po_idoc_out_f01.abap",
+        "line": 132,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_po_idoc_out_f01.abap:132"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_po_idoc_out_f01.abap",
+        "line": 143,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_po_idoc_out_f01.abap:143"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-268-B01",
+      "text": "Der Delta-Beginn ist das Datum des letzten Laufs dieser Schnittstelle; beim ersten Lauf werden Bestellungen ab gestern berücksichtigt.",
+      "anchors": [
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:9"
+        },
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:11"
+        },
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-268-B02",
+      "text": "Es werden nicht gelöschte Bestellungen der gewählten Bestellarten, Lieferanten und Einkaufsorganisationen selektiert, deren Anlagedatum ab dem Delta-Beginn liegt, samt ihren Positionen.",
+      "anchors": [
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:21"
+        },
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:27"
+        },
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-268-B03",
+      "text": "Ohne Bestellungen endet der Report mit einem Hinweis.",
+      "anchors": [
+        {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:12"
+        },
+        {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:13"
+        },
+        {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:14"
+        }
+      ]
+    },
+    {
+      "id": "BM-268-B04",
+      "text": "Für jede Bestellung wird geprüft, ob mit dem Lieferanten eine Ausgangs-Partnervereinbarung für ZPORDERS besteht; fehlt sie, wird die Bestellung mit „kein Partnerprofil“ ins Ergebnis übernommen und nicht gesendet.",
+      "anchors": [
+        {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:18"
+        },
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:40"
+        },
+        {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:19"
+        },
+        {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-268-B05",
+      "text": "Zur Bestellung wird ein IDoc mit Kopfsegment (Nummer, Belegdatum, Währung, Einkäufergruppe) und je nicht gelöschter Position einem Positionssegment (Material, Menge, Einheit, Nettopreis) aufgebaut.",
+      "anchors": [
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:79"
+        },
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:81"
+        },
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-268-B06",
+      "text": "Im Testlauf wird nichts gesendet; die Bestellung erscheint mit „Testlauf - nicht gesendet“ im Ergebnis.",
+      "anchors": [
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:93"
+        },
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:94"
+        },
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:96"
+        }
+      ]
+    },
+    {
+      "id": "BM-268-B07",
+      "text": "Im Echtlauf wird das Bestell-IDoc an den Lieferanten erzeugt; schlägt das fehl, wird zurückgerollt und „Fehler beim Erzeugen“ vermerkt, sonst festgeschrieben und die IDoc-Nummer vermerkt.",
+      "anchors": [
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:99"
+        },
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:111"
+        },
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:112"
+        },
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:115"
+        }
+      ]
+    },
+    {
+      "id": "BM-268-B08",
+      "text": "Im Echtlauf wird nach dem Durchlauf das heutige Datum als letzter Lauf gespeichert, unabhängig davon, ob einzelne Bestellungen gescheitert sind.",
+      "anchors": [
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:129"
+        },
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:132"
+        },
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:133"
+        }
+      ]
+    },
+    {
+      "id": "BM-268-B09",
+      "text": "Zum Schluss wird das Ergebnis je Bestellung als ALV-Liste angezeigt; gelingt das nicht, erscheint ein Hinweis.",
+      "anchors": [
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:143"
+        },
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:146"
+        },
+        {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:148"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:9"
+        },
+        "meaning": "Reportstart (stündlicher Job)"
+      },
+      {
+        "id": "p1",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:10"
+        },
+        "meaning": "Delta-Beginn bestimmen"
+      },
+      {
+        "id": "p2",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:11"
+        },
+        "meaning": "Bestellungen selektieren"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:12"
+        },
+        "meaning": "Keine Bestellungen?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:13"
+        },
+        "meaning": "Hinweis: keine Bestellungen"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:14"
+        },
+        "meaning": "Report verlassen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:17"
+        },
+        "meaning": "Bestellungen durchlaufen"
+      },
+      {
+        "id": "p3",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:18"
+        },
+        "meaning": "Partnervereinbarung des Lieferanten prüfen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:19"
+        },
+        "meaning": "Keine Partnervereinbarung?"
+      },
+      {
+        "id": "p4",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:26"
+        },
+        "meaning": "IDoc zur Bestellung erzeugen"
+      },
+      {
+        "id": "p5",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:29"
+        },
+        "meaning": "Laufdatum fortschreiben"
+      },
+      {
+        "id": "p6",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:30"
+        },
+        "meaning": "Ergebnisliste anzeigen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_idoc_out.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out.abap:30"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "gs",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:8"
+        },
+        "meaning": "Delta-Beginn"
+      },
+      {
+        "id": "gq",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:9"
+        },
+        "meaning": "Datum des letzten Laufs lesen"
+      },
+      {
+        "id": "gg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:11"
+        },
+        "meaning": "Noch kein Lauf?"
+      },
+      {
+        "id": "ge",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:15"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:20"
+        },
+        "meaning": "Selektion"
+      },
+      {
+        "id": "sq1",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:21"
+        },
+        "meaning": "Nicht gelöschte Bestellungen ab Delta-Datum lesen"
+      },
+      {
+        "id": "sg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:27"
+        },
+        "meaning": "Bestellungen gefunden?"
+      },
+      {
+        "id": "sq2",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:28"
+        },
+        "meaning": "Positionen der Bestellungen lesen"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:32"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "cs",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:37"
+        },
+        "meaning": "Partnerprüfung"
+      },
+      {
+        "id": "cq",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:40"
+        },
+        "meaning": "Ausgangs-Partnervereinbarung Lieferant/ZPORDERS lesen"
+      },
+      {
+        "id": "cg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:44"
+        },
+        "meaning": "Vereinbarung vorhanden?"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:47"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "ns",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:52"
+        },
+        "meaning": "IDoc-Erzeugung zur Bestellung"
+      },
+      {
+        "id": "nl",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:79"
+        },
+        "meaning": "Positionen der Bestellung durchlaufen"
+      },
+      {
+        "id": "nck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:81"
+        },
+        "meaning": "Position nicht gelöscht?"
+      },
+      {
+        "id": "nt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:93"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "nr",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:96"
+        },
+        "meaning": "Routine verlassen"
+      },
+      {
+        "id": "mid",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:99"
+        },
+        "meaning": "Bestell-IDoc an Lieferanten erzeugen"
+      },
+      {
+        "id": "ng",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:111"
+        },
+        "meaning": "Erzeugung fehlgeschlagen?"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:112"
+        },
+        "meaning": "Zurückrollen, Ergebnis Fehler"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:115"
+        },
+        "meaning": "Festschreiben und Versand anstoßen, IDoc-Nummer übernehmen"
+      },
+      {
+        "id": "ne",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:121"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:126"
+        },
+        "meaning": "Laufdatum fortschreiben"
+      },
+      {
+        "id": "lck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:129"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "lw",
+        "type": "write",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:132"
+        },
+        "meaning": "Heutiges Datum als letzten Lauf speichern"
+      },
+      {
+        "id": "lc",
+        "type": "transaction",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:133"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:134"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "ds",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:139"
+        },
+        "meaning": "Ergebnisanzeige"
+      },
+      {
+        "id": "df",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:143"
+        },
+        "meaning": "ALV-Liste zum Ergebnis erzeugen"
+      },
+      {
+        "id": "dd",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:146"
+        },
+        "meaning": "Ergebnisliste je Bestellung anzeigen"
+      },
+      {
+        "id": "dm",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:148"
+        },
+        "meaning": "Hinweis: Liste nicht anzeigbar"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_po_idoc_out_f01.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_idoc_out_f01.abap:150"
+        },
+        "meaning": "Ende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "p1",
+        "condition": "always"
+      },
+      {
+        "from": "p1",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "gq",
+        "condition": "always"
+      },
+      {
+        "from": "gq",
+        "to": "gg",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "ge",
+        "condition": "else"
+      },
+      {
+        "from": "ge",
+        "to": "p2",
+        "condition": "always"
+      },
+      {
+        "from": "p2",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "sq1",
+        "condition": "always"
+      },
+      {
+        "from": "sq1",
+        "to": "sg",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "sq2",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "sq2",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "se",
+        "condition": "else"
+      },
+      {
+        "from": "se",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "gt_ekko IS INITIAL"
+      },
+      {
+        "from": "m1",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "p3",
+        "condition": "next row"
+      },
+      {
+        "from": "p3",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "cq",
+        "condition": "always"
+      },
+      {
+        "from": "cq",
+        "to": "cg",
+        "condition": "always"
+      },
+      {
+        "from": "cg",
+        "to": "ce",
+        "condition": "else"
+      },
+      {
+        "from": "ce",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "p4",
+        "condition": "else"
+      },
+      {
+        "from": "p4",
+        "to": "ns",
+        "condition": "always"
+      },
+      {
+        "from": "ns",
+        "to": "nl",
+        "condition": "always"
+      },
+      {
+        "from": "nl",
+        "to": "nck",
+        "condition": "next row"
+      },
+      {
+        "from": "nck",
+        "to": "nl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "nl",
+        "to": "nt",
+        "condition": "no more rows"
+      },
+      {
+        "from": "nt",
+        "to": "mid",
+        "condition": "else"
+      },
+      {
+        "from": "mid",
+        "to": "ng",
+        "condition": "always"
+      },
+      {
+        "from": "ng",
+        "to": "rb",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rb",
+        "to": "ne",
+        "condition": "always"
+      },
+      {
+        "from": "ng",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "ne",
+        "condition": "always"
+      },
+      {
+        "from": "ne",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "p5",
+        "condition": "no more rows"
+      },
+      {
+        "from": "p5",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "lck",
+        "condition": "always"
+      },
+      {
+        "from": "lck",
+        "to": "le",
+        "condition": "else"
+      },
+      {
+        "from": "lck",
+        "to": "lw",
+        "condition": "p_test = abap_false"
+      },
+      {
+        "from": "lw",
+        "to": "lc",
+        "condition": "always"
+      },
+      {
+        "from": "lc",
+        "to": "le",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "p6",
+        "condition": "always"
+      },
+      {
+        "from": "p6",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "ds",
+        "to": "df",
+        "condition": "always"
+      },
+      {
+        "from": "df",
+        "to": "dd",
+        "condition": "always"
+      },
+      {
+        "from": "df",
+        "to": "dm",
+        "condition": "cx_salv_msg"
+      },
+      {
+        "from": "dd",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "dm",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "de",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gg",
+        "to": "ge",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "cg",
+        "to": "ce",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "nt",
+        "to": "nr",
+        "condition": "p_test = abap_true"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zmm_po_idoc_out_f01.abap:21 — kein Fachsatz „geänderte Bestellungen werden erneut übertragen“ (gefiltert wird auf das Anlagedatum AEDAT; Änderungen bestehender Bestellungen werden nicht erkannt, der Kommentar zur Meldung ist irreführend)",
+    "zmm_po_idoc_out_f01.abap:115 — kein Fachsatz „IDoc wurde vom Lieferanten empfangen“ (nur erzeugt und Versand angestoßen)",
+    "zmm_po_idoc_out_f01.abap:132 — kein Fachsatz „nur erfolgreich gesendete Bestellungen schieben den Delta-Beginn“ (das Datum wird immer im Echtlauf fortgeschrieben)"
+  ],
+  "processDescription": "Der Report läuft stündlich im Hintergrund. Er ermittelt den Delta-Beginn aus dem Datum des letzten Laufs (beim ersten Lauf gestern) und selektiert nicht gelöschte Bestellungen der gewählten Bestellarten, Lieferanten und Einkaufsorganisationen mit Anlagedatum ab diesem Tag samt Positionen. Gibt es keine, endet er mit einem Hinweis. Für jede Bestellung prüft er die Partnervereinbarung des Lieferanten für ZPORDERS; ohne sie wird die Bestellung nur mit „kein Partnerprofil“ vermerkt. Sonst baut er ein IDoc aus Kopfsegment und einem Segment je nicht gelöschter Position. Im Testlauf wird nichts gesendet und das vermerkt. Im Echtlauf wird das IDoc erzeugt; bei Fehler wird zurückgerollt, bei Erfolg festgeschrieben und die IDoc-Nummer vermerkt. Anschließend wird im Echtlauf das heutige Datum als letzter Lauf gespeichert und das Ergebnis je Bestellung als ALV-Liste angezeigt."
+}

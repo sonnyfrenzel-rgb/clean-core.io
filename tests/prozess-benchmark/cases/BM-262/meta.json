@@ -1,0 +1,25 @@
+{
+  "id": "BM-262",
+  "title": "Einplanung des Mahn-Nachlaufjobs",
+  "domain": "FI",
+  "band": "einfach",
+  "loc": 37,
+  "constructs": [
+    "JOB_OPEN",
+    "SUBMIT VIA JOB",
+    "JOB_CLOSE",
+    "MESSAGE TYPE E/S/I"
+  ],
+  "scenario": "Kleiner Einplanungsreport, den die Debitorenbuchhaltung nach jedem Mahnlauf startet, damit der Nachlauf im Hintergrund läuft.",
+  "s4_issues": [
+    "JOB_OPEN/JOB_CLOSE in ABAP Cloud nicht freigegeben (Application Jobs)",
+    "Mahnprogramm-Nachlauf ggf. durch Standard-Apps ersetzbar"
+  ],
+  "wave": 3,
+  "module": "FI",
+  "edge_constructs": [
+    "MESSAGE TYPE E als Pfadende",
+    "SUBMIT ... VIA JOB ... AND RETURN"
+  ],
+  "oo": false
+}

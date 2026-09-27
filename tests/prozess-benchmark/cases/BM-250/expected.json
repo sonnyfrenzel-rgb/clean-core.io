@@ -1,0 +1,1655 @@
+{
+  "id": "BM-250",
+  "title": "Gateway-$batch-Changeset: Preisfreigabe von Auftragspositionen mit Nachrichtencontainer und Anwendungsprotokoll",
+  "classes": [
+    "K02",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_preis_service.abap",
+        "line": 68,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_preis_service.abap:68"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_preis_service.abap",
+        "line": 86,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_preis_service.abap:86"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KONV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_preis_service.abap",
+        "line": 97,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_preis_service.abap:97"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_SALESORDER_CHANGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_preis_service.abap",
+        "line": 115,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_preis_service.abap:115"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EVVBAKE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_preis_service.abap",
+        "line": 55,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_preis_service.abap:55"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EVVBAKE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_preis_service.abap",
+        "line": 128,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_preis_service.abap:128"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_msg_collector.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_msg_collector.abap:30"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_msg_collector.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_msg_collector.abap:52"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_msg_collector.abap",
+        "line": 92,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_msg_collector.abap:92"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-250-B01",
+      "text": "Ein Changeset wird nur angenommen, wenn alle Operationen Änderungen an Preispositionen sind; sonst wird es technisch abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:22"
+        },
+        {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-250-B02",
+      "text": "Alle Operationen des Changesets werden gemeinsam verarbeitet, Meldungen über einen Sammler mit dem Nachrichtencontainer und einem Anwendungsprotokoll ZSD/PREISFREIGABE.",
+      "anchors": [
+        {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:29"
+        },
+        {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-250-B03",
+      "text": "Jede Position mit einem Preis kleiner oder gleich null führt zur Meldung „Preis muss positiv sein“ und zur Ablehnung des gesamten Changesets.",
+      "anchors": [
+        {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:44"
+        },
+        {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:45"
+        },
+        {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-250-B04",
+      "text": "Die Positionen werden nach Auftrag gruppiert; jeder Auftrag wird vor der Änderung gesperrt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:53"
+        },
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-250-B05",
+      "text": "Ist ein Auftrag gesperrt, wird „Auftrag … ist gesperrt“ gemeldet und das gesamte Changeset abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:62"
+        },
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:63"
+        },
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-250-B06",
+      "text": "Steht der Auftrag mit der Liefersperre ZP für Preisprüfung, wird diese zurückgenommen; sonst gibt es nur eine Warnung und der Preis wird trotzdem gesetzt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:68"
+        },
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:75"
+        },
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:76"
+        },
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:79"
+        }
+      ]
+    },
+    {
+      "id": "BM-250-B07",
+      "text": "Eine bereits vollständig erledigte Position erhält keinen neuen Preis und löst eine Fehlermeldung aus.",
+      "anchors": [
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:86"
+        },
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:90"
+        },
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:91"
+        }
+      ]
+    },
+    {
+      "id": "BM-250-B08",
+      "text": "Für jede andere Position wird der freigegebene Preis als manuelle Kondition ZMAN gesetzt: vorhandene ZMAN-Konditionen werden geändert, fehlende neu angelegt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:97"
+        },
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:102"
+        }
+      ]
+    },
+    {
+      "id": "BM-250-B09",
+      "text": "Die Preis- und Sperränderungen werden je Auftrag mit dem Auftragsänderungs-BAPI eingestellt, die BAPI-Meldungen gehen in Container und Protokoll.",
+      "anchors": [
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:115"
+        },
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:125"
+        },
+        {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:44"
+        },
+        {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-250-B10",
+      "text": "Liegt danach irgendein Fehler vor – aus dem BAPI oder einer zuvor gemeldeten erledigten Position –, wird das gesamte Changeset mit allen gesammelten Meldungen abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:126"
+        },
+        {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:82"
+        },
+        {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-250-B11",
+      "text": "Ohne Fehler wird der Auftrag entsperrt und der nächste bearbeitet.",
+      "anchors": [
+        {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:128"
+        }
+      ]
+    },
+    {
+      "id": "BM-250-B12",
+      "text": "Jede Operation erhält als Antwort ihre Position mit dem Status freigegeben.",
+      "anchors": [
+        {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:62"
+        },
+        {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-250-B13",
+      "text": "Am Ende des Changesets wird das Anwendungsprotokoll zum Sichern in der Verbuchung registriert; das Festschreiben selbst veranlasst das Gateway-Framework, nicht der Code.",
+      "anchors": [
+        {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:76"
+        },
+        {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:92"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "b_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:18"
+        },
+        "meaning": "Changeset beginnt: Operationen prüfen"
+      },
+      {
+        "id": "b_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:21"
+        },
+        "meaning": "Jede angekündigte Operation prüfen"
+      },
+      {
+        "id": "b_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:22"
+        },
+        "meaning": "Andere Operation als Preisänderung?"
+      },
+      {
+        "id": "b_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:23"
+        },
+        "meaning": "Changeset technisch abweisen"
+      },
+      {
+        "id": "b_n",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:29"
+        },
+        "meaning": "Meldungssammler mit Nachrichtencontainer anlegen"
+      },
+      {
+        "id": "b_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:30"
+        },
+        "meaning": "Deferred Mode gesetzt, Ende"
+      },
+      {
+        "id": "p_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:33"
+        },
+        "meaning": "Alle Preisänderungen des Changesets gemeinsam verarbeiten"
+      },
+      {
+        "id": "p_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:40"
+        },
+        "meaning": "Jede Operation einsammeln"
+      },
+      {
+        "id": "p_in",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:42"
+        },
+        "meaning": "Position mit neuem Preis übernehmen"
+      },
+      {
+        "id": "p_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:44"
+        },
+        "meaning": "Preis nicht positiv?"
+      },
+      {
+        "id": "p_t",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:45"
+        },
+        "meaning": "Fehlertext „Preis muss positiv sein“ sammeln"
+      },
+      {
+        "id": "p_r",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:47"
+        },
+        "meaning": "Bei Fehlern abbrechen"
+      },
+      {
+        "id": "p_sv",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:59"
+        },
+        "meaning": "Preise je Auftrag freigeben"
+      },
+      {
+        "id": "p_l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:62"
+        },
+        "meaning": "Antwort je Operation bilden"
+      },
+      {
+        "id": "p_rs",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:67"
+        },
+        "meaning": "Position mit Status F als Antwort der Operation"
+      },
+      {
+        "id": "p_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:70"
+        },
+        "meaning": "Ende Verarbeitung"
+      },
+      {
+        "id": "e_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:73"
+        },
+        "meaning": "Changeset endet"
+      },
+      {
+        "id": "e_c",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:76"
+        },
+        "meaning": "Anwendungsprotokoll zum Sichern vormerken"
+      },
+      {
+        "id": "e_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zsd_preis_dpc_ext.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_preis_dpc_ext.abap:77"
+        },
+        "meaning": "Ende; Festschreiben übernimmt das Framework"
+      },
+      {
+        "id": "f_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:42"
+        },
+        "meaning": "Preisfreigabe je Auftrag"
+      },
+      {
+        "id": "f_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:53"
+        },
+        "meaning": "Jeden betroffenen Auftrag bearbeiten"
+      },
+      {
+        "id": "f_q",
+        "type": "lock",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:55"
+        },
+        "meaning": "Auftrag sperren"
+      },
+      {
+        "id": "f_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:62"
+        },
+        "meaning": "Sperre fehlgeschlagen?"
+      },
+      {
+        "id": "f_c1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:63"
+        },
+        "meaning": "Fehlertext „Auftrag gesperrt“ mit Sperrbenutzer sammeln"
+      },
+      {
+        "id": "f_c2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:65"
+        },
+        "meaning": "Bei Fehlern abbrechen"
+      },
+      {
+        "id": "f_r1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:68"
+        },
+        "meaning": "Liefersperre und Konditionsnummer des Auftrags lesen"
+      },
+      {
+        "id": "f_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:75"
+        },
+        "meaning": "Liefersperre Preisprüfung gesetzt?"
+      },
+      {
+        "id": "f_a1",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:76"
+        },
+        "meaning": "Liefersperre zum Zurücknehmen vormerken"
+      },
+      {
+        "id": "f_c3",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:79"
+        },
+        "meaning": "Warnung „keine Preisprüfsperre“ sammeln"
+      },
+      {
+        "id": "f_l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:83"
+        },
+        "meaning": "Jede freizugebende Position des Auftrags"
+      },
+      {
+        "id": "f_r2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:86"
+        },
+        "meaning": "Gesamtstatus der Position lesen"
+      },
+      {
+        "id": "f_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:90"
+        },
+        "meaning": "Position bereits erledigt?"
+      },
+      {
+        "id": "f_c4",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:91"
+        },
+        "meaning": "Fehlertext „Position erledigt“ sammeln"
+      },
+      {
+        "id": "f_r3",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:97"
+        },
+        "meaning": "Vorhandene manuelle Preiskondition ZMAN suchen"
+      },
+      {
+        "id": "f_a2",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:102"
+        },
+        "meaning": "Kondition ändern (vorhanden) oder neu anlegen"
+      },
+      {
+        "id": "f_b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:115"
+        },
+        "meaning": "Preise als Kondition ZMAN und ggf. Liefersperre im Auftrag ändern"
+      },
+      {
+        "id": "f_c5",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:125"
+        },
+        "meaning": "BAPI-Meldungen sammeln"
+      },
+      {
+        "id": "f_c6",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:126"
+        },
+        "meaning": "Bei Fehlern abbrechen"
+      },
+      {
+        "id": "f_d",
+        "type": "lock",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:128"
+        },
+        "meaning": "Auftrag entsperren"
+      },
+      {
+        "id": "f_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_preis_service.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_preis_service.abap:132"
+        },
+        "meaning": "Ende Preisfreigabe"
+      },
+      {
+        "id": "k_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:28"
+        },
+        "meaning": "Meldungssammler anlegen"
+      },
+      {
+        "id": "k_b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:30"
+        },
+        "meaning": "Anwendungsprotokoll ZSD/PREISFREIGABE eröffnen"
+      },
+      {
+        "id": "k_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:40"
+        },
+        "meaning": "Rückkehr"
+      },
+      {
+        "id": "a_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:43"
+        },
+        "meaning": "BAPI-Meldungen übernehmen"
+      },
+      {
+        "id": "a_o",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:44"
+        },
+        "meaning": "Meldungen in den Nachrichtencontainer (erste als führende)"
+      },
+      {
+        "id": "a_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:48"
+        },
+        "meaning": "Jede Meldung protokollieren"
+      },
+      {
+        "id": "a_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:49"
+        },
+        "meaning": "Fehler oder Abbruch?"
+      },
+      {
+        "id": "a_f",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:50"
+        },
+        "meaning": "Fehlerkennzeichen setzen"
+      },
+      {
+        "id": "a_b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:52"
+        },
+        "meaning": "Meldung ins Anwendungsprotokoll"
+      },
+      {
+        "id": "a_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:62"
+        },
+        "meaning": "Rückkehr"
+      },
+      {
+        "id": "t_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:65"
+        },
+        "meaning": "Freitextmeldung übernehmen"
+      },
+      {
+        "id": "t_o",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:66"
+        },
+        "meaning": "Freitext in den Nachrichtencontainer"
+      },
+      {
+        "id": "t_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:68"
+        },
+        "meaning": "Fehler oder Abbruch?"
+      },
+      {
+        "id": "t_f",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:69"
+        },
+        "meaning": "Fehlerkennzeichen setzen"
+      },
+      {
+        "id": "t_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:78"
+        },
+        "meaning": "Rückkehr"
+      },
+      {
+        "id": "r_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:81"
+        },
+        "meaning": "Fehlerprüfung"
+      },
+      {
+        "id": "r_ck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:82"
+        },
+        "meaning": "Fehler gesammelt?"
+      },
+      {
+        "id": "r_c",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:84"
+        },
+        "meaning": "Protokoll zum Sichern vormerken"
+      },
+      {
+        "id": "r_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:85"
+        },
+        "meaning": "Geschäftsausnahme mit Nachrichtencontainer: Changeset wird abgelehnt"
+      },
+      {
+        "id": "r_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:88"
+        },
+        "meaning": "Keine Fehler, Rückkehr"
+      },
+      {
+        "id": "sl_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:91"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "sl_b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:92"
+        },
+        "meaning": "Protokoll in der Verbuchung zum Sichern registrieren"
+      },
+      {
+        "id": "sl_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_msg_collector.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_msg_collector.abap:98"
+        },
+        "meaning": "Rückkehr"
+      }
+    ],
+    "edges": [
+      {
+        "from": "b_s",
+        "to": "b_l",
+        "condition": "always"
+      },
+      {
+        "from": "b_l",
+        "to": "b_g",
+        "condition": "next row"
+      },
+      {
+        "from": "b_g",
+        "to": "b_x",
+        "condition": "ls_op-entity_set <> 'PreisPosSet' OR ls_op-operation_type <> 'UE'"
+      },
+      {
+        "from": "b_g",
+        "to": "b_l",
+        "condition": "else"
+      },
+      {
+        "from": "b_l",
+        "to": "b_n",
+        "condition": "no more rows"
+      },
+      {
+        "from": "b_n",
+        "to": "k_s",
+        "condition": "always"
+      },
+      {
+        "from": "k_s",
+        "to": "k_b",
+        "condition": "always"
+      },
+      {
+        "from": "k_b",
+        "to": "k_e",
+        "condition": "always"
+      },
+      {
+        "from": "k_e",
+        "to": "b_e",
+        "condition": "always"
+      },
+      {
+        "from": "p_s",
+        "to": "p_l",
+        "condition": "always"
+      },
+      {
+        "from": "p_l",
+        "to": "p_in",
+        "condition": "next row"
+      },
+      {
+        "from": "p_in",
+        "to": "p_g",
+        "condition": "always"
+      },
+      {
+        "from": "p_g",
+        "to": "p_t",
+        "condition": "ls_pos-neupreis <= 0"
+      },
+      {
+        "from": "p_g",
+        "to": "p_l",
+        "condition": "else"
+      },
+      {
+        "from": "p_t",
+        "to": "t_s",
+        "condition": "always"
+      },
+      {
+        "from": "t_e",
+        "to": "p_r",
+        "condition": "always"
+      },
+      {
+        "from": "p_r",
+        "to": "r_s",
+        "condition": "always"
+      },
+      {
+        "from": "r_e",
+        "to": "p_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "p_l",
+        "to": "p_sv",
+        "condition": "no more rows"
+      },
+      {
+        "from": "p_sv",
+        "to": "f_s",
+        "condition": "always"
+      },
+      {
+        "from": "f_e",
+        "to": "p_l2",
+        "condition": "always"
+      },
+      {
+        "from": "p_l2",
+        "to": "p_rs",
+        "condition": "next row"
+      },
+      {
+        "from": "p_rs",
+        "to": "p_l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "p_l2",
+        "to": "p_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e_s",
+        "to": "e_c",
+        "condition": "always"
+      },
+      {
+        "from": "e_c",
+        "to": "sl_s",
+        "condition": "always"
+      },
+      {
+        "from": "sl_s",
+        "to": "sl_b",
+        "condition": "always"
+      },
+      {
+        "from": "sl_b",
+        "to": "sl_e",
+        "condition": "always"
+      },
+      {
+        "from": "sl_e",
+        "to": "e_e",
+        "condition": "always"
+      },
+      {
+        "from": "t_s",
+        "to": "t_o",
+        "condition": "always"
+      },
+      {
+        "from": "t_o",
+        "to": "t_g",
+        "condition": "always"
+      },
+      {
+        "from": "t_g",
+        "to": "t_f",
+        "condition": "iv_type CA 'EA'"
+      },
+      {
+        "from": "t_g",
+        "to": "t_e",
+        "condition": "else"
+      },
+      {
+        "from": "t_f",
+        "to": "t_e",
+        "condition": "always"
+      },
+      {
+        "from": "r_s",
+        "to": "r_ck",
+        "condition": "always"
+      },
+      {
+        "from": "r_ck",
+        "to": "r_c",
+        "condition": "mv_error = abap_true"
+      },
+      {
+        "from": "r_ck",
+        "to": "r_e",
+        "condition": "else"
+      },
+      {
+        "from": "r_c",
+        "to": "sl_s",
+        "condition": "always"
+      },
+      {
+        "from": "sl_e",
+        "to": "r_x",
+        "condition": "always"
+      },
+      {
+        "from": "f_s",
+        "to": "f_l",
+        "condition": "always"
+      },
+      {
+        "from": "f_l",
+        "to": "f_q",
+        "condition": "next row"
+      },
+      {
+        "from": "f_q",
+        "to": "f_g1",
+        "condition": "always"
+      },
+      {
+        "from": "f_g1",
+        "to": "f_c1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "f_c1",
+        "to": "t_s",
+        "condition": "always"
+      },
+      {
+        "from": "t_e",
+        "to": "f_c2",
+        "condition": "always"
+      },
+      {
+        "from": "f_c2",
+        "to": "r_s",
+        "condition": "always"
+      },
+      {
+        "from": "r_e",
+        "to": "f_r1",
+        "condition": "always"
+      },
+      {
+        "from": "f_g1",
+        "to": "f_r1",
+        "condition": "else"
+      },
+      {
+        "from": "f_r1",
+        "to": "f_g2",
+        "condition": "always"
+      },
+      {
+        "from": "f_g2",
+        "to": "f_a1",
+        "condition": "ls_vbak-lifsk = gc_lifsk_preis"
+      },
+      {
+        "from": "f_g2",
+        "to": "f_c3",
+        "condition": "else"
+      },
+      {
+        "from": "f_a1",
+        "to": "f_l2",
+        "condition": "always"
+      },
+      {
+        "from": "f_c3",
+        "to": "t_s",
+        "condition": "always"
+      },
+      {
+        "from": "t_e",
+        "to": "f_l2",
+        "condition": "always"
+      },
+      {
+        "from": "f_l2",
+        "to": "f_r2",
+        "condition": "next row"
+      },
+      {
+        "from": "f_r2",
+        "to": "f_g3",
+        "condition": "always"
+      },
+      {
+        "from": "f_g3",
+        "to": "f_c4",
+        "condition": "lv_gbsta = 'C'"
+      },
+      {
+        "from": "f_c4",
+        "to": "t_s",
+        "condition": "always"
+      },
+      {
+        "from": "t_e",
+        "to": "f_l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "f_g3",
+        "to": "f_r3",
+        "condition": "else"
+      },
+      {
+        "from": "f_r3",
+        "to": "f_a2",
+        "condition": "always"
+      },
+      {
+        "from": "f_a2",
+        "to": "f_l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "f_l2",
+        "to": "f_b",
+        "condition": "no more rows"
+      },
+      {
+        "from": "f_b",
+        "to": "f_c5",
+        "condition": "always"
+      },
+      {
+        "from": "f_c5",
+        "to": "a_s",
+        "condition": "always"
+      },
+      {
+        "from": "a_s",
+        "to": "a_o",
+        "condition": "always"
+      },
+      {
+        "from": "a_o",
+        "to": "a_l",
+        "condition": "always"
+      },
+      {
+        "from": "a_l",
+        "to": "a_g",
+        "condition": "next row"
+      },
+      {
+        "from": "a_g",
+        "to": "a_f",
+        "condition": "ls_ret-type CA 'EA'"
+      },
+      {
+        "from": "a_g",
+        "to": "a_b",
+        "condition": "else"
+      },
+      {
+        "from": "a_f",
+        "to": "a_b",
+        "condition": "always"
+      },
+      {
+        "from": "a_b",
+        "to": "a_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "a_l",
+        "to": "a_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "a_e",
+        "to": "f_c6",
+        "condition": "always"
+      },
+      {
+        "from": "f_c6",
+        "to": "r_s",
+        "condition": "always"
+      },
+      {
+        "from": "r_e",
+        "to": "f_d",
+        "condition": "always"
+      },
+      {
+        "from": "f_d",
+        "to": "f_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "f_l",
+        "to": "f_e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_sd_preis_service.abap:90 — kein Fachsatz „erledigte Positionen werden übersprungen, die übrigen Preise freigegeben“ (die Fehlermeldung setzt das Fehlerkennzeichen, nach dem BAPI wird das ganze Changeset abgelehnt)",
+    "zcl_sd_msg_collector.abap:84 — kein Fachsatz „das Fehlerprotokoll bleibt erhalten“ (BAL_DB_SAVE registriert nur in der Verbuchung; mit der Ablehnung des Changesets wird es verworfen, wie der Kommentar selbst sagt)",
+    "zcl_sd_preis_service.abap:115 — kein Fachsatz „Änderungen werden per BAPI_TRANSACTION_COMMIT gebucht“ (im Code steht kein Commit; das Gateway-Framework schreibt nach CHANGESET_END fest)",
+    "zcl_sd_preis_service.abap:86 — kein Fachsatz „der Status jeder Position wird korrekt ermittelt“ (lv_gbsta wird nicht zurückgesetzt; ohne VBUP-Satz bleibt der Wert der vorigen Position stehen)"
+  ],
+  "processDescription": "Ein Preisprüfer gibt in einer Fiori-App mehrere Auftragspositionen mit geprüftem Preis frei; die App sendet sie als ein $batch-Changeset. Zu Beginn prüft der Service, dass nur Preisänderungen enthalten sind, schaltet in den Deferred Mode und legt einen Meldungssammler mit Nachrichtencontainer und Anwendungsprotokoll an. Dann werden alle Positionen eingesammelt; ein Preis kleiner oder gleich null führt zur Ablehnung des gesamten Changesets. Je Auftrag wird eine Sperre gesetzt – scheitert sie, wird abgelehnt –, die Liefersperre für Preisprüfung zum Zurücknehmen vorgemerkt (fehlt sie, nur Warnung) und für jede Position der neue Preis als manuelle Kondition ZMAN geändert oder neu angelegt; bereits erledigte Positionen erzeugen eine Fehlermeldung. Das Auftragsänderungs-BAPI stellt die Änderungen ein, seine Meldungen gehen in Container und Protokoll. Liegt irgendein Fehler vor, wird das gesamte Changeset mit allen Meldungen abgelehnt; sonst wird der Auftrag entsperrt. Jede Operation erhält ihre Position mit Status freigegeben als Antwort. Am Ende wird das Protokoll zum Sichern registriert; das Festschreiben übernimmt das Gateway-Framework."
+}

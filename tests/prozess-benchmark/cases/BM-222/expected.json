@@ -1,0 +1,246 @@
+{
+  "id": "BM-222",
+  "title": "Restlaufzeit eines befristeten Vertrags ermitteln",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PA0016",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-222-B01",
+      "text": "Ohne Personalnummer verlässt der Baustein sofort und liefert null Resttage.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-222-B02",
+      "text": "Zum Stichtag werden die Vertragsbestandteile (Infotyp 0016) des Mitarbeiters gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-222-B03",
+      "text": "Gibt es keinen gültigen Satz oder kein Befristungsende, endet der Baustein mit der Ausnahme KEIN_VERTRAG.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-222-B04",
+      "text": "Sonst wird die Zahl der Kalendertage vom Stichtag bis zum Befristungsende zurückgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Bausteinstart"
+      },
+      {
+        "id": "ck",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Personalnummer übergeben?"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Vertragsbestandteile zum Stichtag lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Vertrag mit Befristungsende vorhanden?"
+      },
+      {
+        "id": "x",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Ausnahme KEIN_VERTRAG"
+      },
+      {
+        "id": "a",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Resttage bis Befristungsende berechnen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Bausteinende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "ck",
+        "condition": "always"
+      },
+      {
+        "from": "ck",
+        "to": "q",
+        "condition": "iv_pernr IS NOT INITIAL"
+      },
+      {
+        "from": "ck",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "x",
+        "condition": "sy-subrc <> 0 OR ls_p0016-ctedt IS INITIAL"
+      },
+      {
+        "from": "g",
+        "to": "a",
+        "condition": "else"
+      },
+      {
+        "from": "a",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:15 — kein Fachsatz „ohne Personalnummer wird eine Ausnahme ausgelöst“ (CHECK verlässt den Baustein ohne Ausnahme)",
+    "source.abap:26 — kein Fachsatz „Arbeitstage bis Vertragsende“ (reine Datumsdifferenz in Kalendertagen, kein Fabrikkalender)",
+    "gesamte Scheibe — kein Fachsatz „Vertrag wird verlängert oder Mitarbeiter benachrichtigt“ (der Baustein liest und rechnet nur)"
+  ],
+  "processDescription": "Der Funktionsbaustein wird mit Personalnummer und Stichtag (Vorschlag: Tagesdatum) aufgerufen. Fehlt die Personalnummer, verlässt er sich sofort über CHECK und liefert null Resttage. Sonst liest er den zum Stichtag gültigen Satz der Vertragsbestandteile (Infotyp 0016). Fehlt der Satz oder ist kein Befristungsende gepflegt, endet er mit der Ausnahme KEIN_VERTRAG. Andernfalls gibt er die Kalendertage zwischen Stichtag und Befristungsende zurück."
+}

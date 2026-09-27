@@ -1,0 +1,21 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante lk_g2 -> lk_l",
+      "before": "next iteration",
+      "after": "ls_we-we_menge >= ls_eint-menge * gc_toleranz_menge",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist (Zähler erhöhen) und direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante lk_g2 -> lk_l",
+      "before": "fehlt",
+      "after": "lk_g2 -> lk_l [else]",
+      "why": "Sonst-Zweig des IF ohne ELSE fehlte: eine nicht mengentreue Einteilung wird nicht gezählt, die Schleife läuft weiter.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

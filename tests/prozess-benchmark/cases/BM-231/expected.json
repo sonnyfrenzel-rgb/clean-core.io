@@ -1,0 +1,1226 @@
+{
+  "id": "BM-231",
+  "title": "Plan/Ist-Abweichung je Kostenstelle mit Mail an den Verantwortlichen",
+  "classes": [
+    "K01",
+    "K02"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZCO_ABW_SCHWELLE",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zco_abweichung_mail.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zco_abweichung_mail.abap:41"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CSKS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zco_abweichung_mail.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zco_abweichung_mail.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "COSP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zco_abweichung_mail_f01.abap",
+        "line": 22,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zco_abweichung_mail_f01.abap:22"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zco_abweichung_mail_f01.abap",
+        "line": 77,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zco_abweichung_mail_f01.abap:77"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_DOCUMENT_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zco_abweichung_mail_f01.abap",
+        "line": 78,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zco_abweichung_mail_f01.abap:78"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SAPUSER_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zco_abweichung_mail_f01.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zco_abweichung_mail_f01.abap:82"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-231-B01",
+      "text": "Die Abweichungsschwelle in Prozent wird je Kostenrechnungskreis aus einer Kundentabelle gelesen; fehlt sie, gilt 10 % und es erscheint ein Hinweis.",
+      "anchors": [
+        {
+          "file": "zco_abweichung_mail.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:41"
+        },
+        {
+          "file": "zco_abweichung_mail.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:43"
+        },
+        {
+          "file": "zco_abweichung_mail.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-231-B02",
+      "text": "Es werden die heute gültigen Kostenstellen des Kostenrechnungskreises mit ihrem verantwortlichen Benutzer gelesen.",
+      "anchors": [
+        {
+          "file": "zco_abweichung_mail.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-231-B03",
+      "text": "Je Kostenstelle werden Plan- und Ist-Primärkosten der Planversion für die Perioden 1 bis zur Bis-Periode kumuliert.",
+      "anchors": [
+        {
+          "file": "zco_abweichung_mail.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:57"
+        },
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:22"
+        },
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:32"
+        },
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:34"
+        },
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-231-B04",
+      "text": "Gibt es keine Primärkostensätze, bleibt die Abweichung null.",
+      "anchors": [
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:27"
+        },
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-231-B05",
+      "text": "Die Abweichung ist die prozentuale Differenz von Ist zu Plan; ohne Plan gilt sie als 999 %.",
+      "anchors": [
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:41"
+        },
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:42"
+        },
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-231-B06",
+      "text": "Nur Kostenstellen, deren Abweichung betragsmäßig über der Schwelle liegt, kommen auf die Abweichungsliste.",
+      "anchors": [
+        {
+          "file": "zco_abweichung_mail.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-231-B07",
+      "text": "Hat eine solche Kostenstelle keinen verantwortlichen Benutzer, wird ein Hinweis ausgegeben und keine Mail versandt.",
+      "anchors": [
+        {
+          "file": "zco_abweichung_mail.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:61"
+        },
+        {
+          "file": "zco_abweichung_mail.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-231-B08",
+      "text": "Im Echtlauf erhält der Verantwortliche eine Mail mit kumuliertem Plan, Ist und Abweichung.",
+      "anchors": [
+        {
+          "file": "zco_abweichung_mail.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:66"
+        },
+        {
+          "file": "zco_abweichung_mail.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:67"
+        },
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:78"
+        },
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:82"
+        },
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:84"
+        }
+      ]
+    },
+    {
+      "id": "BM-231-B09",
+      "text": "Wird der Versand angenommen, wird der Sendeauftrag festgeschrieben und protokolliert; ein Fehler der Sendeschnittstelle wird protokolliert.",
+      "anchors": [
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:85"
+        },
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:86"
+        },
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:87"
+        },
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:90"
+        }
+      ]
+    },
+    {
+      "id": "BM-231-B10",
+      "text": "Am Ende wird jede Kostenstelle der Abweichungsliste mit Plan, Ist und Prozent ausgegeben.",
+      "anchors": [
+        {
+          "file": "zco_abweichung_mail.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:71"
+        },
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:101"
+        },
+        {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:102"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zco_abweichung_mail.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:39"
+        },
+        "meaning": "Verarbeitungsstart"
+      },
+      {
+        "id": "qs",
+        "type": "read",
+        "anchor": {
+          "file": "zco_abweichung_mail.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:41"
+        },
+        "meaning": "Abweichungsschwelle lesen"
+      },
+      {
+        "id": "gs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_abweichung_mail.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:43"
+        },
+        "meaning": "Schwelle gepflegt?"
+      },
+      {
+        "id": "mi",
+        "type": "output",
+        "anchor": {
+          "file": "zco_abweichung_mail.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:45"
+        },
+        "meaning": "Hinweis: Standardschwelle 10 %"
+      },
+      {
+        "id": "qk",
+        "type": "read",
+        "anchor": {
+          "file": "zco_abweichung_mail.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:48"
+        },
+        "meaning": "Gültige Kostenstellen mit Verantwortlichem lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zco_abweichung_mail.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:56"
+        },
+        "meaning": "Kostenstellen durchlaufen"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zco_abweichung_mail.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:57"
+        },
+        "meaning": "Plan/Ist-Abweichung ermitteln"
+      },
+      {
+        "id": "ck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_abweichung_mail.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:58"
+        },
+        "meaning": "Schwelle überschritten?"
+      },
+      {
+        "id": "gv",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_abweichung_mail.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:61"
+        },
+        "meaning": "Kein verantwortlicher Benutzer?"
+      },
+      {
+        "id": "wv",
+        "type": "output",
+        "anchor": {
+          "file": "zco_abweichung_mail.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:62"
+        },
+        "meaning": "Hinweis ohne Mail ausgeben"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_abweichung_mail.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:66"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zco_abweichung_mail.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:67"
+        },
+        "meaning": "Mail senden"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "zco_abweichung_mail.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:71"
+        },
+        "meaning": "Abweichungsliste ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zco_abweichung_mail.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail.abap:71"
+        },
+        "meaning": "Programmende"
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:10"
+        },
+        "meaning": "Abweichungsermittlung"
+      },
+      {
+        "id": "aq",
+        "type": "read",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:22"
+        },
+        "meaning": "Plan- und Ist-Primärkosten der Kostenstelle lesen"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:27"
+        },
+        "meaning": "Kostensätze vorhanden?"
+      },
+      {
+        "id": "ar",
+        "type": "end",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:28"
+        },
+        "meaning": "Ohne Werte zurück"
+      },
+      {
+        "id": "al",
+        "type": "loop",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:31"
+        },
+        "meaning": "Kostensätze durchlaufen"
+      },
+      {
+        "id": "ad",
+        "type": "loop",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:32"
+        },
+        "meaning": "Perioden bis Bis-Periode durchlaufen"
+      },
+      {
+        "id": "ag2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:33"
+        },
+        "meaning": "Planwert?"
+      },
+      {
+        "id": "ap",
+        "type": "action",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:34"
+        },
+        "meaning": "Plan kumulieren"
+      },
+      {
+        "id": "ai",
+        "type": "action",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:36"
+        },
+        "meaning": "Ist kumulieren"
+      },
+      {
+        "id": "ag3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:41"
+        },
+        "meaning": "Plan vorhanden?"
+      },
+      {
+        "id": "ap1",
+        "type": "action",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:42"
+        },
+        "meaning": "Abweichung in Prozent berechnen"
+      },
+      {
+        "id": "ap2",
+        "type": "action",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:45"
+        },
+        "meaning": "Abweichung ohne Plan auf 999 % setzen"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:47"
+        },
+        "meaning": "Ende Abweichungsermittlung"
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:52"
+        },
+        "meaning": "Mailversand"
+      },
+      {
+        "id": "bp",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:77"
+        },
+        "meaning": "Sendeauftrag anlegen"
+      },
+      {
+        "id": "bd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:78"
+        },
+        "meaning": "Maildokument mit Plan, Ist und Abweichung erzeugen"
+      },
+      {
+        "id": "bs",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:81"
+        },
+        "meaning": "Dokument an Sendeauftrag hängen"
+      },
+      {
+        "id": "br",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:82"
+        },
+        "meaning": "Verantwortlichen als Empfänger bestimmen"
+      },
+      {
+        "id": "ba",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:83"
+        },
+        "meaning": "Empfänger hinzufügen"
+      },
+      {
+        "id": "bn",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:84"
+        },
+        "meaning": "Mail senden"
+      },
+      {
+        "id": "bg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:85"
+        },
+        "meaning": "Versand angenommen?"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:86"
+        },
+        "meaning": "Sendeauftrag festschreiben"
+      },
+      {
+        "id": "bw",
+        "type": "output",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:87"
+        },
+        "meaning": "Versand protokollieren"
+      },
+      {
+        "id": "bx",
+        "type": "output",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:90"
+        },
+        "meaning": "Mailfehler protokollieren"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:92"
+        },
+        "meaning": "Ende Mailversand"
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:97"
+        },
+        "meaning": "Listenausgabe"
+      },
+      {
+        "id": "ll",
+        "type": "loop",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:101"
+        },
+        "meaning": "Abweichungen durchlaufen"
+      },
+      {
+        "id": "lw",
+        "type": "output",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:102"
+        },
+        "meaning": "Abweichung ausgeben"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "anchor": {
+          "file": "zco_abweichung_mail_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_abweichung_mail_f01.abap:104"
+        },
+        "meaning": "Ende Listenausgabe"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "qs",
+        "condition": "always"
+      },
+      {
+        "from": "qs",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "mi",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mi",
+        "to": "qk",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "qk",
+        "condition": "else"
+      },
+      {
+        "from": "qk",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "c1",
+        "condition": "next row"
+      },
+      {
+        "from": "c1",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "as",
+        "to": "aq",
+        "condition": "always"
+      },
+      {
+        "from": "aq",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "ar",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ag",
+        "to": "al",
+        "condition": "else"
+      },
+      {
+        "from": "al",
+        "to": "ad",
+        "condition": "next row"
+      },
+      {
+        "from": "ad",
+        "to": "ag2",
+        "condition": "next row"
+      },
+      {
+        "from": "ag2",
+        "to": "ap",
+        "condition": "ls_cosp-wrttp = '01'"
+      },
+      {
+        "from": "ag2",
+        "to": "ai",
+        "condition": "else"
+      },
+      {
+        "from": "ap",
+        "to": "ad",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ai",
+        "to": "ad",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ad",
+        "to": "al",
+        "condition": "no more rows"
+      },
+      {
+        "from": "al",
+        "to": "ag3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ag3",
+        "to": "ap1",
+        "condition": "cs_abw-plan <> 0"
+      },
+      {
+        "from": "ag3",
+        "to": "ap2",
+        "condition": "else"
+      },
+      {
+        "from": "ap1",
+        "to": "ae",
+        "condition": "always"
+      },
+      {
+        "from": "ap2",
+        "to": "ae",
+        "condition": "always"
+      },
+      {
+        "from": "ar",
+        "to": "ck",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "ck",
+        "condition": "always"
+      },
+      {
+        "from": "ck",
+        "to": "gv",
+        "condition": "abs( gs_abw-proz ) > gv_schwelle"
+      },
+      {
+        "from": "ck",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "gv",
+        "to": "wv",
+        "condition": "gs_ks-verak_user IS INITIAL"
+      },
+      {
+        "from": "wv",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gv",
+        "to": "gt",
+        "condition": "else"
+      },
+      {
+        "from": "gt",
+        "to": "c2",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "gt",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "c2",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "bp",
+        "condition": "always"
+      },
+      {
+        "from": "bp",
+        "to": "bd",
+        "condition": "always"
+      },
+      {
+        "from": "bd",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "bs",
+        "to": "br",
+        "condition": "always"
+      },
+      {
+        "from": "br",
+        "to": "ba",
+        "condition": "always"
+      },
+      {
+        "from": "ba",
+        "to": "bn",
+        "condition": "always"
+      },
+      {
+        "from": "bn",
+        "to": "bg",
+        "condition": "always"
+      },
+      {
+        "from": "bp",
+        "to": "bx",
+        "condition": "cx_bcs"
+      },
+      {
+        "from": "bd",
+        "to": "bx",
+        "condition": "cx_bcs"
+      },
+      {
+        "from": "bs",
+        "to": "bx",
+        "condition": "cx_bcs"
+      },
+      {
+        "from": "br",
+        "to": "bx",
+        "condition": "cx_bcs"
+      },
+      {
+        "from": "ba",
+        "to": "bx",
+        "condition": "cx_bcs"
+      },
+      {
+        "from": "bn",
+        "to": "bx",
+        "condition": "cx_bcs"
+      },
+      {
+        "from": "bg",
+        "to": "cm",
+        "condition": "lv_ok = abap_true"
+      },
+      {
+        "from": "cm",
+        "to": "bw",
+        "condition": "always"
+      },
+      {
+        "from": "bw",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "bg",
+        "to": "me",
+        "condition": "else"
+      },
+      {
+        "from": "bx",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "c3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "c3",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "ll",
+        "condition": "always"
+      },
+      {
+        "from": "ll",
+        "to": "lw",
+        "condition": "next row"
+      },
+      {
+        "from": "lw",
+        "to": "ll",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ll",
+        "to": "le",
+        "condition": "no more rows"
+      },
+      {
+        "from": "le",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zco_abweichung_mail_f01.abap:22 — kein Fachsatz „Gesamtkosten inklusive Sekundärkosten“ (nur COSP; COSS laut Kommentar bewusst nicht)",
+    "zco_abweichung_mail_f01.abap:84 — kein Fachsatz „Mail ist zugestellt“ (Sendeauftrag angenommen und nach COMMIT WORK an die Sendeverarbeitung übergeben, Zustellung nicht geprüft)",
+    "zco_abweichung_mail.abap:58 — kein Fachsatz „nur Überschreitungen des Plans“ (Betrag, also auch Unterschreitungen)"
+  ],
+  "processDescription": "Der Report läuft monatlich als Job mit Kostenrechnungskreis, Geschäftsjahr, Bis-Periode, Planversion, Kostenstellenbereich und Testlaufkennzeichen. Er liest die Abweichungsschwelle aus einer Kundentabelle; fehlt sie, gilt 10 % mit Hinweis. Dann liest er die gültigen Kostenstellen mit verantwortlichem Benutzer und ermittelt je Kostenstelle in einer FORM Plan- und Ist-Primärkosten kumuliert bis zur Bis-Periode sowie die prozentuale Abweichung; ohne Plan gilt 999 %, ohne Kostensätze null. Kostenstellen, deren Abweichung betragsmäßig die Schwelle nicht überschreitet, werden übergangen; die übrigen kommen auf die Liste. Fehlt der verantwortliche Benutzer, wird nur ein Hinweis ausgegeben. Im Echtlauf erzeugt eine FORM über die Business Communication Services eine Mail mit Plan, Ist und Abweichung an den Verantwortlichen, schreibt den angenommenen Sendeauftrag mit COMMIT WORK fest und protokolliert Versand oder Fehler. Zum Schluss gibt der Report die Abweichungsliste aus."
+}

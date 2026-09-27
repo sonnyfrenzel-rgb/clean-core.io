@@ -1,0 +1,2240 @@
+{
+  "id": "BM-237",
+  "title": "Vier-Augen-Freigabe von Zahlungsvorschlägen mit Bankdatenprüfung",
+  "classes": [
+    "K01",
+    "K03",
+    "K12",
+    "K15"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "REGUH",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzfi_zahlfreigabeu01.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzfi_zahlfreigabeu01.abap:38"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LFA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzfi_zahlfreigabeu01.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzfi_zahlfreigabeu01.abap:58"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CDHDR",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzfi_zahlfreigabef01.abap",
+        "line": 22,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzfi_zahlfreigabef01.abap:22"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CDPOS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzfi_zahlfreigabef01.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzfi_zahlfreigabef01.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_ZF_PRUEF",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "lzfi_zahlfreigabeu01.abap",
+        "line": 74,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzfi_zahlfreigabeu01.abap:74"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_ZF_PRUEF",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "lzfi_zahlfreigabeu02.abap",
+        "line": 26,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzfi_zahlfreigabeu02.abap:26"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_ZF_HIST",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "lzfi_zahlfreigabeu03.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzfi_zahlfreigabeu03.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SWE_EVENT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzfi_zahlfreigabeu02.abap",
+        "line": 73,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzfi_zahlfreigabeu02.abap:73"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_FI_ZF_STATUS_UPD",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "lzfi_zahlfreigabeu02.abap",
+        "line": 63,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzfi_zahlfreigabeu02.abap:63"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-237-B01",
+      "text": "Es werden die Zahlungen des Zahlungsvorschlags zu Laufdatum und Identifikation an Kreditoren gelesen; gibt es keine, endet die Prüfung mit der Ausnahme KEIN_VORSCHLAG.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:38"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:43"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B02",
+      "text": "Zahlungen mit Betrag null werden nicht geprüft.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B03",
+      "text": "Für jede Zahlung wird geprüft, ob die Bankverbindung des Kreditors in den letzten Tagen laut Änderungsbelegen geändert wurde; die erste solche Änderung ergibt einen roten Befund mit Datum und Benutzer.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:51"
+        },
+        {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:22"
+        },
+        {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:26"
+        },
+        {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:28"
+        },
+        {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:30"
+        },
+        {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:35"
+        },
+        {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B04",
+      "text": "Übersteigt der Zahlbetrag das Limit, wird ein Limitbefund festgehalten.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:53"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B05",
+      "text": "Ist der Kreditor ein Einmalkreditor, wird ein Befund festgehalten.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:58"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:60"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B06",
+      "text": "Der Status ist rot bei mindestens einem Bankdatenbefund, gelb bei sonstigen Befunden und sonst grün.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:65"
+        },
+        {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:72"
+        },
+        {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:74"
+        },
+        {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B07",
+      "text": "Das Prüfergebnis wird mit Status, prüfendem Benutzer, Datum und Uhrzeit für den Lauf festgehalten und die Befunde werden zurückgegeben.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:74"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B08",
+      "text": "Zur Freigabe braucht der Benutzer die Freigabeberechtigung; sonst endet sie mit KEINE_BERECHTIGUNG.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:20"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:22"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B09",
+      "text": "Ohne Prüfergebnis zum Lauf wird die Freigabe mit Fehlermeldung abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:26"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:29"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B10",
+      "text": "Wer den Vorschlag geprüft hat, darf ihn nicht freigeben.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:34"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B11",
+      "text": "Bei Status rot ist keine Freigabe möglich.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:38"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B12",
+      "text": "Bei Status gelb ist die Freigabe nur mit Kommentar möglich.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:43"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B13",
+      "text": "Ist der Lauf bereits freigegeben, wird der bisherige Freigeber gemeldet und nichts geändert.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:47"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B14",
+      "text": "Vor der Freigabe wird das Prüfergebnis gesperrt; ist es gesperrt, endet die Freigabe mit GESPERRT.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:51"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:59"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B15",
+      "text": "Die Statusänderung auf freigegeben mit Freigeber und Kommentar wird zur Verbuchung vorgemerkt.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B16",
+      "text": "Für den Lauf wird das Workflow-Ereignis RELEASED erzeugt, über das der Zahlungslauf eingeplant wird; misslingt das, erscheint nur ein Hinweis.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:73"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:81"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B17",
+      "text": "Mit dem Festschreiben werden Status, Historie und Ereignis wirksam; danach wird die Sperre freigegeben.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:85"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B18",
+      "text": "In der Verbuchung werden Status, Freigeber und Freigabedatum gesetzt; fehlt der Prüfsatz, bricht die Verbuchung ab.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu03.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu03.abap:1"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu03.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu03.abap:15"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu03.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu03.abap:20"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu03.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu03.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B19",
+      "text": "Jede Statusänderung wird mit Benutzer, Zeitpunkt und Kommentar in der Historie festgehalten.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu03.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu03.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B20",
+      "text": "Eine Zurückweisung verlangt dieselbe Berechtigung und einen Kommentar.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:20"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:22"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:26"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B21",
+      "text": "Nicht geprüfte oder bereits freigegebene Läufe können nicht zurückgewiesen werden.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:30"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:33"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:34"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:37"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-237-B22",
+      "text": "Die Zurückweisung wird ohne Sperre als Status Z zur Verbuchung vorgemerkt, das Ereignis REJECTED erzeugt und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:42"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:51"
+        },
+        {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:59"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:1"
+        },
+        "meaning": "Prüfung Zahlungsvorschlag"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:38"
+        },
+        "meaning": "Zahlungen des Vorschlags an Kreditoren lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:43"
+        },
+        "meaning": "Vorschlag vorhanden?"
+      },
+      {
+        "id": "rx",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:44"
+        },
+        "meaning": "Ausnahme KEIN_VORSCHLAG"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:47"
+        },
+        "meaning": "Zahlungen durchlaufen"
+      },
+      {
+        "id": "ck",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:49"
+        },
+        "meaning": "Zahlbetrag ungleich null?"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:51"
+        },
+        "meaning": "Bankdatenänderung prüfen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:53"
+        },
+        "meaning": "Betrag über Limit?"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:54"
+        },
+        "meaning": "Befund Limit festhalten"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:58"
+        },
+        "meaning": "Einmalkreditor-Kennzeichen lesen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:60"
+        },
+        "meaning": "Einmalkreditor?"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:61"
+        },
+        "meaning": "Befund Einmalkreditor festhalten"
+      },
+      {
+        "id": "c4",
+        "type": "call",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:65"
+        },
+        "meaning": "Ampelstatus bestimmen"
+      },
+      {
+        "id": "mw",
+        "type": "write",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:74"
+        },
+        "meaning": "Prüfergebnis mit Prüfer festhalten"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu01.abap:77"
+        },
+        "meaning": "Ende Prüfung"
+      },
+      {
+        "id": "bs",
+        "type": "start",
+        "anchor": {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:11"
+        },
+        "meaning": "Bankdatenprüfung"
+      },
+      {
+        "id": "bq",
+        "type": "read",
+        "anchor": {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:22"
+        },
+        "meaning": "Änderungsbelege des Kreditors im Zeitraum lesen"
+      },
+      {
+        "id": "bck",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:26"
+        },
+        "meaning": "Änderungen vorhanden?"
+      },
+      {
+        "id": "bl",
+        "type": "loop",
+        "anchor": {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:28"
+        },
+        "meaning": "Änderungsbelege durchlaufen"
+      },
+      {
+        "id": "bq2",
+        "type": "read",
+        "anchor": {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:30"
+        },
+        "meaning": "Änderungsposition an der Bankverbindung suchen"
+      },
+      {
+        "id": "bg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:35"
+        },
+        "meaning": "Bankverbindung geändert?"
+      },
+      {
+        "id": "bc",
+        "type": "call",
+        "anchor": {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:39"
+        },
+        "meaning": "Roten Befund festhalten"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:43"
+        },
+        "meaning": "Ende Bankdatenprüfung"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:48"
+        },
+        "meaning": "Befund sammeln"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:58"
+        },
+        "meaning": "Ende Befund sammeln"
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:67"
+        },
+        "meaning": "Ampelbewertung"
+      },
+      {
+        "id": "rl",
+        "type": "loop",
+        "anchor": {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:72"
+        },
+        "meaning": "Rote Befunde suchen"
+      },
+      {
+        "id": "rr",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:74"
+        },
+        "meaning": "Status rot zurückgeben"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:77"
+        },
+        "meaning": "Sonstige Befunde?"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabef01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabef01.abap:80"
+        },
+        "meaning": "Ende Ampelbewertung"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:1"
+        },
+        "meaning": "Freigabe Zahlungslauf"
+      },
+      {
+        "id": "au",
+        "type": "action",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:20"
+        },
+        "meaning": "Freigabeberechtigung prüfen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:22"
+        },
+        "meaning": "Berechtigung fehlt?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:23"
+        },
+        "meaning": "Ausnahme KEINE_BERECHTIGUNG"
+      },
+      {
+        "id": "q3",
+        "type": "read",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:26"
+        },
+        "meaning": "Prüfergebnis des Laufs lesen"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:29"
+        },
+        "meaning": "Prüfergebnis vorhanden?"
+      },
+      {
+        "id": "m2",
+        "type": "output",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:30"
+        },
+        "meaning": "Fehler: nicht geprüft"
+      },
+      {
+        "id": "m2e",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:30"
+        },
+        "meaning": "Ausnahme NICHT_GEPRUEFT"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:34"
+        },
+        "meaning": "Freigeber ist Prüfer?"
+      },
+      {
+        "id": "m3",
+        "type": "output",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:35"
+        },
+        "meaning": "Fehler: Vier-Augen-Prinzip"
+      },
+      {
+        "id": "m3e",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:35"
+        },
+        "meaning": "Ausnahme VIER_AUGEN"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:38"
+        },
+        "meaning": "Ampelstatus"
+      },
+      {
+        "id": "m4",
+        "type": "output",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:40"
+        },
+        "meaning": "Fehler: Status rot"
+      },
+      {
+        "id": "m4e",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:40"
+        },
+        "meaning": "Ausnahme STATUS_ROT"
+      },
+      {
+        "id": "g6",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:43"
+        },
+        "meaning": "Kommentar fehlt?"
+      },
+      {
+        "id": "m5",
+        "type": "output",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:44"
+        },
+        "meaning": "Fehler: Kommentar fehlt"
+      },
+      {
+        "id": "m5e",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:44"
+        },
+        "meaning": "Ausnahme KOMMENTAR_FEHLT"
+      },
+      {
+        "id": "m6",
+        "type": "output",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:47"
+        },
+        "meaning": "Meldung: bereits freigegeben"
+      },
+      {
+        "id": "r6",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:48"
+        },
+        "meaning": "Ohne erneute Freigabe zurück"
+      },
+      {
+        "id": "enq",
+        "type": "lock",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:51"
+        },
+        "meaning": "Prüfsatz sperren"
+      },
+      {
+        "id": "g7",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:59"
+        },
+        "meaning": "Sperre fehlgeschlagen?"
+      },
+      {
+        "id": "x7",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:60"
+        },
+        "meaning": "Ausnahme GESPERRT"
+      },
+      {
+        "id": "upd",
+        "type": "update_task",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:63"
+        },
+        "meaning": "Statusänderung „freigegeben“ zur Verbuchung vormerken"
+      },
+      {
+        "id": "ev",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:73"
+        },
+        "meaning": "Workflow-Ereignis RELEASED erzeugen"
+      },
+      {
+        "id": "g8",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:81"
+        },
+        "meaning": "Ereignis nicht erzeugt?"
+      },
+      {
+        "id": "m7",
+        "type": "output",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:82"
+        },
+        "meaning": "Hinweis: Workflow nicht gestartet"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:85"
+        },
+        "meaning": "Freigabe festschreiben"
+      },
+      {
+        "id": "deq",
+        "type": "lock",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:87"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu02.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu02.abap:91"
+        },
+        "meaning": "Ende Freigabe"
+      },
+      {
+        "id": "s3",
+        "type": "start",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu03.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu03.abap:1"
+        },
+        "meaning": "Verbuchung Statusänderung"
+      },
+      {
+        "id": "u1",
+        "type": "write",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu03.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu03.abap:15"
+        },
+        "meaning": "Status, Freigeber und Datum setzen"
+      },
+      {
+        "id": "g9",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu03.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu03.abap:20"
+        },
+        "meaning": "Prüfsatz nicht gefunden?"
+      },
+      {
+        "id": "m8",
+        "type": "output",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu03.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu03.abap:22"
+        },
+        "meaning": "Verbuchungsabbruch"
+      },
+      {
+        "id": "m8e",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu03.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu03.abap:22"
+        },
+        "meaning": "Abbruch der Verbuchung"
+      },
+      {
+        "id": "i1",
+        "type": "write",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu03.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu03.abap:32"
+        },
+        "meaning": "Historiensatz schreiben"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu03.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu03.abap:33"
+        },
+        "meaning": "Ende Verbuchung"
+      },
+      {
+        "id": "s4",
+        "type": "start",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:1"
+        },
+        "meaning": "Zurückweisung Zahlungslauf"
+      },
+      {
+        "id": "au4",
+        "type": "action",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:20"
+        },
+        "meaning": "Freigabeberechtigung prüfen"
+      },
+      {
+        "id": "g10",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:22"
+        },
+        "meaning": "Berechtigung fehlt?"
+      },
+      {
+        "id": "x10",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:23"
+        },
+        "meaning": "Ausnahme KEINE_BERECHTIGUNG"
+      },
+      {
+        "id": "g11",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:26"
+        },
+        "meaning": "Kommentar fehlt?"
+      },
+      {
+        "id": "m9",
+        "type": "output",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:27"
+        },
+        "meaning": "Fehler: Kommentar fehlt"
+      },
+      {
+        "id": "m9e",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:27"
+        },
+        "meaning": "Ausnahme KOMMENTAR_FEHLT"
+      },
+      {
+        "id": "q4",
+        "type": "read",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:30"
+        },
+        "meaning": "Prüfergebnis des Laufs lesen"
+      },
+      {
+        "id": "g12",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:33"
+        },
+        "meaning": "Prüfergebnis vorhanden?"
+      },
+      {
+        "id": "m10",
+        "type": "output",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:34"
+        },
+        "meaning": "Fehler: nicht geprüft"
+      },
+      {
+        "id": "m10e",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:34"
+        },
+        "meaning": "Ausnahme NICHT_GEPRUEFT"
+      },
+      {
+        "id": "g13",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:37"
+        },
+        "meaning": "Bereits freigegeben?"
+      },
+      {
+        "id": "m11",
+        "type": "output",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:38"
+        },
+        "meaning": "Fehler: bereits freigegeben"
+      },
+      {
+        "id": "m11e",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:38"
+        },
+        "meaning": "Ausnahme BEREITS_FREIGEGEBEN"
+      },
+      {
+        "id": "upd4",
+        "type": "update_task",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:42"
+        },
+        "meaning": "Statusänderung „zurückgewiesen“ zur Verbuchung vormerken"
+      },
+      {
+        "id": "ev4",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:51"
+        },
+        "meaning": "Workflow-Ereignis REJECTED erzeugen"
+      },
+      {
+        "id": "cm4",
+        "type": "transaction",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:59"
+        },
+        "meaning": "Zurückweisung festschreiben"
+      },
+      {
+        "id": "e4",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_zahlfreigabeu04.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_zahlfreigabeu04.abap:60"
+        },
+        "meaning": "Ende Zurückweisung"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "rx",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "ck",
+        "condition": "next row"
+      },
+      {
+        "from": "ck",
+        "to": "c1",
+        "condition": "gs_reguh-rbetr <> 0"
+      },
+      {
+        "from": "ck",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "c1",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "bs",
+        "to": "bq",
+        "condition": "always"
+      },
+      {
+        "from": "bq",
+        "to": "bck",
+        "condition": "always"
+      },
+      {
+        "from": "bck",
+        "to": "bl",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "bck",
+        "to": "be",
+        "condition": "else"
+      },
+      {
+        "from": "bl",
+        "to": "bq2",
+        "condition": "next row"
+      },
+      {
+        "from": "bq2",
+        "to": "bg",
+        "condition": "always"
+      },
+      {
+        "from": "bg",
+        "to": "bc",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "bg",
+        "to": "bl",
+        "condition": "else"
+      },
+      {
+        "from": "bc",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "be",
+        "condition": "always"
+      },
+      {
+        "from": "bl",
+        "to": "be",
+        "condition": "no more rows"
+      },
+      {
+        "from": "be",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "c2",
+        "condition": "abs( gs_reguh-rbetr ) > iv_limit"
+      },
+      {
+        "from": "c2",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "q2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "q2",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "c3",
+        "condition": "lv_cpd = 'X'"
+      },
+      {
+        "from": "c3",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g3",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "fs",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "c4",
+        "condition": "no more rows"
+      },
+      {
+        "from": "c4",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "rl",
+        "condition": "always"
+      },
+      {
+        "from": "rl",
+        "to": "rr",
+        "condition": "next row"
+      },
+      {
+        "from": "rl",
+        "to": "rg",
+        "condition": "no more rows"
+      },
+      {
+        "from": "rg",
+        "to": "re",
+        "condition": "gt_befund IS NOT INITIAL"
+      },
+      {
+        "from": "rg",
+        "to": "re",
+        "condition": "else"
+      },
+      {
+        "from": "rr",
+        "to": "mw",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "mw",
+        "condition": "always"
+      },
+      {
+        "from": "mw",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "s2",
+        "to": "au",
+        "condition": "always"
+      },
+      {
+        "from": "au",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "x1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "q3",
+        "condition": "else"
+      },
+      {
+        "from": "q3",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "m2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m2",
+        "to": "m2e",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "g5",
+        "condition": "else"
+      },
+      {
+        "from": "g5",
+        "to": "m3",
+        "condition": "ls_pruef-ersteller = sy-uname"
+      },
+      {
+        "from": "m3",
+        "to": "m3e",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "cs",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "m4",
+        "condition": "WHEN gc_rot"
+      },
+      {
+        "from": "m4",
+        "to": "m4e",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "g6",
+        "condition": "WHEN gc_gelb"
+      },
+      {
+        "from": "g6",
+        "to": "m5",
+        "condition": "iv_kommentar IS INITIAL"
+      },
+      {
+        "from": "m5",
+        "to": "m5e",
+        "condition": "always"
+      },
+      {
+        "from": "g6",
+        "to": "enq",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "m6",
+        "condition": "WHEN gc_freigabe"
+      },
+      {
+        "from": "m6",
+        "to": "r6",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "enq",
+        "condition": "else"
+      },
+      {
+        "from": "enq",
+        "to": "g7",
+        "condition": "always"
+      },
+      {
+        "from": "g7",
+        "to": "x7",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g7",
+        "to": "upd",
+        "condition": "else"
+      },
+      {
+        "from": "upd",
+        "to": "ev",
+        "condition": "always"
+      },
+      {
+        "from": "ev",
+        "to": "g8",
+        "condition": "always"
+      },
+      {
+        "from": "g8",
+        "to": "m7",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m7",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "g8",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "deq",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "s3",
+        "to": "u1",
+        "condition": "always"
+      },
+      {
+        "from": "u1",
+        "to": "g9",
+        "condition": "always"
+      },
+      {
+        "from": "g9",
+        "to": "m8",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m8",
+        "to": "m8e",
+        "condition": "always"
+      },
+      {
+        "from": "g9",
+        "to": "i1",
+        "condition": "else"
+      },
+      {
+        "from": "i1",
+        "to": "e3",
+        "condition": "always"
+      },
+      {
+        "from": "s4",
+        "to": "au4",
+        "condition": "always"
+      },
+      {
+        "from": "au4",
+        "to": "g10",
+        "condition": "always"
+      },
+      {
+        "from": "g10",
+        "to": "x10",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g10",
+        "to": "g11",
+        "condition": "else"
+      },
+      {
+        "from": "g11",
+        "to": "m9",
+        "condition": "iv_kommentar IS INITIAL"
+      },
+      {
+        "from": "m9",
+        "to": "m9e",
+        "condition": "always"
+      },
+      {
+        "from": "g11",
+        "to": "q4",
+        "condition": "else"
+      },
+      {
+        "from": "q4",
+        "to": "g12",
+        "condition": "always"
+      },
+      {
+        "from": "g12",
+        "to": "m10",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m10",
+        "to": "m10e",
+        "condition": "always"
+      },
+      {
+        "from": "g12",
+        "to": "g13",
+        "condition": "else"
+      },
+      {
+        "from": "g13",
+        "to": "m11",
+        "condition": "ls_pruef-status = gc_freigabe"
+      },
+      {
+        "from": "m11",
+        "to": "m11e",
+        "condition": "always"
+      },
+      {
+        "from": "g13",
+        "to": "upd4",
+        "condition": "else"
+      },
+      {
+        "from": "upd4",
+        "to": "ev4",
+        "condition": "always"
+      },
+      {
+        "from": "ev4",
+        "to": "cm4",
+        "condition": "always"
+      },
+      {
+        "from": "cm4",
+        "to": "e4",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "lzfi_zahlfreigabeu02.abap:85 — kein Fachsatz „der Zahlungslauf wird ausgeführt“ (nur Ereignis RELEASED; die Einplanung liegt im Workflow außerhalb des Falls)",
+    "lzfi_zahlfreigabeu01.abap:74 — kein Fachsatz „eine erneute Prüfung lässt eine erteilte Freigabe bestehen“ (MODIFY überschreibt Status und leert Freigeber)",
+    "lzfi_zahlfreigabeu02.abap:34 — kein Fachsatz „der Ersteller des Zahlungsvorschlags darf nicht freigeben“ (verglichen wird mit dem, der die Prüfung zuletzt ausgeführt hat)",
+    "lzfi_zahlfreigabeu02.abap:63 — kein Fachsatz „der Status ist nach diesem Aufruf geändert“ (nur zur Verbuchung vorgemerkt; wirksam erst mit COMMIT WORK)"
+  ],
+  "processDescription": "Die Funktionsgruppe regelt die Vier-Augen-Freigabe von Zahlungsvorschlägen vor dem Zahlungslauf. Der Prüfbaustein liest die Kreditorenzahlungen eines Vorschlags (ohne Vorschlag: Ausnahme) und prüft je Zahlung ungleich null, ob die Bankverbindung laut Änderungsbelegen kürzlich geändert wurde (roter Befund), ob der Betrag über dem Limit liegt und ob ein Einmalkreditor vorliegt. Aus den Befunden ergibt sich eine Ampel: rot bei Bankdatenänderung, gelb bei sonstigen Befunden, sonst grün; sie wird mit dem prüfenden Benutzer in einer Kundentabelle festgehalten. Der Freigabebaustein verlangt eine eigene Berechtigung und ein Prüfergebnis, verbietet die Freigabe durch den Prüfer, lehnt rot ab, verlangt bei gelb einen Kommentar und meldet einen bereits freigegebenen Lauf, ohne etwas zu ändern. Sonst sperrt er den Prüfsatz, merkt die Statusänderung zur Verbuchung vor, erzeugt das Workflow-Ereignis RELEASED (Fehler nur als Hinweis), schreibt fest und entsperrt. Der Verbuchungsbaustein setzt Status, Freigeber und Datum (Abbruch, wenn der Satz fehlt) und schreibt einen Historiensatz. Der Zurückweisungsbaustein verlangt Berechtigung und Kommentar, lehnt nicht geprüfte und bereits freigegebene Läufe ab und merkt ohne Sperre den Status Z vor, erzeugt REJECTED und schreibt fest."
+}

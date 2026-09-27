@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "Polymorpher Aufruf validate: beide Implementierungen stehen in der Kette und werden je Durchlauf aufgerufen — Kanten zu beiden richtig; RAISE EVENT → Handler → Rückkante (synchron) richtig."
+  ]
+}

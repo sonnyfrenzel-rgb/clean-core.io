@@ -1,0 +1,32 @@
+{
+  "id": "BM-232",
+  "title": "Lohnarten der Abrechnungsperiode gegen die Vorperiode plausibilisieren",
+  "domain": "HR",
+  "band": "komplex",
+  "loc": 232,
+  "constructs": [
+    "REPORT mit TOP/CLS/F01",
+    "CLASS DEFERRED",
+    "CREATE OBJECT mit Konstruktor",
+    "EVENTS/RAISE EVENT/SET HANDLER",
+    "CU_READ_RGDIR",
+    "PYXX_READ_PAYROLL_RESULT",
+    "CHECK in FORM",
+    "RETURN in FORM",
+    "VALUE OPTIONAL",
+    "COND"
+  ],
+  "scenario": "Plausibilisierungsreport der Entgeltabrechnung zwischen Abrechnungslauf und Überweisung.",
+  "s4_issues": [
+    "Clusterzugriff über PYXX-Bausteine ist nicht Cloud-fähig",
+    "Clusterkennung DE fest codiert"
+  ],
+  "wave": 3,
+  "module": "HCM-PY",
+  "edge_constructs": [
+    "Ereignisbehandler als versteckter Aufrufpfad",
+    "CHECK nach FORM-Rückgabe",
+    "Tabellenausdruck mit OPTIONAL statt READ TABLE"
+  ],
+  "oo": true
+}

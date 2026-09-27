@@ -1,0 +1,40 @@
+{
+  "id": "BM-296",
+  "title": "WM-Inventur per Handscanner: Platzsperre, Quantzählung mit Fremdmaterial-Rückfrage und Buchung über drei RF-Bilder",
+  "domain": "WM Inventur / RF",
+  "band": "sehr komplex",
+  "loc": 404,
+  "constructs": [
+    "Funktionsgruppe TOP/U01/O01/I01/C01/F01",
+    "drei Dynpros mit LEAVE TO SCREEN-Kette",
+    "Table Control mit EXIT FROM STEP-LOOP",
+    "lokale Klasse mit Ausnahmeklasse",
+    "RAISE EXCEPTION MESSAGE",
+    "TRY/CATCH im PAI",
+    "ENQUEUE/DEQUEUE",
+    "POPUP_TO_CONFIRM",
+    "L_INV_COUNT_EXT",
+    "COMMIT WORK AND WAIT",
+    "ROLLBACK WORK",
+    "funktionaler Methodenaufruf in IF",
+    "auskommentiertes Include"
+  ],
+  "scenario": "RF-Inventur im klassischen WM, mit der Staplerfahrer Stichtagsinventur je Lagerplatz per Handscanner zählen.",
+  "s4_issues": [
+    "LE-WM nur Compatibility Pack, Nachfolger EWM",
+    "Direktlesen LINV",
+    "MATNR 40 Zeichen",
+    "RF-Dynpros statt ITSmobile/Fiori"
+  ],
+  "wave": 3,
+  "module": "LE-WM",
+  "edge_constructs": [
+    "Ausnahmen aus drei Stellen einer Methode in einem CATCH",
+    "Anzahl-Methode mit zwei Aufrufern",
+    "Freigeben-Methode mit zwei Aufrufern",
+    "RETURN in Schleife",
+    "MESSAGE S DISPLAY LIKE W nach CATCH",
+    "EXIT FROM STEP-LOOP"
+  ],
+  "oo": true
+}

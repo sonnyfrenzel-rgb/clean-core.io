@@ -1,0 +1,35 @@
+{
+  "id": "BM-268",
+  "title": "Bestell-IDoc-Ausgang an Lieferantenportal",
+  "domain": "MM",
+  "band": "komplex",
+  "loc": 212,
+  "constructs": [
+    "REPORT mit TOP/F01-Include",
+    "PERFORM/FORM",
+    "SELECT FOR ALL ENTRIES",
+    "EDP13",
+    "EDIDC/EDIDD",
+    "MASTER_IDOC_DISTRIBUTE",
+    "COMMIT/ROLLBACK WORK",
+    "MODIFY",
+    "CL_SALV_TABLE",
+    "TRY/CATCH"
+  ],
+  "scenario": "Stündlicher Job, der neue Bestellungen als kundeneigenes IDoc an ein Lieferantenportal überträgt; gebaut, weil der Standard-Nachrichtenausgang (ORDERS) nicht zum Portalformat passte.",
+  "s4_issues": [
+    "EKKO/EKPO-Direktzugriff (Zielbild I_PurchaseOrderAPI01)",
+    "Kundeneigener IDoc-Typ statt Standard-ORDERS/Output-Management",
+    "Materialnummer 40 Zeichen im Segment Z1PORDI"
+  ],
+  "wave": 3,
+  "module": "MM",
+  "edge_constructs": [
+    "CHECK in Schleife und in FORM",
+    "RETURN in FORM (Testlauf)",
+    "CONTINUE nach Ergebnisvermerk",
+    "irreführender Kommentar (geänderte Bestellungen vs. Anlagedatum)",
+    "Laufdatum trotz Einzelfehlern"
+  ],
+  "oo": false
+}

@@ -1,0 +1,36 @@
+{
+  "id": "BM-239",
+  "title": "Intercompany-Salden mit Partnersystemen per paralleler RFC abstimmen",
+  "domain": "FI",
+  "band": "sehr komplex",
+  "loc": 401,
+  "constructs": [
+    "REPORT mit TOP/F01/F02/F03",
+    "remotefähiger Funktionsbaustein",
+    "STARTING NEW TASK ... PERFORMING ON END OF TASK",
+    "RECEIVE RESULTS",
+    "WAIT UNTIL UP TO",
+    "CALL FUNCTION DESTINATION",
+    "CASE sy-subrc",
+    "ELSEIF sy-subrc",
+    "CHECK in FORM",
+    "SUM(CASE) in Open SQL",
+    "MODIFY Z-Tabelle",
+    "CL_SALV_TABLE Methodenkette"
+  ],
+  "scenario": "Monatsabschluss im Konzern mit mehreren ERP-Systemen; die IC-Abstimmung wird in S/4 typischerweise durch Intercompany Matching and Reconciliation abgelöst.",
+  "s4_issues": [
+    "BSID/BSIK Kompatibilitätssichten",
+    "RFC-Verbindungen zu Altsystemen",
+    "SAP ICMR als Standardersatz"
+  ],
+  "wave": 3,
+  "module": "FI-GL/IC",
+  "edge_constructs": [
+    "asynchroner RFC mit Rückruf-FORM",
+    "Rückfall auf synchronen RFC bei RESOURCE_FAILURE",
+    "sy-subrc nach RECEIVE über eine Zuweisung hinweg",
+    "Zeitgrenze beim WAIT"
+  ],
+  "oo": false
+}

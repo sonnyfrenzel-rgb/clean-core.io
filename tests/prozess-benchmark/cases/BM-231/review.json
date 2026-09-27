@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "Knoten ap2 (f01:45, cs_abw-proz = 999) ist eine Konstantenzuweisung; belassen, weil sie die fachliche Regel „ohne Plan gilt jede Istbuchung als Abweichung“ als Ergebnis festlegt und parallel zu ap1 steht."
+  ]
+}

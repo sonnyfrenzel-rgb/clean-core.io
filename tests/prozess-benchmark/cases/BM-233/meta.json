@@ -1,0 +1,34 @@
+{
+  "id": "BM-233",
+  "title": "Zahlungseingänge des Kontoauszugs über die Rechnungsnummer ausgleichen",
+  "domain": "FI",
+  "band": "komplex",
+  "loc": 236,
+  "constructs": [
+    "FUNCTION-POOL mit TOP/U01/F01",
+    "RAISE",
+    "AUTHORITY-CHECK",
+    "MESSAGE E RAISING",
+    "RETURN",
+    "CASE mit WHEN OTHERS",
+    "CONTINUE",
+    "FIND REGEX mit sy-subrc",
+    "POSTING_INTERFACE_*",
+    "Makro",
+    "UPDATE Standardtabelle"
+  ],
+  "scenario": "Kundeneigene Nachbearbeitung zum elektronischen Kontoauszug, aufgerufen aus einem Z-Report nach FF_5.",
+  "s4_issues": [
+    "POSTING_INTERFACE_* nicht released",
+    "direktes UPDATE auf FEBEP",
+    "BSID Kompatibilitätssicht"
+  ],
+  "wave": 3,
+  "module": "FI-BL",
+  "edge_constructs": [
+    "sy-subrc nach FIND",
+    "Protokollroutine fünffach gerufen",
+    "CASE auf Trefferanzahl"
+  ],
+  "oo": false
+}

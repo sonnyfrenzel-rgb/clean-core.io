@@ -1,0 +1,2181 @@
+{
+  "id": "BM-255",
+  "title": "Unmanaged RAP-BO Umbuchungsauftrag: Handler, statischer Transaktionspuffer, Saver mit Verbucher und tRFC",
+  "classes": [
+    "K02",
+    "K09",
+    "K12",
+    "K15"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZMM_UMBUCHUNG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_mm_umbuchung_upd.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_mm_umbuchung_upd.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zbp_r_umbuchung_lsc.abap",
+        "line": 26,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zbp_r_umbuchung_lsc.abap:26"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "NUMBER_GET_NEXT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_umbuchung_buffer.abap",
+        "line": 43,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_umbuchung_buffer.abap:43"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZMM_UMB",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zbp_r_umbuchung_lhc.abap",
+        "line": 115,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zbp_r_umbuchung_lhc.abap:115"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_MM_UMBUCHUNG_UPD",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zbp_r_umbuchung_lsc.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zbp_r_umbuchung_lsc.abap:48"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_MM_UMBUCHUNG_BUCHEN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zbp_r_umbuchung_lsc.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zbp_r_umbuchung_lsc.abap:75"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-255-B01",
+      "text": "Anlegen und Buchen von Umbuchungsaufträgen sind nur mit der Berechtigung zum Anlegen von Warenbewegungen der Bewegungsart 311 erlaubt.",
+      "anchors": [
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:31"
+        },
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:37"
+        },
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-255-B02",
+      "text": "Ein neuer Umbuchungsauftrag ohne Material oder mit Menge kleiner oder gleich null wird mit der Meldung ZMM_UMB 001 abgelehnt.",
+      "anchors": [
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:48"
+        },
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:49"
+        },
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-255-B03",
+      "text": "Jeder gültige neue Auftrag erhält sofort eine Nummer aus dem Nummernkreis ZMM_UMB und wird im Status offen mit Erfasser und Zeitpunkt vorgemerkt; die Nummer geht an die App zurück.",
+      "anchors": [
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:57"
+        },
+        {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:43"
+        },
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-255-B04",
+      "text": "Ein Auftrag wird zuerst im Transaktionspuffer (Änderungen vor Anlagen) und erst dann in der Datenbank gesucht.",
+      "anchors": [
+        {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:63"
+        },
+        {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:65"
+        },
+        {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-255-B05",
+      "text": "Ändern lässt sich nur die Menge eines vorhandenen, noch offenen Auftrags; nicht gefundene Aufträge werden abgelehnt, nicht offene mit der Meldung ZMM_UMB 010.",
+      "anchors": [
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:71"
+        },
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:77"
+        },
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:79"
+        },
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-255-B06",
+      "text": "Eine Änderung an einem noch nicht gesicherten Auftrag überschreibt dessen Anlage im Puffer, sonst wird sie als Änderung vorgemerkt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:74"
+        },
+        {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:75"
+        },
+        {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-255-B07",
+      "text": "Beim Lesen erhält die App Material, Werk, Lagerorte, Menge, Einheit und Status; nicht gefundene Aufträge werden als nicht gefunden gemeldet.",
+      "anchors": [
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:95"
+        },
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:96"
+        },
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:100"
+        }
+      ]
+    },
+    {
+      "id": "BM-255-B08",
+      "text": "Vor dem Ändern wird jeder Auftrag gesperrt; ist er von einem anderen Benutzer gesperrt, wird mit der Meldung ZMM_UMB 020 und dem Sperrbenutzer abgelehnt.",
+      "anchors": [
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:115"
+        },
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:122"
+        },
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:125"
+        }
+      ]
+    },
+    {
+      "id": "BM-255-B09",
+      "text": "Buchen ist nur für offene Aufträge möglich; andere werden mit der Meldung ZMM_UMB 030 abgelehnt.",
+      "anchors": [
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:137"
+        },
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:139"
+        }
+      ]
+    },
+    {
+      "id": "BM-255-B10",
+      "text": "Ein gebuchter Auftrag erhält den Status „zu buchen“ und wird als Ergebnis zurückgegeben; die Warenbewegung entsteht dabei noch nicht.",
+      "anchors": [
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:146"
+        },
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:147"
+        },
+        {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:149"
+        }
+      ]
+    },
+    {
+      "id": "BM-255-B11",
+      "text": "Vor dem Sichern wird jeder neue und geänderte Auftrag abgelehnt, dessen Von- und Nach-Lagerort gleich sind (ZMM_UMB 040).",
+      "anchors": [
+        {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:16"
+        },
+        {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-255-B12",
+      "text": "Ebenso wird abgelehnt, wenn am Von-Lagerort kein oder zu wenig frei verwendbarer Bestand für die Menge vorhanden ist (ZMM_UMB 041).",
+      "anchors": [
+        {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:26"
+        },
+        {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:31"
+        },
+        {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-255-B13",
+      "text": "Beim Sichern werden neue und geänderte Aufträge zum Schreiben beim Verbucher registriert.",
+      "anchors": [
+        {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:47"
+        },
+        {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-255-B14",
+      "text": "Für jeden geänderten Auftrag im Status „zu buchen“ wird die Warenbewegung als eigene asynchrone Einheit nach dem Commit angestoßen.",
+      "anchors": [
+        {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:74"
+        },
+        {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-255-B15",
+      "text": "Der Verbucher fügt neue Aufträge ein und aktualisiert geänderte; scheitert eines davon, bricht die Verbuchung mit ZMM_UMB 050 bzw. 051 ab und alle Änderungen der Transaktion werden zurückgerollt.",
+      "anchors": [
+        {
+          "file": "z_mm_umbuchung_upd.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_umbuchung_upd.abap:12"
+        },
+        {
+          "file": "z_mm_umbuchung_upd.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_umbuchung_upd.abap:14"
+        },
+        {
+          "file": "z_mm_umbuchung_upd.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_umbuchung_upd.abap:19"
+        },
+        {
+          "file": "z_mm_umbuchung_upd.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_umbuchung_upd.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-255-B16",
+      "text": "Nach Abschluss oder Abbruch der Transaktion wird der Puffer geleert.",
+      "anchors": [
+        {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:84"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "au_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:28"
+        },
+        "meaning": "Laufzeit fragt Berechtigung für Anlegen und Buchen an"
+      },
+      {
+        "id": "au_a",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:31"
+        },
+        "meaning": "Berechtigung für Bewegungsart 311 anlegen prüfen (Ergebnis: erlaubt/unberechtigt)"
+      },
+      {
+        "id": "au_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:37"
+        },
+        "meaning": "Anlegen angefragt? (dann Ergebnis setzen)"
+      },
+      {
+        "id": "au_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:40"
+        },
+        "meaning": "Buchen angefragt? (dann Ergebnis setzen)"
+      },
+      {
+        "id": "au_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:43"
+        },
+        "meaning": "Berechtigungsergebnis zurück"
+      },
+      {
+        "id": "cr_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:46"
+        },
+        "meaning": "Anlegen von Umbuchungsaufträgen"
+      },
+      {
+        "id": "cr_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:47"
+        },
+        "meaning": "Jeder neue Auftrag"
+      },
+      {
+        "id": "cr_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:48"
+        },
+        "meaning": "Menge nicht positiv oder Material fehlt?"
+      },
+      {
+        "id": "cr_f",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:49"
+        },
+        "meaning": "Anlage ablehnen"
+      },
+      {
+        "id": "cr_o",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:50"
+        },
+        "meaning": "Fehler ZMM_UMB 001"
+      },
+      {
+        "id": "cr_n",
+        "type": "call",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:57"
+        },
+        "meaning": "Auftrag im Puffer anlegen, Nummer ziehen"
+      },
+      {
+        "id": "cr_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:65"
+        },
+        "meaning": "Ende Anlegen"
+      },
+      {
+        "id": "up_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:68"
+        },
+        "meaning": "Ändern von Umbuchungsaufträgen"
+      },
+      {
+        "id": "up_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:69"
+        },
+        "meaning": "Jede Änderung"
+      },
+      {
+        "id": "up_c",
+        "type": "call",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:70"
+        },
+        "meaning": "Auftrag aus Puffer oder Datenbank lesen"
+      },
+      {
+        "id": "up_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:71"
+        },
+        "meaning": "Auftrag nicht vorhanden?"
+      },
+      {
+        "id": "up_f1",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:72"
+        },
+        "meaning": "Änderung ablehnen: nicht gefunden"
+      },
+      {
+        "id": "up_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:77"
+        },
+        "meaning": "Auftrag nicht mehr offen?"
+      },
+      {
+        "id": "up_f2",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:78"
+        },
+        "meaning": "Änderung ablehnen"
+      },
+      {
+        "id": "up_o2",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:79"
+        },
+        "meaning": "Fehler ZMM_UMB 010"
+      },
+      {
+        "id": "up_a",
+        "type": "call",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:88"
+        },
+        "meaning": "Neue Menge in den Puffer übernehmen"
+      },
+      {
+        "id": "up_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:90"
+        },
+        "meaning": "Ende Ändern"
+      },
+      {
+        "id": "rd_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:93"
+        },
+        "meaning": "Lesen von Umbuchungsaufträgen"
+      },
+      {
+        "id": "rd_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:94"
+        },
+        "meaning": "Jeder angefragte Auftrag"
+      },
+      {
+        "id": "rd_c",
+        "type": "call",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:95"
+        },
+        "meaning": "Auftrag lesen"
+      },
+      {
+        "id": "rd_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:96"
+        },
+        "meaning": "Nicht gefunden?"
+      },
+      {
+        "id": "rd_f",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:97"
+        },
+        "meaning": "Lesen für diesen Auftrag ablehnen"
+      },
+      {
+        "id": "rd_o",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:100"
+        },
+        "meaning": "Auftragsdaten mit Status zurückgeben"
+      },
+      {
+        "id": "rd_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:110"
+        },
+        "meaning": "Ende Lesen"
+      },
+      {
+        "id": "lk_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:113"
+        },
+        "meaning": "Sperren von Umbuchungsaufträgen"
+      },
+      {
+        "id": "lk_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:114"
+        },
+        "meaning": "Jeder zu sperrende Auftrag"
+      },
+      {
+        "id": "lk_q",
+        "type": "lock",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:115"
+        },
+        "meaning": "Auftrag sperren"
+      },
+      {
+        "id": "lk_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:122"
+        },
+        "meaning": "Sperre fehlgeschlagen?"
+      },
+      {
+        "id": "lk_f",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:123"
+        },
+        "meaning": "Sperren ablehnen (gesperrt)"
+      },
+      {
+        "id": "lk_o",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:125"
+        },
+        "meaning": "Fehler ZMM_UMB 020 mit Sperrbenutzer"
+      },
+      {
+        "id": "lk_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:131"
+        },
+        "meaning": "Ende Sperren"
+      },
+      {
+        "id": "bu_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:134"
+        },
+        "meaning": "Aktion Buchen"
+      },
+      {
+        "id": "bu_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:135"
+        },
+        "meaning": "Jeder zu buchende Auftrag"
+      },
+      {
+        "id": "bu_c",
+        "type": "call",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:136"
+        },
+        "meaning": "Auftrag lesen"
+      },
+      {
+        "id": "bu_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:137"
+        },
+        "meaning": "Nicht offen (oder nicht gefunden)?"
+      },
+      {
+        "id": "bu_f",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:138"
+        },
+        "meaning": "Buchen ablehnen"
+      },
+      {
+        "id": "bu_o",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:139"
+        },
+        "meaning": "Fehler ZMM_UMB 030"
+      },
+      {
+        "id": "bu_a",
+        "type": "call",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:147"
+        },
+        "meaning": "Status in den Puffer übernehmen"
+      },
+      {
+        "id": "bu_r",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:149"
+        },
+        "meaning": "Auftrag als Aktionsergebnis zurückgeben"
+      },
+      {
+        "id": "bu_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lhc.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lhc.abap:152"
+        },
+        "meaning": "Ende Buchen"
+      },
+      {
+        "id": "cb_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:11"
+        },
+        "meaning": "Prüfung vor dem Sichern"
+      },
+      {
+        "id": "cb_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:12"
+        },
+        "meaning": "Jeder neue und geänderte Auftrag im Puffer"
+      },
+      {
+        "id": "cb_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:16"
+        },
+        "meaning": "Von- gleich Nach-Lagerort?"
+      },
+      {
+        "id": "cb_f1",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:17"
+        },
+        "meaning": "Sichern ablehnen"
+      },
+      {
+        "id": "cb_o1",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:18"
+        },
+        "meaning": "Fehler ZMM_UMB 040"
+      },
+      {
+        "id": "cb_r",
+        "type": "read",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:26"
+        },
+        "meaning": "Frei verwendbaren Bestand am Von-Lagerort lesen"
+      },
+      {
+        "id": "cb_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:31"
+        },
+        "meaning": "Kein Bestand oder zu wenig?"
+      },
+      {
+        "id": "cb_f2",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:32"
+        },
+        "meaning": "Sichern ablehnen"
+      },
+      {
+        "id": "cb_o2",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:33"
+        },
+        "meaning": "Fehler ZMM_UMB 041 mit Material und Lagerort"
+      },
+      {
+        "id": "cb_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:40"
+        },
+        "meaning": "Ende Prüfung"
+      },
+      {
+        "id": "sv_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:43"
+        },
+        "meaning": "Sichern"
+      },
+      {
+        "id": "sv_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:47"
+        },
+        "meaning": "Neue oder geänderte Aufträge?"
+      },
+      {
+        "id": "sv_u",
+        "type": "update_task",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:48"
+        },
+        "meaning": "Schreiben der Aufträge beim Verbucher registrieren"
+      },
+      {
+        "id": "sv_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:74"
+        },
+        "meaning": "Jeder geänderte Auftrag im Status „zu buchen“"
+      },
+      {
+        "id": "sv_bg",
+        "type": "async",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:75"
+        },
+        "meaning": "Warenbewegung asynchron nach dem Commit anstoßen (tRFC, eigene LUW)"
+      },
+      {
+        "id": "sv_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:80"
+        },
+        "meaning": "Ende Sichern"
+      },
+      {
+        "id": "cl_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:83"
+        },
+        "meaning": "Aufräumen nach Commit/Rollback"
+      },
+      {
+        "id": "cl_c",
+        "type": "call",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:84"
+        },
+        "meaning": "Puffer leeren"
+      },
+      {
+        "id": "cl_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_r_umbuchung_lsc.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_r_umbuchung_lsc.abap:85"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "n_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:42"
+        },
+        "meaning": "Neuen Auftrag vormerken"
+      },
+      {
+        "id": "n_nr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:43"
+        },
+        "meaning": "Nummer aus Nummernkreis ZMM_UMB/01 ziehen"
+      },
+      {
+        "id": "n_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:58"
+        },
+        "meaning": "Auftrag mit Status offen, Erfasser und Zeitstempel im Puffer; Nummer zurück"
+      },
+      {
+        "id": "le_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:61"
+        },
+        "meaning": "Auftrag lesen"
+      },
+      {
+        "id": "le_a",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:63"
+        },
+        "meaning": "Im Puffer nachschlagen: erst Änderungen, dann Anlagen"
+      },
+      {
+        "id": "le_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:65"
+        },
+        "meaning": "Nicht im Puffer?"
+      },
+      {
+        "id": "le_q",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:66"
+        },
+        "meaning": "Auftrag aus der Datenbank lesen"
+      },
+      {
+        "id": "le_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:70"
+        },
+        "meaning": "Auftrag zurückgeben"
+      },
+      {
+        "id": "ae_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:73"
+        },
+        "meaning": "Änderung vormerken"
+      },
+      {
+        "id": "ae_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:74"
+        },
+        "meaning": "Ist der Auftrag noch ungesicherte Anlage?"
+      },
+      {
+        "id": "ae_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:75"
+        },
+        "meaning": "Noch nicht gesichert?"
+      },
+      {
+        "id": "ae_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:77"
+        },
+        "meaning": "Anlage im Puffer überschrieben"
+      },
+      {
+        "id": "ae_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:81"
+        },
+        "meaning": "Als Änderung vorgemerkt"
+      },
+      {
+        "id": "l_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:84"
+        },
+        "meaning": "Puffer leeren"
+      },
+      {
+        "id": "l_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_umbuchung_buffer.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_umbuchung_buffer.abap:86"
+        },
+        "meaning": "Rückkehr"
+      },
+      {
+        "id": "u_s",
+        "type": "start",
+        "anchor": {
+          "file": "z_mm_umbuchung_upd.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_umbuchung_upd.abap:1"
+        },
+        "meaning": "Verbuchung: Aufträge schreiben"
+      },
+      {
+        "id": "u_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mm_umbuchung_upd.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_umbuchung_upd.abap:11"
+        },
+        "meaning": "Neue Aufträge?"
+      },
+      {
+        "id": "u_i",
+        "type": "write",
+        "anchor": {
+          "file": "z_mm_umbuchung_upd.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_umbuchung_upd.abap:12"
+        },
+        "meaning": "Neue Aufträge einfügen"
+      },
+      {
+        "id": "u_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mm_umbuchung_upd.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_umbuchung_upd.abap:13"
+        },
+        "meaning": "Einfügen fehlgeschlagen?"
+      },
+      {
+        "id": "u_o1",
+        "type": "output",
+        "anchor": {
+          "file": "z_mm_umbuchung_upd.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_umbuchung_upd.abap:14"
+        },
+        "meaning": "Abbruchmeldung ZMM_UMB 050"
+      },
+      {
+        "id": "u_x1",
+        "type": "end",
+        "anchor": {
+          "file": "z_mm_umbuchung_upd.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_umbuchung_upd.abap:14"
+        },
+        "meaning": "Verbuchung abgebrochen, alles zurückgerollt"
+      },
+      {
+        "id": "u_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mm_umbuchung_upd.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_umbuchung_upd.abap:18"
+        },
+        "meaning": "Geänderte Aufträge?"
+      },
+      {
+        "id": "u_u",
+        "type": "write",
+        "anchor": {
+          "file": "z_mm_umbuchung_upd.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_umbuchung_upd.abap:19"
+        },
+        "meaning": "Geänderte Aufträge aktualisieren"
+      },
+      {
+        "id": "u_g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mm_umbuchung_upd.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_umbuchung_upd.abap:20"
+        },
+        "meaning": "Aktualisieren fehlgeschlagen?"
+      },
+      {
+        "id": "u_o2",
+        "type": "output",
+        "anchor": {
+          "file": "z_mm_umbuchung_upd.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_umbuchung_upd.abap:21"
+        },
+        "meaning": "Abbruchmeldung ZMM_UMB 051"
+      },
+      {
+        "id": "u_x2",
+        "type": "end",
+        "anchor": {
+          "file": "z_mm_umbuchung_upd.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_umbuchung_upd.abap:21"
+        },
+        "meaning": "Verbuchung abgebrochen"
+      },
+      {
+        "id": "u_e",
+        "type": "end",
+        "anchor": {
+          "file": "z_mm_umbuchung_upd.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_umbuchung_upd.abap:25"
+        },
+        "meaning": "Verbuchung beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "au_s",
+        "to": "au_a",
+        "condition": "always"
+      },
+      {
+        "from": "au_a",
+        "to": "au_g1",
+        "condition": "always"
+      },
+      {
+        "from": "au_g1",
+        "to": "au_g2",
+        "condition": "requested_authorizations-%create = if_abap_behv=>mk-on"
+      },
+      {
+        "from": "au_g1",
+        "to": "au_g2",
+        "condition": "else"
+      },
+      {
+        "from": "au_g2",
+        "to": "au_e",
+        "condition": "requested_authorizations-%action-buchen = if_abap_behv=>mk-on"
+      },
+      {
+        "from": "au_g2",
+        "to": "au_e",
+        "condition": "else"
+      },
+      {
+        "from": "cr_s",
+        "to": "cr_l",
+        "condition": "always"
+      },
+      {
+        "from": "cr_l",
+        "to": "cr_g",
+        "condition": "next row"
+      },
+      {
+        "from": "cr_g",
+        "to": "cr_f",
+        "condition": "ls_ent-Menge <= 0 OR ls_ent-Material IS INITIAL"
+      },
+      {
+        "from": "cr_f",
+        "to": "cr_o",
+        "condition": "always"
+      },
+      {
+        "from": "cr_o",
+        "to": "cr_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cr_g",
+        "to": "cr_n",
+        "condition": "else"
+      },
+      {
+        "from": "cr_n",
+        "to": "n_s",
+        "condition": "always"
+      },
+      {
+        "from": "n_s",
+        "to": "n_nr",
+        "condition": "always"
+      },
+      {
+        "from": "n_nr",
+        "to": "n_e",
+        "condition": "always"
+      },
+      {
+        "from": "cr_l",
+        "to": "cr_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "up_s",
+        "to": "up_l",
+        "condition": "always"
+      },
+      {
+        "from": "up_l",
+        "to": "up_c",
+        "condition": "next row"
+      },
+      {
+        "from": "up_c",
+        "to": "le_s",
+        "condition": "always"
+      },
+      {
+        "from": "le_s",
+        "to": "le_a",
+        "condition": "always"
+      },
+      {
+        "from": "le_a",
+        "to": "le_g",
+        "condition": "always"
+      },
+      {
+        "from": "le_g",
+        "to": "le_q",
+        "condition": "rs_umb IS INITIAL"
+      },
+      {
+        "from": "le_g",
+        "to": "le_e",
+        "condition": "else"
+      },
+      {
+        "from": "le_q",
+        "to": "le_e",
+        "condition": "always"
+      },
+      {
+        "from": "le_e",
+        "to": "up_g1",
+        "condition": "always"
+      },
+      {
+        "from": "up_g1",
+        "to": "up_f1",
+        "condition": "ls_umb IS INITIAL"
+      },
+      {
+        "from": "up_f1",
+        "to": "up_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "up_g1",
+        "to": "up_g2",
+        "condition": "else"
+      },
+      {
+        "from": "up_g2",
+        "to": "up_f2",
+        "condition": "ls_umb-status <> zbp_r_umbuchung=>gc_status-offen"
+      },
+      {
+        "from": "up_f2",
+        "to": "up_o2",
+        "condition": "always"
+      },
+      {
+        "from": "up_o2",
+        "to": "up_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "up_g2",
+        "to": "up_a",
+        "condition": "else"
+      },
+      {
+        "from": "up_a",
+        "to": "ae_s",
+        "condition": "always"
+      },
+      {
+        "from": "ae_s",
+        "to": "ae_r",
+        "condition": "always"
+      },
+      {
+        "from": "ae_r",
+        "to": "ae_g",
+        "condition": "always"
+      },
+      {
+        "from": "ae_g",
+        "to": "ae_x",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "ae_g",
+        "to": "ae_e",
+        "condition": "else"
+      },
+      {
+        "from": "ae_x",
+        "to": "up_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ae_e",
+        "to": "up_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "up_l",
+        "to": "up_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "rd_s",
+        "to": "rd_l",
+        "condition": "always"
+      },
+      {
+        "from": "rd_l",
+        "to": "rd_c",
+        "condition": "next row"
+      },
+      {
+        "from": "rd_c",
+        "to": "le_s",
+        "condition": "always"
+      },
+      {
+        "from": "le_e",
+        "to": "rd_g",
+        "condition": "always"
+      },
+      {
+        "from": "rd_g",
+        "to": "rd_f",
+        "condition": "ls_umb IS INITIAL"
+      },
+      {
+        "from": "rd_g",
+        "to": "rd_o",
+        "condition": "else"
+      },
+      {
+        "from": "rd_f",
+        "to": "rd_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rd_o",
+        "to": "rd_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rd_l",
+        "to": "rd_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "lk_s",
+        "to": "lk_l",
+        "condition": "always"
+      },
+      {
+        "from": "lk_l",
+        "to": "lk_q",
+        "condition": "next row"
+      },
+      {
+        "from": "lk_q",
+        "to": "lk_g",
+        "condition": "always"
+      },
+      {
+        "from": "lk_g",
+        "to": "lk_f",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "lk_f",
+        "to": "lk_o",
+        "condition": "always"
+      },
+      {
+        "from": "lk_o",
+        "to": "lk_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lk_g",
+        "to": "lk_l",
+        "condition": "else"
+      },
+      {
+        "from": "lk_l",
+        "to": "lk_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "bu_s",
+        "to": "bu_l",
+        "condition": "always"
+      },
+      {
+        "from": "bu_l",
+        "to": "bu_c",
+        "condition": "next row"
+      },
+      {
+        "from": "bu_c",
+        "to": "le_s",
+        "condition": "always"
+      },
+      {
+        "from": "le_e",
+        "to": "bu_g",
+        "condition": "always"
+      },
+      {
+        "from": "bu_g",
+        "to": "bu_f",
+        "condition": "ls_umb-status <> zbp_r_umbuchung=>gc_status-offen"
+      },
+      {
+        "from": "bu_f",
+        "to": "bu_o",
+        "condition": "always"
+      },
+      {
+        "from": "bu_o",
+        "to": "bu_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "bu_a",
+        "to": "ae_s",
+        "condition": "always"
+      },
+      {
+        "from": "ae_x",
+        "to": "bu_r",
+        "condition": "always"
+      },
+      {
+        "from": "ae_e",
+        "to": "bu_r",
+        "condition": "always"
+      },
+      {
+        "from": "bu_r",
+        "to": "bu_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "bu_l",
+        "to": "bu_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cb_s",
+        "to": "cb_l",
+        "condition": "always"
+      },
+      {
+        "from": "cb_l",
+        "to": "cb_g1",
+        "condition": "next row"
+      },
+      {
+        "from": "cb_g1",
+        "to": "cb_f1",
+        "condition": "ls_umb-lgort_von = ls_umb-lgort_nach"
+      },
+      {
+        "from": "cb_f1",
+        "to": "cb_o1",
+        "condition": "always"
+      },
+      {
+        "from": "cb_o1",
+        "to": "cb_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cb_g1",
+        "to": "cb_r",
+        "condition": "else"
+      },
+      {
+        "from": "cb_r",
+        "to": "cb_g2",
+        "condition": "always"
+      },
+      {
+        "from": "cb_g2",
+        "to": "cb_f2",
+        "condition": "sy-subrc <> 0 OR lv_labst < ls_umb-menge"
+      },
+      {
+        "from": "cb_f2",
+        "to": "cb_o2",
+        "condition": "always"
+      },
+      {
+        "from": "cb_o2",
+        "to": "cb_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cb_g2",
+        "to": "cb_l",
+        "condition": "else"
+      },
+      {
+        "from": "cb_l",
+        "to": "cb_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sv_s",
+        "to": "sv_g",
+        "condition": "always"
+      },
+      {
+        "from": "sv_g",
+        "to": "sv_u",
+        "condition": "lt_ins IS NOT INITIAL OR lt_upd IS NOT INITIAL"
+      },
+      {
+        "from": "sv_g",
+        "to": "sv_l",
+        "condition": "else"
+      },
+      {
+        "from": "sv_u",
+        "to": "sv_l",
+        "condition": "always"
+      },
+      {
+        "from": "sv_l",
+        "to": "sv_bg",
+        "condition": "next row"
+      },
+      {
+        "from": "sv_bg",
+        "to": "sv_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "sv_l",
+        "to": "sv_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cl_s",
+        "to": "cl_c",
+        "condition": "always"
+      },
+      {
+        "from": "cl_c",
+        "to": "l_s",
+        "condition": "always"
+      },
+      {
+        "from": "l_s",
+        "to": "l_e",
+        "condition": "always"
+      },
+      {
+        "from": "l_e",
+        "to": "cl_e",
+        "condition": "always"
+      },
+      {
+        "from": "u_s",
+        "to": "u_g1",
+        "condition": "always"
+      },
+      {
+        "from": "u_g1",
+        "to": "u_i",
+        "condition": "it_ins IS NOT INITIAL"
+      },
+      {
+        "from": "u_g1",
+        "to": "u_g3",
+        "condition": "else"
+      },
+      {
+        "from": "u_i",
+        "to": "u_g2",
+        "condition": "always"
+      },
+      {
+        "from": "u_g2",
+        "to": "u_o1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "u_o1",
+        "to": "u_x1",
+        "condition": "always"
+      },
+      {
+        "from": "u_g2",
+        "to": "u_g3",
+        "condition": "else"
+      },
+      {
+        "from": "u_g3",
+        "to": "u_u",
+        "condition": "it_upd IS NOT INITIAL"
+      },
+      {
+        "from": "u_g3",
+        "to": "u_e",
+        "condition": "else"
+      },
+      {
+        "from": "u_u",
+        "to": "u_g4",
+        "condition": "always"
+      },
+      {
+        "from": "u_g4",
+        "to": "u_o2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "u_o2",
+        "to": "u_x2",
+        "condition": "always"
+      },
+      {
+        "from": "u_g4",
+        "to": "u_e",
+        "condition": "else"
+      },
+      {
+        "from": "n_e",
+        "to": "cr_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "bu_g",
+        "to": "bu_a",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zbp_r_umbuchung_lsc.abap:75 — kein Fachsatz „die Warenbewegung 311 wird gebucht“ (nur asynchron angestoßen; Baustein nicht im Fall, der BAPI-Aufruf darüber ist auskommentiert)",
+    "zbp_r_umbuchung_lsc.abap:74 — kein Fachsatz „jeder Auftrag im Status ‚zu buchen‘ wird gebucht“ (in derselben Transaktion angelegte und gebuchte Aufträge stehen in der Anlagetabelle, nicht in lt_upd, und werden nicht angestoßen)",
+    "zcl_mm_umbuchung_buffer.abap:43 — kein Fachsatz „schlägt die Nummernvergabe fehl, wird die Anlage abgelehnt“ (sy-subrc wird nicht ausgewertet; der Auftrag entsteht dann ohne Nummer)",
+    "gesamte Scheibe — kein Fachsatz „Umbuchungsaufträge können gelöscht werden“ (kein DELETE-Handler; laut Kommentar entfernt)"
+  ],
+  "processDescription": "Lagerleiter erfassen in einer Fiori-App Umbuchungsaufträge zwischen Lagerorten; das kundeneigene unmanaged RAP-BO hält alle Änderungen in einem statischen Transaktionspuffer. Anlegen und Buchen setzen die Berechtigung für Bewegungsart 311 voraus. Neue Aufträge ohne Material oder mit nicht positiver Menge werden abgelehnt, gültige erhalten sofort eine Nummer aus dem Nummernkreis und den Status offen. Aufträge werden erst im Puffer, dann in der Datenbank gesucht; ändern lässt sich nur die Menge offener Aufträge, und jeder Auftrag wird vorher gesperrt. Die Aktion Buchen setzt offene Aufträge auf „zu buchen“, andere werden abgelehnt. Vor dem Sichern werden Aufträge mit gleichem Von- und Nach-Lagerort oder ohne ausreichenden frei verwendbaren Bestand am Von-Lagerort abgelehnt. Beim Sichern werden neue und geänderte Aufträge beim Verbucher registriert, der sie schreibt und bei einem Fehler die ganze Transaktion abbricht; für geänderte Aufträge im Status „zu buchen“ wird die eigentliche Warenbewegung asynchron nach dem Commit angestoßen. Danach wird der Puffer geleert."
+}

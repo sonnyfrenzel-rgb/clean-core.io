@@ -1,0 +1,30 @@
+{
+  "id": "BM-226",
+  "title": "Prüfliste fehlender Bankverbindungen vor der Abrechnung",
+  "domain": "HR",
+  "band": "mittel",
+  "loc": 87,
+  "constructs": [
+    "REPORT",
+    "PERFORM",
+    "HR_READ_INFOTYPE",
+    "READ TABLE WITH KEY",
+    "RETURN in FORM",
+    "CHECK in FORM",
+    "CL_SALV_TABLE",
+    "TRY/CATCH"
+  ],
+  "scenario": "Prüfreport der Personalabrechnung vor dem Abrechnungslauf, typischer Kandidat für eine Fiori-Liste.",
+  "s4_issues": [
+    "PA0001 per Direkt-SELECT ohne Berechtigungsprüfung",
+    "SAP-GUI-ALV nicht Cloud-fähig"
+  ],
+  "wave": 3,
+  "module": "HCM-PA",
+  "edge_constructs": [
+    "RETURN in FORM",
+    "CHECK in FORM",
+    "TRY/CATCH um SALV"
+  ],
+  "oo": false
+}

@@ -1,0 +1,16 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "lzsd_ord_inf01.abap:27 (FORM set_status)",
+      "before": "msgv1  = iv_text(50)",
+      "after": "msgv1  = iv_text",
+      "why": "Offset/Länge (50) auf dem generischen csequence-Parameter bricht zur Laufzeit ab, sobald der Text kürzer als 50 Zeichen ist — also schon im Erfolgsfall mit der Auftragsnummer (lv_vbeln, 10 Zeichen) und bei kurzen Fehlertexten; der Status 53/51 würde nie gesetzt. Die Zuweisung an MSGV1 (CHAR50) kürzt von selbst. Keine Zeilenverschiebung.",
+      "category": "Quelltext"
+    }
+  ],
+  "doubts": [
+    "Aktionen ea/ev/na/wa/wm sind (überwiegend) Zuweisungen in cs_order; belassen, weil sie Auftragsart, Lieferdatum, Versandbedingung und Werk des anzulegenden Auftrags festlegen."
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "id": "BM-228",
+  "title": "Gemessene IT-Leistungen auf Kostenstellen verrechnen",
+  "domain": "CO",
+  "band": "komplex",
+  "loc": 221,
+  "constructs": [
+    "FUNCTION-POOL mit TOP/U01/F01",
+    "ENQUEUE/DEQUEUE",
+    "MESSAGE E RAISING",
+    "RAISE",
+    "CHECK in LOOP",
+    "RETURN in FORM",
+    "LOOP ... EXIT",
+    "ELSEIF",
+    "BAPI_ACC_ACTIVITY_ALLOC_POST",
+    "COMMIT WORK"
+  ],
+  "scenario": "Monatlicher CO-Job einer IT-Abteilung, der Ticketzeiten als Leistungsverrechnung bucht; in der Transformation wegen Status-Logik und LUW auffällig.",
+  "s4_issues": [
+    "BAPI_ACC_ACTIVITY_ALLOC_POST nicht für Cloud freigegeben",
+    "eigenes COMMIT WORK nach BAPI_TRANSACTION_COMMIT"
+  ],
+  "wave": 3,
+  "module": "CO-OM-CCA",
+  "edge_constructs": [
+    "CHECK in LOOP",
+    "RETURN in Prüf-FORM mit Rückgabeflag",
+    "LOOP ... EXIT als Suche",
+    "Protokollroutine vierfach gerufen"
+  ],
+  "oo": false
+}

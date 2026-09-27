@@ -1,0 +1,41 @@
+{
+  "id": "BM-277",
+  "title": "Dispositions-Jobkette mit Schritthierarchie und Neustart",
+  "domain": "PP",
+  "band": "sehr komplex",
+  "loc": 472,
+  "constructs": [
+    "REPORT",
+    "abstrakte Klasse mit Schablonenmethode (FINAL)",
+    "INHERITING FROM / REDEFINITION",
+    "super->constructor",
+    "statische Fabrik",
+    "TRY/CLEANUP",
+    "RAISE EXCEPTION",
+    "JOB_OPEN/JOB_CLOSE mit PRED_JOBNAME/PREDJOB_CHECKSTAT",
+    "SUBMIT (dynamisch) VIA JOB",
+    "SUBMIT WITH SELECTION-TABLE VIA JOB",
+    "BP_JOB_STATUS_GET",
+    "BP_JOB_DELETE",
+    "INSERT/UPDATE",
+    "COMMIT WORK"
+  ],
+  "scenario": "Nächtliche Dispositionskette nach Werkszusammenlegung: MRP-Läufe je Werk, Umsetzung von Planaufträgen und Ausnahmemails werden aus Customizing eingeplant, überwacht und bei Abbruch ab dem Fehlerschritt neu gestartet.",
+  "s4_issues": [
+    "RMMRP000 klassische Disposition – in S/4 MRP Live (PPH_MRP_START/MD01N)",
+    "JOB_OPEN/JOB_CLOSE/BP_JOB_* nicht in ABAP Cloud (Application Jobs)",
+    "T399D-Direktzugriff",
+    "dynamischer SUBMIT aus Customizing"
+  ],
+  "wave": 3,
+  "module": "PP",
+  "edge_constructs": [
+    "CLEANUP statt CATCH",
+    "Ausnahmen aus Unterklassen laufen durch zwei Ebenen",
+    "Methode ruft Methode derselben Klasse (restart→monitor, restart→plan)",
+    "RETURN als einzige Anweisung",
+    "Redefinition nur in einer Unterklasse",
+    "MESSAGE oref TYPE I DISPLAY LIKE E"
+  ],
+  "oo": true
+}

@@ -1,0 +1,1297 @@
+{
+  "id": "BM-288",
+  "title": "Kasse: Barverkauf im editierbaren Grid mit Preisnachlese und Sofortauftrag",
+  "classes": [
+    "K07",
+    "K01",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "A004",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_kasse_barverkauf_c01.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_kasse_barverkauf_c01.abap:37"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KONP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_kasse_barverkauf_c01.abap",
+        "line": 55,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_kasse_barverkauf_c01.abap:55"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_GUI_ALV_GRID",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_kasse_barverkauf.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_kasse_barverkauf.abap:41"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_kasse_barverkauf_c01.abap",
+        "line": 93,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_kasse_barverkauf_c01.abap:93"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_SALESORDER_CREATEFROMDAT2",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_kasse_barverkauf_c01.abap",
+        "line": 110,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_kasse_barverkauf_c01.abap:110"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_kasse_barverkauf_c01.abap",
+        "line": 122,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_kasse_barverkauf_c01.abap:122"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_kasse_barverkauf_c01.abap",
+        "line": 128,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_kasse_barverkauf_c01.abap:128"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPOS_JOURNAL",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zsd_kasse_barverkauf_c01.abap",
+        "line": 140,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_kasse_barverkauf_c01.abap:140"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-288-B01",
+      "text": "Nach dem Start der Kasse für Verkaufsorganisation, Verkaufsbüro und Kassennummer wird das Kassenbild aufgerufen.",
+      "anchors": [
+        {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:17"
+        },
+        {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-288-B02",
+      "text": "Beim ersten Aufbau wird das editierbare Positionsgrid angelegt, auf Zelländerungen registriert, der Preisbehandler angemeldet und die leere Positionsliste angezeigt.",
+      "anchors": [
+        {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:29"
+        },
+        {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:39"
+        },
+        {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-288-B03",
+      "text": "Bei jeder Aktion werden offene Eingaben im Grid übernommen, was die Prüfung der geänderten Zellen auslöst.",
+      "anchors": [
+        {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-288-B04",
+      "text": "Für jede geänderte Materialzelle wird der am Tag gültige Konditionssatz Grundpreis PR00 für Verkaufsorganisation, Vertriebsweg 10 und Material gesucht.",
+      "anchors": [
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:27"
+        },
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:33"
+        },
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:34"
+        },
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-288-B05",
+      "text": "Gibt es keinen gültigen Preis, wird am Material ein Fehlereintrag im Grid-Protokoll erzeugt und mit der nächsten geänderten Zelle fortgefahren.",
+      "anchors": [
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:45"
+        },
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:46"
+        },
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-288-B06",
+      "text": "Sonst wird der Konditionsbetrag gelesen und als Preis in die Position übernommen.",
+      "anchors": [
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:55"
+        },
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-288-B07",
+      "text": "Mit BUCHEN wird der Barverkauf gebucht; ohne Positionen geschieht nichts.",
+      "anchors": [
+        {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:57"
+        },
+        {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:58"
+        },
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-288-B08",
+      "text": "Der Bonbetrag wird als Summe aus Menge mal Preis aller Positionen ermittelt und der Kassierer bestätigt in einer Rückfrage, dass dieser Betrag kassiert ist; ohne Bestätigung wird nicht gebucht.",
+      "anchors": [
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:83"
+        },
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:93"
+        },
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:100"
+        }
+      ]
+    },
+    {
+      "id": "BM-288-B09",
+      "text": "Es wird ein Sofortauftrag der Auftragsart ZBV an den CPD-Barverkaufskunden mit Verkaufsbüro und Kassenkennung als Bestellnummer angelegt.",
+      "anchors": [
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:110"
+        }
+      ]
+    },
+    {
+      "id": "BM-288-B10",
+      "text": "Kommt keine Auftragsnummer zurück, wird zurückgerollt, die erste Fehlermeldung als Information in Fehleroptik angezeigt und die Buchung beendet.",
+      "anchors": [
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:121"
+        },
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:122"
+        },
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:124"
+        },
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:125"
+        }
+      ]
+    },
+    {
+      "id": "BM-288-B11",
+      "text": "Sonst wird der Auftrag synchron festgeschrieben und der Verkauf mit Kasse, Zeitpunkt, Auftrag, Betrag und Kassierer ins Kassenjournal für den Tagesabschluss geschrieben.",
+      "anchors": [
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:128"
+        },
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:140"
+        }
+      ]
+    },
+    {
+      "id": "BM-288-B12",
+      "text": "Auftragsnummer und Betrag werden als Erfolgsmeldung angezeigt und die Positionen für den nächsten Kunden geleert.",
+      "anchors": [
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:142"
+        },
+        {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:143"
+        }
+      ]
+    },
+    {
+      "id": "BM-288-B13",
+      "text": "Zurück oder Beenden mit offenen Positionen verlangt die Bestätigung, dass diese verworfen werden; ohne Bestätigung bleibt der Kassierer auf dem Bild, sonst wird das Kassenbild verlassen.",
+      "anchors": [
+        {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:60"
+        },
+        {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:61"
+        },
+        {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:62"
+        },
+        {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:69"
+        },
+        {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:74"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s0",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:17"
+        },
+        "meaning": "Kassenstart"
+      },
+      {
+        "id": "cs",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:20"
+        },
+        "meaning": "Kassenbild aufrufen"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:20"
+        },
+        "meaning": "Ende nach Verlassen"
+      },
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:25"
+        },
+        "meaning": "PBO Kassenbild"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:29"
+        },
+        "meaning": "Grid schon angelegt?"
+      },
+      {
+        "id": "sh",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:39"
+        },
+        "meaning": "Preisbehandler registrieren"
+      },
+      {
+        "id": "disp",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:41"
+        },
+        "meaning": "Positionsgrid anzeigen"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:47"
+        },
+        "meaning": "Ende PBO"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:52"
+        },
+        "meaning": "PAI Kassenbild"
+      },
+      {
+        "id": "ccd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:54"
+        },
+        "meaning": "Grid-Eingaben übernehmen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:56"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "cbu",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:58"
+        },
+        "meaning": "Barverkauf buchen"
+      },
+      {
+        "id": "ch",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:61"
+        },
+        "meaning": "Offene Positionen ermitteln"
+      },
+      {
+        "id": "gh",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:61"
+        },
+        "meaning": "Offene Positionen?"
+      },
+      {
+        "id": "pop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:62"
+        },
+        "meaning": "Rückfrage verwerfen"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:69"
+        },
+        "meaning": "Nicht bestätigt?"
+      },
+      {
+        "id": "r2",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:71"
+        },
+        "meaning": "Auf dem Bild bleiben"
+      },
+      {
+        "id": "lv",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:74"
+        },
+        "meaning": "Kassenbild verlassen"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf.abap:78"
+        },
+        "meaning": "Ende PAI"
+      },
+      {
+        "id": "sho",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:20"
+        },
+        "meaning": "Offene Positionen prüfen"
+      },
+      {
+        "id": "aho",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:21"
+        },
+        "meaning": "Ergebnis: Positionen vorhanden"
+      },
+      {
+        "id": "eho",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:22"
+        },
+        "meaning": "Ende Prüfung"
+      },
+      {
+        "id": "sdc",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:27"
+        },
+        "meaning": "Zelländerung im Grid"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:33"
+        },
+        "meaning": "Geänderte Zellen"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:34"
+        },
+        "meaning": "Welches Feld?"
+      },
+      {
+        "id": "ra",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:37"
+        },
+        "meaning": "Konditionssatz PR00 suchen"
+      },
+      {
+        "id": "gp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:45"
+        },
+        "meaning": "Kein Preis?"
+      },
+      {
+        "id": "ape",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:46"
+        },
+        "meaning": "Fehler ins Grid-Protokoll"
+      },
+      {
+        "id": "rk",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:55"
+        },
+        "meaning": "Preis lesen"
+      },
+      {
+        "id": "mc",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:58"
+        },
+        "meaning": "Preis in Position setzen"
+      },
+      {
+        "id": "edc",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:64"
+        },
+        "meaning": "Ende Behandler"
+      },
+      {
+        "id": "sb",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:69"
+        },
+        "meaning": "Barverkauf buchen"
+      },
+      {
+        "id": "gck1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:81"
+        },
+        "meaning": "Positionen vorhanden?"
+      },
+      {
+        "id": "asum",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:83"
+        },
+        "meaning": "Bonbetrag berechnen"
+      },
+      {
+        "id": "pop2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:93"
+        },
+        "meaning": "Rückfrage kassiert"
+      },
+      {
+        "id": "gck2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:100"
+        },
+        "meaning": "Bestätigt?"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:110"
+        },
+        "meaning": "Sofortauftrag anlegen"
+      },
+      {
+        "id": "gd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:121"
+        },
+        "meaning": "Kein Auftrag angelegt?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:122"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "me",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:124"
+        },
+        "meaning": "Fehler anzeigen"
+      },
+      {
+        "id": "r3",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:125"
+        },
+        "meaning": "Buchung beenden"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:128"
+        },
+        "meaning": "Festschreiben mit Warten"
+      },
+      {
+        "id": "wj",
+        "type": "write",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:140"
+        },
+        "meaning": "Kassenjournal schreiben"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:142"
+        },
+        "meaning": "Erfolgsmeldung"
+      },
+      {
+        "id": "eb",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasse_barverkauf_c01.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasse_barverkauf_c01.abap:145"
+        },
+        "meaning": "Ende Buchen"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s0",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "s1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "sh",
+        "condition": "go_grid IS INITIAL"
+      },
+      {
+        "from": "sh",
+        "to": "disp",
+        "condition": "always"
+      },
+      {
+        "from": "disp",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "s2",
+        "to": "ccd",
+        "condition": "always"
+      },
+      {
+        "from": "ccd",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "cbu",
+        "condition": "WHEN 'BUCHEN'"
+      },
+      {
+        "from": "g2",
+        "to": "ch",
+        "condition": "WHEN 'BACK' OR 'EXIT'"
+      },
+      {
+        "from": "g2",
+        "to": "e2",
+        "condition": "else"
+      },
+      {
+        "from": "cbu",
+        "to": "sb",
+        "condition": "always"
+      },
+      {
+        "from": "r3",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "eb",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "ch",
+        "to": "sho",
+        "condition": "always"
+      },
+      {
+        "from": "eho",
+        "to": "gh",
+        "condition": "always"
+      },
+      {
+        "from": "gh",
+        "to": "pop",
+        "condition": "go_kasse->has_open_items( ) = abap_true"
+      },
+      {
+        "from": "gh",
+        "to": "lv",
+        "condition": "else"
+      },
+      {
+        "from": "pop",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "r2",
+        "condition": "gv_answer <> '1'"
+      },
+      {
+        "from": "ga",
+        "to": "lv",
+        "condition": "else"
+      },
+      {
+        "from": "sho",
+        "to": "aho",
+        "condition": "always"
+      },
+      {
+        "from": "aho",
+        "to": "eho",
+        "condition": "always"
+      },
+      {
+        "from": "sdc",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "lp",
+        "to": "gc",
+        "condition": "next row"
+      },
+      {
+        "from": "gc",
+        "to": "ra",
+        "condition": "WHEN 'MATNR'"
+      },
+      {
+        "from": "gc",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ra",
+        "to": "gp",
+        "condition": "always"
+      },
+      {
+        "from": "gp",
+        "to": "ape",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ape",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gp",
+        "to": "rk",
+        "condition": "else"
+      },
+      {
+        "from": "rk",
+        "to": "mc",
+        "condition": "always"
+      },
+      {
+        "from": "mc",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "edc",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sb",
+        "to": "gck1",
+        "condition": "always"
+      },
+      {
+        "from": "gck1",
+        "to": "asum",
+        "condition": "mt_pos IS NOT INITIAL"
+      },
+      {
+        "from": "gck1",
+        "to": "eb",
+        "condition": "else"
+      },
+      {
+        "from": "asum",
+        "to": "pop2",
+        "condition": "always"
+      },
+      {
+        "from": "pop2",
+        "to": "gck2",
+        "condition": "always"
+      },
+      {
+        "from": "gck2",
+        "to": "bapi",
+        "condition": "gv_answer = '1'"
+      },
+      {
+        "from": "gck2",
+        "to": "eb",
+        "condition": "else"
+      },
+      {
+        "from": "bapi",
+        "to": "gd",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "rb",
+        "condition": "lv_vbeln IS INITIAL"
+      },
+      {
+        "from": "rb",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "r3",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "wj",
+        "condition": "always"
+      },
+      {
+        "from": "wj",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "eb",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zsd_kasse_barverkauf_c01.abap:124 — kein Pfadende an der Meldung; Typ I in Fehleroptik, das Ende setzt RETURN.",
+    "zsd_kasse_barverkauf_c01.abap:110 — kein Fachsatz „Lieferung und Faktura werden erzeugt“ oder „Zahlung wird in FI gebucht“; ob die Auftragsart ZBV Folgebelege erzeugt, steht im Customizing, nicht im Code.",
+    "zsd_kasse_barverkauf_c01.abap:144 — kein output-Knoten „Grid wird aktualisiert“; der Aufruf ist auskommentiert.",
+    "zsd_kasse_barverkauf_c01.abap:140 — kein Fachsatz „Journalfehler wird gemeldet“; sy-subrc wird nach dem INSERT nicht geprüft."
+  ],
+  "processDescription": "Die Kasse startet für Verkaufsorganisation, Verkaufsbüro und Kassennummer das Bild 0100 mit einem editierbaren Positionsgrid. Beim ersten PBO werden Grid, Änderungsereignis und der Behandler für DATA_CHANGED angemeldet. Für jede geänderte Materialzelle sucht der Behandler den gültigen PR00-Satz in A004; ohne Treffer entsteht ein Fehlereintrag im Grid-Protokoll, sonst wird der Betrag aus KONP als Preis gesetzt. Im PAI werden Grid-Eingaben übernommen (was den Behandler auslösen kann). BUCHEN ruft die Buchung: ohne Positionen nichts, sonst Bonsumme per REDUCE, Rückfrage „kassiert?“, bei Ja Sofortauftrag ZBV an den CPD-Kunden. Ohne Auftragsnummer folgt Rollback und eine Fehleranzeige, sonst Commit mit Warten, ein Eintrag im Kassenjournal ZPOS_JOURNAL, eine Erfolgsmeldung und das Leeren der Positionen. Zurück mit offenen Positionen fragt nach; ohne Ja bleibt das Bild, sonst wird es verlassen."
+}

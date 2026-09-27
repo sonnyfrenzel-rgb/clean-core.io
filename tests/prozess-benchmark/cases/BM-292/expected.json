@@ -1,0 +1,1185 @@
+{
+  "id": "BM-292",
+  "title": "Retourenannahme am Schalter: Fakturaprüfung, Positionsauswahl im Popup und Retourenauftrag per Batch-Input",
+  "classes": [
+    "K07",
+    "K01",
+    "K03",
+    "K17"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBRK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_retoure_schalter_f01.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_retoure_schalter_f01.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_retoure_schalter_f01.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_retoure_schalter_f01.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBRP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_retoure_schalter_f01.abap",
+        "line": 35,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_retoure_schalter_f01.abap:35"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REUSE_ALV_POPUP_TO_SELECT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_retoure_schalter_f01.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_retoure_schalter_f01.abap:58"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VA01",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_retoure_schalter_f01.abap",
+        "line": 107,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_retoure_schalter_f01.abap:107"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_RETOURE_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zsd_retoure_schalter_f01.abap",
+        "line": 121,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_retoure_schalter_f01.abap:121"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-292-B01",
+      "text": "Die Retourenannahme startet mit dem Erfassungsbild für Fakturanummer und Rückgabegrund.",
+      "anchors": [
+        {
+          "file": "zsd_retoure_schalter.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter.abap:16"
+        },
+        {
+          "file": "zsd_retoure_schalter.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-292-B02",
+      "text": "Zurück oder Beenden verlässt die Transaktion.",
+      "anchors": [
+        {
+          "file": "zsd_retoure_schalter.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter.abap:24"
+        },
+        {
+          "file": "zsd_retoure_schalter.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-292-B03",
+      "text": "Mit Weiter wird die Faktura gelesen; existiert sie nicht, bricht eine Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zsd_retoure_schalter.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter.abap:29"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:12"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:14"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-292-B04",
+      "text": "Eine stornierte Faktura wird mit Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:18"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-292-B05",
+      "text": "Ist die Faktura noch nicht vollständig an die Buchhaltung übergeben, wird die Retoure mit Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:23"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:25"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-292-B06",
+      "text": "Liegt das Fakturadatum mehr als 30 Tage zurück, erscheint nur eine Warnung mit der Anzahl der Tage; nach Bestätigung geht es weiter.",
+      "anchors": [
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:30"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-292-B07",
+      "text": "Die Fakturapositionen werden gelesen und dem Mitarbeiter in einem Auswahlpopup mit Ankreuzfeld angeboten.",
+      "anchors": [
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:35"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:40"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-292-B08",
+      "text": "Bricht er das Popup ab oder schlägt es fehl, bleibt die Auswahl leer; sonst werden die angekreuzten Positionen übernommen.",
+      "anchors": [
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:73"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-292-B09",
+      "text": "Ohne gewählte Position wird dies gemeldet und keine Retoure angelegt.",
+      "anchors": [
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:41"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:42"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-292-B10",
+      "text": "Sonst wird per Batch-Input im Hintergrund ein Retourenauftrag der Auftragsart ZRE mit Bezug auf die Faktura, die gewählten Positionen und den Rückgabegrund über die Auftragserfassung angelegt, synchron verbucht.",
+      "anchors": [
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:46"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:107"
+        }
+      ]
+    },
+    {
+      "id": "BM-292-B11",
+      "text": "Findet sich in den Meldungen der Auftragserfassung die Erfolgsmeldung V1 311, wird die Retourennummer entnommen, mit Faktura, Grund, Erfasser und Datum im Retourenprotokoll festgeschrieben und als Erfolgsmeldung angezeigt.",
+      "anchors": [
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:112"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:114"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:121"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:122"
+        },
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:123"
+        }
+      ]
+    },
+    {
+      "id": "BM-292-B12",
+      "text": "Sonst wird die erste Fehlermeldung der Auftragserfassung als Information in Fehleroptik angezeigt.",
+      "anchors": [
+        {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:126"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s0",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_retoure_schalter.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter.abap:16"
+        },
+        "meaning": "Retourenannahme starten"
+      },
+      {
+        "id": "cs",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_retoure_schalter.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter.abap:17"
+        },
+        "meaning": "Erfassungsbild"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_retoure_schalter.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter.abap:17"
+        },
+        "meaning": "Ende nach Verlassen"
+      },
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_retoure_schalter.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter.abap:22"
+        },
+        "meaning": "PAI Erfassungsbild"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_retoure_schalter.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter.abap:24"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "lp",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_retoure_schalter.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter.abap:26"
+        },
+        "meaning": "Transaktion beenden"
+      },
+      {
+        "id": "pr",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_retoure_schalter.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter.abap:29"
+        },
+        "meaning": "Faktura prüfen"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_retoure_schalter.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter.abap:34"
+        },
+        "meaning": "Ende PAI"
+      },
+      {
+        "id": "sr",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:8"
+        },
+        "meaning": "Faktura prüfen"
+      },
+      {
+        "id": "rd",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:12"
+        },
+        "meaning": "Fakturakopf lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:14"
+        },
+        "meaning": "Faktura unbekannt?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:15"
+        },
+        "meaning": "Fehler unbekannt"
+      },
+      {
+        "id": "m1e",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:15"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:18"
+        },
+        "meaning": "Storniert?"
+      },
+      {
+        "id": "m2",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:19"
+        },
+        "meaning": "Fehler storniert"
+      },
+      {
+        "id": "m2e",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:19"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "rv",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:23"
+        },
+        "meaning": "Buchhaltungsstatus lesen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:25"
+        },
+        "meaning": "Nicht übergeben?"
+      },
+      {
+        "id": "m3",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:26"
+        },
+        "meaning": "Fehler nicht gebucht"
+      },
+      {
+        "id": "m3e",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:26"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:30"
+        },
+        "meaning": "Frist überschritten?"
+      },
+      {
+        "id": "mw",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:32"
+        },
+        "meaning": "Warnung Frist"
+      },
+      {
+        "id": "rp",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:35"
+        },
+        "meaning": "Fakturapositionen lesen"
+      },
+      {
+        "id": "cw",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:40"
+        },
+        "meaning": "Positionen wählen"
+      },
+      {
+        "id": "gs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:41"
+        },
+        "meaning": "Nichts gewählt?"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:42"
+        },
+        "meaning": "Meldung keine Auswahl"
+      },
+      {
+        "id": "r",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:43"
+        },
+        "meaning": "Ohne Retoure zurück"
+      },
+      {
+        "id": "cr",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:46"
+        },
+        "meaning": "Retoure anlegen"
+      },
+      {
+        "id": "er",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:48"
+        },
+        "meaning": "Ende Prüfung"
+      },
+      {
+        "id": "sw",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:53"
+        },
+        "meaning": "Positionen wählen"
+      },
+      {
+        "id": "pop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:58"
+        },
+        "meaning": "Auswahlpopup"
+      },
+      {
+        "id": "gx",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:73"
+        },
+        "meaning": "Abgebrochen oder Fehler?"
+      },
+      {
+        "id": "rw",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:74"
+        },
+        "meaning": "Leere Auswahl zurück"
+      },
+      {
+        "id": "ew",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:79"
+        },
+        "meaning": "Auswahl zurück"
+      },
+      {
+        "id": "sa",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:84"
+        },
+        "meaning": "Retoure anlegen"
+      },
+      {
+        "id": "ct",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:107"
+        },
+        "meaning": "Batch-Input Auftragserfassung"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:112"
+        },
+        "meaning": "Erfolgsmeldung suchen"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:114"
+        },
+        "meaning": "Retoure angelegt?"
+      },
+      {
+        "id": "wl",
+        "type": "write",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:121"
+        },
+        "meaning": "Retourenprotokoll schreiben"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:122"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "ms2",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:123"
+        },
+        "meaning": "Erfolgsmeldung Retourennummer"
+      },
+      {
+        "id": "mi",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:126"
+        },
+        "meaning": "Fehler der Auftragserfassung anzeigen"
+      },
+      {
+        "id": "ea",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_retoure_schalter_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_retoure_schalter_f01.abap:131"
+        },
+        "meaning": "Ende Retoure"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s0",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "s1",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "lp",
+        "condition": "WHEN 'BACK' OR 'EXIT'"
+      },
+      {
+        "from": "g",
+        "to": "pr",
+        "condition": "WHEN 'WEITER'"
+      },
+      {
+        "from": "g",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "pr",
+        "to": "sr",
+        "condition": "always"
+      },
+      {
+        "from": "er",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "r",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "sr",
+        "to": "rd",
+        "condition": "always"
+      },
+      {
+        "from": "rd",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m1",
+        "to": "m1e",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "m2",
+        "condition": "gs_vbrk-fksto = abap_true"
+      },
+      {
+        "from": "m2",
+        "to": "m2e",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "rv",
+        "condition": "else"
+      },
+      {
+        "from": "rv",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "m3",
+        "condition": "gv_rfbsk <> 'C'"
+      },
+      {
+        "from": "m3",
+        "to": "m3e",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "g4",
+        "condition": "else"
+      },
+      {
+        "from": "g4",
+        "to": "mw",
+        "condition": "lv_tage > gc_frist_tage"
+      },
+      {
+        "from": "mw",
+        "to": "rp",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "rp",
+        "condition": "else"
+      },
+      {
+        "from": "rp",
+        "to": "cw",
+        "condition": "always"
+      },
+      {
+        "from": "cw",
+        "to": "sw",
+        "condition": "always"
+      },
+      {
+        "from": "rw",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "ew",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "ms",
+        "condition": "gt_sel IS INITIAL"
+      },
+      {
+        "from": "ms",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "cr",
+        "condition": "else"
+      },
+      {
+        "from": "cr",
+        "to": "sa",
+        "condition": "always"
+      },
+      {
+        "from": "ea",
+        "to": "er",
+        "condition": "always"
+      },
+      {
+        "from": "sw",
+        "to": "pop",
+        "condition": "always"
+      },
+      {
+        "from": "pop",
+        "to": "gx",
+        "condition": "always"
+      },
+      {
+        "from": "gx",
+        "to": "rw",
+        "condition": "sy-subrc <> 0 OR lv_exit = abap_true"
+      },
+      {
+        "from": "gx",
+        "to": "ew",
+        "condition": "else"
+      },
+      {
+        "from": "sa",
+        "to": "ct",
+        "condition": "always"
+      },
+      {
+        "from": "ct",
+        "to": "rt",
+        "condition": "always"
+      },
+      {
+        "from": "rt",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "wl",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "wl",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "ms2",
+        "condition": "always"
+      },
+      {
+        "from": "ms2",
+        "to": "ea",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "mi",
+        "condition": "else"
+      },
+      {
+        "from": "mi",
+        "to": "ea",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zsd_retoure_schalter_f01.abap:107 — kein Fachsatz „Gutschrift wird erstellt“ oder „Geld wird am Schalter ausgezahlt“; angelegt wird nur ein Retourenauftrag.",
+    "zsd_retoure_schalter_f01.abap:32 — kein Pfadende und kein Fachsatz „Retoure nach 30 Tagen abgelehnt“; die Warnung lässt nach Bestätigung weiterarbeiten.",
+    "zsd_retoure_schalter_f01.abap:121 — kein Fachsatz „der Retourenauftrag wird mit COMMIT WORK gebucht“; VA01 hat mit UPDATE 'S' bereits selbst verbucht, der COMMIT schreibt nur das Protokoll fest.",
+    "zsd_retoure_schalter.abap:30 — kein Fachsatz „Kassenbons können zurückgegeben werden“; der Zweig ist auskommentiert."
+  ],
+  "processDescription": "Die Transaktion zeigt ein Erfassungsbild für Faktura und Rückgabegrund. Mit Weiter liest sie den Fakturakopf und weist unbekannte, stornierte oder noch nicht an die Buchhaltung übergebene Fakturen mit Fehlermeldungen ab; letzteres über den Status in VBUK. Liegt die Faktura mehr als 30 Tage zurück, gibt es nur eine Warnung. Dann werden die Positionen gelesen und in einem Auswahlpopup angeboten; Abbruch ergibt eine leere Auswahl, sonst werden die angekreuzten Positionen übernommen. Ohne Auswahl endet die Prüfung mit einer Statusmeldung. Sonst legt ein Batch-Input auf VA01 im Hintergrund mit synchroner Verbuchung einen Retourenauftrag ZRE mit Fakturabezug an. Findet sich die Erfolgsmeldung V1 311, wird die Retourennummer protokolliert, festgeschrieben und gemeldet; sonst wird die erste Fehlermeldung als Information in Fehleroptik angezeigt."
+}

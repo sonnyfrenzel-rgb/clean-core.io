@@ -1,0 +1,16 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante pr_g2 -> pr_l",
+      "before": "next iteration",
+      "after": "else",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway trägt ihre Bedingung (Sonst-Zweig des IF ohne ELSE); next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "Polymorphe Kanten p_c -> ir_s/li_rs und p_i -> pr_s/li_s geprüft und behalten: die Regelobjekte entstehen per CREATE OBJECT TYPE (ls_klasse-klasse) aus ZMM_PO_REGEL, der Laufzeittyp ist im Code offen."
+  ]
+}

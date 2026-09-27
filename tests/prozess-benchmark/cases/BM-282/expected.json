@@ -1,0 +1,273 @@
+{
+  "id": "BM-282",
+  "title": "QM-Ergebniserfassung: Abbruch mit Datenverlust-Rückfrage (AT EXIT-COMMAND)",
+  "classes": [
+    "K07",
+    "K03"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 14,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:14"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-282-B01",
+      "text": "Hat der Prüfer noch nichts erfasst, wird das Erfassungsbild ohne Rückfrage verlassen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        }
+      ]
+    },
+    {
+      "id": "BM-282-B02",
+      "text": "Sind Ergebnisse erfasst, wird der Prüfer in einem Bestätigungsdialog gefragt, ob er die Erfassung abbrechen und die Ergebnisse verwerfen will; voreingestellt ist „Nein“.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        }
+      ]
+    },
+    {
+      "id": "BM-282-B03",
+      "text": "Bestätigt er mit „Ja“, wird ihm per Statusmeldung angezeigt, dass die Erfassung zum Prüflos verworfen wurde, und das Bild wird verlassen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-282-B04",
+      "text": "Bei „Nein“ bleibt das Modul ohne Wirkung, nur der Funktionscode wird zurückgesetzt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:7"
+        },
+        "meaning": "Abbruch-Funktion auf Bild 0200"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        "meaning": "Schon etwas erfasst?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        "meaning": "Bild ohne Rückfrage verlassen"
+      },
+      {
+        "id": "pop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        "meaning": "Rückfrage Datenverlust"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Abbruch bestätigt?"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Statusmeldung Erfassung verworfen"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Bild verlassen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Ende Modul, Bild bleibt"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "gv_data_changed IS INITIAL"
+      },
+      {
+        "from": "g1",
+        "to": "pop",
+        "condition": "else"
+      },
+      {
+        "from": "pop",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "ms",
+        "condition": "gv_answer = '1'"
+      },
+      {
+        "from": "ms",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "e",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:29 — kein Fachsatz „Prüflos wird entsperrt“ oder „Ergebnisse werden gelöscht“; der Code verlässt nur das Bild und meldet.",
+    "source.abap:29 — kein Pfadende an der Meldung; Typ S unterbricht nicht, erst LEAVE TO SCREEN 0 beendet den Pfad.",
+    "source.abap:14 — kein Fachsatz „Fehler beim Popup wird gemeldet“; sy-subrc der Ausnahmen wird nicht ausgewertet."
+  ],
+  "processDescription": "Das Modul EXIT_0200 läuft bei einem Funktionscode vom Typ E (Zurück/Abbrechen) auf dem Erfassungsbild für Prüfergebnisse. Ist noch nichts erfasst, wird das Bild sofort per LEAVE TO SCREEN 0 verlassen. Sonst fragt ein Bestätigungsdialog, ob die erfassten Ergebnisse verworfen werden sollen, mit „Nein“ als Vorschlag. Bei „Ja“ gibt eine Statusmeldung das Prüflos aus und das Bild wird verlassen. Bei „Nein“ wird nur der Funktionscode zurückgesetzt und das Modul endet; Ausnahmen des Popups werden nicht ausgewertet."
+}

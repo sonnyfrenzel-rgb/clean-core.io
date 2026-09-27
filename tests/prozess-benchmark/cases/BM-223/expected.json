@@ -1,0 +1,543 @@
+{
+  "id": "BM-223",
+  "title": "Kostenstellen für Ist-Primärkosten sperren",
+  "classes": [
+    "K01",
+    "K15"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "CSKS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 26,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:26"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CSKS",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:56"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-223-B01",
+      "text": "Es werden alle am Tagesdatum gültigen Kostenstellen des eingegebenen Kostenrechnungskreises im gewählten Bereich gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-223-B02",
+      "text": "Findet der Report keine Kostenstelle, bricht er mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-223-B03",
+      "text": "Kostenstellen, die bereits für Ist-Primärkosten gesperrt sind, werden übersprungen und gezählt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-223-B04",
+      "text": "Für jede weitere Kostenstelle wird die Änderungsberechtigung geprüft; fehlt sie, wird „Keine Berechtigung“ protokolliert und die Kostenstelle ausgelassen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-223-B05",
+      "text": "Im Testlauf wird je Kostenstelle nur protokolliert, dass sie gesperrt würde.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-223-B06",
+      "text": "Im Echtlauf wird das Sperrkennzeichen für Ist-Primärkosten direkt im Kostenstellenstamm gesetzt und gezählt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-223-B07",
+      "text": "Nach der Schleife werden die Änderungen festgeschrieben und die Anzahl gesperrter und übersprungener Kostenstellen gemeldet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        {
+          "file": "source.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:65"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Gültige Kostenstellen des Kostenrechnungskreises lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Kostenstellen gefunden?"
+      },
+      {
+        "id": "me",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Fehlermeldung: keine Kostenstellen"
+      },
+      {
+        "id": "mee",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Kostenstellen durchlaufen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Bereits gesperrt?"
+      },
+      {
+        "id": "au",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        "meaning": "Änderungsberechtigung für Kostenstelle prüfen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Berechtigung fehlt?"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Fehlende Berechtigung protokollieren"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        "meaning": "Testlauf-Zeile protokollieren"
+      },
+      {
+        "id": "u",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "Sperrkennzeichen Ist-Primärkosten setzen"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        "meaning": "Änderungen festschreiben"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:65"
+        },
+        "meaning": "Anzahl gesperrt und übersprungen melden"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:65"
+        },
+        "meaning": "Reportende"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        "meaning": "Protokollroutine"
+      },
+      {
+        "id": "pw",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "Protokollzeile ausgeben"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        "meaning": "Ende Protokollroutine"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "me",
+        "condition": "gt_ks IS INITIAL"
+      },
+      {
+        "from": "me",
+        "to": "mee",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "g1",
+        "condition": "next row"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "gs_ks-bkzkp = 'X'"
+      },
+      {
+        "from": "g1",
+        "to": "au",
+        "condition": "else"
+      },
+      {
+        "from": "au",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "c1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "c1",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g2",
+        "to": "g3",
+        "condition": "else"
+      },
+      {
+        "from": "g3",
+        "to": "c2",
+        "condition": "p_test = 'X'"
+      },
+      {
+        "from": "c2",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "u",
+        "condition": "else"
+      },
+      {
+        "from": "u",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ps",
+        "to": "pw",
+        "condition": "always"
+      },
+      {
+        "from": "pw",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "cm",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cm",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:60 — kein Fachsatz „nur erfolgreich gesperrte Kostenstellen werden gezählt“ (sy-subrc des UPDATE wird nicht ausgewertet)",
+    "source.abap:64 — kein Fachsatz „im Testlauf wird nichts festgeschrieben“ als Wirkung einer Verzweigung (COMMIT WORK läuft immer; im Testlauf gibt es nur nichts zu schreiben)",
+    "source.abap:56 — kein Fachsatz „Sperre über Stammdatenpflege KS02 mit Änderungsbeleg“ (direktes UPDATE, der Kommentar nennt BDC nur als verworfenen Weg)"
+  ],
+  "processDescription": "Der Abschlussreport wird mit Kostenrechnungskreis, Kostenstellenbereich und Testlaufkennzeichen gestartet. Er liest die am Tagesdatum gültigen Kostenstellen; findet er keine, bricht er mit Fehlermeldung ab. Jede bereits für Ist-Primärkosten gesperrte Kostenstelle wird übersprungen und gezählt. Für die übrigen prüft er die Änderungsberechtigung K_CSKS; ohne Berechtigung schreibt die Protokollroutine eine Zeile, und die Kostenstelle wird ausgelassen. Im Testlauf protokolliert er nur, dass gesperrt würde; im Echtlauf setzt er das Sperrkennzeichen direkt in CSKS und zählt mit. Am Ende folgt COMMIT WORK und eine Erfolgsmeldung mit der Zahl gesperrter und übersprungener Kostenstellen."
+}

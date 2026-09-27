@@ -1,0 +1,27 @@
+{
+  "id": "BM-202",
+  "title": "Freier Lagerortbestand mit lokaler Ausnahmeklasse",
+  "domain": "MM",
+  "band": "einfach",
+  "loc": 43,
+  "constructs": [
+    "REPORT",
+    "lokale Ausnahmeklasse",
+    "RAISE EXCEPTION",
+    "TRY/CATCH",
+    "SELECT SINGLE",
+    "MESSAGE DISPLAY LIKE"
+  ],
+  "scenario": "Hilfsreport im Lager, der vor dem Kommissionieren den frei verwendbaren Bestand eines Lagerorts zeigt.",
+  "s4_issues": [
+    "MARD-Bestandsfelder in S/4 nur über Kompatibilitätsview (Quelle MATDOC)",
+    "Materialnummer 40 Zeichen"
+  ],
+  "wave": 3,
+  "module": "MM",
+  "edge_constructs": [
+    "RAISE EXCEPTION in Methode, CATCH im Aufrufer",
+    "MESSAGE TYPE S DISPLAY LIKE E"
+  ],
+  "oo": true
+}

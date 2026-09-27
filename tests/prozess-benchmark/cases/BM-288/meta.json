@@ -1,0 +1,37 @@
+{
+  "id": "BM-288",
+  "title": "Kasse: Barverkauf im editierbaren Grid mit Preisnachlese und Sofortauftrag",
+  "domain": "Kasse / Barverkauf am Schalter",
+  "band": "komplex",
+  "loc": 259,
+  "constructs": [
+    "lokale Klasse mit Ereignisbehandler data_changed",
+    "CL_GUI_ALV_GRID editierbar",
+    "register_edit_event",
+    "check_changed_data",
+    "add_protocol_entry/modify_cell",
+    "REDUCE",
+    "VALUE FOR",
+    "CHECK in Methode",
+    "funktionaler Methodenaufruf in IF",
+    "POPUP_TO_CONFIRM",
+    "BAPI_SALESORDER_CREATEFROMDAT2"
+  ],
+  "scenario": "Schalterkasse eines Großhändlers, an der Laufkunden bar kaufen; jeder Bon wird als Sofortauftrag an einen CPD-Kunden gebucht und im Z-Kassenjournal vermerkt.",
+  "s4_issues": [
+    "Direktlesen A004/KONP statt Preisfindung/Conditions-API",
+    "MATNR 40 Zeichen im Grid",
+    "CPD-Kunde: in S/4 Business Partner",
+    "SAP-GUI-Grid nicht in Fiori"
+  ],
+  "wave": 3,
+  "module": "SD",
+  "edge_constructs": [
+    "CONTINUE in Schleife als next iteration",
+    "CHECK in Methode verlässt die Methode",
+    "Methodenaufruf in Bedingung",
+    "check_changed_data löst Ereignis aus",
+    "auskommentierter Refresh"
+  ],
+  "oo": true
+}

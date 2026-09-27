@@ -1,0 +1,21 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten cnt",
+      "before": "action zpp_conf_parallel_f01.abap:28 (Gestartetes Paket zählen); Kanten cs->cnt [WHEN 0], cnt->de [always]",
+      "after": "entfernt",
+      "why": "f01:28 (gv_sent = gv_sent + 1) ist eine reine Zähler-Zuweisung - laut Brief kein Knoten; Fachsatz B04 bleibt.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante cs->de",
+      "before": "—",
+      "after": "[WHEN 0]",
+      "why": "Ersatz für cnt: nach erfolgreichem Start verlässt EXIT die DO-Schleife zum ENDFORM.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

@@ -1,0 +1,729 @@
+{
+  "id": "BM-264",
+  "title": "Zeitdatei-Import mit Wiederaufsetzpunkt",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZHR_IF_CHKPT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:50"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZHR_TIME_STG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:65"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZHR_IF_CHKPT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 70,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:70"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-264-B01",
+      "text": "Für die Zeitdatei wird geprüft, ob ein Wiederaufsetzpunkt aus einem abgebrochenen Lauf existiert; dann wird ab der Zeile danach fortgesetzt und darauf hingewiesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-264-B02",
+      "text": "Lässt sich die Datei auf dem Applikationsserver nicht öffnen, bricht der Report mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-264-B03",
+      "text": "Die Datei wird Zeile für Zeile bis zum Dateiende gelesen; Zeilen bis zum Wiederaufsetzpunkt werden übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-264-B04",
+      "text": "Für jede Zeile wird geprüft, ob die Personalnummer zum Buchungsdatum eine gültige Organisationszuordnung hat; sonst wird die Zeile als Fehler ausgegeben und übergangen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-264-B05",
+      "text": "Gültige Zeitsätze werden mit Personalnummer, Datum, Stunden und Status N (neu) in die Staging-Tabelle geschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-264-B06",
+      "text": "Nach jedem vollen Paket wird die erreichte Zeilennummer als Wiederaufsetzpunkt gespeichert und zusammen mit den Zeitsätzen festgeschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        },
+        {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-264-B07",
+      "text": "Ist die Datei vollständig gelesen, wird der Wiederaufsetzpunkt gelöscht, festgeschrieben und die Zahl übernommener und fehlerhafter Sätze ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        },
+        {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Wiederaufsetzpunkt der Datei lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Wiederaufsetzpunkt vorhanden?"
+      },
+      {
+        "id": "mi",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Hinweis: Wiederaufsetzen nach Zeile n"
+      },
+      {
+        "id": "od",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Eingangsdatei öffnen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Datei nicht lesbar?"
+      },
+      {
+        "id": "me",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Fehler: Datei kann nicht geöffnet werden"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Dateizeilen einzeln verarbeiten"
+      },
+      {
+        "id": "rd",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        "meaning": "Nächste Zeile lesen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Dateiende erreicht?"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        },
+        "meaning": "Zeile schon in früherem Lauf verarbeitet?"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        "meaning": "Mitarbeiter zum Datum im Organisationszuordnungs-Infotyp prüfen"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        "meaning": "Personalnummer unbekannt?"
+      },
+      {
+        "id": "we",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "Fehlerzeile protokollieren"
+      },
+      {
+        "id": "ins",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:65"
+        },
+        "meaning": "Zeitsatz mit Status N in Staging schreiben"
+      },
+      {
+        "id": "g6",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        },
+        "meaning": "Paketgrenze erreicht?"
+      },
+      {
+        "id": "cd",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        },
+        "meaning": "Eingangsdatei schließen"
+      },
+      {
+        "id": "mod",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        "meaning": "Wiederaufsetzpunkt fortschreiben"
+      },
+      {
+        "id": "cw1",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        },
+        "meaning": "Paket festschreiben"
+      },
+      {
+        "id": "del",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Wiederaufsetzpunkt löschen"
+      },
+      {
+        "id": "cw2",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        },
+        "meaning": "Rest festschreiben"
+      },
+      {
+        "id": "sum",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        },
+        "meaning": "Anzahl übernommen/fehlerhaft ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        },
+        "meaning": "Ende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "mi",
+        "to": "od",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "od",
+        "condition": "else"
+      },
+      {
+        "from": "od",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "me",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "me",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "lp",
+        "to": "rd",
+        "condition": "next row"
+      },
+      {
+        "from": "rd",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "cd",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g3",
+        "to": "g4",
+        "condition": "else"
+      },
+      {
+        "from": "g4",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g4",
+        "to": "q2",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "g5",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "we",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "we",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g5",
+        "to": "ins",
+        "condition": "else"
+      },
+      {
+        "from": "ins",
+        "to": "g6",
+        "condition": "always"
+      },
+      {
+        "from": "g6",
+        "to": "mod",
+        "condition": "lv_lineno MOD p_pack = 0"
+      },
+      {
+        "from": "mod",
+        "to": "cw1",
+        "condition": "always"
+      },
+      {
+        "from": "cw1",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g6",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "del",
+        "to": "cw2",
+        "condition": "always"
+      },
+      {
+        "from": "cw2",
+        "to": "sum",
+        "condition": "always"
+      },
+      {
+        "from": "sum",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "mi",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "cd",
+        "to": "del",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:65 — kein Fachsatz „Zeiten werden in der Zeitwirtschaft (Infotyp 2002/CATS) gebucht“ (nur Staging-Tabelle mit Status N)",
+    "source.abap:71 — kein Fachsatz „jede Zeile wird sofort festgeschrieben“ (Commit nur an Paketgrenzen, Zeilennummer MOD Paketgröße)",
+    "source.abap:77 — kein Fachsatz „Datei wird gelöscht oder archiviert“ (gelöscht wird nur der Wiederaufsetzpunkt)"
+  ],
+  "processDescription": "Der Report wird nachts eingeplant und liest die Exportdatei der Zeiterfassungsterminals vom Applikationsserver. Zuerst sucht er einen Wiederaufsetzpunkt für diese Datei; gibt es einen, setzt er nach der dort gespeicherten Zeilennummer auf und meldet das. Kann die Datei nicht geöffnet werden, bricht er mit Fehlermeldung ab. Jede Zeile wird in Personalnummer, Datum und Stunden zerlegt und gegen die Organisationszuordnung geprüft; unbekannte Personalnummern werden ausgegeben und übergangen. Gültige Sätze gehen mit Status N in eine Staging-Tabelle. An jeder Paketgrenze wird der Wiederaufsetzpunkt fortgeschrieben und alles festgeschrieben, sodass ein Abbruch höchstens das laufende Paket kostet. Am Dateiende wird der Wiederaufsetzpunkt gelöscht, festgeschrieben und eine Summe ausgegeben."
+}

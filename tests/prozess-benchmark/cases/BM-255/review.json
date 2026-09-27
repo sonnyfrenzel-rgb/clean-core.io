@@ -1,0 +1,35 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante lk_g -> lk_l",
+      "before": "next iteration",
+      "after": "else",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway trägt ihre Bedingung (Sonst-Zweig des IF ohne ELSE); next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante cb_g2 -> cb_l",
+      "before": "next iteration",
+      "after": "else",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway trägt ihre Bedingung (Sonst-Zweig des IF ohne ELSE); next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten cr_m",
+      "before": "action zbp_r_umbuchung_lhc.abap:63: Neue Auftragsnummer zurückmelden; Kanten ['n_e->cr_m[always]', 'cr_m->cr_l[next iteration]']",
+      "after": "entfernt; neue Kanten ['n_e -> cr_l [next iteration]']",
+      "why": "APPEND in die RAP-Tabelle mapped ist reine Schlüsselzuordnung (%cid -> Nummer) ohne Flusswirkung; die Nummernvergabe trägt n_nr. Der Fachsatz B03 bleibt auf Zeile 63 verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten bu_st",
+      "before": "action zbp_r_umbuchung_lhc.abap:146: Status „zu buchen“ (P) setzen; Kanten ['bu_g->bu_st[else]', 'bu_st->bu_a[always]']",
+      "after": "entfernt; neue Kanten ['bu_g -> bu_a [else]']",
+      "why": "Reine, unbedingte Zuweisung an die lokale Struktur; die fachliche Wirkung (Status „zu buchen“ im Puffer) trägt der folgende Aufruf aendern (bu_a). Der Fachsatz B10 bleibt auf Zeile 146 verankert.",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": []
+}

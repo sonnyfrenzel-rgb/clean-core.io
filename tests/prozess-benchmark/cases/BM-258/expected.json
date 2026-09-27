@@ -1,0 +1,1656 @@
+{
+  "id": "BM-258",
+  "title": "ABC-Analyse des Verbrauchswerts je Werk: AMDP-Rechenkern, parallele RFC-Aufgaben, Ergebnis und MARC-Kennzeichen",
+  "classes": [
+    "K01",
+    "K02",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "T001W",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_abc_report.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_abc_report.abap:27"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MSEG",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_abc_amdp.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_abc_amdp.abap:50"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_ABC_ERGEBNIS",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_mm_abc_werk.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_mm_abc_werk.abap:45"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARC",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "z_mm_abc_werk.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_mm_abc_werk.abap:50"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_MM_ABC_WERK",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_abc_runner.abap",
+        "line": 61,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_abc_runner.abap:61"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_MM_ABC_AMDP",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_mm_abc_werk.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_mm_abc_werk.abap:20"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-258-B01",
+      "text": "Als Zeitraum werden die letzten 365 Tage bis heute vorgeschlagen.",
+      "anchors": [
+        {
+          "file": "zmm_abc_report.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-258-B02",
+      "text": "Die Grenze für A muss unter der Grenze für B liegen und B darf 100 % nicht übersteigen; sonst bleibt das Selektionsbild mit Fehlermeldung stehen.",
+      "anchors": [
+        {
+          "file": "zmm_abc_report.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:22"
+        },
+        {
+          "file": "zmm_abc_report.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-258-B03",
+      "text": "Gibt es zu den gewählten Werken keinen Werkseintrag, endet der Lauf mit der Meldung ZMM_ABC 011.",
+      "anchors": [
+        {
+          "file": "zmm_abc_report.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:27"
+        },
+        {
+          "file": "zmm_abc_report.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:30"
+        },
+        {
+          "file": "zmm_abc_report.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-258-B04",
+      "text": "Mehrere Werke werden auf Wunsch parallel in der RFC-Servergruppe parallel_generators analysiert, sonst nacheinander.",
+      "anchors": [
+        {
+          "file": "zmm_abc_report.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:41"
+        },
+        {
+          "file": "zmm_abc_report.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:42"
+        },
+        {
+          "file": "zmm_abc_report.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-258-B05",
+      "text": "Jedes Werk wird als eigene Aufgabe gestartet; ist keine Sitzung frei, wird bis zu 10 Sekunden gewartet und erneut versucht, ist die Gruppe nicht erreichbar, wird das Werk im eigenen Prozess gerechnet.",
+      "anchors": [
+        {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:84"
+        },
+        {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:101"
+        },
+        {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:107"
+        },
+        {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:110"
+        }
+      ]
+    },
+    {
+      "id": "BM-258-B06",
+      "text": "Nach dem Verteilen wird höchstens 30 Minuten auf alle Aufgaben gewartet; das Ergebnis jeder beendeten Aufgabe wird abgeholt, abgebrochene Werke erhalten den Status ABBRUCH.",
+      "anchors": [
+        {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:127"
+        },
+        {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:135"
+        },
+        {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:143"
+        },
+        {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:145"
+        }
+      ]
+    },
+    {
+      "id": "BM-258-B07",
+      "text": "Der Verbrauchswert eines Materials ist der Hauswährungswert seiner Warenausgänge an Kostenstelle, Auftrag und Lieferung (201, 261, 601) abzüglich deren Stornos im Zeitraum; nur Materialien mit positivem Verbrauch zählen.",
+      "anchors": [
+        {
+          "file": "z_mm_abc_werk.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:20"
+        },
+        {
+          "file": "zcl_mm_abc_amdp.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_amdp.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-258-B08",
+      "text": "Hat ein Werk keinen Verbrauch, wird es mit Status LEER zurückgemeldet und nichts gespeichert.",
+      "anchors": [
+        {
+          "file": "z_mm_abc_werk.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:27"
+        },
+        {
+          "file": "z_mm_abc_werk.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-258-B09",
+      "text": "Die Materialien werden nach Verbrauchswert absteigend sortiert; bis zum kumulierten Anteil der A-Grenze sind sie A, bis zur B-Grenze B, der Rest C.",
+      "anchors": [
+        {
+          "file": "z_mm_abc_werk.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:32"
+        },
+        {
+          "file": "zcl_mm_abc_amdp.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_amdp.abap:67"
+        },
+        {
+          "file": "zcl_mm_abc_amdp.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_amdp.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-258-B10",
+      "text": "Das Ergebnis je Material wird mit Wert, kumuliertem Anteil und Klasse zum Stichtag (Periodenende) gespeichert.",
+      "anchors": [
+        {
+          "file": "z_mm_abc_werk.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-258-B11",
+      "text": "Auf Wunsch wird das ABC-Kennzeichen jedes Materials im Werkssegment des Materialstamms direkt überschrieben; danach wird festgeschrieben.",
+      "anchors": [
+        {
+          "file": "z_mm_abc_werk.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:47"
+        },
+        {
+          "file": "z_mm_abc_werk.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:50"
+        },
+        {
+          "file": "z_mm_abc_werk.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-258-B12",
+      "text": "Je Werk werden Anzahl der A-, B- und C-Materialien und der Wert der A-Materialien zurückgemeldet.",
+      "anchors": [
+        {
+          "file": "z_mm_abc_werk.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-258-B13",
+      "text": "Am Ende erscheinen die Summen je Werk mit Status als ALV-Liste, im Hintergrund ersatzweise als einfache Liste.",
+      "anchors": [
+        {
+          "file": "zmm_abc_report.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:61"
+        },
+        {
+          "file": "zmm_abc_report.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:64"
+        },
+        {
+          "file": "zmm_abc_report.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:68"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "in_s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:16"
+        },
+        "meaning": "Selektionsbild wird vorbelegt"
+      },
+      {
+        "id": "in_e",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:19"
+        },
+        "meaning": "Ende Vorbelegung"
+      },
+      {
+        "id": "as_s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:21"
+        },
+        "meaning": "Eingabeprüfung"
+      },
+      {
+        "id": "as_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:22"
+        },
+        "meaning": "Grenzen unplausibel?"
+      },
+      {
+        "id": "as_o",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:23"
+        },
+        "meaning": "Fehler ZMM_ABC 010 (A < B <= 100 %)"
+      },
+      {
+        "id": "as_x",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:23"
+        },
+        "meaning": "Selektionsbild bleibt stehen"
+      },
+      {
+        "id": "as_e",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:24"
+        },
+        "meaning": "Eingaben in Ordnung"
+      },
+      {
+        "id": "so_s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:26"
+        },
+        "meaning": "Analyse startet"
+      },
+      {
+        "id": "so_r",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:27"
+        },
+        "meaning": "Gewählte Werke lesen"
+      },
+      {
+        "id": "so_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:30"
+        },
+        "meaning": "Keine Werke?"
+      },
+      {
+        "id": "so_o",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:31"
+        },
+        "meaning": "Meldung ZMM_ABC 011"
+      },
+      {
+        "id": "so_x",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:32"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "so_n",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:35"
+        },
+        "meaning": "Steuerobjekt mit Zeitraum, Grenzen und MARC-Schalter anlegen"
+      },
+      {
+        "id": "so_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:41"
+        },
+        "meaning": "Parallel und mehr als ein Werk?"
+      },
+      {
+        "id": "so_p",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:42"
+        },
+        "meaning": "Werke parallel analysieren"
+      },
+      {
+        "id": "so_se",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:44"
+        },
+        "meaning": "Werke nacheinander analysieren"
+      },
+      {
+        "id": "so_e",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:45"
+        },
+        "meaning": "Ende Verarbeitung"
+      },
+      {
+        "id": "eo_s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:47"
+        },
+        "meaning": "Ausgabe"
+      },
+      {
+        "id": "eo_ck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:48"
+        },
+        "meaning": "Wurde analysiert?"
+      },
+      {
+        "id": "eo_pf",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:49"
+        },
+        "meaning": "Ergebnisliste ausgeben"
+      },
+      {
+        "id": "eo_e",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:49"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "f_s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:54"
+        },
+        "meaning": "Ergebnisliste"
+      },
+      {
+        "id": "f_f",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:61"
+        },
+        "meaning": "ALV-Liste der Summen je Werk erzeugen"
+      },
+      {
+        "id": "f_d",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:64"
+        },
+        "meaning": "Anzahl A/B/C, A-Wert und Status je Werk anzeigen"
+      },
+      {
+        "id": "f_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:67"
+        },
+        "meaning": "Ersatzausgabe je Werk (ohne ALV)"
+      },
+      {
+        "id": "f_w",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:68"
+        },
+        "meaning": "Summenzeile als Liste"
+      },
+      {
+        "id": "f_e",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_abc_report.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_abc_report.abap:71"
+        },
+        "meaning": "Ende Ausgabe"
+      },
+      {
+        "id": "k_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:48"
+        },
+        "meaning": "Steuerobjekt anlegen"
+      },
+      {
+        "id": "k_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:54"
+        },
+        "meaning": "Rückkehr"
+      },
+      {
+        "id": "se_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:57"
+        },
+        "meaning": "Serielle Verarbeitung"
+      },
+      {
+        "id": "se_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:60"
+        },
+        "meaning": "Jedes Werk"
+      },
+      {
+        "id": "se_c",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:61"
+        },
+        "meaning": "Werk synchron analysieren"
+      },
+      {
+        "id": "se_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:73"
+        },
+        "meaning": "Alle Werke analysiert"
+      },
+      {
+        "id": "pa_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:76"
+        },
+        "meaning": "Parallele Verarbeitung"
+      },
+      {
+        "id": "pa_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:80"
+        },
+        "meaning": "Jedes Werk verteilen"
+      },
+      {
+        "id": "pa_do",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:83"
+        },
+        "meaning": "Startversuch wiederholen"
+      },
+      {
+        "id": "pa_c",
+        "type": "async",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:84"
+        },
+        "meaning": "Werk als Aufgabe in der RFC-Gruppe starten (Rückruf on_ende)"
+      },
+      {
+        "id": "pa_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:101"
+        },
+        "meaning": "Gestartet / keine Ressource / Gruppe nicht erreichbar?"
+      },
+      {
+        "id": "pa_w",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:107"
+        },
+        "meaning": "Bis zu 10 s auf eine frei werdende Aufgabe warten"
+      },
+      {
+        "id": "pa_c2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:110"
+        },
+        "meaning": "Werk ersatzweise synchron analysieren"
+      },
+      {
+        "id": "pa_wa",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:127"
+        },
+        "meaning": "Höchstens 30 min auf alle offenen Aufgaben warten"
+      },
+      {
+        "id": "pa_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:128"
+        },
+        "meaning": "Ende Verteilung"
+      },
+      {
+        "id": "oe_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:131"
+        },
+        "meaning": "Rückruf: eine Werksaufgabe ist beendet"
+      },
+      {
+        "id": "oe_r",
+        "type": "async",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:135"
+        },
+        "meaning": "Ergebnis der Aufgabe abholen"
+      },
+      {
+        "id": "oe_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:143"
+        },
+        "meaning": "Aufgabe abgebrochen?"
+      },
+      {
+        "id": "oe_a",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:145"
+        },
+        "meaning": "Werk mit Status ABBRUCH vermerken"
+      },
+      {
+        "id": "oe_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_abc_runner.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_runner.abap:149"
+        },
+        "meaning": "Summe übernehmen, offene Aufgaben herunterzählen"
+      },
+      {
+        "id": "w_s",
+        "type": "start",
+        "anchor": {
+          "file": "z_mm_abc_werk.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:1"
+        },
+        "meaning": "ABC-Analyse eines Werks"
+      },
+      {
+        "id": "w_c1",
+        "type": "call",
+        "anchor": {
+          "file": "z_mm_abc_werk.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:20"
+        },
+        "meaning": "Verbrauchswerte berechnen"
+      },
+      {
+        "id": "w_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mm_abc_werk.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:27"
+        },
+        "meaning": "Kein Verbrauch?"
+      },
+      {
+        "id": "w_x",
+        "type": "end",
+        "anchor": {
+          "file": "z_mm_abc_werk.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:29"
+        },
+        "meaning": "Werk mit Status LEER zurück"
+      },
+      {
+        "id": "w_c2",
+        "type": "call",
+        "anchor": {
+          "file": "z_mm_abc_werk.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:32"
+        },
+        "meaning": "Materialien klassifizieren"
+      },
+      {
+        "id": "w_m",
+        "type": "write",
+        "anchor": {
+          "file": "z_mm_abc_werk.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:45"
+        },
+        "meaning": "Ergebnis je Material mit Stichtag speichern"
+      },
+      {
+        "id": "w_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mm_abc_werk.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:47"
+        },
+        "meaning": "Materialstamm fortschreiben?"
+      },
+      {
+        "id": "w_l",
+        "type": "loop",
+        "anchor": {
+          "file": "z_mm_abc_werk.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:49"
+        },
+        "meaning": "Jedes Material"
+      },
+      {
+        "id": "w_u",
+        "type": "write",
+        "anchor": {
+          "file": "z_mm_abc_werk.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:50"
+        },
+        "meaning": "ABC-Kennzeichen im Werkssegment überschreiben"
+      },
+      {
+        "id": "w_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_mm_abc_werk.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:56"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "w_l2",
+        "type": "loop",
+        "anchor": {
+          "file": "z_mm_abc_werk.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:58"
+        },
+        "meaning": "Summen bilden"
+      },
+      {
+        "id": "w_cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mm_abc_werk.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:59"
+        },
+        "meaning": "Klasse A (Anzahl und Wert) / B / sonst C zählen"
+      },
+      {
+        "id": "w_e",
+        "type": "end",
+        "anchor": {
+          "file": "z_mm_abc_werk.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_abc_werk.abap:71"
+        },
+        "meaning": "Summe mit Status OK zurück"
+      },
+      {
+        "id": "v_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_abc_amdp.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_amdp.abap:45"
+        },
+        "meaning": "Verbrauchswert je Material"
+      },
+      {
+        "id": "v_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_abc_amdp.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_amdp.abap:50"
+        },
+        "meaning": "Warenausgänge 201/261/601 abzüglich Stornos 202/262/602 im Zeitraum summieren, nur positive Summen"
+      },
+      {
+        "id": "v_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_abc_amdp.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_amdp.abap:60"
+        },
+        "meaning": "Verbrauchswerte zurück"
+      },
+      {
+        "id": "kl_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_abc_amdp.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_amdp.abap:63"
+        },
+        "meaning": "Klassifizierung"
+      },
+      {
+        "id": "kl_a",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_abc_amdp.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_amdp.abap:67"
+        },
+        "meaning": "Kumulierten Wertanteil in absteigender Wertfolge berechnen"
+      },
+      {
+        "id": "kl_b",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_abc_amdp.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_amdp.abap:75"
+        },
+        "meaning": "A bis Grenze A, B bis Grenze B, sonst C"
+      },
+      {
+        "id": "kl_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_abc_amdp.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_abc_amdp.abap:85"
+        },
+        "meaning": "Klassen zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "as_s",
+        "to": "as_g",
+        "condition": "always"
+      },
+      {
+        "from": "as_g",
+        "to": "as_o",
+        "condition": "p_grza >= p_grzb OR p_grzb > 100"
+      },
+      {
+        "from": "as_o",
+        "to": "as_x",
+        "condition": "always"
+      },
+      {
+        "from": "as_g",
+        "to": "as_e",
+        "condition": "else"
+      },
+      {
+        "from": "so_s",
+        "to": "so_r",
+        "condition": "always"
+      },
+      {
+        "from": "so_r",
+        "to": "so_g",
+        "condition": "always"
+      },
+      {
+        "from": "so_g",
+        "to": "so_o",
+        "condition": "gt_werke IS INITIAL"
+      },
+      {
+        "from": "so_o",
+        "to": "so_x",
+        "condition": "always"
+      },
+      {
+        "from": "so_g",
+        "to": "so_n",
+        "condition": "else"
+      },
+      {
+        "from": "so_n",
+        "to": "k_s",
+        "condition": "always"
+      },
+      {
+        "from": "k_s",
+        "to": "k_e",
+        "condition": "always"
+      },
+      {
+        "from": "k_e",
+        "to": "so_g2",
+        "condition": "always"
+      },
+      {
+        "from": "so_g2",
+        "to": "so_p",
+        "condition": "p_par = abap_true AND lines( gt_werke ) > 1"
+      },
+      {
+        "from": "so_g2",
+        "to": "so_se",
+        "condition": "else"
+      },
+      {
+        "from": "so_p",
+        "to": "pa_s",
+        "condition": "always"
+      },
+      {
+        "from": "so_se",
+        "to": "se_s",
+        "condition": "always"
+      },
+      {
+        "from": "pa_e",
+        "to": "so_e",
+        "condition": "always"
+      },
+      {
+        "from": "se_e",
+        "to": "so_e",
+        "condition": "always"
+      },
+      {
+        "from": "se_s",
+        "to": "se_l",
+        "condition": "always"
+      },
+      {
+        "from": "se_l",
+        "to": "se_c",
+        "condition": "next row"
+      },
+      {
+        "from": "se_c",
+        "to": "w_s",
+        "condition": "always"
+      },
+      {
+        "from": "w_x",
+        "to": "se_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "w_e",
+        "to": "se_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "se_l",
+        "to": "se_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pa_s",
+        "to": "pa_l",
+        "condition": "always"
+      },
+      {
+        "from": "pa_l",
+        "to": "pa_do",
+        "condition": "next row"
+      },
+      {
+        "from": "pa_do",
+        "to": "pa_c",
+        "condition": "next row"
+      },
+      {
+        "from": "pa_c",
+        "to": "w_s",
+        "condition": "always"
+      },
+      {
+        "from": "pa_c",
+        "to": "pa_g",
+        "condition": "always"
+      },
+      {
+        "from": "pa_g",
+        "to": "pa_l",
+        "condition": "WHEN 0"
+      },
+      {
+        "from": "pa_g",
+        "to": "pa_w",
+        "condition": "WHEN 1"
+      },
+      {
+        "from": "pa_w",
+        "to": "pa_do",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pa_g",
+        "to": "pa_c2",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "pa_c2",
+        "to": "w_s",
+        "condition": "always"
+      },
+      {
+        "from": "w_x",
+        "to": "pa_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "w_e",
+        "to": "pa_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pa_l",
+        "to": "pa_wa",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pa_wa",
+        "to": "pa_e",
+        "condition": "always"
+      },
+      {
+        "from": "oe_s",
+        "to": "oe_r",
+        "condition": "always"
+      },
+      {
+        "from": "oe_r",
+        "to": "oe_g",
+        "condition": "always"
+      },
+      {
+        "from": "oe_g",
+        "to": "oe_a",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "oe_g",
+        "to": "oe_e",
+        "condition": "else"
+      },
+      {
+        "from": "oe_a",
+        "to": "oe_e",
+        "condition": "always"
+      },
+      {
+        "from": "w_s",
+        "to": "w_c1",
+        "condition": "always"
+      },
+      {
+        "from": "w_c1",
+        "to": "v_s",
+        "condition": "always"
+      },
+      {
+        "from": "v_s",
+        "to": "v_r",
+        "condition": "always"
+      },
+      {
+        "from": "v_r",
+        "to": "v_e",
+        "condition": "always"
+      },
+      {
+        "from": "v_e",
+        "to": "w_g",
+        "condition": "always"
+      },
+      {
+        "from": "w_g",
+        "to": "w_x",
+        "condition": "lt_verbrauch IS INITIAL"
+      },
+      {
+        "from": "w_g",
+        "to": "w_c2",
+        "condition": "else"
+      },
+      {
+        "from": "w_c2",
+        "to": "kl_s",
+        "condition": "always"
+      },
+      {
+        "from": "kl_s",
+        "to": "kl_a",
+        "condition": "always"
+      },
+      {
+        "from": "kl_a",
+        "to": "kl_b",
+        "condition": "always"
+      },
+      {
+        "from": "kl_b",
+        "to": "kl_e",
+        "condition": "always"
+      },
+      {
+        "from": "kl_e",
+        "to": "w_m",
+        "condition": "always"
+      },
+      {
+        "from": "w_m",
+        "to": "w_g2",
+        "condition": "always"
+      },
+      {
+        "from": "w_g2",
+        "to": "w_l",
+        "condition": "iv_marc = abap_true"
+      },
+      {
+        "from": "w_g2",
+        "to": "w_cm",
+        "condition": "else"
+      },
+      {
+        "from": "w_l",
+        "to": "w_u",
+        "condition": "next row"
+      },
+      {
+        "from": "w_u",
+        "to": "w_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "w_l",
+        "to": "w_cm",
+        "condition": "no more rows"
+      },
+      {
+        "from": "w_cm",
+        "to": "w_l2",
+        "condition": "always"
+      },
+      {
+        "from": "w_l2",
+        "to": "w_cs",
+        "condition": "next row"
+      },
+      {
+        "from": "w_cs",
+        "to": "w_l2",
+        "condition": "WHEN 'A'"
+      },
+      {
+        "from": "w_l2",
+        "to": "w_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "eo_s",
+        "to": "eo_ck",
+        "condition": "always"
+      },
+      {
+        "from": "eo_ck",
+        "to": "eo_pf",
+        "condition": "go_runner IS BOUND"
+      },
+      {
+        "from": "eo_ck",
+        "to": "eo_e",
+        "condition": "else"
+      },
+      {
+        "from": "eo_pf",
+        "to": "f_s",
+        "condition": "always"
+      },
+      {
+        "from": "f_s",
+        "to": "f_f",
+        "condition": "always"
+      },
+      {
+        "from": "f_f",
+        "to": "f_d",
+        "condition": "always"
+      },
+      {
+        "from": "f_d",
+        "to": "f_e",
+        "condition": "always"
+      },
+      {
+        "from": "f_f",
+        "to": "f_l",
+        "condition": "cx_salv_msg"
+      },
+      {
+        "from": "f_l",
+        "to": "f_w",
+        "condition": "next row"
+      },
+      {
+        "from": "f_w",
+        "to": "f_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "f_l",
+        "to": "f_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "f_e",
+        "to": "eo_e",
+        "condition": "always"
+      },
+      {
+        "from": "w_cs",
+        "to": "w_l2",
+        "condition": "WHEN 'B'"
+      },
+      {
+        "from": "w_cs",
+        "to": "w_l2",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "in_s",
+        "to": "in_e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_mm_abc_runner.abap:127 — kein Fachsatz „jedes Werk erscheint in der Ergebnisliste“ (Aufgaben, die nach 30 Minuten noch laufen, fehlen in der Liste; ihr Ergebnis wird trotzdem in der Datenbank gespeichert)",
+    "z_mm_abc_werk.abap:50 — kein Fachsatz „ABC-Kennzeichen wird über die Materialstammpflege mit Änderungsbeleg geändert“ (direktes UPDATE ohne Änderungsbeleg, ohne Sperre)",
+    "z_mm_abc_werk.abap:45 — kein Fachsatz „alte Ergebnisse des Werks werden gelöscht“ (MODIFY überschreibt nur gleiche Schlüssel; Materialien ohne Verbrauch behalten alte Sätze)",
+    "zcl_mm_abc_amdp.abap:50 — kein Fachsatz „Verbrauch in Menge“ (summiert wird DMBTR, der Hauswährungswert)"
+  ],
+  "processDescription": "Ein monatlicher Hintergrundjob klassifiziert die Materialien je Werk nach Verbrauchswert. Vorgeschlagen werden die letzten 365 Tage; unplausible Grenzen werden am Selektionsbild abgewiesen. Ohne passende Werke endet der Lauf mit Meldung. Mehrere Werke werden auf Wunsch parallel als RFC-Aufgaben gestartet: fehlt eine freie Sitzung, wird kurz gewartet und erneut versucht, ist die Servergruppe nicht erreichbar, wird das Werk synchron gerechnet; danach wird höchstens 30 Minuten auf alle Ergebnisse gewartet, abgebrochene Werke erhalten den Status ABBRUCH. Je Werk berechnet eine Datenbankprozedur den Verbrauchswert je Material aus Warenausgängen abzüglich Stornos; ohne Verbrauch wird das Werk als leer gemeldet. Die Materialien werden nach kumuliertem Wertanteil in A, B und C eingeteilt, das Ergebnis wird gespeichert und auf Wunsch das ABC-Kennzeichen im Materialstamm direkt überschrieben, dann festgeschrieben. Zum Schluss erscheinen die Summen je Werk als Liste."
+}

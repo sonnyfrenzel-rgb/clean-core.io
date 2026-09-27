@@ -1,0 +1,2385 @@
+{
+  "id": "BM-295",
+  "title": "Kassen-Tagesabschluss: Soll/Ist-Abgleich, Differenzbegründung und FI-Buchung über Buchungsklassen mit Sperre und Änderungsbeleg",
+  "classes": [
+    "K07",
+    "K09",
+    "K12",
+    "K03",
+    "K11"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ENQUEUE_EZPOS_ABSCHL",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zpos_tagesabschluss.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpos_tagesabschluss.abap:25"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZPOS_ABSCHL",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zpos_tagesabschluss_f01.abap",
+        "line": 131,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpos_tagesabschluss_f01.abap:131"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPOS_ABSCHLUSS",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zpos_tagesabschluss_f01.abap",
+        "line": 103,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpos_tagesabschluss_f01.abap:103"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPOS_JOURNAL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zpos_tagesabschluss.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpos_tagesabschluss.abap:58"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPOS_BEWEGUNG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zpos_tagesabschluss.abap",
+        "line": 61,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpos_tagesabschluss.abap:61"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpos_tagesabschluss_f01.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpos_tagesabschluss_f01.abap:39"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_DOCUMENT_POST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpos_tagesabschluss_f01.abap",
+        "line": 81,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpos_tagesabschluss_f01.abap:81"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpos_tagesabschluss_f01.abap",
+        "line": 91,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpos_tagesabschluss_f01.abap:91"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpos_tagesabschluss_f01.abap",
+        "line": 117,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpos_tagesabschluss_f01.abap:117"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPOS_ABSCHL_WRITE_DOCUMENT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zpos_tagesabschluss_f01.abap",
+        "line": 106,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpos_tagesabschluss_f01.abap:106"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_POS_BON_ANZEIGEN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zpos_tagesabschluss_c01.abap",
+        "line": 33,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpos_tagesabschluss_c01.abap:33"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_GUI_ALV_GRID",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpos_tagesabschluss.abap",
+        "line": 94,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpos_tagesabschluss.abap:94"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-295-B01",
+      "text": "Kasse und Tag werden für den Abschluss gesperrt; läuft dort bereits ein Abschluss, wird das Programm mit einer Abbruchmeldung beendet, die den sperrenden Benutzer nennt.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:25"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:33"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B02",
+      "text": "Ist der Tag für diese Kasse bereits gebucht abgeschlossen, wird die Sperre aufgehoben, dies in Fehleroptik gemeldet und nichts weiter getan.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:37"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:40"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:41"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:42"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B03",
+      "text": "Der Anfangsbestand ist der Endbestand des letzten Abschlusses vor dem Stichtag; ist dieser noch nicht gebucht, erhält der Filialleiter einen Hinweis.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:47"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:52"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:53"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B04",
+      "text": "Es werden die Bons und die Einlagen und Entnahmen des Tages gelesen; der Sollbestand ergibt sich aus Anfangsbestand plus Bonsumme plus Einlagen minus Entnahmen, Bewegungen unbekannter Art zählen nicht.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:58"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:61"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:65"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B05",
+      "text": "Das Abschlussbild zeigt das Bonjournal in einem Grid mit einer zusätzlichen Drucktaste zur Bonanzeige.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:76"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:93"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:94"
+        },
+        {
+          "file": "zpos_tagesabschluss_c01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c01.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B06",
+      "text": "Mit der Drucktaste wird der erste markierte Bon im Bonanzeigebaustein geöffnet; ohne Markierung wird der Baustein mit leeren Werten gerufen.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss_c01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c01.abap:28"
+        },
+        {
+          "file": "zpos_tagesabschluss_c01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c01.abap:29"
+        },
+        {
+          "file": "zpos_tagesabschluss_c01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c01.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B07",
+      "text": "Bei der Zählprüfung wird die Differenz Ist minus Soll gebildet.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:108"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:10"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B08",
+      "text": "Liegt der Betrag der Differenz über der Toleranz von 5,00, gibt es eine Warnung mit der Differenz; fehlt dann ein Differenzgrund, bricht eine Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:12"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:14"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:15"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:16"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B09",
+      "text": "Innerhalb der Toleranz wird die Differenz nur als Statusmeldung angezeigt.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B10",
+      "text": "Beim Buchen wird zuerst die Zählung erneut geprüft und dann bestätigt, dass nach dem Abschluss keine Bons mehr möglich sind; ohne Bestätigung wird nichts gebucht.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:111"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:112"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:39"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B11",
+      "text": "Der Beleg der Belegart KA bucht die Bonsumme von der Kasse gegen Erlöse.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:57"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B12",
+      "text": "Jede Einlage oder Entnahme wird über ihre Buchungsklasse als Kassenzeile und Gegenzeile ergänzt; eine Bewegung unbekannter Art bricht die Buchung mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:63"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:65"
+        },
+        {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:48"
+        },
+        {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:54"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:67"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B13",
+      "text": "Eine Einlage erhöht die Kasse gegen das Geldtransitkonto; eine Entnahme mindert die Kasse gegen Geldtransit, wenn sie zur Bank geht, sonst gegen ein Aufwandskonto.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:63"
+        },
+        {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:84"
+        },
+        {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:93"
+        },
+        {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B14",
+      "text": "Eine Kassendifferenz wird mit dem Grund als Text gegen das Differenzkonto gebucht.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B15",
+      "text": "Der Beleg wird in der Finanzbuchhaltung gebucht; bei Fehler oder Abbruch wird zurückgerollt, die Fehlermeldung als Information in Fehleroptik gezeigt und die Buchung beendet.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:81"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:90"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:91"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:93"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:94"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B16",
+      "text": "Sonst wird der Abschluss mit Anfang, Soll, Ist, Differenz, Grund, Endbestand und Belegnummer als gebucht gespeichert und ein Änderungsbeleg mit altem und neuem Stand zur Verbuchung vorgemerkt.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:97"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:103"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:106"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B17",
+      "text": "FI-Beleg, Abschlusssatz und Änderungsbeleg werden gemeinsam festgeschrieben; danach wird die Sperre aufgehoben, Kasse und Belegnummer werden gemeldet und das Abschlussbild verlassen.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:117"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:121"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:122"
+        },
+        {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:123"
+        }
+      ]
+    },
+    {
+      "id": "BM-295-B18",
+      "text": "Zurück, Beenden oder Abbrechen hebt die Sperre auf und verlässt das Bild ohne Buchung.",
+      "anchors": [
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:113"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:114"
+        },
+        {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:115"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s0",
+        "type": "start",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:19"
+        },
+        "meaning": "Abschluss starten"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:25"
+        },
+        "meaning": "Kasse/Tag sperren"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:33"
+        },
+        "meaning": "Gesperrt?"
+      },
+      {
+        "id": "ma",
+        "type": "output",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:34"
+        },
+        "meaning": "Abbruchmeldung gesperrt"
+      },
+      {
+        "id": "mae",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:34"
+        },
+        "meaning": "Programm abgebrochen"
+      },
+      {
+        "id": "rs",
+        "type": "read",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:37"
+        },
+        "meaning": "Abschluss des Tages lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:40"
+        },
+        "meaning": "Schon gebucht?"
+      },
+      {
+        "id": "pe1",
+        "type": "call",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:41"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:42"
+        },
+        "meaning": "Meldung schon abgeschlossen"
+      },
+      {
+        "id": "r0",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:43"
+        },
+        "meaning": "Beenden"
+      },
+      {
+        "id": "sel",
+        "type": "loop",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:47"
+        },
+        "meaning": "Letzter Abschluss vor Stichtag"
+      },
+      {
+        "id": "gv",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:52"
+        },
+        "meaning": "Vortag nicht gebucht?"
+      },
+      {
+        "id": "mi",
+        "type": "output",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:53"
+        },
+        "meaning": "Hinweis Vortag"
+      },
+      {
+        "id": "rj",
+        "type": "read",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:58"
+        },
+        "meaning": "Bons des Tages lesen"
+      },
+      {
+        "id": "rb",
+        "type": "read",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:61"
+        },
+        "meaning": "Einlagen/Entnahmen lesen"
+      },
+      {
+        "id": "ab",
+        "type": "action",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:65"
+        },
+        "meaning": "Bonsumme bilden"
+      },
+      {
+        "id": "as",
+        "type": "action",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:69"
+        },
+        "meaning": "Sollbestand berechnen"
+      },
+      {
+        "id": "cs",
+        "type": "output",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:76"
+        },
+        "meaning": "Abschlussbild"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:76"
+        },
+        "meaning": "Ende nach Verlassen"
+      },
+      {
+        "id": "so",
+        "type": "start",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:81"
+        },
+        "meaning": "PBO Abschlussbild"
+      },
+      {
+        "id": "gg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:85"
+        },
+        "meaning": "Grid angelegt?"
+      },
+      {
+        "id": "sh",
+        "type": "action",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:93"
+        },
+        "meaning": "Toolbar- und Kommandobehandler registrieren"
+      },
+      {
+        "id": "disp",
+        "type": "output",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:94"
+        },
+        "meaning": "Bonjournal anzeigen"
+      },
+      {
+        "id": "eo",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:100"
+        },
+        "meaning": "Ende PBO"
+      },
+      {
+        "id": "sp",
+        "type": "start",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:105"
+        },
+        "meaning": "PAI Abschlussbild"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:107"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "pz1",
+        "type": "call",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:109"
+        },
+        "meaning": "Zählung prüfen"
+      },
+      {
+        "id": "pz2",
+        "type": "call",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:111"
+        },
+        "meaning": "Zählung prüfen vor Buchung"
+      },
+      {
+        "id": "pb",
+        "type": "call",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:112"
+        },
+        "meaning": "Abschluss buchen"
+      },
+      {
+        "id": "pe2",
+        "type": "call",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:114"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "lv",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:115"
+        },
+        "meaning": "Bild verlassen"
+      },
+      {
+        "id": "ep",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss.abap:119"
+        },
+        "meaning": "Ende PAI"
+      },
+      {
+        "id": "stb",
+        "type": "start",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c01.abap:18"
+        },
+        "meaning": "Grid-Toolbar aufbauen"
+      },
+      {
+        "id": "etb",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c01.abap:22"
+        },
+        "meaning": "Ende Toolbar"
+      },
+      {
+        "id": "su",
+        "type": "start",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c01.abap:24"
+        },
+        "meaning": "Grid-Funktion"
+      },
+      {
+        "id": "gu",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c01.abap:27"
+        },
+        "meaning": "Welche Funktion?"
+      },
+      {
+        "id": "gsr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c01.abap:29"
+        },
+        "meaning": "Markierte Zeilen holen"
+      },
+      {
+        "id": "zb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c01.abap:33"
+        },
+        "meaning": "Bon anzeigen"
+      },
+      {
+        "id": "eu",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c01.abap:38"
+        },
+        "meaning": "Ende Grid-Funktion"
+      },
+      {
+        "id": "se",
+        "type": "start",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:47"
+        },
+        "meaning": "Buchungsklasse erzeugen"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:48"
+        },
+        "meaning": "Art der Bewegung?"
+      },
+      {
+        "id": "rz",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:54"
+        },
+        "meaning": "Ausnahme unbekannte Art"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:58"
+        },
+        "meaning": "Objekt zurück"
+      },
+      {
+        "id": "sg",
+        "type": "start",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:61"
+        },
+        "meaning": "Buchungszeilen ergänzen"
+      },
+      {
+        "id": "cbs",
+        "type": "call",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:63"
+        },
+        "meaning": "Vorzeichenbetrag (Redefinition)"
+      },
+      {
+        "id": "ck",
+        "type": "call",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:71"
+        },
+        "meaning": "Gegenkonto (Redefinition)"
+      },
+      {
+        "id": "eg",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:78"
+        },
+        "meaning": "Ende Zeilen"
+      },
+      {
+        "id": "sbe",
+        "type": "start",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:83"
+        },
+        "meaning": "Einlage: Betrag positiv"
+      },
+      {
+        "id": "ebe",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:85"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "ske",
+        "type": "start",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:86"
+        },
+        "meaning": "Einlage: Geldtransit"
+      },
+      {
+        "id": "eke",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:88"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "sba",
+        "type": "start",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:92"
+        },
+        "meaning": "Entnahme: Betrag negativ"
+      },
+      {
+        "id": "eba",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:94"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "ska",
+        "type": "start",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:95"
+        },
+        "meaning": "Entnahme: Konto nach Grund"
+      },
+      {
+        "id": "gka",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:97"
+        },
+        "meaning": "Abschöpfung zur Bank?"
+      },
+      {
+        "id": "eka",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss_c02.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_c02.abap:102"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "sz",
+        "type": "start",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:8"
+        },
+        "meaning": "Zählung prüfen"
+      },
+      {
+        "id": "ad",
+        "type": "action",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:10"
+        },
+        "meaning": "Differenz berechnen"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:12"
+        },
+        "meaning": "Über Toleranz?"
+      },
+      {
+        "id": "mw2",
+        "type": "output",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:14"
+        },
+        "meaning": "Warnung Differenz"
+      },
+      {
+        "id": "gg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:15"
+        },
+        "meaning": "Grund fehlt?"
+      },
+      {
+        "id": "me2",
+        "type": "output",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:16"
+        },
+        "meaning": "Fehler Grund fehlt"
+      },
+      {
+        "id": "me2e",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:16"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "ms2",
+        "type": "output",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:19"
+        },
+        "meaning": "Differenz melden"
+      },
+      {
+        "id": "ez",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:22"
+        },
+        "meaning": "Ende Zählprüfung"
+      },
+      {
+        "id": "sb",
+        "type": "start",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:27"
+        },
+        "meaning": "Abschluss buchen"
+      },
+      {
+        "id": "pop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:39"
+        },
+        "meaning": "Rückfrage Abschluss"
+      },
+      {
+        "id": "gck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:47"
+        },
+        "meaning": "Bestätigt?"
+      },
+      {
+        "id": "lpg",
+        "type": "loop",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:63"
+        },
+        "meaning": "Einlagen/Entnahmen"
+      },
+      {
+        "id": "cf2",
+        "type": "call",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:65"
+        },
+        "meaning": "Buchungsklasse erzeugen"
+      },
+      {
+        "id": "mc2",
+        "type": "output",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:67"
+        },
+        "meaning": "Fehler unbekannte Art"
+      },
+      {
+        "id": "mc2e",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:67"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "cgl",
+        "type": "call",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:69"
+        },
+        "meaning": "Zeilen ergänzen"
+      },
+      {
+        "id": "gd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:73"
+        },
+        "meaning": "Kassendifferenz?"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:81"
+        },
+        "meaning": "FI-Beleg buchen"
+      },
+      {
+        "id": "gr2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:90"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "rb2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:91"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "mi3",
+        "type": "output",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:93"
+        },
+        "meaning": "Fehler anzeigen"
+      },
+      {
+        "id": "r2",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:94"
+        },
+        "meaning": "Buchung beenden"
+      },
+      {
+        "id": "rab",
+        "type": "read",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:97"
+        },
+        "meaning": "Alten Abschlussstand lesen"
+      },
+      {
+        "id": "wm",
+        "type": "write",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:103"
+        },
+        "meaning": "Abschluss als gebucht speichern"
+      },
+      {
+        "id": "cd",
+        "type": "update_task",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:106"
+        },
+        "meaning": "Änderungsbeleg vormerken"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:117"
+        },
+        "meaning": "Gemeinsam festschreiben"
+      },
+      {
+        "id": "pe3",
+        "type": "call",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:121"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "ms3",
+        "type": "output",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:122"
+        },
+        "meaning": "Belegnummer melden"
+      },
+      {
+        "id": "lv2",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:123"
+        },
+        "meaning": "Bild verlassen"
+      },
+      {
+        "id": "eb",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:125"
+        },
+        "meaning": "Ende Buchen (nach Abbruch der Rückfrage)"
+      },
+      {
+        "id": "sen",
+        "type": "start",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:130"
+        },
+        "meaning": "Entsperren"
+      },
+      {
+        "id": "dq",
+        "type": "lock",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:131"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "een",
+        "type": "end",
+        "anchor": {
+          "file": "zpos_tagesabschluss_f01.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpos_tagesabschluss_f01.abap:135"
+        },
+        "meaning": "Ende Entsperren"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s0",
+        "to": "lk",
+        "condition": "always"
+      },
+      {
+        "from": "lk",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "ma",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ma",
+        "to": "mae",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "rs",
+        "condition": "else"
+      },
+      {
+        "from": "rs",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "pe1",
+        "condition": "sy-subrc = 0 AND ls_abs-status = 'G'"
+      },
+      {
+        "from": "pe1",
+        "to": "sen",
+        "condition": "always"
+      },
+      {
+        "from": "een",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "r0",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "sel",
+        "condition": "else"
+      },
+      {
+        "from": "sel",
+        "to": "gv",
+        "condition": "next row"
+      },
+      {
+        "from": "gv",
+        "to": "mi",
+        "condition": "ls_vortag-status <> 'G'"
+      },
+      {
+        "from": "mi",
+        "to": "sel",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gv",
+        "to": "sel",
+        "condition": "next iteration"
+      },
+      {
+        "from": "sel",
+        "to": "rj",
+        "condition": "no more rows"
+      },
+      {
+        "from": "rj",
+        "to": "rb",
+        "condition": "always"
+      },
+      {
+        "from": "rb",
+        "to": "ab",
+        "condition": "always"
+      },
+      {
+        "from": "ab",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "as",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "so",
+        "to": "gg",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "sh",
+        "condition": "go_grid IS INITIAL"
+      },
+      {
+        "from": "sh",
+        "to": "disp",
+        "condition": "always"
+      },
+      {
+        "from": "disp",
+        "to": "eo",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "eo",
+        "condition": "else"
+      },
+      {
+        "from": "sp",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "pz1",
+        "condition": "WHEN 'ZAEHL'"
+      },
+      {
+        "from": "g",
+        "to": "pz2",
+        "condition": "WHEN 'BUCHEN'"
+      },
+      {
+        "from": "g",
+        "to": "pe2",
+        "condition": "WHEN 'BACK' OR 'EXIT' OR 'CANC'"
+      },
+      {
+        "from": "g",
+        "to": "ep",
+        "condition": "else"
+      },
+      {
+        "from": "pz1",
+        "to": "sz",
+        "condition": "always"
+      },
+      {
+        "from": "pz2",
+        "to": "sz",
+        "condition": "always"
+      },
+      {
+        "from": "ez",
+        "to": "ep",
+        "condition": "always"
+      },
+      {
+        "from": "ez",
+        "to": "pb",
+        "condition": "always"
+      },
+      {
+        "from": "pb",
+        "to": "sb",
+        "condition": "always"
+      },
+      {
+        "from": "r2",
+        "to": "ep",
+        "condition": "always"
+      },
+      {
+        "from": "eb",
+        "to": "ep",
+        "condition": "always"
+      },
+      {
+        "from": "pe2",
+        "to": "sen",
+        "condition": "always"
+      },
+      {
+        "from": "een",
+        "to": "lv",
+        "condition": "always"
+      },
+      {
+        "from": "stb",
+        "to": "etb",
+        "condition": "always"
+      },
+      {
+        "from": "su",
+        "to": "gu",
+        "condition": "always"
+      },
+      {
+        "from": "gu",
+        "to": "gsr",
+        "condition": "WHEN 'BON'"
+      },
+      {
+        "from": "gu",
+        "to": "eu",
+        "condition": "else"
+      },
+      {
+        "from": "gsr",
+        "to": "zb",
+        "condition": "always"
+      },
+      {
+        "from": "zb",
+        "to": "eu",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "gc",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "ee",
+        "condition": "WHEN 'E'"
+      },
+      {
+        "from": "gc",
+        "to": "ee",
+        "condition": "WHEN 'A'"
+      },
+      {
+        "from": "gc",
+        "to": "rz",
+        "condition": "else"
+      },
+      {
+        "from": "sg",
+        "to": "cbs",
+        "condition": "always"
+      },
+      {
+        "from": "cbs",
+        "to": "sbe",
+        "condition": "always"
+      },
+      {
+        "from": "cbs",
+        "to": "sba",
+        "condition": "always"
+      },
+      {
+        "from": "sbe",
+        "to": "ebe",
+        "condition": "always"
+      },
+      {
+        "from": "sba",
+        "to": "eba",
+        "condition": "always"
+      },
+      {
+        "from": "ebe",
+        "to": "ck",
+        "condition": "always"
+      },
+      {
+        "from": "eba",
+        "to": "ck",
+        "condition": "always"
+      },
+      {
+        "from": "ck",
+        "to": "ske",
+        "condition": "always"
+      },
+      {
+        "from": "ck",
+        "to": "ska",
+        "condition": "always"
+      },
+      {
+        "from": "ske",
+        "to": "eke",
+        "condition": "always"
+      },
+      {
+        "from": "ska",
+        "to": "gka",
+        "condition": "always"
+      },
+      {
+        "from": "gka",
+        "to": "eka",
+        "condition": "ms_bew-grund = 'BANK'"
+      },
+      {
+        "from": "gka",
+        "to": "eka",
+        "condition": "else"
+      },
+      {
+        "from": "eke",
+        "to": "eg",
+        "condition": "always"
+      },
+      {
+        "from": "eka",
+        "to": "eg",
+        "condition": "always"
+      },
+      {
+        "from": "sz",
+        "to": "ad",
+        "condition": "always"
+      },
+      {
+        "from": "ad",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "mw2",
+        "condition": "abs( gv_diff ) > gc_toleranz"
+      },
+      {
+        "from": "mw2",
+        "to": "gg2",
+        "condition": "always"
+      },
+      {
+        "from": "gg2",
+        "to": "me2",
+        "condition": "gv_grund IS INITIAL"
+      },
+      {
+        "from": "me2",
+        "to": "me2e",
+        "condition": "always"
+      },
+      {
+        "from": "gg2",
+        "to": "ez",
+        "condition": "else"
+      },
+      {
+        "from": "gt",
+        "to": "ms2",
+        "condition": "else"
+      },
+      {
+        "from": "ms2",
+        "to": "ez",
+        "condition": "always"
+      },
+      {
+        "from": "sb",
+        "to": "pop",
+        "condition": "always"
+      },
+      {
+        "from": "pop",
+        "to": "gck",
+        "condition": "always"
+      },
+      {
+        "from": "gck",
+        "to": "lpg",
+        "condition": "gv_answer = '1'"
+      },
+      {
+        "from": "gck",
+        "to": "eb",
+        "condition": "else"
+      },
+      {
+        "from": "lpg",
+        "to": "cf2",
+        "condition": "next row"
+      },
+      {
+        "from": "cf2",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "ee",
+        "to": "cgl",
+        "condition": "always"
+      },
+      {
+        "from": "rz",
+        "to": "mc2",
+        "condition": "lcx_kasse"
+      },
+      {
+        "from": "mc2",
+        "to": "mc2e",
+        "condition": "always"
+      },
+      {
+        "from": "cgl",
+        "to": "sg",
+        "condition": "always"
+      },
+      {
+        "from": "eg",
+        "to": "lpg",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lpg",
+        "to": "gd",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gd",
+        "to": "bapi",
+        "condition": "gv_diff <> 0"
+      },
+      {
+        "from": "gd",
+        "to": "bapi",
+        "condition": "else"
+      },
+      {
+        "from": "bapi",
+        "to": "gr2",
+        "condition": "always"
+      },
+      {
+        "from": "gr2",
+        "to": "rb2",
+        "condition": "line_exists( lt_return[ type = 'E' ] ) OR line_exists( lt_return[ type = 'A' ] )"
+      },
+      {
+        "from": "rb2",
+        "to": "mi3",
+        "condition": "always"
+      },
+      {
+        "from": "mi3",
+        "to": "r2",
+        "condition": "always"
+      },
+      {
+        "from": "gr2",
+        "to": "rab",
+        "condition": "else"
+      },
+      {
+        "from": "rab",
+        "to": "wm",
+        "condition": "always"
+      },
+      {
+        "from": "wm",
+        "to": "cd",
+        "condition": "always"
+      },
+      {
+        "from": "cd",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "pe3",
+        "condition": "always"
+      },
+      {
+        "from": "pe3",
+        "to": "sen",
+        "condition": "always"
+      },
+      {
+        "from": "een",
+        "to": "ms3",
+        "condition": "always"
+      },
+      {
+        "from": "ms3",
+        "to": "lv2",
+        "condition": "always"
+      },
+      {
+        "from": "sen",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "dq",
+        "to": "een",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zpos_tagesabschluss.abap:53 — kein Pfadende und kein Fachsatz „Abschluss wird ohne gebuchten Vortag verhindert“; die Information unterbricht nicht.",
+    "zpos_tagesabschluss_f01.abap:14 — kein Fachsatz „Differenz über Toleranz wird abgelehnt“; nur ein fehlender Grund bricht ab.",
+    "zpos_tagesabschluss_f01.abap:106 — kein Fachsatz „Änderungsbeleg ist geschrieben“ an dieser Stelle; er wird zur Verbuchung vorgemerkt und erst mit dem Commit ausgeführt.",
+    "zpos_tagesabschluss.abap:69 — kein Aufruf der Buchungsklassen bei der Sollberechnung; das Vorzeichen wird hier per COND aus der Art bestimmt."
+  ],
+  "processDescription": "Der Tagesabschluss einer Filialkasse sperrt Kasse und Tag und bricht mit einer A-Meldung ab, wenn bereits jemand abschließt. Ist der Tag schon gebucht, hebt er die Sperre auf, meldet das und endet. Aus dem letzten Abschluss vor dem Stichtag (SELECT … ENDSELECT) übernimmt er den Anfangsbestand und weist nur hin, wenn dieser nicht gebucht ist. Bons und Einlagen/Entnahmen ergeben den Sollbestand. Das Bild zeigt das Bonjournal im Grid mit einer Toolbar-Drucktaste, die einen markierten Bon anzeigt. Die Zählprüfung bildet die Differenz Ist minus Soll, warnt über 5,00 und verlangt dann einen Grund. Beim Buchen folgen erneute Prüfung, Bestätigung, ein FI-Beleg KA mit Bonsumme, Zeilen je Bewegung aus der Klassenhierarchie Einlage/Entnahme (unbekannte Art bricht ab) und ggf. einer Differenzzeile. Bei Fehler wird zurückgerollt und gemeldet; sonst werden Abschlusssatz und Änderungsbeleg geschrieben, alles gemeinsam festgeschrieben, entsperrt, gemeldet und das Bild verlassen. Zurück entsperrt und verlässt ohne Buchung."
+}

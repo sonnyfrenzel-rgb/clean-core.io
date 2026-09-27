@@ -1,0 +1,2096 @@
+{
+  "id": "BM-254",
+  "title": "Gateway Deep Insert: Kundenauftrag mit Positionen aus dem B2B-Webshop anlegen",
+  "classes": [
+    "K01",
+    "K02",
+    "K03",
+    "K09",
+    "K12",
+    "K15"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_auftrag_pruefung.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_auftrag_pruefung.abap:44"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNVV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_auftrag_pruefung.abap",
+        "line": 57,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_auftrag_pruefung.abap:57"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MVKE",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_auftrag_pruefung.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_auftrag_pruefung.abap:75"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNKK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_auftrag_pruefung.abap",
+        "line": 99,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_auftrag_pruefung.abap:99"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_SALESORDER_CREATEFROMDAT2",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_zsd_auftrag_dpc_ext.abap",
+        "line": 99,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zsd_auftrag_dpc_ext.abap:99"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_zsd_auftrag_dpc_ext.abap",
+        "line": 119,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zsd_auftrag_dpc_ext.abap:119"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_zsd_auftrag_dpc_ext.abap",
+        "line": 112,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zsd_auftrag_dpc_ext.abap:112"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_EIL_BENACHRICHTIGUNG",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_zsd_auftrag_dpc_ext.abap",
+        "line": 125,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zsd_auftrag_dpc_ext.abap:125"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CONVERSION_EXIT_MATN1_INPUT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_auftrag_mapper.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_auftrag_mapper.abap:65"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CONVERSION_EXIT_CUNIT_INPUT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_auftrag_mapper.abap",
+        "line": 77,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_auftrag_mapper.abap:77"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCX_SD_AUFTRAG",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_auftrag_pruefung.abap",
+        "line": 114,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_auftrag_pruefung.abap:114"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-254-B01",
+      "text": "Der Webshop übergibt einen Kundenauftrag mit Kopf und Positionen in einem Aufruf.",
+      "anchors": [
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-254-B02",
+      "text": "Ein Auftrag ohne Positionen wird mit der Meldung „Auftrag ohne Positionen“ abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:46"
+        },
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-254-B03",
+      "text": "Der angemeldete Benutzer braucht die Berechtigung, im angegebenen Vertriebsbereich Aufträge anzulegen; sonst wird abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:50"
+        },
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:55"
+        },
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-254-B04",
+      "text": "Ein unbekannter, zum Löschen vorgemerkter oder auftragsgesperrter Kunde wird abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:44"
+        },
+        {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:48"
+        },
+        {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-254-B05",
+      "text": "Ist der Kunde im Vertriebsbereich nicht angelegt oder dort gesperrt, wird ebenfalls abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:57"
+        },
+        {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-254-B06",
+      "text": "Jedes Material muss im Vertriebsbereich angelegt sein und darf nicht den Vertriebsstatus Z9 (gesperrt) haben; Auslaufmaterial (Z1) wird ohne Einschränkung angenommen.",
+      "anchors": [
+        {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:75"
+        },
+        {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:81"
+        },
+        {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-254-B07",
+      "text": "Kopf, Positionen, Einteilungen und Partner werden aus den Shopdaten aufgebaut: Auftragsart aus dem Shop oder ZOR, bei Eilauftrag Versandbedingung Express.",
+      "anchors": [
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:72"
+        },
+        {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:33"
+        },
+        {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:42"
+        },
+        {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-254-B08",
+      "text": "Positionen erhalten Nummern in Zehnerschritten, Material und Einheit werden ins interne Format gewandelt, und jede Position bekommt eine Einteilung zum eigenen oder zum Kopf-Wunschtermin.",
+      "anchors": [
+        {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:55"
+        },
+        {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:65"
+        },
+        {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-254-B09",
+      "text": "Eine Position mit Menge kleiner oder gleich null führt zur Abweisung des ganzen Auftrags.",
+      "anchors": [
+        {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:58"
+        },
+        {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-254-B10",
+      "text": "Warenempfänger ist ein abweichend gepflegter Empfänger, sonst der Auftraggeber.",
+      "anchors": [
+        {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:115"
+        }
+      ]
+    },
+    {
+      "id": "BM-254-B11",
+      "text": "Jeder Prüf- oder Mappingfehler wird mit seinem Meldungstext an den Webshop zurückgegeben und die Anlage abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:114"
+        },
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:80"
+        },
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:155"
+        }
+      ]
+    },
+    {
+      "id": "BM-254-B12",
+      "text": "Der Auftragswert wird aus Menge mal Shoppreis geschätzt und mit Forderungen und Sonderobligo gegen das Kreditlimit des Kreditkontrollbereichs 1000 geprüft; ohne gepflegtes Limit gilt der Kredit als in Ordnung.",
+      "anchors": [
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:84"
+        },
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:87"
+        },
+        {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:99"
+        },
+        {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:106"
+        },
+        {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:109"
+        }
+      ]
+    },
+    {
+      "id": "BM-254-B13",
+      "text": "Bei Überschreitung wird der Auftrag trotzdem angelegt, aber mit Liefersperre Z1, und der Webshop erhält die Warnung ZSD_ORDER 040.",
+      "anchors": [
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:90"
+        },
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:91"
+        }
+      ]
+    },
+    {
+      "id": "BM-254-B14",
+      "text": "Der Kundenauftrag wird angelegt; ohne Auftragsnummer wird verworfen und der Webshop erhält die BAPI-Meldungen als Fehler.",
+      "anchors": [
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:99"
+        },
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:111"
+        },
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:112"
+        },
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:113"
+        },
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:116"
+        }
+      ]
+    },
+    {
+      "id": "BM-254-B15",
+      "text": "Sonst wird der Auftrag synchron festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:119"
+        }
+      ]
+    },
+    {
+      "id": "BM-254-B16",
+      "text": "Bei einem Eilauftrag wird die Versandabteilung in einer eigenen Session benachrichtigt, ohne auf das Ergebnis zu warten.",
+      "anchors": [
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:124"
+        },
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:125"
+        }
+      ]
+    },
+    {
+      "id": "BM-254-B17",
+      "text": "Der Webshop erhält den Auftrag mit Auftragsnummer und Positionsnummern in Zehnerschritten zurück.",
+      "anchors": [
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:136"
+        },
+        {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:139"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "d_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:23"
+        },
+        "meaning": "Webshop sendet Auftrag mit Positionen (Deep Insert)"
+      },
+      {
+        "id": "d_in",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:44"
+        },
+        "meaning": "Auftrag samt Positionen übernehmen"
+      },
+      {
+        "id": "d_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:46"
+        },
+        "meaning": "Keine Positionen?"
+      },
+      {
+        "id": "d_c1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:47"
+        },
+        "meaning": "Abbruch „Auftrag ohne Positionen“"
+      },
+      {
+        "id": "d_a",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:50"
+        },
+        "meaning": "Anlageberechtigung im Vertriebsbereich prüfen"
+      },
+      {
+        "id": "d_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:55"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "d_c2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:56"
+        },
+        "meaning": "Abbruch „keine Berechtigung“"
+      },
+      {
+        "id": "d_c3",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:62"
+        },
+        "meaning": "Kunde prüfen"
+      },
+      {
+        "id": "d_c4",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:66"
+        },
+        "meaning": "Materialien prüfen"
+      },
+      {
+        "id": "d_c5",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:72"
+        },
+        "meaning": "Auftragskopf aufbauen"
+      },
+      {
+        "id": "d_c6",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:73"
+        },
+        "meaning": "Positionen und Einteilungen aufbauen"
+      },
+      {
+        "id": "d_c7",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:77"
+        },
+        "meaning": "Partner aufbauen"
+      },
+      {
+        "id": "d_c8",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:80"
+        },
+        "meaning": "Prüf-/Mappingfehler als Abbruch melden"
+      },
+      {
+        "id": "d_w",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:84"
+        },
+        "meaning": "Auftragswert = Summe Menge × Shoppreis"
+      },
+      {
+        "id": "d_ck",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:87"
+        },
+        "meaning": "Kreditlimit prüfen"
+      },
+      {
+        "id": "d_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:87"
+        },
+        "meaning": "Kreditlimit überschritten?"
+      },
+      {
+        "id": "d_lf",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:90"
+        },
+        "meaning": "Liefersperre Z1 (Kredit) setzen"
+      },
+      {
+        "id": "d_o1",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:91"
+        },
+        "meaning": "Warnung ZSD_ORDER 040 im Response-Header"
+      },
+      {
+        "id": "d_b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:99"
+        },
+        "meaning": "Kundenauftrag anlegen"
+      },
+      {
+        "id": "d_g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:111"
+        },
+        "meaning": "Keine Auftragsnummer?"
+      },
+      {
+        "id": "d_rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:112"
+        },
+        "meaning": "Anlage verwerfen"
+      },
+      {
+        "id": "d_o2",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:113"
+        },
+        "meaning": "BAPI-Meldungen in den Nachrichtencontainer"
+      },
+      {
+        "id": "d_c9",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:116"
+        },
+        "meaning": "Abbruch mit BAPI-Meldungen"
+      },
+      {
+        "id": "d_cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:119"
+        },
+        "meaning": "Auftrag festschreiben (synchron)"
+      },
+      {
+        "id": "d_g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:124"
+        },
+        "meaning": "Eilauftrag?"
+      },
+      {
+        "id": "d_as",
+        "type": "async",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:125"
+        },
+        "meaning": "Versand asynchron informieren (eigene Session, ohne Warten)"
+      },
+      {
+        "id": "d_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:134"
+        },
+        "meaning": "Jede Position der Antwort"
+      },
+      {
+        "id": "d_pn",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:136"
+        },
+        "meaning": "Auftragsnummer und Positionsnummer (10er-Schritte) eintragen"
+      },
+      {
+        "id": "d_o3",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:139"
+        },
+        "meaning": "Angelegten Auftrag mit Positionen an den Webshop zurückgeben"
+      },
+      {
+        "id": "d_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:141"
+        },
+        "meaning": "Ende Deep Insert"
+      },
+      {
+        "id": "b_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:144"
+        },
+        "meaning": "Abbruch vorbereiten"
+      },
+      {
+        "id": "b_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:147"
+        },
+        "meaning": "Vorgängerausnahme? / Text?"
+      },
+      {
+        "id": "b_o1",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:148"
+        },
+        "meaning": "Text der Vorgängerausnahme als Fehler"
+      },
+      {
+        "id": "b_o2",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:151"
+        },
+        "meaning": "Übergebenen Text als Fehler"
+      },
+      {
+        "id": "b_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zsd_auftrag_dpc_ext.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zsd_auftrag_dpc_ext.abap:155"
+        },
+        "meaning": "Geschäftsausnahme mit Nachrichtencontainer: Anlage abgewiesen"
+      },
+      {
+        "id": "pk_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:43"
+        },
+        "meaning": "Kundenprüfung"
+      },
+      {
+        "id": "pk_r1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:44"
+        },
+        "meaning": "Kunde mit Auftragssperre und Löschvormerkung lesen"
+      },
+      {
+        "id": "pk_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:48"
+        },
+        "meaning": "Kunde unbekannt?"
+      },
+      {
+        "id": "pk_f1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:49"
+        },
+        "meaning": "Fehler ZSD_ORDER 010"
+      },
+      {
+        "id": "pk_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:52"
+        },
+        "meaning": "Kunde zum Löschen vorgemerkt oder gesperrt?"
+      },
+      {
+        "id": "pk_f2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:53"
+        },
+        "meaning": "Fehler ZSD_ORDER 011"
+      },
+      {
+        "id": "pk_r2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:57"
+        },
+        "meaning": "Vertriebsbereichsdaten des Kunden lesen"
+      },
+      {
+        "id": "pk_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:64"
+        },
+        "meaning": "Nicht im Vertriebsbereich? / dort gesperrt?"
+      },
+      {
+        "id": "pk_f3",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:65"
+        },
+        "meaning": "Fehler ZSD_ORDER 012"
+      },
+      {
+        "id": "pk_f4",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:67"
+        },
+        "meaning": "Fehler ZSD_ORDER 011"
+      },
+      {
+        "id": "pk_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:69"
+        },
+        "meaning": "Kunde in Ordnung"
+      },
+      {
+        "id": "pm_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:72"
+        },
+        "meaning": "Materialprüfung"
+      },
+      {
+        "id": "pm_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:73"
+        },
+        "meaning": "Jede Position"
+      },
+      {
+        "id": "pm_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:75"
+        },
+        "meaning": "Vertriebsstatus des Materials lesen"
+      },
+      {
+        "id": "pm_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:81"
+        },
+        "meaning": "Material nicht im Vertrieb angelegt?"
+      },
+      {
+        "id": "pm_f1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:82"
+        },
+        "meaning": "Fehler ZSD_ORDER 020"
+      },
+      {
+        "id": "pm_c",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:85"
+        },
+        "meaning": "Vertriebsstatus gesperrt (Z9) / Auslauf (Z1)?"
+      },
+      {
+        "id": "pm_f2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:87"
+        },
+        "meaning": "Fehler ZSD_ORDER 021"
+      },
+      {
+        "id": "pm_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:94"
+        },
+        "meaning": "Materialien in Ordnung"
+      },
+      {
+        "id": "kr_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:97"
+        },
+        "meaning": "Kreditprüfung"
+      },
+      {
+        "id": "kr_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:99"
+        },
+        "meaning": "Kreditlimit, Forderungen und Sonderobligo lesen"
+      },
+      {
+        "id": "kr_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:104"
+        },
+        "meaning": "Kein Limit gepflegt?"
+      },
+      {
+        "id": "kr_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:106"
+        },
+        "meaning": "Kredit gilt als ok"
+      },
+      {
+        "id": "kr_a",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:109"
+        },
+        "meaning": "Ok, wenn Obligo plus Auftragswert das Limit nicht übersteigt"
+      },
+      {
+        "id": "kr_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:110"
+        },
+        "meaning": "Ergebnis zurückgeben"
+      },
+      {
+        "id": "f_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:113"
+        },
+        "meaning": "Prüffehler auslösen"
+      },
+      {
+        "id": "f_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_auftrag_pruefung.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_pruefung.abap:114"
+        },
+        "meaning": "Ausnahme ZCX_SD_AUFTRAG mit Meldung ZSD_ORDER"
+      },
+      {
+        "id": "mk_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:32"
+        },
+        "meaning": "Kopf aufbauen"
+      },
+      {
+        "id": "mk_a",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:33"
+        },
+        "meaning": "Auftragsart aus dem Shop, sonst ZOR"
+      },
+      {
+        "id": "mk_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:42"
+        },
+        "meaning": "Eilauftrag?"
+      },
+      {
+        "id": "mk_a2",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:43"
+        },
+        "meaning": "Versandbedingung Express (10)"
+      },
+      {
+        "id": "mk_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:45"
+        },
+        "meaning": "Kopf zurückgeben"
+      },
+      {
+        "id": "mp_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:48"
+        },
+        "meaning": "Positionen aufbauen"
+      },
+      {
+        "id": "mp_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:55"
+        },
+        "meaning": "Jede Shopposition"
+      },
+      {
+        "id": "mp_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:58"
+        },
+        "meaning": "Menge nicht positiv?"
+      },
+      {
+        "id": "mp_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:59"
+        },
+        "meaning": "Ausnahme ZSD_ORDER 030"
+      },
+      {
+        "id": "mp_c1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:65"
+        },
+        "meaning": "Materialnummer ins interne Format"
+      },
+      {
+        "id": "mp_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:73"
+        },
+        "meaning": "Konvertierung fehlgeschlagen? (dann Eingabe unverändert)"
+      },
+      {
+        "id": "mp_c2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:77"
+        },
+        "meaning": "Mengeneinheit ins interne Format"
+      },
+      {
+        "id": "mp_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:86"
+        },
+        "meaning": "Einheit unbekannt? (dann leer: Basiseinheit)"
+      },
+      {
+        "id": "mp_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:108"
+        },
+        "meaning": "Positionen, Änderungskennzeichen und Einteilungen zurückgeben"
+      },
+      {
+        "id": "pa_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:111"
+        },
+        "meaning": "Partner aufbauen"
+      },
+      {
+        "id": "pa_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:115"
+        },
+        "meaning": "Abweichender Warenempfänger?"
+      },
+      {
+        "id": "pa_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_auftrag_mapper.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_auftrag_mapper.abap:120"
+        },
+        "meaning": "Auftraggeber und Warenempfänger zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "d_s",
+        "to": "d_in",
+        "condition": "always"
+      },
+      {
+        "from": "d_in",
+        "to": "d_g1",
+        "condition": "always"
+      },
+      {
+        "from": "d_g1",
+        "to": "d_c1",
+        "condition": "ls_deep-toitems IS INITIAL"
+      },
+      {
+        "from": "d_c1",
+        "to": "b_s",
+        "condition": "always"
+      },
+      {
+        "from": "d_g1",
+        "to": "d_a",
+        "condition": "else"
+      },
+      {
+        "from": "d_a",
+        "to": "d_g2",
+        "condition": "always"
+      },
+      {
+        "from": "d_g2",
+        "to": "d_c2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "d_c2",
+        "to": "b_s",
+        "condition": "always"
+      },
+      {
+        "from": "d_g2",
+        "to": "d_c3",
+        "condition": "else"
+      },
+      {
+        "from": "d_c3",
+        "to": "pk_s",
+        "condition": "always"
+      },
+      {
+        "from": "pk_s",
+        "to": "pk_r1",
+        "condition": "always"
+      },
+      {
+        "from": "pk_r1",
+        "to": "pk_g1",
+        "condition": "always"
+      },
+      {
+        "from": "pk_g1",
+        "to": "pk_f1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pk_g1",
+        "to": "pk_g2",
+        "condition": "else"
+      },
+      {
+        "from": "pk_g2",
+        "to": "pk_f2",
+        "condition": "ls_kna1-loevm = abap_true OR ls_kna1-aufsd IS NOT INITIAL"
+      },
+      {
+        "from": "pk_g2",
+        "to": "pk_r2",
+        "condition": "else"
+      },
+      {
+        "from": "pk_r2",
+        "to": "pk_g3",
+        "condition": "always"
+      },
+      {
+        "from": "pk_g3",
+        "to": "pk_f3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pk_g3",
+        "to": "pk_f4",
+        "condition": "ls_knvv-aufsd IS NOT INITIAL"
+      },
+      {
+        "from": "pk_g3",
+        "to": "pk_e",
+        "condition": "else"
+      },
+      {
+        "from": "pk_f1",
+        "to": "f_s",
+        "condition": "always"
+      },
+      {
+        "from": "pk_f2",
+        "to": "f_s",
+        "condition": "always"
+      },
+      {
+        "from": "pk_f3",
+        "to": "f_s",
+        "condition": "always"
+      },
+      {
+        "from": "pk_f4",
+        "to": "f_s",
+        "condition": "always"
+      },
+      {
+        "from": "pk_e",
+        "to": "d_c4",
+        "condition": "always"
+      },
+      {
+        "from": "d_c4",
+        "to": "pm_s",
+        "condition": "always"
+      },
+      {
+        "from": "pm_s",
+        "to": "pm_l",
+        "condition": "always"
+      },
+      {
+        "from": "pm_l",
+        "to": "pm_r",
+        "condition": "next row"
+      },
+      {
+        "from": "pm_r",
+        "to": "pm_g1",
+        "condition": "always"
+      },
+      {
+        "from": "pm_g1",
+        "to": "pm_f1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pm_g1",
+        "to": "pm_c",
+        "condition": "else"
+      },
+      {
+        "from": "pm_c",
+        "to": "pm_f2",
+        "condition": "WHEN gc_vmsta_gesperrt"
+      },
+      {
+        "from": "pm_c",
+        "to": "pm_l",
+        "condition": "WHEN gc_vmsta_auslauf"
+      },
+      {
+        "from": "pm_f1",
+        "to": "f_s",
+        "condition": "always"
+      },
+      {
+        "from": "pm_f2",
+        "to": "f_s",
+        "condition": "always"
+      },
+      {
+        "from": "pm_l",
+        "to": "pm_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pm_e",
+        "to": "d_c5",
+        "condition": "always"
+      },
+      {
+        "from": "f_s",
+        "to": "f_x",
+        "condition": "always"
+      },
+      {
+        "from": "f_x",
+        "to": "d_c8",
+        "condition": "zcx_sd_auftrag"
+      },
+      {
+        "from": "d_c5",
+        "to": "mk_s",
+        "condition": "always"
+      },
+      {
+        "from": "mk_s",
+        "to": "mk_a",
+        "condition": "always"
+      },
+      {
+        "from": "mk_a",
+        "to": "mk_g",
+        "condition": "always"
+      },
+      {
+        "from": "mk_g",
+        "to": "mk_a2",
+        "condition": "is_deep-eilig = abap_true"
+      },
+      {
+        "from": "mk_g",
+        "to": "mk_e",
+        "condition": "else"
+      },
+      {
+        "from": "mk_a2",
+        "to": "mk_e",
+        "condition": "always"
+      },
+      {
+        "from": "mk_e",
+        "to": "d_c6",
+        "condition": "always"
+      },
+      {
+        "from": "d_c6",
+        "to": "mp_s",
+        "condition": "always"
+      },
+      {
+        "from": "mp_s",
+        "to": "mp_l",
+        "condition": "always"
+      },
+      {
+        "from": "mp_l",
+        "to": "mp_g",
+        "condition": "next row"
+      },
+      {
+        "from": "mp_g",
+        "to": "mp_x",
+        "condition": "ls_pos-menge <= 0"
+      },
+      {
+        "from": "mp_x",
+        "to": "d_c8",
+        "condition": "zcx_sd_auftrag"
+      },
+      {
+        "from": "mp_g",
+        "to": "mp_c1",
+        "condition": "else"
+      },
+      {
+        "from": "mp_c1",
+        "to": "mp_g2",
+        "condition": "always"
+      },
+      {
+        "from": "mp_g2",
+        "to": "mp_c2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mp_g2",
+        "to": "mp_c2",
+        "condition": "else"
+      },
+      {
+        "from": "mp_c2",
+        "to": "mp_g3",
+        "condition": "always"
+      },
+      {
+        "from": "mp_g3",
+        "to": "mp_l",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mp_l",
+        "to": "mp_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "mp_e",
+        "to": "d_c7",
+        "condition": "always"
+      },
+      {
+        "from": "d_c7",
+        "to": "pa_s",
+        "condition": "always"
+      },
+      {
+        "from": "pa_s",
+        "to": "pa_g",
+        "condition": "always"
+      },
+      {
+        "from": "pa_g",
+        "to": "pa_e",
+        "condition": "is_deep-warenempf IS NOT INITIAL AND is_deep-warenempf <> is_deep-kunnr"
+      },
+      {
+        "from": "pa_g",
+        "to": "pa_e",
+        "condition": "else"
+      },
+      {
+        "from": "pa_e",
+        "to": "d_w",
+        "condition": "always"
+      },
+      {
+        "from": "d_c8",
+        "to": "b_s",
+        "condition": "always"
+      },
+      {
+        "from": "d_w",
+        "to": "d_ck",
+        "condition": "always"
+      },
+      {
+        "from": "d_ck",
+        "to": "kr_s",
+        "condition": "always"
+      },
+      {
+        "from": "kr_s",
+        "to": "kr_r",
+        "condition": "always"
+      },
+      {
+        "from": "kr_r",
+        "to": "kr_g",
+        "condition": "always"
+      },
+      {
+        "from": "kr_g",
+        "to": "kr_x",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "kr_g",
+        "to": "kr_a",
+        "condition": "else"
+      },
+      {
+        "from": "kr_a",
+        "to": "kr_e",
+        "condition": "always"
+      },
+      {
+        "from": "kr_x",
+        "to": "d_g3",
+        "condition": "always"
+      },
+      {
+        "from": "kr_e",
+        "to": "d_g3",
+        "condition": "always"
+      },
+      {
+        "from": "d_g3",
+        "to": "d_lf",
+        "condition": "lo_pruef->kredit_ok( iv_kunnr = ls_deep-kunnr iv_kkber = gc_kkber iv_wert = lv_wert ) = abap_false"
+      },
+      {
+        "from": "d_lf",
+        "to": "d_o1",
+        "condition": "always"
+      },
+      {
+        "from": "d_o1",
+        "to": "d_b",
+        "condition": "always"
+      },
+      {
+        "from": "d_g3",
+        "to": "d_b",
+        "condition": "else"
+      },
+      {
+        "from": "d_b",
+        "to": "d_g4",
+        "condition": "always"
+      },
+      {
+        "from": "d_g4",
+        "to": "d_rb",
+        "condition": "lv_vbeln IS INITIAL"
+      },
+      {
+        "from": "d_rb",
+        "to": "d_o2",
+        "condition": "always"
+      },
+      {
+        "from": "d_o2",
+        "to": "d_c9",
+        "condition": "always"
+      },
+      {
+        "from": "d_c9",
+        "to": "b_s",
+        "condition": "always"
+      },
+      {
+        "from": "d_g4",
+        "to": "d_cm",
+        "condition": "else"
+      },
+      {
+        "from": "d_cm",
+        "to": "d_g5",
+        "condition": "always"
+      },
+      {
+        "from": "d_g5",
+        "to": "d_as",
+        "condition": "ls_deep-eilig = abap_true"
+      },
+      {
+        "from": "d_as",
+        "to": "d_l",
+        "condition": "always"
+      },
+      {
+        "from": "d_g5",
+        "to": "d_l",
+        "condition": "else"
+      },
+      {
+        "from": "d_l",
+        "to": "d_pn",
+        "condition": "next row"
+      },
+      {
+        "from": "d_pn",
+        "to": "d_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "d_l",
+        "to": "d_o3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "d_o3",
+        "to": "d_e",
+        "condition": "always"
+      },
+      {
+        "from": "b_s",
+        "to": "b_g",
+        "condition": "always"
+      },
+      {
+        "from": "b_g",
+        "to": "b_o1",
+        "condition": "ix_prev IS BOUND"
+      },
+      {
+        "from": "b_g",
+        "to": "b_o2",
+        "condition": "iv_text IS NOT INITIAL"
+      },
+      {
+        "from": "b_g",
+        "to": "b_x",
+        "condition": "else"
+      },
+      {
+        "from": "b_o1",
+        "to": "b_x",
+        "condition": "always"
+      },
+      {
+        "from": "b_o2",
+        "to": "b_x",
+        "condition": "always"
+      },
+      {
+        "from": "pm_c",
+        "to": "pm_l",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "mp_g3",
+        "to": "mp_l",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_sd_auftrag_pruefung.abap:106 — kein Fachsatz „Kunden ohne Kreditlimit werden gesperrt oder abgewiesen“ (ohne KNKK-Satz gilt der Kredit als in Ordnung)",
+    "zcl_zsd_auftrag_dpc_ext.abap:90 — kein Fachsatz „bei Kreditüberschreitung wird kein Auftrag angelegt“ (angelegt wird immer, nur mit Liefersperre und Warnung)",
+    "zcl_sd_auftrag_pruefung.abap:85 — kein Fachsatz „für Auslaufmaterial wird die Menge auf den Restbestand begrenzt“ (nur Kommentar; der Code übernimmt die Position unverändert)",
+    "zcl_zsd_auftrag_dpc_ext.abap:125 — kein Fachsatz „der Versand hat die Eilmeldung erhalten, bevor der Webshop antwortet“ (asynchron, Ergebnis wird nicht abgewartet; Baustein nicht im Fall)",
+    "zcl_zsd_auftrag_dpc_ext.abap:84 — kein Fachsatz „die Kreditprüfung nutzt den Nettowert aus der SAP-Preisfindung“ (sie nutzt Menge × Shoppreis vor der Anlage)"
+  ],
+  "processDescription": "Ein B2B-Webshop legt einen Kundenauftrag mit Positionen per Deep Insert an. Ohne Positionen oder ohne Anlageberechtigung im Vertriebsbereich wird die Anfrage mit Fehlermeldung abgewiesen. Eine Prüfklasse weist unbekannte, gesperrte oder zum Löschen vorgemerkte Kunden, Kunden außerhalb des Vertriebsbereichs sowie Materialien ohne Vertriebsdaten oder mit Vertriebsstatus Z9 ab; Auslaufmaterial bleibt erlaubt. Ein Mapper baut Kopf (Auftragsart ZOR als Vorgabe, Express bei Eilauftrag), Positionen in Zehnerschritten mit konvertiertem Material und Einheit, Einteilungen und Partner (Auftraggeber, Warenempfänger) auf; Positionen ohne positive Menge führen zur Abweisung. Jeder Prüf- oder Mappingfehler wird als Fehlermeldung an den Shop zurückgegeben. Danach wird der Auftragswert aus Menge und Shoppreis gegen das klassische Kreditlimit geprüft; bei Überschreitung erhält der Auftrag eine Liefersperre und der Shop eine Warnung, ohne gepflegtes Limit gilt der Kredit als in Ordnung. Das Anlage-BAPI legt den Auftrag an; ohne Nummer wird verworfen und die BAPI-Meldungen gehen an den Shop, sonst wird festgeschrieben. Eilaufträge lösen asynchron eine Benachrichtigung des Versands aus. Der Shop erhält den Auftrag mit Auftrags- und Positionsnummern zurück."
+}

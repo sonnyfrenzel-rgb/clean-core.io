@@ -1,0 +1,33 @@
+{
+  "id": "BM-293",
+  "title": "Werkerterminal Fertigung: Anmeldung und Zeitereignisse über Schrittfabrik, Interface und Vererbung",
+  "domain": "PP Shopfloor / Werkerterminal",
+  "band": "komplex",
+  "loc": 253,
+  "constructs": [
+    "Interface mit Implementierungen",
+    "abstrakte Klasse mit ABSTRACT/REDEFINITION",
+    "Fabrikmethode",
+    "IS INSTANCE OF",
+    "RAISE EXCEPTION MESSAGE",
+    "TRY/CATCH im PAI",
+    "MODIFY dbtab FROM @( VALUE )",
+    "BAPI_PRODORDCONF_CREATE_TE",
+    "CASE ohne WHEN OTHERS vor TRY"
+  ],
+  "scenario": "Touch-Terminal in der Fertigungshalle, an dem Werker sich per Ausweis anmelden und Beginn/Ende eines Vorgangs melden.",
+  "s4_issues": [
+    "Direktlesen AFKO/AFVC statt released CDS",
+    "SAP-GUI-Dynpro am Terminal statt Fiori/MES-Integration"
+  ],
+  "wave": 3,
+  "module": "PP",
+  "edge_constructs": [
+    "Ausnahmen aus drei Aufrufebenen landen im selben CATCH",
+    "polymorpher Aufruf mit zwei Zielen (Interface und Redefinition)",
+    "Methodenaufruf innerhalb VALUE",
+    "CASE fällt ohne WHEN OTHERS in nachfolgenden Code",
+    "auskommentierter Fabrikzweig"
+  ],
+  "oo": true
+}

@@ -1,0 +1,264 @@
+{
+  "id": "BM-281",
+  "title": "Kassenschalter: Bon abschliessen im PAI von Dynpro 0100",
+  "classes": [
+    "K07"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZPOS_BON",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:19"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-281-B01",
+      "text": "Mit dem Funktionscode BACK verlässt der Kassierer das Bonbild ohne weitere Verarbeitung.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-281-B02",
+      "text": "Mit dem Funktionscode BON wird geprüft, ob der Kunde mindestens die Bonsumme bar gegeben hat; ist der gegebene Betrag kleiner, wird die Fehlermeldung ZPOS 012 mit der Bonsumme ausgegeben und die Verarbeitung abgebrochen, der Kassierer bleibt auf dem Bild.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-281-B03",
+      "text": "Reicht der gegebene Betrag, wird der Bon in die Kundentabelle ZPOS_BON geschrieben und die Bonerfassung für den nächsten Kunden geleert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:8"
+        },
+        "meaning": "PAI Bonbild 0100"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "lv",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Bonbild verlassen"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Bargeld kleiner als Bonsumme?"
+      },
+      {
+        "id": "me",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Fehlermeldung Betrag zu klein"
+      },
+      {
+        "id": "mee",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Abbruch, zurück aufs Bild"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Bon speichern"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Ende PAI"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "lv",
+        "condition": "WHEN 'BACK'"
+      },
+      {
+        "from": "g",
+        "to": "gb",
+        "condition": "WHEN 'BON'"
+      },
+      {
+        "from": "g",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "gb",
+        "to": "me",
+        "condition": "gs_bon-gegeben < gs_bon-summe"
+      },
+      {
+        "from": "me",
+        "to": "mee",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "w",
+        "condition": "else"
+      },
+      {
+        "from": "w",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:19 — kein Fachsatz „Bon wird gedruckt“ oder „Kassenlade wird geöffnet“; der Code schreibt nur den Datensatz.",
+    "source.abap:19 — kein Fachsatz „Speicherfehler wird gemeldet“; sy-subrc wird nach dem INSERT nicht ausgewertet.",
+    "source.abap:21 — kein Fachsatz „Bon wird storniert“; der Storno-Zweig ist auskommentiert."
+  ],
+  "processDescription": "Das PAI-Modul des Bonbilds 0100 im Kassenschalter-Modulpool wertet den Funktionscode aus. Mit BACK wird das Bild per LEAVE TO SCREEN 0 verlassen. Mit BON wird zunächst geprüft, ob der vom Kunden gegebene Bargeldbetrag die Bonsumme erreicht; ist er kleiner, bricht die Fehlermeldung ZPOS 012 die Verarbeitung ab und der Kassierer bleibt auf dem Bild. Andernfalls wird der Bon in ZPOS_BON eingefügt und die Erfassungsstruktur geleert. Der Erfolg des INSERT wird nicht geprüft; andere Funktionscodes bleiben ohne Wirkung. Der frühere Storno-Zweig ist auskommentiert."
+}

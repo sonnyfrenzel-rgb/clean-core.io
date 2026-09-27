@@ -1,0 +1,11 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "PBO/PAI-Module und Grid-Behandler sind eigene Einstiege ohne eingehende Kante (Ablauflogik nicht im Fall) – geprüft, korrekt.",
+    "Aufrufe an CL_ALV_CHANGED_DATA_PROTOCOL (ape1/ape2 add_protocol_entry, amc modify_cell) sind als action modelliert, check_changed_data/get_selected_rows dagegen als opaque_call; nach der Knotentabelle wäre opaque_call (bzw. output) ebenso vertretbar – autorweit einheitlich, daher nicht geändert.",
+    "QPAC-Zugriff ohne CODEGRUPPE im WHERE (SELECT SINGLE ohne vollständigen Schlüssel) und die Feldnamen AUSWMENGE1/AUSWMGWRK1 in QAMV nicht sicher verifizierbar – nicht geändert.",
+    "Rückkante el → mc mit Bedingung lcx_erf (Ausnahme propagiert nach CLEANUP-Protokoll) ist eine Rückkehr aus lcl_log=>add in den weiterlaufenden Ausnahmepfad – vertretbar."
+  ]
+}

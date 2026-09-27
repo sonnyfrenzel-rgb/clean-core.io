@@ -1,0 +1,36 @@
+{
+  "id": "BM-272",
+  "title": "Nachverarbeitungsmonitor EWM-Schnittstellenfehler",
+  "domain": "EWM",
+  "band": "komplex",
+  "loc": 202,
+  "constructs": [
+    "REPORT mit Klassen-Include",
+    "lokale Klasse",
+    "CL_SALV_TABLE mit GUI-Status",
+    "SET HANDLER (added_function, double_click)",
+    "AUTHORITY-CHECK",
+    "ENQUEUE/DEQUEUE",
+    "dynamischer CALL FUNCTION",
+    "UPDATE",
+    "POPUP_TO_CONFIRM",
+    "COMMIT WORK"
+  ],
+  "scenario": "Monitor für den EWM-Schnittstellen-Support: Fehler aus Eingangs- und Ausgangsschnittstellen landen in ZEWM_ERRQ und werden hier nachverarbeitet oder verworfen.",
+  "s4_issues": [
+    "SAP GUI ALV-Monitor – Zielbild Fiori/AIF",
+    "dynamischer CALL FUNCTION (nicht prüfbar)",
+    "eigene Sperrobjekte und Z-Queue statt AIF/SXMB_MONI"
+  ],
+  "wave": 3,
+  "module": "EWM",
+  "edge_constructs": [
+    "Ereignisbehandler ohne expliziten Aufrufer",
+    "RETURN in mehreren Methoden",
+    "CHECK in Schleife und Methode",
+    "dynamischer Bausteinname aus Tabellenfeld",
+    "logisches Löschen",
+    "MESSAGE TYPE S DISPLAY LIKE E"
+  ],
+  "oo": true
+}

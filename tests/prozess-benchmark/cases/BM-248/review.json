@@ -1,0 +1,49 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante c1 -> l1",
+      "before": "next iteration",
+      "after": "WHEN 'WERKS'",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist und direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten. Je WHEN-Zweig eine Kante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c1 -> l1",
+      "before": "fehlt",
+      "after": "c1 -> l1 [WHEN 'MATNR']",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist und direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten. Je WHEN-Zweig eine Kante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c1 -> l1",
+      "before": "fehlt",
+      "after": "c1 -> l1 [WHEN 'LGORT']",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist und direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten. Je WHEN-Zweig eine Kante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c1 -> l1",
+      "before": "fehlt",
+      "after": "c1 -> l1 [WHEN 'NURPOSITIV']",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist und direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten. Je WHEN-Zweig eine Kante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante wg -> wl",
+      "before": "next iteration",
+      "after": "sy-subrc = 0",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist und direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten. Der Ja-Zweig (Werk übernehmen, APPEND) führt direkt zurück.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante wg -> wl",
+      "before": "fehlt",
+      "after": "wg -> wl [else]",
+      "why": "Sonst-Zweig des IF ohne ELSE fehlte: ein nicht berechtigtes Werk wird übergangen und die Schleife läuft weiter.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

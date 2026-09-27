@@ -1,0 +1,42 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante pa_g -> pa_l",
+      "before": "next iteration",
+      "after": "WHEN 0",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist bzw. per EXIT direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten. WHEN 0 zählt die Aufgabe und verlässt per EXIT die DO-Schleife; weiter geht es mit dem nächsten Werk.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante w_cs -> w_l2",
+      "before": "next iteration",
+      "after": "WHEN 'A'",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist bzw. per EXIT direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten. Je WHEN-Zweig eine Kante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante w_cs -> w_l2",
+      "before": "fehlt",
+      "after": "w_cs -> w_l2 [WHEN 'B']",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist bzw. per EXIT direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten. Je WHEN-Zweig eine Kante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante w_cs -> w_l2",
+      "before": "fehlt",
+      "after": "w_cs -> w_l2 [WHEN OTHERS]",
+      "why": "Vereinheitlichung: ein Gateway-Zweig, der nur zuweist bzw. per EXIT direkt in die Schleife zurückführt, trägt seine Bedingung wörtlich; next iteration nur für unbedingte Rückkanten. Je WHEN-Zweig eine Kante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten in_a",
+      "before": "action zmm_abc_report.abap:19: Zeitraum: letzte 365 Tage bis heute; Kanten ['in_s->in_a[always]', 'in_a->in_e[always]']",
+      "after": "entfernt; neue Kanten ['in_s -> in_e [always]']",
+      "why": "Reine Zuweisung von Vorschlagswerten an Selektionsparameter (p_bis/p_von) ohne Flusswirkung; außerdem lag der Anker auf der zweiten der beiden Zuweisungen. Der Fachsatz B01 bleibt verankert.",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": []
+}

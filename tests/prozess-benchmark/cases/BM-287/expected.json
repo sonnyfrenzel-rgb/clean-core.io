@@ -1,0 +1,1296 @@
+{
+  "id": "BM-287",
+  "title": "Instandhaltung: Störmeldungs-Schnellerfassung am Equipment mit Dublettenrückfrage",
+  "classes": [
+    "K07",
+    "K01",
+    "K03",
+    "K15",
+    "K11"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EQUI",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpm_stoer_i01.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_stoer_i01.abap:20"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EQUZ",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpm_stoer_i01.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_stoer_i01.abap:20"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EQKT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpm_stoer_i01.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_stoer_i01.abap:20"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VIQMEL",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpm_stoer_i01.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_stoer_i01.abap:41"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpm_stoer_i01.abap",
+        "line": 46,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_stoer_i01.abap:46"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ALM_NOTIF_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpm_stoer_f01.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_stoer_f01.abap:36"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ALM_NOTIF_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpm_stoer_f01.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_stoer_f01.abap:52"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpm_stoer_f01.abap",
+        "line": 60,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_stoer_f01.abap:60"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpm_stoer_f01.abap",
+        "line": 88,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_stoer_f01.abap:88"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-287-B01",
+      "text": "Beim Aufbau des Meldungsdetails wird für Mängelmeldungen (M2) der Subscreen mit dem Objektteil, sonst der Subscreen mit dem Schadensbild eingeblendet.",
+      "anchors": [
+        {
+          "file": "mzpm_stoer_o01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_o01.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-287-B02",
+      "text": "Auf dem Einstiegsbild beendet Zurück oder Beenden die Transaktion.",
+      "anchors": [
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:13"
+        },
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-287-B03",
+      "text": "Wählt der Instandhalter Störmeldung (M1) oder Mängelmeldung (M2), werden zum gescannten Equipment der aktuell gültige Zeitabschnitt mit Planungswerk und die Bezeichnung in Anmeldesprache gelesen.",
+      "anchors": [
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:17"
+        },
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-287-B04",
+      "text": "Gibt es das Equipment nicht, bricht eine Fehlermeldung ab und er bleibt auf dem Einstiegsbild.",
+      "anchors": [
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:28"
+        },
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-287-B05",
+      "text": "Fehlt ihm die Berechtigung für das Planungswerk zur Meldungsanlage, wird die Transaktion mit einer Abbruchmeldung beendet.",
+      "anchors": [
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:32"
+        },
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:35"
+        },
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-287-B06",
+      "text": "Anschließend wird gesucht, ob zum Equipment bereits eine noch nicht abgeschlossene Meldung derselben Meldungsart existiert.",
+      "anchors": [
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-287-B07",
+      "text": "Gibt es eine, wird er gefragt, ob er trotzdem eine neue Meldung anlegen will; verneint er, wird das Einstiegsbild neu aufgerufen.",
+      "anchors": [
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:45"
+        },
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:46"
+        },
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:53"
+        },
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-287-B08",
+      "text": "Ohne offene Meldung oder nach Bestätigung wechselt der Dialog ins Meldungsdetail.",
+      "anchors": [
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-287-B09",
+      "text": "Zurück oder Abbrechen im Meldungsdetail verwirft die Erfassung und kehrt zum Einstiegsbild zurück.",
+      "anchors": [
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:69"
+        },
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:70"
+        },
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-287-B10",
+      "text": "Beim Sichern wird bei gemeldetem Anlagenstillstand mit einer schlechteren Priorität als 2 eine Warnung ausgegeben und die Priorität auf 2 hochgesetzt.",
+      "anchors": [
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:83"
+        },
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:85"
+        },
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:87"
+        },
+        {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-287-B11",
+      "text": "Die Meldung wird mit Equipment, Kurztext, Priorität, Melder, Meldezeitpunkt, Ausfallkennzeichen und Störungsbeginn sowie einer Position mit Schadens- und Objektteilcode per BAPI angelegt.",
+      "anchors": [
+        {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-287-B12",
+      "text": "Meldet der BAPI einen Fehler oder Abbruch, wird die erste solche Meldung ins Anwendungsprotokoll geschrieben, als Statusmeldung in Fehleroptik angezeigt und die Anlage ohne Sichern beendet.",
+      "anchors": [
+        {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:46"
+        },
+        {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:47"
+        },
+        {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:48"
+        },
+        {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-287-B13",
+      "text": "Sonst wird die Meldung gesichert und synchron festgeschrieben; die vergebene Meldungsnummer wird als Erfolgsmeldung angezeigt und das Einstiegsbild für die nächste Meldung aufgerufen.",
+      "anchors": [
+        {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:52"
+        },
+        {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:60"
+        },
+        {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:65"
+        },
+        {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-287-B14",
+      "text": "Die Protokollroutine schreibt nur, wenn ein Anwendungsprotokoll geöffnet ist, und hat sonst keine Wirkung auf den Ablauf.",
+      "anchors": [
+        {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:74"
+        },
+        {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:80"
+        },
+        {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:88"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "so2",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_stoer_o01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_o01.abap:10"
+        },
+        "meaning": "PBO Meldungsdetail"
+      },
+      {
+        "id": "asub",
+        "type": "action",
+        "anchor": {
+          "file": "mzpm_stoer_o01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_o01.abap:15"
+        },
+        "meaning": "Subscreen nach Meldungsart wählen"
+      },
+      {
+        "id": "eo2",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_stoer_o01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_o01.abap:23"
+        },
+        "meaning": "Ende PBO"
+      },
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:8"
+        },
+        "meaning": "PAI Einstieg"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:13"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "lp",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:15"
+        },
+        "meaning": "Transaktion beenden"
+      },
+      {
+        "id": "req",
+        "type": "read",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:20"
+        },
+        "meaning": "Equipment mit Werk und Text lesen"
+      },
+      {
+        "id": "geq",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:28"
+        },
+        "meaning": "Equipment gefunden?"
+      },
+      {
+        "id": "me1",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:29"
+        },
+        "meaning": "Fehler Equipment unbekannt"
+      },
+      {
+        "id": "me1e",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:29"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "ac",
+        "type": "action",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:32"
+        },
+        "meaning": "Berechtigung Planungswerk prüfen"
+      },
+      {
+        "id": "gac",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:35"
+        },
+        "meaning": "Berechtigt?"
+      },
+      {
+        "id": "ma2",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:37"
+        },
+        "meaning": "Abbruchmeldung Berechtigung"
+      },
+      {
+        "id": "ma2e",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:37"
+        },
+        "meaning": "Transaktion abgebrochen"
+      },
+      {
+        "id": "rq",
+        "type": "read",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:41"
+        },
+        "meaning": "Offene Meldung suchen"
+      },
+      {
+        "id": "gq",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:45"
+        },
+        "meaning": "Offene Meldung vorhanden?"
+      },
+      {
+        "id": "pop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:46"
+        },
+        "meaning": "Rückfrage neue Meldung"
+      },
+      {
+        "id": "gans",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:53"
+        },
+        "meaning": "Nicht bestätigt?"
+      },
+      {
+        "id": "lv100",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:54"
+        },
+        "meaning": "Zurück zum Einstieg"
+      },
+      {
+        "id": "lv200",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:59"
+        },
+        "meaning": "Weiter ins Meldungsdetail"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:64"
+        },
+        "meaning": "Ende PAI Einstieg"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:69"
+        },
+        "meaning": "Abbruch im Meldungsdetail"
+      },
+      {
+        "id": "lv2",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:71"
+        },
+        "meaning": "Zurück zum Einstieg"
+      },
+      {
+        "id": "s3",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:77"
+        },
+        "meaning": "PAI Meldungsdetail"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:82"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "gpri",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:85"
+        },
+        "meaning": "Stillstand mit niedriger Priorität?"
+      },
+      {
+        "id": "mw5",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:87"
+        },
+        "meaning": "Warnung Priorität"
+      },
+      {
+        "id": "apri",
+        "type": "action",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:88"
+        },
+        "meaning": "Priorität auf 2 setzen"
+      },
+      {
+        "id": "pf",
+        "type": "call",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:90"
+        },
+        "meaning": "Meldung anlegen"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_stoer_i01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_i01.abap:94"
+        },
+        "meaning": "Ende PAI Detail"
+      },
+      {
+        "id": "s4",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:8"
+        },
+        "meaning": "Meldung anlegen"
+      },
+      {
+        "id": "bc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:36"
+        },
+        "meaning": "Meldung anlegen (BAPI)"
+      },
+      {
+        "id": "lp2",
+        "type": "loop",
+        "anchor": {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:46"
+        },
+        "meaning": "Fehlermeldungen des BAPI"
+      },
+      {
+        "id": "pl2",
+        "type": "call",
+        "anchor": {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:47"
+        },
+        "meaning": "Fehler protokollieren"
+      },
+      {
+        "id": "merr",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:48"
+        },
+        "meaning": "BAPI-Fehler anzeigen"
+      },
+      {
+        "id": "rret",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:49"
+        },
+        "meaning": "Abbruch ohne Sichern"
+      },
+      {
+        "id": "bs",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:52"
+        },
+        "meaning": "Meldung sichern"
+      },
+      {
+        "id": "bcm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:60"
+        },
+        "meaning": "Festschreiben mit Warten"
+      },
+      {
+        "id": "ms12",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:65"
+        },
+        "meaning": "Meldungsnummer melden"
+      },
+      {
+        "id": "lv3",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:67"
+        },
+        "meaning": "Zurück zum Einstieg"
+      },
+      {
+        "id": "s5",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:74"
+        },
+        "meaning": "Protokollroutine"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:80"
+        },
+        "meaning": "Protokoll aktiv?"
+      },
+      {
+        "id": "r5",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:81"
+        },
+        "meaning": "Ohne Protokoll zurück"
+      },
+      {
+        "id": "bal",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:88"
+        },
+        "meaning": "Protokollmeldung ergänzen"
+      },
+      {
+        "id": "e5",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_stoer_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_stoer_f01.abap:95"
+        },
+        "meaning": "Ende Protokollroutine"
+      }
+    ],
+    "edges": [
+      {
+        "from": "so2",
+        "to": "asub",
+        "condition": "always"
+      },
+      {
+        "from": "asub",
+        "to": "eo2",
+        "condition": "always"
+      },
+      {
+        "from": "s1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "lp",
+        "condition": "WHEN 'BACK' OR 'EXIT'"
+      },
+      {
+        "from": "g1",
+        "to": "req",
+        "condition": "WHEN 'M1' OR 'M2'"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "req",
+        "to": "geq",
+        "condition": "always"
+      },
+      {
+        "from": "geq",
+        "to": "me1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "me1",
+        "to": "me1e",
+        "condition": "always"
+      },
+      {
+        "from": "geq",
+        "to": "ac",
+        "condition": "else"
+      },
+      {
+        "from": "ac",
+        "to": "gac",
+        "condition": "always"
+      },
+      {
+        "from": "gac",
+        "to": "ma2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ma2",
+        "to": "ma2e",
+        "condition": "always"
+      },
+      {
+        "from": "gac",
+        "to": "rq",
+        "condition": "else"
+      },
+      {
+        "from": "rq",
+        "to": "gq",
+        "condition": "always"
+      },
+      {
+        "from": "gq",
+        "to": "pop",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gq",
+        "to": "lv200",
+        "condition": "else"
+      },
+      {
+        "from": "pop",
+        "to": "gans",
+        "condition": "always"
+      },
+      {
+        "from": "gans",
+        "to": "lv100",
+        "condition": "gv_answer <> '1'"
+      },
+      {
+        "from": "gans",
+        "to": "lv200",
+        "condition": "else"
+      },
+      {
+        "from": "s2",
+        "to": "lv2",
+        "condition": "always"
+      },
+      {
+        "from": "s3",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "gpri",
+        "condition": "WHEN 'SAVE'"
+      },
+      {
+        "from": "g3",
+        "to": "e3",
+        "condition": "else"
+      },
+      {
+        "from": "gpri",
+        "to": "mw5",
+        "condition": "gs_meld-ausfall = abap_true AND gs_meld-priok > '2'"
+      },
+      {
+        "from": "mw5",
+        "to": "apri",
+        "condition": "always"
+      },
+      {
+        "from": "apri",
+        "to": "pf",
+        "condition": "always"
+      },
+      {
+        "from": "gpri",
+        "to": "pf",
+        "condition": "else"
+      },
+      {
+        "from": "pf",
+        "to": "s4",
+        "condition": "always"
+      },
+      {
+        "from": "rret",
+        "to": "e3",
+        "condition": "always"
+      },
+      {
+        "from": "s4",
+        "to": "bc",
+        "condition": "always"
+      },
+      {
+        "from": "bc",
+        "to": "lp2",
+        "condition": "always"
+      },
+      {
+        "from": "lp2",
+        "to": "pl2",
+        "condition": "next row"
+      },
+      {
+        "from": "pl2",
+        "to": "s5",
+        "condition": "always"
+      },
+      {
+        "from": "r5",
+        "to": "merr",
+        "condition": "always"
+      },
+      {
+        "from": "e5",
+        "to": "merr",
+        "condition": "always"
+      },
+      {
+        "from": "merr",
+        "to": "rret",
+        "condition": "always"
+      },
+      {
+        "from": "lp2",
+        "to": "bs",
+        "condition": "no more rows"
+      },
+      {
+        "from": "bs",
+        "to": "bcm",
+        "condition": "always"
+      },
+      {
+        "from": "bcm",
+        "to": "ms12",
+        "condition": "always"
+      },
+      {
+        "from": "ms12",
+        "to": "lv3",
+        "condition": "always"
+      },
+      {
+        "from": "s5",
+        "to": "g5",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "r5",
+        "condition": "gv_log IS INITIAL"
+      },
+      {
+        "from": "g5",
+        "to": "bal",
+        "condition": "else"
+      },
+      {
+        "from": "bal",
+        "to": "e5",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "mzpm_stoer_f01.abap:52 — kein Fachsatz „Sicherungsfehler wird gemeldet“; die Rückgabe von BAPI_ALM_NOTIF_SAVE wird nicht ausgewertet.",
+    "mzpm_stoer_f01.abap:48 — kein Pfadende an der Meldung; Typ S in Fehleroptik, das Ende setzt erst RETURN.",
+    "mzpm_stoer_f01.abap:64 — kein Fachsatz „erfolgreiche Anlage wird protokolliert“; der Aufruf ist auskommentiert.",
+    "mzpm_stoer_i01.abap:87 — kein Pfadende; nach Bestätigung der Warnung wird die Priorität gesetzt und die Meldung angelegt."
+  ],
+  "processDescription": "Der Modulpool erfasst Stör- und Mängelmeldungen am Equipment. Auf dem Einstiegsbild beendet Zurück die Transaktion; mit M1 oder M2 wird das Equipment samt gültigem Planungswerk und Text gelesen – ohne Treffer bricht eine Fehlermeldung ab, ohne Berechtigung für das Werk beendet eine A-Meldung die Transaktion. Existiert bereits eine offene Meldung derselben Art, fragt ein Popup, ob trotzdem angelegt werden soll; ohne Ja wird das Einstiegsbild neu aufgerufen, sonst das Meldungsdetail 0200. Dessen PBO wählt den Subscreen nach Meldungsart. Abbrechen verwirft die Erfassung und führt zurück. Beim Sichern hebt eine Warnung die Priorität bei Stillstand auf 2; dann legt BAPI_ALM_NOTIF_CREATE die Meldung mit einer Position an. Bei Fehler wird die erste Fehlermeldung protokolliert (nur wenn ein Log offen ist), in Fehleroptik gezeigt und abgebrochen; sonst folgen BAPI_ALM_NOTIF_SAVE ohne Rückgabeprüfung, BAPI_TRANSACTION_COMMIT, eine Erfolgsmeldung mit der Meldungsnummer und die Rückkehr zum Einstiegsbild. Die Ablauflogik der Dynpros und STATUS_0100 sind nicht geliefert; die Module sind eigene Einstiege."
+}

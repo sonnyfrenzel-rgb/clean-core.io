@@ -1,0 +1,24 @@
+{
+  "id": "BM-222",
+  "title": "Restlaufzeit eines befristeten Vertrags ermitteln",
+  "domain": "HR",
+  "band": "einfach",
+  "loc": 27,
+  "constructs": [
+    "FUNCTION",
+    "CHECK",
+    "SELECT SINGLE",
+    "RAISE"
+  ],
+  "scenario": "Hilfsbaustein aus einer HR-Funktionsgruppe, der von Fristenreports und Workflows zur Befristungsüberwachung gerufen wird.",
+  "s4_issues": [
+    "Direktzugriff auf PA-Tabellen statt HR-Lesebausteine (keine Berechtigungsprüfung)"
+  ],
+  "wave": 3,
+  "module": "HCM-PA",
+  "edge_constructs": [
+    "CHECK am Bausteinanfang",
+    "RAISE klassische Ausnahme"
+  ],
+  "oo": false
+}

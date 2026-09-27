@@ -1,0 +1,28 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten a_do",
+      "before": "zcl_pp_rm_import.abap:89",
+      "after": "zcl_pp_rm_import.abap:159",
+      "why": "Der Anker zeigte auf ENDDO (Zeile 89) der Schleife in AUSFUEHREN; die Kopierschleife in ARCHIVIEREN beginnt mit DO in Zeile 159.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kante x_g3 -> x_do",
+      "before": "next iteration",
+      "after": "sy-index = 1",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway trägt ihre Bedingung wörtlich (CONTINUE-Zweig bzw. Sonst-Zweig des IF ohne ELSE); next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante x_g5 -> x_do",
+      "before": "next iteration",
+      "after": "else",
+      "why": "Vereinheitlichung: eine Rückkante von einem Gateway trägt ihre Bedingung wörtlich (CONTINUE-Zweig bzw. Sonst-Zweig des IF ohne ELSE); next iteration nur für unbedingte Rückkanten.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

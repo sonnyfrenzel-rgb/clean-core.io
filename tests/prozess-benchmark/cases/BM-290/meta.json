@@ -1,0 +1,34 @@
+{
+  "id": "BM-290",
+  "title": "Pflegedialog Kassenlimit je Kunde mit Sperre, Freigabeberechtigung und Änderungsbeleg",
+  "domain": "Vertrieb am Schalter / Kasse",
+  "band": "komplex",
+  "loc": 211,
+  "constructs": [
+    "abstrakte Klasse mit Schablonenmethode",
+    "INHERITING FROM / REDEFINITION",
+    "Fabrikmethode CREATE PRIVATE",
+    "Ausnahmeklasse mit IF_T100_MESSAGE",
+    "RAISE EXCEPTION / TRY CATCH",
+    "MESSAGE oref",
+    "ENQUEUE/DEQUEUE",
+    "Änderungsbeleg-Baustein IN UPDATE TASK",
+    "AUTHORITY-CHECK",
+    "COMMIT WORK"
+  ],
+  "scenario": "Eigenentwickelte Pflege für Barzahlungslimits je Kunde, die eine SM30-Pflege ersetzt, weil die Revision Änderungsbelege verlangt.",
+  "s4_issues": [
+    "KUNNR: in S/4 Business Partner als führendes Objekt",
+    "SAP-GUI-Dynpro nicht in Fiori",
+    "eigene Limit-Tabelle neben FSCM-Kreditmanagement"
+  ],
+  "wave": 3,
+  "module": "SD",
+  "edge_constructs": [
+    "Ausnahme propagiert über Schablonenmethode zum CATCH im PAI",
+    "dynamischer Dispatch auf Redefinition",
+    "MESSAGE TYPE E aus Ausnahmeobjekt",
+    "Gateway mit zusammenlaufenden Zweigen"
+  ],
+  "oo": true
+}

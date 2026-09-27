@@ -1,0 +1,34 @@
+{
+  "id": "BM-249",
+  "title": "BOPF-Massenfreigabe von Laborproben: Query, Aktion mit Aktionsvalidierung, Sichern oder Testlauf",
+  "domain": "QM Labor / Probenfreigabe",
+  "band": "komplex",
+  "loc": 259,
+  "constructs": [
+    "BOPF Service Manager query/do_action",
+    "BOPF Transaction Manager save/cleanup",
+    "/bobf/if_frw_action~execute",
+    "/bobf/if_frw_validation~execute",
+    "retrieve_by_association",
+    "io_modify->update/create",
+    "et_failed_key",
+    "private Hilfsmethode mit CHANGING",
+    "ELSEIF",
+    "CONTINUE",
+    "Hintergrundjob-Report"
+  ],
+  "scenario": "Nächtlicher Job in einem Labor-Informationssystem auf Basis eines kundeneigenen BOPF-Geschäftsobjekts; gemessene Proben werden nach Abschluss aller Merkmale freigegeben oder zurückgewiesen.",
+  "s4_issues": [
+    "BOPF kundeneigen: in S/4 lauffähig, aber kein Clean-Core-Modell (Nachfolger RAP)",
+    "Parallele Eigenentwicklung zu QM-Prüflosen/Verwendungsentscheid"
+  ],
+  "wave": 3,
+  "module": "QM",
+  "edge_constructs": [
+    "Framework-Dispatch ohne sichtbare Bindung Aktion→Klasse",
+    "Warnung statt Fehler bei Toleranzverletzung",
+    "Testlauf mit cleanup und RETURN",
+    "Hilfsmethode mit drei Aufrufern"
+  ],
+  "oo": true
+}

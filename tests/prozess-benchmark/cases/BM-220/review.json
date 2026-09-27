@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "Callback geprüft: sa behält die Direktkante sa→sg (Konvention STARTING NEW TASK) und die Kante in den Baustein; fe→os (PERFORMING … ON END OF TASK) und oe→wt (Rückmeldung wird während WAIT verarbeitet) sind belegbar und widersprechen der Konvention nicht. Nicht pfadgenau: fe→os gilt auch nach dem synchronen Rückfallaufruf sc, wo keine Rückmelde-FORM läuft."
+  ]
+}

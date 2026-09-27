@@ -1,0 +1,9 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "STOP → END-OF-SELECTION (st→eos) richtig.",
+    "Kante cil→cl als „no more rows“ (CONTINUE der äußeren Gruppenschleife nach der inneren Schleife): vertretbar, alternativ „next iteration“."
+  ]
+}

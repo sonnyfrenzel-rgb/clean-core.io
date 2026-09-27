@@ -1,0 +1,1377 @@
+{
+  "id": "BM-253",
+  "title": "MES-Rückmeldungen per EML in ein RAP-BO übernehmen: paketweise MODIFY/COMMIT ENTITIES mit Datei-Archivierung",
+  "classes": [
+    "K02",
+    "K12"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZI_PRODRUECKMELDUNG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_pp_rm_import.abap",
+        "line": 100,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pp_rm_import.abap:100"
+      },
+      "identity": {
+        "objectType": "DDLS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_PP_RM_IMPORT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_rm_import.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_rm_import.abap:15"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-253-B01",
+      "text": "Der Job öffnet die Rückmeldedatei des MES; ist sie nicht lesbar, wird das protokolliert, als ein Fehler gezählt und nichts verbucht.",
+      "anchors": [
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:55"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:56"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:57"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-253-B02",
+      "text": "Die Datei wird zeilenweise gelesen; die erste Zeile gilt als Kopfzeile und wird übergangen.",
+      "anchors": [
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:63"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-253-B03",
+      "text": "Zeilen ohne Auftragsnummer oder mit nicht numerischer Gutmenge werden als fehlerhaft gezählt und im Joblog protokolliert.",
+      "anchors": [
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:76"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:78"
+        }
+      ]
+    },
+    {
+      "id": "BM-253-B04",
+      "text": "Gültige Zeilen werden zu Paketen von 50 Rückmeldungen gesammelt und jedes volle Paket sowie das Restpaket verbucht.",
+      "anchors": [
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:85"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:86"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:93"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:94"
+        }
+      ]
+    },
+    {
+      "id": "BM-253-B05",
+      "text": "Je Paket werden Rückmeldungen zu Auftrag und Vorgang mit Gutmenge, Ausschuss (leer = 0), Mengeneinheit und Endrückmeldekennzeichen im Rückmelde-BO angelegt.",
+      "anchors": [
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:100"
+        }
+      ]
+    },
+    {
+      "id": "BM-253-B06",
+      "text": "Lehnt das BO auch nur eine Rückmeldung ab, wird das ganze Paket verworfen, alle Sätze des Pakets zählen als fehlerhaft und die Meldungen des BOs gehen ins Joblog.",
+      "anchors": [
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:116"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:118"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:121"
+        }
+      ]
+    },
+    {
+      "id": "BM-253-B07",
+      "text": "Im Testlauf wird ein fehlerfreies Paket nach der Prüfung verworfen, aber als rückgemeldet gezählt.",
+      "anchors": [
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:126"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:127"
+        }
+      ]
+    },
+    {
+      "id": "BM-253-B08",
+      "text": "Im Echtlauf wird das Paket gesichert; scheitert das Sichern, zählen alle Sätze als fehlerhaft und die Meldungen gehen ins Joblog, sonst als rückgemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:132"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:136"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:139"
+        }
+      ]
+    },
+    {
+      "id": "BM-253-B09",
+      "text": "Nur wenn im Echtlauf kein einziger Fehler auftrat, wird die Datei in eine Archivdatei mit Datum und Uhrzeit kopiert und danach gelöscht.",
+      "anchors": [
+        {
+          "file": "zpp_rm_import.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_rm_import.abap:19"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:153"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:164"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:168"
+        }
+      ]
+    },
+    {
+      "id": "BM-253-B10",
+      "text": "Lässt sich die Archivdatei nicht anlegen, bleibt die Eingangsdatei liegen und ein Hinweis geht ins Joblog.",
+      "anchors": [
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:154"
+        },
+        {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:155"
+        }
+      ]
+    },
+    {
+      "id": "BM-253-B11",
+      "text": "Am Ende gibt der Job die Zahl gelesener, rückgemeldeter und fehlerhafter Sätze aus.",
+      "anchors": [
+        {
+          "file": "zpp_rm_import.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_rm_import.abap:23"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "r_s",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_rm_import.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_rm_import.abap:14"
+        },
+        "meaning": "Importjob startet"
+      },
+      {
+        "id": "r_n",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_rm_import.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_rm_import.abap:15"
+        },
+        "meaning": "Import für Datei und Modus anlegen"
+      },
+      {
+        "id": "r_c1",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_rm_import.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_rm_import.abap:17"
+        },
+        "meaning": "Datei verarbeiten"
+      },
+      {
+        "id": "r_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_rm_import.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_rm_import.abap:19"
+        },
+        "meaning": "Fehlerfrei und Echtlauf?"
+      },
+      {
+        "id": "r_c2",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_rm_import.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_rm_import.abap:20"
+        },
+        "meaning": "Datei archivieren"
+      },
+      {
+        "id": "r_o",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_rm_import.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_rm_import.abap:23"
+        },
+        "meaning": "Statistik gelesen/rückgemeldet/fehlerhaft"
+      },
+      {
+        "id": "r_e",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_rm_import.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_rm_import.abap:23"
+        },
+        "meaning": "Ende des Jobs"
+      },
+      {
+        "id": "k_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:44"
+        },
+        "meaning": "Import anlegen"
+      },
+      {
+        "id": "k_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:47"
+        },
+        "meaning": "Rückkehr"
+      },
+      {
+        "id": "x_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:50"
+        },
+        "meaning": "Datei verarbeiten"
+      },
+      {
+        "id": "x_op",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:55"
+        },
+        "meaning": "Eingangsdatei öffnen"
+      },
+      {
+        "id": "x_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:56"
+        },
+        "meaning": "Datei nicht lesbar?"
+      },
+      {
+        "id": "x_p1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:57"
+        },
+        "meaning": "„Datei nicht lesbar“ protokollieren"
+      },
+      {
+        "id": "x_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:59"
+        },
+        "meaning": "Abbruch mit einem Fehler"
+      },
+      {
+        "id": "x_do",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:62"
+        },
+        "meaning": "Zeile für Zeile lesen"
+      },
+      {
+        "id": "x_rd",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:63"
+        },
+        "meaning": "Nächste Zeile lesen"
+      },
+      {
+        "id": "x_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:64"
+        },
+        "meaning": "Dateiende?"
+      },
+      {
+        "id": "x_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:67"
+        },
+        "meaning": "Kopfzeile?"
+      },
+      {
+        "id": "x_g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:76"
+        },
+        "meaning": "Auftrag fehlt oder Gutmenge nicht numerisch?"
+      },
+      {
+        "id": "x_p2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:78"
+        },
+        "meaning": "Ungültige Zeile protokollieren (als Fehler gezählt)"
+      },
+      {
+        "id": "x_g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:85"
+        },
+        "meaning": "Paket mit 50 Sätzen voll?"
+      },
+      {
+        "id": "x_c1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:86"
+        },
+        "meaning": "Volles Paket verbuchen"
+      },
+      {
+        "id": "x_g6",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:93"
+        },
+        "meaning": "Restpaket vorhanden?"
+      },
+      {
+        "id": "x_c2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:94"
+        },
+        "meaning": "Restpaket verbuchen"
+      },
+      {
+        "id": "x_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:96"
+        },
+        "meaning": "Datei verarbeitet"
+      },
+      {
+        "id": "v_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:99"
+        },
+        "meaning": "Paket verbuchen"
+      },
+      {
+        "id": "v_m",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:100"
+        },
+        "meaning": "Rückmeldungen im BO anlegen (Transaktionspuffer)"
+      },
+      {
+        "id": "v_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:116"
+        },
+        "meaning": "Mindestens ein Satz abgelehnt?"
+      },
+      {
+        "id": "v_rb1",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:118"
+        },
+        "meaning": "Ganzes Paket verwerfen"
+      },
+      {
+        "id": "v_l1",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:120"
+        },
+        "meaning": "Jede BO-Meldung"
+      },
+      {
+        "id": "v_p1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:121"
+        },
+        "meaning": "BO-Meldung protokollieren"
+      },
+      {
+        "id": "v_x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:123"
+        },
+        "meaning": "Paket als fehlerhaft gezählt"
+      },
+      {
+        "id": "v_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:126"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "v_rb2",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:127"
+        },
+        "meaning": "Paket nach Prüfung verwerfen"
+      },
+      {
+        "id": "v_x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:129"
+        },
+        "meaning": "Paket als rückgemeldet gezählt"
+      },
+      {
+        "id": "v_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:132"
+        },
+        "meaning": "Paket sichern"
+      },
+      {
+        "id": "v_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:136"
+        },
+        "meaning": "Sichern fehlgeschlagen?"
+      },
+      {
+        "id": "v_l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:138"
+        },
+        "meaning": "Jede Meldung aus dem Sichern"
+      },
+      {
+        "id": "v_p2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:139"
+        },
+        "meaning": "Meldung protokollieren"
+      },
+      {
+        "id": "v_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:144"
+        },
+        "meaning": "Paket verbucht bzw. als fehlerhaft gezählt"
+      },
+      {
+        "id": "a_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:147"
+        },
+        "meaning": "Datei archivieren"
+      },
+      {
+        "id": "a_o1",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:153"
+        },
+        "meaning": "Archivdatei mit Zeitstempel anlegen"
+      },
+      {
+        "id": "a_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:154"
+        },
+        "meaning": "Archivdatei nicht anlegbar?"
+      },
+      {
+        "id": "a_p",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:155"
+        },
+        "meaning": "Hinweis „Datei bleibt liegen“ protokollieren"
+      },
+      {
+        "id": "a_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:156"
+        },
+        "meaning": "Ohne Archivierung zurück"
+      },
+      {
+        "id": "a_o2",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:158"
+        },
+        "meaning": "Eingangsdatei erneut öffnen"
+      },
+      {
+        "id": "a_do",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:159"
+        },
+        "meaning": "Zeilen kopieren"
+      },
+      {
+        "id": "a_rd",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:160"
+        },
+        "meaning": "Zeile lesen"
+      },
+      {
+        "id": "a_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:161"
+        },
+        "meaning": "Dateiende?"
+      },
+      {
+        "id": "a_t",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:164"
+        },
+        "meaning": "Zeile in die Archivdatei schreiben"
+      },
+      {
+        "id": "a_d",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:168"
+        },
+        "meaning": "Eingangsdatei löschen"
+      },
+      {
+        "id": "a_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:169"
+        },
+        "meaning": "Archiviert"
+      },
+      {
+        "id": "p_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:172"
+        },
+        "meaning": "Protokollieren"
+      },
+      {
+        "id": "p_o",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:174"
+        },
+        "meaning": "Text ins Joblog"
+      },
+      {
+        "id": "p_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_rm_import.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_rm_import.abap:175"
+        },
+        "meaning": "Rückkehr"
+      }
+    ],
+    "edges": [
+      {
+        "from": "r_s",
+        "to": "r_n",
+        "condition": "always"
+      },
+      {
+        "from": "r_n",
+        "to": "k_s",
+        "condition": "always"
+      },
+      {
+        "from": "k_s",
+        "to": "k_e",
+        "condition": "always"
+      },
+      {
+        "from": "k_e",
+        "to": "r_c1",
+        "condition": "always"
+      },
+      {
+        "from": "r_c1",
+        "to": "x_s",
+        "condition": "always"
+      },
+      {
+        "from": "x_s",
+        "to": "x_op",
+        "condition": "always"
+      },
+      {
+        "from": "x_op",
+        "to": "x_g1",
+        "condition": "always"
+      },
+      {
+        "from": "x_g1",
+        "to": "x_p1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "x_p1",
+        "to": "p_s",
+        "condition": "always"
+      },
+      {
+        "from": "p_e",
+        "to": "x_x",
+        "condition": "always"
+      },
+      {
+        "from": "x_g1",
+        "to": "x_do",
+        "condition": "else"
+      },
+      {
+        "from": "x_do",
+        "to": "x_rd",
+        "condition": "next row"
+      },
+      {
+        "from": "x_rd",
+        "to": "x_g2",
+        "condition": "always"
+      },
+      {
+        "from": "x_g2",
+        "to": "x_g6",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "x_g2",
+        "to": "x_g3",
+        "condition": "else"
+      },
+      {
+        "from": "x_g3",
+        "to": "x_do",
+        "condition": "sy-index = 1"
+      },
+      {
+        "from": "x_g3",
+        "to": "x_g4",
+        "condition": "else"
+      },
+      {
+        "from": "x_g4",
+        "to": "x_p2",
+        "condition": "ls_csv-aufnr IS INITIAL OR ls_csv-gutmenge CN '0123456789.'"
+      },
+      {
+        "from": "x_p2",
+        "to": "p_s",
+        "condition": "always"
+      },
+      {
+        "from": "p_e",
+        "to": "x_do",
+        "condition": "next iteration"
+      },
+      {
+        "from": "x_g4",
+        "to": "x_g5",
+        "condition": "else"
+      },
+      {
+        "from": "x_g5",
+        "to": "x_c1",
+        "condition": "lines( lt_paket ) = gc_paket"
+      },
+      {
+        "from": "x_g5",
+        "to": "x_do",
+        "condition": "else"
+      },
+      {
+        "from": "x_c1",
+        "to": "v_s",
+        "condition": "always"
+      },
+      {
+        "from": "v_x1",
+        "to": "x_do",
+        "condition": "next iteration"
+      },
+      {
+        "from": "v_x2",
+        "to": "x_do",
+        "condition": "next iteration"
+      },
+      {
+        "from": "v_e",
+        "to": "x_do",
+        "condition": "next iteration"
+      },
+      {
+        "from": "x_g6",
+        "to": "x_c2",
+        "condition": "lt_paket IS NOT INITIAL"
+      },
+      {
+        "from": "x_g6",
+        "to": "x_e",
+        "condition": "else"
+      },
+      {
+        "from": "x_c2",
+        "to": "v_s",
+        "condition": "always"
+      },
+      {
+        "from": "v_x1",
+        "to": "x_e",
+        "condition": "always"
+      },
+      {
+        "from": "v_x2",
+        "to": "x_e",
+        "condition": "always"
+      },
+      {
+        "from": "v_e",
+        "to": "x_e",
+        "condition": "always"
+      },
+      {
+        "from": "v_s",
+        "to": "v_m",
+        "condition": "always"
+      },
+      {
+        "from": "v_m",
+        "to": "v_g1",
+        "condition": "always"
+      },
+      {
+        "from": "v_g1",
+        "to": "v_rb1",
+        "condition": "ls_failed IS NOT INITIAL"
+      },
+      {
+        "from": "v_rb1",
+        "to": "v_l1",
+        "condition": "always"
+      },
+      {
+        "from": "v_l1",
+        "to": "v_p1",
+        "condition": "next row"
+      },
+      {
+        "from": "v_p1",
+        "to": "p_s",
+        "condition": "always"
+      },
+      {
+        "from": "p_e",
+        "to": "v_l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "v_l1",
+        "to": "v_x1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "v_g1",
+        "to": "v_g2",
+        "condition": "else"
+      },
+      {
+        "from": "v_g2",
+        "to": "v_rb2",
+        "condition": "mv_test = abap_true"
+      },
+      {
+        "from": "v_rb2",
+        "to": "v_x2",
+        "condition": "always"
+      },
+      {
+        "from": "v_g2",
+        "to": "v_cm",
+        "condition": "else"
+      },
+      {
+        "from": "v_cm",
+        "to": "v_g3",
+        "condition": "always"
+      },
+      {
+        "from": "v_g3",
+        "to": "v_l2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "v_l2",
+        "to": "v_p2",
+        "condition": "next row"
+      },
+      {
+        "from": "v_p2",
+        "to": "p_s",
+        "condition": "always"
+      },
+      {
+        "from": "p_e",
+        "to": "v_l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "v_l2",
+        "to": "v_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "v_g3",
+        "to": "v_e",
+        "condition": "else"
+      },
+      {
+        "from": "x_x",
+        "to": "r_g",
+        "condition": "always"
+      },
+      {
+        "from": "x_e",
+        "to": "r_g",
+        "condition": "always"
+      },
+      {
+        "from": "r_g",
+        "to": "r_c2",
+        "condition": "go_import->mv_anz_fehler = 0 AND p_test = abap_false"
+      },
+      {
+        "from": "r_g",
+        "to": "r_o",
+        "condition": "else"
+      },
+      {
+        "from": "r_c2",
+        "to": "a_s",
+        "condition": "always"
+      },
+      {
+        "from": "a_s",
+        "to": "a_o1",
+        "condition": "always"
+      },
+      {
+        "from": "a_o1",
+        "to": "a_g1",
+        "condition": "always"
+      },
+      {
+        "from": "a_g1",
+        "to": "a_p",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "a_p",
+        "to": "p_s",
+        "condition": "always"
+      },
+      {
+        "from": "p_e",
+        "to": "a_x",
+        "condition": "always"
+      },
+      {
+        "from": "a_g1",
+        "to": "a_o2",
+        "condition": "else"
+      },
+      {
+        "from": "a_o2",
+        "to": "a_do",
+        "condition": "always"
+      },
+      {
+        "from": "a_do",
+        "to": "a_rd",
+        "condition": "next row"
+      },
+      {
+        "from": "a_rd",
+        "to": "a_g2",
+        "condition": "always"
+      },
+      {
+        "from": "a_g2",
+        "to": "a_d",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "a_g2",
+        "to": "a_t",
+        "condition": "else"
+      },
+      {
+        "from": "a_t",
+        "to": "a_do",
+        "condition": "next iteration"
+      },
+      {
+        "from": "a_d",
+        "to": "a_e",
+        "condition": "always"
+      },
+      {
+        "from": "a_x",
+        "to": "r_o",
+        "condition": "always"
+      },
+      {
+        "from": "a_e",
+        "to": "r_o",
+        "condition": "always"
+      },
+      {
+        "from": "r_o",
+        "to": "r_e",
+        "condition": "always"
+      },
+      {
+        "from": "p_s",
+        "to": "p_o",
+        "condition": "always"
+      },
+      {
+        "from": "p_o",
+        "to": "p_e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zpp_rm_import.abap:19 — kein Fachsatz „fehlerhafte Zeilen werden aussortiert, der Rest ist erledigt“ (bei einem einzigen Fehler bleibt die ganze Datei liegen; beim nächsten Lauf werden auch die bereits gebuchten Zeilen erneut angelegt)",
+    "zcl_pp_rm_import.abap:100 — kein Fachsatz „Rückmeldung wird in CO11N/AFRU gebucht“ (das BO und seine Sicherungslogik liegen nicht im Fall)",
+    "zcl_pp_rm_import.abap:126 — kein Fachsatz „Testlauf verbucht nichts und zählt nichts“ (er zählt geprüfte Pakete als rückgemeldet)",
+    "zcl_pp_rm_import.abap:168 — kein Fachsatz „die Archivkopie ist geprüft vollständig“ (TRANSFER und CLOSE werden nicht auf Fehler geprüft)"
+  ],
+  "processDescription": "Alle 15 Minuten übernimmt ein Job die Fertigungsrückmeldungen, die ein MES als CSV-Datei auf dem Applikationsserver ablegt. Ist die Datei nicht lesbar, wird das ins Joblog geschrieben und als Fehler gezählt. Sonst wird sie zeilenweise gelesen; die Kopfzeile wird übergangen, Zeilen ohne Auftrag oder mit nicht numerischer Gutmenge werden als fehlerhaft protokolliert. Gültige Zeilen werden zu Paketen von 50 gesammelt und je Paket im Rückmelde-BO angelegt. Lehnt das BO einen Satz ab, wird das ganze Paket verworfen und alle seine Sätze gelten als fehlerhaft; im Testlauf wird ein fehlerfreies Paket nach der Prüfung verworfen, aber gezählt; im Echtlauf wird es gesichert, und scheitert das Sichern, zählt es ebenfalls als fehlerhaft. Nur wenn im Echtlauf kein Fehler auftrat, wird die Datei mit Zeitstempel archiviert und gelöscht; lässt sich das Archiv nicht anlegen, bleibt sie liegen. Zum Schluss gibt der Job die Zahl gelesener, rückgemeldeter und fehlerhafter Sätze aus."
+}

@@ -1,0 +1,34 @@
+{
+  "id": "BM-227",
+  "title": "Mahnsperre auf fällige Posten mit offenem Streitfall setzen",
+  "domain": "FI",
+  "band": "komplex",
+  "loc": 212,
+  "constructs": [
+    "REPORT mit TOP/F01",
+    "INITIALIZATION",
+    "AUTHORITY-CHECK",
+    "MESSAGE E/S",
+    "RETURN",
+    "END-OF-SELECTION",
+    "CHECK in FORM",
+    "CONTINUE",
+    "FI_DOCUMENT_CHANGE",
+    "COMMIT WORK"
+  ],
+  "scenario": "Job-Vorlauf zum Mahnlauf in einer Debitorenbuchhaltung mit selbst gebauter Streitfallverwaltung statt FSCM Dispute Management.",
+  "s4_issues": [
+    "BSID ist Kompatibilitätssicht",
+    "Eigene Streitfalltabelle statt FSCM Dispute Management",
+    "FI_DOCUMENT_CHANGE nicht released"
+  ],
+  "wave": 3,
+  "module": "FI-AR",
+  "edge_constructs": [
+    "RETURN in START-OF-SELECTION mit anschließendem END-OF-SELECTION",
+    "MESSAGE s DISPLAY LIKE E",
+    "Protokollroutine dreifach gerufen",
+    "CHECK sy-subrc in FORM"
+  ],
+  "oo": false
+}

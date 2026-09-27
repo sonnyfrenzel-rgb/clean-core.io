@@ -1,0 +1,31 @@
+{
+  "id": "BM-224",
+  "title": "Beantragte Abwesenheit gegen Überschneidung und Kontingent prüfen",
+  "domain": "HR",
+  "band": "mittel",
+  "loc": 73,
+  "constructs": [
+    "FUNCTION",
+    "RETURN",
+    "SELECT INTO TABLE",
+    "MESSAGE ... RAISING",
+    "ELSEIF",
+    "PERFORM",
+    "CHECK",
+    "LOOP"
+  ],
+  "scenario": "Prüfbaustein einer HR-Funktionsgruppe, den ein alter ESS-Antragsweg vor dem Anlegen einer Abwesenheit ruft.",
+  "s4_issues": [
+    "Direktzugriff auf PA2001/PA2006 ohne Berechtigung",
+    "MESSAGE i im Funktionsbaustein blockiert im RFC-/Hintergrundkontext"
+  ],
+  "wave": 3,
+  "module": "HCM-PT",
+  "edge_constructs": [
+    "MESSAGE E RAISING",
+    "MESSAGE I im FB",
+    "CHECK sy-subrc in FORM",
+    "ELSEIF"
+  ],
+  "oo": false
+}

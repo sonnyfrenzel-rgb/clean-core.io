@@ -1,0 +1,663 @@
+{
+  "id": "BM-245",
+  "title": "Altersstruktur offener Debitorenposten per AMDP mit ALV-Ausgabe",
+  "classes": [
+    "K01",
+    "K02"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "BSID",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_fi_aging_amdp.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_aging_amdp.abap:42"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_fi_aging_amdp.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_aging_amdp.abap:44"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_FI_AGING_AMDP",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_op_alterung.abap",
+        "line": 33,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_op_alterung.abap:33"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_op_alterung.abap",
+        "line": 55,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_op_alterung.abap:55"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-245-B01",
+      "text": "Für jeden einzeln eingegebenen Buchungskreis wird die Anzeigeberechtigung für Buchhaltungsbelege geprüft; fehlt sie, bleibt das Selektionsbild mit einer Fehlermeldung stehen.",
+      "anchors": [
+        {
+          "file": "zfi_op_alterung.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:22"
+        },
+        {
+          "file": "zfi_op_alterung.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:23"
+        },
+        {
+          "file": "zfi_op_alterung.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-245-B02",
+      "text": "Die offenen Debitorenposten der gewählten Buchungskreise werden auf der Datenbank gelesen, nur Posten mit Buchungsdatum bis zum Stichtag.",
+      "anchors": [
+        {
+          "file": "zfi_op_alterung.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:33"
+        },
+        {
+          "file": "zcl_fi_aging_amdp.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_aging_amdp.abap:42"
+        },
+        {
+          "file": "zcl_fi_aging_amdp.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_aging_amdp.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-245-B03",
+      "text": "Je Buchungskreis und Kunde werden die Hauswährungsbeträge (Haben negativ) nach Tagen zwischen Basisdatum und Stichtag in die Klassen bis 30, 31–60, 61–90 und über 90 Tage summiert und mit dem Kundennamen versehen.",
+      "anchors": [
+        {
+          "file": "zcl_fi_aging_amdp.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_aging_amdp.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-245-B04",
+      "text": "Schlägt die Datenbankprozedur fehl, wird ihr Fehlertext angezeigt und die Auswertung abgebrochen.",
+      "anchors": [
+        {
+          "file": "zfi_op_alterung.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:42"
+        },
+        {
+          "file": "zfi_op_alterung.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-245-B05",
+      "text": "Kunden, deren Gesamtsaldo unter dem eingegebenen Mindestbetrag liegt, werden ausgeblendet.",
+      "anchors": [
+        {
+          "file": "zfi_op_alterung.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-245-B06",
+      "text": "Bleibt kein Kunde übrig, erscheint ein Hinweis und keine Liste.",
+      "anchors": [
+        {
+          "file": "zfi_op_alterung.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:49"
+        },
+        {
+          "file": "zfi_op_alterung.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:50"
+        },
+        {
+          "file": "zfi_op_alterung.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-245-B07",
+      "text": "Sonst wird die Altersstruktur als ALV-Liste mit allen Standardfunktionen angezeigt.",
+      "anchors": [
+        {
+          "file": "zfi_op_alterung.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:55"
+        },
+        {
+          "file": "zfi_op_alterung.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:60"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:21"
+        },
+        "meaning": "Prüfung des Selektionsbilds"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:22"
+        },
+        "meaning": "Jeden einzeln eingegebenen Buchungskreis prüfen"
+      },
+      {
+        "id": "a1",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:23"
+        },
+        "meaning": "Anzeigeberechtigung für den Buchungskreis prüfen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:26"
+        },
+        "meaning": "Berechtigung fehlt?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:27"
+        },
+        "meaning": "Fehlermeldung „keine Berechtigung für Buchungskreis“"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:27"
+        },
+        "meaning": "Selektionsbild bleibt stehen, Verarbeitung startet nicht"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:29"
+        },
+        "meaning": "Prüfung bestanden"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:31"
+        },
+        "meaning": "Auswertung starten"
+      },
+      {
+        "id": "c",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:33"
+        },
+        "meaning": "Fälligkeitsraster auf der Datenbank berechnen lassen"
+      },
+      {
+        "id": "s3",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_aging_amdp.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_aging_amdp.abap:37"
+        },
+        "meaning": "AMDP-Prozedur Fälligkeitsraster"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_fi_aging_amdp.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_aging_amdp.abap:42"
+        },
+        "meaning": "Offene Debitorenposten der gewählten Buchungskreise lesen"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_fi_aging_amdp.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_aging_amdp.abap:44"
+        },
+        "meaning": "Posten mit Kundenname je Buchungskreis und Kunde in vier Fälligkeitsklassen summieren"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_aging_amdp.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_aging_amdp.abap:64"
+        },
+        "meaning": "Raster zurückgeben"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:42"
+        },
+        "meaning": "Datenbankfehler als Fehlermeldung anzeigen"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:43"
+        },
+        "meaning": "Auswertung abbrechen"
+      },
+      {
+        "id": "d",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:47"
+        },
+        "meaning": "Kunden unter dem Mindestbetrag ausblenden"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:49"
+        },
+        "meaning": "Keine Kunden übrig?"
+      },
+      {
+        "id": "o3",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:50"
+        },
+        "meaning": "Hinweis „keine Daten“"
+      },
+      {
+        "id": "e4",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:51"
+        },
+        "meaning": "Auswertung ohne Liste beenden"
+      },
+      {
+        "id": "f",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:55"
+        },
+        "meaning": "ALV-Liste zum Raster erzeugen"
+      },
+      {
+        "id": "dsp",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:60"
+        },
+        "meaning": "Altersstruktur als ALV-Liste anzeigen"
+      },
+      {
+        "id": "o4",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:62"
+        },
+        "meaning": "ALV-Fehler melden"
+      },
+      {
+        "id": "x4",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:62"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "e5",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_op_alterung.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_op_alterung.abap:63"
+        },
+        "meaning": "Ende der Auswertung"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s1",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "a1",
+        "condition": "next row"
+      },
+      {
+        "from": "a1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "o1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o1",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "l1",
+        "to": "e1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s2",
+        "to": "c",
+        "condition": "always"
+      },
+      {
+        "from": "c",
+        "to": "s3",
+        "condition": "always"
+      },
+      {
+        "from": "s3",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "r2",
+        "condition": "always"
+      },
+      {
+        "from": "r2",
+        "to": "e3",
+        "condition": "always"
+      },
+      {
+        "from": "e3",
+        "to": "d",
+        "condition": "always"
+      },
+      {
+        "from": "e3",
+        "to": "o2",
+        "condition": "cx_amdp_error"
+      },
+      {
+        "from": "o2",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "d",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "o3",
+        "condition": "gt_raster IS INITIAL"
+      },
+      {
+        "from": "o3",
+        "to": "e4",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "f",
+        "condition": "else"
+      },
+      {
+        "from": "f",
+        "to": "dsp",
+        "condition": "always"
+      },
+      {
+        "from": "dsp",
+        "to": "e5",
+        "condition": "always"
+      },
+      {
+        "from": "f",
+        "to": "o4",
+        "condition": "cx_salv_msg"
+      },
+      {
+        "from": "o4",
+        "to": "x4",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_fi_aging_amdp.abap:44 — kein Fachsatz „Beträge werden in Belegwährung bzw. in Euro umgerechnet“ (summiert wird DMBTR in Hauswährung; 'EUR' ist nur ein fest gesetztes Etikett)",
+    "zfi_op_alterung.abap:23 — kein Fachsatz „alle selektierten Buchungskreise sind berechtigungsgeprüft“ (nur Einzelwerte mit EQ werden geprüft, Intervalle nicht)",
+    "zfi_op_alterung.abap:47 — kein Fachsatz „Posten unter dem Mindestbetrag werden ausgeblendet“ (gefiltert wird die Kundensumme, nicht der Einzelposten)"
+  ],
+  "processDescription": "Der Anwender gibt Buchungskreise, Stichtag und Mindestbetrag ein. Beim Verlassen des Selektionsbilds wird für jeden einzeln eingegebenen Buchungskreis die Anzeigeberechtigung geprüft; fehlt sie, bleibt das Bild mit Fehlermeldung stehen. Danach berechnet eine AMDP-Prozedur auf der Datenbank aus den offenen Debitorenposten bis zum Stichtag je Buchungskreis und Kunde vier Fälligkeitsklassen und den Gesamtsaldo in Hauswährung, ergänzt um den Kundennamen. Scheitert die Prozedur, wird der Fehlertext angezeigt und abgebrochen. Kunden mit Gesamtsaldo unter dem Mindestbetrag werden entfernt; bleibt nichts übrig, erscheint ein Hinweis. Sonst wird das Raster als ALV-Liste angezeigt; ein Fehler beim Erzeugen der Liste bricht mit Meldung ab."
+}

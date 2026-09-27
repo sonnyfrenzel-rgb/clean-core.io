@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "Gateway cg hat nur eine Kante (cg→cl next iteration): beide Zweige (CONTINUE bzw. APPEND) führen in die nächste Iteration; eine zweite Kante wäre ein Duplikat — belassen."
+  ]
+}

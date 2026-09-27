@@ -1,0 +1,34 @@
+{
+  "id": "BM-266",
+  "title": "Application-Log-Klasse für FI-Schnittstellen",
+  "domain": "FI",
+  "band": "mittel",
+  "loc": 112,
+  "constructs": [
+    "Klasse mit CREATE PRIVATE",
+    "statische Fabrikmethode",
+    "BAL_LOG_CREATE",
+    "BAL_LOG_MSG_ADD",
+    "BAL_DB_SAVE",
+    "CHECK in LOOP",
+    "CASE",
+    "RAISE EXCEPTION",
+    "xsdbool",
+    "COMMIT WORK optional"
+  ],
+  "scenario": "Wiederverwendete Protokollklasse, die alle FI-Schnittstellen (Kontoauszug, Zahlungsavis, Kreditorenanlage) für ihre Meldungen in SLG1 nutzen.",
+  "s4_issues": [
+    "BAL_* Funktionsbausteine in ABAP Cloud nicht freigegeben (CL_BALI_LOG)",
+    "COMMIT WORK in Hilfsklasse"
+  ],
+  "wave": 3,
+  "module": "FI",
+  "edge_constructs": [
+    "Hilfsklasse, die nur protokolliert",
+    "CHECK in Schleife",
+    "wirkungsloses CONTINUE am Schleifenende",
+    "MESSAGE TYPE S DISPLAY LIKE W mit RETURN",
+    "Commit nur auf Parameter"
+  ],
+  "oo": true
+}

@@ -1,0 +1,10 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "PBO/PAI-Module und Grid-Behandler sind eigene Einstiege ohne eingehende Kante (Ablauflogik nicht im Fall) – geprüft, korrekt.",
+    "SD_ORDER_CREDIT_RELEASE: Existenz und Verhalten (eigenes Commit? error_message) nicht sicher verifizierbar – nicht geändert.",
+    "INSERT ZSD_FREI_PROT im Ereignisbehandler liegt nach COMMIT WORK AND WAIT und wird erst mit dem nächsten (impliziten) DB-Commit festgeschrieben; B12 formuliert das nicht falsch, aber knapp."
+  ]
+}

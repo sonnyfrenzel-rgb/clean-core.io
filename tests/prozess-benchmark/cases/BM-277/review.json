@@ -1,0 +1,21 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten monx",
+      "before": "action zcl_pp_chain_orchestrator.abap:113 (Status unbekannt); Kanten mong1->monx [sy-subrc <> 0], monx->mong2 [always]",
+      "after": "entfernt",
+      "why": "zcl_pp_chain_orchestrator.abap:113 (lv_status = '?') ist eine reine Zuweisung - laut Brief kein Knoten; Fachsatz B11 bleibt.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante mong1->mong2",
+      "before": "—",
+      "after": "[sy-subrc <> 0]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten monx.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

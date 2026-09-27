@@ -1,0 +1,39 @@
+{
+  "id": "BM-299",
+  "title": "Prüfmittelstamm-Pflege: gesammelte Aktionen über Interface, Satzsperre, generische Änderungsbelege und Kalibrierung mit RFC-Auftrag",
+  "domain": "QM/PM Prüfmittelverwaltung",
+  "band": "sehr komplex",
+  "loc": 408,
+  "constructs": [
+    "Interface mit drei Implementierungen als Befehlsliste",
+    "CALL SCREEN STARTING AT (modal)",
+    "AT EXIT-COMMAND",
+    "ENQUEUE/DEQUEUE/DEQUEUE_ALL",
+    "CHANGEDOCUMENT_OPEN/SINGLE_CASE/CLOSE",
+    "CALL FUNCTION DESTINATION mit MESSAGE",
+    "POPUP_TO_CONFIRM_LOSS_OF_DATA",
+    "AUTHORITY-CHECK",
+    "GET CURSOR LINE",
+    "CHECK im PAI-Modul",
+    "RAISE EXCEPTION MESSAGE",
+    "COMMIT/ROLLBACK WORK"
+  ],
+  "scenario": "Z-Pflegetransaktion für Prüfmittel und deren Kalibrierintervalle, die eine SM30-Pflege ersetzt und bei n.i.O. einen Auftrag im PM-System anfordert.",
+  "s4_issues": [
+    "Prüfmittel als Z-Tabelle statt Equipment/PRT",
+    "RFC auf separates PM-System",
+    "SAP-GUI-Dynpro nicht in Fiori",
+    "Z_PM_KALIB_AUFTRAG nicht geliefert"
+  ],
+  "wave": 3,
+  "module": "QM/PM",
+  "edge_constructs": [
+    "Routine mit drei Aufrufern und MESSAGE E als Abbruch",
+    "Methode mit zwei Aufrufern (Folgetermin)",
+    "polymorpher Aufruf mit drei Zielen in Schleife",
+    "Belegmethode mit drei Aufrufern",
+    "geschachtelter CALL SCREEN aus PAI",
+    "synchroner RFC mit Fehlertext"
+  ],
+  "oo": true
+}

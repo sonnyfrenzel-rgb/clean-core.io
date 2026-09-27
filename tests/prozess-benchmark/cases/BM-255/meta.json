@@ -1,0 +1,38 @@
+{
+  "id": "BM-255",
+  "title": "Unmanaged RAP-BO Umbuchungsauftrag: Handler, statischer Transaktionspuffer, Saver mit Verbucher und tRFC",
+  "domain": "MM Bestandsführung / Umbuchung Lagerort",
+  "band": "sehr komplex",
+  "loc": 403,
+  "constructs": [
+    "RAP unmanaged Handler (CREATE/UPDATE/READ/LOCK/ACTION)",
+    "FOR GLOBAL AUTHORIZATION",
+    "cl_abap_behavior_saver check_before_save/save/cleanup",
+    "statischer Transaktionspuffer",
+    "VALUE ... DEFAULT ... OPTIONAL",
+    "NUMBER_GET_NEXT",
+    "ENQUEUE im LOCK-Handler",
+    "CALL FUNCTION IN UPDATE TASK",
+    "IN BACKGROUND TASK AS SEPARATE UNIT",
+    "Verbuchungsbaustein mit MESSAGE TYPE 'A'",
+    "failed/reported/mapped",
+    "auskommentierter BAPI-Aufruf in der Save-Phase"
+  ],
+  "scenario": "Kundeneigene Fiori-App für Lagerleiter in S/4 Private Cloud: Umbuchungsaufträge zwischen Lagerorten werden als unmanaged RAP-BO über eine Kundentabelle geführt und per Aktion zur Warenbewegung 311 freigegeben.",
+  "s4_issues": [
+    "Leselogik auf MARD (Kompatibilitätsview auf MATDOC) in check_before_save",
+    "tRFC IN BACKGROUND TASK statt bgPF",
+    "Eigene Bestandsprüfung statt ATP/Bestandsfindung"
+  ],
+  "wave": 3,
+  "module": "MM",
+  "edge_constructs": [
+    "Framework-Einstiege ohne Aufrufkanten",
+    "Verbucher ohne Kante ins Ziel",
+    "tRFC mit Direktkante",
+    "frühes RETURN im Puffer",
+    "Nummernvergabe ohne Fehlerprüfung",
+    "in derselben Transaktion angelegte und gebuchte Aufträge werden nicht gebucht"
+  ],
+  "oo": true
+}

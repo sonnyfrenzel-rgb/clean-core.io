@@ -1,0 +1,1291 @@
+{
+  "id": "BM-228",
+  "title": "Gemessene IT-Leistungen auf Kostenstellen verrechnen",
+  "classes": [
+    "K01",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZCO_IT_LEIST",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "lzco_leistungu01.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzco_leistungu01.abap:37"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCO_IT_LEIST",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "lzco_leistungu01.abap",
+        "line": 112,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzco_leistungu01.abap:112"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZCO_IT_LEIST",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "lzco_leistungu01.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzco_leistungu01.abap:25"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CSKS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzco_leistungf01.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzco_leistungf01.abap:15"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CSLA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzco_leistungf01.abap",
+        "line": 35,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzco_leistungf01.abap:35"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_ACTIVITY_ALLOC_POST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzco_leistungu01.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzco_leistungu01.abap:83"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzco_leistungu01.abap",
+        "line": 108,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzco_leistungu01.abap:108"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-228-B01",
+      "text": "Die Leistungstabelle wird für Kostenrechnungskreis und Geschäftsjahr gesperrt; ist sie bereits gesperrt, endet der Baustein mit der Ausnahme GESPERRT.",
+      "anchors": [
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:25"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:33"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-228-B02",
+      "text": "Es werden die noch offenen Leistungsmeldungen der Periode gelesen; gibt es keine, wird die Sperre freigegeben und der Baustein endet mit der Ausnahme KEINE_DATEN.",
+      "anchors": [
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:37"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:42"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:43"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-228-B03",
+      "text": "Für jede Meldung müssen Sender- und Empfängerkostenstelle heute gültig sein; sonst wird eine Warnung gesammelt und die Meldung nicht verrechnet.",
+      "anchors": [
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:51"
+        },
+        {
+          "file": "lzco_leistungf01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:15"
+        },
+        {
+          "file": "lzco_leistungf01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:20"
+        },
+        {
+          "file": "lzco_leistungf01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:21"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-228-B04",
+      "text": "Die Leistungsart muss heute gültig sein; sonst wird eine Warnung gesammelt und die Meldung nicht verrechnet.",
+      "anchors": [
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:55"
+        },
+        {
+          "file": "lzco_leistungf01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:35"
+        },
+        {
+          "file": "lzco_leistungf01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:39"
+        },
+        {
+          "file": "lzco_leistungf01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:40"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-228-B05",
+      "text": "Gültige Meldungen werden zu Verrechnungspositionen mit Sender, Leistungsart, Empfänger und Menge.",
+      "anchors": [
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-228-B06",
+      "text": "Bleibt keine verrechenbare Position, wird eine Fehlermeldung zurückgegeben, die Sperre freigegeben und der Baustein ohne Buchung verlassen.",
+      "anchors": [
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:67"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:68"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:70"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-228-B07",
+      "text": "Die Positionen werden als Leistungsverrechnungsbeleg des Tages gebucht, Warnungen werden ignoriert.",
+      "anchors": [
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-228-B08",
+      "text": "Meldet die Buchung einen Fehler, wird sie verworfen und alle offenen Meldungen der Periode erhalten den Status fehlerhaft.",
+      "anchors": [
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:93"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:96"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:97"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:98"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:103"
+        }
+      ]
+    },
+    {
+      "id": "BM-228-B09",
+      "text": "Im Testlauf wird die Buchung nicht festgeschrieben und eine Testlaufmeldung zurückgegeben.",
+      "anchors": [
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:106"
+        }
+      ]
+    },
+    {
+      "id": "BM-228-B10",
+      "text": "Im Echtlauf wird der Beleg festgeschrieben, die Belegnummer zurückgegeben und alle offenen Meldungen der Periode als verrechnet mit Belegnummer gekennzeichnet.",
+      "anchors": [
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:108"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:112"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:118"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:119"
+        }
+      ]
+    },
+    {
+      "id": "BM-228-B11",
+      "text": "Die gesammelten Meldungen werden an den Aufrufer zurückgegeben und die Sperre freigegeben.",
+      "anchors": [
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:122"
+        },
+        {
+          "file": "lzco_leistungu01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:124"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:1"
+        },
+        "meaning": "Bausteinstart"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:25"
+        },
+        "meaning": "Leistungstabelle für Kostenrechnungskreis/Jahr sperren"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:33"
+        },
+        "meaning": "Sperre fehlgeschlagen?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:34"
+        },
+        "meaning": "Fehler: gesperrt"
+      },
+      {
+        "id": "m1e",
+        "type": "end",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:34"
+        },
+        "meaning": "Ausnahme GESPERRT"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:37"
+        },
+        "meaning": "Offene Leistungsmeldungen der Periode lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:42"
+        },
+        "meaning": "Leistungen vorhanden?"
+      },
+      {
+        "id": "dq1",
+        "type": "lock",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:43"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "rx",
+        "type": "end",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:47"
+        },
+        "meaning": "Ausnahme KEINE_DATEN"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:50"
+        },
+        "meaning": "Leistungsmeldungen durchlaufen"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:51"
+        },
+        "meaning": "Sender- und Empfängerkostenstelle prüfen"
+      },
+      {
+        "id": "gk",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:52"
+        },
+        "meaning": "Kostenstellen ungültig?"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:55"
+        },
+        "meaning": "Leistungsart prüfen"
+      },
+      {
+        "id": "ck",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:56"
+        },
+        "meaning": "Leistungsart gültig?"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:67"
+        },
+        "meaning": "Verrechenbare Positionen vorhanden?"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:68"
+        },
+        "meaning": "Fehlermeldung „nichts verrechenbar“ sammeln"
+      },
+      {
+        "id": "dq2",
+        "type": "lock",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:70"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "r",
+        "type": "end",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:74"
+        },
+        "meaning": "Baustein ohne Buchung verlassen"
+      },
+      {
+        "id": "bp",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:83"
+        },
+        "meaning": "Leistungsverrechnung buchen"
+      },
+      {
+        "id": "lr",
+        "type": "loop",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:93"
+        },
+        "meaning": "Nach Fehlermeldung suchen"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:96"
+        },
+        "meaning": "Buchungsfehler?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:97"
+        },
+        "meaning": "Buchung verwerfen"
+      },
+      {
+        "id": "u1",
+        "type": "write",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:98"
+        },
+        "meaning": "Offene Meldungen als fehlerhaft kennzeichnen"
+      },
+      {
+        "id": "cm1",
+        "type": "transaction",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:103"
+        },
+        "meaning": "Fehlerstatus festschreiben"
+      },
+      {
+        "id": "c4",
+        "type": "call",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:106"
+        },
+        "meaning": "Testlaufmeldung sammeln"
+      },
+      {
+        "id": "bc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:108"
+        },
+        "meaning": "Verrechnungsbeleg festschreiben"
+      },
+      {
+        "id": "u2",
+        "type": "write",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:112"
+        },
+        "meaning": "Offene Meldungen als verrechnet kennzeichnen"
+      },
+      {
+        "id": "cm2",
+        "type": "transaction",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:118"
+        },
+        "meaning": "Status festschreiben"
+      },
+      {
+        "id": "c5",
+        "type": "call",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:119"
+        },
+        "meaning": "Erfolgsmeldung mit Belegnummer sammeln"
+      },
+      {
+        "id": "dq3",
+        "type": "lock",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:124"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "lzco_leistungu01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungu01.abap:128"
+        },
+        "meaning": "Bausteinende"
+      },
+      {
+        "id": "ks",
+        "type": "start",
+        "anchor": {
+          "file": "lzco_leistungf01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:10"
+        },
+        "meaning": "Kostenstellenprüfung"
+      },
+      {
+        "id": "kq",
+        "type": "read",
+        "anchor": {
+          "file": "lzco_leistungf01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:15"
+        },
+        "meaning": "Gültige Sender-/Empfängerkostenstellen zählen"
+      },
+      {
+        "id": "kg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzco_leistungf01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:20"
+        },
+        "meaning": "Beide Kostenstellen gültig?"
+      },
+      {
+        "id": "kc",
+        "type": "call",
+        "anchor": {
+          "file": "lzco_leistungf01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:21"
+        },
+        "meaning": "Warnung ungültige Kostenstelle sammeln"
+      },
+      {
+        "id": "kr",
+        "type": "end",
+        "anchor": {
+          "file": "lzco_leistungf01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:22"
+        },
+        "meaning": "Prüfung negativ beenden"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "anchor": {
+          "file": "lzco_leistungf01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:25"
+        },
+        "meaning": "Ende Kostenstellenprüfung"
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "lzco_leistungf01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:30"
+        },
+        "meaning": "Leistungsartprüfung"
+      },
+      {
+        "id": "lq",
+        "type": "read",
+        "anchor": {
+          "file": "lzco_leistungf01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:35"
+        },
+        "meaning": "Leistungsart lesen"
+      },
+      {
+        "id": "lg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzco_leistungf01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:39"
+        },
+        "meaning": "Leistungsart vorhanden?"
+      },
+      {
+        "id": "lc",
+        "type": "call",
+        "anchor": {
+          "file": "lzco_leistungf01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:40"
+        },
+        "meaning": "Warnung ungültige Leistungsart sammeln"
+      },
+      {
+        "id": "lrt",
+        "type": "end",
+        "anchor": {
+          "file": "lzco_leistungf01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:41"
+        },
+        "meaning": "Prüfung negativ beenden"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "anchor": {
+          "file": "lzco_leistungf01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:50"
+        },
+        "meaning": "Ende Leistungsartprüfung"
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "lzco_leistungf01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:57"
+        },
+        "meaning": "Meldung sammeln"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "anchor": {
+          "file": "lzco_leistungf01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzco_leistungf01.abap:66"
+        },
+        "meaning": "Ende Meldung sammeln"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "lk",
+        "condition": "always"
+      },
+      {
+        "from": "lk",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m1",
+        "to": "m1e",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "q",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "dq1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "dq1",
+        "to": "rx",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "c1",
+        "condition": "next row"
+      },
+      {
+        "from": "c1",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "ks",
+        "to": "kq",
+        "condition": "always"
+      },
+      {
+        "from": "kq",
+        "to": "kg",
+        "condition": "always"
+      },
+      {
+        "from": "kg",
+        "to": "kc",
+        "condition": "lv_cnt < 2"
+      },
+      {
+        "from": "kc",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "kr",
+        "condition": "always"
+      },
+      {
+        "from": "kg",
+        "to": "ke",
+        "condition": "else"
+      },
+      {
+        "from": "kr",
+        "to": "gk",
+        "condition": "always"
+      },
+      {
+        "from": "ke",
+        "to": "gk",
+        "condition": "always"
+      },
+      {
+        "from": "gk",
+        "to": "l",
+        "condition": "lv_ok IS INITIAL"
+      },
+      {
+        "from": "gk",
+        "to": "c2",
+        "condition": "else"
+      },
+      {
+        "from": "c2",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "lq",
+        "condition": "always"
+      },
+      {
+        "from": "lq",
+        "to": "lg",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "lc",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "lc",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "lrt",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "le",
+        "condition": "else"
+      },
+      {
+        "from": "lrt",
+        "to": "ck",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "ck",
+        "condition": "always"
+      },
+      {
+        "from": "ck",
+        "to": "l",
+        "condition": "lv_ok = 'X'"
+      },
+      {
+        "from": "ck",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "g3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g3",
+        "to": "c3",
+        "condition": "gt_items IS INITIAL"
+      },
+      {
+        "from": "c3",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "dq2",
+        "condition": "always"
+      },
+      {
+        "from": "dq2",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "bp",
+        "condition": "else"
+      },
+      {
+        "from": "bp",
+        "to": "lr",
+        "condition": "always"
+      },
+      {
+        "from": "lr",
+        "to": "g4",
+        "condition": "next row"
+      },
+      {
+        "from": "lr",
+        "to": "g4",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g4",
+        "to": "rb",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "rb",
+        "to": "u1",
+        "condition": "always"
+      },
+      {
+        "from": "u1",
+        "to": "cm1",
+        "condition": "always"
+      },
+      {
+        "from": "cm1",
+        "to": "dq3",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "c4",
+        "condition": "iv_testrun = 'X'"
+      },
+      {
+        "from": "c4",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "dq3",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "bc",
+        "condition": "else"
+      },
+      {
+        "from": "bc",
+        "to": "u2",
+        "condition": "always"
+      },
+      {
+        "from": "u2",
+        "to": "cm2",
+        "condition": "always"
+      },
+      {
+        "from": "cm2",
+        "to": "c5",
+        "condition": "always"
+      },
+      {
+        "from": "c5",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "re",
+        "condition": "always"
+      },
+      {
+        "from": "dq3",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "lzco_leistungu01.abap:112 — kein Fachsatz „nur die verrechneten Meldungen werden als verrechnet gekennzeichnet“ (das UPDATE trifft alle offenen Meldungen der Periode, auch die wegen ungültiger Kostenstelle oder Leistungsart übersprungenen)",
+    "lzco_leistungu01.abap:104 — kein Fachsatz „im Testlauf wird nur geprüft“ (BAPI_ACC_ACTIVITY_ALLOC_POST wird ohne Testkennzeichen gerufen; nur das Festschreiben unterbleibt in diesem Baustein)",
+    "lzco_leistungf01.abap:35 — kein Fachsatz „Mengeneinheit wird gegen die Leistungsart geprüft“ (die Prüfung ist auskommentiert)"
+  ],
+  "processDescription": "Der Funktionsbaustein wird monatlich per Job mit Kostenrechnungskreis, Jahr, Periode und Testlaufkennzeichen gerufen. Er sperrt die Kundentabelle der IT-Leistungsmeldungen; ist sie gesperrt, endet er mit GESPERRT. Er liest die offenen Meldungen der Periode; gibt es keine, gibt er die Sperre frei und endet mit KEINE_DATEN. Je Meldung prüfen zwei FORMs, ob Sender- und Empfängerkostenstelle sowie die Leistungsart heute gültig sind; bei Fehlern sammeln sie eine Warnung, und die Meldung wird übersprungen. Gültige Meldungen werden zu Verrechnungspositionen. Bleibt keine, gibt er eine Fehlermeldung zurück, gibt die Sperre frei und endet ohne Buchung. Sonst bucht er über BAPI_ACC_ACTIVITY_ALLOC_POST einen Leistungsverrechnungsbeleg. Bei Fehlermeldungen verwirft er die Buchung und setzt alle offenen Meldungen der Periode auf fehlerhaft; im Testlauf schreibt er nichts fest und meldet den Testlauf; im Echtlauf schreibt er den Beleg fest und setzt alle offenen Meldungen der Periode auf verrechnet mit Belegnummer. Zum Schluss gibt er die gesammelten Meldungen zurück und gibt die Sperre frei."
+}

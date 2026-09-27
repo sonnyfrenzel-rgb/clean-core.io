@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "ENQUEUE_EZWM_TANUM mit _scope '1': Sperre bleibt über COMMIT beim Programm – Kommentar und Modell stimmen."
+  ]
+}

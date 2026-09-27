@@ -1,0 +1,63 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten xa1",
+      "before": "action zcx_hr_send_error.abap:18 (nicht wiederholbar); Kanten xs1->xa1 [always], xa1->xe1 [always]",
+      "after": "entfernt",
+      "why": "zcx_hr_send_error.abap:18 (rv_retry = abap_false) ist eine reine Zuweisung des Rückgabewerts - kein Knoten; Fachsatz B09 bleibt.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante xs1->xe1",
+      "before": "—",
+      "after": "[always]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten xa1.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten xa2",
+      "before": "action zcx_hr_send_temporary.abap:18 (wiederholbar); Kanten xs2->xa2 [always], xa2->xe2 [always]",
+      "after": "entfernt",
+      "why": "zcx_hr_send_temporary.abap:18 (rv_retry = abap_true) ist eine reine Zuweisung des Rückgabewerts - kein Knoten; Fachsatz B09 bleibt.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante xs2->xe2",
+      "before": "—",
+      "after": "[always]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten xa2.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten ex",
+      "before": "action zcl_hr_emp_sender.abap:111 (Eintrag aufgeben (manuelle Klärung)); Kanten eg->ex [ls_queue-retries > gc_max_retries], ex->ew [always]",
+      "after": "entfernt",
+      "why": "zcl_hr_emp_sender.abap:111 (ls_queue-status = 'X') ist eine reine Zuweisung - kein Knoten; Fachsatz B10 bleibt.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante eg->ew",
+      "before": "—",
+      "after": "[ls_queue-retries > gc_max_retries]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten ex.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten bc",
+      "before": "action zcl_hr_emp_sender.abap:95 (Kostenstelle nicht übermitteln); Kanten bg3->bc [ls_p0001-persg <> '1'], bc->be [always]",
+      "after": "entfernt",
+      "why": "zcl_hr_emp_sender.abap:95 ist ein CLEAR auf ein Feld der Nachricht - laut Brief kein Knoten; Fachsatz B06 bleibt.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante bg3->be",
+      "before": "—",
+      "after": "[ls_p0001-persg <> '1']",
+      "why": "Ersatz für den entfernten CLEAR-Knoten bc.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

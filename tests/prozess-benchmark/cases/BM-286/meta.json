@@ -1,0 +1,31 @@
+{
+  "id": "BM-286",
+  "title": "QM-Endkontrolle: Messwerte im Table Control bewerten, verwerfen und sichern",
+  "domain": "QM Endkontrolle",
+  "band": "mittel",
+  "loc": 74,
+  "constructs": [
+    "Table Control",
+    "MODULE ... ON CHAIN-REQUEST (Kommentar)",
+    "CASE ok_code",
+    "DELETE FROM dbtab",
+    "INSERT dbtab FROM TABLE",
+    "ROLLBACK WORK",
+    "COMMIT WORK",
+    "MESSAGE E/S"
+  ],
+  "scenario": "Z-Erfassungsbild für Messwerte an der Endkontrolle, das an der QM-Ergebniserfassung vorbei in eine Kundentabelle schreibt.",
+  "s4_issues": [
+    "Paralleldatenhaltung neben QAMR/QASR",
+    "SAP-GUI-Table-Control nicht in Fiori"
+  ],
+  "wave": 3,
+  "module": "QM",
+  "edge_constructs": [
+    "internes DELETE vs. DB-DELETE",
+    "ROLLBACK vor MESSAGE E",
+    "auskommentierter WHEN-Zweig",
+    "Zeilenmodul im Table-Control-Loop"
+  ],
+  "oo": false
+}

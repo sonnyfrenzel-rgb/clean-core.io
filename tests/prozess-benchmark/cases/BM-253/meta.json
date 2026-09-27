@@ -1,0 +1,35 @@
+{
+  "id": "BM-253",
+  "title": "MES-Rückmeldungen per EML in ein RAP-BO übernehmen: paketweise MODIFY/COMMIT ENTITIES mit Datei-Archivierung",
+  "domain": "PP Fertigungsrückmeldung",
+  "band": "komplex",
+  "loc": 202,
+  "constructs": [
+    "MODIFY ENTITIES ... CREATE FIELDS ... WITH",
+    "MAPPED/FAILED/REPORTED",
+    "ROLLBACK ENTITIES",
+    "COMMIT ENTITIES RESPONSE OF",
+    "OPEN/READ/CLOSE/DELETE DATASET",
+    "TRANSFER",
+    "DO ... EXIT",
+    "SPLIT",
+    "Paketbildung",
+    "MESSAGE TYPE 'S' ins Joblog",
+    "READ-ONLY-Attribute"
+  ],
+  "scenario": "Schnittstellenjob alle 15 Minuten: ein MES legt Rückmeldungen als CSV auf dem Applikationsserver ab, der Job bucht sie über ein kundeneigenes RAP-BO in S/4.",
+  "s4_issues": [
+    "Dateischnittstelle über Applikationsserver statt API/Event",
+    "kundeneigenes RAP-BO statt freigegebener API für Rückmeldungen",
+    "OPEN DATASET ohne Pfadprüfung (Logical File Names)"
+  ],
+  "wave": 3,
+  "module": "PP",
+  "edge_constructs": [
+    "EXIT aus DO nach sy-subrc",
+    "Hilfsroutine, die nur protokolliert, mit fünf Aufrufern",
+    "Testmodus über ROLLBACK ENTITIES",
+    "Datei bleibt bei Einzelfehler liegen"
+  ],
+  "oo": true
+}

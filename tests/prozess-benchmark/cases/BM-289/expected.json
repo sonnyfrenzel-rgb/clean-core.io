@@ -1,0 +1,1238 @@
+{
+  "id": "BM-289",
+  "title": "WM-Packtisch: Transportauftrag im modalen Dialog mit Sperre und Differenzmengen quittieren",
+  "classes": [
+    "K07",
+    "K01",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ENQUEUE_EZWM_TANUM",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "lzwm_quitu01.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzwm_quitu01.abap:19"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LTAP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzwm_quitu01.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzwm_quitu01.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MAKT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzwm_quitu01.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzwm_quitu01.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZWM_TANUM",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "lzwm_quitu01.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzwm_quitu01.abap:41"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzwm_quiti01.abap",
+        "line": 31,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzwm_quiti01.abap:31"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "L_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzwm_quitf01.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzwm_quitf01.abap:34"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-289-B01",
+      "text": "Der Transportauftrag wird gegen parallele Quittierung gesperrt; ist er bereits gesperrt, endet der Baustein mit der Ausnahme TA_GESPERRT.",
+      "anchors": [
+        {
+          "file": "lzwm_quitu01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:19"
+        },
+        {
+          "file": "lzwm_quitu01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:28"
+        },
+        {
+          "file": "lzwm_quitu01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-289-B02",
+      "text": "Es werden die noch nicht quittierten Positionen des Transportauftrags mit Materialkurztext gelesen.",
+      "anchors": [
+        {
+          "file": "lzwm_quitu01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-289-B03",
+      "text": "Gibt es keine offene Position, wird die Sperre wieder aufgehoben und der Baustein endet mit der Ausnahme NICHTS_OFFEN.",
+      "anchors": [
+        {
+          "file": "lzwm_quitu01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:40"
+        },
+        {
+          "file": "lzwm_quitu01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:41"
+        },
+        {
+          "file": "lzwm_quitu01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-289-B04",
+      "text": "Sonst werden die Positionen in einem modalen Quittierdialog angezeigt; nach dessen Ende wird die Sperre aufgehoben und zurückgegeben, ob quittiert wurde.",
+      "anchors": [
+        {
+          "file": "lzwm_quitu01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:50"
+        },
+        {
+          "file": "lzwm_quitu01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:52"
+        },
+        {
+          "file": "lzwm_quitu01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-289-B05",
+      "text": "Mit Abbrechen nach Eingaben muss der Packer das Verwerfen bestätigen; ohne Bestätigung bleibt der Dialog offen, sonst wird er geschlossen.",
+      "anchors": [
+        {
+          "file": "lzwm_quiti01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quiti01.abap:29"
+        },
+        {
+          "file": "lzwm_quiti01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quiti01.abap:30"
+        },
+        {
+          "file": "lzwm_quiti01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quiti01.abap:31"
+        },
+        {
+          "file": "lzwm_quiti01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quiti01.abap:37"
+        },
+        {
+          "file": "lzwm_quiti01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quiti01.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-289-B06",
+      "text": "Beim Quittieren muss für jede markierte Position Istmenge plus Differenzmenge die Sollmenge ergeben, sonst bricht eine Fehlermeldung mit der Positionsnummer ab.",
+      "anchors": [
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:16"
+        },
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:18"
+        },
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-289-B07",
+      "text": "Ist keine Position markiert, erhält der Packer einen Hinweis und es wird nichts quittiert.",
+      "anchors": [
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:29"
+        },
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:30"
+        },
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-289-B08",
+      "text": "Die markierten Positionen werden mit Ist- und Differenzmenge im Transportauftrag quittiert.",
+      "anchors": [
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-289-B09",
+      "text": "Scheitert die Quittierung, wird zurückgerollt und die Meldung des Bausteins als Fehler ausgegeben.",
+      "anchors": [
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:47"
+        },
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:48"
+        },
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-289-B10",
+      "text": "Sonst wird synchron festgeschrieben, Transportauftrag und Anzahl der quittierten Positionen werden gemeldet, die Quittierung wird als erfolgt vermerkt und der Dialog geschlossen.",
+      "anchors": [
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:53"
+        },
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:55"
+        },
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:56"
+        },
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-289-B11",
+      "text": "Mit Differenz wird für die Position unter dem Cursor nach Rückfrage die Fehlmenge Soll minus Ist als Differenzmenge eingetragen und die Position markiert; gebucht wird dabei noch nichts.",
+      "anchors": [
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:72"
+        },
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:73"
+        },
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:75"
+        },
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:81"
+        },
+        {
+          "file": "lzwm_quitf01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:82"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "su",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_quitu01.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:1"
+        },
+        "meaning": "Quittierdialog aufrufen"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "lzwm_quitu01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:19"
+        },
+        "meaning": "Transportauftrag sperren"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_quitu01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:28"
+        },
+        "meaning": "Sperre fehlgeschlagen?"
+      },
+      {
+        "id": "rz1",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_quitu01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:29"
+        },
+        "meaning": "Ausnahme TA gesperrt"
+      },
+      {
+        "id": "rd",
+        "type": "read",
+        "anchor": {
+          "file": "lzwm_quitu01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:32"
+        },
+        "meaning": "Offene TA-Positionen lesen"
+      },
+      {
+        "id": "gi",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_quitu01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:40"
+        },
+        "meaning": "Keine offenen Positionen?"
+      },
+      {
+        "id": "dq1",
+        "type": "lock",
+        "anchor": {
+          "file": "lzwm_quitu01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:41"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "rz2",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_quitu01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:45"
+        },
+        "meaning": "Ausnahme nichts offen"
+      },
+      {
+        "id": "cs",
+        "type": "output",
+        "anchor": {
+          "file": "lzwm_quitu01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:50"
+        },
+        "meaning": "Modalen Quittierdialog zeigen"
+      },
+      {
+        "id": "dq2",
+        "type": "lock",
+        "anchor": {
+          "file": "lzwm_quitu01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:52"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "eu",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_quitu01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitu01.abap:59"
+        },
+        "meaning": "Ergebnis zurückgeben"
+      },
+      {
+        "id": "stm",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_quiti01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quiti01.abap:8"
+        },
+        "meaning": "Zeilenänderung übernehmen"
+      },
+      {
+        "id": "etm",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_quiti01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quiti01.abap:11"
+        },
+        "meaning": "Ende Zeilenmodul"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_quiti01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quiti01.abap:16"
+        },
+        "meaning": "PAI Quittierdialog"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_quiti01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quiti01.abap:22"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "pq",
+        "type": "call",
+        "anchor": {
+          "file": "lzwm_quiti01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quiti01.abap:24"
+        },
+        "meaning": "Quittieren"
+      },
+      {
+        "id": "pd",
+        "type": "call",
+        "anchor": {
+          "file": "lzwm_quiti01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quiti01.abap:27"
+        },
+        "meaning": "Differenz setzen"
+      },
+      {
+        "id": "gch",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_quiti01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quiti01.abap:30"
+        },
+        "meaning": "Eingaben vorhanden?"
+      },
+      {
+        "id": "pop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzwm_quiti01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quiti01.abap:31"
+        },
+        "meaning": "Rückfrage verwerfen"
+      },
+      {
+        "id": "gck",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_quiti01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quiti01.abap:37"
+        },
+        "meaning": "Verwerfen bestätigt?"
+      },
+      {
+        "id": "lv",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_quiti01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quiti01.abap:39"
+        },
+        "meaning": "Dialog schließen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_quiti01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quiti01.abap:44"
+        },
+        "meaning": "Ende PAI"
+      },
+      {
+        "id": "sq",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:10"
+        },
+        "meaning": "Markierte Positionen quittieren"
+      },
+      {
+        "id": "lq",
+        "type": "loop",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:16"
+        },
+        "meaning": "Markierte Positionen"
+      },
+      {
+        "id": "gq",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:18"
+        },
+        "meaning": "Mengen stimmen nicht?"
+      },
+      {
+        "id": "meq",
+        "type": "output",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:19"
+        },
+        "meaning": "Fehler Mengenabgleich"
+      },
+      {
+        "id": "meqe",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:19"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:29"
+        },
+        "meaning": "Nichts markiert?"
+      },
+      {
+        "id": "mi",
+        "type": "output",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:30"
+        },
+        "meaning": "Hinweis markieren"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:31"
+        },
+        "meaning": "Ohne Quittierung zurück"
+      },
+      {
+        "id": "lto",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:34"
+        },
+        "meaning": "TA quittieren"
+      },
+      {
+        "id": "gs",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:47"
+        },
+        "meaning": "Quittierung fehlgeschlagen?"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:48"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "me2",
+        "type": "output",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:49"
+        },
+        "meaning": "Fehler des Bausteins"
+      },
+      {
+        "id": "me2e",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:49"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:53"
+        },
+        "meaning": "Synchron festschreiben"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:55"
+        },
+        "meaning": "Erfolgsmeldung"
+      },
+      {
+        "id": "lv0",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:57"
+        },
+        "meaning": "Dialog schließen"
+      },
+      {
+        "id": "sd",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:66"
+        },
+        "meaning": "Differenz für Cursorzeile"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:72"
+        },
+        "meaning": "Position unter Cursor"
+      },
+      {
+        "id": "gck2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:73"
+        },
+        "meaning": "Position getroffen?"
+      },
+      {
+        "id": "pop2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:75"
+        },
+        "meaning": "Rückfrage Differenz"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:81"
+        },
+        "meaning": "Bestätigt?"
+      },
+      {
+        "id": "ad",
+        "type": "action",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:82"
+        },
+        "meaning": "Fehlmenge als Differenz setzen"
+      },
+      {
+        "id": "ed",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_quitf01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_quitf01.abap:88"
+        },
+        "meaning": "Ende Differenz"
+      }
+    ],
+    "edges": [
+      {
+        "from": "su",
+        "to": "lk",
+        "condition": "always"
+      },
+      {
+        "from": "lk",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "rz1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gl",
+        "to": "rd",
+        "condition": "else"
+      },
+      {
+        "from": "rd",
+        "to": "gi",
+        "condition": "always"
+      },
+      {
+        "from": "gi",
+        "to": "dq1",
+        "condition": "gt_pos IS INITIAL"
+      },
+      {
+        "from": "dq1",
+        "to": "rz2",
+        "condition": "always"
+      },
+      {
+        "from": "gi",
+        "to": "cs",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "dq2",
+        "condition": "always"
+      },
+      {
+        "from": "dq2",
+        "to": "eu",
+        "condition": "always"
+      },
+      {
+        "from": "stm",
+        "to": "etm",
+        "condition": "always"
+      },
+      {
+        "from": "s",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "pq",
+        "condition": "WHEN 'QUIT'"
+      },
+      {
+        "from": "g",
+        "to": "pd",
+        "condition": "WHEN 'DIFF'"
+      },
+      {
+        "from": "g",
+        "to": "gch",
+        "condition": "WHEN 'CANC'"
+      },
+      {
+        "from": "g",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "pq",
+        "to": "sq",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "pd",
+        "to": "sd",
+        "condition": "always"
+      },
+      {
+        "from": "ed",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "gch",
+        "to": "pop",
+        "condition": "gv_changed = abap_true"
+      },
+      {
+        "from": "gch",
+        "to": "lv",
+        "condition": "else"
+      },
+      {
+        "from": "pop",
+        "to": "gck",
+        "condition": "always"
+      },
+      {
+        "from": "gck",
+        "to": "lv",
+        "condition": "gv_answer = '1'"
+      },
+      {
+        "from": "gck",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "sq",
+        "to": "lq",
+        "condition": "always"
+      },
+      {
+        "from": "lq",
+        "to": "gq",
+        "condition": "next row"
+      },
+      {
+        "from": "gq",
+        "to": "meq",
+        "condition": "gs_pos-nista + gs_pos-ndifa <> gs_pos-vsola"
+      },
+      {
+        "from": "meq",
+        "to": "meqe",
+        "condition": "always"
+      },
+      {
+        "from": "gq",
+        "to": "lq",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lq",
+        "to": "ge",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ge",
+        "to": "mi",
+        "condition": "lt_conf IS INITIAL"
+      },
+      {
+        "from": "mi",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "lto",
+        "condition": "else"
+      },
+      {
+        "from": "lto",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "rb",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rb",
+        "to": "me2",
+        "condition": "always"
+      },
+      {
+        "from": "me2",
+        "to": "me2e",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "lv0",
+        "condition": "always"
+      },
+      {
+        "from": "sd",
+        "to": "rt",
+        "condition": "always"
+      },
+      {
+        "from": "rt",
+        "to": "gck2",
+        "condition": "always"
+      },
+      {
+        "from": "gck2",
+        "to": "pop2",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gck2",
+        "to": "ed",
+        "condition": "else"
+      },
+      {
+        "from": "pop2",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "ad",
+        "condition": "gv_answer = '1'"
+      },
+      {
+        "from": "ga",
+        "to": "ed",
+        "condition": "else"
+      },
+      {
+        "from": "ad",
+        "to": "ed",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "lzwm_quitf01.abap:82 — kein Fachsatz „Differenz wird gebucht“; die Routine ändert nur die Dialogdaten, gebucht wird erst beim Quittieren.",
+    "lzwm_quitu01.abap:50 — kein Fachsatz „der Transportauftrag wird quittiert“ als Ergebnis des Bausteins; ob quittiert wurde, hängt am Benutzer und wird nur als Kennzeichen zurückgegeben.",
+    "lzwm_quitu01.abap:48 — kein Fachsatz „Istmenge wird mit Sollmenge vorbelegt“; das geschieht in einem nicht gelieferten PBO-Modul."
+  ],
+  "processDescription": "Der Funktionsbaustein öffnet für einen Transportauftrag einen modalen Quittierdialog am Packtisch. Er sperrt den TA mit einer Dialogsperre; ist er gesperrt, endet er mit TA_GESPERRT. Dann liest er die offenen Positionen mit Materialtext; ohne offene Position hebt er die Sperre auf und endet mit NICHTS_OFFEN. Sonst ruft er Dynpro 0100 als Popup, hebt danach die Sperre auf und gibt zurück, ob quittiert wurde. Im Dialog prüft Quittieren je markierter Position, dass Ist plus Differenz das Soll ergibt (sonst Fehler), meldet bei fehlender Markierung einen Hinweis, ruft L_TO_CONFIRM ohne eigenes Commit, rollt bei Fehler zurück und gibt die Bausteinmeldung als Fehler aus, schreibt sonst mit COMMIT WORK AND WAIT fest, meldet Erfolg und schließt den Dialog. Differenz setzt nach Rückfrage die Fehlmenge der Cursorzeile nur im Puffer. Abbrechen verlangt nach Eingaben eine Bestätigung."
+}

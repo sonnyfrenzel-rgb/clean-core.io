@@ -1,0 +1,1071 @@
+{
+  "id": "BM-290",
+  "title": "Pflegedialog Kassenlimit je Kunde mit Sperre, Freigabeberechtigung und Änderungsbeleg",
+  "classes": [
+    "K07",
+    "K09",
+    "K12",
+    "K15"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZSD_KASSLIMIT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zsd_kasslim_pflege_c01.abap",
+        "line": 104,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_kasslim_pflege_c01.abap:104"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZSD_KASSLIM",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_kasslim_pflege_c01.abap",
+        "line": 71,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_kasslim_pflege_c01.abap:71"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZSD_KASSLIM",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_kasslim_pflege.abap",
+        "line": 55,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_kasslim_pflege.abap:55"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZKASSLIM_WRITE_DOCUMENT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_kasslim_pflege_c01.abap",
+        "line": 113,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_kasslim_pflege_c01.abap:113"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-290-B01",
+      "text": "Zum eingegebenen Kunden wird das bestehende Kassenlimit gelesen; gibt es noch keines, wird ein neuer Satz in Euro vorbereitet.",
+      "anchors": [
+        {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:19"
+        },
+        {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:60"
+        },
+        {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-290-B02",
+      "text": "Der Kundensatz wird für die Pflege gesperrt; ist er bereits gesperrt, wird der sperrende Benutzer als Statusmeldung in Fehleroptik gemeldet und die Pflege beendet.",
+      "anchors": [
+        {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:21"
+        },
+        {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:71"
+        },
+        {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:79"
+        },
+        {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:23"
+        },
+        {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-290-B03",
+      "text": "Sonst wird das Pflegebild mit den Limitdaten aufgerufen.",
+      "anchors": [
+        {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-290-B04",
+      "text": "Beim Sichern übernimmt die Pflege die Bildfelder und prüft: liegt das neue Limit über der Freigabegrenze von 50.000, braucht der Bearbeiter die Zusatzberechtigung für die Verkaufsorganisation, sonst wird das Sichern mit einer Fehlermeldung abgebrochen.",
+      "anchors": [
+        {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:44"
+        },
+        {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:48"
+        },
+        {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:86"
+        },
+        {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:87"
+        },
+        {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-290-B05",
+      "text": "Nach bestandener Prüfung wird der Satz mit Änderer und Datum neu angelegt oder geändert, je nachdem ob er vorher existierte.",
+      "anchors": [
+        {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:103"
+        },
+        {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:104"
+        },
+        {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:107"
+        }
+      ]
+    },
+    {
+      "id": "BM-290-B06",
+      "text": "Dazu wird ein Änderungsbeleg mit altem und neuem Stand zur Verbuchung vorgemerkt.",
+      "anchors": [
+        {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:113"
+        }
+      ]
+    },
+    {
+      "id": "BM-290-B07",
+      "text": "Mit dem Festschreiben werden Satz und Änderungsbeleg gebucht und eine Erfolgsmeldung zum Kunden ausgegeben.",
+      "anchors": [
+        {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:32"
+        },
+        {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-290-B08",
+      "text": "Zurück, Beenden oder Abbrechen hebt die Sperre auf und verlässt das Pflegebild, ohne ungesicherte Eingaben nachzufragen.",
+      "anchors": [
+        {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:55"
+        },
+        {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:58"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s0",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:17"
+        },
+        "meaning": "Pflege starten"
+      },
+      {
+        "id": "cl",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:19"
+        },
+        "meaning": "Limit laden (Fabrikmethode)"
+      },
+      {
+        "id": "cs1",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:21"
+        },
+        "meaning": "Kundensatz sperren"
+      },
+      {
+        "id": "mc",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:23"
+        },
+        "meaning": "Sperrmeldung in Fehleroptik"
+      },
+      {
+        "id": "r0",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:24"
+        },
+        "meaning": "Pflege beenden"
+      },
+      {
+        "id": "cs",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:28"
+        },
+        "meaning": "Pflegebild aufrufen"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:28"
+        },
+        "meaning": "Ende nach Verlassen"
+      },
+      {
+        "id": "so",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:33"
+        },
+        "meaning": "PBO Pflegebild"
+      },
+      {
+        "id": "eo",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:36"
+        },
+        "meaning": "Ende PBO"
+      },
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:41"
+        },
+        "meaning": "PAI Pflegebild"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:43"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "csv",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:48"
+        },
+        "meaning": "Sichern"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:49"
+        },
+        "meaning": "Erfolgsmeldung"
+      },
+      {
+        "id": "me",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:51"
+        },
+        "meaning": "Fehlermeldung aus Ausnahme"
+      },
+      {
+        "id": "mee",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:51"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "dq",
+        "type": "lock",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:55"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "lv",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:58"
+        },
+        "meaning": "Pflegebild verlassen"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasslim_pflege.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege.abap:63"
+        },
+        "meaning": "Ende PAI"
+      },
+      {
+        "id": "sl",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:58"
+        },
+        "meaning": "Fabrikmethode"
+      },
+      {
+        "id": "rd",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:60"
+        },
+        "meaning": "Limit lesen"
+      },
+      {
+        "id": "gn",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:62"
+        },
+        "meaning": "Neuer Satz?"
+      },
+      {
+        "id": "el",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:68"
+        },
+        "meaning": "Ende laden"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:70"
+        },
+        "meaning": "Sperren"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:71"
+        },
+        "meaning": "Kundensatz sperren"
+      },
+      {
+        "id": "gs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:78"
+        },
+        "meaning": "Sperre fehlgeschlagen?"
+      },
+      {
+        "id": "rz",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:79"
+        },
+        "meaning": "Ausnahme gesperrt"
+      },
+      {
+        "id": "es",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:82"
+        },
+        "meaning": "Ende sperren"
+      },
+      {
+        "id": "sv",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:29"
+        },
+        "meaning": "Sichern (Schablone)"
+      },
+      {
+        "id": "cp",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:30"
+        },
+        "meaning": "Prüfen (Redefinition)"
+      },
+      {
+        "id": "cw",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:31"
+        },
+        "meaning": "Schreiben (Redefinition)"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:32"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "ev",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:33"
+        },
+        "meaning": "Ende sichern"
+      },
+      {
+        "id": "sp",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:84"
+        },
+        "meaning": "Prüfen"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:86"
+        },
+        "meaning": "Über Freigabegrenze?"
+      },
+      {
+        "id": "ac",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:87"
+        },
+        "meaning": "Zusatzberechtigung prüfen"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:90"
+        },
+        "meaning": "Nicht berechtigt?"
+      },
+      {
+        "id": "rz2",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:91"
+        },
+        "meaning": "Ausnahme keine Berechtigung"
+      },
+      {
+        "id": "ep",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:95"
+        },
+        "meaning": "Ende prüfen"
+      },
+      {
+        "id": "sw",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:97"
+        },
+        "meaning": "Schreiben"
+      },
+      {
+        "id": "gn2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:103"
+        },
+        "meaning": "Neuer Satz?"
+      },
+      {
+        "id": "wi",
+        "type": "write",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:104"
+        },
+        "meaning": "Limit anlegen"
+      },
+      {
+        "id": "wu",
+        "type": "write",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:107"
+        },
+        "meaning": "Limit ändern"
+      },
+      {
+        "id": "cd",
+        "type": "update_task",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:113"
+        },
+        "meaning": "Änderungsbeleg zur Verbuchung"
+      },
+      {
+        "id": "ew",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_kasslim_pflege_c01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_kasslim_pflege_c01.abap:126"
+        },
+        "meaning": "Ende schreiben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s0",
+        "to": "cl",
+        "condition": "always"
+      },
+      {
+        "from": "cl",
+        "to": "sl",
+        "condition": "always"
+      },
+      {
+        "from": "el",
+        "to": "cs1",
+        "condition": "always"
+      },
+      {
+        "from": "cs1",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "rz",
+        "to": "mc",
+        "condition": "lcx_pflege"
+      },
+      {
+        "from": "mc",
+        "to": "r0",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "so",
+        "to": "eo",
+        "condition": "always"
+      },
+      {
+        "from": "s1",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "csv",
+        "condition": "WHEN 'SAVE'"
+      },
+      {
+        "from": "g",
+        "to": "dq",
+        "condition": "WHEN 'BACK' OR 'EXIT' OR 'CANC'"
+      },
+      {
+        "from": "g",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "csv",
+        "to": "sv",
+        "condition": "always"
+      },
+      {
+        "from": "ev",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "rz2",
+        "to": "me",
+        "condition": "lcx_pflege"
+      },
+      {
+        "from": "me",
+        "to": "mee",
+        "condition": "always"
+      },
+      {
+        "from": "dq",
+        "to": "lv",
+        "condition": "always"
+      },
+      {
+        "from": "sl",
+        "to": "rd",
+        "condition": "always"
+      },
+      {
+        "from": "rd",
+        "to": "gn",
+        "condition": "always"
+      },
+      {
+        "from": "gn",
+        "to": "el",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gn",
+        "to": "el",
+        "condition": "else"
+      },
+      {
+        "from": "ss",
+        "to": "lk",
+        "condition": "always"
+      },
+      {
+        "from": "lk",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "rz",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gs",
+        "to": "es",
+        "condition": "else"
+      },
+      {
+        "from": "sv",
+        "to": "cp",
+        "condition": "always"
+      },
+      {
+        "from": "cp",
+        "to": "sp",
+        "condition": "always"
+      },
+      {
+        "from": "ep",
+        "to": "cw",
+        "condition": "always"
+      },
+      {
+        "from": "cw",
+        "to": "sw",
+        "condition": "always"
+      },
+      {
+        "from": "ew",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "ev",
+        "condition": "always"
+      },
+      {
+        "from": "sp",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "ac",
+        "condition": "ms_neu-limit > gc_limit_freigabe"
+      },
+      {
+        "from": "gl",
+        "to": "ep",
+        "condition": "else"
+      },
+      {
+        "from": "ac",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "rz2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ga",
+        "to": "ep",
+        "condition": "else"
+      },
+      {
+        "from": "sw",
+        "to": "gn2",
+        "condition": "always"
+      },
+      {
+        "from": "gn2",
+        "to": "wi",
+        "condition": "mv_neu = abap_true"
+      },
+      {
+        "from": "gn2",
+        "to": "wu",
+        "condition": "else"
+      },
+      {
+        "from": "wi",
+        "to": "cd",
+        "condition": "always"
+      },
+      {
+        "from": "wu",
+        "to": "cd",
+        "condition": "always"
+      },
+      {
+        "from": "cd",
+        "to": "ew",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zsd_kasslim_pflege_c01.abap:113 — kein Fachsatz „Änderungsbeleg ist geschrieben“ an dieser Stelle; der Aufruf wird nur zur Verbuchung vorgemerkt und erst mit COMMIT WORK ausgeführt.",
+    "zsd_kasslim_pflege_c01.abap:104 — kein Fachsatz „Schreibfehler wird gemeldet“; sy-subrc wird nach INSERT/UPDATE nicht geprüft.",
+    "zsd_kasslim_pflege.abap:58 — kein Fachsatz „ungesicherte Änderungen werden abgefragt“; es gibt keine Datenverlust-Rückfrage.",
+    "zsd_kasslim_pflege.abap:60 — kein Fachsatz „Limit wird gelöscht“; der Zweig ist auskommentiert."
+  ],
+  "processDescription": "Die Pflegetransaktion lädt über eine Fabrikmethode das Kassenlimit des eingegebenen Kunden aus ZSD_KASSLIMIT oder bereitet einen neuen Satz vor. Dann sperrt sie den Kundensatz; ist er gesperrt, wirft die Methode eine Ausnahme, die als Statusmeldung in Fehleroptik gezeigt wird, und die Pflege endet. Sonst wird das Pflegebild 0100 aufgerufen. Beim Sichern übernimmt das PAI die Bildfelder und ruft die Schablonenmethode der abstrakten Basisklasse: sie ruft die redefinierte Prüfung, die über der Freigabegrenze 50.000 die Zusatzberechtigung verlangt und sonst eine Ausnahme wirft (im PAI als Fehlermeldung ausgegeben), dann das redefinierte Schreiben mit INSERT oder UPDATE und der Vormerkung des Änderungsbelegs in der Verbuchung, zuletzt COMMIT WORK. Danach folgt eine Erfolgsmeldung. Zurück hebt die Sperre auf und verlässt das Bild ohne Rückfrage."
+}

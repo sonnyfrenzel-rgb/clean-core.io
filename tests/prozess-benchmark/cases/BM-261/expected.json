@@ -1,0 +1,286 @@
+{
+  "id": "BM-261",
+  "title": "Zählliste fehlerhafter Auftrags-IDocs",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EDIDC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 13,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:13"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-261-B01",
+      "text": "Es werden eingehende IDocs des gewählten Nachrichtentyps im Status 51 (Anwendungsfehler) aus dem Erstellungszeitraum selektiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-261-B02",
+      "text": "Ohne Treffer erscheint eine Erfolgsmeldung „Keine fehlerhaften IDocs gefunden“ und der Report endet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-261-B03",
+      "text": "Jedes fehlerhafte IDoc wird, nach Sendepartner sortiert, mit Partner, IDoc-Nummer und Erstellungsdatum aufgelistet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-261-B04",
+      "text": "Am Ende wird die Gesamtzahl der fehlerhaften IDocs ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        "meaning": "Fehlerhafte Eingangs-IDocs des Nachrichtentyps lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Keine fehlerhaften IDocs?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Hinweis: keine fehlerhaften IDocs"
+      },
+      {
+        "id": "r",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Report verlassen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Fehlerhafte IDocs durchlaufen"
+      },
+      {
+        "id": "w",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Partner, IDoc-Nummer und Datum ausgeben"
+      },
+      {
+        "id": "sum",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Anzahl fehlerhafter IDocs ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Ende der Verarbeitung"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "m",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "w",
+        "condition": "next row"
+      },
+      {
+        "from": "w",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "sum",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sum",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:13 — kein Fachsatz „IDocs werden nachverarbeitet“ (der Report liest und listet nur)",
+    "source.abap:19 — kein Fachsatz „Abbruch mit Fehlermeldung“ (Nachricht vom Typ S, Report endet regulär)"
+  ],
+  "processDescription": "Der Report wird vom Innendienst manuell gestartet. Er liest aus der IDoc-Kopftabelle alle eingehenden IDocs des gewählten Nachrichtentyps (Standard ORDERS) im Fehlerstatus 51 für den Erstellungszeitraum. Gibt es keine, erscheint eine Erfolgsmeldung und der Report endet. Sonst werden die IDocs nach Sendepartner sortiert einzeln mit Partner, Nummer und Datum aufgelistet und zum Schluss die Gesamtzahl ausgegeben. Es wird nichts geändert."
+}

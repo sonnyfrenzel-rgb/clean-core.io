@@ -1,0 +1,2313 @@
+{
+  "id": "BM-298",
+  "title": "Kreditfreigabe am Verkaufsschalter gegen Barzahlung: Obligo aus KNKK/S066, Auftragssperre, Anzahlung im Verbucher und Protokoll über Ereignis",
+  "classes": [
+    "K07",
+    "K09",
+    "K01",
+    "K12",
+    "K17",
+    "K11"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_schalter_kredit.abap",
+        "line": 22,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_schalter_kredit.abap:22"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNKK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_schalter_kredit_c01.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_schalter_kredit_c01.abap:39"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "S066",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_schalter_kredit_c01.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_schalter_kredit_c01.abap:44"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_schalter_kredit.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_schalter_kredit.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_schalter_kredit.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_schalter_kredit.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EVVBAKE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_schalter_kredit_c02.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_schalter_kredit_c02.abap:36"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EVVBAKE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_schalter_kredit_c02.abap",
+        "line": 126,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_schalter_kredit_c02.abap:126"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_GET_VALUES",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_schalter_kredit_c02.abap",
+        "line": 109,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_schalter_kredit_c02.abap:109"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_POS_ANZAHLUNG_BUCHEN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_schalter_kredit_c02.abap",
+        "line": 63,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_schalter_kredit_c02.abap:63"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SD_ORDER_CREDIT_RELEASE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_schalter_kredit_c02.abap",
+        "line": 72,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_schalter_kredit_c02.abap:72"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_FREI_PROT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zsd_schalter_kredit_c02.abap",
+        "line": 144,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_schalter_kredit_c02.abap:144"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_SCHALTER_DRU",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_schalter_kredit_f01.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_schalter_kredit_f01.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_BAR_QUITTUNG",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_schalter_kredit_f01.abap",
+        "line": 24,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_schalter_kredit_f01.abap:24"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VA03",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_schalter_kredit_c01.abap",
+        "line": 76,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_schalter_kredit_c01.abap:76"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-298-B01",
+      "text": "Der Kunde am Schalter muss existieren, sonst endet das Programm mit einer Fehlermeldung.",
+      "anchors": [
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:22"
+        },
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:24"
+        },
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-298-B02",
+      "text": "Für Kunde und Kreditkontrollbereich werden Kreditlimit, Forderungen und Sonderobligo sowie die offenen Auftragswerte aus der Kredit-Infostruktur gelesen und zum Obligo addiert.",
+      "anchors": [
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:28"
+        },
+        {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:39"
+        },
+        {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:44"
+        },
+        {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-298-B03",
+      "text": "Es werden die Aufträge des Kunden mit Kreditstatus nicht freigegeben gelesen; gibt es keine, wird das in Warnoptik gemeldet und nichts weiter getan.",
+      "anchors": [
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:32"
+        },
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:38"
+        },
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:39"
+        },
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-298-B04",
+      "text": "Für jede Freigabe wird ein Protokollbehandler angemeldet, dann zeigt das Schalterbild die gesperrten Aufträge im Grid; ein Doppelklick öffnet den Auftrag in der Anzeige.",
+      "anchors": [
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:44"
+        },
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:45"
+        },
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:63"
+        },
+        {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-298-B05",
+      "text": "Beim Freigeben muss der Mitarbeiter eine Zeile gewählt haben, sonst erhält er einen Hinweis.",
+      "anchors": [
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:88"
+        },
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:89"
+        },
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:90"
+        },
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:91"
+        }
+      ]
+    },
+    {
+      "id": "BM-298-B06",
+      "text": "Der Auftrag wird gesperrt; ist er in Bearbeitung, wird die Freigabe mit dem sperrenden Benutzer abgewiesen.",
+      "anchors": [
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:36"
+        },
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:43"
+        },
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-298-B07",
+      "text": "Die Überziehung ist Obligo plus Auftragswert minus Kreditlimit, mindestens null; der Auftragswert wird dabei zusätzlich zum Obligo gezählt.",
+      "anchors": [
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:48"
+        },
+        {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:53"
+        },
+        {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-298-B08",
+      "text": "Bei Überziehung wird der Barbetrag mit der Überziehung als Vorschlag abgefragt; bricht der Mitarbeiter ab, wird der Auftrag entsperrt und die Freigabe ohne Wirkung beendet.",
+      "anchors": [
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:50"
+        },
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:51"
+        },
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:109"
+        },
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:52"
+        },
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-298-B09",
+      "text": "Deckt der Barbetrag die Überziehung nicht, wird der Auftrag entsperrt und die Freigabe abgewiesen.",
+      "anchors": [
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:56"
+        },
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-298-B10",
+      "text": "Die Anzahlung wird mit Kasse, Kunde, Auftrag und Betrag zur Verbuchung in Kassenjournal und Buchhaltung vorgemerkt.",
+      "anchors": [
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-298-B11",
+      "text": "Der Auftrag wird aus der Kreditsperre freigegeben; scheitert das, wird die Anzahlung verworfen, der Auftrag entsperrt und die Meldung der Freigabe ausgegeben.",
+      "anchors": [
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:72"
+        },
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:78"
+        },
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:79"
+        },
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-298-B12",
+      "text": "Sonst werden Freigabe und Anzahlung synchron festgeschrieben und die Freigabe mit Betrag für die Kreditabteilung protokolliert.",
+      "anchors": [
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:86"
+        },
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:88"
+        },
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:144"
+        }
+      ]
+    },
+    {
+      "id": "BM-298-B13",
+      "text": "Danach wird der Auftrag entsperrt; bei Barzahlung wird eine Quittung auf dem Schalterdrucker der Kasse gedruckt, fehlt die Druckerzuordnung, gibt es nur einen Hinweis.",
+      "anchors": [
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:93"
+        },
+        {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:95"
+        },
+        {
+          "file": "zsd_schalter_kredit_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_f01.abap:16"
+        },
+        {
+          "file": "zsd_schalter_kredit_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_f01.abap:20"
+        },
+        {
+          "file": "zsd_schalter_kredit_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_f01.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-298-B14",
+      "text": "Nach der Rückkehr wird der Auftrag aus der Liste genommen und als freigegeben gemeldet – auch wenn die Freigabe mangels Barzahlung ohne Wirkung beendet wurde; jede Abweisung erscheint als Statusmeldung in Fehleroptik.",
+      "anchors": [
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:97"
+        },
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:98"
+        },
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:99"
+        },
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:101"
+        }
+      ]
+    },
+    {
+      "id": "BM-298-B15",
+      "text": "Zurück oder Beenden verlässt das Schalterbild.",
+      "anchors": [
+        {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:84"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s0",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:20"
+        },
+        "meaning": "Kunde am Schalter"
+      },
+      {
+        "id": "rk",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:22"
+        },
+        "meaning": "Kunde lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:24"
+        },
+        "meaning": "Kunde unbekannt?"
+      },
+      {
+        "id": "me",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:25"
+        },
+        "meaning": "Fehler Kunde"
+      },
+      {
+        "id": "mee",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:25"
+        },
+        "meaning": "Programmende"
+      },
+      {
+        "id": "cfk",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:28"
+        },
+        "meaning": "Kreditdaten laden"
+      },
+      {
+        "id": "ra",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:32"
+        },
+        "meaning": "Kreditgesperrte Aufträge lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:38"
+        },
+        "meaning": "Keine gesperrten Aufträge?"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:39"
+        },
+        "meaning": "Meldung nichts gesperrt"
+      },
+      {
+        "id": "r0",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:40"
+        },
+        "meaning": "Beenden"
+      },
+      {
+        "id": "shp",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:44"
+        },
+        "meaning": "Protokollbehandler anmelden"
+      },
+      {
+        "id": "cs",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:45"
+        },
+        "meaning": "Schalterbild"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:45"
+        },
+        "meaning": "Ende nach Verlassen"
+      },
+      {
+        "id": "so",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:50"
+        },
+        "meaning": "PBO Schalterbild"
+      },
+      {
+        "id": "gg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:54"
+        },
+        "meaning": "Grid angelegt?"
+      },
+      {
+        "id": "shg",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:62"
+        },
+        "meaning": "Doppelklick anmelden"
+      },
+      {
+        "id": "disp",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:63"
+        },
+        "meaning": "Aufträge anzeigen"
+      },
+      {
+        "id": "rf",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:70"
+        },
+        "meaning": "Liste auffrischen"
+      },
+      {
+        "id": "eo",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:72"
+        },
+        "meaning": "Ende PBO"
+      },
+      {
+        "id": "su",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:77"
+        },
+        "meaning": "PAI Schalterbild"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:82"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "lv",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:84"
+        },
+        "meaning": "Bild verlassen"
+      },
+      {
+        "id": "gcc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:88"
+        },
+        "meaning": "Cursorzeile holen"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:89"
+        },
+        "meaning": "Gewählten Auftrag lesen"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:90"
+        },
+        "meaning": "Keine Zeile?"
+      },
+      {
+        "id": "mw",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:91"
+        },
+        "meaning": "Hinweis Zeile wählen"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:92"
+        },
+        "meaning": "Zurück"
+      },
+      {
+        "id": "cfr",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:97"
+        },
+        "meaning": "Freigeben"
+      },
+      {
+        "id": "ms2",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:99"
+        },
+        "meaning": "Meldung freigegeben"
+      },
+      {
+        "id": "mc",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:101"
+        },
+        "meaning": "Abweisung in Fehleroptik"
+      },
+      {
+        "id": "eu",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit.abap:105"
+        },
+        "meaning": "Ende PAI"
+      },
+      {
+        "id": "sfk",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:33"
+        },
+        "meaning": "Kreditdaten"
+      },
+      {
+        "id": "rkk",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:39"
+        },
+        "meaning": "Limit und Forderungen lesen"
+      },
+      {
+        "id": "rs",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:44"
+        },
+        "meaning": "Offene Auftragswerte summieren"
+      },
+      {
+        "id": "ao",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:47"
+        },
+        "meaning": "Obligo berechnen"
+      },
+      {
+        "id": "efk",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:48"
+        },
+        "meaning": "Kreditobjekt zurück"
+      },
+      {
+        "id": "su2",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:52"
+        },
+        "meaning": "Überziehung"
+      },
+      {
+        "id": "au",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:53"
+        },
+        "meaning": "Überziehung berechnen"
+      },
+      {
+        "id": "gu",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:54"
+        },
+        "meaning": "Negativ?"
+      },
+      {
+        "id": "a0",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:55"
+        },
+        "meaning": "Auf null setzen"
+      },
+      {
+        "id": "eu2",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:57"
+        },
+        "meaning": "Überziehung zurück"
+      },
+      {
+        "id": "sd",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:72"
+        },
+        "meaning": "Doppelklick"
+      },
+      {
+        "id": "rtd",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:73"
+        },
+        "meaning": "Auftrag der Zeile"
+      },
+      {
+        "id": "gck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:74"
+        },
+        "meaning": "Zeile gültig?"
+      },
+      {
+        "id": "sp",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:75"
+        },
+        "meaning": "Auftragsnummer übergeben"
+      },
+      {
+        "id": "ct",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:76"
+        },
+        "meaning": "Auftragsanzeige"
+      },
+      {
+        "id": "ed",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c01.abap:77"
+        },
+        "meaning": "Ende Doppelklick"
+      },
+      {
+        "id": "sf",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:32"
+        },
+        "meaning": "Freigabe gegen Barzahlung"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:36"
+        },
+        "meaning": "Auftrag sperren"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:43"
+        },
+        "meaning": "Gesperrt?"
+      },
+      {
+        "id": "rz1",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:44"
+        },
+        "meaning": "Ausnahme gesperrt"
+      },
+      {
+        "id": "cue",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:48"
+        },
+        "meaning": "Überziehung ermitteln"
+      },
+      {
+        "id": "gue",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:50"
+        },
+        "meaning": "Überzogen?"
+      },
+      {
+        "id": "cbe",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:51"
+        },
+        "meaning": "Barbetrag erfragen"
+      },
+      {
+        "id": "gbi",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:52"
+        },
+        "meaning": "Abgebrochen?"
+      },
+      {
+        "id": "ce1",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:53"
+        },
+        "meaning": "Entsperren"
+      },
+      {
+        "id": "r2",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:54"
+        },
+        "meaning": "Ohne Freigabe zurück"
+      },
+      {
+        "id": "gbu",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:56"
+        },
+        "meaning": "Betrag zu klein?"
+      },
+      {
+        "id": "ce2",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:57"
+        },
+        "meaning": "Entsperren"
+      },
+      {
+        "id": "rz2",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:58"
+        },
+        "meaning": "Ausnahme Betrag"
+      },
+      {
+        "id": "ut",
+        "type": "update_task",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:63"
+        },
+        "meaning": "Anzahlung zur Verbuchung"
+      },
+      {
+        "id": "rel",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:72"
+        },
+        "meaning": "Kreditfreigabe"
+      },
+      {
+        "id": "gs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:78"
+        },
+        "meaning": "Freigabe fehlgeschlagen?"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:79"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "ce3",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:80"
+        },
+        "meaning": "Entsperren"
+      },
+      {
+        "id": "rz3",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:81"
+        },
+        "meaning": "Ausnahme Freigabe"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:86"
+        },
+        "meaning": "Synchron festschreiben"
+      },
+      {
+        "id": "rev",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:88"
+        },
+        "meaning": "Ereignis freigegeben"
+      },
+      {
+        "id": "ce4",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:93"
+        },
+        "meaning": "Entsperren"
+      },
+      {
+        "id": "gq",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:95"
+        },
+        "meaning": "Bar gezahlt?"
+      },
+      {
+        "id": "pq",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:96"
+        },
+        "meaning": "Quittung drucken"
+      },
+      {
+        "id": "ef",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:98"
+        },
+        "meaning": "Ende Freigabe"
+      },
+      {
+        "id": "sb",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:103"
+        },
+        "meaning": "Barbetrag erfragen"
+      },
+      {
+        "id": "pgv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:109"
+        },
+        "meaning": "Betragsdialog"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:119"
+        },
+        "meaning": "Abgebrochen?"
+      },
+      {
+        "id": "rb2",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:120"
+        },
+        "meaning": "Betrag 0 zurück"
+      },
+      {
+        "id": "eb",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:123"
+        },
+        "meaning": "Betrag zurück"
+      },
+      {
+        "id": "se",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:125"
+        },
+        "meaning": "Entsperren"
+      },
+      {
+        "id": "dq",
+        "type": "lock",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:126"
+        },
+        "meaning": "Auftragssperre aufheben"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:129"
+        },
+        "meaning": "Ende Entsperren"
+      },
+      {
+        "id": "sp2",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:135"
+        },
+        "meaning": "Freigabe protokollieren"
+      },
+      {
+        "id": "wi",
+        "type": "write",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:144"
+        },
+        "meaning": "Protokollsatz schreiben"
+      },
+      {
+        "id": "ep2",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit_c02.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_c02.abap:145"
+        },
+        "meaning": "Ende Protokoll"
+      },
+      {
+        "id": "sq",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_schalter_kredit_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_f01.abap:11"
+        },
+        "meaning": "Quittung drucken"
+      },
+      {
+        "id": "rq",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_schalter_kredit_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_f01.abap:16"
+        },
+        "meaning": "Schalterdrucker lesen"
+      },
+      {
+        "id": "gq2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_schalter_kredit_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_f01.abap:18"
+        },
+        "meaning": "Kein Drucker?"
+      },
+      {
+        "id": "mi",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_schalter_kredit_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_f01.abap:20"
+        },
+        "meaning": "Hinweis ohne Quittung"
+      },
+      {
+        "id": "r3",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_f01.abap:21"
+        },
+        "meaning": "Ohne Druck zurück"
+      },
+      {
+        "id": "sub",
+        "type": "external_program",
+        "anchor": {
+          "file": "zsd_schalter_kredit_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_f01.abap:24"
+        },
+        "meaning": "Quittungsreport"
+      },
+      {
+        "id": "eq",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_schalter_kredit_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_schalter_kredit_f01.abap:31"
+        },
+        "meaning": "Ende Druck"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s0",
+        "to": "rk",
+        "condition": "always"
+      },
+      {
+        "from": "rk",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "me",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "me",
+        "to": "mee",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "cfk",
+        "condition": "else"
+      },
+      {
+        "from": "cfk",
+        "to": "sfk",
+        "condition": "always"
+      },
+      {
+        "from": "efk",
+        "to": "ra",
+        "condition": "always"
+      },
+      {
+        "from": "ra",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "ms",
+        "condition": "gt_auftr IS INITIAL"
+      },
+      {
+        "from": "ms",
+        "to": "r0",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "shp",
+        "condition": "else"
+      },
+      {
+        "from": "shp",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "so",
+        "to": "gg",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "shg",
+        "condition": "go_grid IS INITIAL"
+      },
+      {
+        "from": "shg",
+        "to": "disp",
+        "condition": "always"
+      },
+      {
+        "from": "disp",
+        "to": "eo",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "rf",
+        "condition": "else"
+      },
+      {
+        "from": "rf",
+        "to": "eo",
+        "condition": "always"
+      },
+      {
+        "from": "su",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "lv",
+        "condition": "WHEN 'BACK' OR 'EXIT'"
+      },
+      {
+        "from": "g3",
+        "to": "gcc",
+        "condition": "WHEN 'FREI'"
+      },
+      {
+        "from": "g3",
+        "to": "eu",
+        "condition": "else"
+      },
+      {
+        "from": "gcc",
+        "to": "rt",
+        "condition": "always"
+      },
+      {
+        "from": "rt",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "mw",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mw",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "cfr",
+        "condition": "else"
+      },
+      {
+        "from": "cfr",
+        "to": "sf",
+        "condition": "always"
+      },
+      {
+        "from": "ef",
+        "to": "ms2",
+        "condition": "always"
+      },
+      {
+        "from": "r2",
+        "to": "ms2",
+        "condition": "always"
+      },
+      {
+        "from": "ms2",
+        "to": "eu",
+        "condition": "always"
+      },
+      {
+        "from": "rz1",
+        "to": "mc",
+        "condition": "lcx_frei"
+      },
+      {
+        "from": "rz2",
+        "to": "mc",
+        "condition": "lcx_frei"
+      },
+      {
+        "from": "rz3",
+        "to": "mc",
+        "condition": "lcx_frei"
+      },
+      {
+        "from": "mc",
+        "to": "eu",
+        "condition": "always"
+      },
+      {
+        "from": "sfk",
+        "to": "rkk",
+        "condition": "always"
+      },
+      {
+        "from": "rkk",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "ao",
+        "condition": "always"
+      },
+      {
+        "from": "ao",
+        "to": "efk",
+        "condition": "always"
+      },
+      {
+        "from": "su2",
+        "to": "au",
+        "condition": "always"
+      },
+      {
+        "from": "au",
+        "to": "gu",
+        "condition": "always"
+      },
+      {
+        "from": "gu",
+        "to": "a0",
+        "condition": "rv_betrag < 0"
+      },
+      {
+        "from": "gu",
+        "to": "eu2",
+        "condition": "else"
+      },
+      {
+        "from": "a0",
+        "to": "eu2",
+        "condition": "always"
+      },
+      {
+        "from": "sd",
+        "to": "rtd",
+        "condition": "always"
+      },
+      {
+        "from": "rtd",
+        "to": "gck",
+        "condition": "always"
+      },
+      {
+        "from": "gck",
+        "to": "sp",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gck",
+        "to": "ed",
+        "condition": "else"
+      },
+      {
+        "from": "sp",
+        "to": "ct",
+        "condition": "always"
+      },
+      {
+        "from": "ct",
+        "to": "ed",
+        "condition": "always"
+      },
+      {
+        "from": "sf",
+        "to": "lk",
+        "condition": "always"
+      },
+      {
+        "from": "lk",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "rz1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "cue",
+        "condition": "else"
+      },
+      {
+        "from": "cue",
+        "to": "su2",
+        "condition": "always"
+      },
+      {
+        "from": "eu2",
+        "to": "gue",
+        "condition": "always"
+      },
+      {
+        "from": "gue",
+        "to": "cbe",
+        "condition": "lv_ueber > 0"
+      },
+      {
+        "from": "gue",
+        "to": "rel",
+        "condition": "else"
+      },
+      {
+        "from": "cbe",
+        "to": "sb",
+        "condition": "always"
+      },
+      {
+        "from": "rb2",
+        "to": "gbi",
+        "condition": "always"
+      },
+      {
+        "from": "eb",
+        "to": "gbi",
+        "condition": "always"
+      },
+      {
+        "from": "gbi",
+        "to": "ce1",
+        "condition": "lv_bar IS INITIAL"
+      },
+      {
+        "from": "ce1",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "ee",
+        "to": "r2",
+        "condition": "always"
+      },
+      {
+        "from": "gbi",
+        "to": "gbu",
+        "condition": "else"
+      },
+      {
+        "from": "gbu",
+        "to": "ce2",
+        "condition": "lv_bar < lv_ueber"
+      },
+      {
+        "from": "ce2",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "ee",
+        "to": "rz2",
+        "condition": "always"
+      },
+      {
+        "from": "gbu",
+        "to": "ut",
+        "condition": "else"
+      },
+      {
+        "from": "ut",
+        "to": "rel",
+        "condition": "always"
+      },
+      {
+        "from": "rel",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "rb",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rb",
+        "to": "ce3",
+        "condition": "always"
+      },
+      {
+        "from": "ce3",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "ee",
+        "to": "rz3",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "rev",
+        "condition": "always"
+      },
+      {
+        "from": "rev",
+        "to": "sp2",
+        "condition": "always"
+      },
+      {
+        "from": "ep2",
+        "to": "ce4",
+        "condition": "always"
+      },
+      {
+        "from": "ce4",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "ee",
+        "to": "gq",
+        "condition": "always"
+      },
+      {
+        "from": "gq",
+        "to": "pq",
+        "condition": "lv_bar > 0"
+      },
+      {
+        "from": "gq",
+        "to": "ef",
+        "condition": "else"
+      },
+      {
+        "from": "pq",
+        "to": "sq",
+        "condition": "always"
+      },
+      {
+        "from": "eq",
+        "to": "ef",
+        "condition": "always"
+      },
+      {
+        "from": "r3",
+        "to": "ef",
+        "condition": "always"
+      },
+      {
+        "from": "sb",
+        "to": "pgv",
+        "condition": "always"
+      },
+      {
+        "from": "pgv",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "rb2",
+        "condition": "sy-subrc <> 0 OR lv_rc = 'A'"
+      },
+      {
+        "from": "gb",
+        "to": "eb",
+        "condition": "else"
+      },
+      {
+        "from": "se",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "dq",
+        "to": "ee",
+        "condition": "always"
+      },
+      {
+        "from": "sp2",
+        "to": "wi",
+        "condition": "always"
+      },
+      {
+        "from": "wi",
+        "to": "ep2",
+        "condition": "always"
+      },
+      {
+        "from": "sq",
+        "to": "rq",
+        "condition": "always"
+      },
+      {
+        "from": "rq",
+        "to": "gq2",
+        "condition": "always"
+      },
+      {
+        "from": "gq2",
+        "to": "mi",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mi",
+        "to": "r3",
+        "condition": "always"
+      },
+      {
+        "from": "gq2",
+        "to": "sub",
+        "condition": "else"
+      },
+      {
+        "from": "sub",
+        "to": "eq",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zsd_schalter_kredit.abap:99 — kein Fachsatz „nur tatsächlich freigegebene Aufträge werden gemeldet“; nach Abbruch der Betragsabfrage kehrt die Methode ohne Ausnahme zurück und die Meldung erscheint trotzdem.",
+    "zsd_schalter_kredit_c02.abap:63 — kein Fachsatz „Anzahlung ist gebucht“ an dieser Stelle; sie wird nur vorgemerkt und bei fehlgeschlagener Freigabe mit ROLLBACK WORK verworfen.",
+    "zsd_schalter_kredit_c01.abap:53 — kein Fachsatz „Überziehung exakt nach Kreditprüfung“; der Auftragswert wird zusätzlich zu den offenen Auftragswerten gezählt.",
+    "zsd_schalter_kredit_c02.abap:88 — kein Fachsatz „Kreditabteilung wird benachrichtigt“; der Behandler schreibt nur einen Protokollsatz."
+  ],
+  "processDescription": "Am Verkaufsschalter liest das Programm den Kunden (sonst Fehlerende) und über eine Fabrikmethode Kreditlimit, Forderungen, Sonderobligo und offene Auftragswerte aus S066. Es zeigt die Aufträge mit Kreditstatus B im Grid (ohne solche endet es mit einem Hinweis); ein Doppelklick öffnet VA03. Beim Freigeben muss eine Zeile gewählt sein. Die Freigabemethode sperrt den Auftrag, berechnet die Überziehung und fragt bei Überziehung den Barbetrag ab: Abbruch entsperrt und kehrt ohne Wirkung zurück, ein zu kleiner Betrag entsperrt und weist ab. Die Anzahlung wird im Verbucher vorgemerkt, dann wird der Auftrag aus der Kreditsperre freigegeben; scheitert das, folgen Rollback, Entsperren und Abweisung. Sonst wird festgeschrieben, das Ereignis FREIGEGEBEN löst einen Protokollsatz aus, der Auftrag wird entsperrt und bei Barzahlung eine Quittung per SUBMIT gedruckt (ohne Drucker nur ein Hinweis). Im PAI wird der Auftrag danach aus der Liste genommen und als freigegeben gemeldet, Abweisungen erscheinen in Fehleroptik."
+}

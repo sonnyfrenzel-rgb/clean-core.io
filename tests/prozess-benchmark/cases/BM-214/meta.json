@@ -1,0 +1,37 @@
+{
+  "id": "BM-214",
+  "title": "EDI-Auftragseingang mit Handlerklassen je Bestellart",
+  "domain": "SD",
+  "band": "sehr komplex",
+  "loc": 495,
+  "constructs": [
+    "IDoc-Eingangsbaustein",
+    "Funktionsgruppe TOP/U01/C01/F01",
+    "globale Klasse mit Klassenpuffer",
+    "Interface + Klassenhierarchie",
+    "Schablonenmethode",
+    "REDEFINITION mit und ohne super->",
+    "Fabrik mit CASE",
+    "FORM RAISING",
+    "VALUE/FOR/OPTIONAL",
+    "BAPI_SALESORDER_CREATEFROMDAT2"
+  ],
+  "scenario": "EDI-Auftragseingang eines Lebensmittelherstellers für Handelsketten; Standard-, Eil- und Konsignationsaufträge laufen über dieselbe Eingangsfunktion.",
+  "s4_issues": [
+    "VBAK-VBTYP in S/4 verlängert (VBTYPL)",
+    "KNVV/KNMT über Business Partner/CVI",
+    "Materialnummer 40 Zeichen",
+    "EDI-Eingang in S/4 Cloud über Output/Input-Management statt IDoc-Baustein"
+  ],
+  "wave": 3,
+  "module": "SD-SLS/EDI",
+  "edge_constructs": [
+    "Redefinition ohne super-Aufruf",
+    "Ausnahme aus FORM",
+    "RETURN aus Puffertreffer",
+    "Commit im Inbound-Baustein",
+    "auskommentierte Prüfung",
+    "Inline-Variable behält Wert über Schleifendurchläufe"
+  ],
+  "oo": true
+}

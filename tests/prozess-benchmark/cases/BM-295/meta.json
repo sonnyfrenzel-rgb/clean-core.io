@@ -1,0 +1,38 @@
+{
+  "id": "BM-295",
+  "title": "Kassen-Tagesabschluss: Soll/Ist-Abgleich, Differenzbegründung und FI-Buchung über Buchungsklassen mit Sperre und Änderungsbeleg",
+  "domain": "Kasse / Filialabschluss",
+  "band": "sehr komplex",
+  "loc": 443,
+  "constructs": [
+    "abstrakte Klasse mit Fabrik und zwei Unterklassen (REDEFINITION)",
+    "Ausnahme IF_T100_DYN_MSG",
+    "SELECT ... ENDSELECT mit UP TO 1 ROWS",
+    "REDUCE/COND",
+    "CL_GUI_ALV_GRID toolbar/user_command",
+    "ENQUEUE/DEQUEUE",
+    "MESSAGE A/E/W/I/S",
+    "POPUP_TO_CONFIRM",
+    "BAPI_ACC_DOCUMENT_POST",
+    "Änderungsbeleg IN UPDATE TASK",
+    "CHECK in FORM",
+    "line_exists"
+  ],
+  "scenario": "Filialkassen-Tagesabschluss, der Kassenbuch-Excel und manuelle FB50-Buchung ablöst und Kassendifferenzen mit Begründung bucht.",
+  "s4_issues": [
+    "BAPI_ACC_DOCUMENT_POST bleibt, aber Z-Kassenbuch neben FI-Kassenbuch (FBCJ)",
+    "SAP-GUI-Dynpro und Grid nicht in Fiori",
+    "Z_POS_BON_ANZEIGEN nicht geliefert"
+  ],
+  "wave": 3,
+  "module": "FI/SD-POS",
+  "edge_constructs": [
+    "Entsperrroutine mit drei Aufrufern",
+    "Zählprüfung mit zwei Aufrufern",
+    "polymorphe Aufrufe mit je zwei Zielen",
+    "Ausnahme aus Fabrik in CATCH innerhalb Schleife",
+    "MESSAGE A beendet das Programm",
+    "CHECK führt zum sonst unerreichbaren ENDFORM"
+  ],
+  "oo": true
+}

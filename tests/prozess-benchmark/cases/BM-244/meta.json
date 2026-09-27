@@ -1,0 +1,30 @@
+{
+  "id": "BM-244",
+  "title": "Web-Dynpro-Aktion: markierte Bestellanforderungen mit dem Freigabecode des Genehmigers freigeben",
+  "domain": "MM Einkauf / Banf-Freigabe",
+  "band": "mittel",
+  "loc": 87,
+  "constructs": [
+    "Web Dynpro View-Controller ONACTION",
+    "Kontextknoten get_selected_elements",
+    "if_wd_message_manager",
+    "BAPI_REQUISITION_RELEASE_GEN",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "READ TABLE ... WITH KEY type = 'E'",
+    "CONTINUE"
+  ],
+  "scenario": "Web-Dynpro-Anwendung für Genehmiger im Einkauf (Portal-Kachel), in der mehrere Bestellanforderungen markiert und in einem Schritt freigegeben werden.",
+  "s4_issues": [
+    "Web Dynpro ABAP ist in S/4 lauffähig, aber nicht Fiori-konform",
+    "BAPI_REQUISITION_RELEASE_GEN ist nicht für Cloud freigegeben; Nachfolger I_PurchaseRequisitionTP / Flexible Workflow",
+    "Kundentabelle ZMM_FRG_USER umgeht die Freigabestrategie-Zuordnung"
+  ],
+  "wave": 3,
+  "module": "MM",
+  "edge_constructs": [
+    "zwei frühe RETURN",
+    "sy-subrc nach CALL FUNCTION und nach READ TABLE",
+    "Commit je Beleg in der Schleife"
+  ],
+  "oo": true
+}

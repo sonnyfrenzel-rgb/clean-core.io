@@ -1,0 +1,593 @@
+{
+  "id": "BM-285",
+  "title": "Werkstatt-Terminal: Rückmeldung zum Fertigungsvorgang mit Endrückmeldungs-Rückfrage",
+  "classes": [
+    "K07",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:48"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PRODORDCONF_CREATE_TT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 73,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:73"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 88,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:88"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-285-B01",
+      "text": "Mit Zurück kehrt der Werker vom Vorgangsdetail in die Vorgangsliste 0100 zurück.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-285-B02",
+      "text": "Beim Rückmelden wird geprüft, ob Gutmenge und Ausschuss zusammen die offene Vorgangsmenge übersteigen; dann bricht eine Fehlermeldung mit der offenen Menge ab, eine Überlieferung ist nicht zulässig.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-285-B03",
+      "text": "Ist die Rückmeldung als Endrückmeldung gekennzeichnet, muss der Werker in einer Rückfrage bestätigen, dass der Vorgang endgültig abgeschlossen wird; ohne Bestätigung wird nichts zurückgemeldet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-285-B04",
+      "text": "Die Rückmeldung mit Gutmenge, Ausschuss, Abweichungsursache, Endrückmeldekennzeichen, Text und Tagesdatum als Buchungsdatum wird per BAPI zum Auftragsvorgang angelegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-285-B05",
+      "text": "Meldet der BAPI einen Fehler oder Abbruch, wird dessen Meldungstext als Informationsmeldung in Fehleroptik angezeigt und die Verarbeitung ohne Festschreiben beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        },
+        {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        },
+        {
+          "file": "source.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-285-B06",
+      "text": "Andernfalls wird die Rückmeldung synchron festgeschrieben und Auftrag und Vorgang als Erfolgsmeldung ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:88"
+        },
+        {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "PAI Vorgangsdetail"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "lv",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Zurück zur Vorgangsliste"
+      },
+      {
+        "id": "gq",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Menge über offener Menge?"
+      },
+      {
+        "id": "mq",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Fehler Überlieferung"
+      },
+      {
+        "id": "mqe",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "pr",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Rückmelden"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Ende PAI"
+      },
+      {
+        "id": "s3",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Rückmeldung buchen"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Endrückmeldung?"
+      },
+      {
+        "id": "pop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Rückfrage Abschluss"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Nicht bestätigt?"
+      },
+      {
+        "id": "r4",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Abbruch ohne Rückmeldung"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        "meaning": "Rückmeldung anlegen"
+      },
+      {
+        "id": "g6",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        },
+        "meaning": "BAPI-Fehler?"
+      },
+      {
+        "id": "m5",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        },
+        "meaning": "BAPI-Meldung anzeigen"
+      },
+      {
+        "id": "r5",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:85"
+        },
+        "meaning": "Abbruch ohne Commit"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:88"
+        },
+        "meaning": "Festschreiben mit Warten"
+      },
+      {
+        "id": "m6",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        },
+        "meaning": "Erfolgsmeldung"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:95"
+        },
+        "meaning": "Ende Rückmelden"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "lv",
+        "condition": "WHEN 'BACK'"
+      },
+      {
+        "from": "g1",
+        "to": "gq",
+        "condition": "WHEN 'RUECK'"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "gq",
+        "to": "mq",
+        "condition": "gs_rm-yield + gs_rm-scrap > gs_vorg-offen"
+      },
+      {
+        "from": "mq",
+        "to": "mqe",
+        "condition": "always"
+      },
+      {
+        "from": "gq",
+        "to": "pr",
+        "condition": "else"
+      },
+      {
+        "from": "pr",
+        "to": "s3",
+        "condition": "always"
+      },
+      {
+        "from": "e3",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "r4",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "r5",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "s3",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "pop",
+        "condition": "gs_rm-endrm = abap_true"
+      },
+      {
+        "from": "g4",
+        "to": "bapi",
+        "condition": "else"
+      },
+      {
+        "from": "pop",
+        "to": "g5",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "r4",
+        "condition": "lv_answer <> '1'"
+      },
+      {
+        "from": "g5",
+        "to": "bapi",
+        "condition": "else"
+      },
+      {
+        "from": "bapi",
+        "to": "g6",
+        "condition": "always"
+      },
+      {
+        "from": "g6",
+        "to": "m5",
+        "condition": "ls_return-type CA 'EA'"
+      },
+      {
+        "from": "m5",
+        "to": "r5",
+        "condition": "always"
+      },
+      {
+        "from": "g6",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "m6",
+        "condition": "always"
+      },
+      {
+        "from": "m6",
+        "to": "e3",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:84 — kein Abbruch durch Fehlermeldung; es ist Typ I in Fehleroptik, das Ende setzt das folgende RETURN.",
+    "source.abap:82 — kein ROLLBACK-Knoten; der Code ruft bei Fehler keinen Rollback auf.",
+    "source.abap:73 — kein Fachsatz „Warenbewegungen (Retrograde Entnahme/Wareneingang) werden gebucht“; ob Folgebuchungen entstehen, hängt am Customizing, nicht am Code."
+  ],
+  "processDescription": "Das PAI des Vorgangsdetails im Werkstatt-Terminal verzweigt nach Funktionscode. Zurück führt in die Vorgangsliste 0100. Bei RUECK wird zuerst geprüft, ob Gut- und Ausschussmenge die offene Vorgangsmenge übersteigen; dann bricht eine Fehlermeldung ab. Sonst wird die Routine RUECKMELDEN gerufen. Ist Endrückmeldung gesetzt, fragt ein Popup, ob der Vorgang endgültig abgeschlossen werden soll; ohne Ja endet die Routine ohne Buchung. Dann wird die Rückmeldung per BAPI_PRODORDCONF_CREATE_TT angelegt. Meldet der BAPI Typ E oder A, wird die Meldung als Informationsmeldung in Fehleroptik gezeigt und ohne Commit abgebrochen; sonst schreibt BAPI_TRANSACTION_COMMIT mit Warten fest und eine Erfolgsmeldung nennt Auftrag und Vorgang."
+}

@@ -1,0 +1,39 @@
+{
+  "id": "BM-278",
+  "title": "HR-Stammdaten-IDoc aus Änderungszeigern mit Infotyp-Mappern",
+  "domain": "HR",
+  "band": "sehr komplex",
+  "loc": 405,
+  "constructs": [
+    "Funktionsbaustein für RBDMIDOC",
+    "CHANGE_POINTERS_READ/STATUS_WRITE",
+    "MASTER_IDOC_DISTRIBUTE",
+    "Interface mit vier Implementierungen",
+    "CREATE OBJECT TYPE (dynamisch aus Customizing)",
+    "TRY/CATCH",
+    "RAISE EXCEPTION",
+    "HR_READ_INFOTYPE",
+    "BAL_LOG_CREATE/MSG_ADD_FREE_TEXT/DB_SAVE",
+    "CHECK in Schleife",
+    "COMMIT WORK"
+  ],
+  "scenario": "Anbindung eines Zutritts- und Kantinensystems: Personaländerungen werden über Änderungszeiger als kundeneigenes IDoc verteilt; Inhalte je Infotyp über Mapper-Klassen.",
+  "s4_issues": [
+    "HR_READ_INFOTYPE/PA-Tabellen – Zielbild SuccessFactors/HCM-APIs",
+    "Änderungszeiger/ALE – Zielbild Event-basierte Integration",
+    "dynamische Klasseninstanziierung aus Customizing",
+    "BAL_* nicht in ABAP Cloud"
+  ],
+  "wave": 3,
+  "module": "HR",
+  "edge_constructs": [
+    "polymorpher Aufruf in APPEND LINES OF",
+    "Ausnahme aus Mapper überspringt Personalnummer",
+    "RETURN in Mappern (optionale Infotypen)",
+    "Löschnachricht statt Daten für Ausgetretene",
+    "Zeiger bleiben bei Fehler offen",
+    "EXIT in Schleife",
+    "MESSAGE E als Abbruch"
+  ],
+  "oo": true
+}

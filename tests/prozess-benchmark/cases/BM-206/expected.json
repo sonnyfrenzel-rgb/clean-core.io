@@ -1,0 +1,671 @@
+{
+  "id": "BM-206",
+  "title": "Retouren-Vorprüfung mit Validator-Kette und Ablehnungsereignis",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Polymorpher Aufruf validate: Kanten zu beiden Implementierungen mit „always“."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBRK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:83"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBRP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:39"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-206-B01",
+      "text": "Die angegebene Referenzrechnung wird gelesen; fehlt sie oder ist sie storniert, bricht die Vorprüfung mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:83"
+        },
+        {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        },
+        {
+          "file": "source.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-206-B02",
+      "text": "Die Retourenanfrage durchläuft eine Kette von Prüfungen in fester Reihenfolge: zuerst Rückgabefrist, dann Menge.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-206-B03",
+      "text": "Die Rückgabe ist nur innerhalb von 30 Tagen nach dem Fakturadatum zulässig.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-206-B04",
+      "text": "Die Rückgabemenge darf die für das Material auf der Rechnung fakturierte Menge nicht übersteigen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-206-B05",
+      "text": "Schlägt eine Prüfung fehl, wird der Name der Prüfung als Ablehnungsgrund ausgegeben und die Kette abgebrochen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-206-B06",
+      "text": "Bestehen alle Prüfungen, wird gemeldet, dass die Retoure zulässig ist und ein Retourenauftrag angelegt werden kann.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:95"
+        },
+        {
+          "file": "source.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:96"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:83"
+        },
+        "meaning": "Referenzrechnung lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        },
+        "meaning": "Rechnung fehlt oder storniert?"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:85"
+        },
+        "meaning": "Fehler: Referenzrechnung fehlt/storniert"
+      },
+      {
+        "id": "x",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:85"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "cr",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:95"
+        },
+        "meaning": "Validator-Kette ausfuehren"
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "Kette durchlaufen"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Validatoren der Reihe nach"
+      },
+      {
+        "id": "cv",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Validator ausfuehren (polymorph)"
+      },
+      {
+        "id": "v1s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Pruefung Rueckgabefrist"
+      },
+      {
+        "id": "v1a",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Frist 30 Tage ab Fakturadatum"
+      },
+      {
+        "id": "v1e",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        }
+      },
+      {
+        "id": "v2s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Pruefung fakturierte Menge"
+      },
+      {
+        "id": "v2q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Fakturierte Menge des Materials summieren"
+      },
+      {
+        "id": "v2a",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Retourmenge hoechstens fakturierte Menge"
+      },
+      {
+        "id": "v2e",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        }
+      },
+      {
+        "id": "gv",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Validator negativ?"
+      },
+      {
+        "id": "ev",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Ablehnung als Ereignis melden"
+      },
+      {
+        "id": "hs",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        "meaning": "Ereignisbehandler Protokoll"
+      },
+      {
+        "id": "ho",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        "meaning": "Ablehnungsgrund ausgeben"
+      },
+      {
+        "id": "he",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        }
+      },
+      {
+        "id": "rr",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        },
+        "meaning": "Kette abbrechen, Ergebnis negativ"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "meaning": "Alle Validatoren positiv",
+        "anchor": {
+          "file": "source.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:65"
+        }
+      },
+      {
+        "id": "gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:95"
+        },
+        "meaning": "Kette positiv?"
+      },
+      {
+        "id": "ok",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:96"
+        },
+        "meaning": "Zulaessigkeit melden"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:97"
+        },
+        "meaning": "Reportende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "o",
+        "condition": "sy-subrc <> 0 OR gs_vbrk-fksto = abap_true"
+      },
+      {
+        "from": "o",
+        "to": "x",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "cr",
+        "condition": "else"
+      },
+      {
+        "from": "cr",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "lp",
+        "to": "cv",
+        "condition": "next row"
+      },
+      {
+        "from": "cv",
+        "to": "v1s",
+        "condition": "always"
+      },
+      {
+        "from": "cv",
+        "to": "v2s",
+        "condition": "always"
+      },
+      {
+        "from": "v1s",
+        "to": "v1a",
+        "condition": "always"
+      },
+      {
+        "from": "v1a",
+        "to": "v1e",
+        "condition": "always"
+      },
+      {
+        "from": "v2s",
+        "to": "v2q",
+        "condition": "always"
+      },
+      {
+        "from": "v2q",
+        "to": "v2a",
+        "condition": "always"
+      },
+      {
+        "from": "v2a",
+        "to": "v2e",
+        "condition": "always"
+      },
+      {
+        "from": "v1e",
+        "to": "gv",
+        "condition": "always"
+      },
+      {
+        "from": "v2e",
+        "to": "gv",
+        "condition": "always"
+      },
+      {
+        "from": "gv",
+        "to": "ev",
+        "condition": "lo_val->validate( is_vbrk ) = abap_false"
+      },
+      {
+        "from": "gv",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ev",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "he",
+        "to": "rr",
+        "condition": "always"
+      },
+      {
+        "from": "hs",
+        "to": "ho",
+        "condition": "always"
+      },
+      {
+        "from": "ho",
+        "to": "he",
+        "condition": "always"
+      },
+      {
+        "from": "rr",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "lp",
+        "to": "re",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gm",
+        "to": "ok",
+        "condition": "go_chain->run( gs_vbrk ) = abap_true"
+      },
+      {
+        "from": "gm",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "ok",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:96 — kein Fachsatz „Retourenauftrag wird angelegt“ — der Report meldet nur die Zulässigkeit.",
+    "source.abap:90 — kein Fachsatz „gesperrte Kunden werden abgelehnt“ — der Sperr-Validator ist auskommentiert.",
+    "source.abap:60 — kein Fachsatz „Ablehnung wird in einer Tabelle protokolliert“ — der Handler schreibt nur eine Listzeile."
+  ],
+  "processDescription": "Der Kundenservice gibt Rechnung, Material und Rückgabemenge ein. Die Rechnung wird gelesen; fehlt sie oder ist sie storniert, endet der Report mit einer Fehlermeldung. Danach läuft eine Kette aus zwei Prüfungen: Rückgabefrist von 30 Tagen ab Fakturadatum und Rückgabemenge höchstens gleich der fakturierten Menge des Materials. Die erste negative Prüfung löst ein Ereignis aus, dessen Handler den Namen der Prüfung als Ablehnungsgrund ausgibt, und beendet die Kette. Bestehen beide Prüfungen, meldet der Report, dass ein Retourenauftrag angelegt werden kann. Angelegt wird dabei nichts; die frühere Kundensperrprüfung ist auskommentiert."
+}

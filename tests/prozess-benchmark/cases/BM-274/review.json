@@ -1,0 +1,101 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten hga",
+      "before": "action zcl_sd_seg_hdr.abap:47 (Lieferung und Warenausgangskennzeichen übernehmen); Kanten has->hga [always], hga->hg3 [always]",
+      "after": "entfernt",
+      "why": "zcl_sd_seg_hdr.abap:47 (cs_ctx-goods_issue = xsdbool( ... )) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante has->hg3",
+      "before": "—",
+      "after": "[always]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten hga.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten hdd",
+      "before": "action zcl_sd_seg_hdr.abap:51 (Heute als Warenausgangsdatum); Kanten hg3->hdd [cs_ctx-gi_date IS INITIAL], hdd->hae [always]",
+      "after": "entfernt",
+      "why": "zcl_sd_seg_hdr.abap:51 (cs_ctx-gi_date = sy-datum) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante hg3->hae",
+      "before": "—",
+      "after": "[cs_ctx-gi_date IS INITIAL]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten hdd.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten itl",
+      "before": "action zcl_sd_seg_itm.abap:46 (Toleranz 0 %); Kanten ig2->itl [sy-subrc <> 0], itl->ig3 [always]",
+      "after": "entfernt",
+      "why": "zcl_sd_seg_itm.abap:46 (lv_tol = 0) ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante ig2->ig3",
+      "before": "—",
+      "after": "[sy-subrc <> 0]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten itl.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten gcl",
+      "before": "action zcl_sd_idoc_log.abap:48 (Ohne Anwendungsprotokoll weiterarbeiten); Kanten gg->gcl [sy-subrc <> 0], gcl->gce [always]",
+      "after": "entfernt",
+      "why": "zcl_sd_idoc_log.abap:48 ist ein CLEAR - laut Brief kein Knoten; Fachsatz B02 bleibt.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante gg->gce",
+      "before": "—",
+      "after": "[sy-subrc <> 0]",
+      "why": "Ersatz für den entfernten CLEAR-Knoten gcl.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten ss1",
+      "before": "action zcl_sd_idoc_log.abap:78 (Erfolgsmeldung mit Lieferungsnummer); Kanten ssg->ss1 [iv_status = '53'], ss1->sse [always]",
+      "after": "entfernt",
+      "why": "zcl_sd_idoc_log.abap:78 (ms_status-msgno = '300') ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante ssg->sse",
+      "before": "—",
+      "after": "[iv_status = '53']",
+      "why": "Ersatz für den entfernten Zuweisungsknoten ss1.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten ss2",
+      "before": "action zcl_sd_idoc_log.abap:82 (Fehlermeldung mit letztem Fehlertext); Kanten ssg->ss2 [else], ss2->sse [always]",
+      "after": "entfernt",
+      "why": "zcl_sd_idoc_log.abap:82 (ms_status-msgno = '301') ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante ssg->sse",
+      "before": "—",
+      "after": "[else]",
+      "why": "Ersatz für den entfernten Zuweisungsknoten ss2.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten wf",
+      "before": "action z_idoc_input_zshpconf.abap:115 (Workflow-Ergebnis Fehler); Kanten sse->wf [always], wf->sv [always]",
+      "after": "entfernt",
+      "why": "z_idoc_input_zshpconf.abap:115 (workflow_result = '99999') ist eine reine Zuweisung - laut Brief kein Knoten; der Fachsatz bleibt auf der Zeile verankert. Die Rückkehr aus set_status im CATCH führt damit direkt zu save (Kante sse -> sv besteht bereits als Rückkante des Erfolgspfads).",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": [
+    "Quelltextprüfung nach dem Umbau: ZCX_SD_SHPCONF hat keinen eigenen Konstruktor mehr und erbt den von CX_STATIC_CHECK/CX_ROOT (TEXTID TYPE SOTR_CONC, PREVIOUS); alle RAISE EXCEPTION übergeben nur TEXTID mit einer SOTR_CONC-Konstante - gültig.",
+    "Der Tabellentyp T_IDOC_STATUS (zcl_sd_idoc_log.abap:19) ist nicht sicher als DDIC-Typ belegt; nicht geändert, da für das Skelett ohne Belang."
+  ]
+}

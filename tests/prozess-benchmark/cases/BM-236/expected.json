@@ -1,0 +1,2227 @@
+{
+  "id": "BM-236",
+  "title": "Kostenplanung aus Datei prüfen und als Primärkostenplan buchen",
+  "classes": [
+    "K01",
+    "K03",
+    "K09",
+    "K10"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "READ DATASET ist als action modelliert, weil die Knotentabelle keinen Typ für Dateilesen vorsieht (read ist DB-Zugriff, output nur OPEN DATASET/TRANSFER).",
+    "Der Konstruktor der Ausnahmeklasse ZCX_CO_PLAN (generiertes Muster) ist nicht als Aufrufziel der RAISE EXCEPTION-Anweisungen modelliert."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "TKA09",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_co_plan_pruefer.abap",
+        "line": 43,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_plan_pruefer.abap:43"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CSKS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_co_plan_pruefer.abap",
+        "line": 106,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_plan_pruefer.abap:106"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CSKB",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_co_plan_pruefer.abap",
+        "line": 78,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_plan_pruefer.abap:78"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_COSTACTPLN_CHECKPRIMCOST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zco_planupload_f01.abap",
+        "line": 140,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zco_planupload_f01.abap:140"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_COSTACTPLN_POSTPRIMCOST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zco_planupload_f01.abap",
+        "line": 149,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zco_planupload_f01.abap:149"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_CO_PLAN_PRUEFER",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zco_planupload.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zco_planupload.abap:42"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-236-B01",
+      "text": "Soll im Echtlauf auf die Planversion 0 gebucht werden, warnt das Selektionsbild; der Lauf bleibt möglich.",
+      "anchors": [
+        {
+          "file": "zco_planupload.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:28"
+        },
+        {
+          "file": "zco_planupload.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B02",
+      "text": "Die Planungsdatei wird vom Applikationsserver gelesen; ist sie nicht lesbar, bricht das Programm mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zco_planupload.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:35"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:15"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:17"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B03",
+      "text": "Jede Zeile außer der Kopfzeile wird am Semikolon in Kostenstelle, Kostenart, Periode, Betrag und Währung zerlegt; ein Dezimalkomma wird in einen Punkt umgesetzt.",
+      "anchors": [
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:21"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:22"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:28"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:31"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B04",
+      "text": "Am Dateiende wird das Lesen beendet.",
+      "anchors": [
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B05",
+      "text": "Enthält die Datei keine Datenzeile, erscheint eine Meldung und der Lauf endet.",
+      "anchors": [
+        {
+          "file": "zco_planupload.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:36"
+        },
+        {
+          "file": "zco_planupload.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:37"
+        },
+        {
+          "file": "zco_planupload.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B06",
+      "text": "Für Kostenrechnungskreis, Geschäftsjahr und Planversion wird ein Prüfer angelegt; existiert die Planversion im Kostenrechnungskreis nicht, bricht das Programm mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zco_planupload.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:42"
+        },
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:43"
+        },
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:46"
+        },
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:47"
+        },
+        {
+          "file": "zco_planupload.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B07",
+      "text": "Jede Zeile wird geprüft; korrekte Zeilen werden für die Buchung gesammelt, fehlerhafte mit Zeilennummer und Fehlertext.",
+      "anchors": [
+        {
+          "file": "zco_planupload.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:51"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:52"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:54"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B08",
+      "text": "Eine Zeile ist fehlerhaft, wenn die Periode nicht zwischen 1 und 12 liegt.",
+      "anchors": [
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:63"
+        },
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B09",
+      "text": "Eine Zeile ist fehlerhaft, wenn die Kostenstelle zum Jahresende des Planjahres nicht gültig ist; bereits als gültig erkannte Kostenstellen werden nicht erneut gelesen.",
+      "anchors": [
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:70"
+        },
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:99"
+        },
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:101"
+        },
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:106"
+        },
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:112"
+        },
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:70"
+        },
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B10",
+      "text": "Eine Zeile ist fehlerhaft, wenn die Kostenart zum Jahresende nicht existiert oder keine primäre Kostenart (Typ 01) ist.",
+      "anchors": [
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:78"
+        },
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:83"
+        },
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:84"
+        },
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:89"
+        },
+        {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:90"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B11",
+      "text": "Gibt es fehlerhafte Zeilen, werden sie mit Zeilennummer, Rohzeile und Fehlertext in die Fehlerdatei geschrieben, sofern eine angegeben ist.",
+      "anchors": [
+        {
+          "file": "zco_planupload.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:53"
+        },
+        {
+          "file": "zco_planupload.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:54"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:73"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:77"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:83"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B12",
+      "text": "Lässt sich die Fehlerdatei nicht öffnen, erscheint ein Hinweis und es wird keine Fehlerdatei geschrieben.",
+      "anchors": [
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:78"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:79"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B13",
+      "text": "Bei „Alles oder nichts“ wird bei mindestens einer fehlerhaften Zeile gar nicht gebucht und die Fehlerzahl gemeldet.",
+      "anchors": [
+        {
+          "file": "zco_planupload.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:55"
+        },
+        {
+          "file": "zco_planupload.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:56"
+        },
+        {
+          "file": "zco_planupload.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B14",
+      "text": "Sonst werden alle korrekten Zeilen zu einer Primärkostenplanung der Perioden 1 bis 12 in der Planversion zusammengestellt, der Betrag jeweils in der Spalte seiner Periode.",
+      "anchors": [
+        {
+          "file": "zco_planupload.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:61"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:121"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:131"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B15",
+      "text": "Im Testlauf werden die Planwerte nur geprüft, im Echtlauf gebucht.",
+      "anchors": [
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:139"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:140"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:149"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B16",
+      "text": "Jede Fehler- oder Abbruchmeldung der Planbuchung wird ausgegeben.",
+      "anchors": [
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:159"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:161"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B17",
+      "text": "Bei einer solchen Meldung wird verworfen und „nicht gebucht“ gemeldet.",
+      "anchors": [
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:164"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:165"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:166"
+        }
+      ]
+    },
+    {
+      "id": "BM-236-B18",
+      "text": "Ohne Fehler wird im Echtlauf festgeschrieben und die Zahl der gebuchten Zeilen gemeldet; im Testlauf wird die Zahl der fehlerfreien Zeilen gemeldet.",
+      "anchors": [
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:168"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:171"
+        },
+        {
+          "file": "zco_planupload_f01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:173"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:25"
+        },
+        "meaning": "Prüfung Selektionsbild"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:28"
+        },
+        "meaning": "Echtlauf auf Version 0?"
+      },
+      {
+        "id": "aw",
+        "type": "output",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:29"
+        },
+        "meaning": "Warnung: operativer Plan"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:30"
+        },
+        "meaning": "Ende Selektionsbildprüfung"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:33"
+        },
+        "meaning": "Uploadlauf starten"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:35"
+        },
+        "meaning": "Planungsdatei lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:36"
+        },
+        "meaning": "Datenzeilen vorhanden?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:37"
+        },
+        "meaning": "Meldung: Datei ohne Daten"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:38"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "co",
+        "type": "call",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:42"
+        },
+        "meaning": "Prüfer für Kostenrechnungskreis, Jahr und Version anlegen"
+      },
+      {
+        "id": "mx",
+        "type": "output",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:48"
+        },
+        "meaning": "Fehler: Planversion unbekannt"
+      },
+      {
+        "id": "mxe",
+        "type": "end",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:48"
+        },
+        "meaning": "Programmabbruch"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:51"
+        },
+        "meaning": "Zeilen prüfen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:53"
+        },
+        "meaning": "Fehlerhafte Zeilen?"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:54"
+        },
+        "meaning": "Fehlerdatei schreiben"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:55"
+        },
+        "meaning": "Alles oder nichts?"
+      },
+      {
+        "id": "m3",
+        "type": "output",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:56"
+        },
+        "meaning": "Meldung: wegen Fehlern nicht gebucht"
+      },
+      {
+        "id": "r3",
+        "type": "end",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:57"
+        },
+        "meaning": "Lauf ohne Buchung beenden"
+      },
+      {
+        "id": "c4",
+        "type": "call",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:61"
+        },
+        "meaning": "Plan buchen"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "zco_planupload.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload.abap:61"
+        },
+        "meaning": "Programmende"
+      },
+      {
+        "id": "ds",
+        "type": "start",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:8"
+        },
+        "meaning": "Datei lesen"
+      },
+      {
+        "id": "op",
+        "type": "output",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:15"
+        },
+        "meaning": "Planungsdatei auf dem Applikationsserver öffnen"
+      },
+      {
+        "id": "dg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:17"
+        },
+        "meaning": "Datei geöffnet?"
+      },
+      {
+        "id": "dm",
+        "type": "output",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:18"
+        },
+        "meaning": "Fehler: Datei nicht lesbar"
+      },
+      {
+        "id": "dme",
+        "type": "end",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:18"
+        },
+        "meaning": "Programmabbruch"
+      },
+      {
+        "id": "dd",
+        "type": "loop",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:21"
+        },
+        "meaning": "Dateizeilen durchlaufen"
+      },
+      {
+        "id": "rd",
+        "type": "action",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:22"
+        },
+        "meaning": "Nächste Zeile lesen"
+      },
+      {
+        "id": "dg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:23"
+        },
+        "meaning": "Dateiende?"
+      },
+      {
+        "id": "dck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:28"
+        },
+        "meaning": "Keine Kopfzeile?"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:42"
+        },
+        "meaning": "Ende Datei lesen"
+      },
+      {
+        "id": "zs",
+        "type": "start",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:47"
+        },
+        "meaning": "Zeilenprüfung"
+      },
+      {
+        "id": "zl",
+        "type": "loop",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:52"
+        },
+        "meaning": "Zeilen durchlaufen"
+      },
+      {
+        "id": "zc",
+        "type": "call",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:54"
+        },
+        "meaning": "Zeile prüfen"
+      },
+      {
+        "id": "zt",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:58"
+        },
+        "meaning": "Fehlertext ermitteln"
+      },
+      {
+        "id": "ze",
+        "type": "end",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:63"
+        },
+        "meaning": "Ende Zeilenprüfung"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:68"
+        },
+        "meaning": "Fehlerdatei"
+      },
+      {
+        "id": "fg0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:73"
+        },
+        "meaning": "Fehlerdatei angegeben?"
+      },
+      {
+        "id": "fr0",
+        "type": "end",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:74"
+        },
+        "meaning": "Ohne Fehlerdatei zurück"
+      },
+      {
+        "id": "fo",
+        "type": "output",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:77"
+        },
+        "meaning": "Fehlerdatei zum Schreiben öffnen"
+      },
+      {
+        "id": "fg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:78"
+        },
+        "meaning": "Öffnen fehlgeschlagen?"
+      },
+      {
+        "id": "fm",
+        "type": "output",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:79"
+        },
+        "meaning": "Hinweis: Fehlerdatei nicht schreibbar"
+      },
+      {
+        "id": "fr",
+        "type": "end",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:80"
+        },
+        "meaning": "Ohne Fehlerdatei zurück"
+      },
+      {
+        "id": "fl",
+        "type": "loop",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:83"
+        },
+        "meaning": "Fehlerzeilen durchlaufen"
+      },
+      {
+        "id": "ft",
+        "type": "output",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:87"
+        },
+        "meaning": "Fehlerzeile schreiben"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:91"
+        },
+        "meaning": "Ende Fehlerdatei"
+      },
+      {
+        "id": "bs",
+        "type": "start",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:98"
+        },
+        "meaning": "Planbuchung"
+      },
+      {
+        "id": "bl",
+        "type": "loop",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:121"
+        },
+        "meaning": "Korrekte Zeilen durchlaufen"
+      },
+      {
+        "id": "ba",
+        "type": "action",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:131"
+        },
+        "meaning": "Betrag der Periodenspalte zuordnen"
+      },
+      {
+        "id": "bg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:139"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "bchk",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:140"
+        },
+        "meaning": "Planwerte prüfen lassen"
+      },
+      {
+        "id": "bpost",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:149"
+        },
+        "meaning": "Primärkostenplan buchen"
+      },
+      {
+        "id": "rl",
+        "type": "loop",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:159"
+        },
+        "meaning": "Fehlermeldungen durchlaufen"
+      },
+      {
+        "id": "rw",
+        "type": "output",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:161"
+        },
+        "meaning": "Fehlermeldung ausgeben"
+      },
+      {
+        "id": "bg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:164"
+        },
+        "meaning": "Fehler gemeldet?"
+      },
+      {
+        "id": "brb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:165"
+        },
+        "meaning": "Verwerfen"
+      },
+      {
+        "id": "bm1",
+        "type": "output",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:166"
+        },
+        "meaning": "Meldung: nicht gebucht"
+      },
+      {
+        "id": "bcm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:168"
+        },
+        "meaning": "Planbuchung festschreiben"
+      },
+      {
+        "id": "bm2",
+        "type": "output",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:171"
+        },
+        "meaning": "Meldung: Zeilen gebucht"
+      },
+      {
+        "id": "bm3",
+        "type": "output",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:173"
+        },
+        "meaning": "Meldung: Testlauf fehlerfrei"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "anchor": {
+          "file": "zco_planupload_f01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_planupload_f01.abap:175"
+        },
+        "meaning": "Ende Planbuchung"
+      },
+      {
+        "id": "ks",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:42"
+        },
+        "meaning": "Prüfer anlegen"
+      },
+      {
+        "id": "kq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:43"
+        },
+        "meaning": "Planversion im Kostenrechnungskreis lesen"
+      },
+      {
+        "id": "kg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:46"
+        },
+        "meaning": "Version vorhanden?"
+      },
+      {
+        "id": "kx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:47"
+        },
+        "meaning": "Ausnahme Version unbekannt"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:57"
+        },
+        "meaning": "Ende Prüfer anlegen"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:60"
+        },
+        "meaning": "Zeilenprüfung"
+      },
+      {
+        "id": "pg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:63"
+        },
+        "meaning": "Periode außerhalb 1 bis 12?"
+      },
+      {
+        "id": "px1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:64"
+        },
+        "meaning": "Ausnahme Periode ungültig"
+      },
+      {
+        "id": "pc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:70"
+        },
+        "meaning": "Kostenstelle prüfen"
+      },
+      {
+        "id": "pg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:70"
+        },
+        "meaning": "Kostenstelle ungültig?"
+      },
+      {
+        "id": "px2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:71"
+        },
+        "meaning": "Ausnahme Kostenstelle ungültig"
+      },
+      {
+        "id": "pq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:78"
+        },
+        "meaning": "Kostenart zum Jahresende lesen"
+      },
+      {
+        "id": "pg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:83"
+        },
+        "meaning": "Kostenart vorhanden?"
+      },
+      {
+        "id": "px3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:84"
+        },
+        "meaning": "Ausnahme Kostenart ungültig"
+      },
+      {
+        "id": "pg4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:89"
+        },
+        "meaning": "Keine primäre Kostenart?"
+      },
+      {
+        "id": "px4",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:90"
+        },
+        "meaning": "Ausnahme Kostenart nicht primär"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:95"
+        },
+        "meaning": "Ende Zeilenprüfung"
+      },
+      {
+        "id": "ks2",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:98"
+        },
+        "meaning": "Kostenstellenprüfung"
+      },
+      {
+        "id": "kr",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:99"
+        },
+        "meaning": "Bereits geprüfte Kostenstelle nachschlagen"
+      },
+      {
+        "id": "kg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:101"
+        },
+        "meaning": "Schon als gültig bekannt?"
+      },
+      {
+        "id": "kret",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:103"
+        },
+        "meaning": "Gültig zurückgeben"
+      },
+      {
+        "id": "kq2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:106"
+        },
+        "meaning": "Kostenstelle zum Jahresende lesen"
+      },
+      {
+        "id": "kg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:112"
+        },
+        "meaning": "Kostenstelle gültig?"
+      },
+      {
+        "id": "ke2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_plan_pruefer.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_plan_pruefer.abap:115"
+        },
+        "meaning": "Ende Kostenstellenprüfung"
+      }
+    ],
+    "edges": [
+      {
+        "from": "as",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "aw",
+        "condition": "p_versn = '000' AND p_test IS INITIAL"
+      },
+      {
+        "from": "aw",
+        "to": "ae",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "ae",
+        "condition": "else"
+      },
+      {
+        "from": "ae",
+        "to": "s",
+        "condition": "always"
+      },
+      {
+        "from": "s",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "ds",
+        "to": "op",
+        "condition": "always"
+      },
+      {
+        "from": "op",
+        "to": "dg",
+        "condition": "always"
+      },
+      {
+        "from": "dg",
+        "to": "dm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "dm",
+        "to": "dme",
+        "condition": "always"
+      },
+      {
+        "from": "dg",
+        "to": "dd",
+        "condition": "else"
+      },
+      {
+        "from": "dd",
+        "to": "rd",
+        "condition": "next row"
+      },
+      {
+        "from": "rd",
+        "to": "dg2",
+        "condition": "always"
+      },
+      {
+        "from": "dg2",
+        "to": "de",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "dg2",
+        "to": "dck",
+        "condition": "else"
+      },
+      {
+        "from": "dck",
+        "to": "dd",
+        "condition": "lv_nr > 1"
+      },
+      {
+        "from": "dck",
+        "to": "dd",
+        "condition": "else"
+      },
+      {
+        "from": "de",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "gt_zeilen IS INITIAL"
+      },
+      {
+        "from": "m1",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "co",
+        "condition": "else"
+      },
+      {
+        "from": "co",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "ks",
+        "to": "kq",
+        "condition": "always"
+      },
+      {
+        "from": "kq",
+        "to": "kg",
+        "condition": "always"
+      },
+      {
+        "from": "kg",
+        "to": "kx",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "kx",
+        "to": "mx",
+        "condition": "zcx_co_plan"
+      },
+      {
+        "from": "mx",
+        "to": "mxe",
+        "condition": "always"
+      },
+      {
+        "from": "kg",
+        "to": "ke",
+        "condition": "else"
+      },
+      {
+        "from": "ke",
+        "to": "c2",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "zs",
+        "condition": "always"
+      },
+      {
+        "from": "zs",
+        "to": "zl",
+        "condition": "always"
+      },
+      {
+        "from": "zl",
+        "to": "zc",
+        "condition": "next row"
+      },
+      {
+        "from": "zc",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "pg1",
+        "condition": "always"
+      },
+      {
+        "from": "pg1",
+        "to": "px1",
+        "condition": "is_zeile-perio < 1 OR is_zeile-perio > 12"
+      },
+      {
+        "from": "pg1",
+        "to": "pc",
+        "condition": "else"
+      },
+      {
+        "from": "pc",
+        "to": "ks2",
+        "condition": "always"
+      },
+      {
+        "from": "ks2",
+        "to": "kr",
+        "condition": "always"
+      },
+      {
+        "from": "kr",
+        "to": "kg2",
+        "condition": "always"
+      },
+      {
+        "from": "kg2",
+        "to": "kret",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "kg2",
+        "to": "kq2",
+        "condition": "else"
+      },
+      {
+        "from": "kq2",
+        "to": "kg3",
+        "condition": "always"
+      },
+      {
+        "from": "kg3",
+        "to": "ke2",
+        "condition": "rv_ok = abap_true"
+      },
+      {
+        "from": "kg3",
+        "to": "ke2",
+        "condition": "else"
+      },
+      {
+        "from": "kret",
+        "to": "pg2",
+        "condition": "always"
+      },
+      {
+        "from": "ke2",
+        "to": "pg2",
+        "condition": "always"
+      },
+      {
+        "from": "pg2",
+        "to": "px2",
+        "condition": "kostl_gueltig( is_zeile-kostl ) = abap_false"
+      },
+      {
+        "from": "pg2",
+        "to": "pq",
+        "condition": "else"
+      },
+      {
+        "from": "pq",
+        "to": "pg3",
+        "condition": "always"
+      },
+      {
+        "from": "pg3",
+        "to": "px3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pg3",
+        "to": "pg4",
+        "condition": "else"
+      },
+      {
+        "from": "pg4",
+        "to": "px4",
+        "condition": "lv_katyp <> '01'"
+      },
+      {
+        "from": "pg4",
+        "to": "pe",
+        "condition": "else"
+      },
+      {
+        "from": "px1",
+        "to": "zt",
+        "condition": "zcx_co_plan"
+      },
+      {
+        "from": "px2",
+        "to": "zt",
+        "condition": "zcx_co_plan"
+      },
+      {
+        "from": "px3",
+        "to": "zt",
+        "condition": "zcx_co_plan"
+      },
+      {
+        "from": "px4",
+        "to": "zt",
+        "condition": "zcx_co_plan"
+      },
+      {
+        "from": "pe",
+        "to": "zl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "zt",
+        "to": "zl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "zl",
+        "to": "ze",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ze",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "c3",
+        "condition": "gt_fehler IS NOT INITIAL"
+      },
+      {
+        "from": "c3",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "fg0",
+        "condition": "always"
+      },
+      {
+        "from": "fg0",
+        "to": "fr0",
+        "condition": "p_errf IS INITIAL"
+      },
+      {
+        "from": "fg0",
+        "to": "fo",
+        "condition": "else"
+      },
+      {
+        "from": "fo",
+        "to": "fg",
+        "condition": "always"
+      },
+      {
+        "from": "fg",
+        "to": "fm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "fm",
+        "to": "fr",
+        "condition": "always"
+      },
+      {
+        "from": "fg",
+        "to": "fl",
+        "condition": "else"
+      },
+      {
+        "from": "fl",
+        "to": "ft",
+        "condition": "next row"
+      },
+      {
+        "from": "ft",
+        "to": "fl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fl",
+        "to": "fe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fr0",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "fr",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "m3",
+        "condition": "p_alles = 'X'"
+      },
+      {
+        "from": "m3",
+        "to": "r3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "c4",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "c4",
+        "condition": "else"
+      },
+      {
+        "from": "c4",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "bs",
+        "to": "bl",
+        "condition": "always"
+      },
+      {
+        "from": "bl",
+        "to": "ba",
+        "condition": "next row"
+      },
+      {
+        "from": "ba",
+        "to": "bl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "bl",
+        "to": "bg",
+        "condition": "no more rows"
+      },
+      {
+        "from": "bg",
+        "to": "bchk",
+        "condition": "p_test = 'X'"
+      },
+      {
+        "from": "bchk",
+        "to": "rl",
+        "condition": "always"
+      },
+      {
+        "from": "bg",
+        "to": "bpost",
+        "condition": "else"
+      },
+      {
+        "from": "bpost",
+        "to": "rl",
+        "condition": "always"
+      },
+      {
+        "from": "rl",
+        "to": "rw",
+        "condition": "next row"
+      },
+      {
+        "from": "rw",
+        "to": "rl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rl",
+        "to": "bg2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "bg2",
+        "to": "brb",
+        "condition": "gv_bapi_err = 'X'"
+      },
+      {
+        "from": "brb",
+        "to": "bm1",
+        "condition": "always"
+      },
+      {
+        "from": "bm1",
+        "to": "be",
+        "condition": "always"
+      },
+      {
+        "from": "bg2",
+        "to": "bcm",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "bcm",
+        "to": "bm2",
+        "condition": "always"
+      },
+      {
+        "from": "bm2",
+        "to": "be",
+        "condition": "always"
+      },
+      {
+        "from": "bg2",
+        "to": "bm3",
+        "condition": "else"
+      },
+      {
+        "from": "bm3",
+        "to": "be",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "se",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zco_planupload_f01.abap:59 — kein Fachsatz „die Fehlerdatei enthält stets die Originalzeile“ (sy-tabix ist nach dem Methodenaufruf nicht verlässlich die Schleifenposition; nach der Kostenstellenprüfung steht er auf dem Wert des READ TABLE auf der Hash-Tabelle)",
+    "zco_planupload.abap:61 — kein Fachsatz „ohne Alles-oder-nichts werden auch fehlerhafte Zeilen gebucht“ (gebucht werden nur die geprüften korrekten Zeilen aus gt_ok)",
+    "zco_planupload_f01.abap:140 — kein Fachsatz „im Testlauf wird gebucht und zurückgerollt“ (eigener Prüfbaustein; ROLLBACK nur bei Fehlermeldungen)",
+    "zco_planupload.abap:29 — kein Fachsatz „Buchung auf Version 0 ist gesperrt“ (nur Warnung)"
+  ],
+  "processDescription": "Der Report lädt eine Kostenplanung aus einer CSV-Datei des Applikationsservers und bucht sie als Primärkostenplan. Das Selektionsbild warnt, wenn im Echtlauf auf Version 0 gebucht werden soll. Der Lauf liest die Datei zeilenweise, überspringt die Kopfzeile und zerlegt jede Zeile in Kostenstelle, Kostenart, Periode, Betrag und Währung; ist die Datei nicht lesbar, bricht er ab, enthält sie keine Datenzeile, endet er mit Meldung. Eine globale Prüfklasse wird für Kostenrechnungskreis, Jahr und Version angelegt und bricht den Lauf über eine Ausnahme ab, wenn die Version fehlt. Sie prüft jede Zeile auf Periode 1 bis 12, zum Jahresende gültige Kostenstelle (mit Puffer) und existierende primäre Kostenart und meldet Fehler als Ausnahme; fehlerhafte Zeilen werden gesammelt, korrekte für die Buchung vorgemerkt. Fehlerhafte Zeilen werden, wenn möglich, in eine Fehlerdatei geschrieben; bei „Alles oder nichts“ endet der Lauf dann ohne Buchung. Sonst stellt der Report die korrekten Zeilen periodengerecht zusammen und ruft im Testlauf den Prüf-BAPI, im Echtlauf den Buchungs-BAPI der Primärkostenplanung. Fehlermeldungen werden ausgegeben und führen zum Verwerfen; ohne Fehler wird im Echtlauf festgeschrieben und die Zeilenzahl gemeldet."
+}

@@ -1,0 +1,1346 @@
+{
+  "id": "BM-270",
+  "title": "Jobkette elektronischer Kontoauszug",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "TBTCO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_bank_chain.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bank_chain.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_FI_JOB_CHAIN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_bank_chain.abap",
+        "line": 31,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bank_chain.abap:31"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_OPEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_fi_job_chain.abap",
+        "line": 55,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_job_chain.abap:55"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_CLOSE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_fi_job_chain.abap",
+        "line": 90,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_job_chain.abap:90"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BP_JOB_DELETE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_fi_job_chain.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_job_chain.abap:75"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RS_VARIANT_EXISTS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_fi_job_chain.abap",
+        "line": 145,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_job_chain.abap:145"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RFEBKA00",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_bank_chain.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bank_chain.abap:34"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-270-B01",
+      "text": "Nur wer Hintergrundjobs freigeben darf, kann die Kontoauszugs-Nachtkette einplanen; sonst bricht der Report mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:15"
+        },
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:18"
+        },
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-270-B02",
+      "text": "Ist bereits ein Job der Kette geplant, freigegeben, startbereit oder aktiv, wird nichts eingeplant und nur darauf hingewiesen.",
+      "anchors": [
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:23"
+        },
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:26"
+        },
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:27"
+        },
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-270-B03",
+      "text": "Die Kette erhält Startdatum und Startzeit für ihren ersten Schritt.",
+      "anchors": [
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-270-B04",
+      "text": "Als erster Schritt wird der Import des elektronischen Kontoauszugs zum Starttermin eingeplant.",
+      "anchors": [
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:34"
+        },
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:90"
+        }
+      ]
+    },
+    {
+      "id": "BM-270-B05",
+      "text": "Als zweiter Schritt wird der kundeneigene Ausgleich eingeplant, der nur startet, wenn der Import erfolgreich beendet wurde.",
+      "anchors": [
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:37"
+        },
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:101"
+        }
+      ]
+    },
+    {
+      "id": "BM-270-B06",
+      "text": "Auf Wunsch wird als dritter Schritt die Mail an das Treasury eingeplant, die nach dem Ausgleich startet, auch wenn dieser gescheitert ist.",
+      "anchors": [
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:41"
+        },
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-270-B07",
+      "text": "Vor jedem Schritt wird geprüft, ob die Variante ZNIGHT für den Report existiert; fehlt sie, scheitert die Einplanung.",
+      "anchors": [
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:52"
+        },
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:145"
+        },
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:153"
+        },
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:154"
+        }
+      ]
+    },
+    {
+      "id": "BM-270-B08",
+      "text": "Jeder Schritt wird als eigener Job angelegt und der jeweilige Report mit seiner Variante als Jobschritt eingeplant; lässt sich der Job nicht anlegen, scheitert die Einplanung.",
+      "anchors": [
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:55"
+        },
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:62"
+        },
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:63"
+        },
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-270-B09",
+      "text": "Lässt sich der Report nicht einplanen, wird der leere Job gelöscht und die Einplanung scheitert.",
+      "anchors": [
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:73"
+        },
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:75"
+        },
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-270-B10",
+      "text": "Der erste Schritt wird zum Starttermin freigegeben, jeder weitere als Nachfolger des vorherigen Jobs; scheitert die Freigabe, scheitert die Einplanung.",
+      "anchors": [
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:88"
+        },
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:111"
+        },
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:112"
+        }
+      ]
+    },
+    {
+      "id": "BM-270-B11",
+      "text": "Scheitert irgendein Schritt, werden alle bereits eingeplanten Jobs der Kette gelöscht, der Fehlertext angezeigt und der Report verlassen.",
+      "anchors": [
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:48"
+        },
+        {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:125"
+        },
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:49"
+        },
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-270-B12",
+      "text": "Bei Erfolg werden alle eingeplanten Jobs mit Name und Nummer als „eingeplant“ ausgegeben.",
+      "anchors": [
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:53"
+        },
+        {
+          "file": "zfi_bank_chain.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:54"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:14"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "auth",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:15"
+        },
+        "meaning": "Berechtigung zur Jobfreigabe prüfen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:18"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "me",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:19"
+        },
+        "meaning": "Fehler: keine Berechtigung"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:19"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:23"
+        },
+        "meaning": "Eingeplante oder laufende Kettenjobs zählen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:26"
+        },
+        "meaning": "Kette bereits eingeplant/aktiv?"
+      },
+      {
+        "id": "mi",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:27"
+        },
+        "meaning": "Hinweis: Kette bereits vorhanden"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:28"
+        },
+        "meaning": "Report verlassen"
+      },
+      {
+        "id": "new",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:31"
+        },
+        "meaning": "Jobkette mit Starttermin anlegen"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:34"
+        },
+        "meaning": "Schritt 1: Kontoauszugsimport einplanen"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:37"
+        },
+        "meaning": "Schritt 2: Z-Ausgleich nach erfolgreichem Import einplanen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:41"
+        },
+        "meaning": "Mailversand gewünscht?"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:42"
+        },
+        "meaning": "Schritt 3: Mail an Treasury nach Schritt 2 einplanen"
+      },
+      {
+        "id": "ccan",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:48"
+        },
+        "meaning": "Bereits eingeplante Schritte löschen"
+      },
+      {
+        "id": "cmsg",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:49"
+        },
+        "meaning": "Fehlertext der Kette anzeigen"
+      },
+      {
+        "id": "r2",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:50"
+        },
+        "meaning": "Report verlassen"
+      },
+      {
+        "id": "cgs",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:53"
+        },
+        "meaning": "Eingeplante Schritte abfragen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:53"
+        },
+        "meaning": "Eingeplante Schritte durchlaufen"
+      },
+      {
+        "id": "w",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:54"
+        },
+        "meaning": "Jobname und -nummer als eingeplant ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bank_chain.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_chain.abap:55"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "cs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:42"
+        },
+        "meaning": "Kette mit Starttermin anlegen"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:45"
+        },
+        "meaning": "Ende Konstruktor"
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:48"
+        },
+        "meaning": "Schritt als Job einplanen"
+      },
+      {
+        "id": "cv",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:52"
+        },
+        "meaning": "Variante prüfen"
+      },
+      {
+        "id": "jo",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:55"
+        },
+        "meaning": "Job anlegen"
+      },
+      {
+        "id": "go",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:62"
+        },
+        "meaning": "Anlegen fehlgeschlagen?"
+      },
+      {
+        "id": "xo",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:63"
+        },
+        "meaning": "Ausnahme: Job nicht angelegt"
+      },
+      {
+        "id": "sub",
+        "type": "external_program",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:69"
+        },
+        "meaning": "Übergebenen Report mit Variante als Jobschritt einplanen (dynamisch)"
+      },
+      {
+        "id": "gsb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:73"
+        },
+        "meaning": "Einplanen fehlgeschlagen?"
+      },
+      {
+        "id": "del",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:75"
+        },
+        "meaning": "Leeren Job löschen"
+      },
+      {
+        "id": "xs",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:82"
+        },
+        "meaning": "Ausnahme: Schritt nicht eingeplant"
+      },
+      {
+        "id": "gf",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:88"
+        },
+        "meaning": "Erster Schritt der Kette?"
+      },
+      {
+        "id": "jc1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:90"
+        },
+        "meaning": "Job zum Starttermin freigeben"
+      },
+      {
+        "id": "jc2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:101"
+        },
+        "meaning": "Job als Nachfolger des vorherigen Schritts freigeben"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:111"
+        },
+        "meaning": "Freigabe fehlgeschlagen?"
+      },
+      {
+        "id": "xc",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:112"
+        },
+        "meaning": "Ausnahme: Job nicht freigegeben"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:119"
+        },
+        "meaning": "Schritt in Kette aufgenommen"
+      },
+      {
+        "id": "ks",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:122"
+        },
+        "meaning": "Kette verwerfen"
+      },
+      {
+        "id": "kl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:124"
+        },
+        "meaning": "Eingeplante Schritte durchlaufen"
+      },
+      {
+        "id": "kd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:125"
+        },
+        "meaning": "Job löschen (Fehler ignoriert)"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:134"
+        },
+        "meaning": "Ende Verwerfen"
+      },
+      {
+        "id": "gss",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:137"
+        },
+        "meaning": "Schritte liefern"
+      },
+      {
+        "id": "gse",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:139"
+        },
+        "meaning": "Schrittliste zurückgeben"
+      },
+      {
+        "id": "vs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:142"
+        },
+        "meaning": "Variante prüfen"
+      },
+      {
+        "id": "vr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:145"
+        },
+        "meaning": "Existenz der Variante zum Report prüfen"
+      },
+      {
+        "id": "vg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:153"
+        },
+        "meaning": "Variante fehlt?"
+      },
+      {
+        "id": "vx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:154"
+        },
+        "meaning": "Ausnahme: Variante fehlt"
+      },
+      {
+        "id": "ve",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_job_chain.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_job_chain.abap:159"
+        },
+        "meaning": "Variante vorhanden"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "auth",
+        "condition": "always"
+      },
+      {
+        "from": "auth",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "me",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "me",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "q",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "mi",
+        "condition": "sy-dbcnt > 0"
+      },
+      {
+        "from": "mi",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "new",
+        "condition": "else"
+      },
+      {
+        "from": "new",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "ce",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "c2",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "c3",
+        "condition": "p_mail = abap_true"
+      },
+      {
+        "from": "c3",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "cgs",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "cgs",
+        "condition": "else"
+      },
+      {
+        "from": "as",
+        "to": "cv",
+        "condition": "always"
+      },
+      {
+        "from": "cv",
+        "to": "vs",
+        "condition": "always"
+      },
+      {
+        "from": "vs",
+        "to": "vr",
+        "condition": "always"
+      },
+      {
+        "from": "vr",
+        "to": "vg",
+        "condition": "always"
+      },
+      {
+        "from": "vg",
+        "to": "vx",
+        "condition": "sy-subrc <> 0 OR lv_rc <> 0"
+      },
+      {
+        "from": "vg",
+        "to": "ve",
+        "condition": "else"
+      },
+      {
+        "from": "ve",
+        "to": "jo",
+        "condition": "always"
+      },
+      {
+        "from": "jo",
+        "to": "go",
+        "condition": "always"
+      },
+      {
+        "from": "go",
+        "to": "xo",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "go",
+        "to": "sub",
+        "condition": "else"
+      },
+      {
+        "from": "sub",
+        "to": "gsb",
+        "condition": "always"
+      },
+      {
+        "from": "gsb",
+        "to": "del",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "del",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "gsb",
+        "to": "gf",
+        "condition": "else"
+      },
+      {
+        "from": "gf",
+        "to": "jc1",
+        "condition": "mt_steps IS INITIAL"
+      },
+      {
+        "from": "gf",
+        "to": "jc2",
+        "condition": "else"
+      },
+      {
+        "from": "jc1",
+        "to": "gc",
+        "condition": "always"
+      },
+      {
+        "from": "jc2",
+        "to": "gc",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "xc",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gc",
+        "to": "ae",
+        "condition": "else"
+      },
+      {
+        "from": "vx",
+        "to": "ccan",
+        "condition": "zcx_fi_job_chain"
+      },
+      {
+        "from": "xo",
+        "to": "ccan",
+        "condition": "zcx_fi_job_chain"
+      },
+      {
+        "from": "xs",
+        "to": "ccan",
+        "condition": "zcx_fi_job_chain"
+      },
+      {
+        "from": "xc",
+        "to": "ccan",
+        "condition": "zcx_fi_job_chain"
+      },
+      {
+        "from": "ccan",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "ks",
+        "to": "kl",
+        "condition": "always"
+      },
+      {
+        "from": "kl",
+        "to": "kd",
+        "condition": "next row"
+      },
+      {
+        "from": "kd",
+        "to": "kl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "kl",
+        "to": "ke",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ke",
+        "to": "cmsg",
+        "condition": "always"
+      },
+      {
+        "from": "cmsg",
+        "to": "r2",
+        "condition": "always"
+      },
+      {
+        "from": "cgs",
+        "to": "gss",
+        "condition": "always"
+      },
+      {
+        "from": "gss",
+        "to": "gse",
+        "condition": "always"
+      },
+      {
+        "from": "gse",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "w",
+        "condition": "next row"
+      },
+      {
+        "from": "w",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zfi_bank_chain.abap:42 — kein Fachsatz „die Mail wird nur nach erfolgreichem Ausgleich versendet“ (iv_checkstat = abap_false: Start unabhängig vom Status des Vorgängers)",
+    "zfi_bank_chain.abap:48 — kein Fachsatz „bereits gelaufene Schritte werden rückgängig gemacht“ (nur Jobs werden gelöscht; Buchungen eines schon gelaufenen Imports bleiben)",
+    "zcl_fi_job_chain.abap:69 — kein Fachsatz „der Kontoauszug wird eingelesen“ an dieser Stelle (der Report wird nur als Jobschritt eingeplant, nicht ausgeführt)"
+  ],
+  "processDescription": "Ein Treasury-Mitarbeiter oder ein Einplanungsjob startet den Report mit Starttermin und Mail-Schalter. Ohne Berechtigung zur Jobfreigabe bricht er ab; ist bereits ein Job der Kette geplant oder aktiv, weist er darauf hin und endet. Sonst legt er eine Jobkette an und plant nacheinander den Kontoauszugsimport, den kundeneigenen Ausgleich und optional die Treasury-Mail ein. Für jeden Schritt wird zuerst die Variante geprüft, dann ein Job angelegt, der Report mit Variante als Jobschritt eingeplant und der Job freigegeben: der erste zum Starttermin, der Ausgleich nur nach erfolgreichem Import, die Mail nach dem Ausgleich unabhängig von dessen Ergebnis. Scheitert ein Schritt an Variante, Anlage, Einplanung oder Freigabe, werden alle bis dahin eingeplanten Jobs gelöscht und der Fehler angezeigt. Bei Erfolg werden die eingeplanten Jobs aufgelistet."
+}

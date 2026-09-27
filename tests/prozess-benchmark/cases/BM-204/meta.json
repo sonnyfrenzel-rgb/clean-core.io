@@ -1,0 +1,31 @@
+{
+  "id": "BM-204",
+  "title": "Warenausgangsprüfung im Liefer-User-Exit über globale Prüfklasse",
+  "domain": "SD",
+  "band": "mittel",
+  "loc": 79,
+  "constructs": [
+    "FORM-Exit USEREXIT_SAVE_DOCUMENT_PREPARE",
+    "CHECK",
+    "globale Klasse",
+    "RAISE EXCEPTION",
+    "TRY/CATCH",
+    "MESSAGE E",
+    "LOOP WHERE"
+  ],
+  "scenario": "Liefer-User-Exit aus einem ECC-Logistikprojekt, der vor dem Warenausgang Kommissionierung, Charge und Route prüft.",
+  "s4_issues": [
+    "VBUP entfällt in S/4 (Status in LIPS)",
+    "Modifikation im User-Exit MV50AFZ1 statt BAdI",
+    "MESSAGE E im Sichern-Exit"
+  ],
+  "wave": 3,
+  "module": "LE-SHP",
+  "edge_constructs": [
+    "CHECK im FORM verlässt die Routine",
+    "RETURN vor Schleife",
+    "drei RAISE-Pfade in einen CATCH",
+    "MESSAGE lo_err TYPE E"
+  ],
+  "oo": true
+}

@@ -1,0 +1,39 @@
+{
+  "id": "BM-237",
+  "title": "Vier-Augen-Freigabe von Zahlungsvorschlägen mit Bankdatenprüfung",
+  "domain": "FI",
+  "band": "sehr komplex",
+  "loc": 403,
+  "constructs": [
+    "FUNCTION-POOL mit TOP/U01-U04/F01",
+    "RAISE",
+    "MESSAGE E RAISING",
+    "MESSAGE A im Verbucher",
+    "CHECK in LOOP",
+    "CHECK in FORM",
+    "EXIT in LOOP",
+    "RETURN in LOOP",
+    "CASE",
+    "AUTHORITY-CHECK",
+    "ENQUEUE/DEQUEUE",
+    "IN UPDATE TASK",
+    "SWE_EVENT_CREATE",
+    "COMMIT WORK",
+    "MODIFY Z-Tabelle"
+  ],
+  "scenario": "Eigenentwickelte Zahlungsfreigabe in der Kreditorenbuchhaltung nach einem Betrugsfall, mit Workflow-Anbindung an F110.",
+  "s4_issues": [
+    "REGUH-Direktzugriff",
+    "Änderungsbelege CDHDR/CDPOS per SELECT",
+    "SAP bietet in S/4 eigene Zahlungsfreigabe (BCM / Freigabe-Workflow)"
+  ],
+  "wave": 3,
+  "module": "FI-AP",
+  "edge_constructs": [
+    "Verbuchungsbaustein im Fall ohne Kante vom Aufrufer",
+    "Vier-Augen-Vergleich gegen den letzten Prüfer",
+    "Protokollroutine von drei Stellen gerufen",
+    "RETURN innerhalb LOOP in FORM"
+  ],
+  "oo": false
+}

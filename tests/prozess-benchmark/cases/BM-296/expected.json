@@ -1,0 +1,2104 @@
+{
+  "id": "BM-296",
+  "title": "WM-Inventur per Handscanner: Platzsperre, Quantzählung mit Fremdmaterial-Rückfrage und Buchung über drei RF-Bilder",
+  "classes": [
+    "K07",
+    "K01",
+    "K03",
+    "K12",
+    "K11"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "LINV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzwm_rf_invc01.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzwm_rf_invc01.abap:47"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZWM_INVPL",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "lzwm_rf_invc01.abap",
+        "line": 60,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzwm_rf_invc01.abap:60"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZWM_INVPL",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "lzwm_rf_invc01.abap",
+        "line": 168,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzwm_rf_invc01.abap:168"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzwm_rf_invc01.abap",
+        "line": 92,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzwm_rf_invc01.abap:92"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "L_INV_COUNT_EXT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzwm_rf_invc01.abap",
+        "line": 146,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzwm_rf_invc01.abap:146"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_WM_RF_LOG",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "lzwm_rf_invc01.abap",
+        "line": 163,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzwm_rf_invc01.abap:163"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-296-B01",
+      "text": "Der Baustein startet die Inventurzählung für eine Lagernummer mit dem Bild zum Scannen des Lagerplatzes und gibt nach Ende die Anzahl der Positionen der noch offenen Zählung zurück.",
+      "anchors": [
+        {
+          "file": "lzwm_rf_invu01.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invu01.abap:1"
+        },
+        {
+          "file": "lzwm_rf_invu01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invu01.abap:14"
+        },
+        {
+          "file": "lzwm_rf_invu01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invu01.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-296-B02",
+      "text": "Mit F3 auf dem Platzbild endet die Zählung.",
+      "anchors": [
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:10"
+        },
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-296-B03",
+      "text": "Der gescannte Platz muss in einem Inventurbeleg stehen und noch ungezählt sein, sonst wird er mit Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:18"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:47"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:51"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:52"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:55"
+        },
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-296-B04",
+      "text": "Der Platz wird gegen parallele Zählung gesperrt; ist er gesperrt, wird der sperrende Benutzer gemeldet.",
+      "anchors": [
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:60"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:67"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-296-B05",
+      "text": "Die erwarteten Quants des Platzes werden mit Sollmenge gelesen und der Fahrer kommt auf das Scanbild.",
+      "anchors": [
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:73"
+        },
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-296-B06",
+      "text": "Ein gescanntes erwartetes Material mit Charge erhöht die gezählte Menge des Quants.",
+      "anchors": [
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:85"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:87"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-296-B07",
+      "text": "Unerwartetes Material wird nur nach Bestätigung als Fremdmaterial aufgenommen; lehnt der Fahrer ab, wird der Scan verworfen und dies als Hinweis gezeigt.",
+      "anchors": [
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:92"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:100"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:101"
+        },
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-296-B08",
+      "text": "Nach jedem Scan werden die Eingabefelder geleert und das Scanbild erneut aufgerufen.",
+      "anchors": [
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:63"
+        },
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-296-B09",
+      "text": "F3 auf dem Scanbild verwirft die Zählung des Platzes, hebt die Sperre auf und kehrt zum Platzbild zurück.",
+      "anchors": [
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:37"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:168"
+        },
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-296-B10",
+      "text": "Mit LEER bestätigt der Fahrer einen leeren Platz: alle erwarteten Quants erhalten Menge 0; wurde schon eine Menge gezählt, wird das abgewiesen. Danach folgt die Übersicht.",
+      "anchors": [
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:47"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:113"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:114"
+        },
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-296-B11",
+      "text": "Weicht beim Buchen eine erwartete Position um mehr als 2 % von der Sollmenge ab oder ist ihr Soll null, erhält der Fahrer eine Warnung mit Empfehlung zur Nachzählung, kann aber weiterbuchen.",
+      "anchors": [
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:84"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:126"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:127"
+        },
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:86"
+        }
+      ]
+    },
+    {
+      "id": "BM-296-B12",
+      "text": "Das Zählergebnis wird an die WM-Inventur übergeben; scheitert das, wird zurückgerollt und die Meldung als Fehler ausgegeben.",
+      "anchors": [
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:89"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:146"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:155"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:156"
+        }
+      ]
+    },
+    {
+      "id": "BM-296-B13",
+      "text": "Sonst wird synchron festgeschrieben, die Zählung in einem Z-Protokoll vermerkt, der Platz entsperrt und die Zählung geleert; der Platz wird als gebucht gemeldet und der Fahrer beginnt mit dem nächsten Platz.",
+      "anchors": [
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:162"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:163"
+        },
+        {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:164"
+        },
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:93"
+        },
+        {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:95"
+        }
+      ]
+    },
+    {
+      "id": "BM-296-B14",
+      "text": "Beim Aufbau der Übersicht wird je Table-Control-Zeile die gezählte Position gelesen; ohne weitere Position endet die Zeilenschleife.",
+      "anchors": [
+        {
+          "file": "lzwm_rf_invo01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invo01.abap:18"
+        },
+        {
+          "file": "lzwm_rf_invo01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invo01.abap:19"
+        },
+        {
+          "file": "lzwm_rf_invo01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invo01.abap:20"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "su",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_rf_invu01.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invu01.abap:1"
+        },
+        "meaning": "Inventurzählung starten"
+      },
+      {
+        "id": "cs",
+        "type": "output",
+        "anchor": {
+          "file": "lzwm_rf_invu01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invu01.abap:14"
+        },
+        "meaning": "Platzbild"
+      },
+      {
+        "id": "ca",
+        "type": "call",
+        "anchor": {
+          "file": "lzwm_rf_invu01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invu01.abap:17"
+        },
+        "meaning": "Anzahl ermitteln"
+      },
+      {
+        "id": "eu",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invu01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invu01.abap:19"
+        },
+        "meaning": "Ende Baustein"
+      },
+      {
+        "id": "so",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_rf_invo01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invo01.abap:8"
+        },
+        "meaning": "PBO RF-Bilder"
+      },
+      {
+        "id": "ca2",
+        "type": "call",
+        "anchor": {
+          "file": "lzwm_rf_invo01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invo01.abap:11"
+        },
+        "meaning": "Zeilenzahl ermitteln"
+      },
+      {
+        "id": "eo",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invo01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invo01.abap:12"
+        },
+        "meaning": "Ende PBO"
+      },
+      {
+        "id": "stg",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_rf_invo01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invo01.abap:17"
+        },
+        "meaning": "Zeile der Übersicht"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "lzwm_rf_invo01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invo01.abap:18"
+        },
+        "meaning": "Position lesen"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_rf_invo01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invo01.abap:19"
+        },
+        "meaning": "Keine Position mehr?"
+      },
+      {
+        "id": "ex",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invo01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invo01.abap:20"
+        },
+        "meaning": "Zeilenschleife beenden"
+      },
+      {
+        "id": "etg",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invo01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invo01.abap:22"
+        },
+        "meaning": "Ende Zeile"
+      },
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:8"
+        },
+        "meaning": "PAI Platzbild"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:10"
+        },
+        "meaning": "Funktion?"
+      },
+      {
+        "id": "lv0",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:13"
+        },
+        "meaning": "Zählung beenden"
+      },
+      {
+        "id": "cpp",
+        "type": "call",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:18"
+        },
+        "meaning": "Platz prüfen und sperren"
+      },
+      {
+        "id": "me1",
+        "type": "output",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:21"
+        },
+        "meaning": "Fehler Platz"
+      },
+      {
+        "id": "me1e",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:21"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "lv200",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:23"
+        },
+        "meaning": "Zum Scanbild"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:26"
+        },
+        "meaning": "Ende PAI Platz"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:31"
+        },
+        "meaning": "PAI Scanbild"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:33"
+        },
+        "meaning": "Funktion?"
+      },
+      {
+        "id": "cfr",
+        "type": "call",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:37"
+        },
+        "meaning": "Zählung verwerfen, entsperren"
+      },
+      {
+        "id": "lv100",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:38"
+        },
+        "meaning": "Zum Platzbild"
+      },
+      {
+        "id": "lv300",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:42"
+        },
+        "meaning": "Zur Übersicht"
+      },
+      {
+        "id": "cle",
+        "type": "call",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:47"
+        },
+        "meaning": "Leerplatz bestätigen"
+      },
+      {
+        "id": "me2",
+        "type": "output",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:49"
+        },
+        "meaning": "Fehler Leerplatz"
+      },
+      {
+        "id": "me2e",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:49"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "lv300b",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:51"
+        },
+        "meaning": "Zur Übersicht"
+      },
+      {
+        "id": "cqe",
+        "type": "call",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:57"
+        },
+        "meaning": "Quant zählen"
+      },
+      {
+        "id": "mc",
+        "type": "output",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:61"
+        },
+        "meaning": "Hinweis Scan verworfen"
+      },
+      {
+        "id": "lv200b",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:64"
+        },
+        "meaning": "Nächster Scan"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:67"
+        },
+        "meaning": "Ende PAI Scan"
+      },
+      {
+        "id": "s3",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:75"
+        },
+        "meaning": "PAI Übersicht"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:77"
+        },
+        "meaning": "Funktion?"
+      },
+      {
+        "id": "lv200c",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:80"
+        },
+        "meaning": "Zurück zum Scanbild"
+      },
+      {
+        "id": "cn",
+        "type": "call",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:84"
+        },
+        "meaning": "Nachzählung prüfen"
+      },
+      {
+        "id": "gn",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:84"
+        },
+        "meaning": "Nachzählung nötig?"
+      },
+      {
+        "id": "mw",
+        "type": "output",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:86"
+        },
+        "meaning": "Warnung Nachzählung"
+      },
+      {
+        "id": "csp",
+        "type": "call",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:89"
+        },
+        "meaning": "Zählung buchen"
+      },
+      {
+        "id": "me4",
+        "type": "output",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:91"
+        },
+        "meaning": "Fehler Buchung"
+      },
+      {
+        "id": "me4e",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:91"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "ms2",
+        "type": "output",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:93"
+        },
+        "meaning": "Platz gebucht melden"
+      },
+      {
+        "id": "lv100b",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:95"
+        },
+        "meaning": "Nächster Platz"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invi01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invi01.abap:98"
+        },
+        "meaning": "Ende PAI Übersicht"
+      },
+      {
+        "id": "sp",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:44"
+        },
+        "meaning": "Platz prüfen"
+      },
+      {
+        "id": "rp",
+        "type": "read",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:47"
+        },
+        "meaning": "Inventurbeleg zum Platz lesen"
+      },
+      {
+        "id": "g1c",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:51"
+        },
+        "meaning": "Kein Beleg?"
+      },
+      {
+        "id": "rz1",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:52"
+        },
+        "meaning": "Ausnahme kein Beleg"
+      },
+      {
+        "id": "g2c",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:55"
+        },
+        "meaning": "Schon gezählt?"
+      },
+      {
+        "id": "rz2",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:56"
+        },
+        "meaning": "Ausnahme Status"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:60"
+        },
+        "meaning": "Platz sperren"
+      },
+      {
+        "id": "g3c",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:67"
+        },
+        "meaning": "Gesperrt?"
+      },
+      {
+        "id": "rz3",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:68"
+        },
+        "meaning": "Ausnahme gesperrt"
+      },
+      {
+        "id": "rq",
+        "type": "read",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:73"
+        },
+        "meaning": "Erwartete Quants lesen"
+      },
+      {
+        "id": "ep",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:79"
+        },
+        "meaning": "Ende Platzprüfung"
+      },
+      {
+        "id": "sq",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:84"
+        },
+        "meaning": "Quant erfassen"
+      },
+      {
+        "id": "rtq",
+        "type": "read",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:85"
+        },
+        "meaning": "Erwarteten Quant suchen"
+      },
+      {
+        "id": "gq",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:87"
+        },
+        "meaning": "Erwartet?"
+      },
+      {
+        "id": "aq",
+        "type": "action",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:88"
+        },
+        "meaning": "Menge aufaddieren"
+      },
+      {
+        "id": "rq1",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:89"
+        },
+        "meaning": "Fertig"
+      },
+      {
+        "id": "pop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:92"
+        },
+        "meaning": "Rückfrage Fremdmaterial"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:100"
+        },
+        "meaning": "Abgelehnt?"
+      },
+      {
+        "id": "rz4",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:101"
+        },
+        "meaning": "Ausnahme Scan verworfen"
+      },
+      {
+        "id": "eq",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:107"
+        },
+        "meaning": "Fremdmaterial aufgenommen"
+      },
+      {
+        "id": "sl",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:112"
+        },
+        "meaning": "Leerplatz"
+      },
+      {
+        "id": "ll",
+        "type": "loop",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:113"
+        },
+        "meaning": "Erwartete Quants"
+      },
+      {
+        "id": "gl2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:114"
+        },
+        "meaning": "Schon Menge gezählt?"
+      },
+      {
+        "id": "rz6",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:115"
+        },
+        "meaning": "Ausnahme nicht leer"
+      },
+      {
+        "id": "el",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:120"
+        },
+        "meaning": "Ende Leerplatz"
+      },
+      {
+        "id": "sn",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:125"
+        },
+        "meaning": "Nachzählung prüfen"
+      },
+      {
+        "id": "ln",
+        "type": "loop",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:126"
+        },
+        "meaning": "Erwartete Positionen"
+      },
+      {
+        "id": "gn2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:127"
+        },
+        "meaning": "Abweichung über 2 %?"
+      },
+      {
+        "id": "rn",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:130"
+        },
+        "meaning": "Ja zurück"
+      },
+      {
+        "id": "en",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:133"
+        },
+        "meaning": "Nein zurück"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:138"
+        },
+        "meaning": "Zählung buchen"
+      },
+      {
+        "id": "lic",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:146"
+        },
+        "meaning": "Zählergebnis an WM"
+      },
+      {
+        "id": "gs",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:155"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:156"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "rz7",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:157"
+        },
+        "meaning": "Ausnahme mit WM-Meldung"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:162"
+        },
+        "meaning": "Synchron festschreiben"
+      },
+      {
+        "id": "lg",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:163"
+        },
+        "meaning": "Z-Protokoll schreiben"
+      },
+      {
+        "id": "cf",
+        "type": "call",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:164"
+        },
+        "meaning": "Entsperren und leeren"
+      },
+      {
+        "id": "es",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:165"
+        },
+        "meaning": "Ende Buchen"
+      },
+      {
+        "id": "sf",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:167"
+        },
+        "meaning": "Freigeben"
+      },
+      {
+        "id": "dq",
+        "type": "lock",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:168"
+        },
+        "meaning": "Platzsperre aufheben"
+      },
+      {
+        "id": "ef",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:173"
+        },
+        "meaning": "Ende Freigeben"
+      },
+      {
+        "id": "sa",
+        "type": "start",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:175"
+        },
+        "meaning": "Anzahl"
+      },
+      {
+        "id": "ea",
+        "type": "end",
+        "anchor": {
+          "file": "lzwm_rf_invc01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzwm_rf_invc01.abap:177"
+        },
+        "meaning": "Anzahl zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "su",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "ca",
+        "condition": "always"
+      },
+      {
+        "from": "ca",
+        "to": "sa",
+        "condition": "always"
+      },
+      {
+        "from": "ea",
+        "to": "eu",
+        "condition": "always"
+      },
+      {
+        "from": "so",
+        "to": "ca2",
+        "condition": "always"
+      },
+      {
+        "from": "ca2",
+        "to": "sa",
+        "condition": "always"
+      },
+      {
+        "from": "ea",
+        "to": "eo",
+        "condition": "always"
+      },
+      {
+        "from": "stg",
+        "to": "rt",
+        "condition": "always"
+      },
+      {
+        "from": "rt",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "ex",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gt",
+        "to": "etg",
+        "condition": "else"
+      },
+      {
+        "from": "s1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "lv0",
+        "condition": "WHEN 'F3'"
+      },
+      {
+        "from": "g1",
+        "to": "cpp",
+        "condition": "WHEN 'ENTR'"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "cpp",
+        "to": "sp",
+        "condition": "always"
+      },
+      {
+        "from": "ep",
+        "to": "lv200",
+        "condition": "always"
+      },
+      {
+        "from": "rz1",
+        "to": "me1",
+        "condition": "lcx_rf_inv"
+      },
+      {
+        "from": "rz2",
+        "to": "me1",
+        "condition": "lcx_rf_inv"
+      },
+      {
+        "from": "rz3",
+        "to": "me1",
+        "condition": "lcx_rf_inv"
+      },
+      {
+        "from": "me1",
+        "to": "me1e",
+        "condition": "always"
+      },
+      {
+        "from": "s2",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "cfr",
+        "condition": "WHEN 'F3'"
+      },
+      {
+        "from": "cfr",
+        "to": "sf",
+        "condition": "always"
+      },
+      {
+        "from": "ef",
+        "to": "lv100",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "lv300",
+        "condition": "WHEN 'F4'"
+      },
+      {
+        "from": "g2",
+        "to": "cle",
+        "condition": "WHEN 'LEER'"
+      },
+      {
+        "from": "cle",
+        "to": "sl",
+        "condition": "always"
+      },
+      {
+        "from": "el",
+        "to": "lv300b",
+        "condition": "always"
+      },
+      {
+        "from": "rz6",
+        "to": "me2",
+        "condition": "lcx_rf_inv"
+      },
+      {
+        "from": "me2",
+        "to": "me2e",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "cqe",
+        "condition": "WHEN 'ENTR'"
+      },
+      {
+        "from": "cqe",
+        "to": "sq",
+        "condition": "always"
+      },
+      {
+        "from": "eq",
+        "to": "lv200b",
+        "condition": "always"
+      },
+      {
+        "from": "rq1",
+        "to": "lv200b",
+        "condition": "always"
+      },
+      {
+        "from": "rz4",
+        "to": "mc",
+        "condition": "lcx_rf_inv"
+      },
+      {
+        "from": "mc",
+        "to": "lv200b",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "e2",
+        "condition": "else"
+      },
+      {
+        "from": "s3",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "lv200c",
+        "condition": "WHEN 'F3'"
+      },
+      {
+        "from": "g3",
+        "to": "cn",
+        "condition": "WHEN 'SAVE'"
+      },
+      {
+        "from": "g3",
+        "to": "e3",
+        "condition": "else"
+      },
+      {
+        "from": "cn",
+        "to": "sn",
+        "condition": "always"
+      },
+      {
+        "from": "rn",
+        "to": "gn",
+        "condition": "always"
+      },
+      {
+        "from": "en",
+        "to": "gn",
+        "condition": "always"
+      },
+      {
+        "from": "gn",
+        "to": "mw",
+        "condition": "go_zaehl->nachzaehlung_noetig( ) = abap_true"
+      },
+      {
+        "from": "gn",
+        "to": "csp",
+        "condition": "else"
+      },
+      {
+        "from": "mw",
+        "to": "csp",
+        "condition": "always"
+      },
+      {
+        "from": "csp",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "ms2",
+        "condition": "always"
+      },
+      {
+        "from": "ms2",
+        "to": "lv100b",
+        "condition": "always"
+      },
+      {
+        "from": "rz7",
+        "to": "me4",
+        "condition": "lcx_rf_inv"
+      },
+      {
+        "from": "me4",
+        "to": "me4e",
+        "condition": "always"
+      },
+      {
+        "from": "sp",
+        "to": "rp",
+        "condition": "always"
+      },
+      {
+        "from": "rp",
+        "to": "g1c",
+        "condition": "always"
+      },
+      {
+        "from": "g1c",
+        "to": "rz1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1c",
+        "to": "g2c",
+        "condition": "else"
+      },
+      {
+        "from": "g2c",
+        "to": "rz2",
+        "condition": "lv_istat <> 'N'"
+      },
+      {
+        "from": "g2c",
+        "to": "lk",
+        "condition": "else"
+      },
+      {
+        "from": "lk",
+        "to": "g3c",
+        "condition": "always"
+      },
+      {
+        "from": "g3c",
+        "to": "rz3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g3c",
+        "to": "rq",
+        "condition": "else"
+      },
+      {
+        "from": "rq",
+        "to": "ep",
+        "condition": "always"
+      },
+      {
+        "from": "sq",
+        "to": "rtq",
+        "condition": "always"
+      },
+      {
+        "from": "rtq",
+        "to": "gq",
+        "condition": "always"
+      },
+      {
+        "from": "gq",
+        "to": "aq",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "aq",
+        "to": "rq1",
+        "condition": "always"
+      },
+      {
+        "from": "gq",
+        "to": "pop",
+        "condition": "else"
+      },
+      {
+        "from": "pop",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "rz4",
+        "condition": "gv_answer <> '1'"
+      },
+      {
+        "from": "ga",
+        "to": "eq",
+        "condition": "else"
+      },
+      {
+        "from": "sl",
+        "to": "ll",
+        "condition": "always"
+      },
+      {
+        "from": "ll",
+        "to": "gl2",
+        "condition": "next row"
+      },
+      {
+        "from": "gl2",
+        "to": "rz6",
+        "condition": "<ls_z>-menge > 0"
+      },
+      {
+        "from": "gl2",
+        "to": "ll",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ll",
+        "to": "el",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sn",
+        "to": "ln",
+        "condition": "always"
+      },
+      {
+        "from": "ln",
+        "to": "gn2",
+        "condition": "next row"
+      },
+      {
+        "from": "gn2",
+        "to": "rn",
+        "condition": "ls_z-soll = 0 OR abs( ls_z-menge - ls_z-soll ) * 100 / ls_z-soll > gc_toleranz_proz"
+      },
+      {
+        "from": "gn2",
+        "to": "ln",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ln",
+        "to": "en",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ss",
+        "to": "lic",
+        "condition": "always"
+      },
+      {
+        "from": "lic",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "rb",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rb",
+        "to": "rz7",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "lg",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "cf",
+        "condition": "always"
+      },
+      {
+        "from": "cf",
+        "to": "sf",
+        "condition": "always"
+      },
+      {
+        "from": "ef",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "sf",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "dq",
+        "to": "ef",
+        "condition": "always"
+      },
+      {
+        "from": "sa",
+        "to": "ea",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "lzwm_rf_invu01.abap:17 — kein Fachsatz „Anzahl der gebuchten Positionen wird zurückgegeben“; nach dem Buchen hat FREIGEBEN die Zählung geleert, zurück kommt nur die Anzahl einer noch offenen Zählung.",
+    "lzwm_rf_invi01.abap:86 — kein Pfadende und kein Fachsatz „Nachzählung wird angelegt“; die Warnung empfiehlt nur, gebucht wird nach Bestätigung trotzdem.",
+    "lzwm_rf_invf01.abap:24 — kein Batch-Input auf LI11N; das ganze Include ist auskommentiert.",
+    "lzwm_rf_invc01.abap:146 — kein Fachsatz „Inventurdifferenzen werden ausgebucht“; übergeben wird nur die Zählung, das Ausbuchen ist ein eigener Schritt außerhalb des Falls."
+  ],
+  "processDescription": "Der RF-Baustein führt einen Staplerfahrer durch die Inventurzählung einer Lagernummer über drei Bilder. Auf dem Platzbild endet F3 die Zählung; ein gescannter Platz wird geprüft (Inventurbeleg vorhanden, Status ungezählt), gesperrt und mit seinen erwarteten Quants geladen – jede Abweichung wirft eine Ausnahme, die als Fehlermeldung erscheint. Auf dem Scanbild erhöht ein erwartetes Material die gezählte Menge; unerwartetes wird nach Rückfrage als Fremdmaterial aufgenommen oder der Scan verworfen (Hinweis in Warnoptik). F3 verwirft und entsperrt, F4 führt zur Übersicht, LEER setzt alle erwarteten Quants auf 0, sofern noch nichts gezählt ist. In der Übersicht warnt SAVE bei mehr als 2 % Abweichung und bucht dann über L_INV_COUNT_EXT; bei Fehler folgt Rollback und Fehlermeldung, sonst COMMIT WORK AND WAIT, ein Z-Protokolleintrag, Entsperren, Erfolgsmeldung und der nächste Platz. Der Baustein gibt am Ende die Anzahl der Positionen einer noch offenen Zählung zurück."
+}

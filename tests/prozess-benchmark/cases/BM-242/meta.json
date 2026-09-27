@@ -1,0 +1,27 @@
+{
+  "id": "BM-242",
+  "title": "Gateway GET_ENTITY: Kreditlimit und Ausschöpfung eines Kunden",
+  "domain": "FI-AR Kreditmanagement",
+  "band": "einfach",
+  "loc": 28,
+  "constructs": [
+    "SAP Gateway DPC_EXT",
+    "GET_ENTITY",
+    "it_key_tab",
+    "SELECT SINGLE",
+    "RAISE EXCEPTION /iwbep/cx_mgw_busi_exception",
+    "String-Template ALPHA = IN"
+  ],
+  "scenario": "Redefinierte GET_ENTITY-Methode einer DPC_EXT-Klasse, die eine selbstgebaute Fiori-Kachel mit dem Kreditlimit eines Kunden versorgt.",
+  "s4_issues": [
+    "KNKK: klassisches Kreditmanagement FI-AR entfällt, Nachfolger SAP Credit Management (UKMBP_CMS_SGM)",
+    "Felder SKFOR/SSOBL werden in S/4 nicht mehr fortgeschrieben"
+  ],
+  "wave": 3,
+  "module": "FI",
+  "edge_constructs": [
+    "Ausnahme als Pfadende",
+    "Division nur bei positivem Limit"
+  ],
+  "oo": true
+}

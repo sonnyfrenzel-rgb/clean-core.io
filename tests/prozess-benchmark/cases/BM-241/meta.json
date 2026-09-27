@@ -1,0 +1,25 @@
+{
+  "id": "BM-241",
+  "title": "RAP-Validierung der Retourenmenge gegen die fakturierte Menge",
+  "domain": "SD Retouren",
+  "band": "einfach",
+  "loc": 29,
+  "constructs": [
+    "RAP behavior handler",
+    "FOR VALIDATE ON SAVE",
+    "READ ENTITIES IN LOCAL MODE",
+    "failed/reported",
+    "new_message"
+  ],
+  "scenario": "Behavior Pool eines kundeneigenen RAP-BOs für Retourenanforderungen in einer S/4-Private-Cloud; die Validierung läuft beim Sichern jeder geänderten Retourenposition.",
+  "s4_issues": [
+    "keine S/4-Altlast; RAP-konform, nur Kunden-BO"
+  ],
+  "wave": 3,
+  "module": "SD",
+  "edge_constructs": [
+    "APPEND in failed/reported als fachliche Wirkung",
+    "zusammengesetzte Bedingung mit OR"
+  ],
+  "oo": true
+}

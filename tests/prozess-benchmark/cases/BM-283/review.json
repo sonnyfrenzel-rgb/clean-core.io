@@ -1,0 +1,9 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "MESSAGE W im PAI außerhalb FIELD/CHAIN: Verarbeitung stoppt bis Enter, Felder sind dann nicht eingabebereit; Fortsetzung nach Bestätigung ist korrekt modelliert.",
+    "L_TO_CREATE_SINGLE mit Bewegungsart 999 ist kundenspezifisches Customizing; Parameter und Ausnahmen des Bausteins passen."
+  ]
+}

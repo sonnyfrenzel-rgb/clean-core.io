@@ -1,0 +1,2249 @@
+{
+  "id": "BM-299",
+  "title": "Prüfmittelstamm-Pflege: gesammelte Aktionen über Interface, Satzsperre, generische Änderungsbelege und Kalibrierung mit RFC-Auftrag",
+  "classes": [
+    "K07",
+    "K09",
+    "K12",
+    "K15",
+    "K11"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZQM_PRUEFMITTEL",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zqm_pm_pflege_c01.abap",
+        "line": 80,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_pm_pflege_c01.abap:80"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZQM_PM",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_pm_pflege_i01.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_pm_pflege_i01.abap:23"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZQM_PM",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_pm_pflege_i01.abap",
+        "line": 100,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_pm_pflege_i01.abap:100"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_ALL",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_pm_pflege_i01.abap",
+        "line": 68,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_pm_pflege_i01.abap:68"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_pm_pflege_i01.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_pm_pflege_i01.abap:38"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_TO_CONFIRM_LOSS_OF_DATA",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_pm_pflege_i01.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_pm_pflege_i01.abap:79"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CHANGEDOCUMENT_OPEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_pm_pflege_c01.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_pm_pflege_c01.abap:37"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CHANGEDOCUMENT_SINGLE_CASE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_pm_pflege_c01.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_pm_pflege_c01.abap:47"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CHANGEDOCUMENT_CLOSE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_pm_pflege_c01.abap",
+        "line": 57,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_pm_pflege_c01.abap:57"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_PM_KALIB_AUFTRAG",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_pm_pflege_c02.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_pm_pflege_c02.abap:42"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-299-B01",
+      "text": "Ohne Pflegeberechtigung für das Werk endet das Programm mit einer Fehlermeldung.",
+      "anchors": [
+        {
+          "file": "zqm_pm_pflege.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:21"
+        },
+        {
+          "file": "zqm_pm_pflege.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:24"
+        },
+        {
+          "file": "zqm_pm_pflege.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-299-B02",
+      "text": "Die Prüfmittel des Werks werden gelesen und in der Pflegeliste angezeigt.",
+      "anchors": [
+        {
+          "file": "zqm_pm_pflege.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:28"
+        },
+        {
+          "file": "zqm_pm_pflege.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-299-B03",
+      "text": "Ändern, Löschen und Kalibrieren setzen voraus, dass der Cursor auf einem Prüfmittel steht, sonst bricht eine Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zqm_pm_pflege.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:52"
+        },
+        {
+          "file": "zqm_pm_pflege.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:54"
+        },
+        {
+          "file": "zqm_pm_pflege.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:55"
+        },
+        {
+          "file": "zqm_pm_pflege.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-299-B04",
+      "text": "Neu öffnet das Detailbild mit Werk und Status frei vorbelegt.",
+      "anchors": [
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:14"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-299-B05",
+      "text": "Zum Ändern wird das Prüfmittel gesperrt; ist es gesperrt, wird der sperrende Benutzer gemeldet, sonst öffnet sich das Detailbild mit dem bisherigen Stand.",
+      "anchors": [
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:23"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:29"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:30"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-299-B06",
+      "text": "Beim Übernehmen im Detailbild wird der nächste Kalibriertermin als letzte Kalibrierung plus Intervall in Kalendertagen berechnet und das Prüfmittel als Neuanlage oder Änderung vorgemerkt.",
+      "anchors": [
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:112"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:115"
+        },
+        {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:20"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:117"
+        }
+      ]
+    },
+    {
+      "id": "BM-299-B07",
+      "text": "Abbrechen im Detailbild hebt bei einer Änderung die Satzsperre auf und kehrt ohne Vormerkung zur Liste zurück.",
+      "anchors": [
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:98"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:99"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:100"
+        }
+      ]
+    },
+    {
+      "id": "BM-299-B08",
+      "text": "Löschen wird nach Bestätigung vorgemerkt und das Prüfmittel aus der Liste genommen.",
+      "anchors": [
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:36"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:38"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-299-B09",
+      "text": "Beim Kalibrieren gibt der Prüfer das Ergebnis i.O. oder n.i.O. an; die letzte Kalibrierung wird auf heute gesetzt.",
+      "anchors": [
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:55"
+        },
+        {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:26"
+        },
+        {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-299-B10",
+      "text": "Bei n.i.O. wird das Prüfmittel gesperrt und im PM-System synchron per RFC ein Instandsetzungsauftrag angefordert; scheitert der Aufruf, bleibt die Sperre und der Prüfer erhält eine Warnung mit dem Fehlertext.",
+      "anchors": [
+        {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:39"
+        },
+        {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:41"
+        },
+        {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:42"
+        },
+        {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:51"
+        },
+        {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-299-B11",
+      "text": "Bei i.O. wird das Prüfmittel freigegeben; in beiden Fällen wird der nächste Termin neu berechnet und die Änderung vorgemerkt.",
+      "anchors": [
+        {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:56"
+        },
+        {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-299-B12",
+      "text": "Beim Sichern werden alle vorgemerkten Aktionen der Reihe nach ausgeführt: Neuanlagen eingefügt, Änderungen geschrieben, Löschungen entfernt, jeweils mit Änderungsbeleg aus altem und neuem Stand.",
+      "anchors": [
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:64"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:65"
+        },
+        {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:80"
+        },
+        {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:99"
+        },
+        {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:113"
+        },
+        {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-299-B13",
+      "text": "Der Änderungsbeleg wird über die generischen Belegbausteine geöffnet, mit der Satzänderung gefüllt und geschlossen.",
+      "anchors": [
+        {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:37"
+        },
+        {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:47"
+        },
+        {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-299-B14",
+      "text": "Ist die ID einer Neuanlage schon vergeben, wird alles zurückgerollt und das Sichern mit Fehlermeldung abgebrochen.",
+      "anchors": [
+        {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:81"
+        },
+        {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:82"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:73"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-299-B15",
+      "text": "Sonst werden alle Änderungen festgeschrieben, alle Sperren des Benutzers aufgehoben und die Anzahl der Aktionen gemeldet.",
+      "anchors": [
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:67"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:68"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-299-B16",
+      "text": "Verlassen mit ungesicherten Aktionen verlangt die Bestätigung des Datenverlusts; ohne vorgemerkte Aktionen wird die Pflege direkt verlassen.",
+      "anchors": [
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:78"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:79"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:85"
+        },
+        {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:89"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s0",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_pm_pflege.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:19"
+        },
+        "meaning": "Pflege starten"
+      },
+      {
+        "id": "ac",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_pm_pflege.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:21"
+        },
+        "meaning": "Pflegeberechtigung prüfen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_pm_pflege.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:24"
+        },
+        "meaning": "Nicht berechtigt?"
+      },
+      {
+        "id": "me",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_pm_pflege.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:25"
+        },
+        "meaning": "Fehler Berechtigung"
+      },
+      {
+        "id": "mee",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:25"
+        },
+        "meaning": "Programmende"
+      },
+      {
+        "id": "rd",
+        "type": "read",
+        "anchor": {
+          "file": "zqm_pm_pflege.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:28"
+        },
+        "meaning": "Prüfmittel des Werks lesen"
+      },
+      {
+        "id": "cs",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_pm_pflege.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:33"
+        },
+        "meaning": "Pflegeliste"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:33"
+        },
+        "meaning": "Ende nach Verlassen"
+      },
+      {
+        "id": "so",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_pm_pflege.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:38"
+        },
+        "meaning": "PBO Liste"
+      },
+      {
+        "id": "eo",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:42"
+        },
+        "meaning": "Ende PBO"
+      },
+      {
+        "id": "sz",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_pm_pflege.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:49"
+        },
+        "meaning": "Cursorzeile holen"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "zqm_pm_pflege.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:54"
+        },
+        "meaning": "Prüfmittel der Zeile"
+      },
+      {
+        "id": "gz",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_pm_pflege.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:55"
+        },
+        "meaning": "Keine Zeile?"
+      },
+      {
+        "id": "mz",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_pm_pflege.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:56"
+        },
+        "meaning": "Fehler Cursor"
+      },
+      {
+        "id": "mze",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:56"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "ez",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege.abap:58"
+        },
+        "meaning": "Zeile geholt"
+      },
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:8"
+        },
+        "meaning": "PAI Liste"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:13"
+        },
+        "meaning": "Funktion?"
+      },
+      {
+        "id": "cs2",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:19"
+        },
+        "meaning": "Detailbild Neuanlage"
+      },
+      {
+        "id": "pz1",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:22"
+        },
+        "meaning": "Zeile holen"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:23"
+        },
+        "meaning": "Prüfmittel sperren"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:29"
+        },
+        "meaning": "Gesperrt?"
+      },
+      {
+        "id": "ml",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:30"
+        },
+        "meaning": "Fehler gesperrt"
+      },
+      {
+        "id": "mle",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:30"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "cs3",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:34"
+        },
+        "meaning": "Detailbild Änderung"
+      },
+      {
+        "id": "pz2",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:37"
+        },
+        "meaning": "Zeile holen"
+      },
+      {
+        "id": "pop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:38"
+        },
+        "meaning": "Rückfrage Löschen"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:45"
+        },
+        "meaning": "Löschen bestätigt?"
+      },
+      {
+        "id": "pz3",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:53"
+        },
+        "meaning": "Zeile holen"
+      },
+      {
+        "id": "ck",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:55"
+        },
+        "meaning": "Kalibrierung erfassen"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:64"
+        },
+        "meaning": "Vorgemerkte Aktionen"
+      },
+      {
+        "id": "cx",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:65"
+        },
+        "meaning": "Aktion ausführen (polymorph)"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:67"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "dqa",
+        "type": "lock",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:68"
+        },
+        "meaning": "Alle Sperren aufheben"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:70"
+        },
+        "meaning": "Anzahl gesichert melden"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:73"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "mce",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:74"
+        },
+        "meaning": "Fehler Sichern"
+      },
+      {
+        "id": "mcee",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:74"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:78"
+        },
+        "meaning": "Ungesicherte Aktionen?"
+      },
+      {
+        "id": "pld",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:79"
+        },
+        "meaning": "Rückfrage Datenverlust"
+      },
+      {
+        "id": "gj",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:85"
+        },
+        "meaning": "Verlust bestätigt?"
+      },
+      {
+        "id": "lv",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:86"
+        },
+        "meaning": "Pflege verlassen"
+      },
+      {
+        "id": "lv2",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:89"
+        },
+        "meaning": "Pflege verlassen"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:93"
+        },
+        "meaning": "Ende PAI Liste"
+      },
+      {
+        "id": "sx",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:98"
+        },
+        "meaning": "Abbruch Detail"
+      },
+      {
+        "id": "gx",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:99"
+        },
+        "meaning": "Änderungsmodus?"
+      },
+      {
+        "id": "dq",
+        "type": "lock",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:100"
+        },
+        "meaning": "Satzsperre aufheben"
+      },
+      {
+        "id": "lvx",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:104"
+        },
+        "meaning": "Zurück zur Liste"
+      },
+      {
+        "id": "su",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:110"
+        },
+        "meaning": "PAI Detail"
+      },
+      {
+        "id": "gck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:112"
+        },
+        "meaning": "Übernehmen?"
+      },
+      {
+        "id": "ct",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:115"
+        },
+        "meaning": "Folgetermin berechnen"
+      },
+      {
+        "id": "gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:117"
+        },
+        "meaning": "Neuanlage?"
+      },
+      {
+        "id": "lv3",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:129"
+        },
+        "meaning": "Zurück zur Liste"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege_i01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_i01.abap:131"
+        },
+        "meaning": "Ende PAI Detail"
+      },
+      {
+        "id": "sn",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:19"
+        },
+        "meaning": "Folgetermin"
+      },
+      {
+        "id": "an",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:20"
+        },
+        "meaning": "Termin berechnen"
+      },
+      {
+        "id": "en",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:21"
+        },
+        "meaning": "Termin zurück"
+      },
+      {
+        "id": "se",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:23"
+        },
+        "meaning": "Kalibrierung erfassen"
+      },
+      {
+        "id": "pop2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:26"
+        },
+        "meaning": "Ergebnis abfragen"
+      },
+      {
+        "id": "al",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:37"
+        },
+        "meaning": "Letzte Kalibrierung heute"
+      },
+      {
+        "id": "gok",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:39"
+        },
+        "meaning": "n.i.O.?"
+      },
+      {
+        "id": "ast",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:41"
+        },
+        "meaning": "Prüfmittel sperren"
+      },
+      {
+        "id": "rfc",
+        "type": "rfc",
+        "anchor": {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:42"
+        },
+        "meaning": "Instandsetzungsauftrag im PM-System"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:51"
+        },
+        "meaning": "RFC gescheitert?"
+      },
+      {
+        "id": "mw",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:53"
+        },
+        "meaning": "Warnung ohne Auftrag"
+      },
+      {
+        "id": "afr",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:56"
+        },
+        "meaning": "Prüfmittel frei"
+      },
+      {
+        "id": "ctn",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:59"
+        },
+        "meaning": "Folgetermin berechnen"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege_c02.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c02.abap:60"
+        },
+        "meaning": "Ende Kalibrierung"
+      },
+      {
+        "id": "sbl",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:32"
+        },
+        "meaning": "Änderungsbeleg"
+      },
+      {
+        "id": "o",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:37"
+        },
+        "meaning": "Beleg öffnen"
+      },
+      {
+        "id": "sc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:47"
+        },
+        "meaning": "Satzänderung erfassen"
+      },
+      {
+        "id": "cl",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:57"
+        },
+        "meaning": "Beleg schließen"
+      },
+      {
+        "id": "ebl",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:68"
+        },
+        "meaning": "Ende Beleg"
+      },
+      {
+        "id": "sa",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:79"
+        },
+        "meaning": "Neuanlage ausführen"
+      },
+      {
+        "id": "wi",
+        "type": "write",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:80"
+        },
+        "meaning": "Prüfmittel einfügen"
+      },
+      {
+        "id": "gi",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:81"
+        },
+        "meaning": "ID vergeben?"
+      },
+      {
+        "id": "rzi",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:82"
+        },
+        "meaning": "Ausnahme Dublette"
+      },
+      {
+        "id": "cbi",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:85"
+        },
+        "meaning": "Beleg Neuanlage"
+      },
+      {
+        "id": "ea",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:86"
+        },
+        "meaning": "Ende Neuanlage"
+      },
+      {
+        "id": "sb",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:98"
+        },
+        "meaning": "Änderung ausführen"
+      },
+      {
+        "id": "wu",
+        "type": "write",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:99"
+        },
+        "meaning": "Prüfmittel ändern"
+      },
+      {
+        "id": "cbu",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:100"
+        },
+        "meaning": "Beleg Änderung"
+      },
+      {
+        "id": "eb",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:101"
+        },
+        "meaning": "Ende Änderung"
+      },
+      {
+        "id": "sc3",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:112"
+        },
+        "meaning": "Löschung ausführen"
+      },
+      {
+        "id": "wd",
+        "type": "write",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:113"
+        },
+        "meaning": "Prüfmittel löschen"
+      },
+      {
+        "id": "cbd",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:114"
+        },
+        "meaning": "Beleg Löschung"
+      },
+      {
+        "id": "ec3",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_pm_pflege_c01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_pm_pflege_c01.abap:115"
+        },
+        "meaning": "Ende Löschung"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s0",
+        "to": "ac",
+        "condition": "always"
+      },
+      {
+        "from": "ac",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "me",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "me",
+        "to": "mee",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "rd",
+        "condition": "else"
+      },
+      {
+        "from": "rd",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "so",
+        "to": "eo",
+        "condition": "always"
+      },
+      {
+        "from": "sz",
+        "to": "rt",
+        "condition": "always"
+      },
+      {
+        "from": "rt",
+        "to": "gz",
+        "condition": "always"
+      },
+      {
+        "from": "gz",
+        "to": "mz",
+        "condition": "sy-subrc <> 0 OR lv_line = 0"
+      },
+      {
+        "from": "mz",
+        "to": "mze",
+        "condition": "always"
+      },
+      {
+        "from": "gz",
+        "to": "ez",
+        "condition": "else"
+      },
+      {
+        "from": "ez",
+        "to": "lk",
+        "condition": "always"
+      },
+      {
+        "from": "ez",
+        "to": "pop",
+        "condition": "always"
+      },
+      {
+        "from": "ez",
+        "to": "ck",
+        "condition": "always"
+      },
+      {
+        "from": "s1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "cs2",
+        "condition": "WHEN 'NEU'"
+      },
+      {
+        "from": "cs2",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "pz1",
+        "condition": "WHEN 'AEND'"
+      },
+      {
+        "from": "pz1",
+        "to": "sz",
+        "condition": "always"
+      },
+      {
+        "from": "lk",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "ml",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ml",
+        "to": "mle",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "cs3",
+        "condition": "else"
+      },
+      {
+        "from": "cs3",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "pz2",
+        "condition": "WHEN 'LOESCH'"
+      },
+      {
+        "from": "pz2",
+        "to": "sz",
+        "condition": "always"
+      },
+      {
+        "from": "pop",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "e1",
+        "condition": "gv_answer = '1'"
+      },
+      {
+        "from": "ga",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "g1",
+        "to": "pz3",
+        "condition": "WHEN 'KALIB'"
+      },
+      {
+        "from": "pz3",
+        "to": "sz",
+        "condition": "always"
+      },
+      {
+        "from": "ck",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "ee",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "lp",
+        "condition": "WHEN 'SAVE'"
+      },
+      {
+        "from": "lp",
+        "to": "cx",
+        "condition": "next row"
+      },
+      {
+        "from": "cx",
+        "to": "sa",
+        "condition": "always"
+      },
+      {
+        "from": "cx",
+        "to": "sb",
+        "condition": "always"
+      },
+      {
+        "from": "cx",
+        "to": "sc3",
+        "condition": "always"
+      },
+      {
+        "from": "ea",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "eb",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ec3",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "cm",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cm",
+        "to": "dqa",
+        "condition": "always"
+      },
+      {
+        "from": "dqa",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "rzi",
+        "to": "rb",
+        "condition": "lcx_pflege"
+      },
+      {
+        "from": "rb",
+        "to": "mce",
+        "condition": "always"
+      },
+      {
+        "from": "mce",
+        "to": "mcee",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "gb",
+        "condition": "WHEN 'BACK' OR 'EXIT'"
+      },
+      {
+        "from": "gb",
+        "to": "pld",
+        "condition": "gt_aktionen IS NOT INITIAL"
+      },
+      {
+        "from": "pld",
+        "to": "gj",
+        "condition": "always"
+      },
+      {
+        "from": "gj",
+        "to": "lv",
+        "condition": "gv_answer = 'J'"
+      },
+      {
+        "from": "gj",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "gb",
+        "to": "lv2",
+        "condition": "else"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "sx",
+        "to": "gx",
+        "condition": "always"
+      },
+      {
+        "from": "gx",
+        "to": "dq",
+        "condition": "gv_modus = 'U'"
+      },
+      {
+        "from": "gx",
+        "to": "lvx",
+        "condition": "else"
+      },
+      {
+        "from": "dq",
+        "to": "lvx",
+        "condition": "always"
+      },
+      {
+        "from": "su",
+        "to": "gck",
+        "condition": "always"
+      },
+      {
+        "from": "gck",
+        "to": "ct",
+        "condition": "ok_code = 'OK'"
+      },
+      {
+        "from": "gck",
+        "to": "e2",
+        "condition": "else"
+      },
+      {
+        "from": "ct",
+        "to": "sn",
+        "condition": "always"
+      },
+      {
+        "from": "en",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "gm",
+        "to": "lv3",
+        "condition": "gv_modus = 'I'"
+      },
+      {
+        "from": "gm",
+        "to": "lv3",
+        "condition": "else"
+      },
+      {
+        "from": "sn",
+        "to": "an",
+        "condition": "always"
+      },
+      {
+        "from": "an",
+        "to": "en",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "pop2",
+        "condition": "always"
+      },
+      {
+        "from": "pop2",
+        "to": "al",
+        "condition": "always"
+      },
+      {
+        "from": "al",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "gok",
+        "to": "ast",
+        "condition": "gv_answer = '2'"
+      },
+      {
+        "from": "ast",
+        "to": "rfc",
+        "condition": "always"
+      },
+      {
+        "from": "rfc",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "mw",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mw",
+        "to": "ctn",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "ctn",
+        "condition": "else"
+      },
+      {
+        "from": "gok",
+        "to": "afr",
+        "condition": "else"
+      },
+      {
+        "from": "afr",
+        "to": "ctn",
+        "condition": "always"
+      },
+      {
+        "from": "ctn",
+        "to": "sn",
+        "condition": "always"
+      },
+      {
+        "from": "en",
+        "to": "ee",
+        "condition": "always"
+      },
+      {
+        "from": "sbl",
+        "to": "o",
+        "condition": "always"
+      },
+      {
+        "from": "o",
+        "to": "sc",
+        "condition": "always"
+      },
+      {
+        "from": "sc",
+        "to": "cl",
+        "condition": "always"
+      },
+      {
+        "from": "cl",
+        "to": "ebl",
+        "condition": "always"
+      },
+      {
+        "from": "ebl",
+        "to": "ea",
+        "condition": "always"
+      },
+      {
+        "from": "ebl",
+        "to": "eb",
+        "condition": "always"
+      },
+      {
+        "from": "ebl",
+        "to": "ec3",
+        "condition": "always"
+      },
+      {
+        "from": "sa",
+        "to": "wi",
+        "condition": "always"
+      },
+      {
+        "from": "wi",
+        "to": "gi",
+        "condition": "always"
+      },
+      {
+        "from": "gi",
+        "to": "rzi",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gi",
+        "to": "cbi",
+        "condition": "else"
+      },
+      {
+        "from": "cbi",
+        "to": "sbl",
+        "condition": "always"
+      },
+      {
+        "from": "sb",
+        "to": "wu",
+        "condition": "always"
+      },
+      {
+        "from": "wu",
+        "to": "cbu",
+        "condition": "always"
+      },
+      {
+        "from": "cbu",
+        "to": "sbl",
+        "condition": "always"
+      },
+      {
+        "from": "sc3",
+        "to": "wd",
+        "condition": "always"
+      },
+      {
+        "from": "wd",
+        "to": "cbd",
+        "condition": "always"
+      },
+      {
+        "from": "cbd",
+        "to": "sbl",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zqm_pm_pflege_i01.abap:64 — kein Fachsatz „Änderung und Löschung prüfen den Erfolg“; nur die Neuanlage wertet sy-subrc aus.",
+    "zqm_pm_pflege_c02.abap:42 — kein Fachsatz „Auftrag ist angelegt“ im Stamm; das Ergebnis des RFC wird nicht gespeichert, nur ein Fehler als Warnung gemeldet.",
+    "zqm_pm_pflege_c02.abap:53 — kein Pfadende; nach Bestätigung wird der Termin berechnet und die Änderung vorgemerkt.",
+    "zqm_pm_pflege_i01.abap:55 — kein Fachsatz „Kalibrierung ist gespeichert“; sie wird nur vorgemerkt und erst mit SAVE geschrieben."
+  ],
+  "processDescription": "Die Pflege prüft die Berechtigung für das Werk (sonst Fehlerende), liest die Prüfmittel und zeigt sie in einer Liste. Ändern, Löschen und Kalibrieren holen die Cursorzeile über eine Routine, die ohne gültige Zeile mit Fehlermeldung abbricht. Neu öffnet das Detailbild vorbelegt, Ändern sperrt zuvor den Satz (sonst Fehlermeldung mit Sperrer). Im Detail berechnet Übernehmen den Folgetermin (letzte Kalibrierung plus Intervall) und merkt Neuanlage oder Änderung vor; Abbrechen entsperrt bei Änderung. Löschen wird nach Bestätigung vorgemerkt. Kalibrieren fragt i.O./n.i.O. ab, setzt die letzte Kalibrierung auf heute, sperrt bei n.i.O. das Prüfmittel und fordert per RFC im PM-System einen Instandsetzungsauftrag an (Fehler nur als Warnung), gibt bei i.O. frei und berechnet den Folgetermin. SAVE führt alle vorgemerkten Aktionen polymorph mit generischem Änderungsbeleg aus; eine doppelte ID führt zu Rollback und Fehlermeldung, sonst Commit, Aufheben aller Sperren und Meldung. Verlassen mit ungesicherten Aktionen verlangt eine Datenverlust-Bestätigung."
+}

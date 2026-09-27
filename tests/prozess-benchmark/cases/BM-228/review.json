@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "Objektliste nennt BAPI_TRANSACTION_ROLLBACK (Zeile 97), DEQUEUE_EZCO_IT_LEIST (Zeilen 43/70/124) und das zweite UPDATE auf ZCO_IT_LEIST (Zeile 98) nicht; nicht geändert, da nur Mehrfachnennungen/Freigaben."
+  ]
+}

@@ -1,0 +1,1075 @@
+{
+  "id": "BM-269",
+  "title": "Parallele Buchung von MES-Rückmeldungen per aRFC",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZPP_CONF_STG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_conf_parallel.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_conf_parallel.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SPBT_INITIALIZE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_conf_parallel.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_conf_parallel.abap:40"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_PP_CONF_PACKAGE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_conf_parallel_f01.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_conf_parallel_f01.abap:15"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PRODORDCONF_CREATE_TT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_pp_conf_package.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_pp_conf_package.abap:27"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPP_CONF_STG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_pp_conf_package.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_pp_conf_package.abap:37"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-269-B01",
+      "text": "Es werden die offenen, vom MES übergebenen Rückmeldungen (Status N) der gewählten Werke und Aufträge nach Auftrag und Vorgang sortiert gelesen; gibt es keine, endet der Report mit einem Hinweis.",
+      "anchors": [
+        {
+          "file": "zpp_conf_parallel.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:30"
+        },
+        {
+          "file": "zpp_conf_parallel.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:35"
+        },
+        {
+          "file": "zpp_conf_parallel.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:36"
+        },
+        {
+          "file": "zpp_conf_parallel.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-269-B02",
+      "text": "Die Servergruppe für die Parallelverarbeitung wird initialisiert; ist sie nicht nutzbar, bricht der Report mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zpp_conf_parallel.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:40"
+        },
+        {
+          "file": "zpp_conf_parallel.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:53"
+        },
+        {
+          "file": "zpp_conf_parallel.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-269-B03",
+      "text": "Die Rückmeldungen werden zu Paketen der gewählten Größe zusammengefasst; jedes volle Paket und das Restpaket werden abgeschickt.",
+      "anchors": [
+        {
+          "file": "zpp_conf_parallel.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:57"
+        },
+        {
+          "file": "zpp_conf_parallel.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:61"
+        },
+        {
+          "file": "zpp_conf_parallel.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-269-B04",
+      "text": "Jedes Paket wird als eigener asynchroner Task in der Servergruppe gebucht, ohne dass der Report auf das Ergebnis wartet.",
+      "anchors": [
+        {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:15"
+        },
+        {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-269-B05",
+      "text": "Sind keine Workprozesse frei, wartet der Report bis zu fünf Sekunden auf einen zurückkehrenden Task und versucht es erneut.",
+      "anchors": [
+        {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:26"
+        },
+        {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-269-B06",
+      "text": "Ist die Servergruppe gestört, wird das Paket stattdessen synchron im eigenen Prozess gebucht.",
+      "anchors": [
+        {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-269-B07",
+      "text": "Für jede Rückmeldung des Pakets wird eine Rückmeldung zum Fertigungsauftragsvorgang mit Gutmenge, Ausschuss, Leistung, Buchungsdatum und Endrückmeldekennzeichen gebucht.",
+      "anchors": [
+        {
+          "file": "z_pp_conf_package.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:16"
+        },
+        {
+          "file": "z_pp_conf_package.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-269-B08",
+      "text": "Scheitert die Buchung, wird sie zurückgerollt und der Staging-Satz mit Fehlertext auf Status E gesetzt.",
+      "anchors": [
+        {
+          "file": "z_pp_conf_package.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:35"
+        },
+        {
+          "file": "z_pp_conf_package.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:36"
+        },
+        {
+          "file": "z_pp_conf_package.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-269-B09",
+      "text": "Gelingt sie, wird der Staging-Satz mit Rückmeldenummer und -zähler auf Status P gesetzt und zusammen mit der Rückmeldung festgeschrieben.",
+      "anchors": [
+        {
+          "file": "z_pp_conf_package.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:43"
+        },
+        {
+          "file": "z_pp_conf_package.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-269-B10",
+      "text": "Am Paketende werden noch offene Statusänderungen festgeschrieben und die Zahl gebuchter und fehlerhafter Rückmeldungen zurückgegeben.",
+      "anchors": [
+        {
+          "file": "z_pp_conf_package.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:54"
+        },
+        {
+          "file": "z_pp_conf_package.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-269-B11",
+      "text": "Endet ein Task, werden seine Ergebnisse abgeholt und aufsummiert; bei System- oder Kommunikationsfehler wird das Paket als gestört gezählt und gemeldet, seine Sätze bleiben offen für den nächsten Lauf.",
+      "anchors": [
+        {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:56"
+        },
+        {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:65"
+        },
+        {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-269-B12",
+      "text": "Nach dem Versand wartet der Report, bis alle gestarteten Tasks zurückgemeldet haben, und gibt die Zahl gesendeter Pakete, gebuchter und fehlerhafter Rückmeldungen sowie gestörter Pakete aus.",
+      "anchors": [
+        {
+          "file": "zpp_conf_parallel.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:68"
+        },
+        {
+          "file": "zpp_conf_parallel.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:70"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_conf_parallel.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:29"
+        },
+        "meaning": "Reportstart (Nachtjob)"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_conf_parallel.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:30"
+        },
+        "meaning": "Offene MES-Rückmeldungen (Status N) lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_conf_parallel.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:35"
+        },
+        "meaning": "Keine offenen Rückmeldungen?"
+      },
+      {
+        "id": "w1",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_conf_parallel.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:36"
+        },
+        "meaning": "Hinweis ausgeben"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_conf_parallel.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:37"
+        },
+        "meaning": "Report verlassen"
+      },
+      {
+        "id": "spbt",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_conf_parallel.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:40"
+        },
+        "meaning": "Servergruppe für Parallelverarbeitung initialisieren"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_conf_parallel.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:53"
+        },
+        "meaning": "Servergruppe nicht nutzbar?"
+      },
+      {
+        "id": "me",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_conf_parallel.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:54"
+        },
+        "meaning": "Fehler: Servergruppe nicht verfügbar"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_conf_parallel.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:54"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zpp_conf_parallel.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:57"
+        },
+        "meaning": "Rückmeldungen zu Paketen sammeln"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_conf_parallel.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:61"
+        },
+        "meaning": "Paket voll oder letzter Satz?"
+      },
+      {
+        "id": "pd",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_conf_parallel.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:62"
+        },
+        "meaning": "Paket abschicken"
+      },
+      {
+        "id": "wt",
+        "type": "action",
+        "anchor": {
+          "file": "zpp_conf_parallel.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:68"
+        },
+        "meaning": "Auf Ergebnis aller gestarteten Pakete warten"
+      },
+      {
+        "id": "wo",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_conf_parallel.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:70"
+        },
+        "meaning": "Summen gesendet/gebucht/fehlerhaft/Systemfehler ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_conf_parallel.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel.abap:70"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "ds",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:8"
+        },
+        "meaning": "Paket per aRFC starten"
+      },
+      {
+        "id": "dl",
+        "type": "loop",
+        "anchor": {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:12"
+        },
+        "meaning": "Versuchen, bis das Paket gestartet oder lokal gebucht ist"
+      },
+      {
+        "id": "as",
+        "type": "async",
+        "anchor": {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:15"
+        },
+        "meaning": "Paket asynchron in der Servergruppe buchen lassen"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:26"
+        },
+        "meaning": "Start des Tasks"
+      },
+      {
+        "id": "ww",
+        "type": "action",
+        "anchor": {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:32"
+        },
+        "meaning": "Warten, bis ein Task zurück ist (max. 5 s)"
+      },
+      {
+        "id": "sc",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:35"
+        },
+        "meaning": "Paket lokal synchron buchen"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:46"
+        },
+        "meaning": "Ende Versand"
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:51"
+        },
+        "meaning": "Ende eines Tasks (Callback)"
+      },
+      {
+        "id": "rr",
+        "type": "async",
+        "anchor": {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:56"
+        },
+        "meaning": "Ergebnis des Pakets abholen"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:65"
+        },
+        "meaning": "Task mit System-/Kommunikationsfehler?"
+      },
+      {
+        "id": "rm",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:68"
+        },
+        "meaning": "Hinweis: Paket fehlgeschlagen"
+      },
+      {
+        "id": "rret",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:69"
+        },
+        "meaning": "Callback verlassen"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_conf_parallel_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_conf_parallel_f01.abap:73"
+        },
+        "meaning": "Gebuchte und fehlerhafte Sätze aufsummiert"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "z_pp_conf_package.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:1"
+        },
+        "meaning": "Paket Rückmeldungen buchen"
+      },
+      {
+        "id": "fl",
+        "type": "loop",
+        "anchor": {
+          "file": "z_pp_conf_package.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:16"
+        },
+        "meaning": "Rückmeldungen des Pakets durchlaufen"
+      },
+      {
+        "id": "fb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_pp_conf_package.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:27"
+        },
+        "meaning": "Rückmeldung zum Fertigungsauftragsvorgang buchen"
+      },
+      {
+        "id": "fg",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_pp_conf_package.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:35"
+        },
+        "meaning": "Buchung fehlerhaft?"
+      },
+      {
+        "id": "frb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_pp_conf_package.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:36"
+        },
+        "meaning": "Rückmeldung zurückrollen"
+      },
+      {
+        "id": "fu1",
+        "type": "write",
+        "anchor": {
+          "file": "z_pp_conf_package.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:37"
+        },
+        "meaning": "Staging-Satz auf E mit Fehlertext"
+      },
+      {
+        "id": "fu2",
+        "type": "write",
+        "anchor": {
+          "file": "z_pp_conf_package.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:43"
+        },
+        "meaning": "Staging-Satz auf P mit Rückmeldenummer"
+      },
+      {
+        "id": "fcm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_pp_conf_package.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:48"
+        },
+        "meaning": "Rückmeldung und Status festschreiben"
+      },
+      {
+        "id": "fc",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_pp_conf_package.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:54"
+        },
+        "meaning": "Restliche Statusänderungen festschreiben"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "z_pp_conf_package.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_conf_package.abap:56"
+        },
+        "meaning": "Zähler gebucht/fehlerhaft zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "w1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "w1",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "spbt",
+        "condition": "else"
+      },
+      {
+        "from": "spbt",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "me",
+        "condition": "sy-subrc <> 0 AND sy-subrc <> 3"
+      },
+      {
+        "from": "me",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "g3",
+        "condition": "next row"
+      },
+      {
+        "from": "g3",
+        "to": "pd",
+        "condition": "lines( gt_package ) >= p_pack OR lv_idx = lines( gt_conf )"
+      },
+      {
+        "from": "g3",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pd",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "ds",
+        "to": "dl",
+        "condition": "always"
+      },
+      {
+        "from": "dl",
+        "to": "as",
+        "condition": "next row"
+      },
+      {
+        "from": "as",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "as",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "ww",
+        "condition": "WHEN 1"
+      },
+      {
+        "from": "ww",
+        "to": "dl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cs",
+        "to": "sc",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "sc",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "de",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "wt",
+        "condition": "no more rows"
+      },
+      {
+        "from": "wt",
+        "to": "wo",
+        "condition": "always"
+      },
+      {
+        "from": "wo",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "rr",
+        "condition": "always"
+      },
+      {
+        "from": "rr",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rm",
+        "to": "rret",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "re",
+        "condition": "else"
+      },
+      {
+        "from": "fs",
+        "to": "fl",
+        "condition": "always"
+      },
+      {
+        "from": "fl",
+        "to": "fb",
+        "condition": "next row"
+      },
+      {
+        "from": "fb",
+        "to": "fg",
+        "condition": "always"
+      },
+      {
+        "from": "fg",
+        "to": "frb",
+        "condition": "ls_return-type CA 'EA' OR ls_detail-type CA 'EA'"
+      },
+      {
+        "from": "frb",
+        "to": "fu1",
+        "condition": "always"
+      },
+      {
+        "from": "fu1",
+        "to": "fl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fg",
+        "to": "fu2",
+        "condition": "else"
+      },
+      {
+        "from": "fu2",
+        "to": "fcm",
+        "condition": "always"
+      },
+      {
+        "from": "fcm",
+        "to": "fl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fl",
+        "to": "fc",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fc",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "de",
+        "condition": "WHEN 0"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "z_pp_conf_package.abap:37 — kein Fachsatz „jeder fehlerhafte Satz wird verlässlich auf E gesetzt“ (der Status E wird erst mit dem nächsten Commit festgeschrieben; ein folgender ROLLBACK im selben Paket verwirft ihn wieder)",
+    "zpp_conf_parallel.abap:68 — kein Fachsatz „der Report wartet, bis alle Rückmeldungen gebucht sind“ (gewartet wird auf die Rückkehr der Tasks; lokal gebuchte Pakete zählen nicht in gv_sent)",
+    "zpp_conf_parallel_f01.abap:68 — kein Fachsatz „gestörte Pakete werden erneut gesendet“ (die Sätze bleiben nur im Status N für einen späteren Lauf)"
+  ],
+  "processDescription": "Der Nachtjob liest die offenen MES-Rückmeldungen der gewählten Werke und Aufträge; ohne Treffer endet er mit Hinweis. Er initialisiert die Servergruppe und bricht ab, wenn sie nicht nutzbar ist. Die Rückmeldungen werden zu Paketen fester Größe gebündelt; jedes volle Paket und das Restpaket wird als asynchroner Task in der Servergruppe gestartet. Sind keine Workprozesse frei, wartet der Report kurz auf zurückkehrende Tasks und versucht es erneut; ist die Gruppe gestört, bucht er das Paket synchron selbst. Im Task wird jede Rückmeldung zum Fertigungsauftragsvorgang gebucht; bei Fehler wird zurückgerollt und der Staging-Satz auf E gesetzt, bei Erfolg auf P mit Rückmeldenummer und festgeschrieben. Endet ein Task, holt ein Callback die Zähler ab; ein Systemfehler wird als gestörtes Paket gezählt und gemeldet, dessen Sätze bleiben offen. Am Ende wartet der Report auf alle Tasks und gibt die Summen aus."
+}

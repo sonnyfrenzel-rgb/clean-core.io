@@ -1,0 +1,32 @@
+{
+  "id": "BM-205",
+  "title": "Weiche Bestandsreservierung mit Sperr-Manager-Klasse",
+  "domain": "MM",
+  "band": "mittel",
+  "loc": 96,
+  "constructs": [
+    "REPORT",
+    "lokale Klassen",
+    "Ausnahmeklassen",
+    "ENQUEUE/DEQUEUE",
+    "TRY mit zwei CATCH",
+    "SELECT SUM",
+    "INSERT Z-Tabelle",
+    "COMMIT WORK"
+  ],
+  "scenario": "Eigenentwicklung, mit der der Vertrieb Bestand für Kundenaufträge vormerkt, ohne SAP-Reservierungen anzulegen.",
+  "s4_issues": [
+    "MARD-Bestand in S/4 aus MATDOC (Kompatibilitätsview)",
+    "Schattenbestandsführung neben ATP/aATP",
+    "Materialnummer 40 Zeichen"
+  ],
+  "wave": 3,
+  "module": "MM-IM",
+  "edge_constructs": [
+    "Sperre in eigener Klasse",
+    "RAISE nach sy-subrc des ENQUEUE",
+    "Freigabe nach ENDTRY auf allen Pfaden",
+    "INSERT ohne sy-subrc-Prüfung"
+  ],
+  "oo": true
+}

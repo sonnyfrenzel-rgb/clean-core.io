@@ -1,0 +1,1161 @@
+{
+  "id": "BM-247",
+  "title": "RAP-Verhalten Kundenreklamation: Anfangsstatus, Kundenprüfung, Eskalation mit Protokoll",
+  "classes": [
+    "K02",
+    "K09",
+    "K12"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZI_REKLAMATION",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zbp_i_reklamation_lhc.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zbp_i_reklamation_lhc.abap:32"
+      },
+      "identity": {
+        "objectType": "DDLS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zbp_i_reklamation_lhc.abap",
+        "line": 90,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zbp_i_reklamation_lhc.abap:90"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZTQM_REKL_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zbp_i_reklamation_lsc.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zbp_i_reklamation_lsc.abap:42"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZQM_REKL_INFORM_LEITUNG",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zbp_i_reklamation_lsc.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zbp_i_reklamation_lsc.abap:34"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-247-B01",
+      "text": "Die Aktion „Eskalieren“ ist für abgeschlossene Reklamationen gesperrt und für alle anderen verfügbar.",
+      "anchors": [
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-247-B02",
+      "text": "Eine neu angelegte Reklamation ohne Status erhält den Status Neu, die Eskalationsstufe 0 und als Eingangsdatum das Tagesdatum, sofern keines erfasst wurde.",
+      "anchors": [
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:53"
+        },
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-247-B03",
+      "text": "Beim Sichern wird jede Reklamation ohne Kunde mit der Meldung ZQM_REKL 001 abgelehnt.",
+      "anchors": [
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:80"
+        },
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:81"
+        },
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-247-B04",
+      "text": "Ist der erfasste Kunde nicht im Kundenstamm vorhanden, wird das Sichern mit der Meldung ZQM_REKL 002 abgelehnt.",
+      "anchors": [
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:90"
+        },
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:93"
+        },
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:94"
+        },
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:95"
+        }
+      ]
+    },
+    {
+      "id": "BM-247-B05",
+      "text": "Hat der Kunde eine Auftragssperre, erscheint nur die Warnung ZQM_REKL 003; die Reklamation kann trotzdem gesichert werden.",
+      "anchors": [
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:93"
+        },
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:102"
+        }
+      ]
+    },
+    {
+      "id": "BM-247-B06",
+      "text": "Das Eskalieren einer abgeschlossenen Reklamation wird mit der Meldung ZQM_REKL 010 abgelehnt.",
+      "anchors": [
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:117"
+        },
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:118"
+        },
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:119"
+        }
+      ]
+    },
+    {
+      "id": "BM-247-B07",
+      "text": "Für jede andere Reklamation wird die Eskalationsstufe neu bestimmt: Stufe 3 ab 50.000 Schadenshöhe oder mehr als 30 Tagen seit Eingang, Stufe 2 ab 10.000 oder mehr als 14 Tagen, sonst Stufe 1.",
+      "anchors": [
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:125"
+        },
+        {
+          "file": "zbp_i_reklamation.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-247-B08",
+      "text": "Ist die berechnete Stufe nicht höher als die bisherige und die bisherige unter 3, wird die bisherige Stufe um eins erhöht.",
+      "anchors": [
+        {
+          "file": "zbp_i_reklamation.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation.abap:32"
+        },
+        {
+          "file": "zbp_i_reklamation.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-247-B09",
+      "text": "Die eskalierten Reklamationen erhalten den Status Eskaliert mit der neuen Stufe und werden als Ergebnis der Aktion zurückgegeben.",
+      "anchors": [
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:129"
+        },
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:132"
+        },
+        {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:140"
+        }
+      ]
+    },
+    {
+      "id": "BM-247-B10",
+      "text": "Beim Sichern wird für jede neue Reklamation ein Anlageprotokoll und für jede Änderung der Eskalationsstufe ein Eskalationsprotokoll mit Zeitstempel und Benutzer vorgemerkt.",
+      "anchors": [
+        {
+          "file": "zbp_i_reklamation_lsc.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lsc.abap:16"
+        },
+        {
+          "file": "zbp_i_reklamation_lsc.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lsc.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-247-B11",
+      "text": "Erreicht eine Reklamation Stufe 3, wird die QM-Leitung über einen asynchronen Baustein in eigener LUW informiert.",
+      "anchors": [
+        {
+          "file": "zbp_i_reklamation_lsc.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lsc.abap:33"
+        },
+        {
+          "file": "zbp_i_reklamation_lsc.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lsc.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-247-B12",
+      "text": "Die vorgemerkten Protokollsätze werden in die Protokolltabelle geschrieben; doppelte Schlüssel werden übergangen.",
+      "anchors": [
+        {
+          "file": "zbp_i_reklamation_lsc.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lsc.abap:41"
+        },
+        {
+          "file": "zbp_i_reklamation_lsc.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lsc.abap:42"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "f_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:31"
+        },
+        "meaning": "Laufzeit fragt die Verfügbarkeit der Aktion „Eskalieren“ ab"
+      },
+      {
+        "id": "f_r",
+        "type": "read",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:32"
+        },
+        "meaning": "Status der Reklamationen lesen"
+      },
+      {
+        "id": "f_a",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:38"
+        },
+        "meaning": "Aktion „Eskalieren“ für abgeschlossene Reklamationen sperren, sonst freigeben"
+      },
+      {
+        "id": "f_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:43"
+        },
+        "meaning": "Ende Feature-Steuerung"
+      },
+      {
+        "id": "i_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:45"
+        },
+        "meaning": "Determination bei Anlage einer Reklamation"
+      },
+      {
+        "id": "i_r",
+        "type": "read",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:46"
+        },
+        "meaning": "Status und Eingangsdatum der neuen Reklamationen lesen"
+      },
+      {
+        "id": "i_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:53"
+        },
+        "meaning": "Reklamationen ohne Status vorhanden?"
+      },
+      {
+        "id": "i_m",
+        "type": "write",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:55"
+        },
+        "meaning": "Status Neu, Eingangsdatum (falls leer: heute) und Eskalationsstufe 0 setzen"
+      },
+      {
+        "id": "i_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:68"
+        },
+        "meaning": "Ende Determination"
+      },
+      {
+        "id": "v_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:70"
+        },
+        "meaning": "Validierung Kunde beim Sichern"
+      },
+      {
+        "id": "v_r",
+        "type": "read",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:71"
+        },
+        "meaning": "Kunde der Reklamationen lesen"
+      },
+      {
+        "id": "v_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:76"
+        },
+        "meaning": "Jede Reklamation prüfen"
+      },
+      {
+        "id": "v_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:80"
+        },
+        "meaning": "Kunde leer?"
+      },
+      {
+        "id": "v_f1",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:81"
+        },
+        "meaning": "Reklamation als fehlerhaft kennzeichnen"
+      },
+      {
+        "id": "v_o1",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:82"
+        },
+        "meaning": "Fehler ZQM_REKL 001 am Feld Kunde"
+      },
+      {
+        "id": "v_q",
+        "type": "read",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:90"
+        },
+        "meaning": "Kunde und Auftragssperre lesen"
+      },
+      {
+        "id": "v_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:93"
+        },
+        "meaning": "Kunde vorhanden? / Auftragssperre?"
+      },
+      {
+        "id": "v_f2",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:94"
+        },
+        "meaning": "Reklamation als fehlerhaft kennzeichnen"
+      },
+      {
+        "id": "v_o2",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:95"
+        },
+        "meaning": "Fehler ZQM_REKL 002: Kunde unbekannt"
+      },
+      {
+        "id": "v_o3",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:102"
+        },
+        "meaning": "Warnung ZQM_REKL 003: Kunde hat Auftragssperre"
+      },
+      {
+        "id": "v_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:108"
+        },
+        "meaning": "Ende Validierung"
+      },
+      {
+        "id": "k_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:110"
+        },
+        "meaning": "Sachbearbeiter löst Aktion „Eskalieren“ aus"
+      },
+      {
+        "id": "k_r",
+        "type": "read",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:111"
+        },
+        "meaning": "Status, Eingang, Schadenshöhe und Stufe lesen"
+      },
+      {
+        "id": "k_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:116"
+        },
+        "meaning": "Jede gewählte Reklamation eskalieren"
+      },
+      {
+        "id": "k_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:117"
+        },
+        "meaning": "Reklamation abgeschlossen?"
+      },
+      {
+        "id": "k_f",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:118"
+        },
+        "meaning": "Aktion für diese Reklamation ablehnen"
+      },
+      {
+        "id": "k_o",
+        "type": "output",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:119"
+        },
+        "meaning": "Fehler ZQM_REKL 010: abgeschlossen"
+      },
+      {
+        "id": "k_c",
+        "type": "call",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:125"
+        },
+        "meaning": "Neue Eskalationsstufe ermitteln"
+      },
+      {
+        "id": "k_m",
+        "type": "write",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:132"
+        },
+        "meaning": "Status und Stufe der eskalierten Reklamationen fortschreiben"
+      },
+      {
+        "id": "k_r2",
+        "type": "read",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:140"
+        },
+        "meaning": "Aktualisierte Reklamationen als Aktionsergebnis lesen"
+      },
+      {
+        "id": "k_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_i_reklamation_lhc.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lhc.abap:146"
+        },
+        "meaning": "Ergebnis zurückgeben"
+      },
+      {
+        "id": "g_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_i_reklamation.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation.abap:24"
+        },
+        "meaning": "Eskalationsstufe berechnen"
+      },
+      {
+        "id": "g_a",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_i_reklamation.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation.abap:27"
+        },
+        "meaning": "Stufe 3 ab 50.000 Schaden oder über 30 Tage, Stufe 2 ab 10.000 oder über 14 Tage, sonst 1"
+      },
+      {
+        "id": "g_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_i_reklamation.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation.abap:32"
+        },
+        "meaning": "Berechnete Stufe nicht höher als bisher und bisher unter 3?"
+      },
+      {
+        "id": "g_i",
+        "type": "action",
+        "anchor": {
+          "file": "zbp_i_reklamation.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation.abap:33"
+        },
+        "meaning": "Bisherige Stufe um eins erhöhen"
+      },
+      {
+        "id": "g_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_i_reklamation.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation.abap:35"
+        },
+        "meaning": "Stufe zurückgeben"
+      },
+      {
+        "id": "s_s",
+        "type": "start",
+        "anchor": {
+          "file": "zbp_i_reklamation_lsc.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lsc.abap:9"
+        },
+        "meaning": "Zusätzliches Sichern beim Commit"
+      },
+      {
+        "id": "s_l1",
+        "type": "loop",
+        "anchor": {
+          "file": "zbp_i_reklamation_lsc.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lsc.abap:16"
+        },
+        "meaning": "Anlageprotokoll für jede neue Reklamation vormerken"
+      },
+      {
+        "id": "s_l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zbp_i_reklamation_lsc.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lsc.abap:25"
+        },
+        "meaning": "Jede Reklamation mit geänderter Eskalationsstufe protokollieren"
+      },
+      {
+        "id": "s_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_i_reklamation_lsc.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lsc.abap:33"
+        },
+        "meaning": "Stufe 3 erreicht?"
+      },
+      {
+        "id": "s_bg",
+        "type": "async",
+        "anchor": {
+          "file": "zbp_i_reklamation_lsc.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lsc.abap:34"
+        },
+        "meaning": "QM-Leitung asynchron informieren (tRFC, eigene LUW)"
+      },
+      {
+        "id": "s_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zbp_i_reklamation_lsc.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lsc.abap:41"
+        },
+        "meaning": "Protokollsätze vorhanden?"
+      },
+      {
+        "id": "s_w",
+        "type": "write",
+        "anchor": {
+          "file": "zbp_i_reklamation_lsc.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lsc.abap:42"
+        },
+        "meaning": "Protokoll in ZTQM_REKL_LOG schreiben"
+      },
+      {
+        "id": "s_e",
+        "type": "end",
+        "anchor": {
+          "file": "zbp_i_reklamation_lsc.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zbp_i_reklamation_lsc.abap:44"
+        },
+        "meaning": "Ende zusätzliches Sichern"
+      }
+    ],
+    "edges": [
+      {
+        "from": "f_s",
+        "to": "f_r",
+        "condition": "always"
+      },
+      {
+        "from": "f_r",
+        "to": "f_a",
+        "condition": "always"
+      },
+      {
+        "from": "f_a",
+        "to": "f_e",
+        "condition": "always"
+      },
+      {
+        "from": "i_s",
+        "to": "i_r",
+        "condition": "always"
+      },
+      {
+        "from": "i_r",
+        "to": "i_g",
+        "condition": "always"
+      },
+      {
+        "from": "i_g",
+        "to": "i_m",
+        "condition": "lt_rekl IS NOT INITIAL"
+      },
+      {
+        "from": "i_g",
+        "to": "i_e",
+        "condition": "else"
+      },
+      {
+        "from": "i_m",
+        "to": "i_e",
+        "condition": "always"
+      },
+      {
+        "from": "v_s",
+        "to": "v_r",
+        "condition": "always"
+      },
+      {
+        "from": "v_r",
+        "to": "v_l",
+        "condition": "always"
+      },
+      {
+        "from": "v_l",
+        "to": "v_g1",
+        "condition": "next row"
+      },
+      {
+        "from": "v_g1",
+        "to": "v_f1",
+        "condition": "ls_rekl-Kunde IS INITIAL"
+      },
+      {
+        "from": "v_f1",
+        "to": "v_o1",
+        "condition": "always"
+      },
+      {
+        "from": "v_o1",
+        "to": "v_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "v_g1",
+        "to": "v_q",
+        "condition": "else"
+      },
+      {
+        "from": "v_q",
+        "to": "v_g2",
+        "condition": "always"
+      },
+      {
+        "from": "v_g2",
+        "to": "v_f2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "v_f2",
+        "to": "v_o2",
+        "condition": "always"
+      },
+      {
+        "from": "v_o2",
+        "to": "v_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "v_g2",
+        "to": "v_o3",
+        "condition": "ls_kna1-aufsd IS NOT INITIAL"
+      },
+      {
+        "from": "v_o3",
+        "to": "v_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "v_g2",
+        "to": "v_l",
+        "condition": "else"
+      },
+      {
+        "from": "v_l",
+        "to": "v_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "k_s",
+        "to": "k_r",
+        "condition": "always"
+      },
+      {
+        "from": "k_r",
+        "to": "k_l",
+        "condition": "always"
+      },
+      {
+        "from": "k_l",
+        "to": "k_g",
+        "condition": "next row"
+      },
+      {
+        "from": "k_g",
+        "to": "k_f",
+        "condition": "<ls_rekl>-Status = gc_status-abgeschlossen"
+      },
+      {
+        "from": "k_f",
+        "to": "k_o",
+        "condition": "always"
+      },
+      {
+        "from": "k_o",
+        "to": "k_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "k_g",
+        "to": "k_c",
+        "condition": "else"
+      },
+      {
+        "from": "k_c",
+        "to": "g_s",
+        "condition": "always"
+      },
+      {
+        "from": "g_s",
+        "to": "g_a",
+        "condition": "always"
+      },
+      {
+        "from": "g_a",
+        "to": "g_g",
+        "condition": "always"
+      },
+      {
+        "from": "g_g",
+        "to": "g_i",
+        "condition": "rv_stufe <= iv_stufe_alt AND iv_stufe_alt < '3'"
+      },
+      {
+        "from": "g_g",
+        "to": "g_e",
+        "condition": "else"
+      },
+      {
+        "from": "g_i",
+        "to": "g_e",
+        "condition": "always"
+      },
+      {
+        "from": "k_l",
+        "to": "k_m",
+        "condition": "no more rows"
+      },
+      {
+        "from": "k_m",
+        "to": "k_r2",
+        "condition": "always"
+      },
+      {
+        "from": "k_r2",
+        "to": "k_e",
+        "condition": "always"
+      },
+      {
+        "from": "s_s",
+        "to": "s_l1",
+        "condition": "always"
+      },
+      {
+        "from": "s_l1",
+        "to": "s_l2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_l2",
+        "to": "s_g",
+        "condition": "next row"
+      },
+      {
+        "from": "s_g",
+        "to": "s_bg",
+        "condition": "ls_upd-Eskalationsstufe = '3'"
+      },
+      {
+        "from": "s_bg",
+        "to": "s_l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "s_g",
+        "to": "s_l2",
+        "condition": "else"
+      },
+      {
+        "from": "s_l2",
+        "to": "s_g2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_g2",
+        "to": "s_w",
+        "condition": "lt_log IS NOT INITIAL"
+      },
+      {
+        "from": "s_g2",
+        "to": "s_e",
+        "condition": "else"
+      },
+      {
+        "from": "s_w",
+        "to": "s_e",
+        "condition": "always"
+      },
+      {
+        "from": "g_e",
+        "to": "k_l",
+        "condition": "next iteration"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zbp_i_reklamation.abap:32 — kein Fachsatz „eine Eskalationsstufe sinkt nie“ (steht die bisherige Stufe auf 3, übernimmt die Methode die neu berechnete, ggf. niedrigere Stufe; der Kommentar trägt das nicht)",
+    "zbp_i_reklamation_lhc.abap:102 — kein Fachsatz „Kunden mit Auftragssperre werden abgelehnt“ (nur Warnung, kein Eintrag in failed)",
+    "zbp_i_reklamation_lsc.abap:34 — kein Fachsatz „QM-Leitung erhält eine E-Mail“ (Baustein nicht im Fall, Wirkung unbekannt; nur asynchron angestoßen)",
+    "zbp_i_reklamation_lhc.abap:132 — kein Fachsatz „Eskalation wird sofort in der Datenbank gespeichert“ (Änderung im Transaktionspuffer; persistiert erst beim Sichern)"
+  ],
+  "processDescription": "Sachbearbeiter pflegen Kundenreklamationen in einer RAP-basierten App. Die Aktion „Eskalieren“ wird für abgeschlossene Reklamationen gesperrt. Legt jemand eine Reklamation an, setzt eine Determination den Status Neu, die Eskalationsstufe 0 und, falls leer, das Tagesdatum als Eingangsdatum. Beim Sichern prüft eine Validierung den Kunden: ohne Kunde oder mit unbekanntem Kunden wird das Sichern mit Fehlermeldung abgelehnt; bei Auftragssperre erscheint nur eine Warnung. Beim Eskalieren werden abgeschlossene Reklamationen mit Fehlermeldung abgewiesen; für die übrigen berechnet eine Hilfsmethode die Stufe aus Schadenshöhe und Alter der Reklamation und erhöht sie mindestens um eins, solange die bisherige Stufe unter 3 liegt. Die Reklamationen erhalten Status Eskaliert und werden als Aktionsergebnis zurückgegeben. Beim Commit schreibt das zusätzliche Sichern Anlage- und Eskalationsprotokolle in eine Kundentabelle und stößt für Reklamationen der Stufe 3 asynchron die Information der QM-Leitung an."
+}

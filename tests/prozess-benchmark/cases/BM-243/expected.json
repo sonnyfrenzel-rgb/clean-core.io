@@ -1,0 +1,445 @@
+{
+  "id": "BM-243",
+  "title": "BOPF-Determination: geplante Frachtkosten einer Sendung aus Kundentarif",
+  "classes": [
+    "K02",
+    "K09"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZTM_TARIF",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 46,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:46"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-243-B01",
+      "text": "Nach einer Änderung an Gewicht oder Route werden die Kopfdaten der betroffenen Sendungen gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-243-B02",
+      "text": "Sendungen ohne Route und bereits abgerechnete Sendungen werden nicht neu bewertet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-243-B03",
+      "text": "Für jede übrige Sendung wird der am Tagesdatum gültige Kundentarif zu Route und Versandart gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-243-B04",
+      "text": "Ohne gültigen Tarif erhält die Sendung die Warnung ZTM_SEND 021 und ihre Frachtkosten bleiben unverändert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-243-B05",
+      "text": "Die Gewichtsfracht ergibt sich aus dem Tarifsatz je angefangene 100 kg Bruttogewicht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-243-B06",
+      "text": "Liegt sie unter der Mindestfracht des Tarifs, wird die Mindestfracht angesetzt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:69"
+        },
+        {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-243-B07",
+      "text": "Für Gefahrgutsendungen wird der prozentuale Gefahrgutzuschlag des Tarifs aufgeschlagen, nach der Mindestfrachtprüfung.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        },
+        {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-243-B08",
+      "text": "Die Frachtkosten werden netto mit der Tarifwährung, ersatzweise EUR, in die Sendung zurückgeschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Determination Frachtkosten, vom BOPF-Framework nach Änderung an Gewicht/Route aufgerufen"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Kopfdaten der geänderten Sendungen lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Jede Sendung bewerten"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Ohne Route oder bereits abgerechnet?"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        },
+        "meaning": "Heute gültigen Tarif zu Route und Versandart lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        "meaning": "Tarif gefunden?"
+      },
+      {
+        "id": "w",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "Warnung ZTM_SEND 021: kein gültiger Tarif für Route/Versandart"
+      },
+      {
+        "id": "c",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:66"
+        },
+        "meaning": "Gewichtsfracht: Satz je angefangene 100 kg"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:69"
+        },
+        "meaning": "Unter Mindestfracht?"
+      },
+      {
+        "id": "m",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        "meaning": "Frachtkosten auf Mindestfracht anheben"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        },
+        "meaning": "Gefahrgut?"
+      },
+      {
+        "id": "z",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        "meaning": "Prozentualen Gefahrgutzuschlag aufschlagen"
+      },
+      {
+        "id": "u",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        },
+        "meaning": "Frachtkosten und Währung in der Sendung fortschreiben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:93"
+        },
+        "meaning": "Warnungen an das Framework zurückgeben, Ende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "r",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "g1",
+        "condition": "next row"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "lr_root->route IS INITIAL OR lr_root->abgerechnet = abap_true"
+      },
+      {
+        "from": "g1",
+        "to": "q",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "w",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "w",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g2",
+        "to": "c",
+        "condition": "else"
+      },
+      {
+        "from": "c",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "m",
+        "condition": "lv_kosten < ls_tarif-mindestfracht"
+      },
+      {
+        "from": "g3",
+        "to": "g4",
+        "condition": "else"
+      },
+      {
+        "from": "m",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "z",
+        "condition": "lr_root->gefahrgut = abap_true"
+      },
+      {
+        "from": "g4",
+        "to": "u",
+        "condition": "else"
+      },
+      {
+        "from": "z",
+        "to": "u",
+        "condition": "always"
+      },
+      {
+        "from": "u",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:56 — kein Fachsatz „Sichern wird abgelehnt“ (Nachricht vom Typ W, et_failed_key bleibt leer)",
+    "source.abap:75 — kein Fachsatz „Mehrwertsteuer wird aufgeschlagen“ (die Bruttozeile ist auskommentiert; der Zuschlag gilt nur Gefahrgut)",
+    "source.abap:84 — kein Fachsatz „Frachtkosten werden in der Datenbank gebucht“ (die Änderung geht in den BOPF-Puffer; gesichert wird erst durch den Aufrufer)"
+  ],
+  "processDescription": "Das BOPF-Framework ruft die Determination nach Änderungen an Gewicht oder Route einer Sendung auf. Sie liest die Kopfdaten der betroffenen Sendungen und überspringt Sendungen ohne Route oder mit Abrechnungskennzeichen. Für jede weitere Sendung wird der am Tagesdatum gültige Kundentarif zu Route und Versandart gelesen; fehlt er, bekommt die Sendung eine Warnung und bleibt unverändert. Sonst wird die Gewichtsfracht aus dem Satz je angefangene 100 kg berechnet, bei Unterschreitung auf die Mindestfracht angehoben und für Gefahrgut um den prozentualen Zuschlag erhöht. Frachtkosten und Tarifwährung (ersatzweise EUR) werden in den BOPF-Puffer der Sendung geschrieben; die gesammelten Warnungen gehen an das Framework zurück."
+}

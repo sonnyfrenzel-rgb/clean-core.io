@@ -1,0 +1,36 @@
+{
+  "id": "BM-238",
+  "title": "Mitarbeiter einer Organisationseinheit zum Stichtag umhängen",
+  "domain": "HR",
+  "band": "sehr komplex",
+  "loc": 408,
+  "constructs": [
+    "Report mit lokaler Behandlerklasse",
+    "globale Klasse",
+    "Interface mit drei Implementierungen",
+    "dynamisches CREATE OBJECT TYPE (var)",
+    "TRY/CATCH cx_sy_create_object_error",
+    "EVENTS/RAISE EVENT/SET HANDLER",
+    "RETURN in Methode",
+    "CHECK in Methode",
+    "CONTINUE",
+    "HR_INFOTYPE_OPERATION",
+    "BAPI_EMPLOYEE_ENQUEUE/DEQUEUE",
+    "String-Templates"
+  ],
+  "scenario": "Werkzeug der Personalabteilung für Reorganisationen, mit per Customizing zuschaltbaren Prüfungen.",
+  "s4_issues": [
+    "HR-Stammdaten per HR_INFOTYPE_OPERATION nicht released",
+    "OM-Tabellen HRP1000/HRP1001 per Direkt-SELECT",
+    "SAP-GUI-Liste"
+  ],
+  "wave": 3,
+  "module": "HCM-PA/OM",
+  "edge_constructs": [
+    "Interfaceaufruf mit Zielen aus Customizing",
+    "statischer Ereignisbehandler als versteckter Aufrufpfad",
+    "Sperre bleibt nach frühem RETURN bestehen",
+    "leerer CATCH"
+  ],
+  "oo": true
+}

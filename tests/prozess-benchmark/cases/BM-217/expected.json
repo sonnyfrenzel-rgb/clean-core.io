@@ -1,0 +1,2230 @@
+{
+  "id": "BM-217",
+  "title": "Retourendisposition mit SALV-Oberfläche, Dispositionsstrategien und Gutschrift",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Gegencheck: Der Handler on_user_command ist ein eigener Einstieg (hs) ohne Kante von dd und ohne Rückkante he→dd — im Fall steht kein RAISE EVENT, das Ereignis löst die SAP-ALV erst bei einer Benutzeraktion aus (null- oder mehrmals); eine „always“-Kante dd→hs wäre falsch.",
+    "Polymorpher Aufruf execute: Kanten zu allen drei Strategien mit „always“.",
+    "SET HANDLER … FOR mo_alv->get_event( ) ist Registrierung und kein eigener Knoten."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_ret_disposition_f01.abap",
+        "line": 6,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_ret_disposition_f01.abap:6"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_ret_disposition_f01.abap",
+        "line": 6,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_ret_disposition_f01.abap:6"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBFA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_ret_disposition_f01.abap",
+        "line": 6,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_ret_disposition_f01.abap:6"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_ret_disposition_f01.abap",
+        "line": 6,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_ret_disposition_f01.abap:6"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MCH1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_ret_disposition_c01.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_ret_disposition_c01.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_GOODSMVT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_ret_disposition_f01.abap",
+        "line": 55,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_ret_disposition_f01.abap:55"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_BILLINGDOC_CREATEMULTIPLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_ret_disposition_f01.abap",
+        "line": 92,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_ret_disposition_f01.abap:92"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_ret_disposition_c01.abap",
+        "line": 148,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_ret_disposition_c01.abap:148"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_RET_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zsd_ret_disposition_c01.abap",
+        "line": 196,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_ret_disposition_c01.abap:196"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_RET_REPAIR",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zsd_ret_disposition_c01.abap",
+        "line": 97,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_ret_disposition_c01.abap:97"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_RET_DISPO",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_ret_reason.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_ret_reason.abap:21"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-217-B01",
+      "text": "Für jede eingegebene Verkaufsorganisation muss der Anwender Aufträge ändern dürfen, sonst wird die Selektion abgewiesen.",
+      "anchors": [
+        {
+          "file": "zsd_ret_disposition.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:22"
+        },
+        {
+          "file": "zsd_ret_disposition.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:23"
+        },
+        {
+          "file": "zsd_ret_disposition.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:28"
+        },
+        {
+          "file": "zsd_ret_disposition.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-217-B02",
+      "text": "Selektiert werden Positionen von Retourenaufträgen (RE) der gewählten Verkaufsorganisationen, deren Retourenlieferung wareneingangsgebucht ist.",
+      "anchors": [
+        {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:6"
+        }
+      ]
+    },
+    {
+      "id": "BM-217-B03",
+      "text": "Positionen, die laut Dispositionsprotokoll bereits erledigt sind, werden als erledigt gekennzeichnet.",
+      "anchors": [
+        {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:22"
+        },
+        {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:23"
+        },
+        {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:26"
+        },
+        {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-217-B04",
+      "text": "Gibt es keine eingegangenen Retouren, endet der Report mit einer Meldung.",
+      "anchors": [
+        {
+          "file": "zsd_ret_disposition.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:35"
+        },
+        {
+          "file": "zsd_ret_disposition.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:36"
+        },
+        {
+          "file": "zsd_ret_disposition.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-217-B05",
+      "text": "Die Retouren werden als Liste mit der Funktion „Disponieren“ angezeigt.",
+      "anchors": [
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:148"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:150"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:155"
+        }
+      ]
+    },
+    {
+      "id": "BM-217-B06",
+      "text": "Wählt der Anwender „Disponieren“ ohne markierte Zeilen, erhält er einen Hinweis.",
+      "anchors": [
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:162"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:175"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 176,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:176"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:177"
+        }
+      ]
+    },
+    {
+      "id": "BM-217-B07",
+      "text": "Je markierter, noch nicht erledigter Position wird die Disposition nach dem Retourengrund bestimmt: Wiedereinlagerung, Verschrottung oder Reparatur.",
+      "anchors": [
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 181,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:181"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 183,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:183"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:185"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:115"
+        }
+      ]
+    },
+    {
+      "id": "BM-217-B08",
+      "text": "Die Regel zum Retourengrund steht in einer Pflegetabelle; ohne eigenen Eintrag gilt die Rückfallregel „*“, ohne passende Dispositionsart wird die Position als fehlerhaft markiert.",
+      "anchors": [
+        {
+          "file": "zcl_sd_ret_reason.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_ret_reason.abap:21"
+        },
+        {
+          "file": "zcl_sd_ret_reason.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_ret_reason.abap:23"
+        },
+        {
+          "file": "zcl_sd_ret_reason.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_ret_reason.abap:24"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:123"
+        }
+      ]
+    },
+    {
+      "id": "BM-217-B09",
+      "text": "Bei Wiedereinlagerung wird geprüft, dass die Charge nicht abgelaufen ist, und die Menge mit der Bewegungsart der Regel umgebucht.",
+      "anchors": [
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:28"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:31"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:32"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-217-B10",
+      "text": "Bei Verschrottung muss eine Kostenstelle in der Regel gepflegt sein; die Menge wird auf diese Kostenstelle verschrottet.",
+      "anchors": [
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:59"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:60"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-217-B11",
+      "text": "Bei Reparatur wird die Menge ins Reparaturlager umgelagert und ein offener Reparaturvorgang angelegt.",
+      "anchors": [
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:88"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-217-B12",
+      "text": "Jede Warenbewegung wird einzeln gebucht und festgeschrieben; ohne Materialbeleg wird zurückgerollt und die Position als fehlerhaft markiert.",
+      "anchors": [
+        {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:55"
+        },
+        {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:65"
+        },
+        {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:66"
+        },
+        {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:67"
+        },
+        {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-217-B13",
+      "text": "Erfolgreiche Positionen werden als erledigt, fehlerhafte mit Fehlertext markiert, und jedes Ergebnis wird im Dispositionsprotokoll vermerkt.",
+      "anchors": [
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 187,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:187"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 190,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:190"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:196"
+        }
+      ]
+    },
+    {
+      "id": "BM-217-B14",
+      "text": "Danach werden zu allen Retourenaufträgen mit erledigten Positionen Gutschriften erzeugt, festgeschrieben und ihre Anzahl gemeldet.",
+      "anchors": [
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:199"
+        },
+        {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:88"
+        },
+        {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:92"
+        },
+        {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:97"
+        },
+        {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:102"
+        }
+      ]
+    },
+    {
+      "id": "BM-217-B15",
+      "text": "Nach der Disposition wird die Liste aktualisiert und bleibt zur weiteren Bearbeitung stehen.",
+      "anchors": [
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:165"
+        },
+        {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:155"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "as0",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_ret_disposition.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:21"
+        },
+        "meaning": "Berechtigungspruefung Selektion"
+      },
+      {
+        "id": "al0",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_ret_disposition.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:22"
+        },
+        "meaning": "Je eingegebene Verkaufsorganisation"
+      },
+      {
+        "id": "au0",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_ret_disposition.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:23"
+        },
+        "meaning": "Aenderungsberechtigung VkOrg pruefen"
+      },
+      {
+        "id": "ag0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_ret_disposition.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:28"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "am0",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_ret_disposition.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:29"
+        },
+        "meaning": "Fehler: keine Berechtigung"
+      },
+      {
+        "id": "amx0",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_ret_disposition.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:29"
+        },
+        "meaning": "Zurueck zum Selektionsbild"
+      },
+      {
+        "id": "ae0",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_ret_disposition.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:31"
+        },
+        "meaning": "Pruefung bestanden"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_ret_disposition.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:33"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "cs",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_ret_disposition.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:34"
+        },
+        "meaning": "Eingegangene Retouren selektieren"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_ret_disposition.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:35"
+        },
+        "meaning": "Keine Retouren?"
+      },
+      {
+        "id": "o0",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_ret_disposition.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:36"
+        },
+        "meaning": "Keine Retouren melden"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_ret_disposition.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:37"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "cd",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_ret_disposition.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:41"
+        },
+        "meaning": "Dispositionsliste anzeigen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_ret_disposition.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition.abap:41"
+        },
+        "meaning": "Reportende"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:4"
+        },
+        "meaning": "Selektion"
+      },
+      {
+        "id": "sq",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:6"
+        },
+        "meaning": "Retourenauftraege mit WE-gebuchter Retourenlieferung lesen"
+      },
+      {
+        "id": "sl",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:22"
+        },
+        "meaning": "Je Retourenposition"
+      },
+      {
+        "id": "sq2",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:23"
+        },
+        "meaning": "Dispositionsprotokoll lesen"
+      },
+      {
+        "id": "sg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:26"
+        },
+        "meaning": "Bereits disponiert?"
+      },
+      {
+        "id": "sa",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:27"
+        },
+        "meaning": "Als erledigt kennzeichnen"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:30"
+        }
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:32"
+        },
+        "meaning": "Warenbewegung buchen"
+      },
+      {
+        "id": "mb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:55"
+        },
+        "meaning": "Warenbewegung mit Bewegungsart der Regel buchen"
+      },
+      {
+        "id": "mg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:65"
+        },
+        "meaning": "Kein Materialbeleg?"
+      },
+      {
+        "id": "mrb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:66"
+        },
+        "meaning": "Verwerfen"
+      },
+      {
+        "id": "mx",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:67"
+        },
+        "meaning": "Ausnahme: Buchung fehlgeschlagen"
+      },
+      {
+        "id": "mc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:73"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:76"
+        }
+      },
+      {
+        "id": "cs2",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:78"
+        },
+        "meaning": "Gutschriften"
+      },
+      {
+        "id": "cg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:88"
+        },
+        "meaning": "Nichts zu fakturieren?"
+      },
+      {
+        "id": "cr",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:89"
+        },
+        "meaning": "Keine Gutschrift"
+      },
+      {
+        "id": "cb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:92"
+        },
+        "meaning": "Gutschriften zu Retourenauftraegen erzeugen"
+      },
+      {
+        "id": "ccm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:97"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "co",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:102"
+        },
+        "meaning": "Anzahl Gutschriften melden"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_ret_disposition_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_f01.abap:103"
+        }
+      },
+      {
+        "id": "ds",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:145"
+        },
+        "meaning": "Anzeige"
+      },
+      {
+        "id": "df",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:148"
+        },
+        "meaning": "ALV erzeugen"
+      },
+      {
+        "id": "dst",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:150"
+        },
+        "meaning": "Oberflaeche mit Funktion DISPO"
+      },
+      {
+        "id": "dsel",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:153"
+        },
+        "meaning": "Zeilenmarkierung einschalten"
+      },
+      {
+        "id": "dd",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:155"
+        },
+        "meaning": "Retourenliste anzeigen"
+      },
+      {
+        "id": "dm",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:157"
+        },
+        "meaning": "ALV-Fehler melden"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:159"
+        }
+      },
+      {
+        "id": "hs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:161"
+        },
+        "meaning": "Benutzerfunktion (Ereignis)"
+      },
+      {
+        "id": "hc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:162"
+        },
+        "meaning": "Welche Funktion?"
+      },
+      {
+        "id": "hp",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:164"
+        },
+        "meaning": "Markierte Positionen disponieren"
+      },
+      {
+        "id": "hr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:165"
+        },
+        "meaning": "Liste aktualisieren"
+      },
+      {
+        "id": "he",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:169"
+        }
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:171"
+        },
+        "meaning": "Disposition"
+      },
+      {
+        "id": "pg1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:175"
+        },
+        "meaning": "Markierte Zeilen holen"
+      },
+      {
+        "id": "pg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 176,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:176"
+        },
+        "meaning": "Nichts markiert?"
+      },
+      {
+        "id": "pm",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:177"
+        },
+        "meaning": "Hinweis: markieren"
+      },
+      {
+        "id": "pr",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:178"
+        },
+        "meaning": "Ende ohne Disposition"
+      },
+      {
+        "id": "pl",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 181,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:181"
+        },
+        "meaning": "Je markierte Zeile"
+      },
+      {
+        "id": "pck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 183,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:183"
+        },
+        "meaning": "Noch nicht disponiert?"
+      },
+      {
+        "id": "pf",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:185"
+        },
+        "meaning": "Disposition zum Retourengrund"
+      },
+      {
+        "id": "pex",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:186"
+        },
+        "meaning": "Disposition ausfuehren (polymorph)"
+      },
+      {
+        "id": "pa1",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 187,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:187"
+        },
+        "meaning": "Position erledigt"
+      },
+      {
+        "id": "pa2",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 190,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:190"
+        },
+        "meaning": "Position fehlerhaft, Text merken"
+      },
+      {
+        "id": "pw",
+        "type": "write",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:196"
+        },
+        "meaning": "Dispositionsprotokoll schreiben"
+      },
+      {
+        "id": "pcm",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:199"
+        },
+        "meaning": "Gutschriften erzeugen"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 200,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:200"
+        }
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:113"
+        },
+        "meaning": "Dispositionsfabrik"
+      },
+      {
+        "id": "fc",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:114"
+        },
+        "meaning": "Regel zum Retourengrund holen"
+      },
+      {
+        "id": "fcase",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:115"
+        },
+        "meaning": "Dispositionsart?"
+      },
+      {
+        "id": "fx",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:123"
+        },
+        "meaning": "Ausnahme: keine Disposition"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:128"
+        }
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:26"
+        },
+        "meaning": "Wiedereinlagerung"
+      },
+      {
+        "id": "rq",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:28"
+        },
+        "meaning": "Verfallsdatum der Charge lesen"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:31"
+        },
+        "meaning": "Charge abgelaufen?"
+      },
+      {
+        "id": "rx",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:32"
+        },
+        "meaning": "Ausnahme: abgelaufen"
+      },
+      {
+        "id": "rp",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:37"
+        },
+        "meaning": "Umbuchung in frei verwendbar"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:39"
+        }
+      },
+      {
+        "id": "xs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:58"
+        },
+        "meaning": "Verschrottung"
+      },
+      {
+        "id": "xg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:59"
+        },
+        "meaning": "Keine Kostenstelle?"
+      },
+      {
+        "id": "xx",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:60"
+        },
+        "meaning": "Ausnahme: keine Kostenstelle"
+      },
+      {
+        "id": "xp",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:65"
+        },
+        "meaning": "Verschrottung auf Kostenstelle"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:67"
+        }
+      },
+      {
+        "id": "ws",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:86"
+        },
+        "meaning": "Reparatur"
+      },
+      {
+        "id": "wp",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:88"
+        },
+        "meaning": "Umlagerung ins Reparaturlager"
+      },
+      {
+        "id": "ww",
+        "type": "write",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:97"
+        },
+        "meaning": "Reparaturvorgang OPEN anlegen"
+      },
+      {
+        "id": "we",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zsd_ret_disposition_c01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_ret_disposition_c01.abap:98"
+        }
+      },
+      {
+        "id": "gs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_ret_reason.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_ret_reason.abap:20"
+        },
+        "meaning": "Regel lesen"
+      },
+      {
+        "id": "gq1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_ret_reason.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_ret_reason.abap:21"
+        },
+        "meaning": "Regel zum Retourengrund lesen"
+      },
+      {
+        "id": "gg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_ret_reason.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_ret_reason.abap:23"
+        },
+        "meaning": "Keine Regel?"
+      },
+      {
+        "id": "gq2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_ret_reason.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_ret_reason.abap:24"
+        },
+        "meaning": "Rueckfallregel * lesen"
+      },
+      {
+        "id": "ge",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zcl_sd_ret_reason.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_ret_reason.abap:27"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "as0",
+        "to": "al0",
+        "condition": "always"
+      },
+      {
+        "from": "al0",
+        "to": "au0",
+        "condition": "next row"
+      },
+      {
+        "from": "au0",
+        "to": "ag0",
+        "condition": "always"
+      },
+      {
+        "from": "ag0",
+        "to": "am0",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "am0",
+        "to": "amx0",
+        "condition": "always"
+      },
+      {
+        "from": "ag0",
+        "to": "al0",
+        "condition": "next iteration"
+      },
+      {
+        "from": "al0",
+        "to": "ae0",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "o0",
+        "condition": "gt_ret IS INITIAL"
+      },
+      {
+        "from": "o0",
+        "to": "x0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "cd",
+        "condition": "else"
+      },
+      {
+        "from": "cd",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "de",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "sq",
+        "condition": "always"
+      },
+      {
+        "from": "sq",
+        "to": "sl",
+        "condition": "always"
+      },
+      {
+        "from": "sl",
+        "to": "sq2",
+        "condition": "next row"
+      },
+      {
+        "from": "sq2",
+        "to": "sg",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "sa",
+        "condition": "sy-subrc = 0 AND lv_status = 'DONE'"
+      },
+      {
+        "from": "sg",
+        "to": "sl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "sa",
+        "to": "sl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "sl",
+        "to": "se",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ds",
+        "to": "df",
+        "condition": "always"
+      },
+      {
+        "from": "df",
+        "to": "dst",
+        "condition": "always"
+      },
+      {
+        "from": "dst",
+        "to": "dsel",
+        "condition": "always"
+      },
+      {
+        "from": "dsel",
+        "to": "dd",
+        "condition": "always"
+      },
+      {
+        "from": "df",
+        "to": "dm",
+        "condition": "cx_salv_msg"
+      },
+      {
+        "from": "dm",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "dd",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "hs",
+        "to": "hc",
+        "condition": "always"
+      },
+      {
+        "from": "hc",
+        "to": "hp",
+        "condition": "WHEN 'DISPO'"
+      },
+      {
+        "from": "hc",
+        "to": "he",
+        "condition": "else"
+      },
+      {
+        "from": "hp",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "hr",
+        "condition": "always"
+      },
+      {
+        "from": "pr",
+        "to": "hr",
+        "condition": "always"
+      },
+      {
+        "from": "hr",
+        "to": "he",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "pg1",
+        "condition": "always"
+      },
+      {
+        "from": "pg1",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pm",
+        "condition": "lt_rows IS INITIAL"
+      },
+      {
+        "from": "pm",
+        "to": "pr",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pl",
+        "condition": "else"
+      },
+      {
+        "from": "pl",
+        "to": "pck",
+        "condition": "next row"
+      },
+      {
+        "from": "pck",
+        "to": "pf",
+        "condition": "<gs_ret>-status <> 'DONE'"
+      },
+      {
+        "from": "pck",
+        "to": "pl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pf",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "pex",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "fc",
+        "condition": "always"
+      },
+      {
+        "from": "fc",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "fcase",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "gq1",
+        "condition": "always"
+      },
+      {
+        "from": "gq1",
+        "to": "gg",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "gq2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gg",
+        "to": "ge",
+        "condition": "else"
+      },
+      {
+        "from": "gq2",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "fcase",
+        "to": "fe",
+        "condition": "WHEN 'RESTOCK'"
+      },
+      {
+        "from": "fcase",
+        "to": "fe",
+        "condition": "WHEN 'SCRAP'"
+      },
+      {
+        "from": "fcase",
+        "to": "fe",
+        "condition": "WHEN 'REPAIR'"
+      },
+      {
+        "from": "fcase",
+        "to": "fx",
+        "condition": "else"
+      },
+      {
+        "from": "pex",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "pa1",
+        "condition": "always"
+      },
+      {
+        "from": "pex",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "pa1",
+        "condition": "always"
+      },
+      {
+        "from": "pex",
+        "to": "ws",
+        "condition": "always"
+      },
+      {
+        "from": "we",
+        "to": "pa1",
+        "condition": "always"
+      },
+      {
+        "from": "pa1",
+        "to": "pw",
+        "condition": "always"
+      },
+      {
+        "from": "pa2",
+        "to": "pw",
+        "condition": "always"
+      },
+      {
+        "from": "pw",
+        "to": "pl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pl",
+        "to": "pcm",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pcm",
+        "to": "cs2",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "cr",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "rq",
+        "condition": "always"
+      },
+      {
+        "from": "rq",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rx",
+        "condition": "lv_vfdat IS NOT INITIAL AND lv_vfdat < sy-datum"
+      },
+      {
+        "from": "rg",
+        "to": "rp",
+        "condition": "else"
+      },
+      {
+        "from": "rp",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "re",
+        "condition": "always"
+      },
+      {
+        "from": "xs",
+        "to": "xg",
+        "condition": "always"
+      },
+      {
+        "from": "xg",
+        "to": "xx",
+        "condition": "ms_cfg-kostl IS INITIAL"
+      },
+      {
+        "from": "xg",
+        "to": "xp",
+        "condition": "else"
+      },
+      {
+        "from": "xp",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "ws",
+        "to": "wp",
+        "condition": "always"
+      },
+      {
+        "from": "wp",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "ww",
+        "condition": "always"
+      },
+      {
+        "from": "ww",
+        "to": "we",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "mb",
+        "condition": "always"
+      },
+      {
+        "from": "mb",
+        "to": "mg",
+        "condition": "always"
+      },
+      {
+        "from": "mg",
+        "to": "mrb",
+        "condition": "cs_ret-mblnr IS INITIAL"
+      },
+      {
+        "from": "mrb",
+        "to": "mx",
+        "condition": "always"
+      },
+      {
+        "from": "mg",
+        "to": "mc",
+        "condition": "else"
+      },
+      {
+        "from": "mc",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "fx",
+        "to": "pa2",
+        "condition": "zcx_sd_ret"
+      },
+      {
+        "from": "rx",
+        "to": "pa2",
+        "condition": "zcx_sd_ret"
+      },
+      {
+        "from": "xx",
+        "to": "pa2",
+        "condition": "zcx_sd_ret"
+      },
+      {
+        "from": "mx",
+        "to": "pa2",
+        "condition": "zcx_sd_ret"
+      },
+      {
+        "from": "cs2",
+        "to": "cg",
+        "condition": "always"
+      },
+      {
+        "from": "cg",
+        "to": "cr",
+        "condition": "lt_bill IS INITIAL"
+      },
+      {
+        "from": "cg",
+        "to": "cb",
+        "condition": "else"
+      },
+      {
+        "from": "cb",
+        "to": "ccm",
+        "condition": "always"
+      },
+      {
+        "from": "ccm",
+        "to": "co",
+        "condition": "always"
+      },
+      {
+        "from": "co",
+        "to": "ce",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zsd_ret_disposition_f01.abap:92 — kein Fachsatz „nur vollständig disponierte Aufträge werden gutgeschrieben“ — es genügt eine erledigte Position des Auftrags; auch in früheren Läufen erledigte Positionen zählen.",
+    "zsd_ret_disposition_f01.abap:92 — kein Fachsatz „Fehler der Gutschrifterzeugung werden gemeldet“ — RETURN des BAPI wird nicht ausgewertet, es wird immer festgeschrieben.",
+    "zsd_ret_disposition_c01.abap:97 — kein Fachsatz „ein Reparaturauftrag (Serviceauftrag) wird angelegt“ — nur ein Eintrag in der Z-Tabelle.",
+    "zsd_ret_disposition_c01.abap:190 — kein Fachsatz „bei einem Fehler wird die ganze Disposition abgebrochen“ — die Schleife läuft mit der nächsten markierten Position weiter."
+  ],
+  "processDescription": "Beim Start prüft der Report die Änderungsberechtigung für jede eingegebene Verkaufsorganisation. Er selektiert Positionen von Retourenaufträgen, deren Retourenlieferung wareneingangsgebucht ist, und kennzeichnet bereits disponierte Positionen; gibt es keine, endet er mit einer Meldung. Die Positionen erscheinen in einer ALV-Liste mit der Funktion „Disponieren“. Für jede markierte, offene Position wählt eine Fabrik anhand des Retourengrunds die Disposition aus einer Pflegetabelle, ersatzweise nach einer Rückfallregel. Wiedereinlagerung prüft das Verfallsdatum der Charge, Verschrottung braucht eine Kostenstelle, Reparatur lagert ins Reparaturlager um und legt einen Reparaturvorgang an; jede Warenbewegung wird sofort gebucht und festgeschrieben. Fehler markieren nur die Position, jedes Ergebnis wird protokolliert. Danach werden Gutschriften zu den Aufträgen mit erledigten Positionen erzeugt, und die Liste wird aktualisiert."
+}

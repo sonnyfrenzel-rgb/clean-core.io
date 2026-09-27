@@ -1,0 +1,571 @@
+{
+  "id": "BM-224",
+  "title": "Beantragte Abwesenheit gegen Überschneidung und Kontingent prüfen",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PA2001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzhr_abwu01.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzhr_abwu01.abap:29"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA2006",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzhr_abwf01.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzhr_abwf01.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-224-B01",
+      "text": "Abwesenheiten der Art 0200 (Krankheit) werden ohne weitere Prüfung als zulässig zurückgegeben.",
+      "anchors": [
+        {
+          "file": "lzhr_abwu01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:23"
+        },
+        {
+          "file": "lzhr_abwu01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:24"
+        },
+        {
+          "file": "lzhr_abwu01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-224-B02",
+      "text": "Es wird geprüft, ob sich der beantragte Zeitraum mit bestehenden, nicht gesperrten Abwesenheiten des Mitarbeiters überschneidet.",
+      "anchors": [
+        {
+          "file": "lzhr_abwu01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-224-B03",
+      "text": "Bei einer Überschneidung endet die Prüfung mit einer Fehlermeldung und der Ausnahme UEBERSCHNEIDUNG.",
+      "anchors": [
+        {
+          "file": "lzhr_abwu01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:34"
+        },
+        {
+          "file": "lzhr_abwu01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-224-B04",
+      "text": "Der Antrag umfasst die Kalendertage von Beginn bis Ende einschließlich.",
+      "anchors": [
+        {
+          "file": "lzhr_abwu01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-224-B05",
+      "text": "Das Restkontingent ergibt sich aus den am Beginndatum abtragbaren Urlaubskontingenten der Arten 10 und 11 als Anspruch minus Verbrauch.",
+      "anchors": [
+        {
+          "file": "lzhr_abwu01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:40"
+        },
+        {
+          "file": "lzhr_abwf01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwf01.abap:12"
+        },
+        {
+          "file": "lzhr_abwf01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwf01.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-224-B06",
+      "text": "Ohne abtragbares Kontingent bleibt der Rest null.",
+      "anchors": [
+        {
+          "file": "lzhr_abwf01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwf01.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-224-B07",
+      "text": "Reicht der Rest nicht für die beantragten Tage, endet die Prüfung mit Fehlermeldung und der Ausnahme KONTINGENT_ERSCHOEPFT.",
+      "anchors": [
+        {
+          "file": "lzhr_abwu01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:43"
+        },
+        {
+          "file": "lzhr_abwu01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-224-B08",
+      "text": "Bleiben nach dem Antrag weniger als drei Tage übrig, wird ein Hinweis ausgegeben, der Antrag bleibt zulässig.",
+      "anchors": [
+        {
+          "file": "lzhr_abwu01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-224-B09",
+      "text": "In allen übrigen Fällen wird der Antrag als zulässig gekennzeichnet.",
+      "anchors": [
+        {
+          "file": "lzhr_abwu01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:50"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "lzhr_abwu01.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:1"
+        },
+        "meaning": "Bausteinstart"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzhr_abwu01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:23"
+        },
+        "meaning": "Krankheit?"
+      },
+      {
+        "id": "r",
+        "type": "end",
+        "anchor": {
+          "file": "lzhr_abwu01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:25"
+        },
+        "meaning": "Krankheit ohne Prüfung zulassen"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "lzhr_abwu01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:29"
+        },
+        "meaning": "Überschneidende Abwesenheiten lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzhr_abwu01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:34"
+        },
+        "meaning": "Überschneidung vorhanden?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "lzhr_abwu01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:35"
+        },
+        "meaning": "Fehler Überschneidung"
+      },
+      {
+        "id": "m1e",
+        "type": "end",
+        "anchor": {
+          "file": "lzhr_abwu01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:35"
+        },
+        "meaning": "Ausnahme UEBERSCHNEIDUNG"
+      },
+      {
+        "id": "c",
+        "type": "call",
+        "anchor": {
+          "file": "lzhr_abwu01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:40"
+        },
+        "meaning": "Restkontingent ermitteln"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "lzhr_abwf01.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwf01.abap:4"
+        },
+        "meaning": "Kontingentermittlung"
+      },
+      {
+        "id": "fq",
+        "type": "read",
+        "anchor": {
+          "file": "lzhr_abwf01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwf01.abap:12"
+        },
+        "meaning": "Urlaubskontingente zum Datum lesen"
+      },
+      {
+        "id": "fck",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzhr_abwf01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwf01.abap:17"
+        },
+        "meaning": "Kontingente gefunden?"
+      },
+      {
+        "id": "fl",
+        "type": "loop",
+        "anchor": {
+          "file": "lzhr_abwf01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwf01.abap:19"
+        },
+        "meaning": "Kontingente durchlaufen"
+      },
+      {
+        "id": "fa",
+        "type": "action",
+        "anchor": {
+          "file": "lzhr_abwf01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwf01.abap:20"
+        },
+        "meaning": "Restanspruch aufsummieren"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "lzhr_abwf01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwf01.abap:22"
+        },
+        "meaning": "Ende Kontingentermittlung"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzhr_abwu01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:43"
+        },
+        "meaning": "Kontingent ausreichend?"
+      },
+      {
+        "id": "m2",
+        "type": "output",
+        "anchor": {
+          "file": "lzhr_abwu01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:44"
+        },
+        "meaning": "Fehler Kontingent erschöpft"
+      },
+      {
+        "id": "m2e",
+        "type": "end",
+        "anchor": {
+          "file": "lzhr_abwu01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:44"
+        },
+        "meaning": "Ausnahme KONTINGENT_ERSCHOEPFT"
+      },
+      {
+        "id": "m3",
+        "type": "output",
+        "anchor": {
+          "file": "lzhr_abwu01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:47"
+        },
+        "meaning": "Hinweis: Restkontingent knapp"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "lzhr_abwu01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzhr_abwu01.abap:51"
+        },
+        "meaning": "Bausteinende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "r",
+        "condition": "iv_awart = '0200'"
+      },
+      {
+        "from": "g0",
+        "to": "q",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "m1",
+        "to": "m1e",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "c",
+        "condition": "else"
+      },
+      {
+        "from": "c",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "fq",
+        "condition": "always"
+      },
+      {
+        "from": "fq",
+        "to": "fck",
+        "condition": "always"
+      },
+      {
+        "from": "fck",
+        "to": "fl",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "fck",
+        "to": "fe",
+        "condition": "else"
+      },
+      {
+        "from": "fl",
+        "to": "fa",
+        "condition": "next row"
+      },
+      {
+        "from": "fa",
+        "to": "fl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fl",
+        "to": "fe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fe",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "m2",
+        "condition": "lv_rest < lv_tage"
+      },
+      {
+        "from": "m2",
+        "to": "m2e",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "m3",
+        "condition": "lv_rest - lv_tage < 3"
+      },
+      {
+        "from": "m3",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "e",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "lzhr_abwu01.abap:38 — kein Fachsatz „Arbeitstage laut Arbeitszeitplan“ (reine Kalendertagedifferenz)",
+    "lzhr_abwu01.abap:47 — kein Fachsatz „Antrag wird bei knappem Kontingent abgelehnt“ (Typ I, danach ev_ok = 'X')",
+    "lzhr_abwf01.abap:17 — kein Fachsatz „ohne Kontingent wird eine Ausnahme ausgelöst“ (CHECK verlässt nur die FORM; der Rest bleibt 0 und erst der Vergleich im Baustein führt zum Fehler)",
+    "gesamte Scheibe — kein Fachsatz „Abwesenheit wird angelegt“ (nur Prüfung, kein Schreiben in Infotyp 2001)"
+  ],
+  "processDescription": "Der Funktionsbaustein prüft einen beantragten Abwesenheitszeitraum eines Mitarbeiters. Krankheit (Art 0200) wird sofort als zulässig zurückgegeben. Sonst liest er nicht gesperrte Abwesenheiten aus Infotyp 2001, die den Zeitraum überschneiden; gibt es welche, endet er mit Fehlermeldung und Ausnahme UEBERSCHNEIDUNG. Danach zählt er die Kalendertage des Antrags und ermittelt in einer FORM des F01-Includes das Restkontingent aus den zum Beginndatum abtragbaren Urlaubskontingenten (Infotyp 2006, Arten 10/11) als Anspruch minus Verbrauch; ohne Kontingent bleibt der Rest null. Reicht der Rest nicht, endet der Baustein mit Fehlermeldung und Ausnahme KONTINGENT_ERSCHOEPFT. Bleiben weniger als drei Tage übrig, gibt er einen Hinweis aus. In beiden verbleibenden Fällen kennzeichnet er den Antrag als zulässig."
+}

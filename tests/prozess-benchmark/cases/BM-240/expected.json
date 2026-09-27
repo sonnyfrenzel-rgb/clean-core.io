@@ -1,0 +1,1964 @@
+{
+  "id": "BM-240",
+  "title": "Plankalkulationen prüfen und als Standardpreis übernehmen",
+  "classes": [
+    "K01",
+    "K03",
+    "K09"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Der polymorphe Aufruf go_regel->pruefen ist mit Kanten zu beiden Implementierungen (Basis und Abweichungsregel) modelliert.",
+    "Der Konstruktor der Ausnahmeklasse ZCX_CO_KALK ist nicht als Aufrufziel der RAISE EXCEPTION-Anweisungen modelliert."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "KEKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zco_kalk_uebernahme_f01.abap",
+        "line": 10,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zco_kalk_uebernahme_f01.abap:10"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CKIS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_co_kalk_regel.abap",
+        "line": 71,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_kalk_regel.abap:71"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MBEW",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_co_kalk_regel_abw.abap",
+        "line": 33,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_kalk_regel_abw.abap:33"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCO_KALK_FRG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_co_kalk_regel.abap",
+        "line": 54,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_kalk_regel.abap:54"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCO_KALK_FRG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zco_kalk_uebernahme_f01.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zco_kalk_uebernahme_f01.abap:83"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_MATVAL_PRICE_CHANGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zco_kalk_uebernahme_f01.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zco_kalk_uebernahme_f01.abap:58"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-240-B01",
+      "text": "Eine Abweichungsschwelle außerhalb von 0 bis 100 Prozent weist das Selektionsbild zurück.",
+      "anchors": [
+        {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:25"
+        },
+        {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-240-B02",
+      "text": "Es werden die Materialkalkulationen der gewählten Werke und Materialien zu Kalkulationsvariante und Kalkulationsdatum gelesen; gibt es keine, erscheint eine Meldung und nur die leere Liste wird ausgegeben.",
+      "anchors": [
+        {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:32"
+        },
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:10"
+        },
+        {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:33"
+        },
+        {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:34"
+        },
+        {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-240-B03",
+      "text": "Berücksichtigt werden nur Materialkalkulationen der Kalkulationsversion 1.",
+      "anchors": [
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:10"
+        }
+      ]
+    },
+    {
+      "id": "BM-240-B04",
+      "text": "Ohne Schwelle gilt die Basisregel, mit Schwelle die Regel mit zusätzlicher Abweichungsprüfung.",
+      "anchors": [
+        {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:38"
+        },
+        {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:34"
+        },
+        {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:35"
+        },
+        {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-240-B05",
+      "text": "Eine Kalkulation, die nicht fehlerfrei kalkuliert ist, wird als Fehler abgelehnt.",
+      "anchors": [
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:25"
+        },
+        {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:47"
+        },
+        {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-240-B06",
+      "text": "Eine Kalkulation, die bereits übernommen wurde, wird mit Warnung abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:54"
+        },
+        {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:58"
+        },
+        {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-240-B07",
+      "text": "Mit Schwelle wird der aktuelle Standardpreis je Einheit gelesen; gibt es keinen, entfällt die Abweichungsprüfung.",
+      "anchors": [
+        {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:31"
+        },
+        {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:33"
+        },
+        {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:38"
+        },
+        {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-240-B08",
+      "text": "Der kalkulierte Stückpreis ist die Summe der Kalkulationspositionen geteilt durch die Losgröße; ohne Losgröße ist er null.",
+      "anchors": [
+        {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:43"
+        },
+        {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:71"
+        },
+        {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:80"
+        },
+        {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:81"
+        },
+        {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-240-B09",
+      "text": "Weicht der kalkulierte Stückpreis um mehr als die Schwelle vom Standardpreis ab, wird die Kalkulation mit Warnung abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:44"
+        },
+        {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:46"
+        },
+        {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-240-B10",
+      "text": "Jede Ablehnung wird gezählt und mit Schwere und Text protokolliert; die Verarbeitung geht mit der nächsten Kalkulation weiter.",
+      "anchors": [
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:28"
+        },
+        {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-240-B11",
+      "text": "Im Testlauf wird eine bestandene Prüfung nur protokolliert.",
+      "anchors": [
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:31"
+        },
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:32"
+        },
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-240-B12",
+      "text": "Im Echtlauf wird der kalkulierte Stückpreis ab heute als Standardpreis in der Materialbewertung des Werks gesetzt.",
+      "anchors": [
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:36"
+        },
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:50"
+        },
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-240-B13",
+      "text": "Meldet die Preisänderung einen Fehler, wird sie verworfen und der Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:68"
+        },
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:69"
+        },
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:70"
+        },
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-240-B14",
+      "text": "Sonst wird festgeschrieben, die Übernahme mit Preis, Benutzer und Datum vermerkt und der übernommene Preis protokolliert.",
+      "anchors": [
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:73"
+        },
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:83"
+        },
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:84"
+        }
+      ]
+    },
+    {
+      "id": "BM-240-B15",
+      "text": "Am Ende werden alle Protokollzeilen nach Schwere sortiert und die Zahl der Ablehnungen ausgegeben.",
+      "anchors": [
+        {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:51"
+        },
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:107"
+        },
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:108"
+        },
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:109"
+        },
+        {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:112"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:23"
+        },
+        "meaning": "Prüfung Abweichungsschwelle"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:25"
+        },
+        "meaning": "Schwelle außerhalb 0 bis 100?"
+      },
+      {
+        "id": "am",
+        "type": "output",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:26"
+        },
+        "meaning": "Fehler: Schwelle ungültig"
+      },
+      {
+        "id": "ame",
+        "type": "end",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:26"
+        },
+        "meaning": "Zurück zum Selektionsbild"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:27"
+        },
+        "meaning": "Ende Schwellenprüfung"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:30"
+        },
+        "meaning": "Übernahmelauf starten"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:32"
+        },
+        "meaning": "Plankalkulationen lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:33"
+        },
+        "meaning": "Kalkulationen vorhanden?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:34"
+        },
+        "meaning": "Meldung: keine Kalkulationen"
+      },
+      {
+        "id": "r",
+        "type": "end",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:35"
+        },
+        "meaning": "Selektionsblock verlassen"
+      },
+      {
+        "id": "fb",
+        "type": "call",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:38"
+        },
+        "meaning": "Prüfregel beschaffen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:40"
+        },
+        "meaning": "Kalkulationen durchlaufen"
+      },
+      {
+        "id": "cv",
+        "type": "call",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:42"
+        },
+        "meaning": "Kalkulation prüfen und übernehmen"
+      },
+      {
+        "id": "cp",
+        "type": "call",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:44"
+        },
+        "meaning": "Ablehnung protokollieren"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:46"
+        },
+        "meaning": "Ende Selektionsblock"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:49"
+        },
+        "meaning": "Abschlussereignis"
+      },
+      {
+        "id": "ca",
+        "type": "call",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:51"
+        },
+        "meaning": "Protokoll ausgeben"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zco_kalk_uebernahme.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme.abap:51"
+        },
+        "meaning": "Programmende"
+      },
+      {
+        "id": "ks",
+        "type": "start",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:8"
+        },
+        "meaning": "Kalkulationsselektion"
+      },
+      {
+        "id": "kq",
+        "type": "read",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:10"
+        },
+        "meaning": "Materialkalkulationen zu Variante und Datum lesen"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:17"
+        },
+        "meaning": "Ende Kalkulationsselektion"
+      },
+      {
+        "id": "vs",
+        "type": "start",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:22"
+        },
+        "meaning": "Verarbeitung je Kalkulation"
+      },
+      {
+        "id": "vc",
+        "type": "call",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:25"
+        },
+        "meaning": "Kalkulation gegen Regel prüfen"
+      },
+      {
+        "id": "vcl",
+        "type": "action",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:28"
+        },
+        "meaning": "Ablehnung zählen"
+      },
+      {
+        "id": "vcx",
+        "type": "end",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:28"
+        },
+        "meaning": "Ausnahme an Aufrufer weitergeben"
+      },
+      {
+        "id": "vg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:31"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "vp1",
+        "type": "call",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:32"
+        },
+        "meaning": "Bestandene Prüfung protokollieren"
+      },
+      {
+        "id": "vr",
+        "type": "end",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:33"
+        },
+        "meaning": "Testlauf: nicht übernehmen"
+      },
+      {
+        "id": "vpu",
+        "type": "call",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:36"
+        },
+        "meaning": "Preis übernehmen"
+      },
+      {
+        "id": "ve",
+        "type": "end",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:37"
+        },
+        "meaning": "Ende Verarbeitung"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:42"
+        },
+        "meaning": "Preisübernahme"
+      },
+      {
+        "id": "pk",
+        "type": "call",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:50"
+        },
+        "meaning": "Kalkulierten Stückpreis ermitteln"
+      },
+      {
+        "id": "pb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:58"
+        },
+        "meaning": "Standardpreis in der Materialbewertung ändern"
+      },
+      {
+        "id": "prt",
+        "type": "read",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:68"
+        },
+        "meaning": "Fehlermeldung suchen"
+      },
+      {
+        "id": "pg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:69"
+        },
+        "meaning": "Preisänderung fehlgeschlagen?"
+      },
+      {
+        "id": "prb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:70"
+        },
+        "meaning": "Preisänderung verwerfen"
+      },
+      {
+        "id": "pl1",
+        "type": "call",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:71"
+        },
+        "meaning": "Fehler protokollieren"
+      },
+      {
+        "id": "pcm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:73"
+        },
+        "meaning": "Preisänderung festschreiben"
+      },
+      {
+        "id": "pi",
+        "type": "write",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:83"
+        },
+        "meaning": "Übernahme der Kalkulation vermerken"
+      },
+      {
+        "id": "pl2",
+        "type": "call",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:84"
+        },
+        "meaning": "Übernommenen Preis protokollieren"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:86"
+        },
+        "meaning": "Ende Preisübernahme"
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:91"
+        },
+        "meaning": "Protokollzeile sammeln"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:99"
+        },
+        "meaning": "Ende Protokollzeile"
+      },
+      {
+        "id": "os",
+        "type": "start",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:104"
+        },
+        "meaning": "Ausgabe"
+      },
+      {
+        "id": "ol",
+        "type": "loop",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:108"
+        },
+        "meaning": "Protokollzeilen durchlaufen"
+      },
+      {
+        "id": "ow",
+        "type": "output",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:109"
+        },
+        "meaning": "Protokollzeile ausgeben"
+      },
+      {
+        "id": "ow2",
+        "type": "output",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:112"
+        },
+        "meaning": "Zahl der Ablehnungen ausgeben"
+      },
+      {
+        "id": "oe",
+        "type": "end",
+        "anchor": {
+          "file": "zco_kalk_uebernahme_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_kalk_uebernahme_f01.abap:113"
+        },
+        "meaning": "Ende Ausgabe"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:32"
+        },
+        "meaning": "Regelbeschaffung"
+      },
+      {
+        "id": "fg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:34"
+        },
+        "meaning": "Keine Schwelle?"
+      },
+      {
+        "id": "fo1",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:35"
+        },
+        "meaning": "Basisregel erzeugen"
+      },
+      {
+        "id": "fo2",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:37"
+        },
+        "meaning": "Abweichungsregel mit Schwelle erzeugen"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:40"
+        },
+        "meaning": "Ende Regelbeschaffung"
+      },
+      {
+        "id": "bs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:43"
+        },
+        "meaning": "Basisprüfung"
+      },
+      {
+        "id": "bg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:47"
+        },
+        "meaning": "Kalkulation nicht fehlerfrei?"
+      },
+      {
+        "id": "bx1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:48"
+        },
+        "meaning": "Ablehnung: Kalkulationsstatus"
+      },
+      {
+        "id": "bq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:54"
+        },
+        "meaning": "Frühere Übernahme der Kalkulation suchen"
+      },
+      {
+        "id": "bg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:58"
+        },
+        "meaning": "Bereits übernommen?"
+      },
+      {
+        "id": "bx2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:59"
+        },
+        "meaning": "Ablehnung: bereits übernommen"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:64"
+        },
+        "meaning": "Ende Basisprüfung"
+      },
+      {
+        "id": "ks2",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:67"
+        },
+        "meaning": "Stückpreis ermitteln"
+      },
+      {
+        "id": "kq2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:71"
+        },
+        "meaning": "Summe der Kalkulationspositionen lesen"
+      },
+      {
+        "id": "kg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:80"
+        },
+        "meaning": "Losgröße fehlt?"
+      },
+      {
+        "id": "kr",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:81"
+        },
+        "meaning": "Preis null zurückgeben"
+      },
+      {
+        "id": "ka",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:83"
+        },
+        "meaning": "Stückpreis = Summe durch Losgröße"
+      },
+      {
+        "id": "ke2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_kalk_regel.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel.abap:84"
+        },
+        "meaning": "Ende Stückpreis"
+      },
+      {
+        "id": "as2",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:24"
+        },
+        "meaning": "Prüfung mit Preisabweichung"
+      },
+      {
+        "id": "asu",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:31"
+        },
+        "meaning": "Basisprüfung ausführen"
+      },
+      {
+        "id": "aq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:33"
+        },
+        "meaning": "Aktuellen Standardpreis lesen"
+      },
+      {
+        "id": "ag1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:38"
+        },
+        "meaning": "Kein Standardpreis?"
+      },
+      {
+        "id": "ar",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:39"
+        },
+        "meaning": "Neuteil ohne Abweichungsprüfung"
+      },
+      {
+        "id": "ak",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:43"
+        },
+        "meaning": "Kalkulierten Stückpreis ermitteln"
+      },
+      {
+        "id": "aa",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:44"
+        },
+        "meaning": "Prozentuale Abweichung berechnen"
+      },
+      {
+        "id": "ag2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:46"
+        },
+        "meaning": "Abweichung über Schwelle?"
+      },
+      {
+        "id": "ax",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:47"
+        },
+        "meaning": "Ablehnung: Abweichung"
+      },
+      {
+        "id": "ae2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_kalk_regel_abw.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_kalk_regel_abw.abap:52"
+        },
+        "meaning": "Ende Prüfung mit Preisabweichung"
+      }
+    ],
+    "edges": [
+      {
+        "from": "as",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "am",
+        "condition": "p_proz < 0 OR p_proz > 100"
+      },
+      {
+        "from": "am",
+        "to": "ame",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "ae",
+        "condition": "else"
+      },
+      {
+        "from": "ae",
+        "to": "s",
+        "condition": "always"
+      },
+      {
+        "from": "s",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "ks",
+        "to": "kq",
+        "condition": "always"
+      },
+      {
+        "from": "kq",
+        "to": "ke",
+        "condition": "always"
+      },
+      {
+        "from": "ke",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "m",
+        "condition": "gt_keko IS INITIAL"
+      },
+      {
+        "from": "m",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "r",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "fb",
+        "condition": "else"
+      },
+      {
+        "from": "fb",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "fg",
+        "condition": "always"
+      },
+      {
+        "from": "fg",
+        "to": "fo1",
+        "condition": "iv_proz IS INITIAL"
+      },
+      {
+        "from": "fg",
+        "to": "fo2",
+        "condition": "else"
+      },
+      {
+        "from": "fo1",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "fo2",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "cv",
+        "condition": "next row"
+      },
+      {
+        "from": "cv",
+        "to": "vs",
+        "condition": "always"
+      },
+      {
+        "from": "vs",
+        "to": "vc",
+        "condition": "always"
+      },
+      {
+        "from": "vc",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "vc",
+        "to": "as2",
+        "condition": "always"
+      },
+      {
+        "from": "bs",
+        "to": "bg1",
+        "condition": "always"
+      },
+      {
+        "from": "bg1",
+        "to": "bx1",
+        "condition": "is_keko-feh_sta <> 'KA'"
+      },
+      {
+        "from": "bg1",
+        "to": "bq",
+        "condition": "else"
+      },
+      {
+        "from": "bq",
+        "to": "bg2",
+        "condition": "always"
+      },
+      {
+        "from": "bg2",
+        "to": "bx2",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "bg2",
+        "to": "be",
+        "condition": "else"
+      },
+      {
+        "from": "be",
+        "to": "vg",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "aq",
+        "condition": "always"
+      },
+      {
+        "from": "bx1",
+        "to": "vcl",
+        "condition": "zcx_co_kalk"
+      },
+      {
+        "from": "bx2",
+        "to": "vcl",
+        "condition": "zcx_co_kalk"
+      },
+      {
+        "from": "as2",
+        "to": "asu",
+        "condition": "always"
+      },
+      {
+        "from": "asu",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "aq",
+        "to": "ag1",
+        "condition": "always"
+      },
+      {
+        "from": "ag1",
+        "to": "ar",
+        "condition": "sy-subrc <> 0 OR lv_stprs IS INITIAL"
+      },
+      {
+        "from": "ag1",
+        "to": "ak",
+        "condition": "else"
+      },
+      {
+        "from": "ar",
+        "to": "vg",
+        "condition": "always"
+      },
+      {
+        "from": "ak",
+        "to": "ks2",
+        "condition": "always"
+      },
+      {
+        "from": "kr",
+        "to": "aa",
+        "condition": "always"
+      },
+      {
+        "from": "ke2",
+        "to": "aa",
+        "condition": "always"
+      },
+      {
+        "from": "aa",
+        "to": "ag2",
+        "condition": "always"
+      },
+      {
+        "from": "ag2",
+        "to": "ax",
+        "condition": "lv_proz > mv_proz"
+      },
+      {
+        "from": "ag2",
+        "to": "ae2",
+        "condition": "else"
+      },
+      {
+        "from": "ax",
+        "to": "vcl",
+        "condition": "zcx_co_kalk"
+      },
+      {
+        "from": "ae2",
+        "to": "vg",
+        "condition": "always"
+      },
+      {
+        "from": "vcl",
+        "to": "vcx",
+        "condition": "always"
+      },
+      {
+        "from": "vcx",
+        "to": "cp",
+        "condition": "zcx_co_kalk"
+      },
+      {
+        "from": "cp",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "vg",
+        "to": "vp1",
+        "condition": "p_test = 'X'"
+      },
+      {
+        "from": "vp1",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "vr",
+        "condition": "always"
+      },
+      {
+        "from": "vr",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "vg",
+        "to": "vpu",
+        "condition": "else"
+      },
+      {
+        "from": "vpu",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "pk",
+        "condition": "always"
+      },
+      {
+        "from": "pk",
+        "to": "ks2",
+        "condition": "always"
+      },
+      {
+        "from": "kr",
+        "to": "pb",
+        "condition": "always"
+      },
+      {
+        "from": "ke2",
+        "to": "pb",
+        "condition": "always"
+      },
+      {
+        "from": "ks2",
+        "to": "kq2",
+        "condition": "always"
+      },
+      {
+        "from": "kq2",
+        "to": "kg",
+        "condition": "always"
+      },
+      {
+        "from": "kg",
+        "to": "kr",
+        "condition": "is_keko-losgr IS INITIAL"
+      },
+      {
+        "from": "kg",
+        "to": "ka",
+        "condition": "else"
+      },
+      {
+        "from": "ka",
+        "to": "ke2",
+        "condition": "always"
+      },
+      {
+        "from": "pb",
+        "to": "prt",
+        "condition": "always"
+      },
+      {
+        "from": "prt",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "prb",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "prb",
+        "to": "pl1",
+        "condition": "always"
+      },
+      {
+        "from": "pl1",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pcm",
+        "condition": "else"
+      },
+      {
+        "from": "pcm",
+        "to": "pi",
+        "condition": "always"
+      },
+      {
+        "from": "pi",
+        "to": "pl2",
+        "condition": "always"
+      },
+      {
+        "from": "pl2",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "ve",
+        "condition": "always"
+      },
+      {
+        "from": "ve",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rs",
+        "to": "re",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "se",
+        "condition": "no more rows"
+      },
+      {
+        "from": "se",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "ca",
+        "condition": "always"
+      },
+      {
+        "from": "ca",
+        "to": "os",
+        "condition": "always"
+      },
+      {
+        "from": "os",
+        "to": "ol",
+        "condition": "always"
+      },
+      {
+        "from": "ol",
+        "to": "ow",
+        "condition": "next row"
+      },
+      {
+        "from": "ow",
+        "to": "ol",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ol",
+        "to": "ow2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ow2",
+        "to": "oe",
+        "condition": "always"
+      },
+      {
+        "from": "oe",
+        "to": "ee",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zco_kalk_uebernahme_f01.abap:58 — kein Fachsatz „die Kalkulation wird in CK24 vorgemerkt und freigegeben“ (direkte Preisänderung; der CK24-Weg ist auskommentiert)",
+    "zcl_co_kalk_regel.abap:81 — kein Fachsatz „Kalkulationen ohne Losgröße werden abgelehnt“ (der Preis ist dann null; mit der Basisregel wird ein Preis null übernommen)",
+    "zco_kalk_uebernahme_f01.abap:28 — kein Fachsatz „die Ablehnung wird hier behandelt“ (CLEANUP zählt nur; die Ausnahme geht an den CATCH im Hauptprogramm weiter)",
+    "zco_kalk_uebernahme_f01.abap:68 — kein Fachsatz „auch Abbruchmeldungen führen zum Verwerfen“ (gesucht wird nur Typ E)"
+  ],
+  "processDescription": "Der Report übernimmt Plankalkulationen als neuen Standardpreis und ersetzt damit das Vormerken und Freigeben in CK24. Das Selektionsbild weist eine Abweichungsschwelle außerhalb 0 bis 100 Prozent zurück. Der Lauf liest die Materialkalkulationen zu Variante und Datum; ohne Treffer meldet er das und springt zum Abschlussereignis. Eine statische Fabrik liefert ohne Schwelle die Basisregel, mit Schwelle eine Unterklasse mit Abweichungsprüfung. Je Kalkulation prüft die Regel: nicht fehlerfrei kalkuliert oder bereits übernommen führt zur Ablehnung; die Unterklasse ruft die Basisprüfung und vergleicht dann den kalkulierten Stückpreis (Positionssumme durch Losgröße) mit dem Standardpreis, sofern es einen gibt. Ablehnungen laufen als Ausnahme durch einen CLEANUP-Block, der sie zählt, und werden im Hauptprogramm protokolliert. Im Testlauf wird eine bestandene Prüfung nur protokolliert; im Echtlauf setzt der Report den Stückpreis per BAPI als Standardpreis, verwirft bei Fehlermeldung oder schreibt fest, vermerkt die Übernahme in einer Kundentabelle und protokolliert. Zum Schluss gibt er das Protokoll und die Zahl der Ablehnungen aus."
+}

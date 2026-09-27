@@ -1,0 +1,39 @@
+{
+  "id": "BM-216",
+  "title": "Kitting-Reservierung für Fertigungsaufträge mit Sperr-Manager und Zuteilungsstrategien",
+  "domain": "MM",
+  "band": "sehr komplex",
+  "loc": 445,
+  "constructs": [
+    "RFC-Funktionsbaustein",
+    "Funktionsgruppe TOP/U01/C01/F01",
+    "Report als Aufrufer",
+    "Sperr-Manager-Klasse",
+    "TRY … CLEANUP verschachtelt",
+    "lokales Interface mit zwei Strategien",
+    "SELECT … ENDSELECT mit EXIT",
+    "BAPI_MATERIAL_AVAILABILITY",
+    "BAPI_RESERVATION_CREATE1",
+    "FORM RAISING",
+    "AUTHORITY-CHECK",
+    "CL_SALV_TABLE"
+  ],
+  "scenario": "Kitting für eine Montagelinie: das MES reserviert per RFC die Komponenten eines Fertigungsauftrags für den Transport ins Produktionsversorgungslager; ein Report dient als Rückfall.",
+  "s4_issues": [
+    "RESB/AFKO/AUFK/JEST-Direktzugriff",
+    "MCHB-Bestände in S/4 aus MATDOC",
+    "Materialnummer 40 Zeichen",
+    "BAPI_MATERIAL_AVAILABILITY statt aATP-API"
+  ],
+  "wave": 3,
+  "module": "MM-IM/PP",
+  "edge_constructs": [
+    "CLEANUP mit anschließendem CATCH",
+    "Ausnahme aus FORM",
+    "RAISE im Schleifenrumpf",
+    "CHECK am Methodenanfang",
+    "Hilfs-FORM, die nur protokolliert, mit vier Aufrufern",
+    "RETURN in Strategie"
+  ],
+  "oo": true
+}

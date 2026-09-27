@@ -1,0 +1,1334 @@
+{
+  "id": "BM-212",
+  "title": "Inventurdifferenzen buchen mit wertabhängigen Freigaberegeln",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Polymorpher Aufruf is_auto_postable: Kanten zu beiden Regeln mit „always“.",
+    "Die Ausnahme cx_salv_msg entsteht im opaken SALV-Aufruf; Kante dt→dm mit dem Ausnahmenamen."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "IKPF",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_pi_diff_post_f01.abap",
+        "line": 5,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_pi_diff_post_f01.abap:5"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ISEG",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_pi_diff_post_f01.abap",
+        "line": 5,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_pi_diff_post_f01.abap:5"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MBEW",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_pi_diff_post_f01.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_pi_diff_post_f01.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_MATPHYSINV_POSTDIFF",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_pi_diff_post_f01.abap",
+        "line": 62,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_pi_diff_post_f01.abap:62"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_PI_LIMIT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_pi_diff_post_c01.abap",
+        "line": 63,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_pi_diff_post_c01.abap:63"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_PI_HOLD",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zmm_pi_diff_post_f01.abap",
+        "line": 86,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_pi_diff_post_f01.abap:86"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-212-B01",
+      "text": "Selektiert werden gezählte, noch nicht als Differenz gebuchte und nicht gelöschte Inventurpositionen der gewählten Werke und Belege.",
+      "anchors": [
+        {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:5"
+        }
+      ]
+    },
+    {
+      "id": "BM-212-B02",
+      "text": "Jede Position wird mit dem Bewertungspreis bewertet: gleitender Durchschnittspreis oder Standardpreis je Preissteuerung; ohne Preis bleibt der Wert 0.",
+      "anchors": [
+        {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:16"
+        },
+        {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:18"
+        },
+        {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:23"
+        },
+        {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-212-B03",
+      "text": "Gibt es keine Differenzen, endet der Lauf mit einer Meldung.",
+      "anchors": [
+        {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:41"
+        },
+        {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:42"
+        },
+        {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-212-B04",
+      "text": "Welche Freigaberegel gilt, ist je Werk gepflegt: Prozentregel oder – auch ungepflegt – absolute Wertgrenze.",
+      "anchors": [
+        {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:63"
+        },
+        {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-212-B05",
+      "text": "Nach der absoluten Regel ist eine Position direkt buchbar, wenn der Betrag ihres Differenzwerts die Werksgrenze nicht übersteigt.",
+      "anchors": [
+        {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-212-B06",
+      "text": "Nach der Prozentregel ist sie direkt buchbar, wenn die Mengenabweichung in Prozent vom Buchbestand die Grenze nicht übersteigt; bei Buchbestand null nie.",
+      "anchors": [
+        {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:42"
+        },
+        {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:44"
+        },
+        {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-212-B07",
+      "text": "Direkt buchbare Positionen werden zum Buchen, alle anderen zur Freigabe vorgesehen.",
+      "anchors": [
+        {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:48"
+        },
+        {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:49"
+        },
+        {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-212-B08",
+      "text": "Im Testlauf werden alle Positionen mit Wert und Entscheidung als ALV-Liste angezeigt und nichts gebucht.",
+      "anchors": [
+        {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:55"
+        },
+        {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-212-B09",
+      "text": "Im Echtlauf werden die buchbaren Differenzen je Inventurbeleg gebucht; bei Fehlern wird der Beleg verworfen und als fehlgeschlagen ausgegeben, sonst festgeschrieben und als gebucht ausgegeben.",
+      "anchors": [
+        {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:57"
+        },
+        {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:62"
+        },
+        {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:70"
+        },
+        {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:71"
+        },
+        {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:72"
+        },
+        {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:74"
+        },
+        {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-212-B10",
+      "text": "Freigabepflichtige Positionen werden mit Anleger und Datum für das Werkscontrolling vorgemerkt.",
+      "anchors": [
+        {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:82"
+        },
+        {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:86"
+        },
+        {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:88"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:39"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "cs",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:40"
+        },
+        "meaning": "Differenzpositionen selektieren und bewerten"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:41"
+        },
+        "meaning": "Keine Differenzen?"
+      },
+      {
+        "id": "o0",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:42"
+        },
+        "meaning": "Keine Differenzen melden"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:43"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:46"
+        },
+        "meaning": "Je Differenzposition"
+      },
+      {
+        "id": "cf",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:47"
+        },
+        "meaning": "Freigaberegel des Werks holen"
+      },
+      {
+        "id": "cr",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:48"
+        },
+        "meaning": "Regel anwenden (polymorph)"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:48"
+        },
+        "meaning": "Direkt buchbar?"
+      },
+      {
+        "id": "a1",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:49"
+        },
+        "meaning": "Zum Buchen vorsehen"
+      },
+      {
+        "id": "a2",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:51"
+        },
+        "meaning": "Zur Freigabe vorsehen"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:55"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "cd",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:56"
+        },
+        "meaning": "Ergebnis anzeigen"
+      },
+      {
+        "id": "cp",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:58"
+        },
+        "meaning": "Differenzen buchen/vormerken"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_pi_diff_post.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post.abap:59"
+        },
+        "meaning": "Reportende"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:4"
+        },
+        "meaning": "Selektion"
+      },
+      {
+        "id": "sq",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:5"
+        },
+        "meaning": "Gezaehlte, ungebuchte, nicht geloeschte Inventurpositionen lesen"
+      },
+      {
+        "id": "sl",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:16"
+        },
+        "meaning": "Je Position bewerten"
+      },
+      {
+        "id": "sm",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:18"
+        },
+        "meaning": "Bewertungspreis lesen"
+      },
+      {
+        "id": "sg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:23"
+        },
+        "meaning": "Preis vorhanden?"
+      },
+      {
+        "id": "sa",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:24"
+        },
+        "meaning": "Differenzwert = Mengendifferenz x Preis (gleitend oder Standard)"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:29"
+        }
+      },
+      {
+        "id": "ds",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:31"
+        },
+        "meaning": "Anzeige"
+      },
+      {
+        "id": "dt",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:35"
+        },
+        "meaning": "ALV-Objekt erzeugen"
+      },
+      {
+        "id": "dd",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:37"
+        },
+        "meaning": "Positionen mit Wert und Entscheidung anzeigen"
+      },
+      {
+        "id": "dm",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:39"
+        },
+        "meaning": "ALV-Fehler melden"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:41"
+        }
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:43"
+        },
+        "meaning": "Buchung"
+      },
+      {
+        "id": "pl",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:57"
+        },
+        "meaning": "Je Inventurbeleg mit buchbaren Positionen"
+      },
+      {
+        "id": "pb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:62"
+        },
+        "meaning": "Inventurdifferenzen buchen"
+      },
+      {
+        "id": "pg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:70"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "prb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:71"
+        },
+        "meaning": "Verwerfen"
+      },
+      {
+        "id": "pw1",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:72"
+        },
+        "meaning": "Fehler ausgeben"
+      },
+      {
+        "id": "pc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:74"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "pw2",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:77"
+        },
+        "meaning": "Erfolg ausgeben"
+      },
+      {
+        "id": "hl",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:82"
+        },
+        "meaning": "Freigabepflichtige Positionen"
+      },
+      {
+        "id": "hm",
+        "type": "write",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:86"
+        },
+        "meaning": "Zur Freigabe vormerken"
+      },
+      {
+        "id": "hc",
+        "type": "transaction",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:88"
+        },
+        "meaning": "Vormerkungen festschreiben"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_pi_diff_post_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_f01.abap:89"
+        }
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:58"
+        },
+        "meaning": "Regelfabrik"
+      },
+      {
+        "id": "fq",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:63"
+        },
+        "meaning": "Regeltyp und Grenzen des Werks lesen"
+      },
+      {
+        "id": "fc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:66"
+        },
+        "meaning": "Regeltyp?"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:73"
+        }
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:23"
+        },
+        "meaning": "Absolute Regel"
+      },
+      {
+        "id": "aa",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:24"
+        },
+        "meaning": "Betrag des Differenzwerts <= Grenze"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:25"
+        }
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:41"
+        },
+        "meaning": "Prozentregel"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:42"
+        },
+        "meaning": "Buchbestand null?"
+      },
+      {
+        "id": "rr",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:44"
+        },
+        "meaning": "Nicht direkt buchbar"
+      },
+      {
+        "id": "ra",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:46"
+        },
+        "meaning": "Prozentuale Abweichung <= Grenze"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "meaning": "Blockende",
+        "anchor": {
+          "file": "zmm_pi_diff_post_c01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_pi_diff_post_c01.abap:47"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "sq",
+        "condition": "always"
+      },
+      {
+        "from": "sq",
+        "to": "sl",
+        "condition": "always"
+      },
+      {
+        "from": "sl",
+        "to": "sm",
+        "condition": "next row"
+      },
+      {
+        "from": "sm",
+        "to": "sg",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "sa",
+        "condition": "sy-subrc = 0 AND ls_mbew-peinh > 0"
+      },
+      {
+        "from": "sg",
+        "to": "sl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "sa",
+        "to": "sl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "sl",
+        "to": "se",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g0",
+        "to": "o0",
+        "condition": "gt_items IS INITIAL"
+      },
+      {
+        "from": "o0",
+        "to": "x0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "lp",
+        "to": "cf",
+        "condition": "next row"
+      },
+      {
+        "from": "cf",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "cr",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "fq",
+        "condition": "always"
+      },
+      {
+        "from": "fq",
+        "to": "fc",
+        "condition": "always"
+      },
+      {
+        "from": "fc",
+        "to": "fe",
+        "condition": "WHEN 'PCT'"
+      },
+      {
+        "from": "fc",
+        "to": "fe",
+        "condition": "else"
+      },
+      {
+        "from": "cr",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "cr",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "rr",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "as",
+        "to": "aa",
+        "condition": "always"
+      },
+      {
+        "from": "aa",
+        "to": "ae",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rr",
+        "condition": "is_item-buchm = 0"
+      },
+      {
+        "from": "rg",
+        "to": "ra",
+        "condition": "else"
+      },
+      {
+        "from": "ra",
+        "to": "re",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "a1",
+        "condition": "lo_rule->is_auto_postable( <gs_item> ) = abap_true"
+      },
+      {
+        "from": "gr",
+        "to": "a2",
+        "condition": "else"
+      },
+      {
+        "from": "a1",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "a2",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "gt",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gt",
+        "to": "cd",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "gt",
+        "to": "cp",
+        "condition": "else"
+      },
+      {
+        "from": "cd",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "de",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "ds",
+        "to": "dt",
+        "condition": "always"
+      },
+      {
+        "from": "dt",
+        "to": "dd",
+        "condition": "always"
+      },
+      {
+        "from": "dd",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "dt",
+        "to": "dm",
+        "condition": "cx_salv_msg"
+      },
+      {
+        "from": "dm",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "cp",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "pl",
+        "condition": "always"
+      },
+      {
+        "from": "pl",
+        "to": "pb",
+        "condition": "next row"
+      },
+      {
+        "from": "pb",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "prb",
+        "condition": "line_exists( lt_return[ type = 'E' ] ) OR line_exists( lt_return[ type = 'A' ] )"
+      },
+      {
+        "from": "pg",
+        "to": "pc",
+        "condition": "else"
+      },
+      {
+        "from": "prb",
+        "to": "pw1",
+        "condition": "always"
+      },
+      {
+        "from": "pc",
+        "to": "pw2",
+        "condition": "always"
+      },
+      {
+        "from": "pw1",
+        "to": "pl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pw2",
+        "to": "pl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pl",
+        "to": "hl",
+        "condition": "no more rows"
+      },
+      {
+        "from": "hl",
+        "to": "hm",
+        "condition": "next row"
+      },
+      {
+        "from": "hm",
+        "to": "hl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "hl",
+        "to": "hc",
+        "condition": "no more rows"
+      },
+      {
+        "from": "hc",
+        "to": "pe",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zmm_pi_diff_post_f01.abap:86 — kein Fachsatz „freigabepflichtige Differenzen werden nach Freigabe gebucht“ — der Report merkt nur vor; eine Buchung nach Freigabe ist nicht im Code.",
+    "zmm_pi_diff_post_c01.abap:66 — kein Fachsatz „ohne gepflegte Grenze wird alles gebucht“ — ungepflegt gilt die absolute Regel mit Grenze 0, also geht fast alles zur Freigabe.",
+    "zmm_pi_diff_post_f01.abap:37 — kein Fachsatz „im Testlauf werden die Vormerkungen geschrieben“ — der Testlauf zeigt nur an."
+  ],
+  "processDescription": "Der Lauf selektiert gezählte, noch nicht gebuchte Inventurpositionen der gewählten Werke und bewertet jede Mengendifferenz mit dem gleitenden oder dem Standardpreis. Gibt es keine, endet er mit einer Meldung. Je Werk ist eine Freigaberegel gepflegt: Prozentabweichung vom Buchbestand oder absolute Wertgrenze, die auch gilt, wenn nichts gepflegt ist. Positionen innerhalb der Grenze werden zum Buchen, alle anderen zur Freigabe vorgesehen. Im Testlauf zeigt eine ALV-Liste das Ergebnis. Im Echtlauf werden die buchbaren Differenzen je Inventurbeleg über den BAPI gebucht und das Ergebnis je Beleg ausgegeben; freigabepflichtige Positionen werden in einer Z-Tabelle für das Werkscontrolling vorgemerkt und festgeschrieben."
+}

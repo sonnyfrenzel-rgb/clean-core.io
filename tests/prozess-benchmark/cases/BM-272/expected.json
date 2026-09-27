@@ -1,0 +1,1636 @@
+{
+  "id": "BM-272",
+  "title": "Nachverarbeitungsmonitor EWM-Schnittstellenfehler",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZEWM_ERRQ",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zewm_errq_mon_cls.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zewm_errq_mon_cls.abap:45"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zewm_errq_mon_cls.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zewm_errq_mon_cls.abap:28"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZEWM_ERRQ",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zewm_errq_mon_cls.abap",
+        "line": 105,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zewm_errq_mon_cls.abap:105"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEWM_ERRQ",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zewm_errq_mon_cls.abap",
+        "line": 125,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zewm_errq_mon_cls.abap:125"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zewm_errq_mon_cls.abap",
+        "line": 155,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zewm_errq_mon_cls.abap:155"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-272-B01",
+      "text": "Den Monitor darf nur öffnen, wer für die Lagernummer die Anzeigeberechtigung hat; sonst bricht er mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zewm_errq_mon.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon.abap:16"
+        },
+        {
+          "file": "zewm_errq_mon.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon.abap:19"
+        },
+        {
+          "file": "zewm_errq_mon.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-272-B02",
+      "text": "Es werden die Schnittstellenfehler der gewählten Lagernummern, Schnittstellen und Tage gelesen, standardmäßig nur offene Einträge (Status E), auf Wunsch alle, die neuesten zuerst.",
+      "anchors": [
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:22"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:44"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:45"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-272-B03",
+      "text": "Gibt es keine Einträge, erscheint ein Hinweis und der Monitor endet.",
+      "anchors": [
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:23"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:24"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-272-B04",
+      "text": "Die Einträge werden als ALV-Liste mit den Zusatzfunktionen Nachverarbeiten und Verwerfen und mit Doppelklick auf den Fehlertext angezeigt.",
+      "anchors": [
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:28"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:37"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:38"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-272-B05",
+      "text": "Ein Doppelklick auf eine Zeile zeigt den Fehlertext des Eintrags.",
+      "anchors": [
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:74"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:76"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-272-B06",
+      "text": "Nachverarbeiten verlangt markierte Zeilen und eine eigene Berechtigung; fehlt eins davon, erscheint ein Hinweis und nichts wird verarbeitet.",
+      "anchors": [
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:88"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:89"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:93"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:96"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-272-B07",
+      "text": "Nur noch offene Einträge werden nachverarbeitet; jeder wird vorher gesperrt, und ist er von jemand anderem gesperrt, wird er als Fehler gezählt und übergangen.",
+      "anchors": [
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:103"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:105"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:112"
+        }
+      ]
+    },
+    {
+      "id": "BM-272-B08",
+      "text": "Je Eintrag wird der im Eintrag hinterlegte Nachverarbeitungsbaustein der Schnittstelle aufgerufen; welche Buchung er ausführt, ist im Fall nicht sichtbar.",
+      "anchors": [
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:118"
+        }
+      ]
+    },
+    {
+      "id": "BM-272-B09",
+      "text": "Endet der Baustein ohne Ausnahme, wird der Eintrag mit Bearbeiter und Datum als verarbeitet markiert, sonst wird sein Versuchszähler erhöht; danach wird die Sperre gelöst.",
+      "anchors": [
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:124"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:125"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:131"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:138"
+        }
+      ]
+    },
+    {
+      "id": "BM-272-B10",
+      "text": "Nach der Nachverarbeitung wird festgeschrieben und die Zahl erfolgreicher und fehlerhafter Einträge gemeldet.",
+      "anchors": [
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:143"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:144"
+        }
+      ]
+    },
+    {
+      "id": "BM-272-B11",
+      "text": "Verwerfen setzt markierte Einträge nach Bestätigung einer Sicherheitsabfrage logisch auf gelöscht (Status D), damit die Historie für die Revision erhalten bleibt; ohne Markierung oder Bestätigung geschieht nichts.",
+      "anchors": [
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:153"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:155"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:161"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:168"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:173"
+        }
+      ]
+    },
+    {
+      "id": "BM-272-B12",
+      "text": "Nach jeder der beiden Funktionen werden die Einträge neu gelesen und die Liste aktualisiert; andere Funktionen lösen nichts aus.",
+      "anchors": [
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:61"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:67"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:69"
+        },
+        {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:70"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zewm_errq_mon.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon.abap:15"
+        },
+        "meaning": "Monitorstart"
+      },
+      {
+        "id": "auth",
+        "type": "action",
+        "anchor": {
+          "file": "zewm_errq_mon.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon.abap:16"
+        },
+        "meaning": "Anzeigeberechtigung für die Lagernummer prüfen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zewm_errq_mon.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon.abap:19"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "me",
+        "type": "output",
+        "anchor": {
+          "file": "zewm_errq_mon.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon.abap:20"
+        },
+        "meaning": "Fehler: keine Berechtigung"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "zewm_errq_mon.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon.abap:20"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "crun",
+        "type": "call",
+        "anchor": {
+          "file": "zewm_errq_mon.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon.abap:24"
+        },
+        "meaning": "Monitor ausführen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zewm_errq_mon.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon.abap:24"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:21"
+        },
+        "meaning": "Monitor aufbauen"
+      },
+      {
+        "id": "rsel",
+        "type": "call",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:22"
+        },
+        "meaning": "Fehlereinträge selektieren"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:23"
+        },
+        "meaning": "Keine Einträge?"
+      },
+      {
+        "id": "rm",
+        "type": "output",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:24"
+        },
+        "meaning": "Hinweis: keine Einträge"
+      },
+      {
+        "id": "rr1",
+        "type": "end",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:25"
+        },
+        "meaning": "Methode verlassen"
+      },
+      {
+        "id": "rf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:28"
+        },
+        "meaning": "ALV-Liste erzeugen"
+      },
+      {
+        "id": "rr2",
+        "type": "end",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:31"
+        },
+        "meaning": "Ohne Liste verlassen"
+      },
+      {
+        "id": "rh1",
+        "type": "action",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:37"
+        },
+        "meaning": "Zusatzfunktionen Nachverarbeiten/Verwerfen anmelden"
+      },
+      {
+        "id": "rh2",
+        "type": "action",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:38"
+        },
+        "meaning": "Doppelklick anmelden"
+      },
+      {
+        "id": "rd",
+        "type": "output",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:39"
+        },
+        "meaning": "Fehlerliste anzeigen"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:40"
+        },
+        "meaning": "Ende Aufbau"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:43"
+        },
+        "meaning": "Selektion"
+      },
+      {
+        "id": "sg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:44"
+        },
+        "meaning": "Auch verarbeitete Einträge?"
+      },
+      {
+        "id": "sq1",
+        "type": "read",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:45"
+        },
+        "meaning": "Alle Einträge der Selektion lesen"
+      },
+      {
+        "id": "sq2",
+        "type": "read",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:50"
+        },
+        "meaning": "Nur offene Fehlereinträge (Status E) lesen"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:57"
+        },
+        "meaning": "Neueste zuerst sortiert"
+      },
+      {
+        "id": "us",
+        "type": "start",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:60"
+        },
+        "meaning": "Zusatzfunktion gewählt"
+      },
+      {
+        "id": "uc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:61"
+        },
+        "meaning": "Welche Funktion?"
+      },
+      {
+        "id": "ur",
+        "type": "call",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:63"
+        },
+        "meaning": "Nachverarbeiten"
+      },
+      {
+        "id": "ud",
+        "type": "call",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:65"
+        },
+        "meaning": "Verwerfen"
+      },
+      {
+        "id": "ux",
+        "type": "end",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:67"
+        },
+        "meaning": "Andere Funktion: nichts tun"
+      },
+      {
+        "id": "usel",
+        "type": "call",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:69"
+        },
+        "meaning": "Einträge neu lesen"
+      },
+      {
+        "id": "urf",
+        "type": "output",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:70"
+        },
+        "meaning": "Liste aktualisieren"
+      },
+      {
+        "id": "ue",
+        "type": "end",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:71"
+        },
+        "meaning": "Ende Funktion"
+      },
+      {
+        "id": "ds",
+        "type": "start",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:74"
+        },
+        "meaning": "Doppelklick auf Zeile"
+      },
+      {
+        "id": "dg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:76"
+        },
+        "meaning": "Zeile gefunden?"
+      },
+      {
+        "id": "dm",
+        "type": "output",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:77"
+        },
+        "meaning": "Fehlertext anzeigen"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:79"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:82"
+        },
+        "meaning": "Markierte Einträge nachverarbeiten"
+      },
+      {
+        "id": "pg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:88"
+        },
+        "meaning": "Nichts markiert?"
+      },
+      {
+        "id": "pm1",
+        "type": "output",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:89"
+        },
+        "meaning": "Hinweis: Zeilen markieren"
+      },
+      {
+        "id": "pr1",
+        "type": "end",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:90"
+        },
+        "meaning": "Methode verlassen"
+      },
+      {
+        "id": "pa",
+        "type": "action",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:93"
+        },
+        "meaning": "Berechtigung zur Nachverarbeitung prüfen"
+      },
+      {
+        "id": "pg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:96"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "pm2",
+        "type": "output",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:97"
+        },
+        "meaning": "Hinweis: keine Berechtigung"
+      },
+      {
+        "id": "pr2",
+        "type": "end",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:98"
+        },
+        "meaning": "Methode verlassen"
+      },
+      {
+        "id": "pl",
+        "type": "loop",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:101"
+        },
+        "meaning": "Markierte Zeilen durchlaufen"
+      },
+      {
+        "id": "pck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:103"
+        },
+        "meaning": "Eintrag noch offen?"
+      },
+      {
+        "id": "penq",
+        "type": "lock",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:105"
+        },
+        "meaning": "Fehlereintrag sperren"
+      },
+      {
+        "id": "pg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:112"
+        },
+        "meaning": "Gesperrt durch anderen?"
+      },
+      {
+        "id": "ph",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:118"
+        },
+        "meaning": "Schnittstellenspezifischen Nachverarbeitungsbaustein aufrufen (dynamisch)"
+      },
+      {
+        "id": "pg4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:124"
+        },
+        "meaning": "Nachverarbeitung ohne Ausnahme?"
+      },
+      {
+        "id": "pu1",
+        "type": "write",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:125"
+        },
+        "meaning": "Eintrag als verarbeitet (P) mit Bearbeiter markieren"
+      },
+      {
+        "id": "pu2",
+        "type": "write",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:131"
+        },
+        "meaning": "Versuchszähler erhöhen"
+      },
+      {
+        "id": "pdeq",
+        "type": "lock",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:138"
+        },
+        "meaning": "Sperre lösen"
+      },
+      {
+        "id": "pcw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:143"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "pms",
+        "type": "output",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:144"
+        },
+        "meaning": "Anzahl erfolgreich/fehlerhaft melden"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:145"
+        },
+        "meaning": "Ende Nachverarbeiten"
+      },
+      {
+        "id": "xs",
+        "type": "start",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:148"
+        },
+        "meaning": "Markierte Einträge verwerfen"
+      },
+      {
+        "id": "xck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:153"
+        },
+        "meaning": "Etwas markiert?"
+      },
+      {
+        "id": "xpop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:155"
+        },
+        "meaning": "Sicherheitsabfrage"
+      },
+      {
+        "id": "xg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:161"
+        },
+        "meaning": "Nicht bestätigt?"
+      },
+      {
+        "id": "xr",
+        "type": "end",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:162"
+        },
+        "meaning": "Abbruch ohne Änderung"
+      },
+      {
+        "id": "xl",
+        "type": "loop",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:165"
+        },
+        "meaning": "Markierte Zeilen durchlaufen"
+      },
+      {
+        "id": "xu",
+        "type": "write",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:168"
+        },
+        "meaning": "Eintrag logisch löschen (Status D)"
+      },
+      {
+        "id": "xcw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:173"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "xe2",
+        "type": "end",
+        "anchor": {
+          "file": "zewm_errq_mon_cls.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zewm_errq_mon_cls.abap:174"
+        },
+        "meaning": "Ende Verwerfen"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "auth",
+        "condition": "always"
+      },
+      {
+        "from": "auth",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "me",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "me",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "crun",
+        "condition": "else"
+      },
+      {
+        "from": "crun",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "rr1",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "rr2",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "rsel",
+        "condition": "always"
+      },
+      {
+        "from": "rsel",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rm",
+        "condition": "mt_errq IS INITIAL"
+      },
+      {
+        "from": "rm",
+        "to": "rr1",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rf",
+        "condition": "else"
+      },
+      {
+        "from": "rf",
+        "to": "rr2",
+        "condition": "cx_salv_msg"
+      },
+      {
+        "from": "rf",
+        "to": "rh1",
+        "condition": "always"
+      },
+      {
+        "from": "rh1",
+        "to": "rh2",
+        "condition": "always"
+      },
+      {
+        "from": "rh2",
+        "to": "rd",
+        "condition": "always"
+      },
+      {
+        "from": "rd",
+        "to": "re",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "sg",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "sq1",
+        "condition": "p_all = abap_true"
+      },
+      {
+        "from": "sg",
+        "to": "sq2",
+        "condition": "else"
+      },
+      {
+        "from": "sq1",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "sq2",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "us",
+        "to": "uc",
+        "condition": "always"
+      },
+      {
+        "from": "uc",
+        "to": "ur",
+        "condition": "WHEN 'REPROC'"
+      },
+      {
+        "from": "uc",
+        "to": "ud",
+        "condition": "WHEN 'DISCARD'"
+      },
+      {
+        "from": "uc",
+        "to": "ux",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "ur",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "usel",
+        "condition": "always"
+      },
+      {
+        "from": "pr1",
+        "to": "usel",
+        "condition": "always"
+      },
+      {
+        "from": "pr2",
+        "to": "usel",
+        "condition": "always"
+      },
+      {
+        "from": "ud",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "xe2",
+        "to": "usel",
+        "condition": "always"
+      },
+      {
+        "from": "xr",
+        "to": "usel",
+        "condition": "always"
+      },
+      {
+        "from": "usel",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "urf",
+        "condition": "always"
+      },
+      {
+        "from": "urf",
+        "to": "ue",
+        "condition": "always"
+      },
+      {
+        "from": "ds",
+        "to": "dg",
+        "condition": "always"
+      },
+      {
+        "from": "dg",
+        "to": "dm",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "dm",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "dg",
+        "to": "de",
+        "condition": "else"
+      },
+      {
+        "from": "ps",
+        "to": "pg1",
+        "condition": "always"
+      },
+      {
+        "from": "pg1",
+        "to": "pm1",
+        "condition": "lt_rows IS INITIAL"
+      },
+      {
+        "from": "pm1",
+        "to": "pr1",
+        "condition": "always"
+      },
+      {
+        "from": "pg1",
+        "to": "pa",
+        "condition": "else"
+      },
+      {
+        "from": "pa",
+        "to": "pg2",
+        "condition": "always"
+      },
+      {
+        "from": "pg2",
+        "to": "pm2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pm2",
+        "to": "pr2",
+        "condition": "always"
+      },
+      {
+        "from": "pg2",
+        "to": "pl",
+        "condition": "else"
+      },
+      {
+        "from": "pl",
+        "to": "pck",
+        "condition": "next row"
+      },
+      {
+        "from": "pck",
+        "to": "pl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pck",
+        "to": "penq",
+        "condition": "<ls_errq>-status = 'E'"
+      },
+      {
+        "from": "penq",
+        "to": "pg3",
+        "condition": "always"
+      },
+      {
+        "from": "pg3",
+        "to": "pl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pg3",
+        "to": "ph",
+        "condition": "else"
+      },
+      {
+        "from": "ph",
+        "to": "pg4",
+        "condition": "always"
+      },
+      {
+        "from": "pg4",
+        "to": "pu1",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "pg4",
+        "to": "pu2",
+        "condition": "else"
+      },
+      {
+        "from": "pu1",
+        "to": "pdeq",
+        "condition": "always"
+      },
+      {
+        "from": "pu2",
+        "to": "pdeq",
+        "condition": "always"
+      },
+      {
+        "from": "pdeq",
+        "to": "pl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pl",
+        "to": "pcw",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pcw",
+        "to": "pms",
+        "condition": "always"
+      },
+      {
+        "from": "pms",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "xs",
+        "to": "xck",
+        "condition": "always"
+      },
+      {
+        "from": "xck",
+        "to": "xe2",
+        "condition": "else"
+      },
+      {
+        "from": "xck",
+        "to": "xpop",
+        "condition": "lt_rows IS NOT INITIAL"
+      },
+      {
+        "from": "xpop",
+        "to": "xg",
+        "condition": "always"
+      },
+      {
+        "from": "xg",
+        "to": "xr",
+        "condition": "lv_answer <> '1'"
+      },
+      {
+        "from": "xg",
+        "to": "xl",
+        "condition": "else"
+      },
+      {
+        "from": "xl",
+        "to": "xu",
+        "condition": "next row"
+      },
+      {
+        "from": "xu",
+        "to": "xl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "xl",
+        "to": "xcw",
+        "condition": "no more rows"
+      },
+      {
+        "from": "xcw",
+        "to": "xe2",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zewm_errq_mon_cls.abap:118 — kein Fachsatz „Lageraufgabe/Lieferung wird gebucht“ (der Baustein wird dynamisch aus dem Eintrag bestimmt; sein Inhalt liegt nicht im Fall)",
+    "zewm_errq_mon_cls.abap:168 — kein Fachsatz „Einträge werden physisch gelöscht“ (nur Status D)",
+    "zewm_errq_mon_cls.abap:112 — kein Fachsatz „gesperrte Einträge werden später automatisch erneut versucht“ (sie werden nur als Fehler gezählt und übergangen)"
+  ],
+  "processDescription": "Der Schnittstellen-Support öffnet den Monitor für eine oder mehrere Lagernummern; ohne Anzeigeberechtigung bricht er ab. Der Monitor liest die Schnittstellenfehler der Selektion, standardmäßig nur offene, und zeigt sie als ALV-Liste; gibt es keine, endet er mit Hinweis. Ein Doppelklick zeigt den Fehlertext. Mit „Nachverarbeiten“ werden die markierten, noch offenen Einträge nach einer eigenen Berechtigungsprüfung einzeln gesperrt und über den im Eintrag hinterlegten Nachverarbeitungsbaustein ihrer Schnittstelle erneut verarbeitet; gelingt das, wird der Eintrag als verarbeitet markiert, sonst sein Versuchszähler erhöht, gesperrte Einträge werden übergangen. Danach wird festgeschrieben und das Ergebnis gemeldet. Mit „Verwerfen“ werden markierte Einträge nach Sicherheitsabfrage logisch gelöscht. Nach beiden Funktionen wird die Liste neu gelesen und aktualisiert."
+}

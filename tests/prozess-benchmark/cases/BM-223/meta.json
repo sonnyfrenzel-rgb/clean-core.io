@@ -1,0 +1,30 @@
+{
+  "id": "BM-223",
+  "title": "Kostenstellen für Ist-Primärkosten sperren",
+  "domain": "CO",
+  "band": "mittel",
+  "loc": 73,
+  "constructs": [
+    "REPORT",
+    "SELECT-OPTIONS",
+    "AUTHORITY-CHECK",
+    "CONTINUE",
+    "UPDATE",
+    "COMMIT WORK",
+    "PERFORM",
+    "MESSAGE E/S"
+  ],
+  "scenario": "Jahresabschluss-Hilfsreport im Controlling, der Kostenstellen für Istbuchungen sperrt; in der Transformation wegen direktem Stammdaten-UPDATE auffällig.",
+  "s4_issues": [
+    "Direktes UPDATE auf CSKS umgeht Änderungsbelege und Stammdaten-APIs",
+    "Kostenstellensperre in S/4 besser über API/Mass Maintenance"
+  ],
+  "wave": 3,
+  "module": "CO-OM-CCA",
+  "edge_constructs": [
+    "CONTINUE nach Protokollaufruf",
+    "MESSAGE E in START-OF-SELECTION",
+    "Protokollroutine mehrfach gerufen"
+  ],
+  "oo": false
+}

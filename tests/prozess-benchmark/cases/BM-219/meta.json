@@ -1,0 +1,35 @@
+{
+  "id": "BM-219",
+  "title": "Dialog zur Kreditfreigabe mit Dynpro-Modulen und Zustandsklassen",
+  "domain": "SD",
+  "band": "sehr komplex",
+  "loc": 395,
+  "constructs": [
+    "Dialogreport mit CALL SCREEN",
+    "PBO/PAI-Module",
+    "FIELD … MODULE ON REQUEST",
+    "LEAVE TO SCREEN / LEAVE PROGRAM",
+    "Zustandsklassen über lokales Interface",
+    "AUTHORITY-CHECK",
+    "SD_ORDER_CREDIT_RELEASE",
+    "BAPI_SALESORDER_CHANGE",
+    "COMMIT/ROLLBACK WORK",
+    "auskommentierter BDC-Altstand"
+  ],
+  "scenario": "Eigene Kreditfreigabetransaktion des Kreditmanagements mit Begründungspflicht, die in einem ECC-System VKM3 ersetzt.",
+  "s4_issues": [
+    "VBUK entfällt in S/4",
+    "klassisches SD-Kreditmanagement (KNKK, SD_ORDER_CREDIT_RELEASE) in S/4 durch FIN-FSCM Credit Management ersetzt",
+    "SAP-GUI-Dynpros nicht cloudfähig"
+  ],
+  "wave": 3,
+  "module": "SD-BF-CM",
+  "edge_constructs": [
+    "Dynpro-Ablauf über Modulgrenzen",
+    "MESSAGE E in Feldmodul und PAI",
+    "Ausnahme je Aufrufer in eigenen CATCH",
+    "Zustand, der nur eine Ausnahme wirft",
+    "unbeachtete BAPI-Rückgabe"
+  ],
+  "oo": true
+}

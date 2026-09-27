@@ -1,0 +1,1156 @@
+{
+  "id": "BM-232",
+  "title": "Lohnarten der Abrechnungsperiode gegen die Vorperiode plausibilisieren",
+  "classes": [
+    "K01",
+    "K03",
+    "K09"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PA0001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_abrechnung_vergleich_f01.abap",
+        "line": 9,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_abrechnung_vergleich_f01.abap:9"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CU_READ_RGDIR",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zhr_abrechnung_vergleich_f01.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_abrechnung_vergleich_f01.abap:27"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PYXX_READ_PAYROLL_RESULT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zhr_abrechnung_vergleich_f01.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_abrechnung_vergleich_f01.abap:79"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-232-B01",
+      "text": "Ein Vergleichsobjekt wird mit der eingegebenen Prozentschwelle angelegt und ein Protokoll für gemeldete Abweichungen registriert.",
+      "anchors": [
+        {
+          "file": "zhr_abrechnung_vergleich.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich.abap:15"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-232-B02",
+      "text": "Es werden die Personalnummern der gewählten Abrechnungskreise gelesen, deren organisatorische Zuordnung heute oder später endet.",
+      "anchors": [
+        {
+          "file": "zhr_abrechnung_vergleich.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich.abap:21"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:9"
+        }
+      ]
+    },
+    {
+      "id": "BM-232-B03",
+      "text": "Für jeden Mitarbeiter wird das Abrechnungsverzeichnis gelesen; ohne Verzeichnis wird er übersprungen.",
+      "anchors": [
+        {
+          "file": "zhr_abrechnung_vergleich.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich.abap:24"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:27"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:37"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-232-B04",
+      "text": "Im Verzeichnis wird je Für-Periode das aktuelle Ergebnis gesucht, einmal für die Abrechnungsperiode und einmal für die Vergleichsperiode.",
+      "anchors": [
+        {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:41"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:42"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:66"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-232-B05",
+      "text": "Fehlt eines der beiden Ergebnisse, wird der Mitarbeiter nicht verglichen.",
+      "anchors": [
+        {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-232-B06",
+      "text": "Beide Abrechnungsergebnisse werden aus dem deutschen Abrechnungscluster gelesen; scheitert das Lesen eines davon, wird der Mitarbeiter nicht verglichen.",
+      "anchors": [
+        {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:45"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:47"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:79"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:46"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-232-B07",
+      "text": "Für jede gewählte Lohnart der Ergebnistabelle der Abrechnungsperiode wird die prozentuale Veränderung gegenüber dem Betrag der Vorperiode berechnet; fehlt die Lohnart in der Vorperiode, gilt die Veränderung als 100 %.",
+      "anchors": [
+        {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:50"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:44"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-232-B08",
+      "text": "Liegt die Veränderung betragsmäßig über der Schwelle, wird eine Abweichung mit Personalnummer, Lohnart, altem und neuem Betrag gemeldet und im Protokoll gesammelt.",
+      "anchors": [
+        {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:49"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:50"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-232-B09",
+      "text": "Zum Schluss werden alle gesammelten Abweichungen als Liste ausgegeben.",
+      "anchors": [
+        {
+          "file": "zhr_abrechnung_vergleich.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich.abap:27"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:72"
+        },
+        {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:73"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich.abap:14"
+        },
+        "meaning": "Verarbeitungsstart"
+      },
+      {
+        "id": "co",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich.abap:15"
+        },
+        "meaning": "Vergleichsobjekt mit Schwelle anlegen"
+      },
+      {
+        "id": "cs",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:35"
+        },
+        "meaning": "Konstruktor Vergleich"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:37"
+        },
+        "meaning": "Ende Konstruktor"
+      },
+      {
+        "id": "sh",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich.abap:19"
+        },
+        "meaning": "Protokoll für Abweichungsereignis registrieren"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich.abap:21"
+        },
+        "meaning": "Mitarbeiter der Abrechnungskreise lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich.abap:23"
+        },
+        "meaning": "Mitarbeiter durchlaufen"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich.abap:24"
+        },
+        "meaning": "Abrechnungsergebnisse vergleichen"
+      },
+      {
+        "id": "ca",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich.abap:27"
+        },
+        "meaning": "Abweichungen ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich.abap:27"
+        },
+        "meaning": "Programmende"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:8"
+        },
+        "meaning": "Personalselektion"
+      },
+      {
+        "id": "pq",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:9"
+        },
+        "meaning": "Personalnummern der Abrechnungskreise lesen"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:13"
+        },
+        "meaning": "Ende Personalselektion"
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:18"
+        },
+        "meaning": "Vergleich je Mitarbeiter"
+      },
+      {
+        "id": "rg",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:27"
+        },
+        "meaning": "Abrechnungsverzeichnis lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:37"
+        },
+        "meaning": "Verzeichnis vorhanden?"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:38"
+        },
+        "meaning": "Mitarbeiter ohne Abrechnung überspringen"
+      },
+      {
+        "id": "cs1",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:41"
+        },
+        "meaning": "Ergebnis der Abrechnungsperiode suchen"
+      },
+      {
+        "id": "cs2",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:42"
+        },
+        "meaning": "Ergebnis der Vorperiode suchen"
+      },
+      {
+        "id": "ck0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:43"
+        },
+        "meaning": "Beide Ergebnisse vorhanden?"
+      },
+      {
+        "id": "ce1",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:45"
+        },
+        "meaning": "Aktuelles Ergebnis lesen"
+      },
+      {
+        "id": "ck1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:46"
+        },
+        "meaning": "Lesen erfolgreich?"
+      },
+      {
+        "id": "ce2",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:47"
+        },
+        "meaning": "Ergebnis der Vorperiode lesen"
+      },
+      {
+        "id": "ck2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:48"
+        },
+        "meaning": "Lesen erfolgreich?"
+      },
+      {
+        "id": "cv",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:50"
+        },
+        "meaning": "Lohnarten vergleichen"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:53"
+        },
+        "meaning": "Ende Vergleich je Mitarbeiter"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:60"
+        },
+        "meaning": "Suche aktuelles Ergebnis"
+      },
+      {
+        "id": "sl",
+        "type": "loop",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:66"
+        },
+        "meaning": "Aktuelle Ergebnisse der Periode durchlaufen"
+      },
+      {
+        "id": "sa",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:68"
+        },
+        "meaning": "Sequenznummer übernehmen"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:70"
+        },
+        "meaning": "Ende Suche"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:75"
+        },
+        "meaning": "Ergebnis lesen"
+      },
+      {
+        "id": "ep",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:79"
+        },
+        "meaning": "Abrechnungsergebnis aus Cluster lesen"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_f01.abap:97"
+        },
+        "meaning": "Ende Ergebnis lesen"
+      },
+      {
+        "id": "vs",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:39"
+        },
+        "meaning": "Lohnartenvergleich"
+      },
+      {
+        "id": "vl",
+        "type": "loop",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:44"
+        },
+        "meaning": "Gewählte Lohnarten der aktuellen Periode durchlaufen"
+      },
+      {
+        "id": "va",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:47"
+        },
+        "meaning": "Prozentuale Veränderung berechnen"
+      },
+      {
+        "id": "vg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:49"
+        },
+        "meaning": "Veränderung über Schwelle?"
+      },
+      {
+        "id": "ev",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:50"
+        },
+        "meaning": "Abweichung melden"
+      },
+      {
+        "id": "ve",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:58"
+        },
+        "meaning": "Ende Lohnartenvergleich"
+      },
+      {
+        "id": "hs",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:65"
+        },
+        "meaning": "Abweichung protokollieren"
+      },
+      {
+        "id": "he",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:68"
+        },
+        "meaning": "Ende Protokollierung"
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:70"
+        },
+        "meaning": "Abweichungsliste"
+      },
+      {
+        "id": "al",
+        "type": "loop",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:72"
+        },
+        "meaning": "Abweichungen durchlaufen"
+      },
+      {
+        "id": "aw",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:73"
+        },
+        "meaning": "Abweichung ausgeben"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_abrechnung_vergleich_cls.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_abrechnung_vergleich_cls.abap:75"
+        },
+        "meaning": "Ende Abweichungsliste"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "co",
+        "condition": "always"
+      },
+      {
+        "from": "co",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "ce",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "sh",
+        "condition": "always"
+      },
+      {
+        "from": "sh",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "pq",
+        "condition": "always"
+      },
+      {
+        "from": "pq",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "c2",
+        "condition": "next row"
+      },
+      {
+        "from": "c2",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "r1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "r1",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g1",
+        "to": "cs1",
+        "condition": "else"
+      },
+      {
+        "from": "cs1",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "sl",
+        "condition": "always"
+      },
+      {
+        "from": "sl",
+        "to": "sa",
+        "condition": "next row"
+      },
+      {
+        "from": "sa",
+        "to": "sl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "sl",
+        "to": "se",
+        "condition": "no more rows"
+      },
+      {
+        "from": "se",
+        "to": "cs2",
+        "condition": "always"
+      },
+      {
+        "from": "cs2",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "ck0",
+        "condition": "always"
+      },
+      {
+        "from": "ck0",
+        "to": "ce1",
+        "condition": "lv_seq_akt IS NOT INITIAL AND lv_seq_vor IS NOT INITIAL"
+      },
+      {
+        "from": "ck0",
+        "to": "me",
+        "condition": "else"
+      },
+      {
+        "from": "ce1",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "ep",
+        "condition": "always"
+      },
+      {
+        "from": "ep",
+        "to": "ee",
+        "condition": "always"
+      },
+      {
+        "from": "ee",
+        "to": "ck1",
+        "condition": "always"
+      },
+      {
+        "from": "ck1",
+        "to": "ce2",
+        "condition": "lv_rc = 0"
+      },
+      {
+        "from": "ck1",
+        "to": "me",
+        "condition": "else"
+      },
+      {
+        "from": "ce2",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "ee",
+        "to": "ck2",
+        "condition": "always"
+      },
+      {
+        "from": "ck2",
+        "to": "cv",
+        "condition": "lv_rc = 0"
+      },
+      {
+        "from": "ck2",
+        "to": "me",
+        "condition": "else"
+      },
+      {
+        "from": "cv",
+        "to": "vs",
+        "condition": "always"
+      },
+      {
+        "from": "vs",
+        "to": "vl",
+        "condition": "always"
+      },
+      {
+        "from": "vl",
+        "to": "va",
+        "condition": "next row"
+      },
+      {
+        "from": "va",
+        "to": "vg",
+        "condition": "always"
+      },
+      {
+        "from": "vg",
+        "to": "ev",
+        "condition": "abs( lv_proz ) > mv_schwelle"
+      },
+      {
+        "from": "ev",
+        "to": "hs",
+        "condition": "always"
+      },
+      {
+        "from": "hs",
+        "to": "he",
+        "condition": "always"
+      },
+      {
+        "from": "he",
+        "to": "vl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "vg",
+        "to": "vl",
+        "condition": "else"
+      },
+      {
+        "from": "vl",
+        "to": "ve",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ve",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "ca",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ca",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "as",
+        "to": "al",
+        "condition": "always"
+      },
+      {
+        "from": "al",
+        "to": "aw",
+        "condition": "next row"
+      },
+      {
+        "from": "aw",
+        "to": "al",
+        "condition": "next iteration"
+      },
+      {
+        "from": "al",
+        "to": "ae",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ae",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zhr_abrechnung_vergleich.abap:27 — kein Fachsatz „Überweisung wird gesperrt oder Abrechnung zurückgesetzt“ (nur Liste)",
+    "zhr_abrechnung_vergleich_f01.abap:9 — kein Fachsatz „nur zum Periodenende aktive Mitarbeiter“ (Bedingung ist nur endda >= Tagesdatum)",
+    "zhr_abrechnung_vergleich_cls.abap:44 — kein Fachsatz „weggefallene Lohnarten werden gemeldet“ (verglichen wird nur, was in der aktuellen Periode vorkommt)",
+    "zhr_abrechnung_vergleich_f01.abap:46 — kein Fachsatz „Lesefehler werden gemeldet“ (CHECK verlässt die FORM stillschweigend)"
+  ],
+  "processDescription": "Der Report plausibilisiert nach dem Abrechnungslauf die Ergebnisse gegen die Vorperiode. Er legt ein lokales Vergleichsobjekt mit der Prozentschwelle an und registriert ein Protokollobjekt als Behandler für dessen Abweichungsereignis. Dann liest er die Personalnummern der gewählten Abrechnungskreise und liest je Mitarbeiter das Abrechnungsverzeichnis; ohne Verzeichnis wird der Mitarbeiter übersprungen. Eine FORM sucht für Abrechnungs- und Vergleichsperiode je das aktuelle Ergebnis; fehlt eines, verlässt die Verarbeitung den Mitarbeiter über CHECK. Beide Ergebnisse werden aus dem Cluster gelesen; ein Lesefehler beendet den Mitarbeiter ebenfalls still. Die Vergleichsmethode berechnet für jede gewählte Lohnart der aktuellen Periode die prozentuale Veränderung zur Vorperiode (100 %, wenn die Lohnart dort fehlt) und löst oberhalb der Schwelle das Ereignis aus, dessen Behandler die Abweichung sammelt. Am Ende gibt das Protokollobjekt alle Abweichungen als Liste aus."
+}

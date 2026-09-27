@@ -1,0 +1,32 @@
+{
+  "id": "BM-230",
+  "title": "Periodenabgrenzungen per Batch-Input FBS1 buchen",
+  "domain": "FI",
+  "band": "komplex",
+  "loc": 216,
+  "constructs": [
+    "REPORT mit TOP/SEL/F01",
+    "AT SELECTION-SCREEN",
+    "Makros",
+    "CALL TRANSACTION USING MESSAGES INTO",
+    "READ TABLE WITH KEY",
+    "RETURN in FORM",
+    "CHECK in FORM",
+    "BDC_OPEN_GROUP/INSERT/CLOSE_GROUP",
+    "MESSAGE A/E/I/S",
+    "FORMAT_MESSAGE"
+  ],
+  "scenario": "Monatsabschluss-Report der Hauptbuchhaltung aus ECC, der Abgrenzungen per Batch-Input bucht; typisches Ablösungsobjekt in der S/4-Transformation.",
+  "s4_issues": [
+    "Batch-Input auf FBS1 bricht bei geänderten Dynpros (Coding-Block, S/4-Felder)",
+    "CALL TRANSACTION nicht Cloud-fähig"
+  ],
+  "wave": 3,
+  "module": "FI-GL",
+  "edge_constructs": [
+    "sy-subrc nach CALL TRANSACTION und nach READ TABLE kombiniert",
+    "MESSAGE A in FORM",
+    "auskommentierte Prüfung im Selektionsbild"
+  ],
+  "oo": false
+}

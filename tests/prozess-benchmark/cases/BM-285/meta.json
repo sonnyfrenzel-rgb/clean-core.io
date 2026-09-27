@@ -1,0 +1,30 @@
+{
+  "id": "BM-285",
+  "title": "Werkstatt-Terminal: Rückmeldung zum Fertigungsvorgang mit Endrückmeldungs-Rückfrage",
+  "domain": "PP Shopfloor",
+  "band": "mittel",
+  "loc": 95,
+  "constructs": [
+    "MODULE INPUT",
+    "CASE ok_code",
+    "PERFORM",
+    "POPUP_TO_CONFIRM",
+    "BAPI_PRODORDCONF_CREATE_TT",
+    "BAPI_TRANSACTION_COMMIT",
+    "MESSAGE E/I/S",
+    "MESSAGE ... DISPLAY LIKE"
+  ],
+  "scenario": "Z-Modulpool am Werkstatt-Terminal einer Fertigungshalle, auf dem Werker Vorgangsrückmeldungen ohne CO11N erfassen.",
+  "s4_issues": [
+    "SAP-GUI-Dynpro nicht in Fiori weiterverwendbar",
+    "Rückmeldung in S/4 über released API bzw. Fiori-App empfohlen"
+  ],
+  "wave": 3,
+  "module": "PP",
+  "edge_constructs": [
+    "frühes RETURN nach Popup",
+    "MESSAGE I DISPLAY LIKE E gefolgt von RETURN",
+    "mehrere end-Knoten einer FORM mit Rückkanten"
+  ],
+  "oo": false
+}

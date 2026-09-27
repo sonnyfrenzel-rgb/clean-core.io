@@ -1,0 +1,1243 @@
+{
+  "id": "BM-271",
+  "title": "Outbound-Proxy Mitarbeiterstamm mit Warteschlange",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZHR_SEND_QUEUE",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_emp_send.abap",
+        "line": 22,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_emp_send.abap:22"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0000",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_emp_send.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_emp_send.abap:25"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCO_HR_EMPLOYEE_OUT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_hr_emp_sender.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_emp_sender.abap:45"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_READ_INFOTYPE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_hr_emp_sender.abap",
+        "line": 61,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_emp_sender.abap:61"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_hr_emp_sender.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_emp_sender.abap:82"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZHR_SEND_QUEUE",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_hr_emp_sender.abap",
+        "line": 113,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_emp_sender.abap:113"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-271-B01",
+      "text": "Im Normallauf werden die zum Stichtag aktiven Mitarbeiter der Selektion bestimmt, im Nachsendelauf nur die Mitarbeiter, die in der Warteschlange auf einen neuen Versuch warten.",
+      "anchors": [
+        {
+          "file": "zhr_emp_send.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:21"
+        },
+        {
+          "file": "zhr_emp_send.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:22"
+        },
+        {
+          "file": "zhr_emp_send.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-271-B02",
+      "text": "Gibt es keine Mitarbeiter, endet der Report mit einem Hinweis.",
+      "anchors": [
+        {
+          "file": "zhr_emp_send.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:31"
+        },
+        {
+          "file": "zhr_emp_send.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:32"
+        },
+        {
+          "file": "zhr_emp_send.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-271-B03",
+      "text": "Für jeden Mitarbeiter wird eine Stammdatennachricht an den externen Payroll-Dienstleister übergeben.",
+      "anchors": [
+        {
+          "file": "zhr_emp_send.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:40"
+        },
+        {
+          "file": "zhr_emp_send.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:42"
+        },
+        {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-271-B04",
+      "text": "Die Nachricht enthält Name, Vorname und Geburtsdatum zum Stichtag; fehlen die Daten zur Person, wird der Mitarbeiter mit fachlichem Fehler nicht gesendet.",
+      "anchors": [
+        {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:61"
+        },
+        {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:72"
+        },
+        {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-271-B05",
+      "text": "Buchungskreis, Werk und Kostenstelle kommen aus der organisatorischen Zuordnung zum Stichtag; fehlt sie, wird der Mitarbeiter mit fachlichem Fehler nicht gesendet.",
+      "anchors": [
+        {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:82"
+        },
+        {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:87"
+        },
+        {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-271-B06",
+      "text": "Die Kostenstelle wird nur für Angestellte (Mitarbeitergruppe 1) übermittelt.",
+      "anchors": [
+        {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:94"
+        },
+        {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:95"
+        }
+      ]
+    },
+    {
+      "id": "BM-271-B07",
+      "text": "Ist das Senden technisch gestört, wird ein wiederholbarer Sendefehler gemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-271-B08",
+      "text": "Wurde die Nachricht übergeben, wird der Mitarbeiter aus der Warteschlange genommen.",
+      "anchors": [
+        {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-271-B09",
+      "text": "Nur technische Fehler gelten als wiederholbar; fachliche Fehler nicht.",
+      "anchors": [
+        {
+          "file": "zhr_emp_send.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:45"
+        },
+        {
+          "file": "zcx_hr_send_error.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcx_hr_send_error.abap:18"
+        },
+        {
+          "file": "zcx_hr_send_temporary.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcx_hr_send_temporary.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-271-B10",
+      "text": "Bei technischem Fehler wird der Mitarbeiter mit Fehlertext und um eins erhöhter Versuchszahl in die Warteschlange gestellt; nach mehr als fünf Versuchen wird der Eintrag aufgegeben und muss manuell geklärt werden.",
+      "anchors": [
+        {
+          "file": "zhr_emp_send.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:46"
+        },
+        {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:103"
+        },
+        {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:109"
+        },
+        {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:111"
+        },
+        {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:113"
+        }
+      ]
+    },
+    {
+      "id": "BM-271-B11",
+      "text": "Bei fachlichem Fehler werden Personalnummer und Fehlertext in der Liste ausgegeben.",
+      "anchors": [
+        {
+          "file": "zhr_emp_send.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-271-B12",
+      "text": "Erst am Ende werden alle übergebenen Nachrichten und Warteschlangenänderungen festgeschrieben und die Zahl gesendeter, eingereihter und fehlerhafter Mitarbeiter ausgegeben.",
+      "anchors": [
+        {
+          "file": "zhr_emp_send.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:57"
+        },
+        {
+          "file": "zhr_emp_send.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:58"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:20"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "gq",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:21"
+        },
+        "meaning": "Nur Warteschlange nachsenden?"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:22"
+        },
+        "meaning": "Personalnummern der Warteschlange (Status R) lesen"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:25"
+        },
+        "meaning": "Zum Stichtag aktive Mitarbeiter lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:31"
+        },
+        "meaning": "Keine Mitarbeiter?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:32"
+        },
+        "meaning": "Hinweis: nichts zu senden"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:33"
+        },
+        "meaning": "Report verlassen"
+      },
+      {
+        "id": "new",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:38"
+        },
+        "meaning": "Sender mit Stichtag anlegen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:40"
+        },
+        "meaning": "Mitarbeiter durchlaufen"
+      },
+      {
+        "id": "snd",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:42"
+        },
+        "meaning": "Mitarbeiterdaten senden"
+      },
+      {
+        "id": "ir",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:45"
+        },
+        "meaning": "Fehlerart abfragen"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:45"
+        },
+        "meaning": "Technischer (wiederholbarer) Fehler?"
+      },
+      {
+        "id": "enq",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:46"
+        },
+        "meaning": "Mitarbeiter in Warteschlange stellen"
+      },
+      {
+        "id": "wf",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:51"
+        },
+        "meaning": "Fachlichen Fehler mit Text ausgeben"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:57"
+        },
+        "meaning": "Proxy-Nachrichten und Warteschlange festschreiben"
+      },
+      {
+        "id": "wo",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:58"
+        },
+        "meaning": "Summen gesendet/Warteschlange/Fehler ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_send.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_send.abap:58"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "cs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:31"
+        },
+        "meaning": "Stichtag übernehmen"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:33"
+        },
+        "meaning": "Ende Konstruktor"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:36"
+        },
+        "meaning": "Mitarbeiter senden"
+      },
+      {
+        "id": "sp",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:39"
+        },
+        "meaning": "Nachricht aus Stammdaten aufbauen"
+      },
+      {
+        "id": "sg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:42"
+        },
+        "meaning": "Proxy noch nicht erzeugt?"
+      },
+      {
+        "id": "snew",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:43"
+        },
+        "meaning": "Outbound-Proxy erzeugen"
+      },
+      {
+        "id": "spx",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:45"
+        },
+        "meaning": "Mitarbeiternachricht an Payroll-Dienstleister übergeben"
+      },
+      {
+        "id": "sx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:47"
+        },
+        "meaning": "Ausnahme: technischer Sendefehler"
+      },
+      {
+        "id": "sdel",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:53"
+        },
+        "meaning": "Mitarbeiter aus Warteschlange entfernen"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:54"
+        },
+        "meaning": "Ende Senden"
+      },
+      {
+        "id": "bs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:57"
+        },
+        "meaning": "Nachricht aufbauen"
+      },
+      {
+        "id": "bh",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:61"
+        },
+        "meaning": "Daten zur Person (Infotyp 0002) zum Stichtag lesen"
+      },
+      {
+        "id": "bg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:72"
+        },
+        "meaning": "Keine Daten zur Person?"
+      },
+      {
+        "id": "bx1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:74"
+        },
+        "meaning": "Ausnahme: fachlicher Fehler"
+      },
+      {
+        "id": "bq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:82"
+        },
+        "meaning": "Organisatorische Zuordnung zum Stichtag lesen"
+      },
+      {
+        "id": "bg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:87"
+        },
+        "meaning": "Keine Organisationszuordnung?"
+      },
+      {
+        "id": "bx2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:88"
+        },
+        "meaning": "Ausnahme: fachlicher Fehler"
+      },
+      {
+        "id": "bg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:94"
+        },
+        "meaning": "Kein Angestellter (Mitarbeitergruppe ≠ 1)?"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:97"
+        },
+        "meaning": "Nachricht zurückgeben"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:100"
+        },
+        "meaning": "In Warteschlange stellen"
+      },
+      {
+        "id": "eq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:103"
+        },
+        "meaning": "Bisherigen Warteschlangeneintrag lesen"
+      },
+      {
+        "id": "eg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:109"
+        },
+        "meaning": "Mehr als fünf Versuche?"
+      },
+      {
+        "id": "ew",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:113"
+        },
+        "meaning": "Warteschlangeneintrag mit Fehlertext und Versuchszahl schreiben"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_emp_sender.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_emp_sender.abap:114"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "xs1",
+        "type": "start",
+        "anchor": {
+          "file": "zcx_hr_send_error.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcx_hr_send_error.abap:17"
+        },
+        "meaning": "Fachlicher Fehler: wiederholbar?"
+      },
+      {
+        "id": "xe1",
+        "type": "end",
+        "anchor": {
+          "file": "zcx_hr_send_error.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcx_hr_send_error.abap:19"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "xs2",
+        "type": "start",
+        "anchor": {
+          "file": "zcx_hr_send_temporary.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcx_hr_send_temporary.abap:16"
+        },
+        "meaning": "Technischer Fehler: wiederholbar? (Redefinition)"
+      },
+      {
+        "id": "xe2",
+        "type": "end",
+        "anchor": {
+          "file": "zcx_hr_send_temporary.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcx_hr_send_temporary.abap:19"
+        },
+        "meaning": "Ende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "gq",
+        "condition": "always"
+      },
+      {
+        "from": "gq",
+        "to": "q1",
+        "condition": "p_queue = abap_true"
+      },
+      {
+        "from": "gq",
+        "to": "q2",
+        "condition": "else"
+      },
+      {
+        "from": "q1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "q2",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "gt_pernr IS INITIAL"
+      },
+      {
+        "from": "m1",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "new",
+        "condition": "else"
+      },
+      {
+        "from": "new",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "ce",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "snd",
+        "condition": "next row"
+      },
+      {
+        "from": "snd",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ss",
+        "to": "sp",
+        "condition": "always"
+      },
+      {
+        "from": "sp",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "bs",
+        "to": "bh",
+        "condition": "always"
+      },
+      {
+        "from": "bh",
+        "to": "bg1",
+        "condition": "always"
+      },
+      {
+        "from": "bg1",
+        "to": "bx1",
+        "condition": "sy-subrc <> 0 OR lt_p0002 IS INITIAL"
+      },
+      {
+        "from": "bg1",
+        "to": "bq",
+        "condition": "else"
+      },
+      {
+        "from": "bq",
+        "to": "bg2",
+        "condition": "always"
+      },
+      {
+        "from": "bg2",
+        "to": "bx2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "bg2",
+        "to": "bg3",
+        "condition": "else"
+      },
+      {
+        "from": "bg3",
+        "to": "be",
+        "condition": "else"
+      },
+      {
+        "from": "be",
+        "to": "sg",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "snew",
+        "condition": "mo_proxy IS NOT BOUND"
+      },
+      {
+        "from": "snew",
+        "to": "spx",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "spx",
+        "condition": "else"
+      },
+      {
+        "from": "snew",
+        "to": "sx",
+        "condition": "cx_ai_system_fault"
+      },
+      {
+        "from": "spx",
+        "to": "sx",
+        "condition": "cx_ai_system_fault"
+      },
+      {
+        "from": "spx",
+        "to": "sdel",
+        "condition": "always"
+      },
+      {
+        "from": "sdel",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "bx1",
+        "to": "ir",
+        "condition": "zcx_hr_send_error"
+      },
+      {
+        "from": "bx2",
+        "to": "ir",
+        "condition": "zcx_hr_send_error"
+      },
+      {
+        "from": "sx",
+        "to": "ir",
+        "condition": "zcx_hr_send_temporary"
+      },
+      {
+        "from": "ir",
+        "to": "xs1",
+        "condition": "always"
+      },
+      {
+        "from": "ir",
+        "to": "xs2",
+        "condition": "always"
+      },
+      {
+        "from": "xe1",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "xe2",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "enq",
+        "condition": "gx_err->is_retryable( ) = abap_true"
+      },
+      {
+        "from": "enq",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "eq",
+        "condition": "always"
+      },
+      {
+        "from": "eq",
+        "to": "eg",
+        "condition": "always"
+      },
+      {
+        "from": "eg",
+        "to": "ew",
+        "condition": "else"
+      },
+      {
+        "from": "ew",
+        "to": "ee",
+        "condition": "always"
+      },
+      {
+        "from": "ee",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gr",
+        "to": "wf",
+        "condition": "else"
+      },
+      {
+        "from": "wf",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "cw",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cw",
+        "to": "wo",
+        "condition": "always"
+      },
+      {
+        "from": "wo",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "xs1",
+        "to": "xe1",
+        "condition": "always"
+      },
+      {
+        "from": "xs2",
+        "to": "xe2",
+        "condition": "always"
+      },
+      {
+        "from": "eg",
+        "to": "ew",
+        "condition": "ls_queue-retries > gc_max_retries"
+      },
+      {
+        "from": "bg3",
+        "to": "be",
+        "condition": "ls_p0001-persg <> '1'"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_hr_emp_sender.abap:45 — kein Fachsatz „der Payroll-Dienstleister hat die Daten empfangen“ (asynchroner Proxy: die Nachricht wird erst mit dem COMMIT WORK am Reportende versandbereit)",
+    "zcl_hr_emp_sender.abap:53 — kein Fachsatz „nur bei erfolgreicher Zustellung entfernt“ im Sinne eines Empfangsnachweises (entfernt wird nach Übergabe an den Proxy)",
+    "zhr_emp_send.abap:45 — kein Fachsatz „fehlende Stammdaten werden später nachgesendet“ (fachliche Fehler sind nicht wiederholbar und kommen nicht in die Warteschlange)"
+  ],
+  "processDescription": "Der Report läuft täglich oder als Nachsendelauf. Im Normallauf bestimmt er die zum Stichtag aktiven Mitarbeiter der Selektion, im Nachsendelauf die Mitarbeiter der Warteschlange; gibt es keine, endet er mit Hinweis. Für jeden Mitarbeiter wird eine Nachricht mit Daten zur Person und organisatorischer Zuordnung zum Stichtag aufgebaut, wobei die Kostenstelle nur für Angestellte mitgeht; fehlen Personendaten oder Zuordnung, ist das ein fachlicher Fehler. Die Nachricht wird an den Outbound-Proxy übergeben; ein technischer Proxyfehler wird als wiederholbarer Fehler gemeldet, bei Erfolg wird der Mitarbeiter aus der Warteschlange genommen. Wiederholbare Fehler führen zu einem Warteschlangeneintrag mit Fehlertext und Versuchszahl, der nach mehr als fünf Versuchen aufgegeben wird; fachliche Fehler werden nur ausgegeben. Am Ende wird alles festgeschrieben, womit die Nachrichten versandbereit werden, und eine Summe ausgegeben."
+}

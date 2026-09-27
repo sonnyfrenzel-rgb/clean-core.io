@@ -1,0 +1,2295 @@
+{
+  "id": "BM-294",
+  "title": "Werkstattrückmeldung Instandhaltungsauftrag: Arbeitszeit und Materialentnahme mit Sperre, Tabstrip und Grid in einer LUW",
+  "classes": [
+    "K07",
+    "K01",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "AUFK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "sapmzpm_rueck_f01.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "sapmzpm_rueck_f01.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "STATUS_CHECK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "sapmzpm_rueck_f01.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "sapmzpm_rueck_f01.abap:25"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_ESORDER",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "sapmzpm_rueck_f01.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "sapmzpm_rueck_f01.abap:37"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_ESORDER",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "sapmzpm_rueck_f01.abap",
+        "line": 197,
+        "token": null,
+        "expressionPath": null,
+        "raw": "sapmzpm_rueck_f01.abap:197"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "sapmzpm_rueck_f01.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "sapmzpm_rueck_f01.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "sapmzpm_rueck_f01.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "sapmzpm_rueck_f01.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFVV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "sapmzpm_rueck_f01.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "sapmzpm_rueck_f01.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RESB",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "sapmzpm_rueck_f01.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "sapmzpm_rueck_f01.abap:56"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "sapmzpm_rueck_i01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "sapmzpm_rueck_i01.abap:11"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ALM_CONF_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "sapmzpm_rueck_f01.abap",
+        "line": 131,
+        "token": null,
+        "expressionPath": null,
+        "raw": "sapmzpm_rueck_f01.abap:131"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_GOODSMVT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "sapmzpm_rueck_f01.abap",
+        "line": 175,
+        "token": null,
+        "expressionPath": null,
+        "raw": "sapmzpm_rueck_f01.abap:175"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "sapmzpm_rueck_f01.abap",
+        "line": 95,
+        "token": null,
+        "expressionPath": null,
+        "raw": "sapmzpm_rueck_f01.abap:95"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "sapmzpm_rueck_f01.abap",
+        "line": 102,
+        "token": null,
+        "expressionPath": null,
+        "raw": "sapmzpm_rueck_f01.abap:102"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_GUI_ALV_GRID",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "sapmzpm_rueck_o01.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "sapmzpm_rueck_o01.abap:36"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-294-B01",
+      "text": "Im Tabstrip wird bei der Registerkarte Komponenten der Grid-Subscreen, sonst der Subscreen mit der Vorgangsliste eingeblendet.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_o01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_o01.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B02",
+      "text": "Beim ersten Anzeigen der Komponenten wird das editierbare Grid angelegt, der Behandler für geänderte Daten registriert und die Reservierungspositionen angezeigt; später wird die Anzeige nur aufgefrischt.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_o01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_o01.abap:25"
+        },
+        {
+          "file": "sapmzpm_rueck_o01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_o01.abap:35"
+        },
+        {
+          "file": "sapmzpm_rueck_o01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_o01.abap:36"
+        },
+        {
+          "file": "sapmzpm_rueck_o01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_o01.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B03",
+      "text": "Für jede geänderte Entnahmemenge wird geprüft, ob sie die offene Reservierungsmenge übersteigt; dann wird eine Warnung ins Grid-Protokoll geschrieben, die Mehrentnahme bleibt aber zulässig.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_c01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_c01.abap:23"
+        },
+        {
+          "file": "sapmzpm_rueck_c01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_c01.abap:28"
+        },
+        {
+          "file": "sapmzpm_rueck_c01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_c01.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B04",
+      "text": "Liegt die gesamte Istarbeit eines Vorgangs mit der neuen Rückmeldung über 150 % der Planarbeit, erhält der Werker eine Warnung, die er bestätigen kann.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:36"
+        },
+        {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B05",
+      "text": "Vor jeder Funktion werden die Eingaben im Komponentengrid übernommen, sofern das Grid existiert.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:52"
+        },
+        {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B06",
+      "text": "Beim Laden eines Auftrags wird ein vorher geladener Auftrag zuerst entsperrt.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:58"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:12"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B07",
+      "text": "Der Auftrag muss ein Instandhaltungsauftrag sein, sonst bricht eine Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:16"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:19"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B08",
+      "text": "Ist der Auftrag nicht freigegeben, wird er mit Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:25"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:33"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B09",
+      "text": "Der Auftrag wird für die Rückmeldung gesperrt; ist er bereits gesperrt, wird der sperrende Benutzer in einer Fehlermeldung genannt.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:37"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:44"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B10",
+      "text": "Es werden die Vorgänge mit Plan- und bisheriger Istarbeit sowie die nicht gelöschten, nicht endausgefassten Reservierungspositionen des Auftrags gelesen, und die Anzahl der Vorgänge wird gemeldet.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:48"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:56"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B11",
+      "text": "Beim Sichern mit markierten Endrückmeldungen muss der Werker bestätigen, dass diese Vorgänge abgeschlossen werden; ohne Bestätigung wird nichts gebucht.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:62"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:78"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:79"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B12",
+      "text": "Für jeden Vorgang mit neuer Istarbeit oder Endrückmeldung wird eine Zeitrückmeldung mit Arbeit, Einheit, Endrückmeldekennzeichen und Tagesdatum angelegt; gibt es keine, entfällt dieser Schritt.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:90"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:127"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:131"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B13",
+      "text": "Meldet die Zeitrückmeldung einen Fehler, wird sie als misslungen vermerkt und ihr Meldungstext gesammelt.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:137"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:139"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B14",
+      "text": "Für jede Komponente mit Entnahmemenge wird eine Warenentnahme mit Bewegungsart 261 zum Auftrag und zur Reservierungsposition gebucht; ohne Entnahmemenge entfällt dieser Schritt.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:91"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:167"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:175"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B15",
+      "text": "Jede Fehlermeldung der Warenbewegung markiert die Entnahme als misslungen und wird gesammelt.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:186"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 188,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:188"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B16",
+      "text": "Nur wenn Zeitrückmeldung und Warenentnahme beide gelungen sind, wird alles gemeinsam festgeschrieben, der Auftrag als rückgemeldet gemeldet, entsperrt und das Bild geleert.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:94"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:95"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:98"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:99"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B17",
+      "text": "Andernfalls wird alles zurückgerollt und die erste gesammelte Fehlermeldung als Information in Fehleroptik angezeigt; der Auftrag bleibt gesperrt.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:102"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:104"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B18",
+      "text": "Die Protokollroutine sammelt nur Meldungstexte und hat sonst keine Wirkung.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 205,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:205"
+        },
+        {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 206,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:206"
+        }
+      ]
+    },
+    {
+      "id": "BM-294-B19",
+      "text": "Verlässt der Werker die Rückmeldung mit erfassten Daten, muss er den Datenverlust bestätigen; ohne Bestätigung bleibt er im Bild, sonst wird der Auftrag entsperrt und die Transaktion beendet.",
+      "anchors": [
+        {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:8"
+        },
+        {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:10"
+        },
+        {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:11"
+        },
+        {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:19"
+        },
+        {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:25"
+        },
+        {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:26"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "so1",
+        "type": "start",
+        "anchor": {
+          "file": "sapmzpm_rueck_o01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_o01.abap:8"
+        },
+        "meaning": "PBO Status"
+      },
+      {
+        "id": "eo1",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_o01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_o01.abap:11"
+        },
+        "meaning": "Ende PBO Status"
+      },
+      {
+        "id": "so2",
+        "type": "start",
+        "anchor": {
+          "file": "sapmzpm_rueck_o01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_o01.abap:16"
+        },
+        "meaning": "PBO Subscreen-Wahl"
+      },
+      {
+        "id": "asw",
+        "type": "action",
+        "anchor": {
+          "file": "sapmzpm_rueck_o01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_o01.abap:17"
+        },
+        "meaning": "Subscreen nach Registerkarte"
+      },
+      {
+        "id": "eo2",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_o01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_o01.abap:19"
+        },
+        "meaning": "Ende Subscreen-Wahl"
+      },
+      {
+        "id": "so3",
+        "type": "start",
+        "anchor": {
+          "file": "sapmzpm_rueck_o01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_o01.abap:24"
+        },
+        "meaning": "PBO Komponentengrid"
+      },
+      {
+        "id": "gg",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_o01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_o01.abap:25"
+        },
+        "meaning": "Grid schon angelegt?"
+      },
+      {
+        "id": "sh",
+        "type": "action",
+        "anchor": {
+          "file": "sapmzpm_rueck_o01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_o01.abap:35"
+        },
+        "meaning": "Behandler registrieren"
+      },
+      {
+        "id": "disp",
+        "type": "output",
+        "anchor": {
+          "file": "sapmzpm_rueck_o01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_o01.abap:36"
+        },
+        "meaning": "Komponenten anzeigen"
+      },
+      {
+        "id": "rf",
+        "type": "output",
+        "anchor": {
+          "file": "sapmzpm_rueck_o01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_o01.abap:42"
+        },
+        "meaning": "Anzeige auffrischen"
+      },
+      {
+        "id": "eo3",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_o01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_o01.abap:44"
+        },
+        "meaning": "Ende PBO Grid"
+      },
+      {
+        "id": "se",
+        "type": "start",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:8"
+        },
+        "meaning": "Verlassen (Exit-Kommando)"
+      },
+      {
+        "id": "gch",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:10"
+        },
+        "meaning": "Daten erfasst?"
+      },
+      {
+        "id": "pop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:11"
+        },
+        "meaning": "Rückfrage Datenverlust"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:19"
+        },
+        "meaning": "Nicht bestätigt?"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:21"
+        },
+        "meaning": "Im Bild bleiben"
+      },
+      {
+        "id": "pe1",
+        "type": "call",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:25"
+        },
+        "meaning": "Auftrag entsperren"
+      },
+      {
+        "id": "lp",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:26"
+        },
+        "meaning": "Transaktion beenden"
+      },
+      {
+        "id": "st",
+        "type": "start",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:33"
+        },
+        "meaning": "Vorgangszeile geändert"
+      },
+      {
+        "id": "gw",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:36"
+        },
+        "meaning": "Über 150 % Planarbeit?"
+      },
+      {
+        "id": "mw",
+        "type": "output",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:37"
+        },
+        "meaning": "Warnung Mehrarbeit"
+      },
+      {
+        "id": "et",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:42"
+        },
+        "meaning": "Ende Zeilenmodul"
+      },
+      {
+        "id": "su",
+        "type": "start",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:47"
+        },
+        "meaning": "PAI Rückmeldebild"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:52"
+        },
+        "meaning": "Grid vorhanden?"
+      },
+      {
+        "id": "ccd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:53"
+        },
+        "meaning": "Grid-Eingaben übernehmen"
+      },
+      {
+        "id": "gc2",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:56"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "pl",
+        "type": "call",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:58"
+        },
+        "meaning": "Auftrag laden"
+      },
+      {
+        "id": "ps",
+        "type": "call",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:62"
+        },
+        "meaning": "Sichern"
+      },
+      {
+        "id": "eu",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_i01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_i01.abap:67"
+        },
+        "meaning": "Ende PAI"
+      },
+      {
+        "id": "sd",
+        "type": "start",
+        "anchor": {
+          "file": "sapmzpm_rueck_c01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_c01.abap:18"
+        },
+        "meaning": "Grid-Änderung"
+      },
+      {
+        "id": "lpd",
+        "type": "loop",
+        "anchor": {
+          "file": "sapmzpm_rueck_c01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_c01.abap:23"
+        },
+        "meaning": "Geänderte Entnahmemengen"
+      },
+      {
+        "id": "gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_c01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_c01.abap:28"
+        },
+        "meaning": "Über offener Menge?"
+      },
+      {
+        "id": "ape",
+        "type": "action",
+        "anchor": {
+          "file": "sapmzpm_rueck_c01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_c01.abap:30"
+        },
+        "meaning": "Warnung ins Grid-Protokoll"
+      },
+      {
+        "id": "ed",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_c01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_c01.abap:41"
+        },
+        "meaning": "Ende Behandler"
+      },
+      {
+        "id": "sl",
+        "type": "start",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:8"
+        },
+        "meaning": "Auftrag laden"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:12"
+        },
+        "meaning": "Vorheriger Auftrag geladen?"
+      },
+      {
+        "id": "pe2",
+        "type": "call",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:13"
+        },
+        "meaning": "Vorherigen Auftrag entsperren"
+      },
+      {
+        "id": "rd",
+        "type": "read",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:16"
+        },
+        "meaning": "Auftragskopf lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:19"
+        },
+        "meaning": "Kein IH-Auftrag?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:20"
+        },
+        "meaning": "Fehler Auftrag"
+      },
+      {
+        "id": "m1e",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:20"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "sc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:25"
+        },
+        "meaning": "Status freigegeben prüfen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:33"
+        },
+        "meaning": "Nicht freigegeben?"
+      },
+      {
+        "id": "m3",
+        "type": "output",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:34"
+        },
+        "meaning": "Fehler nicht freigegeben"
+      },
+      {
+        "id": "m3e",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:34"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:37"
+        },
+        "meaning": "Auftrag sperren"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:44"
+        },
+        "meaning": "Gesperrt?"
+      },
+      {
+        "id": "m4",
+        "type": "output",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:45"
+        },
+        "meaning": "Fehler gesperrt durch"
+      },
+      {
+        "id": "m4e",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:45"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "rv",
+        "type": "read",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:48"
+        },
+        "meaning": "Vorgänge mit Arbeit lesen"
+      },
+      {
+        "id": "rk",
+        "type": "read",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:56"
+        },
+        "meaning": "Reservierungen lesen"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:66"
+        },
+        "meaning": "Auftrag geladen melden"
+      },
+      {
+        "id": "el",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:68"
+        },
+        "meaning": "Ende laden"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:73"
+        },
+        "meaning": "Sichern"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:78"
+        },
+        "meaning": "Endrückmeldung markiert?"
+      },
+      {
+        "id": "pop2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:79"
+        },
+        "meaning": "Rückfrage Abschluss"
+      },
+      {
+        "id": "gck2",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:87"
+        },
+        "meaning": "Bestätigt?"
+      },
+      {
+        "id": "prm",
+        "type": "call",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:90"
+        },
+        "meaning": "Zeitrückmeldung"
+      },
+      {
+        "id": "pwa",
+        "type": "call",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:91"
+        },
+        "meaning": "Warenentnahme"
+      },
+      {
+        "id": "gok",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:94"
+        },
+        "meaning": "Beides gelungen?"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:95"
+        },
+        "meaning": "Gemeinsam festschreiben"
+      },
+      {
+        "id": "ms2",
+        "type": "output",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:98"
+        },
+        "meaning": "Erfolgsmeldung"
+      },
+      {
+        "id": "pe3",
+        "type": "call",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:99"
+        },
+        "meaning": "Auftrag entsperren"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:102"
+        },
+        "meaning": "Alles zurückrollen"
+      },
+      {
+        "id": "mi2",
+        "type": "output",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:104"
+        },
+        "meaning": "Erste Fehlermeldung anzeigen"
+      },
+      {
+        "id": "es",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:107"
+        },
+        "meaning": "Ende sichern"
+      },
+      {
+        "id": "sr",
+        "type": "start",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:112"
+        },
+        "meaning": "Zeitrückmeldung"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:127"
+        },
+        "meaning": "Nichts rückzumelden?"
+      },
+      {
+        "id": "rr",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:128"
+        },
+        "meaning": "Ohne Rückmeldung zurück"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:131"
+        },
+        "meaning": "Zeitrückmeldungen anlegen"
+      },
+      {
+        "id": "gb2",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:137"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "pp1",
+        "type": "call",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:139"
+        },
+        "meaning": "Fehlertext sammeln"
+      },
+      {
+        "id": "er",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:142"
+        },
+        "meaning": "Ende Zeitrückmeldung"
+      },
+      {
+        "id": "sw",
+        "type": "start",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:147"
+        },
+        "meaning": "Warenentnahme"
+      },
+      {
+        "id": "gi",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:167"
+        },
+        "meaning": "Nichts zu entnehmen?"
+      },
+      {
+        "id": "rw",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:168"
+        },
+        "meaning": "Ohne Entnahme zurück"
+      },
+      {
+        "id": "bgm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:175"
+        },
+        "meaning": "Warenentnahme 261 buchen"
+      },
+      {
+        "id": "lpr",
+        "type": "loop",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:186"
+        },
+        "meaning": "Fehlermeldungen der Bewegung"
+      },
+      {
+        "id": "pp2",
+        "type": "call",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 188,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:188"
+        },
+        "meaning": "Fehlertext sammeln"
+      },
+      {
+        "id": "ew",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 191,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:191"
+        },
+        "meaning": "Ende Warenentnahme"
+      },
+      {
+        "id": "sen",
+        "type": "start",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:196"
+        },
+        "meaning": "Entsperren"
+      },
+      {
+        "id": "dq",
+        "type": "lock",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:197"
+        },
+        "meaning": "Auftragssperre aufheben"
+      },
+      {
+        "id": "een",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 200,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:200"
+        },
+        "meaning": "Ende entsperren"
+      },
+      {
+        "id": "spr",
+        "type": "start",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 205,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:205"
+        },
+        "meaning": "Protokoll sammeln"
+      },
+      {
+        "id": "epr",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzpm_rueck_f01.abap",
+          "line": 207,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzpm_rueck_f01.abap:207"
+        },
+        "meaning": "Ende Protokoll"
+      }
+    ],
+    "edges": [
+      {
+        "from": "so1",
+        "to": "eo1",
+        "condition": "always"
+      },
+      {
+        "from": "so2",
+        "to": "asw",
+        "condition": "always"
+      },
+      {
+        "from": "asw",
+        "to": "eo2",
+        "condition": "always"
+      },
+      {
+        "from": "so3",
+        "to": "gg",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "sh",
+        "condition": "go_grid IS INITIAL"
+      },
+      {
+        "from": "sh",
+        "to": "disp",
+        "condition": "always"
+      },
+      {
+        "from": "disp",
+        "to": "eo3",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "rf",
+        "condition": "else"
+      },
+      {
+        "from": "rf",
+        "to": "eo3",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "gch",
+        "condition": "always"
+      },
+      {
+        "from": "gch",
+        "to": "pop",
+        "condition": "gv_changed = abap_true"
+      },
+      {
+        "from": "gch",
+        "to": "pe1",
+        "condition": "else"
+      },
+      {
+        "from": "pop",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "re",
+        "condition": "gv_answer <> '1'"
+      },
+      {
+        "from": "ga",
+        "to": "pe1",
+        "condition": "else"
+      },
+      {
+        "from": "pe1",
+        "to": "sen",
+        "condition": "always"
+      },
+      {
+        "from": "een",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "st",
+        "to": "gw",
+        "condition": "always"
+      },
+      {
+        "from": "gw",
+        "to": "mw",
+        "condition": "gs_vorg-ismnw + gs_vorg-ismnw_neu > gs_vorg-arbei * '1.5'"
+      },
+      {
+        "from": "mw",
+        "to": "et",
+        "condition": "always"
+      },
+      {
+        "from": "gw",
+        "to": "et",
+        "condition": "else"
+      },
+      {
+        "from": "su",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "ccd",
+        "condition": "go_grid IS BOUND"
+      },
+      {
+        "from": "gb",
+        "to": "gc2",
+        "condition": "else"
+      },
+      {
+        "from": "ccd",
+        "to": "gc2",
+        "condition": "always"
+      },
+      {
+        "from": "gc2",
+        "to": "pl",
+        "condition": "WHEN 'LADEN'"
+      },
+      {
+        "from": "gc2",
+        "to": "eu",
+        "condition": "WHEN 'TAB_VORG' OR 'TAB_KOMP'"
+      },
+      {
+        "from": "gc2",
+        "to": "ps",
+        "condition": "WHEN 'SICH'"
+      },
+      {
+        "from": "gc2",
+        "to": "eu",
+        "condition": "else"
+      },
+      {
+        "from": "pl",
+        "to": "sl",
+        "condition": "always"
+      },
+      {
+        "from": "el",
+        "to": "eu",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "eu",
+        "condition": "always"
+      },
+      {
+        "from": "sd",
+        "to": "lpd",
+        "condition": "always"
+      },
+      {
+        "from": "lpd",
+        "to": "gm",
+        "condition": "next row"
+      },
+      {
+        "from": "gm",
+        "to": "ape",
+        "condition": "lv_menge > lv_offen"
+      },
+      {
+        "from": "ape",
+        "to": "lpd",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gm",
+        "to": "lpd",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lpd",
+        "to": "ed",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sl",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "pe2",
+        "condition": "gv_aufnr_alt IS NOT INITIAL"
+      },
+      {
+        "from": "gl",
+        "to": "rd",
+        "condition": "else"
+      },
+      {
+        "from": "pe2",
+        "to": "sen",
+        "condition": "always"
+      },
+      {
+        "from": "een",
+        "to": "rd",
+        "condition": "always"
+      },
+      {
+        "from": "rd",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m1",
+        "to": "m1e",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "sc",
+        "condition": "else"
+      },
+      {
+        "from": "sc",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "m3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m3",
+        "to": "m3e",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "lk",
+        "condition": "else"
+      },
+      {
+        "from": "lk",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "m4",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m4",
+        "to": "m4e",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "rv",
+        "condition": "else"
+      },
+      {
+        "from": "rv",
+        "to": "rk",
+        "condition": "always"
+      },
+      {
+        "from": "rk",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "el",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "pop2",
+        "condition": "line_exists( gt_vorg[ endrm = abap_true ] )"
+      },
+      {
+        "from": "ge",
+        "to": "prm",
+        "condition": "else"
+      },
+      {
+        "from": "pop2",
+        "to": "gck2",
+        "condition": "always"
+      },
+      {
+        "from": "gck2",
+        "to": "prm",
+        "condition": "gv_answer = '1'"
+      },
+      {
+        "from": "gck2",
+        "to": "es",
+        "condition": "else"
+      },
+      {
+        "from": "prm",
+        "to": "sr",
+        "condition": "always"
+      },
+      {
+        "from": "rr",
+        "to": "pwa",
+        "condition": "always"
+      },
+      {
+        "from": "er",
+        "to": "pwa",
+        "condition": "always"
+      },
+      {
+        "from": "pwa",
+        "to": "sw",
+        "condition": "always"
+      },
+      {
+        "from": "rw",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "ew",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "gok",
+        "to": "cm",
+        "condition": "lv_ok_rm = abap_true AND lv_ok_wa = abap_true"
+      },
+      {
+        "from": "cm",
+        "to": "ms2",
+        "condition": "always"
+      },
+      {
+        "from": "ms2",
+        "to": "pe3",
+        "condition": "always"
+      },
+      {
+        "from": "pe3",
+        "to": "sen",
+        "condition": "always"
+      },
+      {
+        "from": "een",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "gok",
+        "to": "rb",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "mi2",
+        "condition": "always"
+      },
+      {
+        "from": "mi2",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "sr",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "rr",
+        "condition": "lt_tt IS INITIAL"
+      },
+      {
+        "from": "gt",
+        "to": "bapi",
+        "condition": "else"
+      },
+      {
+        "from": "bapi",
+        "to": "gb2",
+        "condition": "always"
+      },
+      {
+        "from": "gb2",
+        "to": "pp1",
+        "condition": "ls_return-type CA 'EA'"
+      },
+      {
+        "from": "pp1",
+        "to": "spr",
+        "condition": "always"
+      },
+      {
+        "from": "epr",
+        "to": "er",
+        "condition": "always"
+      },
+      {
+        "from": "gb2",
+        "to": "er",
+        "condition": "else"
+      },
+      {
+        "from": "sw",
+        "to": "gi",
+        "condition": "always"
+      },
+      {
+        "from": "gi",
+        "to": "rw",
+        "condition": "lt_item IS INITIAL"
+      },
+      {
+        "from": "gi",
+        "to": "bgm",
+        "condition": "else"
+      },
+      {
+        "from": "bgm",
+        "to": "lpr",
+        "condition": "always"
+      },
+      {
+        "from": "lpr",
+        "to": "pp2",
+        "condition": "next row"
+      },
+      {
+        "from": "pp2",
+        "to": "spr",
+        "condition": "always"
+      },
+      {
+        "from": "epr",
+        "to": "lpr",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lpr",
+        "to": "ew",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sen",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "dq",
+        "to": "een",
+        "condition": "always"
+      },
+      {
+        "from": "spr",
+        "to": "epr",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "sapmzpm_rueck_c01.abap:30 — kein Fachsatz „Mehrentnahme wird verhindert“; der Protokolleintrag ist Typ W, die Menge bleibt stehen.",
+    "sapmzpm_rueck_f01.abap:131 — kein Fachsatz „Auftrag wird technisch abgeschlossen“; Endrückmeldung schließt nur die Vorgänge ab.",
+    "sapmzpm_rueck_f01.abap:102 — kein Fachsatz „Auftrag wird entsperrt“ im Fehlerzweig; entsperrt wird nur nach erfolgreichem Festschreiben oder beim Verlassen.",
+    "sapmzpm_rueck_c01.abap:43 — kein Absprung in die Bestandsübersicht; der Behandler ist entfernt."
+  ],
+  "processDescription": "Der Modulpool meldet einen Instandhaltungsauftrag in einem Bild zurück: Arbeitszeit je Vorgang (Table Control) und Materialentnahme je Reservierung (editierbares Grid), getrennt über einen Tabstrip. Beim Laden wird ein vorheriger Auftrag entsperrt, der neue muss ein Instandhaltungsauftrag und freigegeben sein und wird gesperrt; jede Abweichung bricht mit Fehlermeldung ab. Vorgänge und offene Reservierungen werden gelesen. Beim Erfassen warnt das Zeilenmodul bei mehr als 150 % der Planarbeit, das Grid schreibt bei Mehrentnahme eine Warnung ins Protokoll. Beim Sichern verlangt eine markierte Endrückmeldung eine Bestätigung. Dann werden Zeitrückmeldungen per BAPI_ALM_CONF_CREATE und Warenentnahmen 261 per BAPI_GOODSMVT_CREATE angelegt; Fehlertexte sammelt eine reine Protokollroutine. Nur wenn beides gelingt, wird gemeinsam festgeschrieben, gemeldet, entsperrt und das Bild geleert; sonst wird alles zurückgerollt und die erste Fehlermeldung gezeigt. Beim Verlassen mit erfassten Daten fragt ein Popup nach; bei Ja wird entsperrt und die Transaktion beendet."
+}

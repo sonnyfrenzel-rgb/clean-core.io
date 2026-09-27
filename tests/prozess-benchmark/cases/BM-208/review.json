@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "RAISE EVENT released → Handler on_released → Rückkante ne: synchron, richtig. Zustandswechsel über Attributzuweisung (kein Knoten) mit zwei Kanten kg→ke vertretbar."
+  ]
+}

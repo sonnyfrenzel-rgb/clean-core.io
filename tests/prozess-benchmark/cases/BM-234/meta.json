@@ -1,0 +1,39 @@
+{
+  "id": "BM-234",
+  "title": "Monatsabschluss: Vorprüfungen und Schließen der Buchungsperiode",
+  "domain": "FI",
+  "band": "sehr komplex",
+  "loc": 419,
+  "constructs": [
+    "REPORT mit TOP/SEL/F01/F02/F03",
+    "AT SELECTION-SCREEN",
+    "END-OF-SELECTION",
+    "ELSEIF",
+    "AUTHORITY-CHECK",
+    "CHECK in FORM",
+    "RETURN in FORM",
+    "CASE",
+    "ENQUEUE_E_TABLE",
+    "MODIFY Standardtabelle",
+    "COMMIT WORK",
+    "BAL_*",
+    "MESSAGE A/E",
+    "auskommentierte Aufrufe",
+    "toter FORM"
+  ],
+  "scenario": "Abschlussreport einer Konzernbuchhaltung, der Prüfungen und Periodensteuerung in einem Job bündelt; in der S/4-Transformation wegen direkter T001B-Änderung und BSIS-Zugriff kritisch.",
+  "s4_issues": [
+    "direktes MODIFY auf T001B umgeht Pflege und Änderungsbelege",
+    "BSIS ist Kompatibilitätssicht",
+    "VBKPF-Zählung ohne Berücksichtigung neuer Parkfunktionen"
+  ],
+  "wave": 3,
+  "module": "FI-GL",
+  "edge_constructs": [
+    "Protokollroutine mit fachlicher Nebenwirkung (Fehlerzähler)",
+    "MESSAGE E in FORM nach explizitem Log-Sichern",
+    "nicht gerufene FORM im Include",
+    "ELSEIF mit Testlaufzweig"
+  ],
+  "oo": false
+}

@@ -1,0 +1,35 @@
+{
+  "id": "BM-247",
+  "title": "RAP-Verhalten Kundenreklamation: Anfangsstatus, Kundenprüfung, Eskalation mit Protokoll",
+  "domain": "QM Reklamationsmanagement",
+  "band": "komplex",
+  "loc": 231,
+  "constructs": [
+    "RAP managed with additional save",
+    "FOR INSTANCE FEATURES",
+    "FOR DETERMINE ON MODIFY",
+    "FOR VALIDATE ON SAVE",
+    "FOR MODIFY ACTION ... RESULT",
+    "READ/MODIFY ENTITIES IN LOCAL MODE",
+    "cl_abap_behavior_saver save_modified",
+    "IN BACKGROUND TASK AS SEPARATE UNIT",
+    "statische Methode des Behavior Pools",
+    "ELSEIF",
+    "CHECK",
+    "CONTINUE"
+  ],
+  "scenario": "Kundeneigenes RAP-BO für Reklamationen in einem S/4-Private-Cloud-System; Sachbearbeiter erfassen Reklamationen in einer Fiori-Elements-App und eskalieren sie per Aktion.",
+  "s4_issues": [
+    "SELECT auf KNA1 im Behavior Pool statt freigegebenem I_Customer",
+    "tRFC IN BACKGROUND TASK in der Save-Phase statt bgPF"
+  ],
+  "wave": 3,
+  "module": "QM",
+  "edge_constructs": [
+    "Warnung ohne failed",
+    "Rückkehrwert einer funktionalen Methode in Zuweisung",
+    "Kommentar widerspricht Code (Eskalation kann zurückgehen)",
+    "Schleife ohne Knoten im Körper"
+  ],
+  "oo": true
+}

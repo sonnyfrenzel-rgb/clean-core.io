@@ -1,0 +1,1845 @@
+{
+  "id": "BM-239",
+  "title": "Intercompany-Salden mit Partnersystemen per paralleler RFC abstimmen",
+  "classes": [
+    "K01",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Die Kante vom Ende des remote gerufenen Bausteins in den Rückruf salden_empfangen und die Kante vom Rückrufende zum WAIT bilden die Laufzeitsemantik von ON END OF TASK ab; ob der Benchmark diese Kanten verlangt, ist offen."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZFI_IC_PARTNER",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_ic_abstimmung_f01.abap",
+        "line": 10,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_abstimmung_f01.abap:10"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BSID",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_ic_abstimmung_f01.abap",
+        "line": 31,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_abstimmung_f01.abap:31"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BSIK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_ic_abstimmung_f01.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_abstimmung_f01.abap:38"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_IC_DIFF",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zfi_ic_abstimmung_f03.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_abstimmung_f03.abap:44"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_FI_IC_SALDEN_LESEN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_ic_abstimmung_f02.abap",
+        "line": 22,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_abstimmung_f02.abap:22"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-239-B01",
+      "text": "Es werden die aktiven Partnergesellschaften des Buchungskreises mit RFC-Destination gelesen; gibt es keine, bricht der Lauf mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:31"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f01.abap:10"
+        },
+        {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:32"
+        },
+        {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-239-B02",
+      "text": "Je Partner werden der eigene Forderungs- und Verbindlichkeitssaldo aus offenen Posten mit dessen Partner-Gesellschaftsnummer bis zum Stichtag ermittelt.",
+      "anchors": [
+        {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:36"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f01.abap:27"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f01.abap:31"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f01.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-239-B03",
+      "text": "Je Partner wird die Saldenabfrage im Partnersystem asynchron gestartet.",
+      "anchors": [
+        {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:37"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-239-B04",
+      "text": "Sind keine freien Prozesse verfügbar, wird der Partner synchron abgefragt; das Ergebnis oder der Fehler wird sofort vermerkt.",
+      "anchors": [
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:35"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:40"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:54"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:55"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-239-B05",
+      "text": "Scheitert der Start aus anderem Grund, wird der Fehler beim Partner vermerkt.",
+      "anchors": [
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-239-B06",
+      "text": "Im Partnersystem werden die offenen Forderungen und Verbindlichkeiten gegenüber der anfragenden Gesellschaft bis zum Stichtag gezählt und saldiert; ohne offene Posten meldet die Abfrage KEINE_DATEN.",
+      "anchors": [
+        {
+          "file": "lzfi_ic_rfcu01.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ic_rfcu01.abap:1"
+        },
+        {
+          "file": "lzfi_ic_rfcu01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ic_rfcu01.abap:20"
+        },
+        {
+          "file": "lzfi_ic_rfcu01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ic_rfcu01.abap:27"
+        },
+        {
+          "file": "lzfi_ic_rfcu01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ic_rfcu01.abap:34"
+        },
+        {
+          "file": "lzfi_ic_rfcu01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ic_rfcu01.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-239-B07",
+      "text": "Bei Rückmeldung eines Partners wird sein Ergebnis übernommen; KEINE_DATEN gilt als Saldo null, ein Kommunikations- oder Systemfehler wird vermerkt; jede Rückmeldung wird gezählt.",
+      "anchors": [
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:76"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:82"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:93"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:94"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:97"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:99"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:102"
+        }
+      ]
+    },
+    {
+      "id": "BM-239-B08",
+      "text": "Ergebnisse und Fehler werden nur bei Partnern eingetragen, die in der Saldenliste stehen.",
+      "anchors": [
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:113"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:115"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:127"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:129"
+        }
+      ]
+    },
+    {
+      "id": "BM-239-B09",
+      "text": "Jede Abfrage läuft unter dem Partner-Buchungskreis als Taskname, über den die Rückmeldung dem Partner zugeordnet wird.",
+      "anchors": [
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:20"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:92"
+        }
+      ]
+    },
+    {
+      "id": "BM-239-B10",
+      "text": "Nach dem Start aller Abfragen wird höchstens fünf Minuten auf alle Rückmeldungen gewartet; fehlen danach welche, erscheint ein Hinweis.",
+      "anchors": [
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:65"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:66"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-239-B11",
+      "text": "Partner mit Abfragefehler werden nicht verglichen.",
+      "anchors": [
+        {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:38"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-239-B12",
+      "text": "Verglichen werden unsere Forderung mit der Verbindlichkeit des Partners und unsere Verbindlichkeit mit der Forderung des Partners.",
+      "anchors": [
+        {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-239-B13",
+      "text": "Liegen beide Differenzen innerhalb der Toleranz, gilt der Partner als abgestimmt; sonst als Differenz.",
+      "anchors": [
+        {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-239-B14",
+      "text": "Im Echtlauf wird für jede Differenz ein offener Klärungssatz mit beiden Differenzbeträgen geschrieben und am Ende festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:34"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:44"
+        },
+        {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:40"
+        },
+        {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-239-B15",
+      "text": "Das Abstimmungsergebnis je Partner wird als ALV-Liste angezeigt; ein Anzeigefehler wird gemeldet.",
+      "anchors": [
+        {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:44"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:58"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:61"
+        },
+        {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:63"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:29"
+        },
+        "meaning": "Abstimmungslauf starten"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:31"
+        },
+        "meaning": "Partnergesellschaften lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:32"
+        },
+        "meaning": "Aktive Partner vorhanden?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:33"
+        },
+        "meaning": "Fehler: keine Partner"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:33"
+        },
+        "meaning": "Programmabbruch"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:36"
+        },
+        "meaning": "Eigene Salden je Partner ermitteln"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:37"
+        },
+        "meaning": "Partnersalden parallel lesen"
+      },
+      {
+        "id": "c4",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:38"
+        },
+        "meaning": "Salden vergleichen"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:40"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:41"
+        },
+        "meaning": "Differenzsätze festschreiben"
+      },
+      {
+        "id": "c5",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:44"
+        },
+        "meaning": "Ergebnis anzeigen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_abstimmung.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung.abap:44"
+        },
+        "meaning": "Programmende"
+      },
+      {
+        "id": "pls",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f01.abap:9"
+        },
+        "meaning": "Partnerselektion"
+      },
+      {
+        "id": "plq",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f01.abap:10"
+        },
+        "meaning": "Aktive Partner des Buchungskreises lesen"
+      },
+      {
+        "id": "ple",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f01.abap:15"
+        },
+        "meaning": "Ende Partnerselektion"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f01.abap:23"
+        },
+        "meaning": "Eigene Salden"
+      },
+      {
+        "id": "el",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f01.abap:27"
+        },
+        "meaning": "Partner durchlaufen"
+      },
+      {
+        "id": "eq1",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f01.abap:31"
+        },
+        "meaning": "Forderungssaldo gegenüber Partner bis Stichtag lesen"
+      },
+      {
+        "id": "eq2",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f01.abap:38"
+        },
+        "meaning": "Verbindlichkeitssaldo gegenüber Partner bis Stichtag lesen"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f01.abap:47"
+        },
+        "meaning": "Ende eigene Salden"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:9"
+        },
+        "meaning": "Parallele Abfrage"
+      },
+      {
+        "id": "pl",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:18"
+        },
+        "meaning": "Partner durchlaufen"
+      },
+      {
+        "id": "pa",
+        "type": "async",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:22"
+        },
+        "meaning": "Saldenabfrage im Partnersystem asynchron starten"
+      },
+      {
+        "id": "pc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:35"
+        },
+        "meaning": "Start erfolgreich?"
+      },
+      {
+        "id": "pr",
+        "type": "rfc",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:40"
+        },
+        "meaning": "Saldenabfrage synchron ausführen"
+      },
+      {
+        "id": "prg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:54"
+        },
+        "meaning": "Synchrone Abfrage erfolgreich?"
+      },
+      {
+        "id": "pcs1",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:55"
+        },
+        "meaning": "Partnersaldo übernehmen"
+      },
+      {
+        "id": "pcf1",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:57"
+        },
+        "meaning": "Abfragefehler vermerken"
+      },
+      {
+        "id": "pcf2",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:60"
+        },
+        "meaning": "Startfehler vermerken"
+      },
+      {
+        "id": "pw",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:65"
+        },
+        "meaning": "Auf alle Rückmeldungen höchstens fünf Minuten warten"
+      },
+      {
+        "id": "pg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:66"
+        },
+        "meaning": "Rückmeldungen fehlen?"
+      },
+      {
+        "id": "pm",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:67"
+        },
+        "meaning": "Hinweis: nicht alle Partner geantwortet"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:69"
+        },
+        "meaning": "Ende parallele Abfrage"
+      },
+      {
+        "id": "cs",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:76"
+        },
+        "meaning": "Rückruf bei Taskende"
+      },
+      {
+        "id": "crr",
+        "type": "async",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:82"
+        },
+        "meaning": "Ergebnis der Partnerabfrage empfangen"
+      },
+      {
+        "id": "cg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:93"
+        },
+        "meaning": "Ergebnis erhalten?"
+      },
+      {
+        "id": "cc1",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:94"
+        },
+        "meaning": "Partnersaldo übernehmen"
+      },
+      {
+        "id": "cc2",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:97"
+        },
+        "meaning": "Partnersaldo null übernehmen"
+      },
+      {
+        "id": "cc3",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:99"
+        },
+        "meaning": "Abfragefehler vermerken"
+      },
+      {
+        "id": "cad",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:102"
+        },
+        "meaning": "Rückmeldung zählen"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:103"
+        },
+        "meaning": "Ende Rückruf"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:108"
+        },
+        "meaning": "Partnersaldo übernehmen"
+      },
+      {
+        "id": "sr",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:113"
+        },
+        "meaning": "Saldozeile des Partners suchen"
+      },
+      {
+        "id": "sck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:115"
+        },
+        "meaning": "Partner bekannt?"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:118"
+        },
+        "meaning": "Ende Saldo übernehmen"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:123"
+        },
+        "meaning": "Fehler vermerken"
+      },
+      {
+        "id": "fr",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:127"
+        },
+        "meaning": "Saldozeile des Partners suchen"
+      },
+      {
+        "id": "fck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:129"
+        },
+        "meaning": "Partner bekannt?"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f02.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f02.abap:132"
+        },
+        "meaning": "Ende Fehler vermerken"
+      },
+      {
+        "id": "vs",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:13"
+        },
+        "meaning": "Saldenvergleich"
+      },
+      {
+        "id": "vl",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:19"
+        },
+        "meaning": "Partnersalden durchlaufen"
+      },
+      {
+        "id": "vg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:21"
+        },
+        "meaning": "Partnersaldo fehlerhaft?"
+      },
+      {
+        "id": "va",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:25"
+        },
+        "meaning": "Differenzen berechnen"
+      },
+      {
+        "id": "vg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:28"
+        },
+        "meaning": "Beide Differenzen in Toleranz?"
+      },
+      {
+        "id": "vck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:34"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "vm",
+        "type": "write",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:44"
+        },
+        "meaning": "Differenzsatz zur Klärung schreiben"
+      },
+      {
+        "id": "ve",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:46"
+        },
+        "meaning": "Ende Saldenvergleich"
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:51"
+        },
+        "meaning": "Ergebnisanzeige"
+      },
+      {
+        "id": "af",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:58"
+        },
+        "meaning": "ALV-Liste erzeugen"
+      },
+      {
+        "id": "afn",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:60"
+        },
+        "meaning": "Standardfunktionen einschalten"
+      },
+      {
+        "id": "ad",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:61"
+        },
+        "meaning": "Abstimmungsergebnis anzeigen"
+      },
+      {
+        "id": "ax",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:63"
+        },
+        "meaning": "Anzeigefehler melden"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_abstimmung_f03.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_abstimmung_f03.abap:65"
+        },
+        "meaning": "Ende Ergebnisanzeige"
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "lzfi_ic_rfcu01.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ic_rfcu01.abap:1"
+        },
+        "meaning": "Saldenabfrage im Partnersystem"
+      },
+      {
+        "id": "rq1",
+        "type": "read",
+        "anchor": {
+          "file": "lzfi_ic_rfcu01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ic_rfcu01.abap:20"
+        },
+        "meaning": "Forderungen gegenüber der anfragenden Gesellschaft zählen und saldieren"
+      },
+      {
+        "id": "rq2",
+        "type": "read",
+        "anchor": {
+          "file": "lzfi_ic_rfcu01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ic_rfcu01.abap:27"
+        },
+        "meaning": "Verbindlichkeiten gegenüber der anfragenden Gesellschaft zählen und saldieren"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzfi_ic_rfcu01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ic_rfcu01.abap:34"
+        },
+        "meaning": "Keine offenen Posten?"
+      },
+      {
+        "id": "rx",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_ic_rfcu01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ic_rfcu01.abap:35"
+        },
+        "meaning": "Ausnahme KEINE_DATEN"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "anchor": {
+          "file": "lzfi_ic_rfcu01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzfi_ic_rfcu01.abap:37"
+        },
+        "meaning": "Ende Saldenabfrage"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "pls",
+        "condition": "always"
+      },
+      {
+        "from": "pls",
+        "to": "plq",
+        "condition": "always"
+      },
+      {
+        "from": "plq",
+        "to": "ple",
+        "condition": "always"
+      },
+      {
+        "from": "ple",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "m",
+        "condition": "gt_partner IS INITIAL"
+      },
+      {
+        "from": "m",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "c2",
+        "condition": "else"
+      },
+      {
+        "from": "c2",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "el",
+        "condition": "always"
+      },
+      {
+        "from": "el",
+        "to": "eq1",
+        "condition": "next row"
+      },
+      {
+        "from": "eq1",
+        "to": "eq2",
+        "condition": "always"
+      },
+      {
+        "from": "eq2",
+        "to": "el",
+        "condition": "next iteration"
+      },
+      {
+        "from": "el",
+        "to": "ee",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ee",
+        "to": "c3",
+        "condition": "always"
+      },
+      {
+        "from": "c3",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "pl",
+        "condition": "always"
+      },
+      {
+        "from": "pl",
+        "to": "pa",
+        "condition": "next row"
+      },
+      {
+        "from": "pa",
+        "to": "pc",
+        "condition": "always"
+      },
+      {
+        "from": "pa",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "pc",
+        "to": "pl",
+        "condition": "WHEN 0"
+      },
+      {
+        "from": "pc",
+        "to": "pr",
+        "condition": "WHEN 3"
+      },
+      {
+        "from": "pr",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "prg",
+        "condition": "always"
+      },
+      {
+        "from": "rx",
+        "to": "prg",
+        "condition": "keine_daten"
+      },
+      {
+        "from": "prg",
+        "to": "pcs1",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "pcs1",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "pl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "prg",
+        "to": "pcf1",
+        "condition": "else"
+      },
+      {
+        "from": "pcf1",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "pl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pc",
+        "to": "pcf2",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "pcf2",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "pl",
+        "to": "pw",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pw",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pm",
+        "condition": "gv_fertig < gv_gestartet"
+      },
+      {
+        "from": "pm",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pe",
+        "condition": "else"
+      },
+      {
+        "from": "pe",
+        "to": "c4",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "rx",
+        "to": "cs",
+        "condition": "keine_daten"
+      },
+      {
+        "from": "cs",
+        "to": "crr",
+        "condition": "always"
+      },
+      {
+        "from": "crr",
+        "to": "cg",
+        "condition": "always"
+      },
+      {
+        "from": "cg",
+        "to": "cc1",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "cc1",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "cad",
+        "condition": "always"
+      },
+      {
+        "from": "cg",
+        "to": "cc2",
+        "condition": "sy-subrc = 3"
+      },
+      {
+        "from": "cc2",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "cg",
+        "to": "cc3",
+        "condition": "else"
+      },
+      {
+        "from": "cc3",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "cad",
+        "condition": "always"
+      },
+      {
+        "from": "cad",
+        "to": "ce",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "pw",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "sr",
+        "condition": "always"
+      },
+      {
+        "from": "sr",
+        "to": "sck",
+        "condition": "always"
+      },
+      {
+        "from": "sck",
+        "to": "se",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "sck",
+        "to": "se",
+        "condition": "else"
+      },
+      {
+        "from": "fs",
+        "to": "fr",
+        "condition": "always"
+      },
+      {
+        "from": "fr",
+        "to": "fck",
+        "condition": "always"
+      },
+      {
+        "from": "fck",
+        "to": "fe",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "fck",
+        "to": "fe",
+        "condition": "else"
+      },
+      {
+        "from": "c4",
+        "to": "vs",
+        "condition": "always"
+      },
+      {
+        "from": "vs",
+        "to": "vl",
+        "condition": "always"
+      },
+      {
+        "from": "vl",
+        "to": "vg1",
+        "condition": "next row"
+      },
+      {
+        "from": "vg1",
+        "to": "vl",
+        "condition": "<ls_saldo>-status = 'F'"
+      },
+      {
+        "from": "vg1",
+        "to": "va",
+        "condition": "else"
+      },
+      {
+        "from": "va",
+        "to": "vg2",
+        "condition": "always"
+      },
+      {
+        "from": "vg2",
+        "to": "vl",
+        "condition": "abs( lv_diff1 ) <= p_toler AND abs( lv_diff2 ) <= p_toler"
+      },
+      {
+        "from": "vg2",
+        "to": "vck",
+        "condition": "else"
+      },
+      {
+        "from": "vck",
+        "to": "vm",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "vck",
+        "to": "vl",
+        "condition": "else"
+      },
+      {
+        "from": "vm",
+        "to": "vl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "vl",
+        "to": "ve",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ve",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "cm",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "cm",
+        "to": "c5",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "c5",
+        "condition": "else"
+      },
+      {
+        "from": "c5",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "as",
+        "to": "af",
+        "condition": "always"
+      },
+      {
+        "from": "af",
+        "to": "afn",
+        "condition": "always"
+      },
+      {
+        "from": "afn",
+        "to": "ad",
+        "condition": "always"
+      },
+      {
+        "from": "ad",
+        "to": "ae",
+        "condition": "always"
+      },
+      {
+        "from": "af",
+        "to": "ax",
+        "condition": "cx_salv_msg"
+      },
+      {
+        "from": "ax",
+        "to": "ae",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "rq1",
+        "condition": "always"
+      },
+      {
+        "from": "rq1",
+        "to": "rq2",
+        "condition": "always"
+      },
+      {
+        "from": "rq2",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rx",
+        "condition": "lv_ford_cnt = 0 AND lv_verb_cnt = 0"
+      },
+      {
+        "from": "rg",
+        "to": "re",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zfi_ic_abstimmung_f03.abap:21 — kein Fachsatz „Partner ohne Rückmeldung werden nicht verglichen“ (übersprungen wird nur Status F; ein Partner, dessen Antwort nach der Wartezeit fehlt, wird mit Partnersaldo null verglichen und kann als Differenz geschrieben werden)",
+    "zfi_ic_abstimmung_f02.abap:65 — kein Fachsatz „der Lauf bricht ab, wenn ein Partner nicht antwortet“ (nur Hinweis vom Typ I)",
+    "zfi_ic_abstimmung_f03.abap:44 — kein Fachsatz „Differenzen werden automatisch ausgebucht“ (nur Klärungssatz mit Status offen)",
+    "gesamte Scheibe — kein Fachsatz „Fremdwährungssalden werden umgerechnet“ (verglichen werden Hauswährungsbeträge, laut Kommentar gleiche Konzernwährung vorausgesetzt)"
+  ],
+  "processDescription": "Der Report stimmt zum Stichtag die Intercompany-Salden eines Buchungskreises mit den Partnersystemen ab. Er liest die aktiven Partner aus einer Kundentabelle (ohne Partner: Abbruch) und ermittelt je Partner eigene Forderungen und Verbindlichkeiten aus offenen Posten mit der Partner-Gesellschaftsnummer. Dann startet er je Partner die Saldenabfrage im Partnersystem asynchron per RFC; fehlen freie Prozesse, fragt er synchron ab, andere Startfehler vermerkt er. Der Baustein im Partnersystem zählt und saldiert die offenen Posten gegenüber der anfragenden Gesellschaft und meldet ohne Posten KEINE_DATEN. Ein Rückruf bei Taskende übernimmt Saldo, Saldo null bei KEINE_DATEN oder einen Fehler und zählt die Rückmeldung; der Report wartet höchstens fünf Minuten und weist auf fehlende Rückmeldungen hin. Beim Vergleich werden Partner mit Fehler übersprungen, die übrigen gegen die Toleranz geprüft; Differenzen werden im Echtlauf als offene Klärungssätze geschrieben und mit COMMIT WORK festgeschrieben. Am Ende zeigt der Report das Ergebnis als ALV-Liste an."
+}

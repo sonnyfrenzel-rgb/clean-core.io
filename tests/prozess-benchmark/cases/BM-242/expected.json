@@ -1,0 +1,247 @@
+{
+  "id": "BM-242",
+  "title": "Gateway GET_ENTITY: Kreditlimit und Ausschöpfung eines Kunden",
+  "classes": [
+    "K01",
+    "K02"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "KNKK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-242-B01",
+      "text": "Für den angefragten Kunden (mit führenden Nullen aufbereitet) und Kreditkontrollbereich werden Kreditlimit, Forderungen, Sonderobligo und Risikoklasse gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-242-B02",
+      "text": "Existiert kein Kreditlimit, wird die Anfrage mit dem Geschäftsfehler „Kein Kreditlimit für Kunde … in …“ abgewiesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-242-B03",
+      "text": "Bei einem Limit größer null wird die Ausschöpfung als Anteil von Forderungen plus Sonderobligo am Limit in Prozent berechnet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-242-B04",
+      "text": "Bei einem Limit von null bleibt die Ausschöpfung leer; das Limit wird trotzdem zurückgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "OData-Leseanforderung für ein Kreditlimit (Einzelsatz)"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Kreditlimit, Forderungen und Sonderobligo des Kunden im Kreditkontrollbereich lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Kreditlimit vorhanden?"
+      },
+      {
+        "id": "x",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Abbruch mit Geschäftsfehler „Kein Kreditlimit“ an den Client"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Limit größer null?"
+      },
+      {
+        "id": "a",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Ausschöpfung in Prozent aus Forderungen und Sonderobligo berechnen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Kreditlimit an den Client zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "r",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "x",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "a",
+        "condition": "er_entity-klimk > 0"
+      },
+      {
+        "from": "g2",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "a",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:12 — kein Fachsatz „Kreditprüfung wird durchgeführt“ (es wird nur gelesen und angezeigt, nicht gegen einen Auftrag geprüft)",
+    "source.abap:26 — kein Fachsatz „Kunde wird bei Überschreitung gesperrt“ (die Methode ändert nichts)",
+    "gesamte Scheibe — keine Berechtigungsprüfung auf den Kreditkontrollbereich behaupten; im Code steht keine"
+  ],
+  "processDescription": "Eine Fiori-App fragt über OData das Kreditlimit eines Kunden in einem Kreditkontrollbereich an. Die Methode übernimmt Kundennummer und Kreditkontrollbereich aus dem Schlüssel und liest Kreditlimit, Forderungen, Sonderobligo und Risikoklasse aus dem klassischen Kreditmanagement. Gibt es keinen Eintrag, wird die Anfrage mit einem Geschäftsfehler abgewiesen. Ist das Limit größer null, wird die Ausschöpfung in Prozent aus Forderungen plus Sonderobligo berechnet; sonst bleibt sie leer. Das Ergebnis geht an den Client zurück, geändert wird nichts."
+}

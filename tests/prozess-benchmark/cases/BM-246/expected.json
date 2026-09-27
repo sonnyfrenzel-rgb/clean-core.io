@@ -1,0 +1,622 @@
+{
+  "id": "BM-246",
+  "title": "Gateway CREATE_ENTITY: Störmeldung aus der Instandhaltungs-App anlegen",
+  "classes": [
+    "K02",
+    "K03"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EQUI",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ALM_NOTIF_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:48"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ALM_NOTIF_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 67,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:67"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:58"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 76,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:76"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-246-B01",
+      "text": "Die App übergibt Equipment, Kurztext und das Kennzeichen „Anlage steht“ für eine neue Störmeldung.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-246-B02",
+      "text": "Fehlen Equipment oder Kurztext, wird die Anlage mit der Meldung ZPM_APP 001 abgewiesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-246-B03",
+      "text": "Existiert das Equipment nicht, wird die Anlage mit der Meldung ZPM_APP 002 und der Equipmentnummer abgewiesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-246-B04",
+      "text": "Steht die Anlage, erhält die Meldung Priorität 1 und einen Wunschendtermin morgen, sonst Priorität 3 und einen Wunschendtermin in 14 Tagen; Melder ist der angemeldete Benutzer, Wunschbeginn heute.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-246-B05",
+      "text": "Es wird eine Instandhaltungsmeldung der Art M2 zum Equipment angelegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-246-B06",
+      "text": "Meldet die Anlage einen Fehler oder Abbruch, wird verworfen und die BAPI-Meldungen gehen mit der ersten als führender Meldung an die App, die Anfrage wird abgewiesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-246-B07",
+      "text": "Sonst wird die Meldung gesichert, erhält ihre endgültige Nummer und wird synchron festgeschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-246-B08",
+      "text": "Die App erhält die Meldungsnummer als Erfolgsmeldung ZPM_APP 010 im Response-Header sowie Nummer und Priorität in der Antwort.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        {
+          "file": "source.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:90"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "App sendet eine neue Störmeldung (OData POST)"
+      },
+      {
+        "id": "in",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Meldungsdaten aus der Anfrage übernehmen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Equipment oder Kurztext fehlt?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Fehler ZPM_APP 001 (Pflichtfeld) in den Nachrichtencontainer"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Anlage mit Geschäftsfehler abweisen"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Equipment lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Equipment vorhanden?"
+      },
+      {
+        "id": "m2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Fehler ZPM_APP 002 mit Equipmentnummer"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "Anlage mit Geschäftsfehler abweisen"
+      },
+      {
+        "id": "p",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        "meaning": "Priorität und Wunschendtermin aus „Anlage steht“ ableiten"
+      },
+      {
+        "id": "b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Meldung vom Typ M2 anlegen (vorläufige Nummer)"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        "meaning": "Fehler bei der Anlage?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Anlage verwerfen"
+      },
+      {
+        "id": "m3",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "BAPI-Meldungen mit führender Meldung an die App geben"
+      },
+      {
+        "id": "x3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        "meaning": "Anlage mit Geschäftsfehler abweisen"
+      },
+      {
+        "id": "sv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        "meaning": "Meldung sichern, endgültige Nummer vergeben"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        "meaning": "Festschreiben (synchron)"
+      },
+      {
+        "id": "m4",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        "meaning": "Erfolgsmeldung ZPM_APP 010 mit Meldungsnummer im Response-Header"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:90"
+        },
+        "meaning": "Angelegte Meldung mit Nummer und Priorität an die App zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "in",
+        "condition": "always"
+      },
+      {
+        "from": "in",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "ls_input-equnr IS INITIAL OR ls_input-kurztext IS INITIAL"
+      },
+      {
+        "from": "m1",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "q",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "m2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m2",
+        "to": "x2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "p",
+        "condition": "else"
+      },
+      {
+        "from": "p",
+        "to": "b",
+        "condition": "always"
+      },
+      {
+        "from": "b",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "rb",
+        "condition": "line_exists( lt_return[ type = 'E' ] ) OR line_exists( lt_return[ type = 'A' ] )"
+      },
+      {
+        "from": "rb",
+        "to": "m3",
+        "condition": "always"
+      },
+      {
+        "from": "m3",
+        "to": "x3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "sv",
+        "condition": "else"
+      },
+      {
+        "from": "sv",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "m4",
+        "condition": "always"
+      },
+      {
+        "from": "m4",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:67 — kein Fachsatz „ein Fehler beim Sichern wird zurückgewiesen“ (die Rückgabe des Sicherns wird nicht ausgewertet, danach wird immer festgeschrieben)",
+    "source.abap:30 — kein Fachsatz „gelöschte Equipments werden abgewiesen“ (der Kommentar verspricht es, der Code prüft nur die Existenz)",
+    "source.abap:43 — kein Fachsatz „ein Instandhaltungsauftrag wird angelegt“ (es entsteht nur eine Meldung)"
+  ],
+  "processDescription": "Ein Instandhalter meldet über eine Tablet-App eine Störung; der OData-Service übernimmt Equipment, Kurztext und das Kennzeichen „Anlage steht“. Fehlt Equipment oder Kurztext, oder existiert das Equipment nicht, wird die Anfrage mit einer Fehlermeldung im Nachrichtencontainer abgewiesen. Sonst werden Priorität und Wunschendtermin abgeleitet: bei stehender Anlage Priorität 1 und Ende morgen, sonst Priorität 3 und Ende in 14 Tagen. Dann wird eine M2-Meldung angelegt. Meldet das BAPI Fehler, wird verworfen und die BAPI-Meldungen gehen an die App. Andernfalls wird die Meldung gesichert und festgeschrieben, ohne das Ergebnis des Sicherns zu prüfen, und die App erhält die endgültige Nummer als Erfolgsmeldung und im Antwortsatz."
+}
