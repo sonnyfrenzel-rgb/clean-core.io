@@ -462,3 +462,34 @@ test('F4 — CALL TRANSACTION sagt den Aufruf, nicht einen aus dem Namen gelesen
   expect(mappe).toContain('synchron');
   expect(mappe).not.toContain('Anlage');
 });
+
+test('F5 — MESSAGE … INTO und WRITE … TO geben nichts aus', () => {
+  const code = quelle(
+    'FORM pruefen CHANGING cv_text TYPE string.',
+    "  MESSAGE e010(zbel) WITH gv_beleg INTO cv_text.",
+    "  MESSAGE e011(zbel) RAISING nicht_gefunden.",
+    '  WRITE gv_betrag TO gv_anzeige CURRENCY gv_waehrung.',
+    "  MESSAGE s012(zbel) DISPLAY LIKE 'E'.",
+    "  WRITE / gv_betrag CURRENCY gv_waehrung.",
+    'ENDFORM.',
+  );
+  const into = satzAn(code, 2).join(' ');
+  expect(into).toContain('in cv_text übernommen');
+  expect(into).toContain('angezeigt wird dabei nichts');
+  expect(into).not.toMatch(/Meldung wird ausgegeben/);
+
+  const raising = satzAn(code, 3).join(' ');
+  expect(raising).toContain('Ausnahme nicht_gefunden wird ausgelöst');
+  expect(raising).not.toMatch(/wird ausgegeben/);
+
+  const formatiert = satzAn(code, 4).join(' ');
+  expect(formatiert).toContain('in gv_anzeige übernommen');
+  expect(formatiert).not.toMatch(/wird ausgegeben/);
+
+  // Eine echte Meldung sagt ihren Typ; eine echte Ausgabe bleibt eine Ausgabe,
+  // ohne die Formatierungszusätze als Inhalt zu lesen.
+  expect(satzAn(code, 5).join(' ')).toContain('Statusmeldung 012(ZBEL) wird ausgegeben, angezeigt wie eine Fehlermeldung');
+  const ausgabe = satzAn(code, 6).join(' ');
+  expect(ausgabe).toContain('ausgegeben');
+  expect(ausgabe).not.toContain('CURRENCY');
+});

@@ -612,17 +612,53 @@ function originMap(statements: readonly AbapStatement[]): Map<string, ValueOrigi
   return origins;
 }
 
+/**
+ * `WRITE x TO y` gibt nichts aus: es schreibt `x` formatiert in `y` (F5).
+ * Nur ein `WRITE` ohne `TO` ist eine Listenausgabe.
+ */
+function isOutputWrite(statement: AbapStatement): boolean {
+  return statement.keyword.toUpperCase() === 'WRITE' && !WRITE_TO.test(statement.text);
+}
+
+const WRITE_TO = /^WRITE\s+(.+?)\s+TO\s+([A-Za-z0-9_\-<>~]+(?:\+\d+)?(?:\(\d+\))?)(?:\s|$)/i;
+
+/** Die Formatierungszusätze einer Listenausgabe — sie sagen, wie, nicht was ausgegeben wird. */
+const WRITE_OPTIONS =
+  /\s+(?:UNIT|CURRENCY|DECIMALS|EXPONENT|ROUND|TIME\s+ZONE|USING\s+(?:NO\s+)?EDIT\s+MASK|COLOR|INTENSIFIED|INVERSE|HOTSPOT|INPUT|FRAME|NO-GAP|NO-SIGN|NO-ZERO|NO-GROUPING|LEFT-JUSTIFIED|CENTERED|RIGHT-JUSTIFIED|UNDER|DD\/MM\/YY(?:YY)?|MM\/DD\/YY(?:YY)?|DDMMYY|MMDDYY|YYMMDD|AS\s+(?:CHECKBOX|ICON|SYMBOL|LINE)|QUICKINFO|ENVIRONMENT\s+TIME\s+FORMAT|STYLE)\b.*$/i;
+
+/** Was ein `WRITE` ausgibt, ohne Position, Zeilenvorschub und Formatierung. */
+function writeBody(statement: AbapStatement): string {
+  return statement.text
+    .replace(/^WRITE\s*/i, '')
+    .replace(/^AT\s+/i, '')
+    .replace(/^\/?\s*\d*(?:\(\*{0,2}\d*\))?\s+/, '')
+    .replace(/^\/\s*/, '')
+    .replace(WRITE_OPTIONS, '')
+    .trim();
+}
+
 /** `WRITE / 'X'` oder `WRITE / lv_x` — der häufigste Anker des Korpus. */
 function writtenTarget(
   statement: AbapStatement,
   origins?: Map<string, ValueOrigin>,
 ): { label: string; literal: boolean } {
-  const body = statement.text.replace(/^WRITE\s*/i, '').replace(/^\/?\s*/, '').replace(/^\/\s*/, '').trim();
-  const literal = literalOf(body);
+  const body = writeBody(statement);
+  // `'Text'(001)` ist ein Literal mit Textsymbol, `gv_x(10)` ein Ausschnitt.
+  const literal = literalOf(body.replace(/^('[^']*')\(\w{1,3}\)$/, '$1'));
   if (literal != null) return { label: literal, literal: true };
-  const origin = origins?.get(plain(body).toLowerCase());
+  const cut = body.replace(/(?:\+\d+)?\(\d+\)$/, '');
+  const origin = origins?.get(plain(cut).toLowerCase());
   if (origin && origin !== 'none') return { label: ORIGIN_TERMS[origin], literal: false };
-  return { label: termFor(body).singular, literal: false };
+  return { label: termFor(cut).singular, literal: false };
+}
+
+/** Der Satz zu `WRITE x TO y` — Formatierung in ein Feld, keine Ausgabe (F5). */
+function writeToSentence(statement: AbapStatement): string | null {
+  const match = WRITE_TO.exec(statement.text);
+  if (!match) return null;
+  const source = match[1].replace(/^\/\s*/, '');
+  const shown = literalOf(source) ?? plain(source);
+  return `Der Wert ${shown} wird aufbereitet in ${plain(match[2])} übernommen; ausgegeben wird dabei nichts.`;
 }
 
 const SELECT_LIST = /^SELECT\s+(?:SINGLE\s+)?(?:DISTINCT\s+)?(.+?)\s+FROM\s+/i;
@@ -1113,7 +1149,7 @@ function guardSentence(
     body.push(next);
     if (body.length > 4) break;
   }
-  const write = body.find((s) => s.keyword.toUpperCase() === 'WRITE');
+  const write = body.find((s) => isOutputWrite(s));
   const leave = body.find((s) => ['RETURN', 'LEAVE', 'EXIT'].includes(s.keyword.toUpperCase()));
   if (!leave) return null;
 
@@ -1219,6 +1255,104 @@ function registrationNotes(luw: LuwModel, index: number): string[] {
   return notes;
 }
 
+// ---------------------------------------------------------------------------
+// MESSAGE (F5)
+// ---------------------------------------------------------------------------
+
+const MESSAGE_TYPES: Record<string, { noun: string; article: string }> = {
+  A: { noun: 'Abbruchmeldung', article: 'eine' },
+  E: { noun: 'Fehlermeldung', article: 'eine' },
+  W: { noun: 'Warnung', article: 'eine' },
+  I: { noun: 'Informationsmeldung', article: 'eine' },
+  S: { noun: 'Statusmeldung', article: 'eine' },
+  X: { noun: 'Meldung vom Typ X', article: 'eine' },
+};
+
+interface MessageParts {
+  /** `001(ZSD)`, `„Text"` oder der Name der Variablen. */
+  label: string | null;
+  type: string | null;
+  into: string | null;
+  raising: string | null;
+  displayLike: string | null;
+}
+
+/** Die Bestandteile einer `MESSAGE`-Anweisung — Nummer, Typ, INTO, RAISING, DISPLAY LIKE. */
+function messageParts(text: string): MessageParts {
+  const body = text.replace(/^MESSAGE\s+/i, '');
+  const short = /^([AEISWX])(\d{3})(?:\((\S+?)\))?(?=\s|$)/i.exec(body);
+  const byId = /^ID\s+('[^']*'|\S+)\s+TYPE\s+('[^']*'|\S+)\s+NUMBER\s+('[^']*'|\S+)/i.exec(body);
+  const typeAddition = /\bTYPE\s+('[^']*'|\S+)/i.exec(body);
+  let label: string | null = null;
+  let type: string | null = null;
+  if (short) {
+    type = short[1].toUpperCase();
+    label = `${short[2]}${short[3] ? `(${short[3].toUpperCase()})` : ''}`;
+  } else if (byId) {
+    type = (literalOf(byId[2]) ?? '').toUpperCase() || null;
+    // Nummer und Klasse aus Variablen sind erst zur Laufzeit bekannt — dann
+    // bleibt die Meldung ohne Nummer, statt Feldnamen als Nummer zu zeigen.
+    const number = literalOf(byId[3]);
+    const id = literalOf(byId[1]);
+    label = number != null && id != null ? `${number}(${id.toUpperCase()})` : null;
+  } else {
+    const first = /^('[^']*'|`[^`]*`|\S+)/.exec(body)?.[1] ?? '';
+    const literal = literalOf(first.replace(/\(\w{1,3}\)$/, ''));
+    label = literal != null ? `„${literal}“` : plain(first);
+    if (typeAddition) type = (literalOf(typeAddition[1]) ?? '').toUpperCase() || null;
+  }
+  const into = /\bINTO\s+(\S+)/i.exec(body);
+  const raising = /\bRAISING\s+(\S+)/i.exec(body);
+  const like = /\bDISPLAY\s+LIKE\s+('[^']*'|\S+)/i.exec(body);
+  return {
+    label,
+    type,
+    into: into ? plain(into[1]) : null,
+    raising: raising ? plain(raising[1]) : null,
+    displayLike: like ? (literalOf(like[1]) ?? '').toUpperCase() || null : null,
+  };
+}
+
+/**
+ * Der Satz zu `MESSAGE` (F5).
+ *
+ * `MESSAGE … INTO v` gibt **nichts** aus — der Meldungstext landet in `v`.
+ * `MESSAGE … RAISING x` löst eine Ausnahme aus; angezeigt wird nur, wenn der
+ * Aufrufer sie nicht behandelt. Nur die übrigen Formen zeigen etwas an, und
+ * dann mit ihrem Typ.
+ */
+function messageSentence(text: string): string {
+  const parts = messageParts(text);
+  const label = parts.label ? ` ${parts.label}` : '';
+  if (parts.into) {
+    return `Der Meldungstext${label} wird in ${parts.into} übernommen; angezeigt wird dabei nichts.`;
+  }
+  const kind = parts.type ? MESSAGE_TYPES[parts.type] : undefined;
+  if (parts.raising) {
+    return `Die Ausnahme ${parts.raising} wird ausgelöst; die Meldung${label} erscheint nur, wenn der Aufrufer die Ausnahme nicht behandelt.`;
+  }
+  const noun = kind ? kind.noun : 'Meldung';
+  const like = parts.displayLike && MESSAGE_TYPES[parts.displayLike] && parts.displayLike !== parts.type
+    ? `, angezeigt wie ${MESSAGE_TYPES[parts.displayLike].article} ${MESSAGE_TYPES[parts.displayLike].noun}`
+    : '';
+  const consequence =
+    parts.type === 'A'
+      ? '; das Programm wird abgebrochen'
+      : parts.type === 'X'
+        ? '; das Programm bricht mit einem Laufzeitfehler ab'
+        : '';
+  return `Die ${noun}${label} wird ausgegeben${like}${consequence}.`;
+}
+
+/** Derselbe Inhalt als Satzteil für Zweige und Folgen. */
+function messageFragment(text: string): string {
+  const parts = messageParts(text);
+  if (parts.into) return `der Meldungstext in ${parts.into} übernommen`;
+  if (parts.raising) return `die Ausnahme ${parts.raising} ausgelöst`;
+  const kind = parts.type ? MESSAGE_TYPES[parts.type] : undefined;
+  return kind ? `${kind.article} ${kind.noun} ausgegeben` : 'eine Meldung ausgegeben';
+}
+
 /** Was übersprungen wird, wenn ein CHECK mit diesem Vergleich in einer Schleife steht. */
 const CHECK_COMPLEMENT: Record<string, string> = {
   '>=': 'kleinere',
@@ -1279,7 +1413,9 @@ function sentenceFor(
   const anchors = [range(statement)];
 
   if (keyword === 'WRITE') {
-    const written = statement.text.replace(/^WRITE\s*/i, '').replace(/^\/?\s*/, '').trim();
+    const formatted = writeToSentence(statement);
+    if (formatted) return { anchors, core: formatted, tag: 'write' };
+    const written = writeBody(statement);
     const resolvedText = literalOf(written) == null ? resolveValue(written, statements, statement.index) : null;
     if (resolvedText && resolvedText.value) {
       // Schritt 1 vor Schritt 2: der Leser sieht den Text, nicht den Variablennamen.
@@ -1408,7 +1544,7 @@ function sentenceFor(
   }
 
   if (keyword === 'MESSAGE') {
-    return { anchors, core: 'Eine Meldung wird ausgegeben.', tag: 'message' };
+    return { anchors, core: messageSentence(text), tag: 'message' };
   }
 
   if (keyword === 'CHECK') {
@@ -1709,10 +1845,14 @@ function bodyFragment(statement: AbapStatement, origins: Map<string, ValueOrigin
   const keyword = statement.keyword.toUpperCase();
   if (keyword === 'COMMIT') return 'COMMIT WORK ausgeführt';
   if (keyword === 'ROLLBACK') return 'ROLLBACK WORK ausgeführt';
-  if (keyword === 'WRITE') return `${writtenTarget(statement, origins).label} ausgegeben`;
+  if (keyword === 'WRITE') {
+    const formatted = WRITE_TO.exec(text);
+    if (formatted) return `ein Wert aufbereitet in ${plain(formatted[2])} übernommen`;
+    return `${writtenTarget(statement, origins).label} ausgegeben`;
+  }
   if (keyword === 'RETURN' || keyword === 'EXIT') return 'der Block verlassen';
   if (keyword === 'LEAVE') return 'die Screenfolge beendet';
-  if (keyword === 'MESSAGE') return 'eine Meldung ausgegeben';
+  if (keyword === 'MESSAGE') return messageFragment(text);
   if (keyword === 'MODIFY') return 'eine Zeile eingefügt oder überschrieben';
   if (keyword === 'APPEND') return 'eine Zeile aufgenommen';
   if (keyword === 'UPDATE') return 'eine Zeile geändert';
@@ -1882,7 +2022,7 @@ function sequenceSentences(
   const flush = () => {
     // Ein Lauf aus lauter `WRITE` ist die Ausgabeliste — dafür gibt es
     // `listSentence`, und zwei Sätze über dieselbe Liste sind einer zu viel.
-    const onlyOutput = run.every((statement) => statement.keyword.toUpperCase() === 'WRITE');
+    const onlyOutput = run.every((statement) => isOutputWrite(statement));
     if (run.length >= 2 && !onlyOutput) {
       drafts.push({
         anchors: run.map(range),
@@ -2001,7 +2141,7 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
   };
   for (let i = 0; i < statements.length; i += 1) {
     const statement = statements[i];
-    if (statement.keyword.toUpperCase() === 'WRITE') {
+    if (isOutputWrite(statement)) {
       if (run.length === 0) runStack = stacks[i];
       run.push(statement);
     } else if (!['ENDLOOP', 'ENDIF', 'ENDSELECT'].includes(statement.keyword.toUpperCase())) {
