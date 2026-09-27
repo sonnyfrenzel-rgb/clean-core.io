@@ -840,6 +840,10 @@ class SkeletonBuilder {
    * then not also be listed as code no entry reaches.
    */
   private reachedRoutines = new Set<string>();
+  /** A report that writes `START-OF-SELECTION`: its screen modules wait for a `CALL SCREEN` (D1). */
+  private modulesWaitForScreen = false;
+  /** Did the walk pass a `CALL SCREEN`? */
+  private screenCalled = false;
 
   constructor(
     private statements: AbapStatement[],
@@ -868,6 +872,7 @@ class SkeletonBuilder {
 
     const entries = this.readEntryPoints();
     for (const entry of entries) this.buildEntryRegion(entry);
+    for (const entry of this.deferredModuleEntries()) this.buildEntryRegion(entry);
     this.collapseSmallRegions();
     this.applyGuards();
     // Roadmap 2.15: after the guards, so a folded run switch is already on its
@@ -1210,6 +1215,27 @@ class SkeletonBuilder {
    * between kinds does one answer beat another, and only where the source
    * itself is unambiguous — a program that writes `START-OF-SELECTION` has said
    * where it begins.
+   *
+   * **But an event block answers only for what the report runtime calls.** A
+   * `MODULE … INPUT/OUTPUT` is called by the screen runtime and by nothing
+   * else, a `FUNCTION` by a caller outside the source, a public method of a
+   * global class (or a RAP handler) likewise — whether or not the same source
+   * also writes `LOAD-OF-PROGRAM`. Until 27.09.2026 the first event block ended
+   * the search here, and a module pool with `LOAD-OF-PROGRAM` lost every one of
+   * its modules to "not reached" (D1). So these three are entries **beside**
+   * the event blocks. Only the bare `FORM` stays a last resort: a report that
+   * performs it has said it is a step.
+   *
+   * One precedence is kept, the one §5.8's own note on 2.14 writes: *"ein
+   * Programm, das `START-OF-SELECTION` schreibt, hat gesagt, wo es beginnt"*.
+   * An executable report shows its screens only through a `CALL SCREEN` of its
+   * own, so there its modules run exactly when such a statement runs — and
+   * which screen's flow logic calls which module is not in this source. The
+   * modules of a report that writes `START-OF-SELECTION` are therefore entries
+   * only once the walk has passed a `CALL SCREEN` (`deferredModuleEntries`);
+   * a screen the report never calls leaves them where 2.14 put them, under
+   * "not reached". A module pool or function group has no such statement to
+   * wait for: a dialog transaction starts its screens from outside.
    */
   private readEntryPoints(): EntryPoint[] {
     const events = this.eventEntries();
@@ -1233,7 +1259,13 @@ class SkeletonBuilder {
           });
         }
       }
-      return events;
+      this.modulesWaitForScreen = events.some((e) => !e.implicit && /^START-OF-SELECTION$/i.test(e.label));
+      const outside = [
+        ...this.functionEntries(),
+        ...this.methodEntries(),
+        ...(this.modulesWaitForScreen ? [] : this.moduleEntries()),
+      ].sort((a, b) => a.statement.index - b.statement.index);
+      return [...events, ...this.noteTriggers(outside)];
     }
 
     // One class, not three: a function module, a public method and a dialog
@@ -1267,12 +1299,25 @@ class SkeletonBuilder {
     return [];
   }
 
+  /**
+   * The screen modules of a report that writes `START-OF-SELECTION`, once the
+   * walk has shown that the report calls a screen at all — see the precedence
+   * in `readEntryPoints`. Empty otherwise.
+   */
+  private deferredModuleEntries(): EntryPoint[] {
+    if (!this.modulesWaitForScreen || !this.screenCalled) return [];
+    return this.noteTriggers(this.moduleEntries());
+  }
+
   /** The classic event blocks, unchanged since rule 4 — a report says it itself. */
   private eventEntries(): EntryPoint[] {
     const out: EntryPoint[] = [];
     const isBoundary = (i: number) => {
       const block = this.blockAt.get(i);
+      // `FUNCTION` is not in the block table (`readFunctionBlocks`), so it is
+      // named here: an event block ends where a function module begins.
       return this.isEventStatement(this.statements[i])
+        || this.statements[i].keyword === 'FUNCTION'
         || (block !== undefined
           && (block.kind === 'form' || block.kind === 'module' || block.kind === 'class'
             || block.kind === 'interface' || block.kind === 'define'));
@@ -1635,6 +1680,7 @@ class SkeletonBuilder {
       for (let j = i; j < this.statements.length; j++) {
         const block = this.blockAt.get(j);
         const boundary = j > i && (this.isEventStatement(this.statements[j])
+          || this.statements[j].keyword === 'FUNCTION'
           || (block !== undefined && (block.kind === 'form' || block.kind === 'module'
             || block.kind === 'class' || block.kind === 'interface' || block.kind === 'define')));
         if (boundary) break;
@@ -2343,6 +2389,7 @@ class SkeletonBuilder {
       return keep(node);
     }
     if (/^CALL\s+SCREEN\b/i.test(text)) {
+      this.screenCalled = true;
       const screen = /^CALL\s+SCREEN\s+([\w/]+)/i.exec(text)?.[1] ?? 'CALL SCREEN';
       // 2.16: a dynpro is a person. The token is written the way the source
       // writes it, `SCREEN 9000`, and both words are in the statement.

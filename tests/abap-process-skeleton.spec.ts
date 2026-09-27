@@ -2003,4 +2003,51 @@ test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
     // And drawn is not "not reached".
     expect(skeleton.notDrawn.unreached).toEqual([]);
   });
+
+  test('D1 — screen modules and function modules are entries beside an event block', () => {
+    // §5.8, Startereignis: "dazu (2.14): `FUNCTION name.`, …, ein Dynpro-Ereignis
+    // (`MODULE … OUTPUT` und `… INPUT`)". The screen runtime calls a module, an
+    // outside caller a function module — a `LOAD-OF-PROGRAM` in the same source
+    // calls neither of them.
+    const pool = buildProcessSkeleton([
+      'PROGRAM zcc_pool.',
+      'LOAD-OF-PROGRAM.',
+      '  CLEAR gv_count.',
+      'MODULE status_0100 OUTPUT.',
+      "  SET PF-STATUS 'MAIN'.",
+      'ENDMODULE.',
+      'MODULE user_command_0100 INPUT.',
+      "  IF ok_code = 'SAVE'.",
+      '    UPDATE zsd_route SET x = 1.',
+      '  ENDIF.',
+      'ENDMODULE.',
+      'FUNCTION z_cc_post.',
+      '  INSERT zsd_log FROM ls_log.',
+      'ENDFUNCTION.',
+    ].join('\n'));
+    expect(startsOf(pool).map((n) => [n.label, n.detail?.origin])).toEqual([
+      ['LOAD-OF-PROGRAM', 'event'],
+      ['status_0100 OUTPUT', 'module'],
+      ['user_command_0100 INPUT', 'module'],
+      ['z_cc_post', 'function'],
+    ]);
+    expect(pool.notDrawn.unreached).toEqual([]);
+    expect(pool.nodes.filter((n) => n.kind === 'write').map((n) => n.anchor?.lineStart)).toEqual([9, 13]);
+    // The event block ends where the function module begins.
+    expect(pool.nodes.find((n) => n.kind === 'write' && n.anchor?.lineStart === 13)?.region).toBe('entry:z_cc_post@12');
+
+    // A report that writes START-OF-SELECTION has said where it begins (§5.8,
+    // note on 2.14): its screen modules run when it calls a screen, and then
+    // they are entries too.
+    const report = buildProcessSkeleton([
+      'REPORT zcc_report.',
+      'START-OF-SELECTION.',
+      '  CALL SCREEN 100.',
+      'MODULE user_command_0100 INPUT.',
+      '  UPDATE zsd_route SET x = 1.',
+      'ENDMODULE.',
+    ].join('\n'));
+    expect(startsOf(report).map((n) => n.label)).toEqual(['START-OF-SELECTION', 'user_command_0100 INPUT']);
+    expect(report.notDrawn.unreached).toEqual([]);
+  });
 });
