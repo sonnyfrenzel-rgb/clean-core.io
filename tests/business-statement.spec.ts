@@ -442,3 +442,23 @@ test('F3 — nur GET <knoten> ist eine logische Datenbank; GET PARAMETER, TIME, 
   expect(satzAn(code, 3).join(' ')).toContain('Benutzerparameter BUK');
   expect(satzAn(code, 6).join(' ')).toContain('logischen Datenbank');
 });
+
+test('F4 — CALL TRANSACTION sagt den Aufruf, nicht einen aus dem Namen gelesenen Zweck', () => {
+  const code = quelle(
+    'REPORT z_f4.',
+    'START-OF-SELECTION.',
+    "  SET PARAMETER ID 'AUN' FIELD gv_beleg.",
+    "  CALL TRANSACTION 'ZANZ' AND SKIP FIRST SCREEN.",
+    "  CALL TRANSACTION 'ZAEND' USING gt_bdc MODE 'N' UPDATE 'S' MESSAGES INTO gt_msg.",
+  );
+  const anzeige = satzAn(code, 4).join(' ');
+  expect(anzeige).toContain('Die Transaktion ZANZ wird');
+  expect(anzeige).toContain('Einstiegsbild wird übersprungen');
+  expect(anzeige).not.toMatch(/Anlage|angestoßen/);
+
+  const mappe = satzAn(code, 5).join(' ');
+  expect(mappe).toContain('Batch-Input');
+  expect(mappe).toContain('Modus N');
+  expect(mappe).toContain('synchron');
+  expect(mappe).not.toContain('Anlage');
+});

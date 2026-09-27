@@ -1471,11 +1471,35 @@ function sentenceFor(
     }
     const transaction = /^CALL\s+TRANSACTION\s+('[^']*'|[A-Za-z0-9_]+)/i.exec(text);
     if (transaction) {
+      // F4: der Satz sagt, **dass** die Transaktion aufgerufen wird und wie —
+      // nicht, wozu. „Anlage" aus dem Namen zu lesen hieß bei VA02, ME53N
+      // oder PA20 schlicht das Falsche.
       const name = literalOf(transaction[1]) ?? transaction[1];
+      const using = /\bUSING\s+(\S+)/i.exec(text);
+      const mode = /\bMODE\s+('[^']*'|\S+)/i.exec(text);
+      const update = /\bUPDATE\s+('[^']*'|\S+)/i.exec(text);
+      const modeValue = mode ? (literalOf(mode[1]) ?? plain(mode[1])) : null;
+      const how = [
+        using ? 'per Batch-Input' : '',
+        modeValue ? (/^[AENP]$/i.test(modeValue) ? `im Modus ${modeValue.toUpperCase()}` : `im Modus aus ${modeValue}`) : '',
+      ].filter(Boolean);
+      const updateValue = update ? (literalOf(update[1]) ?? plain(update[1])).toUpperCase() : null;
+      const booking =
+        updateValue === 'S'
+          ? ' und synchron verbucht'
+          : updateValue === 'A'
+            ? ' und asynchron verbucht'
+            : updateValue === 'L'
+              ? ' und lokal verbucht'
+              : '';
+      const after: string[] = [];
+      if (/\bAND\s+SKIP\s+FIRST\s+SCREEN\b/i.test(text)) after.push('das Einstiegsbild wird übersprungen');
+      // Mit Bilddaten stößt der Aufruf die Verarbeitung der Transaktion an;
+      // ohne ist es ein Dialogaufruf. Beides sagt nichts über ihren Zweck.
       return {
         anchors,
-        core: `Die Anlage wird über die Transaktion ${name} angestoßen.`,
-        notes: ['Ob und was persistiert wird, entscheidet die aufgerufene Transaktion.'],
+        core: `Die Transaktion ${name} wird ${how.length > 0 ? `${how.join(' ')} ` : ''}${using ? 'angestoßen' : 'aufgerufen'}${booking}${after.length > 0 ? `; ${after.join(', ')}` : ''}.`,
+        notes: using ? ['Ob und was persistiert wird, entscheidet die aufgerufene Transaktion.'] : [],
         tag: 'call',
       };
     }
