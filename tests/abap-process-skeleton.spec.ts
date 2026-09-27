@@ -71,7 +71,11 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   // one was added: every node of every loop body is still in the skeleton, one
   // plane further in.
   [LEGACY, 114, 116, 32, 4, 19, 323, 6, 1],
-  ['Z_BUSINESS_PARTNER_SYNC.txt', 17, 14, 5, 2, 0, 0, 1, 0],
+  // 27.09.2026 (D4): `MESSAGE '…' TYPE 'I'` in END-OF-SELECTION is a dialog
+  // box the user confirms — §5.8's popup, a user task. One node more, and the
+  // arm of the `IF` that used to run straight into the end now runs through
+  // it: 17→18 nodes, 14→15 edges.
+  ['Z_BUSINESS_PARTNER_SYNC.txt', 18, 15, 5, 2, 0, 0, 1, 0],
   ['Z_EMPLOYEE_EXPENSE_VAL.txt', 13, 12, 3, 1, 0, 0, 1, 0],
   ['Z_INVOICE_EXTRACTOR.txt', 17, 13, 4, 1, 0, 0, 0, 0],
   ['Z_MATERIAL_STOCK_CALC.txt', 18, 15, 6, 1, 0, 0, 0, 0],
@@ -2049,5 +2053,35 @@ test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
     ].join('\n'));
     expect(startsOf(report).map((n) => n.label)).toEqual(['START-OF-SELECTION', 'user_command_0100 INPUT']);
     expect(report.notDrawn.unreached).toEqual([]);
+  });
+
+  test('D4 — an information message is a popup the user confirms: a user task', () => {
+    // §5.8, User-Task: "ein Mensch handelt im Programm: `CALL SCREEN`, Popup, …".
+    const skeleton = buildProcessSkeleton([
+      'REPORT zcc_msg.',
+      'START-OF-SELECTION.',
+      '  MESSAGE i012(zsd) WITH gv_count.',
+      "  MESSAGE 'Nothing selected' TYPE 'I'.",
+      '  MESSAGE s013(zsd).',
+      '  MESSAGE w014(zsd).',
+      "  MESSAGE e015(zsd) INTO gv_text.",
+      "  MESSAGE i016(zsd) INTO gv_text.",
+      '  UPDATE zsd_log SET done = abap_true.',
+    ].join('\n'));
+    const at = (line: number) => skeleton.nodes.filter((n) => n.anchor?.lineStart === line).map((n) => n.kind);
+    expect(at(3)).toEqual(['user-task']);
+    expect(at(4)).toEqual(['user-task']);
+    // The status line and the context-dependent warning draw nothing.
+    expect(at(5)).toEqual([]);
+    expect(at(6)).toEqual([]);
+    // `MESSAGE … INTO` shows nothing and ends nothing, whatever its type: the
+    // flow reaches the write behind it.
+    expect(at(7)).toEqual([]);
+    expect(at(8)).toEqual([]);
+    const write = skeleton.nodes.find((n) => n.kind === 'write')!;
+    expect(skeleton.edges.some((e) => e.to === write.id)).toBe(true);
+    // A popup is a person: lane evidence of the kind `human`.
+    expect(skeleton.laneEvidence.filter((e) => e.kind === 'human').map((e) => e.token))
+      .toEqual(['MESSAGE I012', "MESSAGE TYPE 'I'"]);
   });
 });

@@ -155,7 +155,9 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   // routines that used to collapse into a read and a write now standing as
   // phases (see `abap-process-skeleton.spec.ts`).
   [LEGACY, 77, 74, 15, 16, 8, 1, 1],
-  ['Z_BUSINESS_PARTNER_SYNC.txt', 17, 13, 3, 4, 3, 0, 0],
+  // 27.09.2026 (D4): the information popup in END-OF-SELECTION is a user task
+  // now — one flow node and one flow more (17→18, 13→14).
+  ['Z_BUSINESS_PARTNER_SYNC.txt', 18, 14, 3, 4, 3, 0, 0],
   ['Z_EMPLOYEE_EXPENSE_VAL.txt', 13, 12, 2, 3, 0, 0, 0],
   ['Z_INVOICE_EXTRACTOR.txt', 13, 10, 2, 3, 2, 0, 0],
   ['Z_MATERIAL_STOCK_CALC.txt', 16, 14, 4, 5, 4, 0, 0],

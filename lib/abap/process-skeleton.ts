@@ -576,10 +576,40 @@ function anchorOf(statement: AbapStatement, tokenOffset = 0): NodeAnchor {
   };
 }
 
+/**
+ * `MESSAGE … INTO field` fills the message fields and the target and shows
+ * nothing: no dialog, no status line, no termination, whatever its type. It is
+ * never an output and never an end — the program carries on to the next
+ * statement, usually to write the text into a log.
+ */
+function isMessageInto(text: string): boolean {
+  return /^MESSAGE\b/i.test(text) && /\bINTO\b/i.test(maskLiterals(text));
+}
+
 /** `MESSAGE e001 …`, `MESSAGE '…' TYPE 'E'` — the types that end the process. */
 function isErrorMessage(text: string): boolean {
+  if (isMessageInto(text)) return false;
   if (/^MESSAGE\s+[eaxEAX]\d/.test(text)) return true;
   return /^MESSAGE\b[\s\S]*\bTYPE\s+'[EAXeax]'/.test(text);
+}
+
+/**
+ * `MESSAGE i001 …`, `MESSAGE '…' TYPE 'I'` — an information message, which
+ * ABAP shows as a **dialog box the user has to confirm** before the program
+ * goes on, in every context. §5.8 lists the popup under User-Task: *"ein
+ * Mensch handelt im Programm: `CALL SCREEN`, Popup, …"* (D4).
+ *
+ * `S` and `W` stay without a node, on purpose. `S` goes to the status line and
+ * nobody acts on it — §5.8 has no element for a text nobody answers. `W`
+ * depends on where it is sent (a warning on a screen waits for Enter, in
+ * `START-OF-SELECTION` it ends the program like an `E`), and the reader does
+ * not decide which of two opposite elements a statement is from context it is
+ * not sure of. `DISPLAY LIKE` changes the icon, not the type.
+ */
+function isInfoMessage(text: string): boolean {
+  if (isMessageInto(text)) return false;
+  if (/^MESSAGE\s+[iI]\d/.test(text)) return true;
+  return /^MESSAGE\b[\s\S]*\bTYPE\s+'[Ii]'/.test(text);
 }
 
 /**
@@ -1128,6 +1158,7 @@ class SkeletonBuilder {
       if (/^CALL\s+SCREEN\b/i.test(text)) out.add('human');
       if (isListOutput(statement) || isFileOutput(statement)) out.add('file');
       if (isErrorMessage(text) || statement.keyword === 'RAISE') out.add('error');
+      if (isInfoMessage(text)) out.add('human');
       if (/^LEAVE\s+PROGRAM\b/i.test(text)) out.add('error');
       if (statement.keyword === 'AUTHORITY-CHECK') out.add('authority');
       const perform = /^PERFORM\s+([\w/]+)/i.exec(text);
@@ -2371,6 +2402,20 @@ class SkeletonBuilder {
       return { exits: [], outputRun: null };
     }
 
+    if (isInfoMessage(text)) {
+      // D4: the popup is a person acting in the program — a user task, and
+      // lane evidence of the same kind as `CALL SCREEN` (2.16 lists the popup
+      // among the human evidence). Both tokens stand in the statement.
+      const label = this.errorLabel(statement);
+      // `MESSAGE i012(zsd)` names itself; `MESSAGE lv_text TYPE 'I'` names
+      // only its type, and that is what the token then says.
+      const id = /^MESSAGE\s+[iI]\d/.test(text) ? label : "TYPE 'I'";
+      this.recordEvidence('human', `MESSAGE ${id}`, anchorOf(statement), statement);
+      return keep(this.addNode('user-task', label, anchorOf(statement), ctx.region, ctx.container, {
+        detail: { message: 'I' },
+      }));
+    }
+
     if (statement.keyword === 'PERFORM') return { ...this.walkPerform(statement, ctx, incoming), outputRun: null };
 
     if (/^CALL\s+FUNCTION\b/i.test(text)) return { ...this.walkFunction(statement, ctx, incoming), outputRun: null };
@@ -2670,6 +2715,7 @@ class SkeletonBuilder {
       return at(functionTaskKind(name), name);
     }
     if (isErrorMessage(body.text)) return at('end-error', this.errorLabel(body));
+    if (isInfoMessage(body.text)) return at('user-task', this.errorLabel(body), { message: 'I' });
     if (isListOutput(body) || isFileOutput(body)) {
       return at('output', body.keyword, { statements: 1, target: isFileOutput(body) ? 'file' : 'list' });
     }

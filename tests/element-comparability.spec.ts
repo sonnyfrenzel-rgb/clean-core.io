@@ -153,10 +153,15 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // `output` 19 → 20) and **+2 `technical`** (`read` 27 → 28,
     // `error-boundary` 21 → 22). Not one element changed class, and no other
     // file moved by one.
+    //
+    // 308 since 27.09.2026 (D4): `MESSAGE '…' TYPE 'I'` in
+    // `Z_BUSINESS_PARTNER_SYNC.txt` is the popup §5.8 draws as a user task, and
+    // a user task is business-comparable like the ALV one beside it — **+1
+    // `business-comparable`**, nothing else moved.
     expect(byClass).toEqual({
       structural: 109,
       technical: 104,
-      'business-comparable': 70,
+      'business-comparable': 71,
       unknown: 24,
     });
     // 48 gateways: 7 still technical by condition (14,6 %, from 27 of 68 before
