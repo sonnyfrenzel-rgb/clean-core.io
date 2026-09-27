@@ -28,6 +28,14 @@ dazu Schritt A aus dem Security-Audit von v2.19.0 und die Befunde der Vollprüfu
   neuen Benchmark aus 200 konstruierten ABAP-Fällen (`tests/prozess-benchmark/`):
   Knoten-Treffer über eingefügte Programme mit Includes von 61,3 % auf 69,4 %, auf der
   Prüfhälfte, die bei der Entwicklung verdeckt blieb, von 61,9 % auf 69,1 %.
+- **Jede Ebene des Prozesses hat einen sichtbaren Anfang, und ein vorzeitiges Ende ist
+  als solches erkennbar (ADR-054).** Klappt man einen Teilprozess auf, beginnt er an
+  einem Startereignis auf seiner `FORM`- bzw. `METHOD`-Zeile. Ein `RETURN`, ein `EXIT`
+  außerhalb einer Schleife oder ein `STOP` mitten in einer Routine endet auf einem eigenen
+  Endereignis, beschriftet als „End (early)" und mit der Bedingung wörtlich an der Kante —
+  statt still in das gemeinsame Ende zu laufen. Ein `CHECK` bleibt ein bedingter Fluss.
+  Ereignisse zählen nirgends als Schritt. Gemessen am Prozess-Benchmark: Knoten-Treffer
+  von 69,4 % auf 78,7 %, auf der verdeckten Prüfhälfte von 69,1 % auf 78,8 %.
 - **Die Fachsätze der Business-Sicht sagen nichts mehr, was der Code nicht trägt.**
   Fünf unabhängige Prüfungen über 2.273 Sollsätze fanden dieselben Fehler: `CHECK` hieß
   überall „kleinere werden übersprungen, die Schleife läuft weiter", jedes `sy-subrc`
