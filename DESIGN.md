@@ -667,8 +667,8 @@ komplexeste Beispiel des Produkts, `ZLEGACY_ORDER_FULFILLMENT_AUDIT` (1.000 Zeil
 
 | BPMN-Element | entsteht aus | im Beispiel |
 |---|---|---|
-| **Startereignis** | Einstieg: `START-OF-SELECTION`, Transaktion, BAdI-Methode, RFC-Baustein — **dazu (2.14): `FUNCTION name.`, eine öffentliche Methode einer *globalen* Klasse, ein Dynpro-Ereignis (`MODULE … OUTPUT` und `… INPUT`), und eine `FORM`, die kein `PERFORM` erreicht** | Audit-Lauf gestartet (L161) |
-| **Endereignis** | normales Ende des Einstiegs | Audit abgeschlossen (L176–179) |
+| **Startereignis** | Einstieg: `START-OF-SELECTION`, Transaktion, BAdI-Methode, RFC-Baustein — **dazu (2.14): `FUNCTION name.`, eine öffentliche Methode einer *globalen* Klasse, ein Dynpro-Ereignis (`MODULE … OUTPUT` und `… INPUT`), und eine `FORM`, die kein `PERFORM` erreicht** — **und (ADR-054) der Anfang jedes aufklappbaren Teilprozesses:** eine `FORM`/Methode, die als eingeklappter Teilprozess mit eigener Ebene gezeichnet wird, beginnt in dieser Ebene an einem Startereignis auf ihrer `FORM`-/`METHOD`-Zeile. Nur dort: auf der Ebene des Aufrufers bleibt der Teilprozess ein Kasten; eine Routine, die als ein Schritt gezeichnet wird (klein, Entscheidungstabelle, technischer Helfer), und der Körper einer Mehrfach-Instanz bekommen keins | Audit-Lauf gestartet (L161); „Aktionen ausführen" beginnt (L435) |
+| **Endereignis** | normales Ende des Einstiegs oder Teilprozesses, am schließenden Wort — **und (ADR-054) ein eigenes Endereignis je vorzeitigem Ausstieg:** `RETURN`, `EXIT` außerhalb einer Schleife, `STOP` und ein `CHECK`, der die Routine oder den Block verlässt, enden auf ihrer eigenen Anweisung; die Bedingung steht wörtlich an der eingehenden Kante. **Direkt vor dem Blockschluss ist kein früher Ausstieg:** folgt bis zum Blockschluss nichts, was gezeichnet wird, bleibt es das normale Ende; zwei `RETURN` hintereinander im selben Zweig sind eines | Audit abgeschlossen (L176–179); „Aufträge und Positionen sammeln" endet vorzeitig ohne Aufträge (`EXIT`, L252) |
 <!--
   Die vier neuen Einstiegsformen (2.14, 23.09.2026) und die drei Regeln, die sie
   eng halten — sie stehen hier, weil die Zeile darüber sonst als Einladung zum
@@ -737,6 +737,20 @@ Mehrfach-Instanz enthält, ist deshalb nie ein Schritt.
 | **Datenobjekt** | Datei, Ergebnisliste | CSV nach `C:\TEMP` (L538) |
 | **Lanes** (Vorschlag) | AUTHORITY-CHECK, Benutzer-/Batchkontext, Benennung — immer *Model proposal* oder *Reconstructed* | Batch-Lauf · Prüfer (außerhalb des Programms) |
 | **Textanmerkung** | was der Code nicht sagt, am Element: *Not determined*, fest verdrahtete Werte | „Review entry is a table row — who works on it is not determined" (L500) |
+
+**Warum Teilprozess-Start und vorzeitige Enden (ADR-054, Sonny 27.09.2026).** Gemessen am
+Prozess-Benchmark (`tests/prozess-benchmark/`, 200 Fälle) waren Start- und Endereignisse die
+schwächsten Knotenarten: 37 % der Soll-Starts und 65 % der Soll-Enden wurden getroffen, weil
+jede Routine ohne eigenen Anfang gezeichnet wurde und fünf Ausstiege einer Routine auf *einem*
+Ende am `ENDFORM` zusammenliefen. BPMN und SAP Signavio zeichnen beides anders: jede Ebene hat
+einen sichtbaren Anfang, und jeder Weg hinaus endet dort, wo er hinausgeht. Mit der Regel steigt
+die Knoten-Trefferquote von 69,4 % auf 78,7 % (Starts 71 %, Enden 86,5 %). Für den Nutzer gilt
+dabei: **Ereignisse sind keine Schritte** — keine Schrittzahl, kein Zähler der Übersicht, der
+Laufvarianten, des ersten Blicks oder der Minikarte zählt sie, die Schrittliste nummeriert nur
+Schritte, und die Minikarte zeigt ein Ereignis als runde Zelle. **Ein vorzeitiges Ende ist
+erkennbar:** es heißt *„End (early)"* in Schrittliste, Gliederung, Codekarte und Editor, trägt
+auf der Karte das Wort über dem Kreis, und sein Name nennt die Routine und das Schlüsselwort
+(`SELECT_ITEMS (EXIT)`), die Bedingung steht an der Kante davor.
 
 **Nicht in der Palette:** inklusives, komplexes und ereignisbasiertes Gateway (aus `IF`-Ketten nicht sicher
 ableitbar), Kompensation, Eskalation, Transaktions- und Ereignis-Teilprozess, Choreografie. Commit-Grenzen und
@@ -1029,6 +1043,7 @@ Sonny 15.09.2026):
 
 | Version | Datum | Was |
 |---|---|---|
+| 1.6 | 27.09.2026 | Ereignisse in Teilprozessen und an frühen Ausstiegen (ADR-054, Sonny 27.09.2026): jeder aufklappbare Teilprozess beginnt in seiner Ebene an einem Startereignis auf der `FORM`-/`METHOD`-Zeile; `RETURN`, `EXIT` außerhalb von Schleifen, `STOP` und ein `CHECK`, der den Block verlässt, enden auf einem eigenen Endereignis mit der Bedingung an der Kante — direkt vor dem Blockschluss bleibt es das normale Ende. Ereignisse zählen nirgends als Schritt, ein vorzeitiges Ende heißt „End (early)" (§5.8) |
 | 1.5 | 24.09.2026 | Entscheidungen E-1 bis E-7 aus Block D („die ganze App aus einem Guss"), Sonny 24.09.2026 (ADR-047 bis ADR-053): 12 px / 600 als Stufe „Meta/Chip" in der Skala (§1.2); 2 px nur in Chips, Kennungen und zur Icon-Ausrichtung, 6/10/14 px nicht (§1.3); Stufenkopf wie Projekttitel 22 px / 800, `--cc-ink`, neutrales Icon, „Back to workspace" (§1.2, §2.3); Schwere eines Befunds als feste Liste `lib/severity.ts` mit Kennungsform und Farben (§1.8, §4.1, §8); Tokens statt Palette auch auf öffentlichen Seiten, große Radien und Mesh nur dort (Einleitung, §1); altes Dashboard und alte Stufen-Demo werden nach dieser Datei neu gebaut, nichts wird entfernt statt umgebaut (§2.2, §6.1.2); deutsche Datenschutzerklärung als Rechtstext-Ausnahme von §3 |
 | 1.4.3 | 15.09.2026 | Abgleich mit der abgenommenen Landingpage 3.0: Vertrauenssatz nennt den Admin-Zugriff, den `firestore.rules` zulässt; Quelle für den verschlüsselten Schlüssel ist Terms §5 und `/trust`, nicht `SECURITY.md` §4 (das sind S/4-Zugangsdaten); Tour-Stationen in der Sichten-Reihenfolge Business · IT · Management; Bewegung auf der Startseite, Fokusring auf Code-Fläche, Gewichte des `SectionHeader` |
 | 1.4.2 | 15.09.2026 | „Ask this case" läuft immer über die eingebettete Hilfe-KI, die für 3.0 ausgebaut wird (ADR-043, §6.2) |
