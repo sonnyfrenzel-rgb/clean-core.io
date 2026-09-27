@@ -874,6 +874,20 @@ interface Lead {
 
 const lead = (text: string, clause = false): Lead => ({ text, clause });
 
+/**
+ * Der Satzanfang zu einem Kennzeichen (`= 'X'`): „Wenn das Feld gv_flag
+ * gesetzt ist, wird …".
+ *
+ * Ein Nebensatz mit `nounPhrase`, kein „Mit gesetztem gv_flag": die Endung
+ * von „gesetztem" rät ein Geschlecht, das für einen unbekannten Bezeichner
+ * niemand festgelegt hat (F12, QA 594357222bd7). `nounPhrase` nimmt das
+ * Geschlecht aus dem Glossar, wo es eines führt, und sonst „das Feld …" —
+ * dann trägt das Wort „Feld" den Artikel, nicht der Bezeichner.
+ */
+function flagLead(identifier: string, set: boolean): Lead {
+  return lead(`Wenn ${nounPhrase(identifier)} ${set ? '' : 'nicht '}gesetzt ist`, true);
+}
+
 /** „Ohne Treffer wird X" oder „Ist die Sperre nicht zu erhalten, wird X". */
 function compose(subject: Lead, rest: string): string {
   return `${subject.text}${subject.clause ? ',' : ''} wird ${rest}`;
@@ -1267,7 +1281,7 @@ function guardSentence(
       const neutral = neutralOutcome(value);
       subject = compare[2] === '=' ? neutral.ok : neutral.fail;
     } else if (value === 'X') {
-      subject = lead(compare[2] === '=' ? `Mit gesetztem ${name}` : `Ohne gesetztes ${name}`);
+      subject = flagLead(compare[1], compare[2] === '=');
     } else {
       subject = lead(`Wenn ${conditionClause(head.text)}`, true);
     }
@@ -2606,7 +2620,7 @@ function branchSubject(branch: Branch, statements: readonly AbapStatement[], cha
   const initial = /^(?:IF|ELSEIF)\s+(\S+)\s+IS\s+(NOT\s+)?INITIAL\s*$/i.exec(head);
   if (initial) return initialLead(initial[1], statements, chainHead, Boolean(initial[2]));
   const flag = /^(?:IF|ELSEIF)\s+(\S+)\s*(<>|=)\s*'X'\s*$/i.exec(head);
-  if (flag) return lead(flag[2] === '=' ? `Mit gesetztem ${plain(flag[1])}` : `Ohne gesetztes ${plain(flag[1])}`);
+  if (flag) return flagLead(flag[1], flag[2] === '=');
   // „Beträge größer 10000" ist ein Subjekt, kein Satzanfang vor „wird".
   // Das Fallbuch schreibt an dieser Stelle „Für größere Beträge wird …", und
   // genau diese Form trägt auch einen erzeugten Satz.

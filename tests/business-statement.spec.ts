@@ -941,3 +941,25 @@ test('QA b7e191a72212 — eine lokale Wirkung nur, wenn der Empfänger die lokal
   expect(satzAn(mitLokal, klassen.length + 1).join(' ')).toContain('kein COMMIT WORK');
 });
 
+test('QA 594357222bd7 — ein Kennzeichen ohne erratenes Geschlecht, im Zweig und im Wächter', () => {
+  const code = quelle(
+    'REPORT z_594.',
+    'START-OF-SELECTION.',
+    "  IF gv_flag = 'X'.",
+    "    gv_modus = 'A'.",
+    '  ENDIF.',
+    "  IF gv_flag <> 'X'.",
+    '    RETURN.',
+    '  ENDIF.',
+    "  IF gs_kunde-loevm = 'X'.",
+    "    gv_modus = 'L'.",
+    '  ENDIF.',
+  );
+  const alle = saetze(code).join(' ');
+  expect(alle).not.toMatch(/gesetzte[mns]?\b/);
+  expect(satzAn(code, 4).join(' ')).toContain('Wenn das Feld gv_flag gesetzt ist, wird das Feld gv_modus auf A gesetzt');
+  expect(satzAn(code, 6).join(' ')).toContain('Wenn das Feld gv_flag nicht gesetzt ist, wird der Block verlassen');
+  // Ein Feld mit bekanntem Geschlecht nimmt seinen Artikel aus dem Glossar.
+  expect(satzAn(code, 10).join(' ')).toContain('Wenn die Löschvormerkung gesetzt ist');
+});
+
