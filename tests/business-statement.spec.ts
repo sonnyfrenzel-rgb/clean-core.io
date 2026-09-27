@@ -615,3 +615,28 @@ test('F8 — der Rückgabewert landet beim Empfänger links vom =, nicht bei der
 
   expect(satzAn(code, 5).join(' ')).toContain('nach gv_anzahl übernommen');
 });
+
+test('F9 — LEAVE sagt, wohin es geht: Folgebild, Listenende, Programmende', () => {
+  const code = quelle(
+    'MODULE user_command_0100 INPUT.',
+    '  CASE ok_code.',
+    "    WHEN 'WEITER'.",
+    '      LEAVE TO SCREEN 200.',
+    "    WHEN 'ZURUECK'.",
+    '      LEAVE TO SCREEN 0.',
+    "    WHEN 'ENDE'.",
+    '      LEAVE PROGRAM.',
+    "    WHEN 'LISTE'.",
+    '      LEAVE LIST-PROCESSING.',
+    '  ENDCASE.',
+    'ENDMODULE.',
+  );
+  const weiter = satzAn(code, 4).join(' ');
+  expect(weiter).toContain('Bild 200');
+  expect(weiter).not.toContain('Screenfolge wird beendet');
+  expect(satzAn(code, 6).join(' ')).toContain('Screenfolge wird beendet');
+  expect(satzAn(code, 8).join(' ')).toContain('Programm wird beendet');
+  const liste = satzAn(code, 10).join(' ');
+  expect(liste).toContain('Listenverarbeitung wird verlassen');
+  expect(liste).not.toContain('Screenfolge');
+});

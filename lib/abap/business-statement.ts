@@ -1410,10 +1410,56 @@ function guardExit(
     : 'vor der Datenbankoperation zurückgekehrt';
 }
 
-/** Wohin ein LEAVE führt — ausgebaut in F9; hier nur, damit der Wächter es nicht „Block" nennt. */
+/**
+ * Wohin ein `LEAVE` führt, als Satzteil nach „wird" (F9).
+ *
+ * Früher hieß jedes LEAVE „die Screenfolge wird beendet" — auch `LEAVE TO
+ * SCREEN 200` (weiter mit Bild 200), `LEAVE LIST-PROCESSING` (zurück aus der
+ * Liste) und `LEAVE PROGRAM` (das ganze Programm endet).
+ */
 function leavePhrase(statement: AbapStatement): string | null {
-  void statement;
+  const text = statement.text.trim();
+  const screen = /^LEAVE\s+TO\s+SCREEN\s+(\S+)$/i.exec(text);
+  if (screen) return screen[1] === '0' ? 'die Screenfolge beendet' : `zu Bild ${plain(screen[1])} gewechselt`;
+  if (/^LEAVE\s+SCREEN$/i.test(text)) return 'das aktuelle Bild verlassen';
+  if (/^LEAVE\s+LIST-PROCESSING$/i.test(text)) return 'die Listenverarbeitung verlassen';
+  if (/^LEAVE\s+TO\s+LIST-PROCESSING\b/i.test(text)) return 'in die Listenverarbeitung gewechselt';
+  if (/^LEAVE\s+PROGRAM$/i.test(text)) return 'das Programm beendet';
+  const transaction = /^LEAVE\s+TO\s+(?:CURRENT\s+)?TRANSACTION\s*('[^']*'|\S+)?/i.exec(text);
+  if (transaction) {
+    return transaction[1]
+      ? `das Programm verlassen und die Transaktion ${literalOf(transaction[1]) ?? plain(transaction[1])} gestartet`
+      : 'das Programm verlassen und die aktuelle Transaktion neu gestartet';
+  }
   return null;
+}
+
+/** Der ganze Satz zu einem `LEAVE`. */
+function leaveSentence(statement: AbapStatement, statements: readonly AbapStatement[]): string {
+  const text = statement.text.trim();
+  if (/^LEAVE\s+TO\s+SCREEN\s+0$/i.test(text)) return 'Die Screenfolge wird beendet.';
+  const screen = /^LEAVE\s+TO\s+SCREEN\s+(\S+)$/i.exec(text);
+  if (screen) return `Es geht weiter mit Bild ${plain(screen[1])}.`;
+  if (/^LEAVE\s+SCREEN$/i.test(text)) {
+    const set = statements
+      .slice(Math.max(0, statement.index - 2), statement.index)
+      .map((other) => /^SET\s+SCREEN\s+(\S+)$/i.exec(other.text))
+      .find(Boolean);
+    if (set && set[1] === '0') return 'Die Screenfolge wird beendet.';
+    return set ? `Es geht weiter mit Bild ${plain(set[1])}.` : 'Das aktuelle Bild wird verlassen; es folgt das eingestellte Folgebild.';
+  }
+  if (/^LEAVE\s+LIST-PROCESSING$/i.test(text)) {
+    return 'Die Listenverarbeitung wird verlassen; es geht zurück zu dem Bild, von dem sie ausging.';
+  }
+  if (/^LEAVE\s+TO\s+LIST-PROCESSING\b/i.test(text)) return 'Es wird in die Listenverarbeitung gewechselt.';
+  if (/^LEAVE\s+PROGRAM$/i.test(text)) return 'Das Programm wird beendet.';
+  const transaction = /^LEAVE\s+TO\s+(?:CURRENT\s+)?TRANSACTION\s*('[^']*'|\S+)?/i.exec(text);
+  if (transaction) {
+    return transaction[1]
+      ? `Das Programm wird verlassen und die Transaktion ${literalOf(transaction[1]) ?? plain(transaction[1])} gestartet.`
+      : 'Das Programm wird verlassen und die aktuelle Transaktion neu gestartet.';
+  }
+  return 'Die aktuelle Verarbeitung wird verlassen.';
 }
 
 /** Eine Zuweisung in einem Zweig: „Negative Beträge setzen die Route auf INVALID." */
@@ -1986,7 +2032,7 @@ function sentenceFor(
   }
 
   if (keyword === 'LEAVE') {
-    return { anchors, core: 'Die Screenfolge wird beendet.', tag: 'leave' };
+    return { anchors, core: leaveSentence(statement, statements), tag: 'leave' };
   }
 
   if (keyword === 'CREATE' && /^CREATE\s+DATA\b/i.test(text)) {
@@ -2126,7 +2172,7 @@ function sentenceFor(
  * Gateway mit zwei Kanten. Erkannt wird nur, was hier benannt ist; eine
  * Anweisung ohne Satzteil wird übergangen, statt erfunden zu werden.
  */
-function bodyFragment(statement: AbapStatement, origins: Map<string, ValueOrigin>): string | null {
+function bodyFragment(statement: AbapStatement, origins: Map<string, ValueOrigin>, stacks?: Block[][]): string | null {
   const text = statement.text;
   const keyword = statement.keyword.toUpperCase();
   if (keyword === 'COMMIT') return 'COMMIT WORK ausgeführt';
@@ -2136,8 +2182,14 @@ function bodyFragment(statement: AbapStatement, origins: Map<string, ValueOrigin
     if (formatted) return `ein Wert aufbereitet in ${plain(formatted[2])} übernommen`;
     return `${writtenTarget(statement, origins).label} ausgegeben`;
   }
-  if (keyword === 'RETURN' || keyword === 'EXIT') return 'der Block verlassen';
-  if (keyword === 'LEAVE') return 'die Screenfolge beendet';
+  if (keyword === 'RETURN') return 'der Block verlassen';
+  if (keyword === 'EXIT') {
+    const stack = stacks?.[statement.index] ?? [];
+    const innermost = [...stack].reverse().find((block) => block.kind === 'loop' || block.kind === 'routine');
+    return innermost?.kind === 'loop' ? 'die Schleife verlassen' : 'der Block verlassen';
+  }
+  if (keyword === 'CONTINUE') return 'der Schleifendurchlauf übersprungen';
+  if (keyword === 'LEAVE') return leavePhrase(statement) ?? 'die aktuelle Verarbeitung verlassen';
   if (keyword === 'MESSAGE') return messageFragment(text);
   if (keyword === 'MODIFY') return 'eine Zeile eingefügt oder überschrieben';
   if (keyword === 'APPEND') return 'eine Zeile aufgenommen';
@@ -2246,6 +2298,7 @@ function branchSentences(
   index: number,
   origins: Map<string, ValueOrigin>,
   loops: ReadonlySet<number>,
+  stacks: Block[][],
 ): Draft[] {
   const branches = branchChain(statements, index, loops);
   if (!branches) return [];
@@ -2253,7 +2306,7 @@ function branchSentences(
   const parts: Array<{ branch: Branch; subject: Lead; phrase: string }> = [];
   for (const branch of branches) {
     const fragments = branch.body
-      .map((statement) => bodyFragment(statement, origins))
+      .map((statement) => bodyFragment(statement, origins, stacks))
       .filter((fragment): fragment is string => fragment !== null);
     if (fragments.length === 0) continue;
     const phrase = enumerate(fragments);
@@ -2321,7 +2374,7 @@ function sequenceSentences(
     fragments = [];
   };
   for (let i = 0; i < statements.length; i += 1) {
-    const fragment = bodyFragment(statements[i], origins);
+    const fragment = bodyFragment(statements[i], origins, stacks);
     const level = stacks[i].length;
     if (fragment === null || (run.length > 0 && level !== depth)) {
       flush();
@@ -2409,7 +2462,7 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
   for (let i = 0; i < statements.length; i += 1) {
     const guard = guardSentence(statements, i, origins, context);
     if (guard) out.push(build(guard));
-    for (const draft of branchSentences(statements, i, origins, loops)) out.push(build(draft));
+    for (const draft of branchSentences(statements, i, origins, loops, stacks)) out.push(build(draft));
   }
   for (const draft of sequenceSentences(statements, stacks, origins)) out.push(build(draft));
 
