@@ -640,3 +640,28 @@ test('F9 — LEAVE sagt, wohin es geht: Folgebild, Listenende, Programmende', ()
   expect(liste).toContain('Listenverarbeitung wird verlassen');
   expect(liste).not.toContain('Screenfolge');
 });
+
+test('F10 — keine Übergaben und Wirkungen, die der Code nicht trägt', () => {
+  const code = quelle(
+    'REPORT z_f10.',
+    'PARAMETERS p_ziel TYPE rfcdest.',
+    'START-OF-SELECTION.',
+    '  GET BADI go_badi.',
+    '  CALL BADI go_badi->pruefen EXPORTING is_kopf = gs_kopf it_pos = gt_pos CHANGING cv_ok = gv_ok.',
+    "  CALL FUNCTION 'Z_ZAEHLER_LESEN' EXPORTING iv_id = gv_id IMPORTING ev_stand = gv_stand.",
+    "  CALL FUNCTION 'Z_ABGLEICH' DESTINATION p_ziel EXPORTING iv_id = gv_id.",
+  );
+  const badi = satzAn(code, 5).join(' ');
+  expect(badi).toContain('gs_kopf');
+  expect(badi).toContain('gt_pos');
+  expect(badi).toContain('pruefen');
+  expect(badi).not.toMatch(/Betrag|Routentext|Freigabeprozess/);
+
+  const baustein = satzAn(code, 6).join(' ');
+  expect(baustein).toContain('Ergebnis von Z_ZAEHLER_LESEN wird in gv_stand übernommen');
+  expect(baustein).not.toContain('konvertiert');
+
+  const rfc = satzAn(code, 7).join(' ');
+  expect(rfc).toContain('Z_ABGLEICH wird in einem entfernten System über die eingegebene Destination aufgerufen');
+  expect(rfc).not.toContain('benachrichtigt');
+});

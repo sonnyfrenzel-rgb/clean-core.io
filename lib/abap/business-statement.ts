@@ -1882,7 +1882,18 @@ function sentenceFor(
         core = `Der Baustein ${name} wird asynchron in einer eigenen Task gestartet.`;
         notes.push('Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor.');
       } else if (/\bDESTINATION\b/i.test(text)) {
-        core = `Ein entferntes System wird über die eingegebene Destination benachrichtigt.`;
+        // F10: „benachrichtigt" und „eingegebene" standen fest im Satz. Was
+        // der Code trägt: der Baustein läuft in einem entfernten System, über
+        // die Destination, die hier steht.
+        const destination = /\bDESTINATION\s+('[^']*'|\S+)/i.exec(text);
+        const where = !destination
+          ? 'eine Destination'
+          : literalOf(destination[1]) != null
+            ? `die Destination ${literalOf(destination[1])}`
+            : fromSelectionScreen(destination[1])
+              ? 'die eingegebene Destination'
+              : `die Destination aus ${plain(destination[1])}`;
+        core = `${name} wird in einem entfernten System über ${where} aufgerufen.`;
         notes.push('Welches System und was dort geschieht, ist aus dem gelieferten Code nicht ableitbar.');
       }
       // Was hineingeht und was herauskommt — das ist die fachliche Aussage
@@ -1963,13 +1974,21 @@ function sentenceFor(
     }
     const badi = /^CALL\s+BADI\s+(\S+)/i.exec(text);
     if (badi) {
+      // F10: was hineingeht und herauskommt, steht in EXPORTING und
+      // CHANGING/IMPORTING/RECEIVING — nicht in einem festen Satz über
+      // „Betrag" und „Routentext", der nur für einen einzigen Fall stimmte.
       const name = badi[1].split('->')[1] ?? badi[1];
-      return {
-        anchors,
-        core: `Der Betrag wird der Methode ${name} übergeben und ein Routentext übernommen.`,
-        notes: ['Dieser Aufruf ist nicht selbst ein menschlicher Freigabeprozess.'],
-        tag: 'call',
-      };
+      const given = [...text.matchAll(/\bEXPORTING\s+(.+?)(?=\s+(?:IMPORTING|CHANGING|RECEIVING|EXCEPTIONS)\b|$)/gi)]
+        .flatMap((match) => [...match[1].matchAll(/\w+\s*=\s*(\S+)/g)].map((pair) => pair[1]));
+      const taken = [...text.matchAll(/\b(?:IMPORTING|CHANGING|RECEIVING)\s+(.+?)(?=\s+(?:EXPORTING|IMPORTING|CHANGING|RECEIVING|EXCEPTIONS)\b|$)/gi)]
+        .flatMap((match) => [...match[1].matchAll(/\w+\s*=\s*(\S+)/g)].map((pair) => pair[1]));
+      const capital = (phrase: string) => phrase.charAt(0).toUpperCase() + phrase.slice(1);
+      const back = taken.length > 0 ? enumerate(taken.map((value) => nounPhrase(value, 'akk'))) : null;
+      const core =
+        given.length > 0
+          ? `${capital(enumerate(given.map((value) => nounPhrase(value, 'nom'))))} ${given.length > 1 ? 'werden' : 'wird'} der BAdI-Methode ${name} übergeben${back ? ` und ${back} übernommen` : ''}.`
+          : `Die BAdI-Methode ${name} wird aufgerufen${back ? `; übernommen wird ${back}` : ''}.`;
+      return { anchors, core, tag: 'call' };
     }
     const kernel = /^CALL\s+'([^']+)'/i.exec(text);
     if (kernel) {
@@ -2398,14 +2417,19 @@ function sequenceSentences(
  * Sollsätze gutschreiben, und mehrere Sätze an einer Anweisung sind deshalb
  * keine zweite Chance, sondern zwei Aussagen.
  */
-function resultSentence(statement: AbapStatement): Draft | null {
+function resultSentence(statement: AbapStatement, statements: readonly AbapStatement[]): Draft | null {
   if (!/^CALL\s+FUNCTION\b/i.test(statement.text)) return null;
   if (/\bIN\s+UPDATE\s+TASK\b|\bSTARTING\s+NEW\s+TASK\b/i.test(statement.text)) return null;
   const importing = /\bIMPORTING\s+\w+\s*=\s*(\S+)/i.exec(statement.text);
   if (!importing) return null;
+  // F10: „das konvertierte Ergebnis" stand an jedem Bausteinaufruf mit
+  // IMPORTING — gelesen aus dem Namen eines einzigen Konvertierungsbausteins.
+  // Was der Baustein zurückgibt, ist sein Ergebnis; mehr sagt der Code nicht.
+  const fn = /^CALL\s+FUNCTION\s+('[^']*'|[A-Za-z0-9_]+)/i.exec(statement.text);
+  const name = fn ? (resolveValue(fn[1], statements, statement.index).value ?? plain(fn[1])) : '';
   return {
     anchors: [range(statement)],
-    core: `Das konvertierte Ergebnis wird in ${plain(importing[1])} übernommen.`,
+    core: `Das Ergebnis von ${name} wird in ${plain(importing[1])} übernommen.`,
     tag: 'result',
   };
 }
@@ -2505,7 +2529,7 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
     }
     const draft = sentenceFor(statement, statements, stack, origins, luw);
     if (draft) out.push(build(draft));
-    const result = resultSentence(statement);
+    const result = resultSentence(statement, statements);
     if (result) out.push(build(result));
     const fields = resultFieldsSentence(statement);
     if (fields) out.push(build(fields));
