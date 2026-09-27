@@ -729,7 +729,11 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
       }
     }
   }
-  const restriction = filters.length > 0 ? ` mit ${enumerate(filters)}` : '';
+  // FOR ALL ENTRIES: gelesen wird zu den Zeilen einer internen Tabelle —
+  // das gehört in den Satz, sonst klingt er nach „alle Kunden".
+  const entries = /\bFOR\s+ALL\s+ENTRIES\s+IN\s+@?([A-Za-z0-9_\-<>]+)/i.exec(text);
+  const restriction =
+    (filters.length > 0 ? ` mit ${enumerate(filters)}` : '') + (entries ? ` zu den Einträgen aus ${plain(entries[1])}` : '');
 
   if (/\bCOUNT\s*\(/i.test(text)) {
     if (dynamicPredicate) {
@@ -1533,10 +1537,25 @@ function branchAssignment(statement: AbapStatement, stack: Block[], statements: 
 }
 
 /** Eine Zuweisung ohne Zweig: „Die Review-Markierung wird auf N gesetzt." */
-function plainAssignment(statement: AbapStatement): Draft | null {
+function plainAssignment(statement: AbapStatement, statements: readonly AbapStatement[], stack: Block[]): Draft | null {
   const assign = /^(\S+)\s*=\s*('[^']*'|`[^`]*`|-?\d+)\s*$/.exec(statement.text);
   if (!assign) return null;
   const value = literalOf(assign[2]) ?? assign[2];
+  // Der RETURNING-Parameter einer Methode ist ihr Ergebnis, kein Feld mit
+  // eigener Bedeutung: `text = 'x'` in `METHOD tick` heißt „tick gibt x
+  // zurück", nicht „der Text wird auf x gesetzt".
+  const method = [...stack].reverse().find((block) => block.kind === 'routine' && /^METHOD$/i.test(block.head.keyword));
+  if (method) {
+    const methodName = /^METHOD\s+(?:\S+~)?([A-Za-z0-9_]+)/i.exec(method.head.text)?.[1] ?? '';
+    const target = plain(assign[1]).toLowerCase();
+    const returning = statements.some((other) => {
+      const declaration = /^(?:CLASS-)?METHODS\s+([A-Za-z0-9_]+)\b.*\bRETURNING\s+VALUE\(\s*([A-Za-z0-9_]+)\s*\)/i.exec(other.text);
+      return declaration !== null && declaration[1].toLowerCase() === methodName.toLowerCase() && declaration[2].toLowerCase() === target;
+    });
+    if (returning) {
+      return { anchors: [range(statement)], core: `Die Methode ${methodName} gibt den Wert ${value} zurück.`, tag: 'set' };
+    }
+  }
   return {
     anchors: [range(statement)],
     core: `${capitalize(nounPhrase(plain(assign[1])))} wird auf ${value} gesetzt.`,
@@ -1886,7 +1905,25 @@ function sentenceFor(
   if (keyword === 'AUTHORITY-CHECK') {
     const object = /OBJECT\s+('[^']*'|[A-Za-z0-9_]+)/i.exec(text);
     const name = object ? (literalOf(object[1]) ?? object[1]) : '';
-    return { anchors, core: `Die Berechtigung auf ${name} wird geprüft.`, tag: 'auth' };
+    // Eine Prüfung, deren sy-subrc niemand liest, schützt nichts: der Satz
+    // sagt es, statt einen Schutz nahezulegen, den der Code nicht hat.
+    let evaluated = false;
+    for (let i = statement.index + 1; i < statements.length; i += 1) {
+      const next = statements[i];
+      if (/\bsy-subrc\b/i.test(next.text)) {
+        evaluated = true;
+        break;
+      }
+      if (isEvent(next) || /^(?:END(?:FORM|METHOD|FUNCTION|MODULE)|FORM|METHOD)$/i.test(next.keyword)) break;
+      if (/^(?:SELECT|READ|LOOP|CALL|AUTHORITY-CHECK|OPEN|INSERT|UPDATE|MODIFY|DELETE|ASSIGN|FIND|SEARCH|ENDLOOP|ENDSELECT|RECEIVE|COMMIT|CATCH|PERFORM)$/i.test(next.keyword)) break;
+      if (/->|=>/.test(next.text)) break;
+    }
+    return {
+      anchors,
+      core: `Die Berechtigung auf ${name} wird geprüft.`,
+      notes: evaluated ? [] : ['Das Ergebnis der Prüfung wird nicht ausgewertet; die Verarbeitung läuft unabhängig davon weiter.'],
+      tag: 'auth',
+    };
   }
 
   if (keyword === 'MESSAGE') {
@@ -2445,10 +2482,18 @@ function sequenceSentences(
     // Ein Lauf aus lauter `WRITE` ist die Ausgabeliste — dafür gibt es
     // `listSentence`, und zwei Sätze über dieselbe Liste sind einer zu viel.
     const onlyOutput = run.every((statement) => isOutputWrite(statement));
+    // Lauter PERFORMs sind drei Aufrufe nacheinander, nicht einer mit
+    // Parametern — der Satz sagt beides: welche Art und in welcher Folge.
+    const performs = run.every((statement) => /^PERFORM\s+[A-Za-z0-9_]+/i.test(statement.text));
     if (run.length >= 2 && !onlyOutput) {
+      const names = run.map((statement) => /^PERFORM\s+([A-Za-z0-9_]+)/i.exec(statement.text)?.[1] ?? '');
       drafts.push({
         anchors: run.map(range),
-        core: `Es wird ${enumerate(fragments)}.`,
+        core: performs
+          ? `Die Unterprogramme ${enumerate(names)} werden nacheinander aufgerufen${
+              run.some((statement) => /\b(?:USING|CHANGING|TABLES)\b/i.test(statement.text)) ? '' : ', jedes ohne Parameter'
+            }.`
+          : `Es wird ${enumerate(fragments)}.`,
         grain: 'group',
         tag: `seq${run[0].lineStart}`,
       });
@@ -2614,7 +2659,7 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
       out.push(build(branch));
       continue;
     }
-    const plainSet = plainAssignment(statement);
+    const plainSet = plainAssignment(statement, statements, stack);
     if (plainSet) {
       out.push(build(plainSet));
       continue;

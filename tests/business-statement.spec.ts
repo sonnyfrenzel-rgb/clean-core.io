@@ -736,3 +736,30 @@ test('F12 — kein erratenes Geschlecht vor Bezeichnern, Verb passt zum Subjekt'
   expect(existenz).toContain('geprüft, ob es einen passenden Satz in zsperre');
   expect(existenz).not.toContain('abap_true');
 });
+
+test('17.9 — die Sätze sagen nicht, was der Code an ihrem Anker nicht trägt', () => {
+  const code = quelle(
+    'REPORT z_verboten.',
+    'CLASS lcl_zaehler DEFINITION.',
+    '  PUBLIC SECTION.',
+    '    CLASS-METHODS naechster RETURNING VALUE(rv_nummer) TYPE i.',
+    'ENDCLASS.',
+    'CLASS lcl_zaehler IMPLEMENTATION.',
+    '  METHOD naechster.',
+    '    rv_nummer = 7.',
+    '  ENDMETHOD.',
+    'ENDCLASS.',
+    'START-OF-SELECTION.',
+    '  PERFORM: lesen, rechnen, ausgeben.',
+    "  AUTHORITY-CHECK OBJECT 'Z_LISTE' ID 'ACTVT' FIELD '03'.",
+    '  SELECT kunnr FROM kna1 FOR ALL ENTRIES IN @gt_schluessel WHERE kunnr = @gt_schluessel-kunnr INTO TABLE @DATA(lt_da).',
+  );
+  // Drei Aufrufe nacheinander, nicht einer mit zwei Parametern.
+  expect(satzAn(code, 12).join(' ')).toContain('Die Unterprogramme lesen, rechnen und ausgeben werden nacheinander aufgerufen, jedes ohne Parameter');
+  // Eine Berechtigungsprüfung, deren Ergebnis niemand liest, schützt nichts.
+  expect(satzAn(code, 13).join(' ')).toContain('Das Ergebnis der Prüfung wird nicht ausgewertet');
+  // Ein RETURNING-Parameter ist das Ergebnis der Methode, kein Feld mit eigenem Namen.
+  expect(satzAn(code, 8).join(' ')).toContain('Die Methode naechster gibt den Wert 7 zurück');
+  // FOR ALL ENTRIES liest zu den Einträgen einer Tabelle, nicht „die Kunden".
+  expect(satzAn(code, 14).join(' ')).toContain('zu den Einträgen aus gt_schluessel');
+});
