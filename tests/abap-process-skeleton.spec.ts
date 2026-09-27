@@ -2485,6 +2485,50 @@ test.describe('ADR-054 — events in sub-processes and at early exits', () => {
     expect(skeleton.notes.filter((n) => n.reason === 'unreachable-after-abort')).toEqual([]);
   });
 
+  test('LEAVE TO SCREEN and LEAVE LIST-PROCESSING end the step where they stand; LEAVE TO LIST-PROCESSING does not', () => {
+    // §5.8 / ADR-054: "jeder Weg hinaus endet dort, wo er hinausgeht". Both
+    // statements leave the dialog step on the spot — the statement after them
+    // never runs. Written for this test.
+    const pool = [
+      'PROGRAM zleave_screen.', //                                        1
+      'MODULE user_command_0100 INPUT.', //                               2
+      '  CASE sy-ucomm.', //                                              3
+      "    WHEN 'BACK'.", //                                              4
+      '      LEAVE TO SCREEN 0.', //                                      5
+      "    WHEN 'SAVE'.", //                                              6
+      "      UPDATE zorder SET status = 'S' WHERE id = @gv_id.", //       7
+      '  ENDCASE.', //                                                    8
+      "  CALL FUNCTION 'Z_NOTIFY_SALES'.", //                             9
+      'ENDMODULE.', //                                                    10
+    ].join('\n');
+    const skeleton = buildProcessSkeleton(pool);
+    const early = skeleton.nodes.filter((n) => n.detail?.early === true);
+    expect(early.map((n) => [n.kind, n.label, n.anchor?.lineStart])).toEqual([['end', 'LEAVE TO SCREEN', 5]]);
+    const into = skeleton.edges.filter((e) => e.to === early[0].id);
+    expect(into.map((e) => [e.condition, e.reason])).toEqual([["'BACK'", 'leave-screen']]);
+    // The call after the CASE is not reached from the BACK arm any more.
+    const call = skeleton.nodes.find((n) => n.anchor?.lineStart === 9);
+    const fromBack = skeleton.edges.filter((e) => e.to === call?.id && e.condition === "'BACK'");
+    expect(fromBack).toEqual([]);
+
+    const report = (leave: string) => [
+      'REPORT zleave_list.', //                                           1
+      'END-OF-SELECTION.', //                                             2
+      '  SELECT * FROM zorder INTO TABLE @DATA(lt_order).', //            3
+      '  IF lt_order IS INITIAL.', //                                     4
+      `    ${leave}`, //                                                  5
+      '  ENDIF.', //                                                      6
+      "  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'.", //                     7
+    ].join('\n');
+    const list = buildProcessSkeleton(report('LEAVE LIST-PROCESSING.'));
+    expect(list.nodes.filter((n) => n.detail?.early === true).map((n) => [n.label, n.anchor?.lineStart]))
+      .toEqual([['LEAVE LIST-PROCESSING', 5]]);
+    // `LEAVE TO LIST-PROCESSING` only switches the output to a list: no end.
+    const toList = buildProcessSkeleton(report('LEAVE TO LIST-PROCESSING.'));
+    expect(toList.nodes.filter((n) => n.detail?.early === true)).toEqual([]);
+    expect(toList.nodes.filter((n) => n.kind === 'end')).toHaveLength(1);
+  });
+
   test('events are not steps: first look, "Ask this case" and the map count what they counted', () => {
     const skeleton = buildProcessSkeleton(RELEASE);
     const stage = processStage(skeleton);

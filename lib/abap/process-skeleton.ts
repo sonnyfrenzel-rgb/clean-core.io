@@ -208,6 +208,8 @@ export type SkeletonEdgeReason =
   | 'continue-loop'
   | 'return'
   | 'stop'
+  /** `LEAVE SCREEN`, `LEAVE TO SCREEN n`, `LEAVE LIST-PROCESSING` — see `leavesDialogStep`. */
+  | 'leave-screen'
   | 'no-return'
   | 'abort';
 
@@ -646,6 +648,27 @@ function isInfoMessage(text: string): boolean {
  */
 function isRaiseEvent(text: string): boolean {
   return /^RAISE\s+EVENT\b/i.test(text);
+}
+
+/**
+ * `LEAVE SCREEN`, `LEAVE TO SCREEN n` and `LEAVE LIST-PROCESSING` — the words
+ * of the statement that leaves, or `null`.
+ *
+ * All three end the processing of the current dialog step on the spot: the
+ * runtime goes on with the next screen (or back to the caller for screen 0),
+ * resp. with the screen list processing was started from — never with the
+ * statement after it. Until 27.09.2026 they fell through to the branch for
+ * moves and calculations, and the walk carried on as if the module went on:
+ * `WHEN 'BACK'. LEAVE TO SCREEN 0.` led straight into the save of the next arm.
+ * They leave the block from wherever they stand, exactly as a `RETURN` does, so
+ * they end the same way (ADR-054, `leaveEarly`).
+ *
+ * `LEAVE TO LIST-PROCESSING` is the opposite and is not here: it only switches
+ * the output of the current step to a list, and the statement after it runs.
+ */
+function leavesDialogStep(text: string): string | null {
+  const m = /^LEAVE\s+(TO\s+SCREEN|SCREEN|LIST-PROCESSING)\b/i.exec(text);
+  return m ? `LEAVE ${m[1].replace(/\s+/g, ' ').toUpperCase()}` : null;
 }
 
 /** `RAISE EXCEPTION …`, `RAISE cx_…`, `RAISE RESUMABLE …` — the `RAISE` that ends the flow. */
@@ -2529,7 +2552,8 @@ class SkeletonBuilder {
       const text = statement.text;
       if (statement.keyword === 'RETURN' || statement.keyword === 'STOP'
         || raisesException(statement) || isErrorMessage(text)
-        || /^LEAVE\s+PROGRAM\b/i.test(text) || /^LEAVE\s+TO\s+TRANSACTION\b/i.test(text)) {
+        || /^LEAVE\s+PROGRAM\b/i.test(text) || /^LEAVE\s+TO\s+TRANSACTION\b/i.test(text)
+        || leavesDialogStep(text)) {
         return false;
       }
       if (statement.keyword === 'SUBMIT'
@@ -2755,6 +2779,12 @@ class SkeletonBuilder {
       this.leaveEarly(statement, incoming, ctx, null, reason);
       return { exits: [], outputRun: null };
     }
+    const leaving = leavesDialogStep(text);
+    if (leaving) {
+      // The dialog step ends here, from inside a loop or not — like `RETURN`.
+      this.leaveEarly(statement, incoming, ctx, null, 'leave-screen', leaving);
+      return { exits: [], outputRun: null };
+    }
 
     /* Rule 3 — what comes back, and what does not. */
     if (statement.keyword === 'SUBMIT') {
@@ -2938,6 +2968,8 @@ class SkeletonBuilder {
    * (`tests/prozess-benchmark/`). A `CHECK` that leaves the block is not one of
    * them: `DESIGN.md` §5.8 draws it as a conditional flow rather than as an
    * element of its own, and it keeps leading to the normal end (`walkCheck`).
+   * `LEAVE SCREEN`, `LEAVE TO SCREEN` and `LEAVE LIST-PROCESSING` leave the
+   * block the same way a `RETURN` does and end the same way (`leavesDialogStep`).
    *
    * Rule 6 holds: the label is the keyword the source writes, the routine it
    * leaves travels in `detail.routine`, and the **condition** travels verbatim
@@ -2956,9 +2988,11 @@ class SkeletonBuilder {
     ctx: WalkContext,
     kind: SkeletonEdgeKind | null,
     reason: SkeletonEdgeReason,
+    /** The words that leave, where one keyword is not enough (`LEAVE TO SCREEN`). */
+    words?: string,
   ): void {
     if (!incoming.length) return;
-    const keyword = statement.keyword.toUpperCase();
+    const keyword = words ?? statement.keyword.toUpperCase();
     const node = this.addNode('end', keyword, anchorOf(statement), ctx.region, ctx.container, {
       detail: { early: true, exit: keyword, routine: ctx.container ?? ctx.region.label },
     });
