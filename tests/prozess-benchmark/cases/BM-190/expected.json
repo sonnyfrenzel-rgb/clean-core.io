@@ -1,0 +1,599 @@
+{
+  "id": "BM-190",
+  "title": "Containerterminal: Stellplatz reservieren mit Sperrversuchen und Wartepause",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": null,
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ENQUEUE_EZYARD_PLATZ",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:21"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZYARD_PLATZ",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:44"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZYARD_PLATZ",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 60,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:60"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZYARD_PLATZ",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:48"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-190-B01",
+      "text": "Der Stellplatz wird bis zu fünfmal exklusiv zu sperren versucht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-190-B02",
+      "text": "Ist der Platz von einem anderen Gate-Rechner gesperrt, wird zwei Sekunden gewartet und erneut versucht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-190-B03",
+      "text": "Bei einem technischen Sperrfehler wird die Reservierung mit der Ausnahme SPERRFEHLER abgebrochen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-190-B04",
+      "text": "Nach fünf erfolglosen Versuchen läuft die Reservierung ohne Sperre weiter, weil die anschließende Prüfung das Ergebnis der Wartepause statt des Sperrversuchs auswertet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-190-B05",
+      "text": "Der Stellplatz wird gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-190-B06",
+      "text": "Existiert der Platz nicht oder ist er nicht frei, wird die Sperre aufgehoben und die Reservierung mit PLATZ_BELEGT abgelehnt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-190-B07",
+      "text": "Das Reservierungsende wird aus dem aktuellen Zeitpunkt plus der angegebenen Stundenzahl (Standard 24) berechnet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-190-B08",
+      "text": "Der Platz wird mit Status R für den Container reserviert und gespeichert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-190-B09",
+      "text": "Danach wird die Sperre des Stellplatzes aufgehoben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Gate-In fordert Stellplatz an"
+      },
+      {
+        "id": "d",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Bis zu fünf Sperrversuche"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Stellplatz exklusiv sperren"
+      },
+      {
+        "id": "c",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Sperre erhalten, fremd gesperrt oder Fehler?"
+      },
+      {
+        "id": "w",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Zwei Sekunden warten"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "Fehlermeldung Sperrfehler"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "Abbruch: Sperrfehler"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        "meaning": "Sperre erhalten? (prüft faktisch Ergebnis der Wartepause)"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Fehlermeldung Platz gesperrt"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Abbruch: Platz gesperrt"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        "meaning": "Stellplatz lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Platz vorhanden und frei?"
+      },
+      {
+        "id": "u1",
+        "type": "lock",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "o3",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        "meaning": "Fehlermeldung Platz belegt"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        "meaning": "Abbruch: Platz belegt"
+      },
+      {
+        "id": "rb",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Reservierungsende berechnen"
+      },
+      {
+        "id": "wr",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Platz für Container reservieren"
+      },
+      {
+        "id": "u2",
+        "type": "lock",
+        "anchor": {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:66"
+        },
+        "meaning": "Reservierung erledigt"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "d",
+        "condition": "always"
+      },
+      {
+        "from": "d",
+        "to": "lk",
+        "condition": "next row"
+      },
+      {
+        "from": "lk",
+        "to": "c",
+        "condition": "always"
+      },
+      {
+        "from": "c",
+        "to": "g1",
+        "condition": "WHEN 0"
+      },
+      {
+        "from": "c",
+        "to": "w",
+        "condition": "WHEN 1"
+      },
+      {
+        "from": "c",
+        "to": "o1",
+        "condition": "else"
+      },
+      {
+        "from": "w",
+        "to": "d",
+        "condition": "next iteration"
+      },
+      {
+        "from": "d",
+        "to": "g1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g1",
+        "to": "o2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "q",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "u1",
+        "condition": "sy-subrc <> 0 OR ls_platz-status <> 'F'"
+      },
+      {
+        "from": "u1",
+        "to": "o3",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "rb",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "wr",
+        "condition": "always"
+      },
+      {
+        "from": "wr",
+        "to": "u2",
+        "condition": "always"
+      },
+      {
+        "from": "u2",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "o1",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "o2",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "o3",
+        "to": "e3",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:41 — kein Fachsatz „nach fünf erfolglosen Sperrversuchen wird die Reservierung mit PLATZ_GESPERRT abgelehnt“: nach der letzten Wartepause ist sy-subrc 0, die Ausnahme wird so nie ausgelöst und die Reservierung läuft ohne Sperre weiter",
+    "source.abap:60 — kein Fachsatz „die Reservierung ist festgeschrieben, solange der Platz gesperrt ist“: der Baustein setzt kein COMMIT ab und hebt die Sperre direkt nach dem UPDATE auf",
+    "gesamte Scheibe — kein Fachsatz „der Container wird eingelagert bzw. der Gate-In gebucht“: reserviert wird nur der Stellplatz"
+  ],
+  "processDescription": "Beim Gate-In ruft die Terminaltransaktion den Baustein mit Yard, Stellplatz, Container und Reservierungsdauer (Standard 24 Stunden) auf. Der Baustein versucht bis zu fünfmal, den Stellplatz exklusiv zu sperren. Gelingt die Sperre, geht er weiter; ist der Platz von einem anderen Gate-Rechner gesperrt, wartet er zwei Sekunden und versucht es erneut; bei einem technischen Sperrfehler bricht er mit SPERRFEHLER ab. Die nach der Schleife folgende Prüfung auf eine fehlgeschlagene Sperre wertet das Ergebnis der Wartepause aus, das immer erfolgreich ist; nach fünf erfolglosen Versuchen läuft die Reservierung deshalb ohne Sperre weiter, und PLATZ_GESPERRT wird nie ausgelöst. Dann liest er den Stellplatz. Gibt es ihn nicht oder ist er nicht frei (Status F), hebt er die Sperre auf und lehnt mit PLATZ_BELEGT ab. Sonst berechnet er das Reservierungsende, setzt den Platz auf Status R mit Container und Bearbeiter, schreibt ihn zurück und hebt die Sperre auf. Festgeschrieben wird erst durch den Aufrufer."
+}

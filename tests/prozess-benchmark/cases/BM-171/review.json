@@ -1,0 +1,51 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufruf cdl",
+      "before": "cdl -> g0 [always]",
+      "after": "edl -> g0 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf csp",
+      "before": "csp -> g1 [always]",
+      "after": "x1 -> g1 [always]; x2 -> g1 [always]; x3 -> g1 [always]; x4 -> g1 [always]; esp -> g1 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante cv -> x1",
+      "before": "[CATCH cx_sy_conversion_no_number]",
+      "after": "[cx_sy_conversion_no_number]",
+      "why": "Vereinheitlichte Konvention: die Kante in einen CATCH-Zweig trägt als Bedingung den Ausnahmenamen.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten ood (neu) vor xod",
+      "before": "xod end auf zisu_ablupload_f01.abap:15 ohne output",
+      "after": "ood output auf zisu_ablupload_f01.abap:15, Kante ood -> xod [always]; eingehende Kanten auf ood umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o0 (neu)",
+      "before": "keine Knoten auf zisu_ablupload.abap:40",
+      "after": "o0 output auf zisu_ablupload.abap:40; g0 -> o0 [gt_satz IS INITIAL]; o0 -> x0 [always]",
+      "why": "Die Meldung (MESSAGE … TYPE 'S', ggf. DISPLAY LIKE 'E') ist die Ausgabe dieses Pfadendes und fehlte als output-Knoten; das folgende RETURN bleibt end.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz B03 Anker",
+      "before": ":39, :41",
+      "after": ":39, :40, :41",
+      "why": "Der Hinweis steht auf Zeile 40.",
+      "category": "Anker"
+    }
+  ],
+  "doubts": [
+    "satz_pruefen Z. 84/86: stehen zwei Vorablesungen auf demselben Datum, teilt Z. 86 durch null (Laufzeitfehler); der Fall macht das nicht zum Thema, nicht ergänzt."
+  ]
+}

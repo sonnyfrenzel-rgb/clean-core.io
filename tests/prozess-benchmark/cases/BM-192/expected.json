@@ -1,0 +1,1216 @@
+{
+  "id": "BM-192",
+  "title": "Zählerstandserfassung aus der Ablese-App: Gateway Deep Insert mit Plausibilisierung und Upload per BAPI",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZCL_ISU_MR_VALIDATOR",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_zisu_meter_dpc_ext.abap",
+        "line": 74,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zisu_meter_dpc_ext.abap:74"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EQUI",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_isu_mr_validator.abap",
+        "line": 63,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_isu_mr_validator.abap:63"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ETDZ",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_isu_mr_validator.abap",
+        "line": 91,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_isu_mr_validator.abap:91"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EABL",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_isu_mr_validator.abap",
+        "line": 105,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_isu_mr_validator.abap:105"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_MTRREADDOC_UPLOAD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_zisu_meter_dpc_ext.abap",
+        "line": 103,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zisu_meter_dpc_ext.abap:103"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_zisu_meter_dpc_ext.abap",
+        "line": 109,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zisu_meter_dpc_ext.abap:109"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_zisu_meter_dpc_ext.abap",
+        "line": 117,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zisu_meter_dpc_ext.abap:117"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "/IWBEP/CX_MGW_BUSI_EXCEPTION",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_zisu_meter_dpc_ext.abap",
+        "line": 55,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zisu_meter_dpc_ext.abap:55"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-192-B01",
+      "text": "Angenommen werden nur Anlagen über die Entitätsmenge der Zählerablesungen; jede andere Menge wird als nicht unterstützt abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:41"
+        },
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-192-B02",
+      "text": "Kopf der Ablesung und die Stände der Zählwerke werden aus der Anfrage der App übernommen.",
+      "anchors": [
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-192-B03",
+      "text": "Enthält die Anfrage keine Zählwerksstände, wird sie mit der Meldung „Keine Zählwerke übermittelt“ abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:51"
+        },
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-192-B04",
+      "text": "Ohne Berechtigung zum Hochladen von Zählerständen wird die Anfrage abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:61"
+        },
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-192-B05",
+      "text": "Für den Lasttest-Benutzer MR_LOADTEST entfällt die Plausibilisierung vollständig.",
+      "anchors": [
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-192-B06",
+      "text": "Das Gerät wird über die Seriennummer ermittelt; ist es unbekannt oder nicht eindeutig, ist die Ablesung unplausibel.",
+      "anchors": [
+        {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:63"
+        },
+        {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-192-B07",
+      "text": "Ein Ablesedatum in der Zukunft macht die Ablesung unplausibel.",
+      "anchors": [
+        {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-192-B08",
+      "text": "Je Zählwerk wird geprüft, ob es zum Ablesedatum am Gerät eingebaut ist; sonst ist die Ablesung unplausibel.",
+      "anchors": [
+        {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:91"
+        },
+        {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-192-B09",
+      "text": "Liegt eine frühere gültige Ablesung vor, wird der neue Stand mit dem letzten verglichen; bei Erstablesung entfällt der Vergleich.",
+      "anchors": [
+        {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:105"
+        },
+        {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:112"
+        }
+      ]
+    },
+    {
+      "id": "BM-192-B10",
+      "text": "Ist der neue Stand kleiner als der letzte, wird ein Zählerüberlauf angenommen, wenn der daraus folgende Verbrauch höchstens ein Zehntel des Zählbereichs beträgt, was nur eine Warnung ergibt; sonst ist die Ablesung unplausibel.",
+      "anchors": [
+        {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:118"
+        },
+        {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:121"
+        },
+        {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:124"
+        }
+      ]
+    },
+    {
+      "id": "BM-192-B11",
+      "text": "Ist die Ablesung unplausibel, wird sie mit den Prüfmeldungen an die App abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:82"
+        },
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:86"
+        }
+      ]
+    },
+    {
+      "id": "BM-192-B12",
+      "text": "Die Zählwerksstände werden mit Seriennummer, Ablesedatum, -zeit, -grund und Ablesehinweis als Ableseergebnisse im Versorgersystem angelegt.",
+      "anchors": [
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:94"
+        },
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:103"
+        }
+      ]
+    },
+    {
+      "id": "BM-192-B13",
+      "text": "Meldet die Anlage einen Fehler, wird alles zurückgenommen und die Anfrage mit den Meldungen des Bausteins abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:108"
+        },
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:109"
+        },
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:112"
+        }
+      ]
+    },
+    {
+      "id": "BM-192-B14",
+      "text": "Sonst wird die Anlage synchron festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:117"
+        }
+      ]
+    },
+    {
+      "id": "BM-192-B15",
+      "text": "Die Nummern der angelegten Ablesebelege werden je Zählwerk ermittelt und mit dem Status POSTED an die App zurückgegeben.",
+      "anchors": [
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:123"
+        },
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:130"
+        },
+        {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:131"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s_cde",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:33"
+        },
+        "meaning": "App sendet Ablesung (Deep Insert)"
+      },
+      {
+        "id": "g_set",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:41"
+        },
+        "meaning": "Entitätsmenge Zählerablesung?"
+      },
+      {
+        "id": "e_set",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:42"
+        },
+        "meaning": "Abweisung: Operation nicht unterstützt"
+      },
+      {
+        "id": "oc_read",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:49"
+        },
+        "meaning": "Kopf und Zählwerke aus Anfrage übernehmen"
+      },
+      {
+        "id": "g_regs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:51"
+        },
+        "meaning": "Zählwerke übermittelt?"
+      },
+      {
+        "id": "e_regs",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:55"
+        },
+        "meaning": "Ablehnung: keine Zählwerke"
+      },
+      {
+        "id": "a_auth",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:61"
+        },
+        "meaning": "Berechtigung zum Hochladen prüfen"
+      },
+      {
+        "id": "g_auth",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:63"
+        },
+        "meaning": "Berechtigt?"
+      },
+      {
+        "id": "e_auth",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:64"
+        },
+        "meaning": "Ablehnung: keine Berechtigung"
+      },
+      {
+        "id": "g_dbg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:71"
+        },
+        "meaning": "Lasttest-Benutzer?"
+      },
+      {
+        "id": "c_val",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:74"
+        },
+        "meaning": "Ablesung plausibilisieren"
+      },
+      {
+        "id": "s_v",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:54"
+        },
+        "meaning": "Plausibilisierung"
+      },
+      {
+        "id": "r_equi",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:63"
+        },
+        "meaning": "Gerät zur Seriennummer suchen"
+      },
+      {
+        "id": "g_cnt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:69"
+        },
+        "meaning": "Gerät eindeutig?"
+      },
+      {
+        "id": "e_v0",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:73"
+        },
+        "meaning": "Unplausibel: Gerät unbekannt"
+      },
+      {
+        "id": "e_v2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:80"
+        },
+        "meaning": "Unplausibel: Seriennummer mehrdeutig"
+      },
+      {
+        "id": "g_date",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:83"
+        },
+        "meaning": "Ablesedatum in der Zukunft?"
+      },
+      {
+        "id": "l_reg",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:88"
+        },
+        "meaning": "Je Zählwerk"
+      },
+      {
+        "id": "r_etdz",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:91"
+        },
+        "meaning": "Zählwerk zum Ablesedatum lesen"
+      },
+      {
+        "id": "g_etdz",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:97"
+        },
+        "meaning": "Zählwerk am Gerät?"
+      },
+      {
+        "id": "r_prev",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:105"
+        },
+        "meaning": "Letzte gültige Ablesung lesen"
+      },
+      {
+        "id": "g_prev",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:112"
+        },
+        "meaning": "Erstablesung?"
+      },
+      {
+        "id": "g_less",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:118"
+        },
+        "meaning": "Neuer Stand kleiner als letzter?"
+      },
+      {
+        "id": "a_cons",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:121"
+        },
+        "meaning": "Verbrauch bei Zählerüberlauf berechnen"
+      },
+      {
+        "id": "g_over",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:124"
+        },
+        "meaning": "Überlauf unplausibel groß?"
+      },
+      {
+        "id": "a_ok",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:140"
+        },
+        "meaning": "Plausibel, wenn keine Fehlermeldung vorliegt"
+      },
+      {
+        "id": "e_v",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_isu_mr_validator.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_mr_validator.abap:142"
+        },
+        "meaning": "Plausibilitätsergebnis an Service zurück"
+      },
+      {
+        "id": "g_val",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:82"
+        },
+        "meaning": "Ablesung plausibel?"
+      },
+      {
+        "id": "oc_msg",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:83"
+        },
+        "meaning": "Prüfmeldungen für App aufbereiten"
+      },
+      {
+        "id": "e_val",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:86"
+        },
+        "meaning": "Ablehnung: unplausibel"
+      },
+      {
+        "id": "a_map",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:94"
+        },
+        "meaning": "Ableseergebnisse für Anlage aufbereiten"
+      },
+      {
+        "id": "oc_bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:103"
+        },
+        "meaning": "Ableseergebnisse anlegen"
+      },
+      {
+        "id": "g_ret",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:108"
+        },
+        "meaning": "Fehler bei Anlage?"
+      },
+      {
+        "id": "oc_rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:109"
+        },
+        "meaning": "Anlage zurücknehmen"
+      },
+      {
+        "id": "oc_msg2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:110"
+        },
+        "meaning": "Bausteinmeldungen für App aufbereiten"
+      },
+      {
+        "id": "e_ret",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:112"
+        },
+        "meaning": "Ablehnung: Anlage fehlgeschlagen"
+      },
+      {
+        "id": "oc_cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:117"
+        },
+        "meaning": "Anlage synchron festschreiben"
+      },
+      {
+        "id": "l_doc",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:122"
+        },
+        "meaning": "Je Zählwerk"
+      },
+      {
+        "id": "r_doc",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:123"
+        },
+        "meaning": "Belegnummer der Ablesung nachlesen"
+      },
+      {
+        "id": "oc_copy",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:131"
+        },
+        "meaning": "Ablesung mit Belegnummern und Status an App zurückgeben"
+      },
+      {
+        "id": "e_cde",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zisu_meter_dpc_ext.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zisu_meter_dpc_ext.abap:137"
+        },
+        "meaning": "Anlage abgeschlossen"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s_cde",
+        "to": "g_set",
+        "condition": "always"
+      },
+      {
+        "from": "g_set",
+        "to": "e_set",
+        "condition": "iv_entity_set_name <> gc_set_reading"
+      },
+      {
+        "from": "g_set",
+        "to": "oc_read",
+        "condition": "else"
+      },
+      {
+        "from": "oc_read",
+        "to": "g_regs",
+        "condition": "always"
+      },
+      {
+        "from": "g_regs",
+        "to": "e_regs",
+        "condition": "ls_deep-toregisters IS INITIAL"
+      },
+      {
+        "from": "g_regs",
+        "to": "a_auth",
+        "condition": "else"
+      },
+      {
+        "from": "a_auth",
+        "to": "g_auth",
+        "condition": "always"
+      },
+      {
+        "from": "g_auth",
+        "to": "e_auth",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_auth",
+        "to": "g_dbg",
+        "condition": "else"
+      },
+      {
+        "from": "g_dbg",
+        "to": "g_val",
+        "condition": "sy-uname = 'MR_LOADTEST'"
+      },
+      {
+        "from": "g_dbg",
+        "to": "c_val",
+        "condition": "else"
+      },
+      {
+        "from": "c_val",
+        "to": "s_v",
+        "condition": "always"
+      },
+      {
+        "from": "s_v",
+        "to": "r_equi",
+        "condition": "always"
+      },
+      {
+        "from": "r_equi",
+        "to": "g_cnt",
+        "condition": "always"
+      },
+      {
+        "from": "g_cnt",
+        "to": "e_v0",
+        "condition": "WHEN 0"
+      },
+      {
+        "from": "g_cnt",
+        "to": "g_date",
+        "condition": "WHEN 1"
+      },
+      {
+        "from": "g_cnt",
+        "to": "e_v2",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "g_date",
+        "to": "l_reg",
+        "condition": "is_head-readdate > sy-datum"
+      },
+      {
+        "from": "g_date",
+        "to": "l_reg",
+        "condition": "else"
+      },
+      {
+        "from": "l_reg",
+        "to": "r_etdz",
+        "condition": "next row"
+      },
+      {
+        "from": "r_etdz",
+        "to": "g_etdz",
+        "condition": "always"
+      },
+      {
+        "from": "g_etdz",
+        "to": "l_reg",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_etdz",
+        "to": "r_prev",
+        "condition": "else"
+      },
+      {
+        "from": "r_prev",
+        "to": "g_prev",
+        "condition": "always"
+      },
+      {
+        "from": "g_prev",
+        "to": "l_reg",
+        "condition": "lt_last IS INITIAL"
+      },
+      {
+        "from": "g_prev",
+        "to": "g_less",
+        "condition": "else"
+      },
+      {
+        "from": "g_less",
+        "to": "a_cons",
+        "condition": "ls_reg-reading < lv_prev"
+      },
+      {
+        "from": "g_less",
+        "to": "l_reg",
+        "condition": "else"
+      },
+      {
+        "from": "a_cons",
+        "to": "g_over",
+        "condition": "always"
+      },
+      {
+        "from": "g_over",
+        "to": "l_reg",
+        "condition": "lv_overflow > lv_max / 10 OR lv_overflow = 0"
+      },
+      {
+        "from": "g_over",
+        "to": "l_reg",
+        "condition": "else"
+      },
+      {
+        "from": "l_reg",
+        "to": "a_ok",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_val",
+        "to": "oc_msg",
+        "condition": "lv_ok = abap_false"
+      },
+      {
+        "from": "oc_msg",
+        "to": "e_val",
+        "condition": "always"
+      },
+      {
+        "from": "g_val",
+        "to": "a_map",
+        "condition": "else"
+      },
+      {
+        "from": "a_map",
+        "to": "oc_bapi",
+        "condition": "always"
+      },
+      {
+        "from": "oc_bapi",
+        "to": "g_ret",
+        "condition": "always"
+      },
+      {
+        "from": "g_ret",
+        "to": "oc_rb",
+        "condition": "line_exists( lt_return[ type = 'E' ] ) OR line_exists( lt_return[ type = 'A' ] )"
+      },
+      {
+        "from": "oc_rb",
+        "to": "oc_msg2",
+        "condition": "always"
+      },
+      {
+        "from": "oc_msg2",
+        "to": "e_ret",
+        "condition": "always"
+      },
+      {
+        "from": "g_ret",
+        "to": "oc_cm",
+        "condition": "else"
+      },
+      {
+        "from": "oc_cm",
+        "to": "l_doc",
+        "condition": "always"
+      },
+      {
+        "from": "l_doc",
+        "to": "r_doc",
+        "condition": "next row"
+      },
+      {
+        "from": "r_doc",
+        "to": "l_doc",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_doc",
+        "to": "oc_copy",
+        "condition": "no more rows"
+      },
+      {
+        "from": "a_ok",
+        "to": "e_v",
+        "condition": "always"
+      },
+      {
+        "from": "e_v0",
+        "to": "g_val",
+        "condition": "always"
+      },
+      {
+        "from": "e_v2",
+        "to": "g_val",
+        "condition": "always"
+      },
+      {
+        "from": "e_v",
+        "to": "g_val",
+        "condition": "always"
+      },
+      {
+        "from": "oc_copy",
+        "to": "e_cde",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_zisu_meter_dpc_ext.abap:71 — kein Fachsatz „jede Ablesung wird vor dem Upload plausibilisiert“: für den Benutzer MR_LOADTEST wird der Prüfer gar nicht aufgerufen",
+    "zcl_zisu_meter_dpc_ext.abap:94 — kein Fachsatz „Warnungen der Plausibilisierung (Zählerüberlauf) werden an die App gemeldet“: die Weitergabe ist auskommentiert, bei plausibler Ablesung werden die Prüfmeldungen verworfen",
+    "zcl_isu_mr_validator.abap:145 — kein Fachsatz „die Ablesung wird gegen ein Foto der Zähleranzeige geprüft“: die Methode wird nie aufgerufen, ihr Aufruf ist auskommentiert",
+    "zcl_zisu_meter_dpc_ext.abap:61 — kein Fachsatz „der Ableser darf nur Geräte seiner Ableseeinheit erfassen“: geprüft wird nur die Aktivität Anlegen, keine Ableseeinheit oder Geräteebene"
+  ],
+  "processDescription": "Die Ablese-App sendet eine Ablesung mit Kopf (Seriennummer, Ablesedatum und -zeit, Ablesegrund, Hinweis) und den Ständen der Zählwerke als Deep Insert an den OData-Service. Anfragen an eine andere Entitätsmenge werden als nicht unterstützt abgewiesen. Der Service übernimmt die Nutzdaten in eine tiefe Struktur; fehlen Zählwerksstände oder die Berechtigung zum Hochladen, lehnt er die Anfrage mit einer Geschäftsausnahme ab. Außer für den hart codierten Lasttest-Benutzer plausibilisiert eine Hilfsklasse die Ablesung: Das Gerät muss über die Seriennummer eindeutig zu finden sein, sonst bricht die Prüfung sofort ab; ein Ablesedatum in der Zukunft ist unplausibel. Je Zählwerk prüft sie, ob es zum Ablesedatum am Gerät eingebaut ist, und vergleicht den Stand mit der letzten gültigen Ablesung; bei Erstablesung entfällt der Vergleich. Ein kleinerer Stand gilt als Zählerüberlauf mit Warnung, wenn der rechnerische Verbrauch höchstens ein Zehntel des Zählbereichs beträgt, sonst als Fehler. Ist die Ablesung unplausibel, lehnt der Service sie mit den Prüfmeldungen ab; Warnungen werden nicht weitergegeben. Andernfalls legt er die Ableseergebnisse per BAPI an; meldet dieser einen Fehler oder Abbruch, wird zurückgenommen und mit den Bausteinmeldungen abgelehnt, sonst synchron festgeschrieben. Abschließend liest er je Zählwerk die Nummer des angelegten Ablesebelegs nach und gibt die Ablesung mit Status POSTED an die App zurück."
+}

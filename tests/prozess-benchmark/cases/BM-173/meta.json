@@ -1,0 +1,37 @@
+{
+  "id": "BM-173",
+  "title": "Automotive Kanban: Scanner-Dialog meldet Behälter leer, bei Doppelscan Eil-Nachschub",
+  "domain": "Branchenlösung Automotive – Kanban/Linienversorgung",
+  "band": "komplex",
+  "loc": 182,
+  "constructs": [
+    "Modulpool mit PBO/PAI-Modulen",
+    "GET PARAMETER ID",
+    "CASE ok_code",
+    "LEAVE PROGRAM",
+    "LEAVE TO SCREEN",
+    "MESSAGE TYPE E in PAI-FORM",
+    "AUTHORITY-CHECK",
+    "CASE mit Konstanten und WHEN OTHERS",
+    "BAPI_KANBAN_CHANGESTATUS",
+    "BAPI_TRANSACTION_ROLLBACK/COMMIT",
+    "POPUP_TO_CONFIRM",
+    "INSERT Z-Tabelle + COMMIT WORK",
+    "auskommentierter Funktionscode mit CALL TRANSACTION"
+  ],
+  "scenario": "Zulieferer-Montagelinie: Werker scannen mit dem MDE-Gerät leere Kanban-Behälter, damit der Nachschub anläuft; wird ein bereits leerer Behälter erneut gescannt, kann ein Eil-Nachschub ausgelöst werden.",
+  "s4_issues": [
+    "SAP-GUI-Dynpro auf MDE-Gerät (ITS/SAPConsole) – in S/4 Fiori-App Kanban/Scanner-App",
+    "Direktlesen PKPS/PKHD",
+    "Eigene Eil-Nachschub-Tabelle neben Sonderkanban des Standards",
+    "Z-Berechtigungsobjekt Z_KANBAN"
+  ],
+  "wave": 2,
+  "module": "PP-KAB (Automotive)",
+  "edge_constructs": [
+    "LEAVE TO SCREEN / LEAVE PROGRAM",
+    "MESSAGE … TYPE E als Pfadende im PAI (Dynpro bleibt stehen)",
+    "GET PARAMETER ID",
+    "auskommentierter Zweig (SET PARAMETER ID + CALL TRANSACTION … AND SKIP FIRST SCREEN)"
+  ]
+}

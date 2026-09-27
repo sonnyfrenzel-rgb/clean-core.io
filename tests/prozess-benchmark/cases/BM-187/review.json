@@ -1,0 +1,14 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten c1/c2/c3 -> l",
+      "before": "c1 -> l, c2 -> l, c3 -> l [next iteration] (Direktkanten vom Aufruf add_fehler zurück in die Schleife)",
+      "after": "e2 -> l [next iteration] (Rückkehr aus add_fehler; alle drei Aufrufer kehren an dieselbe Stelle zurück: CONTINUE bzw. Schleifenende)",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks zum nächsten Schritt; keine zusätzliche Direktkante Aufruf → nächster Schritt. Die drei Rückkanten fallen auf dieselbe Kante zusammen.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

@@ -1,0 +1,35 @@
+{
+  "id": "BM-175",
+  "title": "Bonusabsprachen: Endabrechnung freigegebener Absprachen je Absprachenart als Hintergrundjob einplanen",
+  "domain": "SD-Bonusabwicklung / Rebates",
+  "band": "komplex",
+  "loc": 169,
+  "constructs": [
+    "AT NEW / AT END OF",
+    "CHECK in LOOP vor AT END OF",
+    "IF/ELSEIF im AT-END-Block",
+    "dynamisches PERFORM (lv_form) IN PROGRAM (lv_prog) IF FOUND",
+    "SELECT SINGLE mit Inline-Deklaration",
+    "RANGE OF + VALUE #",
+    "JOB_OPEN / SUBMIT … VIA JOB … AND RETURN / JOB_CLOSE",
+    "MESSAGE TYPE E aus FORM",
+    "INSERT Z-Tabelle ohne COMMIT",
+    "String-Template für Jobnamen"
+  ],
+  "scenario": "Nach Ablauf der Bonusperiode plant der Vertriebsinnendienst die Endabrechnung aller vom Controlling freigegebenen Kundenbonusabsprachen ein – je Absprachenart ein Job mit der Standard-Sammelabrechnung.",
+  "s4_issues": [
+    "SD-Bonusabwicklung (KONA, RV15C001) in S/4HANA durch Settlement Management / Konditionskontrakte ersetzt",
+    "Dynamischer Aufruf kundenspezifischer Routinen über Customizingtabelle",
+    "SUBMIT eines Standardprogramms mit Selektionsparameternamen",
+    "Direktlesen KONA"
+  ],
+  "wave": 2,
+  "module": "SD-REB",
+  "edge_constructs": [
+    "SUBMIT … VIA JOB mit JOB_OPEN/JOB_CLOSE",
+    "PERFORM (lv_form) IN PROGRAM (lv_prog) IF FOUND",
+    "AT NEW / AT END OF",
+    "CHECK mitten in der Schleife überspringt AT END OF",
+    "RETURN aus tiefem FORM"
+  ]
+}

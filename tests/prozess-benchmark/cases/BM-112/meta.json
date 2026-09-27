@@ -1,0 +1,41 @@
+{
+  "id": "BM-112",
+  "title": "IDoc-Eingang Equipmenttausch: Ausbau, Zählerstand bei Ausbau, Einbau mit Ausnahmeklasse und IDoc-Status",
+  "domain": "PM — Equipment-Einbau/-Ausbau, Schnittstelle",
+  "band": "komplex",
+  "loc": 227,
+  "constructs": [
+    "IDoc-Eingangsbaustein",
+    "EDIDC/EDIDD",
+    "LOOP AT … WHERE",
+    "CASE segnam",
+    "CONTINUE",
+    "TRY … CATCH",
+    "FORM … RAISING",
+    "RAISE EXCEPTION TYPE",
+    "SELECT SINGLE mit Join",
+    "BAPI_EQUI_DISMANTLE",
+    "BAPI_EQUI_INSTALL",
+    "MEASUREM_DOCUM_RFC_SINGLE_001",
+    "MESSAGE … INTO",
+    "BAPI_TRANSACTION_ROLLBACK/COMMIT",
+    "VALUE mit COND",
+    "IDoc-Status 51/53"
+  ],
+  "scenario": "Techniker tauschen im Feld ein Aggregat (Pumpe, Motor) und melden den Tausch über eine mobile App; die Middleware schickt je Tausch ein Kunden-IDoc, das Ausbau, Zählerstand und Einbau in einem LUW bucht.",
+  "s4_issues": [
+    "BAPI_EQUI_DISMANTLE/INSTALL und MEASUREM_DOCUM_RFC_SINGLE_001 nicht für Cloud freigegeben",
+    "Direkte Lesezugriffe auf EQUZ/ILOA, IMPTT/EQUI",
+    "Kunden-IDoc-Typ statt freigegebener API (API_EQUIPMENT)",
+    "LUW über mehrere BAPIs mit gemeinsamem Rollback"
+  ],
+  "wave": 2,
+  "module": "PM",
+  "edge_constructs": [
+    "RAISE EXCEPTION TYPE",
+    "TRY … CATCH",
+    "RETURN aus tiefem FORM",
+    "CONTINUE in verschachtelten Schleifen (auch wirkungslos im WHEN OTHERS)",
+    "COND #"
+  ]
+}

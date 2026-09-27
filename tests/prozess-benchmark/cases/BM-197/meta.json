@@ -1,0 +1,43 @@
+{
+  "id": "BM-197",
+  "title": "Frachtauftrag im TM freigeben: BOPF-Determination, Kapazitätsvalidierung, Freigabeaktion und Gateway-Service",
+  "domain": "Technische Randbereiche — BOPF-Erweiterung / OData-Service im Transportmanagement",
+  "band": "sehr komplex",
+  "loc": 670,
+  "constructs": [
+    "BOPF-Determination /BOBF/IF_FRW_DETERMINATION~EXECUTE mit io_read->retrieve / retrieve_by_association / io_modify->update",
+    "BOPF-Validierung /BOBF/IF_FRW_VALIDATION~EXECUTE mit et_failed_key und Meldungen über /BOBF/CL_FRW_FACTORY=>GET_MESSAGE",
+    "BOPF-Aktion /BOBF/IF_FRW_ACTION~EXECUTE mit ev_static_action_failed",
+    "AUTHORITY-CHECK",
+    "CHANGEDOCUMENT_OPEN / _SINGLE_CASE / _CLOSE",
+    "CL_BCS mit SAP-Benutzer als Empfänger",
+    "SAP-Gateway *_DPC_EXT: EXECUTE_ACTION (Function Import) und *_GET_ENTITYSET",
+    "BOPF-Service-Manager: convert_altern_key, do_action, query, retrieve; Transaktionsmanager save/cleanup",
+    "Kundentabelle ZTM_VEH_CAP, Schalter über TVARVC",
+    "Kundenerweiterungsfelder ZZ_* am TOR-Root"
+  ],
+  "scenario": "Kundenerweiterung des TM-Frachtauftrags (BO /SCMTMS/TOR) für eine Fiori-App der Disposition: eine Determination schreibt Gesamtgewicht und Gefahrgutkennzeichen fort, eine Validierung prüft Fahrzeugkapazität und ADR-Zulassung, eine Aktion gibt den Frachtauftrag frei, und ein OData-Service liefert den Arbeitsvorrat und löst die Freigabe aus.",
+  "s4_issues": [
+    "BOPF ist in S/4HANA-TM weiterhin Laufzeit des Frachtauftrags, für Neuentwicklungen aber durch RAP abgelöst; Erweiterungen über Enhancement Workbench sind kein freigegebenes Erweiterungsmodell",
+    "SEGW-basierter OData-V2-Service mit DPC_EXT statt RAP-Service",
+    "Kundeneigene Kapazitätstabelle ZTM_VEH_CAP neben den Ressourcenstammdaten des TM",
+    "CL_BCS aus einer BOPF-Aktion; Commit liegt beim Transaktionsmanager",
+    "Direkter Zugriff auf TVARVC als Schalter"
+  ],
+  "wave": 2,
+  "module": "TM",
+  "edge_constructs": [
+    "LOOP AT … GROUP BY mit REDUCE … FOR … IN GROUP",
+    "VALUE #( FOR … ) / VALUE #( BASE … FOR … )",
+    "SWITCH, COND, xsdbool, Inline-Deklarationen, verkettete Methodenaufrufe",
+    "CHECK mitten in Schleife",
+    "CONTINUE in Schleifen (mehrere Ausstiege je Durchlauf)",
+    "RAISE EXCEPTION TYPE als Pfadende",
+    "TRY … CATCH mit leerem CATCH-Block (##NO_HANDLER)",
+    "Schalter über TVARVC (Überplanungstoleranz)",
+    "nie aufgerufene Methode (Portal-Übertragung per RFC) und auskommentierte Zweige",
+    "auskommentierte Debug-Hintertür IF sy-uname = …",
+    "super-> Aufruf in die generierte DPC-Klasse",
+    "SELECT … FOR ALL ENTRIES mit Leerprüfung der Treibertabelle"
+  ]
+}

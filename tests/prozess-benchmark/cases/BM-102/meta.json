@@ -1,0 +1,28 @@
+{
+  "id": "BM-102",
+  "title": "Zählerstand plausibilisieren: letzter Messbeleg, Rückwärtszählung, Zählerüberlauf",
+  "domain": "PM — Zähler und leistungsabhängige Wartung",
+  "band": "einfach",
+  "loc": 34,
+  "constructs": [
+    "FUNCTION",
+    "SELECT SINGLE neue Syntax",
+    "ORDER BY … UP TO 1 ROWS",
+    "VALUE … OPTIONAL",
+    "MESSAGE … RAISING",
+    "COND #"
+  ],
+  "scenario": "Prüfbaustein einer kundeneigenen Zählerstandserfassung (Upload aus Betriebsdatenerfassung), der vor dem Anlegen eines Messbelegs den Zuwachs gegenüber der letzten Ablesung ermittelt.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf IMPTT und IMRG; in S/4 Cloud nur über freigegebene Messbeleg-APIs",
+    "IMRG-READG ist interner Gleitpunktwert (SI-Einheit); Differenzbildung ohne Einheitenumrechnung",
+    "Klassische Ausnahmen mit MESSAGE … RAISING statt klassenbasierter Ausnahmen"
+  ],
+  "wave": 2,
+  "module": "PM",
+  "edge_constructs": [
+    "MESSAGE … RAISING",
+    "COND #",
+    "Inline-Deklarationen"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "id": "BM-160",
+  "title": "ESS-Adressänderung mit Genehmigungsworkflow, Übernahme in Infotyp 0006 und Rückrechnungshinweis",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "sehr komplex",
+  "loc": 404,
+  "constructs": [
+    "RFC-Funktionsbaustein mit klassischen Ausnahmen",
+    "Workflow-Schrittbaustein",
+    "SELECT SINGLE PA0105/PA0003/T005/TVARVC (neue und klassische Syntax)",
+    "MESSAGE … RAISING",
+    "NEW",
+    "TRY … CATCH … RETRY",
+    "RAISE EXCEPTION TYPE / RAISE EXCEPTION Objekt",
+    "WAIT UP TO",
+    "xsdbool",
+    "CL_SYSTEM_UUID",
+    "INSERT Kundentabelle",
+    "SWE_EVENT_CREATE",
+    "AUTHORITY-CHECK P_ORGIN",
+    "CASE mit WHEN OTHERS RAISE",
+    "BAPI_EMPLOYEE_ENQUEUE/DEQUEUE",
+    "HR_INFOTYPE_OPERATION IT0006",
+    "HR_READ_SUBTYPE",
+    "SO_NEW_DOCUMENT_SEND_API1",
+    "CALL FUNCTION … IN UPDATE TASK",
+    "COMMIT WORK",
+    "MESSAGE Typ A im Verbuchungsbaustein"
+  ],
+  "scenario": "Mitarbeiter melden ihre neue Anschrift in einer ESS-App; Inlandsumzüge ohne Rückwirkung werden sofort in den Infotyp 0006 übernommen, Auslandsumzüge und rückwirkende Umzüge gehen über einen Workflow an die Personalabteilung, und die Entgeltabrechnung erhält bei Rückwirkung einen Hinweis.",
+  "s4_issues": [
+    "Direkte Lesezugriffe auf PA0105/PA0003",
+    "SAPoffice-Versand SO_NEW_DOCUMENT_SEND_API1",
+    "Klassischer Workflow über SWE_EVENT_CREATE",
+    "WAIT UP TO in RFC-Verarbeitung",
+    "Kundentabelle ZESS_ADDR_REQ als Antragsablage"
+  ],
+  "wave": 2,
+  "module": "ESS",
+  "edge_constructs": [
+    "TRY … CATCH … RETRY mit WAIT UP TO",
+    "RAISE EXCEPTION eines gefangenen Objekts",
+    "RAISE / MESSAGE … RAISING als Pfadende",
+    "Schalter über TVARVC",
+    "CALL FUNCTION … IN UPDATE TASK",
+    "xsdbool",
+    "WHEN OTHERS mit RAISE"
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufruf c_dv",
+      "before": "c_dv -> g_ok [always]",
+      "after": "e_dv -> g_ok [always]; x1 -> g_ok [always]; x2 -> g_ok [always]; x3 -> g_ok [always]; x4 -> g_ok [always]; x5 -> g_ok [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_arch",
+      "before": "c_arch -> l [next iteration]",
+      "after": "e_ar -> l [next iteration]; x_ar -> l [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_lp",
+      "before": "c_lp -> g_t [always]",
+      "after": "e_lp -> g_t [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_p1",
+      "before": "c_p1 -> x1 [always]",
+      "after": "e_pr -> x1 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_p2",
+      "before": "c_p2 -> x2 [always]",
+      "after": "e_pr -> x2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_p3",
+      "before": "c_p3 -> x3 [always]",
+      "after": "e_pr -> x3 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_p4",
+      "before": "c_p4 -> x4 [always]",
+      "after": "e_pr -> x4 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_p5",
+      "before": "c_p5 -> x5 [always]",
+      "after": "e_pr -> x5 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_p6",
+      "before": "c_p6 -> e_dv [always]",
+      "after": "e_pr -> e_dv [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_p7",
+      "before": "c_p7 -> x_ar [always]",
+      "after": "e_pr -> x_ar [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_p8",
+      "before": "c_p8 -> g_t2 [always]",
+      "after": "e_pr -> g_t2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_ct",
+      "before": "c_ct -> l_lo [always]",
+      "after": "e_c -> l_lo [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Ausnahmekanten nach c_p8",
+      "before": "c_pr -> c_p8 [CATCH zcx_ehs_zusammenlagerung INTO DATA(lx_zl)]",
+      "after": "x_u -> c_p8 [zcx_ehs_zusammenlagerung]; x_v -> c_p8 [zcx_ehs_zusammenlagerung]",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION in einem gerufenen Block des Falls ist ein end-Knoten; die Ausnahmekante geht von diesem end in den CATCH-Zweig des Aufrufers (Bedingung: Ausnahmename), nicht vom Aufrufknoten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_pr",
+      "before": "c_pr -> l_lo [next iteration]",
+      "after": "e_p -> l_lo [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante a_tr -> c_p2",
+      "before": "[CATCH cx_transformation_error INTO DATA(lx_trans)]",
+      "after": "[cx_transformation_error]",
+      "why": "Vereinheitlichte Konvention: die Ausnahmekante trägt als Bedingung den Ausnahmenamen, nicht die CATCH-Anweisung.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_fac -> m_pa",
+      "before": "[CATCH cx_salv_msg]",
+      "after": "[cx_salv_msg]",
+      "why": "Vereinheitlichte Konvention: die Ausnahmekante trägt als Bedingung den Ausnahmenamen, nicht die CATCH-Anweisung.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

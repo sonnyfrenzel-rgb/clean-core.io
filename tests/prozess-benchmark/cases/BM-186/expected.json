@@ -1,0 +1,591 @@
+{
+  "id": "BM-186",
+  "title": "OData-Filial-App Werbeaktionen: GET_ENTITYSET mit Pflichtfilter, Berechtigung je Filiale, dynamischem WHERE",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": null,
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZRET_AKTION",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_zret_promo_dpc_ext.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zret_promo_dpc_ext.abap:49"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRET_AKT_FIL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_zret_promo_dpc_ext.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zret_promo_dpc_ext.abap:49"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "/IWBEP/CX_MGW_BUSI_EXCEPTION",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_zret_promo_dpc_ext.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_zret_promo_dpc_ext.abap:21"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-186-B01",
+      "text": "Die App fragt Werbeaktionen mit Filtern ab; ausgewertet werden die Filter Filiale und Aktiv.",
+      "anchors": [
+        {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:12"
+        },
+        {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-186-B02",
+      "text": "Mit dem Filter Aktiv werden nur Aktionen berücksichtigt, die heute laufen.",
+      "anchors": [
+        {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-186-B03",
+      "text": "Jeder andere Filter wird mit dem Fehler „Filter nicht unterstützt“ abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-186-B04",
+      "text": "Ohne Filialfilter wird die Anfrage mit „Filter WERKS ist Pflicht“ abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:27"
+        },
+        {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-186-B05",
+      "text": "Filialen, für die der Benutzer keine Anzeigeberechtigung hat, werden aus der Anfrage entfernt.",
+      "anchors": [
+        {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:34"
+        },
+        {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:35"
+        },
+        {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-186-B06",
+      "text": "Bleibt keine berechtigte Filiale übrig, wird die Anfrage mit einem Berechtigungsfehler abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:43"
+        },
+        {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-186-B07",
+      "text": "Die Aktionen der berechtigten Filialen werden mit Text, Laufzeit und Rabattsatz nach Beginndatum sortiert gelesen.",
+      "anchors": [
+        {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-186-B08",
+      "text": "Die Ergebnisliste wird auf die angefragte Seite ($skip/$top) zugeschnitten.",
+      "anchors": [
+        {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:59"
+        },
+        {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-186-B09",
+      "text": "Auf Anforderung wird die Anzahl der zurückgegebenen Aktionen als Trefferzahl gemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:67"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:8"
+        },
+        "meaning": "App fragt Werbeaktionen an"
+      },
+      {
+        "id": "gf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:12"
+        },
+        "meaning": "Filter der Anfrage übernehmen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:14"
+        },
+        "meaning": "Filter einzeln auswerten"
+      },
+      {
+        "id": "c",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:15"
+        },
+        "meaning": "Welcher Filter?"
+      },
+      {
+        "id": "aw",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:19"
+        },
+        "meaning": "Einschränkung auf heute laufende Aktionen setzen"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:21"
+        },
+        "meaning": "Abweisung: Filter nicht unterstützt"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:27"
+        },
+        "meaning": "Filialfilter angegeben?"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:28"
+        },
+        "meaning": "Abweisung: Filialfilter fehlt"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:34"
+        },
+        "meaning": "Angefragte Filialen prüfen"
+      },
+      {
+        "id": "au",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:35"
+        },
+        "meaning": "Anzeigeberechtigung für Filiale prüfen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:38"
+        },
+        "meaning": "Berechtigt? Sonst Filiale entfernen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:43"
+        },
+        "meaning": "Berechtigte Filiale übrig?"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:44"
+        },
+        "meaning": "Abweisung: keine Berechtigung"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:49"
+        },
+        "meaning": "Aktionen der Filialen lesen"
+      },
+      {
+        "id": "p1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:59"
+        },
+        "meaning": "Seitengröße angefragt? Ende abschneiden"
+      },
+      {
+        "id": "p2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:63"
+        },
+        "meaning": "Seitenversatz angefragt? Anfang abschneiden"
+      },
+      {
+        "id": "gi",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:67"
+        },
+        "meaning": "Trefferzahl angefordert?"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_zret_promo_dpc_ext.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_zret_promo_dpc_ext.abap:71"
+        },
+        "meaning": "Aktionsliste an App liefern"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "gf",
+        "condition": "always"
+      },
+      {
+        "from": "gf",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "c",
+        "condition": "next row"
+      },
+      {
+        "from": "c",
+        "to": "l1",
+        "condition": "WHEN 'WERKS'"
+      },
+      {
+        "from": "c",
+        "to": "aw",
+        "condition": "WHEN 'AKTIV'"
+      },
+      {
+        "from": "c",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "aw",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l1",
+        "to": "g1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g1",
+        "to": "e2",
+        "condition": "lt_werks IS INITIAL"
+      },
+      {
+        "from": "g1",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "l2",
+        "to": "au",
+        "condition": "next row"
+      },
+      {
+        "from": "au",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "l2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "l2",
+        "to": "g3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g3",
+        "to": "e3",
+        "condition": "lt_werks IS INITIAL"
+      },
+      {
+        "from": "g3",
+        "to": "q",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "p1",
+        "condition": "always"
+      },
+      {
+        "from": "p1",
+        "to": "p2",
+        "condition": "is_paging-top > 0"
+      },
+      {
+        "from": "p1",
+        "to": "p2",
+        "condition": "else"
+      },
+      {
+        "from": "p2",
+        "to": "gi",
+        "condition": "is_paging-skip > 0"
+      },
+      {
+        "from": "p2",
+        "to": "gi",
+        "condition": "else"
+      },
+      {
+        "from": "gi",
+        "to": "e",
+        "condition": "io_tech_request_context->has_inlinecount( ) = abap_true"
+      },
+      {
+        "from": "gi",
+        "to": "e",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_zret_promo_dpc_ext.abap:68 — kein Fachsatz „die Gesamtzahl der passenden Aktionen wird gemeldet“: gezählt wird nach dem Abschneiden der Seite, gemeldet wird nur die Anzahl der gelieferten Zeilen",
+    "zcl_zret_promo_dpc_ext.abap:35 — kein Fachsatz „die Berechtigung wird für alle angefragten Filialen vollständig geprüft“: geprüft wird nur der Von-Wert jeder Filterzeile; bei Intervallen oder Mustern bleiben die übrigen Filialen ungeprüft im Filter",
+    "zcl_zret_promo_dpc_ext.abap:49 — kein Fachsatz „ohne Filter Aktiv werden nur künftige Aktionen geliefert“: ohne diesen Filter ist die dynamische Bedingung leer und es werden alle Aktionen der Filialen geliefert, auch abgelaufene",
+    "gesamte Scheibe — kein Fachsatz „Aktionen werden angelegt oder geändert“: die Methode liest nur"
+  ],
+  "processDescription": "Die Filial-App fragt über den OData-Service die Werbeaktionen an. Die Methode übernimmt die Filter der Anfrage und wertet sie einzeln aus: Der Filialfilter wird als Filialbereich übernommen, der Filter Aktiv schränkt auf Aktionen ein, deren Laufzeit den heutigen Tag enthält, und jeder andere Filter wird mit „Filter nicht unterstützt“ abgewiesen. Fehlt der Filialfilter, wird die Anfrage mit „Filter WERKS ist Pflicht“ abgewiesen. Danach prüft die Methode für jede angefragte Filiale die Anzeigeberechtigung und entfernt Filialen ohne Berechtigung; geprüft wird dabei nur der Von-Wert der Filterzeile. Bleibt keine Filiale übrig, folgt ein Berechtigungsfehler. Dann liest sie die Aktionen dieser Filialen mit Text, Laufzeit und Rabattsatz, nach Beginndatum sortiert; ohne Filter Aktiv sind das alle, auch abgelaufene. Die Liste wird auf die angefragte Seite zugeschnitten. Ist eine Trefferzahl angefordert, meldet die Methode die Zahl der gelieferten Zeilen, nicht die Gesamtzahl. Geschrieben wird nichts."
+}

@@ -1,0 +1,1247 @@
+{
+  "id": "BM-111",
+  "title": "Strukturliste Technische Plätze: rekursive IFLOT-Hierarchie mit Equipments, dynamischem Filter und Absprung",
+  "classes": [
+    "K01",
+    "K04",
+    "K13",
+    "K17",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "IFLOT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpm_tplatz_baum.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_tplatz_baum.abap:42"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "IFLO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpm_tplatz_baum_f01.abap",
+        "line": 43,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_tplatz_baum_f01.abap:43"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JEST",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpm_tplatz_baum_f01.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_tplatz_baum_f01.abap:51"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EQUZ",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpm_tplatz_baum_f01.abap",
+        "line": 84,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_tplatz_baum_f01.abap:84"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ILOA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpm_tplatz_baum_f01.abap",
+        "line": 84,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_tplatz_baum_f01.abap:84"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EQKT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpm_tplatz_baum_f01.abap",
+        "line": 84,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_tplatz_baum_f01.abap:84"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "IE03",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpm_tplatz_baum.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_tplatz_baum.abap:65"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "IL03",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpm_tplatz_baum.abap",
+        "line": 68,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_tplatz_baum.abap:68"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-111-B01",
+      "text": "Der eingegebene Einstiegsplatz wird bei der Eingabe geprüft; existiert er nicht, wird die Eingabe mit Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:42"
+        },
+        {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:44"
+        },
+        {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-111-B02",
+      "text": "Aus der Platzart- und der Werksauswahl wird eine Zusatzbedingung für die Platzlesung gebildet; ohne Auswahl gilt keine Einschränkung.",
+      "anchors": [
+        {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:51"
+        },
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:12"
+        },
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:13"
+        },
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:15"
+        },
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-111-B03",
+      "text": "Die Struktur wird ab dem Einstiegsplatz Ebene für Ebene aufgelöst; der Einstiegsplatz selbst erscheint nicht in der Liste.",
+      "anchors": [
+        {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-111-B04",
+      "text": "Ist die Höchstebene erreicht, wird für den Platz der Hinweis „weitere Ebenen“ ausgegeben und nicht weiter aufgelöst.",
+      "anchors": [
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:38"
+        },
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:39"
+        },
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-111-B05",
+      "text": "Zu einem Platz werden die direkt untergeordneten Plätze mit Text in Anmeldesprache gelesen, eingeschränkt durch die Zusatzbedingung, und nach Platznummer sortiert.",
+      "anchors": [
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-111-B06",
+      "text": "Untergeordnete Plätze mit aktivem Systemstatus „inaktiv“ werden samt ihrem gesamten Teilbaum ausgelassen.",
+      "anchors": [
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:51"
+        },
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-111-B07",
+      "text": "Jeder übrige Platz wird eingerückt nach Ebene mit Text gelistet und gezählt.",
+      "anchors": [
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-111-B08",
+      "text": "Ist die Equipmentanzeige gewählt, werden die aktuell direkt am Platz eingebauten Equipments ohne Unterequipments mit Kurztext gelesen, eingerückt gelistet und gezählt.",
+      "anchors": [
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:66"
+        },
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:67"
+        },
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:84"
+        },
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:92"
+        },
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-111-B09",
+      "text": "Danach wird der Platz selbst als Ausgangspunkt der nächsten Ebene aufgelöst.",
+      "anchors": [
+        {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-111-B10",
+      "text": "Am Ende der Liste werden die Anzahl gelisteter Plätze und Equipments ausgegeben.",
+      "anchors": [
+        {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-111-B11",
+      "text": "Ein Doppelklick auf ein Equipment öffnet dessen Anzeige, ein Doppelklick auf einen Platz die Platzanzeige, jeweils ohne Einstiegsbild.",
+      "anchors": [
+        {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:63"
+        },
+        {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:64"
+        },
+        {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:65"
+        },
+        {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:66"
+        },
+        {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:67"
+        },
+        {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:68"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:41"
+        },
+        "meaning": "Eingabeprüfung Einstiegsplatz"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:42"
+        },
+        "meaning": "Einstiegsplatz lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:44"
+        },
+        "meaning": "Platz unbekannt?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:45"
+        },
+        "meaning": "Fehler: Platz existiert nicht"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:45"
+        },
+        "meaning": "Selektionsbild bleibt zur Korrektur"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:46"
+        },
+        "meaning": "Eingabe in Ordnung"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:49"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:51"
+        },
+        "meaning": "Zusatzfilter bilden"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:52"
+        },
+        "meaning": "Struktur ab Einstiegsplatz auflösen"
+      },
+      {
+        "id": "s3",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:55"
+        },
+        "meaning": "Listenabschluss"
+      },
+      {
+        "id": "o3",
+        "type": "output",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:57"
+        },
+        "meaning": "Summen Plätze und Equipments ausgeben"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:59"
+        },
+        "meaning": "Liste fertig"
+      },
+      {
+        "id": "s4",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:62"
+        },
+        "meaning": "Doppelklick in der Liste"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:63"
+        },
+        "meaning": "Equipmentzeile gewählt?"
+      },
+      {
+        "id": "a4",
+        "type": "action",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:64"
+        },
+        "meaning": "Equipment für Absprung vorgeben"
+      },
+      {
+        "id": "t4",
+        "type": "external_program",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:65"
+        },
+        "meaning": "Equipment anzeigen"
+      },
+      {
+        "id": "a5",
+        "type": "action",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:67"
+        },
+        "meaning": "Platz für Absprung vorgeben"
+      },
+      {
+        "id": "t5",
+        "type": "external_program",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:68"
+        },
+        "meaning": "Technischen Platz anzeigen"
+      },
+      {
+        "id": "e4",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_tplatz_baum.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum.abap:70"
+        },
+        "meaning": "Zurück zur Liste"
+      },
+      {
+        "id": "sb",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:10"
+        },
+        "meaning": "Zusatzfilter bilden"
+      },
+      {
+        "id": "gb1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:12"
+        },
+        "meaning": "Platzart eingeschränkt?"
+      },
+      {
+        "id": "ab1",
+        "type": "action",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:13"
+        },
+        "meaning": "Filter auf Platzart"
+      },
+      {
+        "id": "gb2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:15"
+        },
+        "meaning": "Standortwerk eingeschränkt?"
+      },
+      {
+        "id": "ab2",
+        "type": "action",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:19"
+        },
+        "meaning": "Filter auf Standortwerk ergänzen"
+      },
+      {
+        "id": "eb",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:22"
+        },
+        "meaning": "Filter gebildet"
+      },
+      {
+        "id": "sx",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:29"
+        },
+        "meaning": "Unterplätze eines Platzes auflösen"
+      },
+      {
+        "id": "gx",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:38"
+        },
+        "meaning": "Höchstebene erreicht?"
+      },
+      {
+        "id": "ox",
+        "type": "output",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:39"
+        },
+        "meaning": "Hinweis weitere Ebenen"
+      },
+      {
+        "id": "xx",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:40"
+        },
+        "meaning": "Auflösung dieses Zweigs beenden"
+      },
+      {
+        "id": "rx",
+        "type": "read",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:43"
+        },
+        "meaning": "Direkt untergeordnete Plätze lesen (dynamischer Filter)"
+      },
+      {
+        "id": "lx",
+        "type": "loop",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:50"
+        },
+        "meaning": "Unterplätze durchgehen"
+      },
+      {
+        "id": "rj",
+        "type": "read",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:51"
+        },
+        "meaning": "Status INAK des Platzes lesen"
+      },
+      {
+        "id": "gj",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:55"
+        },
+        "meaning": "Platz inaktiv?"
+      },
+      {
+        "id": "ox2",
+        "type": "output",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:60"
+        },
+        "meaning": "Platz eingerückt listen"
+      },
+      {
+        "id": "gq",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:66"
+        },
+        "meaning": "Equipments anzeigen?"
+      },
+      {
+        "id": "cq",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:67"
+        },
+        "meaning": "Eingebaute Equipments listen"
+      },
+      {
+        "id": "cr",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:69"
+        },
+        "meaning": "Nächste Ebene rekursiv auflösen"
+      },
+      {
+        "id": "ex",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:71"
+        },
+        "meaning": "Ebene fertig"
+      },
+      {
+        "id": "sl",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:78"
+        },
+        "meaning": "Equipments am Platz"
+      },
+      {
+        "id": "rl",
+        "type": "read",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:84"
+        },
+        "meaning": "Aktuell eingebaute Equipments ohne Unterequipments lesen"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:92"
+        },
+        "meaning": "Equipments vorhanden?"
+      },
+      {
+        "id": "ll",
+        "type": "loop",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:95"
+        },
+        "meaning": "Equipments durchgehen"
+      },
+      {
+        "id": "ol",
+        "type": "output",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:97"
+        },
+        "meaning": "Equipment eingerückt listen"
+      },
+      {
+        "id": "el",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_tplatz_baum_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_tplatz_baum_f01.abap:103"
+        },
+        "meaning": "Equipments gelistet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s1",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m1",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "s2",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "sb",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "sx",
+        "condition": "always"
+      },
+      {
+        "from": "s3",
+        "to": "o3",
+        "condition": "always"
+      },
+      {
+        "from": "o3",
+        "to": "e3",
+        "condition": "always"
+      },
+      {
+        "from": "s4",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "a4",
+        "condition": "gv_equnr IS NOT INITIAL"
+      },
+      {
+        "from": "a4",
+        "to": "t4",
+        "condition": "always"
+      },
+      {
+        "from": "t4",
+        "to": "e4",
+        "condition": "always"
+      },
+      {
+        "from": "a5",
+        "to": "t5",
+        "condition": "always"
+      },
+      {
+        "from": "t5",
+        "to": "e4",
+        "condition": "always"
+      },
+      {
+        "from": "sb",
+        "to": "gb1",
+        "condition": "always"
+      },
+      {
+        "from": "gb1",
+        "to": "ab1",
+        "condition": "s_fltyp[] IS NOT INITIAL"
+      },
+      {
+        "from": "gb1",
+        "to": "gb2",
+        "condition": "else"
+      },
+      {
+        "from": "ab1",
+        "to": "gb2",
+        "condition": "always"
+      },
+      {
+        "from": "gb2",
+        "to": "ab2",
+        "condition": "s_swerk[] IS NOT INITIAL"
+      },
+      {
+        "from": "gb2",
+        "to": "eb",
+        "condition": "else"
+      },
+      {
+        "from": "ab2",
+        "to": "eb",
+        "condition": "always"
+      },
+      {
+        "from": "sx",
+        "to": "gx",
+        "condition": "always"
+      },
+      {
+        "from": "gx",
+        "to": "ox",
+        "condition": "pv_level >= p_maxl"
+      },
+      {
+        "from": "ox",
+        "to": "xx",
+        "condition": "always"
+      },
+      {
+        "from": "gx",
+        "to": "rx",
+        "condition": "else"
+      },
+      {
+        "from": "rx",
+        "to": "lx",
+        "condition": "always"
+      },
+      {
+        "from": "lx",
+        "to": "rj",
+        "condition": "next row"
+      },
+      {
+        "from": "rj",
+        "to": "gj",
+        "condition": "always"
+      },
+      {
+        "from": "gj",
+        "to": "lx",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gj",
+        "to": "ox2",
+        "condition": "else"
+      },
+      {
+        "from": "ox2",
+        "to": "gq",
+        "condition": "always"
+      },
+      {
+        "from": "gq",
+        "to": "cq",
+        "condition": "p_equi = 'X'"
+      },
+      {
+        "from": "gq",
+        "to": "cr",
+        "condition": "else"
+      },
+      {
+        "from": "cq",
+        "to": "sl",
+        "condition": "always"
+      },
+      {
+        "from": "cr",
+        "to": "sx",
+        "condition": "always"
+      },
+      {
+        "from": "lx",
+        "to": "ex",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sl",
+        "to": "rl",
+        "condition": "always"
+      },
+      {
+        "from": "rl",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "ll",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gl",
+        "to": "el",
+        "condition": "else"
+      },
+      {
+        "from": "ll",
+        "to": "ol",
+        "condition": "next row"
+      },
+      {
+        "from": "ol",
+        "to": "ll",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ll",
+        "to": "el",
+        "condition": "no more rows"
+      },
+      {
+        "from": "eb",
+        "to": "c2",
+        "condition": "always"
+      },
+      {
+        "from": "ex",
+        "to": "s3",
+        "condition": "always"
+      },
+      {
+        "from": "xx",
+        "to": "s3",
+        "condition": "always"
+      },
+      {
+        "from": "el",
+        "to": "cr",
+        "condition": "always"
+      },
+      {
+        "from": "ex",
+        "to": "lx",
+        "condition": "next iteration"
+      },
+      {
+        "from": "xx",
+        "to": "lx",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g4",
+        "to": "a5",
+        "condition": "gv_tplnr IS NOT INITIAL"
+      },
+      {
+        "from": "g4",
+        "to": "e4",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zpm_tplatz_baum_f01.abap:38 — kein Fachsatz „der Hinweis ‚weitere Ebenen‘ erscheint nur, wenn es tiefere Plätze gibt“: er erscheint für jeden Platz der Höchstebene, ohne dass Unterplätze gelesen werden",
+    "zpm_tplatz_baum_f01.abap:43 — kein Fachsatz „der Werks-/Platzartfilter blendet nur einzelne Plätze aus“: ein nicht passender Platz wird mit seinem gesamten Teilbaum nicht aufgelöst",
+    "zpm_tplatz_baum_f01.abap:109 — kein Knoten und kein Fachsatz „die Struktur wird als ALV angezeigt“: LIST_ALV wird nie aufgerufen",
+    "zpm_tplatz_baum.abap:52 — kein Fachsatz „der Einstiegsplatz und seine Equipments werden gelistet“: aufgelöst werden nur seine Unterplätze"
+  ],
+  "processDescription": "Der Planer gibt einen Einstiegsplatz, eine Höchstebene, ein Kennzeichen für die Equipmentanzeige sowie optional Standortwerke und Platzarten ein; ein unbekannter Einstiegsplatz wird schon bei der Eingabe abgewiesen. Beim Start bildet der Report aus Werks- und Platzartauswahl eine dynamische Zusatzbedingung und löst dann die Struktur ab dem Einstiegsplatz rekursiv auf. Für jeden Platz liest er die direkt untergeordneten Plätze mit Text, eingeschränkt durch die Zusatzbedingung, sodass ein nicht passender Platz mit seinem ganzen Teilbaum entfällt. Plätze mit aktivem Status inaktiv werden samt Teilbaum übersprungen, alle anderen werden eingerückt gelistet und gezählt. Ist die Equipmentanzeige gewählt, erscheinen darunter die aktuell direkt eingebauten Equipments ohne Unterequipments. Danach wird der Platz selbst weiter aufgelöst; auf der Höchstebene endet die Auflösung mit dem Hinweis „weitere Ebenen“, unabhängig davon, ob es tiefere Plätze gibt. Der Einstiegsplatz selbst erscheint nicht in der Liste. Am Ende stehen die Anzahl der Plätze und Equipments. Ein Doppelklick auf eine Zeile springt ohne Einstiegsbild in die Anzeige des Equipments oder des Technischen Platzes. Es wird nichts geschrieben."
+}

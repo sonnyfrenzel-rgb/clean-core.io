@@ -1,0 +1,112 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_as (neu)",
+      "before": "ag -> s [else]",
+      "after": "e_as end auf zre_indexmiete.abap:20 (letzte Anweisung von AT SELECTION-SCREEN); ag -> e_as [else]; e_as -> s [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten Aufruf c1",
+      "before": "c1 -> g1 [always]",
+      "after": "ve -> g1 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c2",
+      "before": "c2 -> gt [always]",
+      "after": "ae -> gt [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c3",
+      "before": "c3 -> c4 [always]",
+      "after": "xe -> c4 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c4",
+      "before": "c4 -> c5 [always]",
+      "after": "be -> c5 [always]; bre -> c5 [always]; bfr -> c5 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_s (neu) / Kanten c5, gt",
+      "before": "c5 -> es [always]; gt -> es [else]",
+      "after": "e_s end auf zre_indexmiete.abap:33 (ENDIF, letzte Anweisung von START-OF-SELECTION); gt -> e_s [else]; me, mr, mqr -> e_s [always]; e_s -> es [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks steht ein end-Knoten auf der letzten Anweisung. Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c6",
+      "before": "c6 -> ee [always]",
+      "after": "oe -> ee [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten oe (end)",
+      "before": "zre_indexmiete_f01.abap:101",
+      "after": "zre_indexmiete_f01.abap:110 (ENDFORM)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten xa",
+      "before": "action zre_indexmiete_f02.abap:26 „Als gesperrt mit Sperrendem kennzeichnen“; xg -> xa [sy-subrc <> 0]; xa -> xl [next iteration]",
+      "after": "entfernt; überbrückt: xg -> xl [sy-subrc <> 0]",
+      "why": "Reine Zuweisung (Status G und Sperrtext, f02:26); laut Autorenbrief kein Knoten, steuert keinen weiteren Fluss (so auch BM-093, BM-099, BM-100). Inhalt bleibt im Fachsatz (B10).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten bca",
+      "before": "action zre_indexmiete_f02.abap:124 „Als Druckfehler kennzeichnen“; bcg -> bca [sy-subrc <> 0]; bca -> bl [next iteration]",
+      "after": "entfernt; überbrückt: bcg -> bl [sy-subrc <> 0]",
+      "why": "Reine Zuweisung (Status D und Drucktext, f02:124); laut Autorenbrief kein Knoten, steuert keinen weiteren Fluss (so auch BM-093, BM-099, BM-100). Inhalt bleibt im Fachsatz (B18).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten bup",
+      "before": "action zre_indexmiete_f02.abap:106 „Nur Druckvorschau mit Dialog statt Sofortdruck“; bu -> bup [sy-uname = 'AKR_TEST']; bup -> bl [always]",
+      "after": "entfernt; überbrückt: bu -> bl [sy-uname = 'AKR_TEST']",
+      "why": "Reine Zuweisung (ls_ctrl-preview/no_dialog, f02:106); laut Autorenbrief kein Knoten, steuert keinen weiteren Fluss (so auch BM-093, BM-099, BM-100). Inhalt bleibt im Fachsatz (B17).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten xrb",
+      "before": "transaction auf zre_indexmiete_f02.abap:44",
+      "after": "opaque_call auf zre_indexmiete_f02.abap:44",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call (Standardbaustein außerhalb des Falls); transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten xcm",
+      "before": "transaction auf zre_indexmiete_f02.abap:48",
+      "after": "opaque_call auf zre_indexmiete_f02.abap:48",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call (Standardbaustein außerhalb des Falls); transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Verbotener Schluss (neu) zu f02:51",
+      "before": "—",
+      "after": "zre_indexmiete_f02.abap:51 — kein Fachsatz „die Fortschreibung von Basiswert und letzter Anpassung ist zusammen mit der Vertragsänderung festgeschrieben“: das UPDATE steht nach dem COMMIT und wird erst mit dem nächsten Commit wirksam; scheitert die Änderung des nächsten Vertrags, nimmt dessen Rollback die Fortschreibung mit zurück, während die neue Kondition bestehen bleibt",
+      "why": "Falle „Rollback nimmt fremde Änderungen mit“: UPDATE zre_index_vtr (f02:51) folgt auf BAPI_TRANSACTION_COMMIT und bleibt offen; der BAPI_TRANSACTION_ROLLBACK des nächsten Vertrags (f02:44) verwirft ihn. Der Vertrag trägt dann die neue Miete, aber den alten Basiswert und das alte Anpassungsdatum. Weder Fachsätze noch verbotene Schlüsse deckten das ab.",
+      "category": "verbotener Schluss"
+    },
+    {
+      "where": "processDescription",
+      "before": "—",
+      "after": "Satz zur offenen Fortschreibung und zum Rollback des Folgevertrags ergänzt",
+      "why": "Wie verbotener Schluss zu f02:51.",
+      "category": "Fachsatz"
+    }
+  ],
+  "doubts": []
+}

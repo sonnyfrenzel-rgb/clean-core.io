@@ -1,0 +1,112 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufruf c1",
+      "before": "c1 -> g1 [always]",
+      "after": "ae -> g1 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c2",
+      "before": "c2 -> c3 [always]",
+      "after": "te -> c3 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c3",
+      "before": "c3 -> c4 [always]",
+      "after": "be -> c4 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c4",
+      "before": "c4 -> c5 [always]",
+      "after": "ve -> c5 [always]; vr -> c5 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_s (neu)",
+      "before": "c5 -> es [always] (Direktkante neben c5 -> l); kein end für START-OF-SELECTION",
+      "after": "e_s end auf ztrm_fx_mtm.abap:31 (letzte Anweisung von START-OF-SELECTION); le -> e_s [always]; e_s -> es [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks steht ein end-Knoten auf der letzten Anweisung. Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten Aufruf c6",
+      "before": "c6 -> gt [always]",
+      "after": "xe -> gt [always]; xr -> gt [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c7",
+      "before": "c7 -> c8 [always]",
+      "after": "see -> c8 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c8",
+      "before": "c8 -> ee [always]",
+      "after": "oe -> ee [always]; or -> ee [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf ln",
+      "before": "ln -> lh [always]",
+      "after": "ke -> lh [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf lc",
+      "before": "lc -> ll [next iteration]",
+      "after": "pend -> ll [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten ke (end)",
+      "before": "zcl_trm_cpty_limit.abap:35",
+      "after": "zcl_trm_cpty_limit.abap:36 (ENDMETHOD)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten see (end)",
+      "before": "ztrm_fx_mtm_f02.abap:69",
+      "after": "ztrm_fx_mtm_f02.abap:70 (ENDFORM)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten he (end)",
+      "before": "ztrm_fx_mtm_f02.abap:7 (APPEND in gt_breach)",
+      "after": "ztrm_fx_mtm_f02.abap:9 (ENDMETHOD)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION. Das APPEND in die interne Tabelle ist kein Knoten; B11 bleibt auf f02:7.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf pe",
+      "before": "pe -> pend [always]",
+      "after": "he -> pend [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt. RAISE EVENT ruft die registrierten Behandler synchron auf und setzt erst danach fort; der einzige Behandler (lcl_breach_handler, per SET HANDLER f02:22 registriert) liegt im Fall. Deshalb wie ein Aufruf: Rückkante vom end des Behandlers statt Direktkante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten pa",
+      "before": "action zcl_trm_cpty_limit.abap:44 „Standardlimit verwenden“; pg -> pa [sy-subrc <> 0]; pa -> pc [always]",
+      "after": "entfernt; überbrückt: pg -> pc [sy-subrc <> 0]",
+      "why": "Reine Zuweisung (lv_limit = mv_std_limit, Klasse Z. 44); laut Autorenbrief kein Knoten, steuert keinen weiteren Fluss (so auch BM-093, BM-099, BM-100). Inhalt bleibt im Fachsatz (B10).",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": []
+}

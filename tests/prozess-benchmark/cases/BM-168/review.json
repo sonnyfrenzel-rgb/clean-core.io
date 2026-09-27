@@ -1,0 +1,37 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante rt -> x3",
+      "before": "[CATCH cx_sy_itab_line_not_found]",
+      "after": "[cx_sy_itab_line_not_found]",
+      "why": "Vereinheitlichte Konvention: die Kante in einen CATCH-Zweig trägt als Bedingung den Ausnahmenamen.",
+      "category": "Kante"
+    },
+    {
+      "where": "Fachsatz B06",
+      "before": "Bei Edelstahlgehäuse wird an jede Variante außer der Sonderausführung ein E angehängt.",
+      "after": "Bei Edelstahlgehäuse wird an die Variante ein E angehängt, außer sie lautet genau SO; eine ATEX-Sonderausführung (SX) erhält das E also doch.",
+      "why": "Die Prüfung in Z. 71 vergleicht auf den Wert nach der ATEX-Umschlüsselung (Z. 68): aus SO wird bei ATEX SX, und SX <> 'SO' – das E wird angehängt (SXE). Der Satz „jede Variante außer der Sonderausführung“ war für ATEX-Sonderausführungen falsch.",
+      "category": "Fachsatz"
+    },
+    {
+      "where": "verbotener Schluss zu :71",
+      "before": "zcl_vc_fertvar.abap:71 — kein Fachsatz „Edelstahl gilt für alle Varianten“: die Sonderausführung SO bekommt kein E",
+      "after": "zcl_vc_fertvar.abap:71 — kein Fachsatz „Edelstahl gilt für alle Varianten“ und keiner „Sonderausführungen erhalten nie ein E“: nur der Wert SO bleibt ohne E, die ATEX-Sonderausführung SX wird zu SXE",
+      "why": "Folgeänderung zu B06: der umgekehrte Fehlschluss ist ebenso naheliegend.",
+      "category": "verbotener Schluss"
+    },
+    {
+      "where": "processDescription",
+      "before": "… ein Edelstahlgehäuse hängt außer bei SO ein E an …",
+      "after": "… ein Edelstahlgehäuse hängt ein E an, außer die Variante lautet danach genau SO …",
+      "why": "Folgeänderung zu B06.",
+      "category": "Fachsatz"
+    }
+  ],
+  "doubts": [
+    "ax, ae, hp sind action-Knoten auf Zuweisungen an den Rückgabewert; belassen, weil sie Variante bzw. Hinweis des Ergebnisses festlegen (Autorenbrief: Berechnung, die ein Ergebnis festlegt)."
+  ]
+}

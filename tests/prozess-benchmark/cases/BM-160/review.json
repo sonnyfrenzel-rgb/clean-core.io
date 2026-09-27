@@ -1,0 +1,210 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten o_open (neu) vor e_open",
+      "before": "e_open end auf z_ess_address_request.abap:47 ohne output",
+      "after": "o_open output auf z_ess_address_request.abap:47, Kante o_open -> e_open [always]; eingehende Kanten auf o_open umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o_inv (neu) vor e_inv",
+      "before": "e_inv end auf z_ess_address_request.abap:56 ohne output",
+      "after": "o_inv output auf z_ess_address_request.abap:56, Kante o_inv -> e_inv [always]; eingehende Kanten auf o_inv umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o_u (neu) vor e_u",
+      "before": "e_u end auf z_ess_addr_status_update.abap:15 ohne output",
+      "after": "o_u output auf z_ess_addr_status_update.abap:15, Kante o_u -> e_u [always]; eingehende Kanten auf o_u umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_val -> e_inv [CATCH zcx_ess_addr]",
+      "before": "vom Aufruf in den Handler",
+      "after": "x_c, x_t005, x_plz, x_dt -> o_inv [CATCH zcx_ess_addr]",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION im gerufenen Block ist ein end-Knoten, von dort führt die Kante in den CATCH-Zweig des Aufrufers (Bedingung: der Ausnahmename); keine Kante vom Aufruf selbst in den Handler.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_v (neu)",
+      "before": "kein end-Knoten auf zcl_ess_addr_service.abap:75",
+      "after": "e_v end auf zcl_ess_addr_service.abap:75; g_dt -> e_v [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_val -> a_uuid",
+      "before": "c_val -> a_uuid [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_v -> a_uuid [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten a_uuid",
+      "before": "action",
+      "after": "opaque_call",
+      "why": "Die Zeile ruft die Standardmethode cl_system_uuid=>create_uuid_c32_static( ); ein Aufruf mit Ziel außerhalb des Falls ist opaque_call.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten e_na (neu)",
+      "before": "kein end-Knoten auf zcl_ess_addr_service.abap:83",
+      "after": "e_na end auf zcl_ess_addr_service.abap:83; a_need -> e_na [always]; e_na -> g_appr [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten c_na (neu); Kante g_appr -> s_na",
+      "before": "g_appr -> s_na [always] neben den Bedingungskanten",
+      "after": "c_na call auf :70 (funktionaler Methodenaufruf in der IF-Bedingung); w_ins -> c_na -> s_na; Rückkehr e_na -> g_appr",
+      "why": "Ein Gateway hat keine always-Kante; der Aufruf ist ein eigener Schritt vor der Auswertung.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_ca (neu)",
+      "before": "kein end-Knoten auf zcl_ess_addr_service.abap:167",
+      "after": "e_ca end auf zcl_ess_addr_service.abap:167; c_rs -> e_ca [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_pdu (neu)",
+      "before": "kein end-Knoten auf zcl_ess_addr_service.abap:173",
+      "after": "e_pdu end auf zcl_ess_addr_service.abap:173; r_pa3 -> e_pdu [always]; e_pdu -> a_need [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten c_pdu1 (neu); Kanten c_cur1 -> a_need, a_need -> s_pdu",
+      "before": "c_cur1 -> a_need (Direktkante); a_need -> s_pdu [always] (action ruft Methode)",
+      "after": "e_ca -> c_pdu1 [always]; c_pdu1 call auf :81 (payroll_done_until( ) im xsdbool-Ausdruck) -> s_pdu; Rückkehr e_pdu -> a_need",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt. Der Aufruf von payroll_done_until( ) ist ein eigener call-Knoten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten a_f1",
+      "before": "action auf z_ess_address_request.abap:83; g_swe -> a_f1 [sy-subrc <> 0]; a_f1 -> u_st [always]",
+      "after": "entfernt; g_swe -> u_st [sy-subrc <> 0]",
+      "why": "ls_req-status = '…' ist eine reine Zuweisung; laut Autorenbrief kein Knoten (so auch BM-099). Der Status steht in den Fachsätzen und wird über den Verbuchungsaufruf geschrieben.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten x_lk",
+      "before": "action (RAISE EXCEPTION, im selben TRY gefangen)",
+      "after": "end",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION ist ein end-Knoten; die Kante führt in den CATCH-Zweig (hier im selben TRY).",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten a_cnt",
+      "before": "action auf zcl_ess_addr_service.abap:103; x_lk -> a_cnt [CATCH zcx_ess_addr]; a_cnt -> g_rt [always]",
+      "after": "entfernt; x_lk -> g_rt [CATCH zcx_ess_addr INTO DATA(lx_lock)]",
+      "why": "mv_retry = mv_retry + 1 (:103) ist eine reine Zuweisung (Zähler); laut Autorenbrief kein Knoten. Die Ausnahmekante führt direkt zur Prüfung der Versuchszahl; Inhalt in Fachsatz B14.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante c_cur2 -> c_ito",
+      "before": "c_cur2 -> c_ito [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_ca -> c_ito [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten c_pdu2 (neu); Kante g_pay -> s_pdu",
+      "before": "g_pay -> s_pdu [always] neben der Bedingungskante",
+      "after": "c_pdu2 call auf :147; g_ito -> c_pdu2 [else] -> s_pdu; Rückkehr e_pdu -> g_pay",
+      "why": "Ein Gateway hat keine always-Kante; der Aufruf in der IF-Bedingung ist ein eigener Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_nt (neu)",
+      "before": "c_so ohne ausgehende Kante",
+      "after": "e_nt end auf :207; c_so -> e_nt",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_ap (neu)",
+      "before": "kein end-Knoten auf zcl_ess_addr_service.abap:150",
+      "after": "e_ap end auf zcl_ess_addr_service.abap:150; g_pay -> e_ap [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Rückkanten notify_payroll",
+      "before": "c_ntf -> s_nt ohne Rückkehr",
+      "after": "e_tv, e_nt -> e_ap [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten a_ok",
+      "before": "action auf z_ess_address_request.abap:88; c_apply -> a_ok [always]; a_ok -> u_st [always]",
+      "after": "entfernt; Rückkehr e_ap -> u_st (eigener Eintrag)",
+      "why": "ls_req-status = '…' ist eine reine Zuweisung; laut Autorenbrief kein Knoten (so auch BM-099). Der Status steht in den Fachsätzen und wird über den Verbuchungsaufruf geschrieben.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten a_f2",
+      "before": "action auf z_ess_address_request.abap:90; c_apply -> a_f2 [CATCH zcx_ess_addr]; a_f2 -> u_st [always]",
+      "after": "entfernt; Ausnahmekanten x_rt, x_upd -> u_st [CATCH zcx_ess_addr] (eigener Eintrag)",
+      "why": "ls_req-status = '…' ist eine reine Zuweisung; laut Autorenbrief kein Knoten (so auch BM-099). Der Status steht in den Fachsätzen und wird über den Verbuchungsaufruf geschrieben.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten a_ok2",
+      "before": "action auf z_ess_address_decide.abap:58; c_ap2 -> a_ok2 [always]; a_ok2 -> u_st2 [always]",
+      "after": "entfernt; Rückkehr e_ap -> u_st2 (eigener Eintrag)",
+      "why": "ls_req-status = '…' ist eine reine Zuweisung; laut Autorenbrief kein Knoten (so auch BM-099). Der Status steht in den Fachsätzen und wird über den Verbuchungsaufruf geschrieben.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten a_f3",
+      "before": "action auf z_ess_address_decide.abap:60; c_ap2 -> a_f3 [CATCH zcx_ess_addr]; a_f3 -> u_st2 [always]",
+      "after": "entfernt; Ausnahmekanten x_rt, x_upd -> u_st2 [CATCH zcx_ess_addr] (eigener Eintrag)",
+      "why": "ls_req-status = '…' ist eine reine Zuweisung; laut Autorenbrief kein Knoten (so auch BM-099). Der Status steht in den Fachsätzen und wird über den Verbuchungsaufruf geschrieben.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kanten c_apply / c_ap2",
+      "before": "c_apply -> a_ok [always], c_apply -> a_f2 [CATCH zcx_ess_addr]; c_ap2 -> a_ok2 [always], c_ap2 -> a_f3 [CATCH zcx_ess_addr]",
+      "after": "Rückkehr e_ap -> u_st, e_ap -> u_st2 [always]; Ausnahmekanten x_rt, x_upd -> u_st und -> u_st2 [CATCH zcx_ess_addr]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt. Vereinheitlichte Konvention: RAISE EXCEPTION im gerufenen Block ist ein end-Knoten, von dort führt die Kante in den CATCH-Zweig des Aufrufers (Bedingung: der Ausnahmename); keine Kante vom Aufruf selbst in den Handler.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten a_rej",
+      "before": "action auf z_ess_address_decide.abap:63; g_dec -> a_rej [WHEN 'R']; a_rej -> u_st2 [always]",
+      "after": "entfernt; g_dec -> u_st2 [WHEN 'R']",
+      "why": "ls_req-status = '…' ist eine reine Zuweisung; laut Autorenbrief kein Knoten (so auch BM-099). Der Status steht in den Fachsätzen und wird über den Verbuchungsaufruf geschrieben.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kanten u_st -> s_u, u_st2 -> s_u",
+      "before": "Kanten vom Verbuchungsaufruf in den Verbuchungsbaustein",
+      "after": "entfernt; s_u bleibt eigener Einstieg",
+      "why": "Vereinheitlichte Konvention: beim Verbucher (IN UPDATE TASK) keine Kante ins Ziel, nur die Direktkante zum nächsten Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_dok (neu)",
+      "before": "kein end-Knoten auf z_ess_address_decide.abap:75",
+      "after": "e_dok end auf z_ess_address_decide.abap:75; t_cm2 -> e_dok [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_u2 (neu)",
+      "before": "kein end-Knoten auf z_ess_addr_status_update.abap:17",
+      "after": "e_u2 end auf z_ess_addr_status_update.abap:17; g_u -> e_u2 [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

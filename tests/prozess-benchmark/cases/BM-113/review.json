@@ -1,0 +1,58 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufruf clo",
+      "before": "clo -> rso [always]",
+      "after": "elo -> rso [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cw",
+      "before": "cw -> l [next iteration]",
+      "after": "elm -> l [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf ck",
+      "before": "ck -> l [next iteration]",
+      "after": "(Rückkanten bereits vorhanden)",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf ccc",
+      "before": "ccc -> g2 [always]",
+      "after": "ecc -> g2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cb",
+      "before": "cb -> l [next iteration]",
+      "after": "eb -> l [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cbs",
+      "before": "cbs -> eb [always]",
+      "after": "elm -> eb [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cbe",
+      "before": "cbe -> lb [next iteration]",
+      "after": "elm -> lb [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "zcs_sm_faktura_f01.abap:35-39 — Dynpro SAPLAD15/0100 und die Feldnamen AD15_S_… der DP90-Mappe nicht gegen ein System geprüft."
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufrufe c und c4 (PERFORM walk)",
+      "before": "c -> g1 [always]; c4 -> l [next iteration] (Direktkanten zusätzlich zur Kante in das FORM)",
+      "after": "e2 -> g1 [always], e3 -> g1 [always] (Rückkehr zum Aufrufer c); e2 -> l [next iteration], e3 -> l [next iteration] (Rückkehr zum rekursiven Aufrufer c4 in der Schleife)",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e5 (neu)",
+      "before": "o3 output auf source.abap:35 ohne end",
+      "after": "e5 end auf source.abap:35; o3 -> e5 [always]",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e4 (neu)",
+      "before": "kein end-Knoten auf source.abap:36",
+      "after": "e4 end auf source.abap:36; o2 -> e4 [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz B04",
+      "before": "Anker source.abap:67 (REDUCE)",
+      "after": "Anker source.abap:73 (APPEND ls_out TO gt_out)",
+      "why": "Das Vormerken der Einheit mit Ebene und Personenzahl geschieht mit dem APPEND in Zeile 73; Zeile 67 ist bereits B03 (Zählen).",
+      "category": "Anker"
+    }
+  ],
+  "doubts": []
+}

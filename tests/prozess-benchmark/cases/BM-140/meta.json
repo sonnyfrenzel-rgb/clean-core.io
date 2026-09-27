@@ -1,0 +1,48 @@
+{
+  "id": "BM-140",
+  "title": "Treasury Devisen: tägliche Marktbewertung offener Termingeschäfte, Vortagesvergleich über INDX, Kontrahentenlimite per Ereignis, XML-Export und Positionsliste aus dem Listenspeicher",
+  "domain": "FSCM/TRM / Treasury Devisen und Risiko",
+  "band": "sehr komplex",
+  "loc": 401,
+  "constructs": [
+    "REPORT mit TOP-, F01-, F02-Include",
+    "lokale Behandlerklasse",
+    "RETURN mit END-OF-SELECTION",
+    "CHECK in END-OF-SELECTION",
+    "SELECT mit INNER JOIN",
+    "FOR ALL ENTRIES",
+    "READ_EXCHANGE_RATE",
+    "LOOP … WHERE mit EXIT",
+    "IMPORT/EXPORT … FROM/TO DATABASE indx(zm)",
+    "READ TABLE BINARY SEARCH",
+    "NEW",
+    "SET HANDLER / RAISE EVENT",
+    "AT NEW / AT END OF",
+    "CALL TRANSFORMATION id",
+    "OPEN DATASET / TRANSFER / CLOSE DATASET",
+    "SUBMIT … EXPORTING LIST TO MEMORY AND RETURN",
+    "LIST_FROM_MEMORY / WRITE_LIST",
+    "VALUE # FOR",
+    "COND #"
+  ],
+  "scenario": "Konzern-Treasury mit Devisentermingeschäften bei mehreren Banken: Abends werden alle offenen Geschäfte zu Marktkursen bewertet, die Kreditlinien der Banken geprüft und die Marktwerte an das Risikosystem übergeben.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf VTBFHA statt freigegebener Treasury-Sichten",
+    "Eigenbau-Marktbewertung neben der TRM-Bewertung (Market Risk Analyzer)",
+    "INDX-Cluster und Anwendungsserverdatei als Schnittstelle",
+    "SUBMIT mit Listenspeicher und WRITE_LIST (SAP-GUI-Liste)"
+  ],
+  "wave": 2,
+  "module": "TRM",
+  "edge_constructs": [
+    "AT NEW / AT END OF",
+    "IMPORT/EXPORT … FROM/TO DATABASE",
+    "CALL TRANSFORMATION",
+    "SUBMIT … AND RETURN mit EXPORTING LIST TO MEMORY",
+    "SET HANDLER/RAISE EVENT",
+    "CONTINUE/EXIT in verschachtelten Schleifen",
+    "RETURN aus Ereignisblock (END-OF-SELECTION läuft weiter)",
+    "NEW",
+    "VALUE #( FOR … )"
+  ]
+}

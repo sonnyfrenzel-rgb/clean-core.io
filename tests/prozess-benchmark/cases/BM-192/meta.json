@@ -1,0 +1,39 @@
+{
+  "id": "BM-192",
+  "title": "Zählerstandserfassung aus der Ablese-App: Gateway Deep Insert mit Plausibilisierung und Upload per BAPI",
+  "domain": "Technische Randbereiche — OData / SAP Gateway",
+  "band": "komplex",
+  "loc": 291,
+  "constructs": [
+    "*_DPC_EXT~CREATE_DEEP_ENTITY",
+    "io_data_provider->read_entry_data in tiefe Struktur",
+    "Hilfsklasse zur Plausibilisierung im Fall",
+    "EQUI/ETDZ/EABL gelesen",
+    "BAPI_MTRREADDOC_UPLOAD",
+    "BAPI_TRANSACTION_COMMIT / BAPI_TRANSACTION_ROLLBACK",
+    "/IWBEP/CX_MGW_BUSI_EXCEPTION mit Message-Container",
+    "copy_data_to_ref",
+    "AUTHORITY-CHECK auf Kundenobjekt"
+  ],
+  "scenario": "OData-Service einer mobilen Ablese-App im Versorgerumfeld (IS-U): der Ableser sendet Kopf und Zählwerksstände eines Geräts in einem Deep Insert, das Backend plausibilisiert und legt die Ableseergebnisse per BAPI an.",
+  "s4_issues": [
+    "SEGW-basierte Gateway-Services (DPC_EXT) gelten in S/4 als klassisch; strategisch ist ein RAP-basierter OData-V4-Service",
+    "Direkte Lesezugriffe auf EQUI, ETDZ und EABL statt freigegebener Schnittstellen bzw. CDS-Views",
+    "BAPI_MTRREADDOC_UPLOAD ist in S/4HANA Utilities weiter vorhanden, aber nicht für ABAP Cloud freigegeben",
+    "Hart codierter Testbenutzer umgeht die Plausibilisierung im Produktivcode"
+  ],
+  "wave": 2,
+  "module": "IS-U",
+  "edge_constructs": [
+    "RAISE EXCEPTION TYPE",
+    "Debug-Hintertür (IF sy-uname = …)",
+    "CONTINUE in Schleife",
+    "RETURN aus Methode",
+    "VALUE #( FOR … )",
+    "COND #",
+    "xsdbool",
+    "NEW mit verkettetem Methodenaufruf",
+    "nie gerufene Methode / auskommentierter Aufruf",
+    "auskommentierte Warnungsweitergabe"
+  ]
+}

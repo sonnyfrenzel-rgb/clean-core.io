@@ -1,0 +1,70 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_tp (neu)",
+      "before": "th output ohne ausgehende Kante (Validator-Warnung)",
+      "after": "e_tp end auf zps_budget_avc.abap:42 (ULINE, letzte Anweisung von TOP-OF-PAGE); th -> e_tp [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten Aufruf c1",
+      "before": "c1 -> g1 [always]",
+      "after": "dend -> g1 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_s (neu)",
+      "before": "c2 -> es [always] (Direktkante neben c2 -> b)",
+      "after": "e_s end auf zps_budget_avc.abap:50 (letzte Anweisung von START-OF-SELECTION); bend -> e_s [always]; e_s -> es [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks steht ein end-Knoten auf der letzten Anweisung. Die Rückkehr aus AUSSCHOEPFUNG_BEWERTEN führt dorthin, erst danach folgt END-OF-SELECTION; die Direktkante c2 -> es entfällt nach der Aufrufkonvention.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante r1 -> es (neu)",
+      "before": "r1 (RETURN) ohne ausgehende Kante",
+      "after": "r1 -> es [always]",
+      "why": "RETURN verlässt nur den Ereignisblock START-OF-SELECTION; die Laufzeit löst danach END-OF-SELECTION aus, sodass die leere Liste mit Zähler erscheint (so auch Fachsatz B08 und der verbotene Schluss zu Z. 48). Ohne die Kante widersprach das Skelett dem eigenen Fachsatz.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c3",
+      "before": "c3 -> g2 [always]",
+      "after": "lend -> g2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten bo",
+      "before": "action zps_budget_avc_f01.abap:61 „Als „ohne Budget“ kennzeichnen“; bg -> bo [<ls_erg>-budget = 0]; bo -> bl [next iteration]",
+      "after": "entfernt; überbrückt: bg -> bl [<ls_erg>-budget = 0]",
+      "why": "Reine Zuweisung (Ampel 'OHNE', f01:61); laut Autorenbrief kein Knoten, steuert keinen weiteren Fluss (so auch BM-093, BM-099, BM-100). Inhalt bleibt im Fachsatz (B09).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten bend (end)",
+      "before": "zps_budget_avc_f01.abap:69",
+      "after": "zps_budget_avc_f01.abap:72 (ENDFORM)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kante bend -> e_s (neu)",
+      "before": "keine Rückkante aus AUSSCHOEPFUNG_BEWERTEN",
+      "after": "bend -> e_s [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten lend (end)",
+      "before": "zps_budget_avc_f01.abap:91",
+      "after": "zps_budget_avc_f01.abap:92 (ENDFORM)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    }
+  ],
+  "doubts": []
+}

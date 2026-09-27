@@ -1,0 +1,270 @@
+{
+  "id": "BM-162",
+  "title": "IS-Oil: Temperaturkorrektur einer Tankmenge auf 15 °C mit Ausdehnungskoeffizient",
+  "classes": [
+    "K01",
+    "K02"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZOIL_KOEFF",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 22,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:22"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-162-B01",
+      "text": "Liegt die gemessene Temperatur unter -30 °C oder über 60 °C, bricht die Umrechnung mit der Ausnahme „Temperatur unplausibel“ ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-162-B02",
+      "text": "Der Ausdehnungskoeffizient des Materials wird aus der Kundentabelle gelesen; fehlt er, endet die Umrechnung mit der Ausnahme „kein Koeffizient“.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-162-B03",
+      "text": "Die Menge bei 15 °C ergibt sich aus der gemessenen Menge mal (1 − Koeffizient × (Temperatur − 15)); ist der Koeffizient leer, wird die Menge unverändert übernommen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Einstieg Mengenumrechnung"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Temperatur außerhalb -30 bis 60 °C?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Abbruch: Temperatur unplausibel"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Ausdehnungskoeffizient des Materials lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Koeffizient gepflegt?"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Fehlernachricht: kein Koeffizient zum Material"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Abbruch: kein Koeffizient"
+      },
+      {
+        "id": "c",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Menge auf 15 °C korrigieren"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Korrigierte Menge zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "x1",
+        "condition": "iv_temp_c < -30 OR iv_temp_c > 60"
+      },
+      {
+        "from": "gt",
+        "to": "q",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "o2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g",
+        "to": "c",
+        "condition": "else"
+      },
+      {
+        "from": "c",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "o2",
+        "to": "x2",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:30 — kein Fachsatz „die Korrektur erfolgt nach ASTM-Tabelle 54B bzw. Dichte-abhängig“: gerechnet wird eine lineare Näherung mit einem einzigen Koeffizienten je Material",
+    "source.abap:25 — kein Fachsatz „ohne Koeffizient wird die gemessene Menge übernommen“: der Baustein endet mit Ausnahme, die Exportmenge bleibt leer; nur ein gepflegter, aber leerer Koeffizient führt zu Faktor 1",
+    "gesamte Scheibe — kein Fachsatz „Tankbestand oder Materialbeleg wird gebucht“: der Baustein rechnet nur"
+  ],
+  "processDescription": "Der Funktionsbaustein wird von Erfassungsprogrammen des Tanklagers mit Material, gemessener Literzahl und Messtemperatur gerufen. Zuerst prüft er, ob die Temperatur zwischen -30 °C und 60 °C liegt, und bricht sonst mit einer Ausnahme ab. Dann liest er den Ausdehnungskoeffizienten des Materials aus einer Kundentabelle; ist keiner gepflegt, endet er mit Nachricht und der Ausnahme „kein Koeffizient“. Andernfalls rechnet er die Menge linear auf 15 °C um: gemessene Menge mal (1 minus Koeffizient mal Temperaturdifferenz zu 15 °C). Ist der Koeffizient im Satz leer, wird der Faktor 1 verwendet und die Menge unverändert zurückgegeben. Es wird nichts gebucht und nichts geschrieben."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "BM-199",
+  "title": "Pharma-Serialisierung: Seriennummern für Arzneimittelpackungen kommissionieren (Shared-Objects-GTIN-Cache, Zielmarkt-BAdI EU-FMD/US-DSCSA, EPCIS)",
+  "domain": "Technische Randbereiche — Shared Objects / Kernel-BAdI / Nummernkreise (Pharma-Serialisierung)",
+  "band": "sehr komplex",
+  "loc": 505,
+  "constructs": [
+    "Funktionsbaustein mit klassischen Ausnahmen (MESSAGE … RAISING)",
+    "Shared Objects: ATTACH_FOR_READ, CX_SHM_NO_ACTIVE_VERSION, ATTACH_FOR_WRITE, CREATE OBJECT … AREA HANDLE, SET_ROOT, DETACH_COMMIT",
+    "Kernel-BAdI mit Filter: GET BADI … FILTERS, CALL BADI, zwei Implementierungen",
+    "ENQUEUE mit Wiederholungsschleife und WAIT UP TO, DEQUEUE",
+    "NUMBER_GET_NEXT blockweise (quantity)",
+    "SELECT SINGLE Duplikatprüfung in innerer Schleife",
+    "CALL TRANSFORMATION (EPCIS ObjectEvent)",
+    "INSERT … FROM TABLE ACCEPTING DUPLICATE KEYS, ROLLBACK WORK",
+    "Änderungsbelege über generierten Baustein IN UPDATE TASK",
+    "COMMIT WORK AND WAIT optional"
+  ],
+  "scenario": "Pharmahersteller mit eigener Serialisierungslösung im ERP (statt SAP ATTP), die von den Verpackungslinien pro Charge Seriennummern anfordert und EU-FMD- bzw. US-DSCSA-Meldungen erzeugt; typischer Kandidat für die Ablösung durch SAP Advanced Track and Trace in der S/4-Transformation.",
+  "s4_issues": [
+    "Eigenentwicklung parallel zu SAP Advanced Track and Trace for Pharmaceuticals (ATTP), das in S/4 der vorgesehene Weg ist",
+    "ZSER_GTIN-MATNR 18-stellig, MATNR in S/4 40-stellig (Hinweis im Code, Feld nicht angepasst)",
+    "Shared Objects und klassische Ausnahmen (MESSAGE … RAISING) sind in ABAP Cloud nicht verfügbar",
+    "NUMBER_GET_NEXT statt CL_NUMBERRANGE_RUNTIME; ENQUEUE-Bausteine statt CL_ABAP_LOCK_OBJECT_FACTORY"
+  ],
+  "wave": 2,
+  "module": "LO-SER",
+  "edge_constructs": [
+    "MESSAGE … RAISING",
+    "TRY … CATCH / RETRY",
+    "RAISE EXCEPTION TYPE",
+    "WAIT UP TO",
+    "EXIT in DO-Schleife",
+    "CONTINUE in verschachtelter Schleife (DO in WHILE)",
+    "CALL TRANSFORMATION",
+    "IF 1 = 2 (toter Zweig)",
+    "auskommentierte Zweige",
+    "VALUE #( FOR … )",
+    "Inline-Deklarationen",
+    "GET BADI … FILTERS / CALL BADI (Ziel zur Laufzeit per Filter)"
+  ]
+}

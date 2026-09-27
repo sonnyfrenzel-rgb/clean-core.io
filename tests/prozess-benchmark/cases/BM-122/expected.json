@@ -1,0 +1,267 @@
+{
+  "id": "BM-122",
+  "title": "RE-FX: auslaufende Mietverträge mit Ampel nach Restlaufzeit (VICNCN)",
+  "classes": [
+    "K01",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VICNCN",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-122-B01",
+      "text": "Beim Aufruf wird der Buchungskreis aus dem Benutzerparameter vorgeschlagen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-122-B02",
+      "text": "Es werden die Mietverträge des Buchungskreises gelesen, deren erstes Vertragsende zwischen heute und dem Ende des eingegebenen Tagesfensters liegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        }
+      ]
+    },
+    {
+      "id": "BM-122-B03",
+      "text": "Je Vertrag wird eine Ampel bestimmt: Rot bis 30 Tage Restlaufzeit, Gelb bis 60 Tage, sonst Grün.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-122-B04",
+      "text": "Jeder Vertrag wird mit Nummer, Bezeichnung, Enddatum und Ampel gelistet, aufsteigend nach Enddatum.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "si",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        "meaning": "Vorbelegung des Selektionsbilds"
+      },
+      {
+        "id": "gp",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Buchungskreis aus dem Benutzerparameter vorschlagen"
+      },
+      {
+        "id": "e_si",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Vorbelegung beendet"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Verträge mit erstem Vertragsende im Zeitfenster lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Verträge nach Enddatum durchgehen"
+      },
+      {
+        "id": "c",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Ampel aus der Restlaufzeit bestimmen"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Vertrag mit Enddatum und Ampel listen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "si",
+        "to": "gp",
+        "condition": "always"
+      },
+      {
+        "from": "gp",
+        "to": "e_si",
+        "condition": "always"
+      },
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "c",
+        "condition": "next row"
+      },
+      {
+        "from": "c",
+        "to": "o",
+        "condition": "always"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e_si",
+        "to": "s",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:27 — kein Fachsatz „Kündigungsfristen je Vertragsart werden berücksichtigt“: der Zweig ist auskommentiert",
+    "source.abap:16 — kein Fachsatz „unbefristete Verträge werden als auslaufend gemeldet“: ohne erstes Vertragsende liegt das Datum nicht im Zeitfenster",
+    "gesamte Scheibe — kein Fachsatz „Verträge werden verlängert oder gekündigt“: der Report listet nur"
+  ],
+  "processDescription": "Beim Aufruf schlägt der Report den Buchungskreis aus dem Benutzerparameter vor; der Anwender gibt zusätzlich ein Tagesfenster ein (Vorschlag 90 Tage). Der Report liest alle Mietverträge des Buchungskreises, deren erstes Vertragsende zwischen heute und dem Fensterende liegt, und sortiert sie nach diesem Datum. Für jeden Vertrag bestimmt er aus der Restlaufzeit eine Ampel: Rot bis 30 Tage, Gelb bis 60 Tage, sonst Grün. Jeder Vertrag erscheint mit Nummer, Bezeichnung, Enddatum und Ampel in einer Liste. Eine früher geplante Berücksichtigung von Kündigungsfristen je Vertragsart ist auskommentiert und wirkt nicht. Verträge ohne erstes Vertragsende fallen aus der Selektion. Es wird nichts geändert."
+}

@@ -1,0 +1,28 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten rb",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call; transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten tc",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call; transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "source.abap:40",
+      "before": "AND v~vkuesch = space.",
+      "after": "AND v~vkuegru = space.",
+      "why": "VEDA-VKUESCH ist die Kündigungsregel (zugeordnetes Kündigungsverfahren), nicht das Kennzeichen einer erfolgten Kündigung; „nicht gekündigt“ (B01, Knoten r1, Prosa) trägt erst ein leerer Kündigungsgrund VKUEGRU. Zeilenzahl unverändert, Anker bleiben.",
+      "category": "Quelltext"
+    }
+  ],
+  "doubts": []
+}

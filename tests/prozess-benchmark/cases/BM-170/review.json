@@ -1,0 +1,35 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten o0 (neu)",
+      "before": "keine Knoten auf source.abap:30",
+      "after": "o0 output auf source.abap:30; g0 -> o0 [lt_tknum IS INITIAL]; o0 -> x0 [always]",
+      "why": "Die Ausgabe (WRITE, Z. 30) trägt diesen Pfad und steht in Fachsatz B02; sie fehlte als output-Knoten.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz B02 Anker",
+      "before": ":29, :31",
+      "after": ":29, :30, :31",
+      "why": "Die Ausgabe steht auf Zeile 30.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten e1 (neu)",
+      "before": "kein end-Knoten auf source.abap:67",
+      "after": "e1 end auf source.abap:67; l -> e1 [no more rows] statt -> s2; e1 -> s2 [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten oz (neu) vor xz",
+      "before": "xz end auf source.abap:72 ohne output",
+      "after": "oz output auf source.abap:72, Kante oz -> xz [always]; eingehende Kanten auf oz umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

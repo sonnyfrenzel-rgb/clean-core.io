@@ -1,0 +1,43 @@
+{
+  "id": "BM-154",
+  "title": "Reisekosten: Genehmigungsfristen überwachen – automatisch genehmigen, erinnern, eskalieren",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "komplex",
+  "loc": 248,
+  "constructs": [
+    "REPORT mit Include",
+    "SELECT mit JOIN und Aggregat (neue Syntax)",
+    "FOR ALL ENTRIES",
+    "VALUE # mit Tabellenausdruck OPTIONAL",
+    "HR_READ_INFOTYPE",
+    "RH_GET_LEADER",
+    "LOOP AT … GROUP BY … ASSIGNING",
+    "LOOP AT GROUP",
+    "GROUP BY … INTO mit FOR … IN GROUP",
+    "CHECK in LOOP",
+    "BAPI_TRIP_APPROVE",
+    "line_exists",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "CL_BCS mit verketteten Aufrufen",
+    "TRY … CATCH",
+    "CL_SALV_TABLE"
+  ],
+  "scenario": "Die Reisestelle hat eine Betriebsvereinbarung umgesetzt: Kleinbeträge gelten nach Fristablauf als genehmigt, säumige Genehmiger bekommen Sammelerinnerungen, nach längerer Frist wird an deren Vorgesetzte eskaliert.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf PTRV_PERIO/PTRV_HEAD/PTRV_SREC/PA0105",
+    "Statuswert ANTRG als Literal",
+    "Mailversand mit COMMIT WORK je Empfänger",
+    "Platzhalter-Personalnummer 99999999"
+  ],
+  "wave": 2,
+  "module": "FI-TV",
+  "edge_constructs": [
+    "LOOP AT … GROUP BY mit LOOP AT GROUP",
+    "GROUP BY … INTO mit VALUE # ( FOR … IN GROUP )",
+    "CHECK mitten in der Schleife",
+    "verkettete Methodenaufrufe",
+    "Platzhalter-Personalnummer als versteckte Sonderregel",
+    "Testlauf-Schalter",
+    "CONTINUE in der Schleife"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "id": "BM-174",
+  "title": "Exportkontrolle: Auslieferung beim Sichern per RFC gegen GTS prüfen und mit Liefersperre belegen",
+  "domain": "Außenhandel / GTS – Exportkontrolle",
+  "band": "komplex",
+  "loc": 159,
+  "constructs": [
+    "User-Exit USEREXIT_SAVE_DOCUMENT_PREPARE (MV50AFZ1)",
+    "CHECK / EXIT im Exit-FORM",
+    "CALL FUNCTION mit TABLES (XLIPS)",
+    "CASE mit WHEN OTHERS",
+    "MESSAGE TYPE E abhängig von sy-batch",
+    "Schalter über TVARVC",
+    "Debug-Hintertür sy-uname/sy-sysid",
+    "RETURN aus FM (vier Stellen)",
+    "CALL FUNCTION … DESTINATION mit communication_failure/system_failure MESSAGE",
+    "CHECK in LOOP",
+    "SELECT SINGLE in Schleife mit Inline-Deklaration",
+    "INSERT Protokolltabelle"
+  ],
+  "scenario": "Maschinenbauer mit separatem SAP-GTS-System: beim Sichern jeder Auslieferung ins Ausland prüft ein Exit synchron per RFC Embargo und Sanktionslisten und setzt bei Treffer die eigene Liefersperre GT.",
+  "s4_issues": [
+    "Eigene synchrone RFC-Anbindung statt Standard-Integration SD–GTS (Compliance-Prüfung über Plug-in)",
+    "Synchroner RFC im Sichern-Exit löst einen impliziten Datenbank-Commit aus",
+    "Modifikation von LIKP im User-Exit",
+    "Direktlesen KNA1/MARC-STAWN (Warennummer in S/4 im Produkt-Klassifizierungsmodell)"
+  ],
+  "wave": 2,
+  "module": "SD-FT / GTS",
+  "edge_constructs": [
+    "Schalter über TVARVC (leere Destination = aus)",
+    "Debug-Hintertür IF sy-uname = … OR sy-sysid = …",
+    "CHECK mitten in der Schleife",
+    "MESSAGE … TYPE E als Pfadende (Sichern verhindert)",
+    "EXIT aus Exit-FORM",
+    "RETURN aus Funktionsbaustein"
+  ]
+}

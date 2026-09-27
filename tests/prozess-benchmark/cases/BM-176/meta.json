@@ -1,0 +1,48 @@
+{
+  "id": "BM-176",
+  "title": "IS-U Abrechnungsvorbereitung: fehlende Turnusablesungen einer Portion schätzen oder Abrechnung sperren",
+  "domain": "Branchenlösung IS-U / Versorger – Abrechnung",
+  "band": "sehr komplex",
+  "loc": 433,
+  "constructs": [
+    "INITIALIZATION mit GET PARAMETER ID",
+    "AT SELECTION-SCREEN ON / AT SELECTION-SCREEN",
+    "SET PARAMETER ID",
+    "lokale Klassen mit EVENTS / RAISE EVENT / SET HANDLER",
+    "eigene Ausnahmeklasse (cx_static_check)",
+    "RAISE EXCEPTION TYPE",
+    "TRY … CATCH … CLEANUP",
+    "ENQUEUE/DEQUEUE je Anlage",
+    "CONTINUE",
+    "COMMIT je Paket (MOD)",
+    "ROLLBACK WORK im Testlauf",
+    "JOIN über vier Tabellen (EANLH/TE422/EANL/EVER)",
+    "SELECT COUNT(*) mit JOIN EABLG/EABL",
+    "xsdbool",
+    "UPDATE EVER direkt",
+    "CASE auf Rückgabewert",
+    "CL_SALV_TABLE mit verkettetem Methodenaufruf",
+    "END-OF-SELECTION",
+    "nie gerufenes FORM (Mailversand)"
+  ],
+  "scenario": "Stadtwerk mit monatlichem Turnus: vor dem Abrechnungslauf einer Portion prüft ein Job, ob für jede Anlage mit aktivem Vertrag die Turnusablesung vorliegt, schätzt fehlende oder sperrt die Abrechnung am Vertrag.",
+  "s4_issues": [
+    "Direktes UPDATE auf EVER (Vertrag) ohne Änderungsbeleg und ohne Standard-API",
+    "Direktlesen EANLH/TE422/EANL/EVER/EABLG/EABL",
+    "Eigene Schätzlogik im Z-Baustein neben der Standard-Ableseschätzung",
+    "COMMIT innerhalb der Verarbeitungsschleife",
+    "Mailversand über SO_NEW_DOCUMENT_SEND_API1 (tot, aber im Bestand)"
+  ],
+  "wave": 2,
+  "module": "IS-U",
+  "edge_constructs": [
+    "SET HANDLER / RAISE EVENT",
+    "TRY … CATCH … CLEANUP (CLEANUP läuft bei abgefangener Ausnahme nicht)",
+    "RAISE EXCEPTION TYPE über zwei Methodenebenen",
+    "INITIALIZATION, AT SELECTION-SCREEN ON, END-OF-SELECTION",
+    "SET/GET PARAMETER ID",
+    "CONTINUE in LOOP",
+    "nie erreichtes FORM",
+    "verkettete Methodenaufrufe / NEW / xsdbool"
+  ]
+}

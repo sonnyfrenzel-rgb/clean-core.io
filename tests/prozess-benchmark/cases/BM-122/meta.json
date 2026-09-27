@@ -1,0 +1,31 @@
+{
+  "id": "BM-122",
+  "title": "RE-FX: auslaufende Mietverträge mit Ampel nach Restlaufzeit (VICNCN)",
+  "domain": "RE-FX / Immobilienverwaltung",
+  "band": "einfach",
+  "loc": 29,
+  "constructs": [
+    "REPORT",
+    "PARAMETERS",
+    "INITIALIZATION",
+    "GET PARAMETER ID",
+    "SELECT neue Syntax mit Inline-Tabelle",
+    "LOOP AT",
+    "COND #",
+    "WRITE-Liste"
+  ],
+  "scenario": "Objektmanagement einer Wohnungsgesellschaft: monatliche Liste der Mietverträge, deren erstes Vertragsende bald erreicht wird, als Vorlage für Verlängerungsgespräche.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf VICNCN statt freigegebener RE-FX-CDS-Views",
+    "WRITE-Liste ohne Fiori-Pendant"
+  ],
+  "wave": 2,
+  "module": "RE-FX",
+  "edge_constructs": [
+    "INITIALIZATION",
+    "SET/GET PARAMETER ID",
+    "COND #",
+    "Inline-Deklarationen",
+    "auskommentierter Zweig"
+  ]
+}

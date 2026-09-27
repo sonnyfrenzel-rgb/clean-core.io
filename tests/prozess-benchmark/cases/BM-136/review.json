@@ -1,0 +1,126 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufruf c1",
+      "before": "c1 -> g1 [always]",
+      "after": "pe -> g1 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_s (neu)",
+      "before": "c2 -> es [always] (Direktkante neben c2 -> ps); kein end für START-OF-SELECTION",
+      "after": "e_s end auf zps_netz_resched.abap:23 (letzte Anweisung von START-OF-SELECTION); pse -> e_s [always]; e_s -> es [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks steht ein end-Knoten auf der letzten Anweisung. Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten Aufruf c3",
+      "before": "c3 -> c4 [always]",
+      "after": "me -> c4 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c4",
+      "before": "c4 -> c5 [always]",
+      "after": "br -> c5 [always]; be -> c5 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c5",
+      "before": "c5 -> e2 [always]",
+      "after": "ar -> e2 [always]; ae -> e2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf pcl",
+      "before": "pcl -> pl2 [next iteration]",
+      "after": "le -> pl2 [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf lc",
+      "before": "lc -> le [always]",
+      "after": "fe -> le [always]; fr -> le [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten pd",
+      "before": "action zps_netz_resched_f01.abap:28 „Projekt aus der Verarbeitung nehmen“; pg -> pd [sy-subrc <> 0]; pd -> pl [next iteration]",
+      "after": "entfernt; überbrückt: pg -> pl [sy-subrc <> 0]",
+      "why": "Reine Zuweisung (DELETE gt_proj auf die interne Tabelle, f01:28); laut Autorenbrief kein Knoten, steuert keinen weiteren Fluss (so auch BM-093, BM-099, BM-100). Inhalt bleibt im Fachsatz (B01).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten re (end)",
+      "before": "zps_netz_resched_f01.abap:92",
+      "after": "zps_netz_resched_f01.abap:93 (ENDFORM)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten le (end)",
+      "before": "zps_netz_resched_f01.abap:107",
+      "after": "zps_netz_resched_f01.abap:108 (ENDFORM)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten ae (end)",
+      "before": "zps_netz_resched_f01.abap:141",
+      "after": "zps_netz_resched_f01.abap:142 (ENDFORM)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten be (end)",
+      "before": "zps_netz_resched_f01.abap:194",
+      "after": "zps_netz_resched_f01.abap:195 (ENDFORM)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten fe (end)",
+      "before": "z_ps_resched_project.abap:98 (ENDLOOP)",
+      "after": "z_ps_resched_project.abap:99 (ENDFUNCTION)",
+      "why": "Vereinheitlichte Konvention: ein Funktionsbaustein endet auf ENDFUNCTION, nicht auf dem ENDLOOP davor.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten frb",
+      "before": "transaction auf z_ps_resched_project.abap:66",
+      "after": "opaque_call auf z_ps_resched_project.abap:66",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call (Standardbaustein außerhalb des Falls); transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten frb2",
+      "before": "transaction auf z_ps_resched_project.abap:77",
+      "after": "opaque_call auf z_ps_resched_project.abap:77",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call (Standardbaustein außerhalb des Falls); transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten fcm",
+      "before": "transaction auf z_ps_resched_project.abap:80",
+      "after": "opaque_call auf z_ps_resched_project.abap:80",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call (Standardbaustein außerhalb des Falls); transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Verbotener Schluss zu f01:39",
+      "before": "zps_netz_resched_f01.abap:39 — kein Fachsatz „die Zahl paralleler Aufgaben wird auf einen gültigen Bereich begrenzt“: die Eingabe wird nicht geprüft, bei 0 wartet der Lauf unbegrenzt",
+      "after": "zps_netz_resched_f01.abap:39 — kein Fachsatz „die Zahl paralleler Aufgaben wird auf einen gültigen Bereich begrenzt“: die Eingabe wird nicht geprüft; bei 0 ist die Bedingung nie erfüllt, WAIT kehrt dann jeweils erst nach Ende aller offenen Aufgaben (sy-subrc 8) zurück, und die Projekte laufen nacheinander",
+      "why": "WAIT UNTIL (Kurzform von WAIT FOR ASYNCHRONOUS TASKS UNTIL) wartet nicht unbegrenzt: ist die Bedingung falsch und keine asynchrone Aufgabe mit Rückrufroutine mehr offen, wird die Anweisung mit sy-subrc = 8 verlassen. Bei p_maxt = 0 kehrt sie im ersten Durchlauf sofort und danach nach dem Ende der gerade laufenden Aufgabe zurück; der Lauf serialisiert, hängt aber nicht.",
+      "category": "verbotener Schluss"
+    }
+  ],
+  "doubts": []
+}

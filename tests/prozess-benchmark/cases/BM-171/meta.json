@@ -1,0 +1,38 @@
+{
+  "id": "BM-171",
+  "title": "IS-U: Ableseergebnisse der Ablesefirma aus CSV plausibilisieren und per BAPI hochladen",
+  "domain": "Branchenlösung IS-U / Versorger – Ablesung",
+  "band": "komplex",
+  "loc": 180,
+  "constructs": [
+    "INCLUDE mit FORM-Routinen",
+    "OPEN/READ/CLOSE DATASET",
+    "MESSAGE TYPE E in FORM",
+    "DO mit EXIT",
+    "AT FIRST / AT LAST",
+    "CONTINUE vor AT LAST",
+    "TRY … CATCH cx_sy_conversion_no_number mit RETURN",
+    "SELECT … ORDER BY … UP TO 2 ROWS",
+    "Tabellenausdrücke lt_alt[ 1 ]",
+    "BAPI_MTRREADDOC_UPLOAD",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "auskommentierte Fehlerbewertung"
+  ],
+  "scenario": "Stadtwerk mit externer Ablesefirma: die Ableseergebnisse der Turnusablesung kommen als CSV auf den Applikationsserver und werden nach einfacher Plausibilisierung als Ablesebelege hochgeladen.",
+  "s4_issues": [
+    "Dateiablage per OPEN DATASET ohne logischen Dateinamen",
+    "Direktlesen EQUI/EABL",
+    "Eigene Plausibilisierung neben den IS-U-Plausibilitätsregeln (EL28-Logik)",
+    "COMMIT je Satz in der Schleife"
+  ],
+  "wave": 2,
+  "module": "IS-U",
+  "edge_constructs": [
+    "AT FIRST / AT LAST in LOOP",
+    "CONTINUE überspringt AT LAST beim letzten Satz",
+    "RETURN aus tiefem FORM (vier Stellen)",
+    "TRY … CATCH mit RETURN",
+    "MESSAGE … TYPE E als Pfadende in FORM",
+    "auskommentierter Zweig (Warnung statt Fehler)"
+  ]
+}

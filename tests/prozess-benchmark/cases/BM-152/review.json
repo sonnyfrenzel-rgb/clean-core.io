@@ -1,0 +1,170 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten o_abm (neu) vor o_abort",
+      "before": "o_abort end auf zpt_term_upload_f01.abap:15 ohne output",
+      "after": "o_abm output auf zpt_term_upload_f01.abap:15, Kante o_abm -> o_abort [always]; eingehende Kanten auf o_abm umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_lock (neu)",
+      "before": "kein end-Knoten auf zpt_term_upload_f01.abap:17",
+      "after": "e_lock end auf zpt_term_upload_f01.abap:17; g_lock -> e_lock [else]; e_lock -> c_log [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten c_log, s_lc, c_balc, e_lc (neu); Kante c_lock -> c_read",
+      "before": "PERFORM log_create (Z. 38) und FORM log_create ohne Knoten; Direktkante c_lock -> c_read [always]",
+      "after": "e_lock -> c_log -> s_lc -> c_balc (BAL_LOG_CREATE) -> e_lc -> c_read; Direktkante entfernt",
+      "why": "Aufruf eines FORM im Fall mit Standardbaustein (Fachsatz B02 verankert Z. 38 und f01:25) fehlte; die Direktkante überging außerdem das Ende des Sperr-FORM.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten s_la, c_lmsg, e_la, c_la1 … c_la8 (neu)",
+      "before": "FORM log_add und seine acht Aufrufe ohne Knoten",
+      "after": "s_la start f01:35 -> c_lmsg opaque_call f01:37 (BAL_LOG_MSG_ADD_FREE_TEXT) -> e_la end f01:47; Aufrufe :41, f01:58, 76, 119, 134, 161, 175, 191 je als call mit Kante in s_la und Rückkante von e_la zum jeweils nächsten Schritt",
+      "why": "Jeder Fehler- und Hinweispfad des Jobs endet in einem Protokolleintrag (B03, B05, B06, B08, B09, B12, B13); die Aufrufe liegen im Fall und tragen die Fehlerpfade. Die Verzweigung IF pv_type CA 'EA' (f01:44) zählt nur gv_errors hoch, das nirgends gelesen wird, und ist daher kein Knoten.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante g_conv -> l_do",
+      "before": "g_conv -> l_do [next iteration]",
+      "after": "g_conv -> l_do [else]",
+      "why": "Kante aus einem Gateway trägt die Bedingung; der Sonst-Zweig (Zeile übernehmen) läuft zur nächsten Zeile.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_rf2 (neu)",
+      "before": "kein end-Knoten auf zpt_term_upload_f01.abap:82",
+      "after": "e_rf2 end auf zpt_term_upload_f01.abap:82; g_eof -> e_rf2 [sy-subrc <> 0]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten g_eof -> g_raw, c_read -> g_raw",
+      "before": "g_eof -> g_raw [sy-subrc <> 0]; c_read -> g_raw [always]",
+      "after": "g_eof -> e_rf2 [sy-subrc <> 0] (EXIT verlässt DO, danach CLOSE DATASET und ENDFORM); e_rf -> g_raw, e_rf2 -> g_raw [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt. Das Dateiende führt nicht direkt ins Hauptprogramm, sondern über das Ende des FORM.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten g_bdg (neu)",
+      "before": "Bedingung lt_badge IS NOT INITIAL an Kanten des read-Knotens r_badge",
+      "after": "gateway f01:109; r_badge -> g_bdg [always]; g_bdg -> r_teven [lt_badge IS NOT INITIAL]; g_bdg -> l_raw [else]",
+      "why": "Das IF in Z. 109 (Schutz des FOR ALL ENTRIES) ist eine eigene Verzweigung; ein read-Knoten verzweigt nicht.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten g_same (neu)",
+      "before": "innere Schleife l_dup ohne Körper (nur [no more rows])",
+      "after": "gateway f01:141; l_dup -> g_same [next row]; g_same -> g_isdup [ls_teven-ldate = ls_raw-ldate AND ls_teven-ltime = ls_raw-ltime] (EXIT); g_same -> l_dup [else]",
+      "why": "Die Dublettenprüfung selbst (B10, verankert auf Z. 141) fehlte; EXIT verlässt nur die innere Schleife.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten a_ev",
+      "before": "action auf zpt_term_upload_f01.abap:150; g_isdup -> a_ev [else]; a_ev -> l_raw [next iteration]",
+      "after": "entfernt; g_isdup -> l_raw [else]",
+      "why": "Reine Zuweisungen der Ereignisfelder und APPEND in die interne Tabelle (f01:150–154); laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B11.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_me (neu)",
+      "before": "kein end-Knoten auf zpt_term_upload_f01.abap:156",
+      "after": "e_me end auf zpt_term_upload_f01.abap:156; l_raw -> e_me [no more rows]; e_me -> c_post [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_map -> c_post",
+      "before": "c_map -> c_post [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_me -> c_post [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_pe2 (neu)",
+      "before": "kein end-Knoten auf zpt_term_upload_f01.abap:182",
+      "after": "e_pe2 end auf zpt_term_upload_f01.abap:182; c_cm -> e_pe2 [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_rb -> c_la7 (neu)",
+      "before": "c_rb ohne ausgehende Kante",
+      "after": "c_rb -> c_la7 [always]; Rückkehr e_la -> e_pe2",
+      "why": "Nach dem Rollback wird die Ablehnung protokolliert, dann endet das FORM.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_post -> g_posted",
+      "before": "c_post -> g_posted [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_pe -> g_posted [always], e_pe2 -> g_posted [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten l_lines (neu)",
+      "before": "o_tr (TRANSFER, f01:195) ohne Schleife; o_tr -> w_del [always]",
+      "after": "loop f01:194; g_aopen -> l_lines [else]; l_lines -> o_tr [next row]; o_tr -> l_lines [next iteration]; l_lines -> w_del [no more rows]",
+      "why": "TRANSFER steht in LOOP AT gt_lines; die Schleife fehlte.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_af2 (neu)",
+      "before": "kein end-Knoten auf zpt_term_upload_f01.abap:199",
+      "after": "e_af2 end auf zpt_term_upload_f01.abap:199; w_del -> e_af2 [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_arch -> c_save",
+      "before": "c_arch -> c_save [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_af -> c_save [always], e_af2 -> c_save [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten s_ls, c_bsave, g_batch, o_disp, e_ls (neu)",
+      "before": "FORM log_save ohne Knoten; c_save -> lk_deq [always]",
+      "after": "c_save -> s_ls -> c_bsave (BAL_DB_SAVE) -> g_batch [sy-batch IS INITIAL] -> o_disp (BAL_DSP_LOG_DISPLAY) -> e_ls; g_batch [else] -> e_ls; e_ls -> lk_deq",
+      "why": "FORM im Fall mit Sicherung, Verzweigung Dialog/Hintergrund und Anzeige (Fachsatz B15 verankert f01:205/211); Aufruf und Rückkehr nach Konvention.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_sos (neu)",
+      "before": "kein end-Knoten auf zpt_term_upload.abap:50",
+      "after": "e_sos end auf zpt_term_upload.abap:50; lk_deq -> e_sos [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz B05",
+      "before": "Zeilen, deren Datum oder Uhrzeit sich nicht umwandeln lässt oder deren Datum leer ist, werden als Fehler protokolliert und übergangen.",
+      "after": "Zeilen mit leerem Datum werden als Fehler protokolliert und übergangen; ein ungültiges Datum oder eine ungültige Uhrzeit wird bei der Zuweisung nicht geprüft und läuft weiter.",
+      "why": "Die Zuweisung einer Zeichenkette an ein Feld vom Typ d bzw. t prüft den Inhalt nicht und löst keine Konvertierungsausnahme aus; CATCH SYSTEM-EXCEPTIONS conversion_errors greift hier nie, sy-subrc ist nach ENDCATCH 0. Übrig bleibt nur die Prüfung auf leeres Datum.",
+      "category": "Fachsatz"
+    },
+    {
+      "where": "forbiddenConclusions",
+      "before": "—",
+      "after": "neuer verbotener Schluss zu f01:71 (CATCH SYSTEM-EXCEPTIONS greift nicht)",
+      "why": "Der naheliegende Fehlschluss aus dem CATCH-Block ist genau der, den der Code nicht trägt.",
+      "category": "verbotener Schluss"
+    },
+    {
+      "where": "processDescription",
+      "before": "„Zeilen mit nicht umwandelbarem Datum oder Uhrzeit werden als Fehler protokolliert.“",
+      "after": "„Zeilen mit leerem Datum werden als Fehler protokolliert; ungültige Datums- oder Uhrzeitangaben werden nicht erkannt, …“",
+      "why": "Folgeänderung zu B05.",
+      "category": "Fachsatz"
+    }
+  ],
+  "doubts": [
+    "Die Suche LOOP AT gt_return … WHERE type CA 'EA' / EXIT (f01:170) ist als reine Nachschlage-Schleife ohne loop-Knoten belassen; die Entscheidung liegt auf dem Gateway f01:173."
+  ]
+}

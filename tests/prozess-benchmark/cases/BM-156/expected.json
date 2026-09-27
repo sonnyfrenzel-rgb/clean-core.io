@@ -1,0 +1,2983 @@
+{
+  "id": "BM-156",
+  "title": "bAV-Monatsmeldung an den Versorgungsträger aus Abrechnungsergebnissen mit Rückrechnungsdifferenzen",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "T569V",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpy_bav_export_f01.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpy_bav_export_f01.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "INDX",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpy_bav_export_f01.abap",
+        "line": 7,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpy_bav_export_f01.abap:7"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPY_BAV_LGART",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zpy_bav_export_f01.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpy_bav_export_f01.abap:38"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_READ_INFOTYPE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpy_bav_export_f01.abap",
+        "line": 60,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpy_bav_export_f01.abap:60"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CU_READ_RGDIR",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpy_bav_export_f01.abap",
+        "line": 78,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpy_bav_export_f01.abap:78"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PYXX_READ_PAYROLL_RESULT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpy_bav_export_f01.abap",
+        "line": 141,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpy_bav_export_f01.abap:141"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "INDX",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "zpy_bav_export_f02.abap",
+        "line": 86,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpy_bav_export_f02.abap:86"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpy_bav_export_f02.abap",
+        "line": 98,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpy_bav_export_f02.abap:98"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD_FREE_TEXT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpy_bav_export_f02.abap",
+        "line": 113,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpy_bav_export_f02.abap:113"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpy_bav_export_f02.abap",
+        "line": 126,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpy_bav_export_f02.abap:126"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DSP_LOG_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpy_bav_export_f02.abap",
+        "line": 132,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpy_bav_export_f02.abap:132"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-156-B01",
+      "text": "Beim Aufruf wird als Meldedatei ein Name im bAV-Ausgangsverzeichnis mit dem aktuellen Jahr und Monat vorgeschlagen.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B02",
+      "text": "Ein Dateipfad außerhalb des freigegebenen bAV-Schnittstellenverzeichnisses wird auf dem Selektionsbild abgewiesen.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:21"
+        },
+        {
+          "file": "zpy_bav_export.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B03",
+      "text": "Für den Lauf wird ein Anwendungsprotokoll zu Träger und Periode eröffnet.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:28"
+        },
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:98"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B04",
+      "text": "Der Lauf bricht ab, wenn der Abrechnungskreis unbekannt ist oder nicht im Status „Ende der Abrechnung“ steht oder seine Periode noch vor der gewählten liegt.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:23"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:26"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:27"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:29"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B05",
+      "text": "Wurde die gewählte Periode bereits gemeldet, bricht der Echtlauf ab, es sei denn, eine Wiederholung ist ausdrücklich gewählt.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:7"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:9"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:11"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B06",
+      "text": "Die dem Träger zugeordneten bAV-Lohnarten mit ihrer Einteilung in Arbeitgeber- und Arbeitnehmeranteil werden geladen; fehlen sie, bricht der Lauf ab.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:38"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:40"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B07",
+      "text": "Aus dem Trägerkürzel wird der Name des trägerspezifischen Formatierungsprogramms gebildet.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B08",
+      "text": "Die Meldedatei wird angelegt; gelingt das nicht, bricht der Lauf ab, sonst wird ein Kopfsatz mit Träger, Periode und Datum geschrieben.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:6"
+        },
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:7"
+        },
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:8"
+        },
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B09",
+      "text": "Für jeden selektierten Mitarbeiter wird der bAV-Vertrag beim gewählten Träger zum Ende des Auswahlzeitraums der logischen Datenbank gesucht; ohne Vertrag wird er übergangen.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:34"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:60"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:71"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:72"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B10",
+      "text": "Hat der Mitarbeiter kein Abrechnungsverzeichnis, wird eine Warnung protokolliert und er übergangen.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:78"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:88"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:89"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:90"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B11",
+      "text": "Jedes aktuelle Ergebnis, das in der gewählten Periode entstanden ist, wird gelesen; ist es nicht lesbar, wird ein Fehler protokolliert und das Ergebnis übersprungen.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:93"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:95"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:141"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:97"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:98"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B12",
+      "text": "Aus dem Ergebnis werden die Beträge der bAV-Lohnarten nach Arbeitgeber- und Arbeitnehmeranteil summiert.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:106"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:160"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:161"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:162"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:163"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B13",
+      "text": "Als Jahreswert werden die Kalenderjahreskumulationen aller bAV-Lohnarten des Trägers aufsummiert.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:172"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:175"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 176,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:176"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B14",
+      "text": "Ein Ergebnis der laufenden Periode wird als laufender Satz gemeldet, auch wenn seine Beiträge null sind.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:108"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:131"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B15",
+      "text": "Bei einer rückgerechneten Periode wird das vorherige Ergebnis derselben Periode gelesen und nur die Differenz der Anteile gemeldet; fehlt der Vorgänger oder ist er nicht lesbar, werden die vollen Beträge als Differenzsatz gemeldet.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:114"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:116"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:117"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:119"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:121"
+        },
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:122"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B16",
+      "text": "Rückrechnungssätze ohne Differenz werden nicht gemeldet.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:126"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B17",
+      "text": "Jeder Datensatz enthält Satzart, Personalnummer, Vertrag, Periode, beide Anteile und Jahreswert, wird – sofern das Trägerprogramm eine Aufbereitung vorsieht – trägerspezifisch aufbereitet und in die Datei geschrieben; Anzahl und Summen werden fortgeschrieben.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:42"
+        },
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:44"
+        },
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B18",
+      "text": "Nach allen Mitarbeitern wird ein Summensatz mit Satzanzahl und Summen beider Anteile geschrieben.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:39"
+        },
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:56"
+        },
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B19",
+      "text": "Im Testlauf wird die fertige Datei wieder gelöscht und nichts vermerkt.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:73"
+        },
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:75"
+        },
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B20",
+      "text": "Enthält die Datei keinen Datensatz, wird die Periode nicht als gemeldet vermerkt.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:80"
+        },
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B21",
+      "text": "Sonst wird die Periode als gemeldet vermerkt und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:86"
+        },
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-156-B22",
+      "text": "Das Protokoll wird gesichert und bei Dialogstart angezeigt.",
+      "anchors": [
+        {
+          "file": "zpy_bav_export.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:41"
+        },
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:126"
+        },
+        {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:132"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s_init",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:17"
+        },
+        "meaning": "Programmaufruf"
+      },
+      {
+        "id": "e_init",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:18"
+        },
+        "meaning": "Dateiname vorgeschlagen"
+      },
+      {
+        "id": "s_ss",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:20"
+        },
+        "meaning": "Dateipfad prüfen"
+      },
+      {
+        "id": "g_path",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:21"
+        },
+        "meaning": "Pfad außerhalb des Schnittstellenverzeichnisses?"
+      },
+      {
+        "id": "o_path",
+        "type": "output",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:23"
+        },
+        "meaning": "Fehlermeldung, Pfad korrigieren"
+      },
+      {
+        "id": "e_path",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:23"
+        },
+        "meaning": "Eingabe abgewiesen, Selektionsbild erneut"
+      },
+      {
+        "id": "e_ss",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:24"
+        },
+        "meaning": "Pfad zulässig"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:26"
+        },
+        "meaning": "Meldelauf startet"
+      },
+      {
+        "id": "c_lc",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:28"
+        },
+        "meaning": "Protokoll eröffnen"
+      },
+      {
+        "id": "s_lc",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:93"
+        },
+        "meaning": "Protokoll anlegen"
+      },
+      {
+        "id": "c_balc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:98"
+        },
+        "meaning": "Anwendungsprotokoll ZPY/BAV zu Träger und Periode anlegen"
+      },
+      {
+        "id": "e_lc",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:105"
+        },
+        "meaning": "Protokoll angelegt"
+      },
+      {
+        "id": "c_cr",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:29"
+        },
+        "meaning": "Abrechnungsstatus prüfen"
+      },
+      {
+        "id": "s_ccr",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:18"
+        },
+        "meaning": "Verwaltungssatz prüfen"
+      },
+      {
+        "id": "r_569",
+        "type": "read",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:23"
+        },
+        "meaning": "Status und Periode des Abrechnungskreises lesen"
+      },
+      {
+        "id": "g_569a",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:26"
+        },
+        "meaning": "Verwaltungssatz vorhanden?"
+      },
+      {
+        "id": "m_569a",
+        "type": "output",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:27"
+        },
+        "meaning": "Fehlermeldung: Abrechnungskreis unbekannt"
+      },
+      {
+        "id": "o_569a",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:27"
+        },
+        "meaning": "Abbruch: Abrechnungskreis unbekannt"
+      },
+      {
+        "id": "g_569b",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:29"
+        },
+        "meaning": "Abrechnung nicht beendet oder Periode noch nicht erreicht?"
+      },
+      {
+        "id": "m_569b",
+        "type": "output",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:32"
+        },
+        "meaning": "Fehlermeldung: Periode nicht abgeschlossen"
+      },
+      {
+        "id": "o_569b",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:32"
+        },
+        "meaning": "Abbruch: Periode nicht abgeschlossen"
+      },
+      {
+        "id": "e_ccr",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:34"
+        },
+        "meaning": "Abrechnungsstatus in Ordnung"
+      },
+      {
+        "id": "c_dr",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:30"
+        },
+        "meaning": "Doppellauf prüfen"
+      },
+      {
+        "id": "s_cdr",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:5"
+        },
+        "meaning": "Doppellaufsperre"
+      },
+      {
+        "id": "r_indx",
+        "type": "read",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:7"
+        },
+        "meaning": "Zuletzt gemeldete Periode lesen"
+      },
+      {
+        "id": "g_dr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:9"
+        },
+        "meaning": "Periode schon gemeldet und kein Test/Wiederholung?"
+      },
+      {
+        "id": "m_dr",
+        "type": "output",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:11"
+        },
+        "meaning": "Fehlermeldung: Periode bereits gemeldet"
+      },
+      {
+        "id": "o_dr",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:11"
+        },
+        "meaning": "Abbruch: Periode bereits gemeldet"
+      },
+      {
+        "id": "e_cdr",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:13"
+        },
+        "meaning": "Kein Doppellauf"
+      },
+      {
+        "id": "c_cust",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:31"
+        },
+        "meaning": "Lohnartenzuordnung laden"
+      },
+      {
+        "id": "s_lcu",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:37"
+        },
+        "meaning": "Customizing laden"
+      },
+      {
+        "id": "r_lg",
+        "type": "read",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:38"
+        },
+        "meaning": "bAV-Lohnarten des Trägers lesen"
+      },
+      {
+        "id": "g_lg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:40"
+        },
+        "meaning": "Keine Lohnarten gepflegt?"
+      },
+      {
+        "id": "m_lg",
+        "type": "output",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:41"
+        },
+        "meaning": "Fehlermeldung: Träger ohne Lohnarten"
+      },
+      {
+        "id": "o_lg",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:41"
+        },
+        "meaning": "Abbruch: Träger ohne Lohnarten"
+      },
+      {
+        "id": "e_lcu",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:44"
+        },
+        "meaning": "Customizing geladen, Formatierungsprogramm bestimmt"
+      },
+      {
+        "id": "c_open",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:32"
+        },
+        "meaning": "Meldedatei anlegen"
+      },
+      {
+        "id": "s_of",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:5"
+        },
+        "meaning": "Datei öffnen"
+      },
+      {
+        "id": "o_od",
+        "type": "output",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:6"
+        },
+        "meaning": "Meldedatei zum Schreiben öffnen"
+      },
+      {
+        "id": "g_od",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:7"
+        },
+        "meaning": "Datei anlegbar?"
+      },
+      {
+        "id": "m_ode",
+        "type": "output",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:8"
+        },
+        "meaning": "Fehlermeldung: Datei nicht anlegbar"
+      },
+      {
+        "id": "o_ode",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:8"
+        },
+        "meaning": "Abbruch: Datei nicht anlegbar"
+      },
+      {
+        "id": "o_hdr",
+        "type": "output",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:18"
+        },
+        "meaning": "Kopfsatz mit Träger, Periode und Datum schreiben"
+      },
+      {
+        "id": "e_of",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:19"
+        },
+        "meaning": "Datei mit Kopfsatz angelegt"
+      },
+      {
+        "id": "e_sos",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:32"
+        },
+        "meaning": "Vorbereitung abgeschlossen"
+      },
+      {
+        "id": "s_get",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:34"
+        },
+        "meaning": "Verarbeitung je Mitarbeiter"
+      },
+      {
+        "id": "c_pe",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:36"
+        },
+        "meaning": "Mitarbeiter melden"
+      },
+      {
+        "id": "e_get",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:36"
+        },
+        "meaning": "Mitarbeiter verarbeitet"
+      },
+      {
+        "id": "s_pe",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:47"
+        },
+        "meaning": "Mitarbeiter verarbeiten"
+      },
+      {
+        "id": "c_it",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:60"
+        },
+        "meaning": "bAV-Verträge zum Periodenende lesen"
+      },
+      {
+        "id": "r_ctr",
+        "type": "read",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:71"
+        },
+        "meaning": "Vertrag beim gewählten Träger suchen"
+      },
+      {
+        "id": "g_ctr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:72"
+        },
+        "meaning": "Kein Vertrag beim Träger?"
+      },
+      {
+        "id": "e_ctr",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:74"
+        },
+        "meaning": "Mitarbeiter übergehen"
+      },
+      {
+        "id": "c_rg",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:78"
+        },
+        "meaning": "Abrechnungsverzeichnis lesen"
+      },
+      {
+        "id": "g_rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:88"
+        },
+        "meaning": "Kein Abrechnungsergebnis?"
+      },
+      {
+        "id": "e_rg",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:90"
+        },
+        "meaning": "Warnung protokollieren, Mitarbeiter übergehen"
+      },
+      {
+        "id": "l_rg",
+        "type": "loop",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:93"
+        },
+        "meaning": "Je aktuellem Ergebnis der In-Periode"
+      },
+      {
+        "id": "c_rr1",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:95"
+        },
+        "meaning": "Ergebnis lesen"
+      },
+      {
+        "id": "g_ok1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:97"
+        },
+        "meaning": "Ergebnis nicht lesbar?"
+      },
+      {
+        "id": "c_ca1",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:106"
+        },
+        "meaning": "Beiträge des Ergebnisses ermitteln"
+      },
+      {
+        "id": "g_cur",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:108"
+        },
+        "meaning": "Laufende Periode?"
+      },
+      {
+        "id": "r_prev",
+        "type": "read",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:114"
+        },
+        "meaning": "Vorgängerergebnis der rückgerechneten Periode suchen"
+      },
+      {
+        "id": "g_prev",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:116"
+        },
+        "meaning": "Vorgänger vorhanden?"
+      },
+      {
+        "id": "c_rr2",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:117"
+        },
+        "meaning": "Vorgänger lesen"
+      },
+      {
+        "id": "g_ok2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:119"
+        },
+        "meaning": "Vorgänger lesbar?"
+      },
+      {
+        "id": "c_ca2",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:121"
+        },
+        "meaning": "Beiträge des Vorgängers ermitteln"
+      },
+      {
+        "id": "a_delta",
+        "type": "action",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:122"
+        },
+        "meaning": "Differenz zum Vorgänger bilden"
+      },
+      {
+        "id": "g_zero",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:126"
+        },
+        "meaning": "Keine Differenz?"
+      },
+      {
+        "id": "e_pe",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:133"
+        },
+        "meaning": "Mitarbeiter gemeldet"
+      },
+      {
+        "id": "c_wr",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:131"
+        },
+        "meaning": "Datensatz schreiben"
+      },
+      {
+        "id": "s_rr",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:136"
+        },
+        "meaning": "Ergebnis aus Cluster lesen"
+      },
+      {
+        "id": "c_py",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:141"
+        },
+        "meaning": "Abrechnungsergebnis aus Cluster RD lesen"
+      },
+      {
+        "id": "e_rr",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:151"
+        },
+        "meaning": "Ergebnis gelesen, Lesbarkeit zurückgeben"
+      },
+      {
+        "id": "s_ca",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:154"
+        },
+        "meaning": "Beiträge summieren"
+      },
+      {
+        "id": "l_rt",
+        "type": "loop",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:160"
+        },
+        "meaning": "Je Lohnart des Ergebnisses"
+      },
+      {
+        "id": "r_lg2",
+        "type": "read",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:161"
+        },
+        "meaning": "Lohnart in der bAV-Zuordnung suchen"
+      },
+      {
+        "id": "g_lg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:162"
+        },
+        "meaning": "bAV-Lohnart?"
+      },
+      {
+        "id": "g_art",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:163"
+        },
+        "meaning": "Arbeitgeber- oder Arbeitnehmeranteil?"
+      },
+      {
+        "id": "l_crt",
+        "type": "loop",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:172"
+        },
+        "meaning": "Je Jahreskumulation"
+      },
+      {
+        "id": "r_crt",
+        "type": "read",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:173"
+        },
+        "meaning": "Kumulierte Lohnart in der bAV-Zuordnung suchen"
+      },
+      {
+        "id": "g_crt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:175"
+        },
+        "meaning": "bAV-Lohnart?"
+      },
+      {
+        "id": "a_ytd",
+        "type": "action",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 176,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:176"
+        },
+        "meaning": "Jahreswert aufsummieren"
+      },
+      {
+        "id": "e_ca",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 179,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:179"
+        },
+        "meaning": "Beiträge und Jahreswert ermittelt"
+      },
+      {
+        "id": "s_wr",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:22"
+        },
+        "meaning": "Datensatz aufbauen"
+      },
+      {
+        "id": "c_fmt",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:42"
+        },
+        "meaning": "Trägerspezifische Aufbereitung, falls vorhanden"
+      },
+      {
+        "id": "o_rec",
+        "type": "output",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:44"
+        },
+        "meaning": "Datensatz in die Datei schreiben"
+      },
+      {
+        "id": "e_wr",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:48"
+        },
+        "meaning": "Satz geschrieben, Zähler fortgeschrieben"
+      },
+      {
+        "id": "s_eos",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:38"
+        },
+        "meaning": "Abschluss"
+      },
+      {
+        "id": "c_tr",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:39"
+        },
+        "meaning": "Summensatz schreiben"
+      },
+      {
+        "id": "s_wt",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:51"
+        },
+        "meaning": "Summensatz"
+      },
+      {
+        "id": "g_wt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:56"
+        },
+        "meaning": "Datei offen?"
+      },
+      {
+        "id": "o_trl",
+        "type": "output",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:65"
+        },
+        "meaning": "Summensatz mit Anzahl und Summen schreiben"
+      },
+      {
+        "id": "e_wt",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:66"
+        },
+        "meaning": "Summensatz geschrieben"
+      },
+      {
+        "id": "c_cl",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:40"
+        },
+        "meaning": "Datei abschließen und Periode vermerken"
+      },
+      {
+        "id": "s_cl",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:69"
+        },
+        "meaning": "Abschließen"
+      },
+      {
+        "id": "g_cl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:70"
+        },
+        "meaning": "Datei offen?"
+      },
+      {
+        "id": "g_test",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:73"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "w_del",
+        "type": "action",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:75"
+        },
+        "meaning": "Testdatei löschen"
+      },
+      {
+        "id": "e_test",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:77"
+        },
+        "meaning": "Ohne Vermerk beenden"
+      },
+      {
+        "id": "g_cnt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:80"
+        },
+        "meaning": "Keine Datensätze?"
+      },
+      {
+        "id": "e_cnt",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:82"
+        },
+        "meaning": "Periode nicht vermerken"
+      },
+      {
+        "id": "w_indx",
+        "type": "write",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:86"
+        },
+        "meaning": "Gemeldete Periode vermerken"
+      },
+      {
+        "id": "t_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:88"
+        },
+        "meaning": "Vermerk festschreiben"
+      },
+      {
+        "id": "e_cl",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:90"
+        },
+        "meaning": "Periode vermerkt"
+      },
+      {
+        "id": "c_ld",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:41"
+        },
+        "meaning": "Protokoll sichern und im Dialog anzeigen"
+      },
+      {
+        "id": "s_ld",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:123"
+        },
+        "meaning": "Protokoll sichern und anzeigen"
+      },
+      {
+        "id": "c_bsave",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:126"
+        },
+        "meaning": "Anwendungsprotokoll in der Datenbank sichern"
+      },
+      {
+        "id": "g_batch",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:131"
+        },
+        "meaning": "Dialogstart?"
+      },
+      {
+        "id": "o_disp",
+        "type": "output",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:132"
+        },
+        "meaning": "Protokoll anzeigen"
+      },
+      {
+        "id": "e_ld",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:138"
+        },
+        "meaning": "Protokoll gesichert"
+      },
+      {
+        "id": "e_eos",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export.abap:41"
+        },
+        "meaning": "Meldelauf beendet"
+      },
+      {
+        "id": "s_la",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:108"
+        },
+        "meaning": "Protokollmeldung hinzufügen"
+      },
+      {
+        "id": "c_lmsg",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:113"
+        },
+        "meaning": "Freitextmeldung ins Anwendungsprotokoll schreiben"
+      },
+      {
+        "id": "e_la",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:120"
+        },
+        "meaning": "Meldung protokolliert"
+      },
+      {
+        "id": "c_la1",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:89"
+        },
+        "meaning": "Protokoll: kein Abrechnungsergebnis"
+      },
+      {
+        "id": "c_la2",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f01.abap:98"
+        },
+        "meaning": "Protokoll: Ergebnis nicht lesbar"
+      },
+      {
+        "id": "c_la3",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:76"
+        },
+        "meaning": "Protokoll: Testlauf, Datei gelöscht"
+      },
+      {
+        "id": "c_la4",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:81"
+        },
+        "meaning": "Protokoll: keine Sätze, Periode nicht vermerkt"
+      },
+      {
+        "id": "c_la5",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_bav_export_f02.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_bav_export_f02.abap:89"
+        },
+        "meaning": "Protokoll: Datei erstellt, Periode vermerkt"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s_ss",
+        "to": "g_path",
+        "condition": "always"
+      },
+      {
+        "from": "g_path",
+        "to": "o_path",
+        "condition": "p_file NS '/interface/hr/bav/'"
+      },
+      {
+        "from": "s",
+        "to": "c_lc",
+        "condition": "always"
+      },
+      {
+        "from": "c_cr",
+        "to": "s_ccr",
+        "condition": "always"
+      },
+      {
+        "from": "s_ccr",
+        "to": "r_569",
+        "condition": "always"
+      },
+      {
+        "from": "r_569",
+        "to": "g_569a",
+        "condition": "always"
+      },
+      {
+        "from": "g_569a",
+        "to": "m_569a",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_569a",
+        "to": "g_569b",
+        "condition": "else"
+      },
+      {
+        "from": "g_569b",
+        "to": "m_569b",
+        "condition": "lv_vwsaz <> '3' OR lv_pabrj < p_pabrj OR ( lv_pabrj = p_pabrj AND lv_pabrp < p_pabrp )"
+      },
+      {
+        "from": "c_dr",
+        "to": "s_cdr",
+        "condition": "always"
+      },
+      {
+        "from": "s_cdr",
+        "to": "r_indx",
+        "condition": "always"
+      },
+      {
+        "from": "r_indx",
+        "to": "g_dr",
+        "condition": "always"
+      },
+      {
+        "from": "g_dr",
+        "to": "m_dr",
+        "condition": "gv_last = gv_inper AND p_test IS INITIAL AND p_rerun IS INITIAL"
+      },
+      {
+        "from": "c_cust",
+        "to": "s_lcu",
+        "condition": "always"
+      },
+      {
+        "from": "s_lcu",
+        "to": "r_lg",
+        "condition": "always"
+      },
+      {
+        "from": "r_lg",
+        "to": "g_lg",
+        "condition": "always"
+      },
+      {
+        "from": "g_lg",
+        "to": "m_lg",
+        "condition": "gt_lgart IS INITIAL"
+      },
+      {
+        "from": "c_open",
+        "to": "s_of",
+        "condition": "always"
+      },
+      {
+        "from": "s_of",
+        "to": "o_od",
+        "condition": "always"
+      },
+      {
+        "from": "o_od",
+        "to": "g_od",
+        "condition": "always"
+      },
+      {
+        "from": "g_od",
+        "to": "m_ode",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_od",
+        "to": "o_hdr",
+        "condition": "else"
+      },
+      {
+        "from": "s_get",
+        "to": "c_pe",
+        "condition": "always"
+      },
+      {
+        "from": "c_pe",
+        "to": "s_pe",
+        "condition": "always"
+      },
+      {
+        "from": "s_pe",
+        "to": "c_it",
+        "condition": "always"
+      },
+      {
+        "from": "c_it",
+        "to": "r_ctr",
+        "condition": "always"
+      },
+      {
+        "from": "r_ctr",
+        "to": "g_ctr",
+        "condition": "always"
+      },
+      {
+        "from": "g_ctr",
+        "to": "e_ctr",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_ctr",
+        "to": "c_rg",
+        "condition": "else"
+      },
+      {
+        "from": "c_rg",
+        "to": "g_rg",
+        "condition": "always"
+      },
+      {
+        "from": "g_rg",
+        "to": "c_la1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_rg",
+        "to": "l_rg",
+        "condition": "else"
+      },
+      {
+        "from": "l_rg",
+        "to": "c_rr1",
+        "condition": "next row"
+      },
+      {
+        "from": "c_rr1",
+        "to": "s_rr",
+        "condition": "always"
+      },
+      {
+        "from": "g_ok1",
+        "to": "c_la2",
+        "condition": "lv_ok = abap_false"
+      },
+      {
+        "from": "g_ok1",
+        "to": "c_ca1",
+        "condition": "else"
+      },
+      {
+        "from": "c_ca1",
+        "to": "s_ca",
+        "condition": "always"
+      },
+      {
+        "from": "g_cur",
+        "to": "c_wr",
+        "condition": "ls_rgdir-fpper = ls_rgdir-inper"
+      },
+      {
+        "from": "g_cur",
+        "to": "r_prev",
+        "condition": "else"
+      },
+      {
+        "from": "r_prev",
+        "to": "g_prev",
+        "condition": "always"
+      },
+      {
+        "from": "g_prev",
+        "to": "c_rr2",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_prev",
+        "to": "g_zero",
+        "condition": "else"
+      },
+      {
+        "from": "c_rr2",
+        "to": "s_rr",
+        "condition": "always"
+      },
+      {
+        "from": "g_ok2",
+        "to": "c_ca2",
+        "condition": "lv_ok = abap_true"
+      },
+      {
+        "from": "g_ok2",
+        "to": "g_zero",
+        "condition": "else"
+      },
+      {
+        "from": "c_ca2",
+        "to": "s_ca",
+        "condition": "always"
+      },
+      {
+        "from": "a_delta",
+        "to": "g_zero",
+        "condition": "always"
+      },
+      {
+        "from": "g_zero",
+        "to": "l_rg",
+        "condition": "ls_rec-ag = 0 AND ls_rec-an = 0"
+      },
+      {
+        "from": "g_zero",
+        "to": "c_wr",
+        "condition": "else"
+      },
+      {
+        "from": "c_wr",
+        "to": "s_wr",
+        "condition": "always"
+      },
+      {
+        "from": "s_rr",
+        "to": "c_py",
+        "condition": "always"
+      },
+      {
+        "from": "s_ca",
+        "to": "l_rt",
+        "condition": "always"
+      },
+      {
+        "from": "l_rt",
+        "to": "r_lg2",
+        "condition": "next row"
+      },
+      {
+        "from": "r_lg2",
+        "to": "g_lg2",
+        "condition": "always"
+      },
+      {
+        "from": "g_lg2",
+        "to": "g_art",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_lg2",
+        "to": "l_rt",
+        "condition": "else"
+      },
+      {
+        "from": "g_art",
+        "to": "l_rt",
+        "condition": "WHEN 'AG'"
+      },
+      {
+        "from": "g_art",
+        "to": "l_rt",
+        "condition": "WHEN 'AN'"
+      },
+      {
+        "from": "l_rt",
+        "to": "l_crt",
+        "condition": "no more rows"
+      },
+      {
+        "from": "l_crt",
+        "to": "r_crt",
+        "condition": "next row"
+      },
+      {
+        "from": "g_crt",
+        "to": "a_ytd",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_crt",
+        "to": "l_crt",
+        "condition": "else"
+      },
+      {
+        "from": "a_ytd",
+        "to": "l_crt",
+        "condition": "next iteration"
+      },
+      {
+        "from": "s_wr",
+        "to": "c_fmt",
+        "condition": "always"
+      },
+      {
+        "from": "c_fmt",
+        "to": "o_rec",
+        "condition": "always"
+      },
+      {
+        "from": "s_eos",
+        "to": "c_tr",
+        "condition": "always"
+      },
+      {
+        "from": "c_tr",
+        "to": "s_wt",
+        "condition": "always"
+      },
+      {
+        "from": "s_wt",
+        "to": "g_wt",
+        "condition": "always"
+      },
+      {
+        "from": "g_wt",
+        "to": "o_trl",
+        "condition": "gv_file_open = abap_true"
+      },
+      {
+        "from": "c_cl",
+        "to": "s_cl",
+        "condition": "always"
+      },
+      {
+        "from": "s_cl",
+        "to": "g_cl",
+        "condition": "always"
+      },
+      {
+        "from": "g_cl",
+        "to": "g_test",
+        "condition": "gv_file_open = abap_true"
+      },
+      {
+        "from": "g_test",
+        "to": "w_del",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "w_del",
+        "to": "c_la3",
+        "condition": "always"
+      },
+      {
+        "from": "g_test",
+        "to": "g_cnt",
+        "condition": "else"
+      },
+      {
+        "from": "g_cnt",
+        "to": "c_la4",
+        "condition": "gv_count_rec = 0"
+      },
+      {
+        "from": "g_cnt",
+        "to": "w_indx",
+        "condition": "else"
+      },
+      {
+        "from": "w_indx",
+        "to": "t_cm",
+        "condition": "always"
+      },
+      {
+        "from": "s_init",
+        "to": "e_init",
+        "condition": "always"
+      },
+      {
+        "from": "o_path",
+        "to": "e_path",
+        "condition": "always"
+      },
+      {
+        "from": "g_path",
+        "to": "e_ss",
+        "condition": "else"
+      },
+      {
+        "from": "e_init",
+        "to": "s_ss",
+        "condition": "always"
+      },
+      {
+        "from": "e_ss",
+        "to": "s",
+        "condition": "always"
+      },
+      {
+        "from": "s_la",
+        "to": "c_lmsg",
+        "condition": "always"
+      },
+      {
+        "from": "c_lmsg",
+        "to": "e_la",
+        "condition": "always"
+      },
+      {
+        "from": "c_la1",
+        "to": "s_la",
+        "condition": "always"
+      },
+      {
+        "from": "c_la2",
+        "to": "s_la",
+        "condition": "always"
+      },
+      {
+        "from": "c_la3",
+        "to": "s_la",
+        "condition": "always"
+      },
+      {
+        "from": "c_la4",
+        "to": "s_la",
+        "condition": "always"
+      },
+      {
+        "from": "c_la5",
+        "to": "s_la",
+        "condition": "always"
+      },
+      {
+        "from": "c_lc",
+        "to": "s_lc",
+        "condition": "always"
+      },
+      {
+        "from": "s_lc",
+        "to": "c_balc",
+        "condition": "always"
+      },
+      {
+        "from": "c_balc",
+        "to": "e_lc",
+        "condition": "always"
+      },
+      {
+        "from": "e_lc",
+        "to": "c_cr",
+        "condition": "always"
+      },
+      {
+        "from": "m_569a",
+        "to": "o_569a",
+        "condition": "always"
+      },
+      {
+        "from": "m_569b",
+        "to": "o_569b",
+        "condition": "always"
+      },
+      {
+        "from": "g_569b",
+        "to": "e_ccr",
+        "condition": "else"
+      },
+      {
+        "from": "e_ccr",
+        "to": "c_dr",
+        "condition": "always"
+      },
+      {
+        "from": "m_dr",
+        "to": "o_dr",
+        "condition": "always"
+      },
+      {
+        "from": "g_dr",
+        "to": "e_cdr",
+        "condition": "else"
+      },
+      {
+        "from": "e_cdr",
+        "to": "c_cust",
+        "condition": "always"
+      },
+      {
+        "from": "m_lg",
+        "to": "o_lg",
+        "condition": "always"
+      },
+      {
+        "from": "g_lg",
+        "to": "e_lcu",
+        "condition": "else"
+      },
+      {
+        "from": "e_lcu",
+        "to": "c_open",
+        "condition": "always"
+      },
+      {
+        "from": "m_ode",
+        "to": "o_ode",
+        "condition": "always"
+      },
+      {
+        "from": "o_hdr",
+        "to": "e_of",
+        "condition": "always"
+      },
+      {
+        "from": "e_of",
+        "to": "e_sos",
+        "condition": "always"
+      },
+      {
+        "from": "e_sos",
+        "to": "s_get",
+        "condition": "always"
+      },
+      {
+        "from": "e_la",
+        "to": "e_rg",
+        "condition": "always"
+      },
+      {
+        "from": "e_la",
+        "to": "l_rg",
+        "condition": "next iteration"
+      },
+      {
+        "from": "c_py",
+        "to": "e_rr",
+        "condition": "always"
+      },
+      {
+        "from": "e_rr",
+        "to": "g_ok1",
+        "condition": "always"
+      },
+      {
+        "from": "e_rr",
+        "to": "g_ok2",
+        "condition": "always"
+      },
+      {
+        "from": "g_art",
+        "to": "l_rt",
+        "condition": "else"
+      },
+      {
+        "from": "r_crt",
+        "to": "g_crt",
+        "condition": "always"
+      },
+      {
+        "from": "l_crt",
+        "to": "e_ca",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e_ca",
+        "to": "g_cur",
+        "condition": "always"
+      },
+      {
+        "from": "e_ca",
+        "to": "a_delta",
+        "condition": "always"
+      },
+      {
+        "from": "o_rec",
+        "to": "e_wr",
+        "condition": "always"
+      },
+      {
+        "from": "e_wr",
+        "to": "l_rg",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_rg",
+        "to": "e_pe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e_ctr",
+        "to": "e_get",
+        "condition": "always"
+      },
+      {
+        "from": "e_rg",
+        "to": "e_get",
+        "condition": "always"
+      },
+      {
+        "from": "e_pe",
+        "to": "e_get",
+        "condition": "always"
+      },
+      {
+        "from": "e_get",
+        "to": "s_eos",
+        "condition": "always"
+      },
+      {
+        "from": "g_wt",
+        "to": "e_wt",
+        "condition": "else"
+      },
+      {
+        "from": "o_trl",
+        "to": "e_wt",
+        "condition": "always"
+      },
+      {
+        "from": "e_wt",
+        "to": "c_cl",
+        "condition": "always"
+      },
+      {
+        "from": "e_la",
+        "to": "e_test",
+        "condition": "always"
+      },
+      {
+        "from": "e_la",
+        "to": "e_cnt",
+        "condition": "always"
+      },
+      {
+        "from": "t_cm",
+        "to": "c_la5",
+        "condition": "always"
+      },
+      {
+        "from": "g_cl",
+        "to": "e_cl",
+        "condition": "else"
+      },
+      {
+        "from": "e_la",
+        "to": "e_cl",
+        "condition": "always"
+      },
+      {
+        "from": "e_test",
+        "to": "c_ld",
+        "condition": "always"
+      },
+      {
+        "from": "e_cnt",
+        "to": "c_ld",
+        "condition": "always"
+      },
+      {
+        "from": "e_cl",
+        "to": "c_ld",
+        "condition": "always"
+      },
+      {
+        "from": "c_ld",
+        "to": "s_ld",
+        "condition": "always"
+      },
+      {
+        "from": "s_ld",
+        "to": "c_bsave",
+        "condition": "always"
+      },
+      {
+        "from": "c_bsave",
+        "to": "g_batch",
+        "condition": "always"
+      },
+      {
+        "from": "g_batch",
+        "to": "o_disp",
+        "condition": "sy-batch = abap_false"
+      },
+      {
+        "from": "g_batch",
+        "to": "e_ld",
+        "condition": "else"
+      },
+      {
+        "from": "o_disp",
+        "to": "e_ld",
+        "condition": "always"
+      },
+      {
+        "from": "e_ld",
+        "to": "e_eos",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zpy_bav_export_f01.abap:172 — kein Fachsatz „der Jahreswert enthält nur Arbeitgeberbeiträge“ (summiert werden alle zugeordneten bAV-Lohnarten, der Kommentar trifft nicht zu)",
+    "zpy_bav_export_f02.abap:42 — kein Fachsatz über den Inhalt der trägerspezifischen Aufbereitung (Zielprogramm dynamisch und nicht im Fall; fehlt es, wird still übergangen)",
+    "zpy_bav_export_f01.abap:108 — kein Fachsatz „Mitarbeiter ohne Beiträge werden nicht gemeldet“ (laufende Sätze mit null werden geschrieben)",
+    "gesamte Scheibe — kein Fachsatz „die Datei wird an den Träger übertragen“ (nur auf dem Applikationsserver abgelegt)"
+  ],
+  "processDescription": "Die Entgeltabrechnung meldet monatlich je Versorgungsträger die bAV-Beiträge per Datei. Beim Aufruf wird ein Dateiname vorgeschlagen; Pfade außerhalb des bAV-Verzeichnisses werden abgewiesen. Der Lauf eröffnet ein Protokoll und bricht ab, wenn der Abrechnungskreis nicht im Status „Ende der Abrechnung“ steht, die Periode schon ohne Wiederholungskennzeichen gemeldet wurde, dem Träger keine Lohnarten zugeordnet sind oder die Datei nicht anlegbar ist. Dann schreibt er einen Kopfsatz. Je Mitarbeiter sucht er den bAV-Vertrag beim Träger und das Abrechnungsverzeichnis; ohne beides wird der Mitarbeiter übergangen. Jedes in der Periode entstandene aktuelle Ergebnis wird gelesen, die bAV-Lohnarten nach Arbeitgeber- und Arbeitnehmeranteil summiert und der Jahreswert aus den Kumulationen gebildet. Laufende Perioden werden voll gemeldet, rückgerechnete als Differenz zum Vorgängerergebnis; Differenzsätze ohne Änderung entfallen. Jeder Satz wird gegebenenfalls trägerspezifisch aufbereitet und geschrieben. Am Ende folgen ein Summensatz, im Testlauf das Löschen der Datei, sonst – wenn Sätze geschrieben wurden – der Vermerk der gemeldeten Periode, und die Anzeige des Protokolls."
+}

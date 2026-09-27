@@ -1,0 +1,98 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten en_e1, en_e0 / en_end (neu)",
+      "before": "en_e1 end auf zle_frachtbrief_f01.abap:29, en_e0 end auf :31 (Zuweisungen des Rückgabecodes)",
+      "after": "en_e1, en_e0 action; neuer end-Knoten en_end auf :34 (ENDFORM entry), Kanten en_e1/en_e0 -> en_end [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten ge_end (neu)",
+      "before": "kein end-Knoten auf zle_frachtbrief_f01.abap:119",
+      "after": "ge_end end auf zle_frachtbrief_f01.abap:119; ge_g -> ge_end [else] statt -> en_g1; ge_p20 -> ge_end [always] statt -> en_g1; ge_c -> ge_end [WHEN 2] statt -> en_g1; ge_p21 -> ge_end [always] statt -> en_g1",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten aus gefahrgut_ermitteln -> em_g1",
+      "before": "ge_g -> em_g1 [else], ge_p20 -> em_g1, ge_c -> em_g1 [WHEN 2], ge_p21 -> em_g1",
+      "after": "entfernt (Rückkehr läuft über ge_end -> dl_end -> em_g1)",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten dl_end (neu)",
+      "before": "kein end-Knoten auf zle_frachtbrief_f01.abap:85",
+      "after": "dl_end end auf zle_frachtbrief_f01.abap:85; dl_end -> en_g1 [always]; dl_end -> em_g1 [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante ge_end -> dl_end",
+      "before": "(keine)",
+      "after": "ge_end -> dl_end [always]",
+      "why": "Rückkehr aus GEFAHRGUT_ERMITTELN an die Stelle nach PERFORM gefahrgut_ermitteln (Ende von DATEN_LESEN), von dort je Aufrufer zurück (en_g1, em_g1).",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fm_end (end) / fm_fr (neu)",
+      "before": "fm_end end auf z_le_gefahrgut_daten.abap:102 (ev_freigestellt = xsdbool( … ))",
+      "after": "fm_fr action auf :102, fm_end end auf :104 (ENDFUNCTION.); fm_l2 -> fm_fr [no more rows], fm_fr -> fm_end",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten fm_m50 (neu) vor fm_e50",
+      "before": "fm_e50 end auf z_le_gefahrgut_daten.abap:35 ohne output",
+      "after": "fm_m50 output auf z_le_gefahrgut_daten.abap:35, Kante fm_m50 -> fm_e50 [always]; eingehende Kanten auf fm_m50 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten fm_m51 (neu) vor fm_e51",
+      "before": "fm_e51 end auf z_le_gefahrgut_daten.abap:50 ohne output",
+      "after": "fm_m51 output auf z_le_gefahrgut_daten.abap:50, Kante fm_m51 -> fm_e51 [always]; eingehende Kanten auf fm_m51 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten fa_end (neu)",
+      "before": "kein end-Knoten auf zle_frachtbrief_f01.abap:235",
+      "after": "fa_end end auf zle_frachtbrief_f01.abap:235; fa_chk -> fa_end [else] statt -> en_g2; fa_g3 -> fa_end [else] statt -> em_g3; fa_p42 -> fa_end [always] statt -> em_g3; fa_end -> en_g2 [always]; fa_end -> em_g3 [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten ep_end (neu)",
+      "before": "kein end-Knoten auf zle_frachtbrief_f02.abap:70",
+      "after": "ep_end end auf zle_frachtbrief_f02.abap:70; ep_g3 -> ep_end [else] statt -> em_g2; ep_a -> ep_end [always] statt -> em_g2; ep_end -> em_g2 [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten ms_try",
+      "before": "gateway auf zle_frachtbrief_f02.abap:98 (TRY.) mit Kante [CATCH cx_bcs INTO lx_bcs]",
+      "after": "entfernt; ms_s -> ms_c1 [always]; Ausnahmekanten [CATCH cx_bcs INTO lx_bcs] von ms_c1, ms_c2, ms_c3, ms_c4, ms_c5",
+      "why": "TRY ist keine Verzweigung; im Wellenteil (BM-183, BM-184, BM-191) wird die Ausnahme als Kante vom auslösenden Aufruf zum Handler modelliert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten ms_end (neu)",
+      "before": "kein end-Knoten auf zle_frachtbrief_f02.abap:135",
+      "after": "ms_end end auf zle_frachtbrief_f02.abap:135; ms_cm -> ms_end [always] statt -> em_e; ms_p45 -> ms_end [always] statt -> em_e; ms_end -> em_e [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten em_e / em_end (neu)",
+      "before": "em_e end auf zle_frachtbrief_f02.abap:31 (return_code = COND #( … ))",
+      "after": "em_e action; neuer end-Knoten em_end auf :33 (ENDFORM entry_mail)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Knotenart"
+    }
+  ],
+  "doubts": []
+}

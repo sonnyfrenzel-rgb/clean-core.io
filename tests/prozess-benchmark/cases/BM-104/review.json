@@ -1,0 +1,14 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Objekt CVDDH",
+      "before": "source.abap:23",
+      "after": "source.abap:19",
+      "why": "Anker auf die erste Zeile der Anweisung: die Unterabfrage auf CVDDH gehört zum SELECT in Zeile 19.",
+      "category": "Anker"
+    }
+  ],
+  "doubts": []
+}

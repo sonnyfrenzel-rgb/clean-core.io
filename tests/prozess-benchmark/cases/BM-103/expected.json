@@ -1,0 +1,257 @@
+{
+  "id": "BM-103",
+  "title": "Servicemeldung beim Sichern: Priorität aus Kundenklasse ableiten (BAdI NOTIF_EVENT_SAVE)",
+  "classes": [
+    "K05",
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "NOTIF_EVENT_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 1,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:1"
+      },
+      "identity": {
+        "objectType": "BADI"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 13,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:13"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-103-B01",
+      "text": "Die Regel greift nur für Servicemeldungen der Arten S1 und S3; alle anderen Meldungen werden unverändert gesichert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:7"
+        }
+      ]
+    },
+    {
+      "id": "BM-103-B02",
+      "text": "Meldungen, die der Benutzer TWEBER sichert, bleiben ohne Prioritätsableitung.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:9"
+        },
+        {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        }
+      ]
+    },
+    {
+      "id": "BM-103-B03",
+      "text": "Zum Kunden der Meldung wird die Kundenklassifizierung gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-103-B04",
+      "text": "Kunden der Klasse 01 erhalten Priorität 1, Kunden der Klasse 02 Priorität 2; bei allen anderen bleibt die erfasste Priorität stehen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Servicemeldung wird gesichert"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:7"
+        },
+        "meaning": "Servicemeldungsart S1 oder S3?"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:9"
+        },
+        "meaning": "Sichert der Testbenutzer?"
+      },
+      {
+        "id": "x",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        "meaning": "Ohne Prioritätsableitung weiter sichern"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        "meaning": "Kundenklassifizierung lesen"
+      },
+      {
+        "id": "a",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Priorität aus Kundenklasse festlegen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Meldung mit Priorität zurück an das Sichern"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "cs_viqmel-qmart = 'S1' OR cs_viqmel-qmart = 'S3'"
+      },
+      {
+        "from": "g1",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "x",
+        "condition": "sy-uname = 'TWEBER'"
+      },
+      {
+        "from": "g2",
+        "to": "r",
+        "condition": "else"
+      },
+      {
+        "from": "r",
+        "to": "a",
+        "condition": "always"
+      },
+      {
+        "from": "a",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:18 — kein Fachsatz „alle übrigen Kunden erhalten Priorität 3“: die Standardzuweisung ist auskommentiert, der ELSE-Zweig lässt die erfasste Priorität stehen",
+    "source.abap:13 — kein Fachsatz „Meldungen ohne Kunden werden abgewiesen“: ohne Treffer ist die Klasse leer und die Priorität bleibt unverändert",
+    "gesamte Scheibe — kein Fachsatz „die Meldung wird eskaliert oder ein Termin gesetzt“: geändert wird nur das Prioritätsfeld"
+  ],
+  "processDescription": "Beim Sichern einer Meldung ruft das System den BAdI mit den Meldungskopfdaten auf. Nur Servicemeldungen der Arten S1 und S3 werden behandelt; alle anderen verlassen die Methode unverändert. Sichert der Benutzer TWEBER, endet die Methode ebenfalls ohne Änderung, eine im Produktivcode verbliebene Testhintertür. Für alle anderen wird die Kundenklassifizierung des Meldungskunden aus dem Debitorenstamm gelesen. Kunden der Klasse 01 erhalten Priorität 1, Kunden der Klasse 02 Priorität 2, bei allen übrigen, auch ohne Kunden, bleibt die erfasste Priorität erhalten. Die geänderte Priorität wird mit der Meldung gesichert."
+}

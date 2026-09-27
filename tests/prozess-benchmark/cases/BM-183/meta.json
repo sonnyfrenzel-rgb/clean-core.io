@@ -1,0 +1,29 @@
+{
+  "id": "BM-183",
+  "title": "Frachtpreis aus Shared-Objects-Tarifcache: Neuaufbau bei fehlender Version, Gewichtsstaffel",
+  "domain": "Technische Randbereiche — Shared Memory / Shared Objects",
+  "band": "einfach",
+  "loc": 29,
+  "constructs": [
+    "Klassenmethode",
+    "Shared Objects ATTACH_FOR_READ",
+    "CX_SHM_NO_ACTIVE_VERSION",
+    "DETACH",
+    "RAISE EXCEPTION TYPE",
+    "COND #"
+  ],
+  "scenario": "Frachtkostenkalkulation einer Spedition bzw. eines Versenders: Speditionstarife je Relation werden applikationsserverweit in einem Shared-Objects-Gebiet gehalten, damit die Kalkulation je Lieferung nicht jedes Mal die Tariftabellen liest.",
+  "s4_issues": [
+    "Shared Objects sind in S/4 Private Cloud nutzbar, in ABAP Cloud nicht freigegeben",
+    "Applikationsserver-lokaler Cache: Tarifänderungen werden erst nach Invalidierung/Neuaufbau wirksam",
+    "Frachtkosten in S/4 strategisch über TM/Freight Settlement statt kundeneigener Kalkulation"
+  ],
+  "wave": 2,
+  "module": "LE-TRA",
+  "edge_constructs": [
+    "TRY … CATCH",
+    "RAISE EXCEPTION TYPE als Pfadende",
+    "COND #",
+    "verkettete Methodenaufrufe (lo_area->root->get_satz)"
+  ]
+}

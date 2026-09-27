@@ -1,0 +1,27 @@
+{
+  "id": "BM-105",
+  "title": "Eingebaute Equipments am Technischen Platz: EQUZ/ILOA-Join mit Zeilenbegrenzung",
+  "domain": "PM — Technische Plätze und Equipmenteinbau",
+  "band": "einfach",
+  "loc": 25,
+  "constructs": [
+    "REPORT",
+    "INITIALIZATION",
+    "GET PARAMETER ID",
+    "SELECT … ENDSELECT mit Join",
+    "EXIT",
+    "WRITE-Liste"
+  ],
+  "scenario": "Schichtmeister lässt sich vor einem Stillstand die aktuell an einem Technischen Platz eingebauten Equipments ausgeben; der Platz wird aus dem zuletzt in IL03 benutzten Wert vorbelegt.",
+  "s4_issues": [
+    "Direkter Join über EQUZ/ILOA statt CDS-View I_Equipment / I_FunctionalLocation",
+    "SELECT … ENDSELECT mit Zeilenzähler statt UP TO n ROWS"
+  ],
+  "wave": 2,
+  "module": "PM",
+  "edge_constructs": [
+    "INITIALIZATION",
+    "SET/GET PARAMETER ID",
+    "EXIT in SELECT … ENDSELECT"
+  ]
+}

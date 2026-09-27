@@ -1,0 +1,614 @@
+{
+  "id": "BM-106",
+  "title": "Zählerstände aus BDE-Datei hochladen: plausibilisieren, Messbeleg anlegen, Testlauf",
+  "classes": [
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "Z_PM_ZAEHLER_PLAUSI",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:48"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MEASUREM_DOCUM_RFC_SINGLE_001",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 68,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:68"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-106-B01",
+      "text": "Die BDE-Datei mit Zählerständen wird vom Applikationsserver geöffnet; ist sie nicht lesbar, bricht der Lauf mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-106-B02",
+      "text": "Die Datei wird Satz für Satz bis zum Dateiende gelesen und in Messpunkt, Datum, Uhrzeit und Zählerstand zerlegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-106-B03",
+      "text": "Ein Zählerstand, der sich nicht in eine Zahl umwandeln lässt, wird als fehlerhafter Satz gemeldet und übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-106-B04",
+      "text": "Jeder Zählerstand wird gegen den letzten Stand des Messpunkts plausibilisiert; ist er kleiner, wird er gemeldet und übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-106-B05",
+      "text": "Im Testlauf wird nur der ermittelte Zuwachs ausgegeben, es entsteht kein Messbeleg.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        },
+        {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-106-B06",
+      "text": "Im Echtlauf wird zu jedem gültigen Zählerstand ein Messbeleg mit Herkunft BDE-Upload angelegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-106-B07",
+      "text": "Schlägt das Anlegen fehl, wird der Fehler zum Messpunkt ausgegeben und der Satz übersprungen; sonst wird der Messbeleg sofort festgeschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:83"
+        },
+        {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        },
+        {
+          "file": "source.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-106-B08",
+      "text": "Am Dateiende wird die Datei geschlossen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:90"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "op",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "BDE-Datei öffnen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Datei nicht lesbar?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Fehler: Datei nicht lesbar"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Lauf abgebrochen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Dateisätze nacheinander verarbeiten"
+      },
+      {
+        "id": "rd",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Nächsten Satz lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Dateiende?"
+      },
+      {
+        "id": "cv",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Zählerstand in Zahl umwandeln"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        "meaning": "Fehlerhaften Satz melden"
+      },
+      {
+        "id": "pc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Zählerstand gegen letzten Stand prüfen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Plausibilisierung fehlgeschlagen?"
+      },
+      {
+        "id": "o3",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Rückläufigen Zählerstand melden"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "o4",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        "meaning": "Zuwachs im Testlauf ausgeben"
+      },
+      {
+        "id": "mc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        },
+        "meaning": "Messbeleg anlegen"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:83"
+        },
+        "meaning": "Anlegen fehlgeschlagen?"
+      },
+      {
+        "id": "o5",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        },
+        "meaning": "Fehler zum Messpunkt ausgeben"
+      },
+      {
+        "id": "tc",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:87"
+        },
+        "meaning": "Messbeleg festschreiben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:90"
+        },
+        "meaning": "Datei schließen, Lauf beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "op",
+        "condition": "always"
+      },
+      {
+        "from": "op",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m1",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "rd",
+        "condition": "next row"
+      },
+      {
+        "from": "rd",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "e",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "cv",
+        "condition": "else"
+      },
+      {
+        "from": "cv",
+        "to": "o2",
+        "condition": "cx_sy_conversion_no_number"
+      },
+      {
+        "from": "o2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cv",
+        "to": "pc",
+        "condition": "always"
+      },
+      {
+        "from": "pc",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "o3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o3",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g3",
+        "to": "g4",
+        "condition": "else"
+      },
+      {
+        "from": "g4",
+        "to": "o4",
+        "condition": "p_test = 'X'"
+      },
+      {
+        "from": "o4",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g4",
+        "to": "mc",
+        "condition": "else"
+      },
+      {
+        "from": "mc",
+        "to": "g5",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "o5",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o5",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g5",
+        "to": "tc",
+        "condition": "else"
+      },
+      {
+        "from": "tc",
+        "to": "l",
+        "condition": "next iteration"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:39 — kein Fachsatz „es wird geprüft, dass der Messpunkt zum Equipment der Datei gehört“: die Equipmentnummer wird eingelesen, aber nirgends verwendet",
+    "source.abap:63 — kein Fachsatz „im Testlauf werden die Messbelege simuliert angelegt“: der Testlauf ruft den Anlagebaustein gar nicht auf",
+    "gesamte Scheibe — kein Fachsatz „fehlerhafte Sätze werden in eine Fehlerdatei geschrieben oder die Datei wird archiviert“: Fehler erscheinen nur in der Liste, die Datei wird nur geschlossen",
+    "source.abap:87 — kein Fachsatz „der Upload wird bei einem Fehler vollständig zurückgerollt“: jeder erfolgreiche Messbeleg wird einzeln festgeschrieben"
+  ],
+  "processDescription": "Der Job wird mit dem Pfad der BDE-Datei und einem Testlaufkennzeichen gestartet. Er öffnet die Datei auf dem Applikationsserver; ist sie nicht lesbar, bricht er mit einer Fehlermeldung ab. Danach liest er die Datei Satz für Satz bis zum Dateiende und zerlegt jeden Satz in Equipment, Messpunkt, Datum, Uhrzeit und Zählerstand. Lässt sich der Zählerstand nicht als Zahl lesen, wird der Satz als fehlerhaft gemeldet und übersprungen. Jeder Zählerstand wird über einen Kundenbaustein gegen den letzten Stand des Messpunkts plausibilisiert; ein rückläufiger Stand wird gemeldet und übersprungen. Im Testlauf gibt der Job nur den ermittelten Zuwachs aus. Im Echtlauf legt er je Satz einen Messbeleg mit Herkunft BDE-Upload an, meldet Fehler beim Anlegen und schreibt jeden erfolgreichen Messbeleg sofort fest. Die Equipmentnummer aus der Datei wird nicht geprüft. Am Dateiende wird die Datei geschlossen."
+}

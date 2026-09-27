@@ -1,0 +1,39 @@
+{
+  "id": "BM-132",
+  "title": "RE-FX Nebenkostenabrechnung: Kosten einer Abrechnungseinheit zeitanteilig nach Fläche oder Personen verteilen, mit Vorauszahlungen verrechnen und ins FI buchen",
+  "domain": "RE-FX / Immobilienverwaltung – Nebenkosten",
+  "band": "komplex",
+  "loc": 195,
+  "constructs": [
+    "REPORT mit TOP- und F01-Include",
+    "SELECT SUM",
+    "SELECT mit INNER JOIN",
+    "COND #",
+    "SELECT SINGLE mit Inline-Deklaration in Schleife",
+    "TRY … CATCH … CLEANUP über FORM-Grenze",
+    "FORM … RAISING",
+    "CHECK in Schleife",
+    "VALUE #",
+    "BAPI_ACC_DOCUMENT_POST",
+    "line_exists",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "INSERT mit Host-Ausdruck",
+    "COMMIT WORK"
+  ],
+  "scenario": "Wohnungsunternehmen vor Einführung der Standard-Nebenkostenabrechnung (SCS): Ein Eigenbau verteilt einmal im Jahr die umlagefähigen Kosten einer Abrechnungseinheit auf die Mieter und bucht Nachzahlungen und Guthaben.",
+  "s4_issues": [
+    "RE-FX bietet die Nebenkostenabrechnung (SCS) im Standard; der Eigenbau umgeht sie",
+    "Direkter Lesezugriff auf VICNCN/VICDCOND",
+    "BAPI_ACC_DOCUMENT_POST mit Commit je Mieter, Ergebnisprotokoll in derselben LUW wie ein späterer Rollback"
+  ],
+  "wave": 2,
+  "module": "RE-FX",
+  "edge_constructs": [
+    "TRY … CATCH … CLEANUP",
+    "MESSAGE … TYPE 'E' als Pfadende",
+    "CHECK mitten in Schleife",
+    "COND #",
+    "VALUE #",
+    "Inline-Deklarationen"
+  ]
+}

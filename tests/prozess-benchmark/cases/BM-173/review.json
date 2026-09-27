@@ -1,0 +1,72 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufruf cbl",
+      "before": "cbl -> clm [always]",
+      "after": "eb -> clm [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf clm",
+      "before": "clm -> l200 [always]",
+      "after": "el -> l200 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf csk",
+      "before": "csk -> el [always]",
+      "after": "es -> el [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten o1 (neu) vor m1",
+      "before": "m1 end auf mzkanbanf01.abap:15 ohne output",
+      "after": "o1 output auf mzkanbanf01.abap:15, Kante o1 -> m1 [always]; eingehende Kanten auf o1 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o2 (neu) vor m2",
+      "before": "m2 end auf mzkanbanf01.abap:22 ohne output",
+      "after": "o2 output auf mzkanbanf01.abap:22, Kante o2 -> m2 [always]; eingehende Kanten auf o2 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o3 (neu) vor m3",
+      "before": "m3 end auf mzkanbanf01.abap:29 ohne output",
+      "after": "o3 output auf mzkanbanf01.abap:29, Kante o3 -> m3 [always]; eingehende Kanten auf o3 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o10 (neu) vor m10",
+      "before": "m10 end auf mzkanbanf01.abap:49 ohne output",
+      "after": "o10 output auf mzkanbanf01.abap:49, Kante o10 -> m10 [always]; eingehende Kanten auf o10 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o11 (neu) vor m11",
+      "before": "m11 end auf mzkanbanf01.abap:73 ohne output",
+      "after": "o11 output auf mzkanbanf01.abap:73, Kante o11 -> m11 [always]; eingehende Kanten auf o11 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o12 (neu) vor m12",
+      "before": "m12 end auf mzkanbanf01.abap:95 ohne output",
+      "after": "o12 output auf mzkanbanf01.abap:95, Kante o12 -> m12 [always]; eingehende Kanten auf o12 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": [
+    "MESSAGE TYPE 'E' im PAI ohne FIELD/CHAIN: das Dynpro wird erneut gesendet, aber ohne eingabebereite Felder und ohne neuen PBO-Durchlauf. „Die Scanmaske bleibt mit Fehlermeldung stehen“ (B03, Prosa) ist dafür zutreffend genug; nicht geändert."
+  ]
+}

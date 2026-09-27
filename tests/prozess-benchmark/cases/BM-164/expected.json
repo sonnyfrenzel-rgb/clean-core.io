@@ -1,0 +1,280 @@
+{
+  "id": "BM-164",
+  "title": "Leergutkonto: offener Mehrweg-Saldo je Kunde und Leergutmaterial",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZSD_LEERGUT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 10,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:10"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-164-B01",
+      "text": "Es werden die Leergutbewegungen des eingegebenen Kunden bis zum Stichtag gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        }
+      ]
+    },
+    {
+      "id": "BM-164-B02",
+      "text": "Für den Benutzer MUELLERK werden Bewegungen über 500 Einheiten vor der Saldierung verworfen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        }
+      ]
+    },
+    {
+      "id": "BM-164-B03",
+      "text": "Je Leergutmaterial wird der Saldo gebildet: Ausgaben an den Kunden erhöhen ihn, alle anderen Bewegungen mindern ihn.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-164-B04",
+      "text": "Nur Leergutmaterialien mit einem von null verschiedenen Saldo werden mit Kunde und Saldo ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:9"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        "meaning": "Leergutbewegungen des Kunden bis Stichtag lesen"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Sonderbenutzer?"
+      },
+      {
+        "id": "d",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Große Bewegungen aus der Rechnung nehmen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Bewegungen je Leergutmaterial gruppieren"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Saldo offen?"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Offenen Saldo je Leergutmaterial listen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "d",
+        "condition": "sy-uname = 'MUELLERK'"
+      },
+      {
+        "from": "gb",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "d",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "g",
+        "condition": "next row"
+      },
+      {
+        "from": "g",
+        "to": "o",
+        "condition": "lv_saldo <> 0"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:15 — kein Fachsatz „Bewegungen über 500 Einheiten werden als unplausibel ausgesondert“: das geschieht nur für einen einzelnen Benutzernamen, für alle anderen zählen sie",
+    "source.abap:20 — kein Fachsatz „nur Rücknahmen (R) mindern den Saldo“: jede Richtung außer A wird abgezogen, auch unbekannte Kennzeichen",
+    "gesamte Scheibe — kein Fachsatz „Leergut wird dem Kunden berechnet oder gutgeschrieben“: der Report liest und listet nur"
+  ],
+  "processDescription": "Der Report wird mit Kundennummer und Stichtag gestartet. Er liest aus einer Kundentabelle alle Leergutbewegungen dieses Kunden bis zum Stichtag mit Leergutmaterial, Richtung und Menge. Ist der angemeldete Benutzer MUELLERK, werden vorher alle Bewegungen über 500 Einheiten aus der Rechnung entfernt – eine Test-Hintertür, die das Ergebnis für diesen Benutzer verfälscht. Danach werden die Bewegungen je Leergutmaterial gruppiert und saldiert: Ausgaben (A) erhöhen den Saldo, jede andere Richtung mindert ihn. Nur Materialien mit offenem Saldo werden mit Kunde, Material und Saldo gelistet. Es wird nichts gebucht oder geändert."
+}

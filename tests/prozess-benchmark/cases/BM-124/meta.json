@@ -1,0 +1,28 @@
+{
+  "id": "BM-124",
+  "title": "FSCM-Kreditmanagement: Auftragswert gegen Kreditlimit des Segments prüfen (UKMBP_CMS_SGM, xsdbool)",
+  "domain": "FSCM / Credit Management",
+  "band": "einfach",
+  "loc": 32,
+  "constructs": [
+    "CLASS",
+    "METHOD",
+    "SELECT SINGLE neue Syntax",
+    "RAISE EXCEPTION TYPE",
+    "RETURN",
+    "xsdbool"
+  ],
+  "scenario": "Ein Web-Shop-Backend fragt vor der Auftragsannahme, ob der Wert noch ins Kreditlimit des Geschäftspartners im Kreditsegment passt.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf UKMBP_CMS_SGM statt freigegebener Kreditmanagement-API",
+    "Umgehung der Standard-Kreditprüfung im Auftrag"
+  ],
+  "wave": 2,
+  "module": "FSCM-CR",
+  "edge_constructs": [
+    "RAISE EXCEPTION TYPE",
+    "xsdbool",
+    "Inline-Deklarationen",
+    "RETURN aus Methode"
+  ]
+}

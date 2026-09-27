@@ -1,0 +1,29 @@
+{
+  "id": "BM-185",
+  "title": "Änderungshistorie Mietkonditionen aus Änderungsbelegen, Gruppenwechsel je Änderungsnummer",
+  "domain": "Technische Randbereiche — Change Documents",
+  "band": "einfach",
+  "loc": 31,
+  "constructs": [
+    "REPORT",
+    "CHANGEDOCUMENT_READ",
+    "CONV #",
+    "SORT",
+    "LOOP AT … INTO DATA( )",
+    "AT NEW … ENDAT",
+    "WRITE-Liste"
+  ],
+  "scenario": "Report der Immobilienverwaltung, mit dem die Sachbearbeitung nachvollzieht, wer wann welche Mietkonditionen eines Mietvertrags in der kundeneigenen Konditionstabelle geändert hat (z. B. bei Mieterrückfragen oder Revision).",
+  "s4_issues": [
+    "Kundeneigene Konditionstabelle neben den RE-FX-Standardkonditionen",
+    "CHANGEDOCUMENT_READ ist nicht für ABAP Cloud freigegeben",
+    "Klassische WRITE-Liste statt ALV/Fiori-App"
+  ],
+  "wave": 2,
+  "module": "RE-FX",
+  "edge_constructs": [
+    "AT NEW (Felder rechts vom Gruppenschlüssel sind initial)",
+    "auskommentierter Fehlerzweig",
+    "Inline-Deklarationen"
+  ]
+}

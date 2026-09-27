@@ -1,0 +1,693 @@
+{
+  "id": "BM-128",
+  "title": "PSM-FM: Mittelvorbindungen aus freigegebenen Beschaffungsanträgen anlegen, mit Vorab-Verfügbarkeitsprüfung (dynamisches WHERE, EXIT in innerer Schleife)",
+  "classes": [
+    "K01",
+    "K03",
+    "K12",
+    "K13"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZFM_ANTRAG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:29"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFM_ANTRAG_POS",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFM_V_VERFUEGBAR",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:42"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FMFR_CREATE_FROM_DATA",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 62,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:62"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 73,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:73"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFM_ANTRAG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 77,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:77"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:79"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-128-B01",
+      "text": "Es werden die freigegebenen Beschaffungsanträge des Finanzkreises und Geschäftsjahres gelesen, eingeschränkt auf eine Finanzstelle, wenn sie angegeben ist.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-128-B02",
+      "text": "Gibt es keine freigegebenen Anträge, bricht der Lauf mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-128-B03",
+      "text": "Zu den Anträgen werden alle Positionen gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-128-B04",
+      "text": "Für jede Position eines Antrags werden die verfügbaren Mittel der Finanzstelle und Finanzposition nachgelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-128-B05",
+      "text": "Reichen die Mittel für eine Position nicht, wird die Prüfung des Antrags abgebrochen und der Antrag als zurückgestellt gemeldet; er bleibt freigegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-128-B06",
+      "text": "Für gedeckte Anträge wird eine Mittelvorbindung der Belegart ZV mit allen Positionen angelegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-128-B07",
+      "text": "Schlägt die Anlage fehl, wird zurückgerollt und der Fehler mit Meldungsnummer gemeldet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-128-B08",
+      "text": "Nach erfolgreicher Anlage wird der Antrag mit der Belegnummer als angelegt gekennzeichnet und alles festgeschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        }
+      ]
+    },
+    {
+      "id": "BM-128-B09",
+      "text": "Die Nummer der angelegten Mittelvorbindung wird je Antrag gemeldet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Freigegebene Anträge des Finanzkreises und Jahres (ggf. einer Finanzstelle) lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Keine freigegebenen Anträge?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Fehlermeldung „keine Anträge“"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Programmabbruch durch Fehlermeldung"
+      },
+      {
+        "id": "rp",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Antragspositionen lesen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Anträge einzeln verarbeiten"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Positionen des Antrags durchgehen"
+      },
+      {
+        "id": "rv",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Verfügbare Mittel für Finanzstelle und Finanzposition lesen"
+      },
+      {
+        "id": "gv",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Reichen die Mittel für die Position?"
+      },
+      {
+        "id": "gk",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        "meaning": "Antrag nicht gedeckt?"
+      },
+      {
+        "id": "ov",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        "meaning": "Antrag als zurückgestellt melden"
+      },
+      {
+        "id": "fc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        },
+        "meaning": "Mittelvorbindung im Haushalt anlegen"
+      },
+      {
+        "id": "gf",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "Anlage fehlgeschlagen?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        "meaning": "Anlage zurückrollen"
+      },
+      {
+        "id": "of",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        },
+        "meaning": "Fehler mit Meldungsnummer melden"
+      },
+      {
+        "id": "wa",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Antrag als angelegt mit Belegnummer kennzeichnen"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        },
+        "meaning": "Anlage und Antragsstatus festschreiben"
+      },
+      {
+        "id": "oa",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        },
+        "meaning": "Belegnummer der Mittelvorbindung melden"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:83"
+        },
+        "meaning": "Lauf fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "gt_antr IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "rp",
+        "condition": "else"
+      },
+      {
+        "from": "rp",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "l2",
+        "condition": "next row"
+      },
+      {
+        "from": "l2",
+        "to": "rv",
+        "condition": "next row"
+      },
+      {
+        "from": "rv",
+        "to": "gv",
+        "condition": "always"
+      },
+      {
+        "from": "gv",
+        "to": "gk",
+        "condition": "gv_verf < gs_pos-betrag"
+      },
+      {
+        "from": "gv",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "l2",
+        "to": "gk",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gk",
+        "to": "ov",
+        "condition": "gv_ok = abap_false"
+      },
+      {
+        "from": "ov",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gk",
+        "to": "fc",
+        "condition": "else"
+      },
+      {
+        "from": "fc",
+        "to": "gf",
+        "condition": "always"
+      },
+      {
+        "from": "gf",
+        "to": "rb",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rb",
+        "to": "of",
+        "condition": "always"
+      },
+      {
+        "from": "of",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gf",
+        "to": "wa",
+        "condition": "else"
+      },
+      {
+        "from": "wa",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "oa",
+        "condition": "always"
+      },
+      {
+        "from": "oa",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l1",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:55 — kein Fachsatz „der Antrag wird abgelehnt“: sein Status bleibt unverändert, er wird im nächsten Lauf erneut geprüft",
+    "source.abap:42 — kein Fachsatz „Positionen ohne Verfügbarkeitssatz gelten als nicht gedeckt“: ohne Treffer bleibt der Wert der vorher geprüften Position stehen",
+    "source.abap:47 — kein Fachsatz „die Verfügbarkeit wird über alle Positionen kumuliert geprüft“: jede Position wird einzeln gegen den verfügbaren Betrag verglichen",
+    "source.abap:62 — kein Fachsatz „die Mittelvorbindung wird genehmigt oder gebucht“: der Report legt sie an, eine Genehmigung findet nicht statt"
+  ],
+  "processDescription": "Der Report läuft nachts mit Finanzkreis, Geschäftsjahr und optional einer Finanzstelle. Er baut daraus die Selektion und liest alle freigegebenen Beschaffungsanträge; findet er keine, bricht er mit einer Fehlermeldung ab. Dann liest er alle Antragspositionen. Für jeden Antrag prüft er Position für Position, ob die verfügbaren Mittel der Finanzstelle und Finanzposition laut eigener Verfügbarkeitssicht den Positionsbetrag decken; bei der ersten nicht gedeckten Position bricht er die Prüfung ab, meldet den Antrag als zurückgestellt und lässt ihn unverändert. Gedeckte Anträge legt er als Mittelvorbindung der Belegart ZV mit allen Positionen an. Schlägt die Anlage fehl, rollt er zurück und meldet den Fehler mit Meldungsnummer. Gelingt sie, kennzeichnet er den Antrag als angelegt mit der Belegnummer, schreibt alles fest und meldet die Nummer. Findet die Verfügbarkeitslesung keinen Satz, vergleicht er gegen den Wert der vorher geprüften Position."
+}

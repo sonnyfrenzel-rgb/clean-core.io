@@ -1,0 +1,575 @@
+{
+  "id": "BM-168",
+  "title": "Variantenkonfiguration: Fertigungsvariante und Plangruppe aus der Merkmalbewertung einer Auftragsposition",
+  "classes": [
+    "K01",
+    "K03",
+    "K09"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBAP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_vc_fertvar.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_vc_fertvar.abap:29"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VC_I_GET_CONFIGURATION",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_vc_fertvar.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_vc_fertvar.abap:38"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZVC_FERTVAR",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_vc_fertvar.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_vc_fertvar.abap:75"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-168-B01",
+      "text": "Zur Auftragsposition wird die Konfigurationsinstanz gelesen; ist die Position nicht konfiguriert, endet die Ermittlung mit einer Ausnahme.",
+      "anchors": [
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:29"
+        },
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:32"
+        },
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-168-B02",
+      "text": "Die Merkmalbewertung der Konfiguration wird gelesen; scheitert das, endet die Ermittlung mit einer Ausnahme.",
+      "anchors": [
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:38"
+        },
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-168-B03",
+      "text": "Die Spannung ist Pflichtmerkmal: fehlt ihre Bewertung, endet die Ermittlung mit der Ausnahme „Merkmal fehlt“; Gehäuse und ATEX-Kennzeichen sind optional.",
+      "anchors": [
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:54"
+        },
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:56"
+        },
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:59"
+        },
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-168-B04",
+      "text": "Aus der Spannung ergibt sich die Grundvariante: 230 V → N1, 400 V → N3, 690 V → H3, jede andere Spannung → Sonderausführung SO.",
+      "anchors": [
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-168-B05",
+      "text": "Bei ATEX-Ausführung wird die zweite Stelle der Variante durch X ersetzt und ein Hinweis auf den zwingenden Prüfplan EX01 gesetzt.",
+      "anchors": [
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:67"
+        },
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-168-B06",
+      "text": "Bei Edelstahlgehäuse wird an die Variante ein E angehängt, außer sie lautet genau SO; eine ATEX-Sonderausführung (SX) erhält das E also doch.",
+      "anchors": [
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:71"
+        },
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-168-B07",
+      "text": "Zur Variante wird die Plangruppe aus der Zuordnungstabelle gelesen; fehlt sie, wird ein Hinweis auf manuelle Zuordnung gesetzt.",
+      "anchors": [
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:75"
+        },
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:77"
+        },
+        {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:78"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:28"
+        },
+        "meaning": "Variante zu Auftragsposition ermitteln"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:29"
+        },
+        "meaning": "Konfigurationsinstanz der Position lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:32"
+        },
+        "meaning": "Position nicht konfiguriert?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:33"
+        },
+        "meaning": "Ausnahme: nicht konfiguriert"
+      },
+      {
+        "id": "cf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:38"
+        },
+        "meaning": "Merkmalbewertung lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:47"
+        },
+        "meaning": "Konfiguration lesbar?"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:48"
+        },
+        "meaning": "Ausnahme: Konfiguration fehlt"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:54"
+        },
+        "meaning": "Pflichtmerkmal Spannung nachschlagen"
+      },
+      {
+        "id": "x3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:56"
+        },
+        "meaning": "Ausnahme: Merkmal fehlt"
+      },
+      {
+        "id": "sw",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:62"
+        },
+        "meaning": "Grundvariante aus Spannung ableiten"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:67"
+        },
+        "meaning": "ATEX-Ausführung?"
+      },
+      {
+        "id": "ax",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:68"
+        },
+        "meaning": "Variante auf ATEX umschlüsseln, Hinweis setzen"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:71"
+        },
+        "meaning": "Edelstahlgehäuse und keine Sonderausführung?"
+      },
+      {
+        "id": "ae",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:72"
+        },
+        "meaning": "Edelstahl-Kennung anhängen"
+      },
+      {
+        "id": "qp",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:75"
+        },
+        "meaning": "Plangruppe zur Variante lesen"
+      },
+      {
+        "id": "gp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:77"
+        },
+        "meaning": "Plangruppe fehlt?"
+      },
+      {
+        "id": "hp",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:78"
+        },
+        "meaning": "Hinweis manuelle Zuordnung setzen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_vc_fertvar.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_fertvar.abap:80"
+        },
+        "meaning": "Ergebnis zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "x1",
+        "condition": "lv_cuobj IS INITIAL"
+      },
+      {
+        "from": "g1",
+        "to": "cf",
+        "condition": "else"
+      },
+      {
+        "from": "cf",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "x2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "rt",
+        "condition": "else"
+      },
+      {
+        "from": "rt",
+        "to": "x3",
+        "condition": "cx_sy_itab_line_not_found"
+      },
+      {
+        "from": "rt",
+        "to": "sw",
+        "condition": "always"
+      },
+      {
+        "from": "sw",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "ax",
+        "condition": "lv_atex = abap_true"
+      },
+      {
+        "from": "ga",
+        "to": "ge",
+        "condition": "else"
+      },
+      {
+        "from": "ax",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "ae",
+        "condition": "lv_gehaeuse = 'EDELSTAHL' AND rs_erg-fertvar <> 'SO'"
+      },
+      {
+        "from": "ge",
+        "to": "qp",
+        "condition": "else"
+      },
+      {
+        "from": "ae",
+        "to": "qp",
+        "condition": "always"
+      },
+      {
+        "from": "qp",
+        "to": "gp",
+        "condition": "always"
+      },
+      {
+        "from": "gp",
+        "to": "hp",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gp",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "hp",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_vc_fertvar.abap:68 — kein Fachsatz „die ATEX-Variante bleibt je Spannung unterscheidbar“: N1 und N3 werden beide zu NX, die Spannungsstufe geht verloren",
+    "zcl_vc_fertvar.abap:78 — kein Fachsatz „der ATEX-Prüfplanhinweis bleibt immer erhalten“: fehlt die Plangruppe, wird er überschrieben",
+    "gesamte Scheibe — kein Fachsatz „die Konfiguration oder der Auftrag wird geändert“: die Methode liest nur und gibt Variante, Plangruppe und Hinweis zurück",
+    "zcl_vc_fertvar.abap:71 — kein Fachsatz „Edelstahl gilt für alle Varianten“ und keiner „Sonderausführungen erhalten nie ein E“: nur der Wert SO bleibt ohne E, die ATEX-Sonderausführung SX wird zu SXE"
+  ],
+  "processDescription": "Die Methode wird aus der Auftragsfreigabe und der Arbeitsvorbereitung mit Auftragsnummer und Position gerufen. Sie liest die Konfigurationsinstanz der Position und bricht mit einer Ausnahme ab, wenn die Position nicht konfiguriert ist. Dann liest sie die Merkmalbewertung; ist sie nicht lesbar, endet sie ebenfalls mit einer Ausnahme. Die Spannung ist Pflicht und führt, wenn sie fehlt, zur Ausnahme „Merkmal fehlt“; Gehäuse und ATEX-Kennzeichen werden nur übernommen, wenn sie bewertet sind. Aus der Spannung ergibt sich die Grundvariante N1, N3 oder H3, sonst die Sonderausführung SO. Eine ATEX-Ausführung ersetzt die zweite Stelle durch X und setzt einen Prüfplanhinweis; ein Edelstahlgehäuse hängt ein E an, außer die Variante lautet danach genau SO. Schließlich wird die Plangruppe zur Variante gelesen, und fehlt sie, ersetzt ein Hinweis auf manuelle Zuordnung den bisherigen Hinweis. Die Methode ändert nichts."
+}

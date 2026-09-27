@@ -1,0 +1,605 @@
+{
+  "id": "BM-107",
+  "title": "Auftragsfreigabe nur mit erteilten Genehmigungen und aktiver Freischaltung (BAdI WORKORDER_UPDATE)",
+  "classes": [
+    "K05",
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "WORKORDER_UPDATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_im_pm_wcm_release.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_pm_wcm_release.abap:20"
+      },
+      "identity": {
+        "objectType": "BADI"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "IHGNS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_im_pm_wcm_release.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_pm_wcm_release.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_im_pm_wcm_release.abap",
+        "line": 43,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_pm_wcm_release.abap:43"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPM_FREISCH",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_im_pm_wcm_release.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_pm_wcm_release.abap:47"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-107-B01",
+      "text": "Die Prüfung greift nur für Aufträge des Planungswerks 2000; alle anderen Aufträge werden ohne Prüfung freigegeben.",
+      "anchors": [
+        {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-107-B02",
+      "text": "Es werden die nicht gelöschten Genehmigungen zum Auftrag gelesen und die noch nicht erteilten gezählt.",
+      "anchors": [
+        {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:28"
+        },
+        {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-107-B03",
+      "text": "Ist mindestens eine Genehmigung nicht erteilt, wird die Freigabe mit einer Fehlermeldung mit Anzahl und Auftragsnummer abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:37"
+        },
+        {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-107-B04",
+      "text": "Es werden die Vorgänge des Auftrags mit Steuerschlüssel ZWCM gelesen und dazu die erfassten Freischaltungen.",
+      "anchors": [
+        {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:43"
+        },
+        {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-107-B05",
+      "text": "Ein ZWCM-Vorgang gilt als nicht freigeschaltet, wenn eine seiner Freischaltungen nicht aktiv ist oder gar keine erfasst ist.",
+      "anchors": [
+        {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:54"
+        },
+        {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-107-B06",
+      "text": "Die Prüfung der Vorgänge endet beim ersten nicht freigeschalteten Vorgang.",
+      "anchors": [
+        {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-107-B07",
+      "text": "Ist ein Vorgang nicht freigeschaltet, wird die Freigabe mit einer Fehlermeldung zu diesem Vorgang abgelehnt; sonst wird der Auftrag freigegeben.",
+      "anchors": [
+        {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:68"
+        },
+        {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:69"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:20"
+        },
+        "meaning": "Auftrag soll freigegeben werden"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:25"
+        },
+        "meaning": "Auftrag aus Werk 2000?"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:28"
+        },
+        "meaning": "Genehmigungen zum Auftrag lesen"
+      },
+      {
+        "id": "a1",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:33"
+        },
+        "meaning": "Nicht erteilte Genehmigungen zählen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:37"
+        },
+        "meaning": "Genehmigung offen?"
+      },
+      {
+        "id": "m2",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:38"
+        },
+        "meaning": "Fehler: Genehmigungen nicht erteilt"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:38"
+        },
+        "meaning": "Freigabe abgelehnt"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:43"
+        },
+        "meaning": "Sicherheitskritische Vorgänge (ZWCM) lesen"
+      },
+      {
+        "id": "r3",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:47"
+        },
+        "meaning": "Freischaltungen zu diesen Vorgängen lesen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:52"
+        },
+        "meaning": "ZWCM-Vorgänge durchgehen"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:53"
+        },
+        "meaning": "Freischaltungen des Vorgangs durchgehen"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:54"
+        },
+        "meaning": "Freischaltung nicht aktiv?"
+      },
+      {
+        "id": "f4",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:55"
+        },
+        "meaning": "Vorgang als nicht freigeschaltet vermerken"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:59"
+        },
+        "meaning": "Keine Freischaltung erfasst?"
+      },
+      {
+        "id": "f5",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:61"
+        },
+        "meaning": "Vorgang als nicht freigeschaltet vermerken"
+      },
+      {
+        "id": "g6",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:63"
+        },
+        "meaning": "Nicht freigeschalteter Vorgang gefunden?"
+      },
+      {
+        "id": "g7",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:68"
+        },
+        "meaning": "Freischaltung unvollständig?"
+      },
+      {
+        "id": "m7",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:69"
+        },
+        "meaning": "Fehler: Vorgang nicht freigeschaltet"
+      },
+      {
+        "id": "x7",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:69"
+        },
+        "meaning": "Freigabe abgelehnt"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_pm_wcm_release.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pm_wcm_release.abap:72"
+        },
+        "meaning": "Freigabe darf erfolgen"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "r1",
+        "condition": "is_header_dialog-iwerk = '2000'"
+      },
+      {
+        "from": "g1",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "r1",
+        "to": "a1",
+        "condition": "always"
+      },
+      {
+        "from": "a1",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "m2",
+        "condition": "lv_offen > 0"
+      },
+      {
+        "from": "m2",
+        "to": "x2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "r2",
+        "condition": "else"
+      },
+      {
+        "from": "r2",
+        "to": "r3",
+        "condition": "always"
+      },
+      {
+        "from": "r3",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "l2",
+        "condition": "next row"
+      },
+      {
+        "from": "l2",
+        "to": "g4",
+        "condition": "next row"
+      },
+      {
+        "from": "g4",
+        "to": "f4",
+        "condition": "ls_isol-status <> 'AKT'"
+      },
+      {
+        "from": "g4",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "l2",
+        "to": "g5",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g5",
+        "to": "f5",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g5",
+        "to": "g6",
+        "condition": "else"
+      },
+      {
+        "from": "g6",
+        "to": "g7",
+        "condition": "lv_isol_ok = abap_false"
+      },
+      {
+        "from": "g6",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "l1",
+        "to": "g7",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g7",
+        "to": "m7",
+        "condition": "lv_isol_ok = abap_false"
+      },
+      {
+        "from": "m7",
+        "to": "x7",
+        "condition": "always"
+      },
+      {
+        "from": "g7",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "f4",
+        "to": "g5",
+        "condition": "always"
+      },
+      {
+        "from": "f5",
+        "to": "g6",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_im_pm_wcm_release.abap:47 — kein Fachsatz „Aufträge ohne ZWCM-Vorgänge werden abgelehnt“: ohne solche Vorgänge liest FOR ALL ENTRIES zwar alle Freischaltungen, die Vorgangsschleife läuft aber nicht und die Freigabe wird erlaubt",
+    "zcl_im_pm_wcm_release.abap:25 — kein Fachsatz „die Prüfung gilt für alle Werke oder ist über Auftragsarten gesteuert“: sie ist hart auf Planungswerk 2000 beschränkt",
+    "gesamte Scheibe — kein Fachsatz „Genehmigungen werden erteilt oder Freischaltungen gesetzt“: die Methode prüft nur und lehnt ggf. ab",
+    "zcl_im_pm_wcm_release.abap:69 — kein Fachsatz „alle nicht freigeschalteten Vorgänge werden gemeldet“: die Prüfung bricht beim ersten ab und nennt nur diesen"
+  ],
+  "processDescription": "Wird ein Instandhaltungsauftrag freigegeben, ruft das System die BAdI-Methode mit den Auftragskopfdaten auf. Geprüft werden nur Aufträge des Planungswerks 2000; alle anderen werden ohne Prüfung freigegeben. Zunächst liest die Methode alle nicht gelöschten Genehmigungen des Auftrags und zählt die noch nicht erteilten. Ist mindestens eine offen, lehnt sie die Freigabe mit Anzahl und Auftragsnummer ab. Anschließend liest sie die Vorgänge mit Steuerschlüssel ZWCM und die dazu erfassten Freischaltungen aus einer Kundentabelle. Je Vorgang gilt: ist eine Freischaltung nicht aktiv oder gar keine erfasst, ist der Vorgang nicht freigeschaltet, und die Prüfung bricht beim ersten solchen Vorgang ab. In diesem Fall wird die Freigabe mit einer Meldung zu diesem Vorgang abgelehnt, andernfalls darf der Auftrag freigegeben werden. Aufträge ohne ZWCM-Vorgänge passieren die zweite Prüfung immer."
+}

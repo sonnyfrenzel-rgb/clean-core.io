@@ -1,0 +1,47 @@
+{
+  "id": "BM-196",
+  "title": "Frachtbrief mit Gefahrgutangaben je Transport: Druck und PDF-Mail an den Spediteur über die Nachrichtensteuerung",
+  "domain": "Technische Randbereiche — Formulardruck / Nachrichtensteuerung / Gefahrgut",
+  "band": "sehr komplex",
+  "loc": 604,
+  "constructs": [
+    "FORM ENTRY / FORM ENTRY_MAIL (Nachrichtensteuerung, TNAPR)",
+    "NAST-Objektschlüssel als Transportnummer",
+    "SELECT VTTK/VTTP/LIKP/LIPS/LFA1/ADR6",
+    "SELECT … FOR ALL ENTRIES",
+    "kundeneigener Funktionsbaustein mit EXCEPTIONS und CASE sy-subrc",
+    "SSF_FUNCTION_MODULE_NAME + dynamischer Aufruf des Formularbausteins",
+    "Archivierung über TOA_DARA/ARC_PARAMS gemäß NAST-TDARMOD",
+    "Kopienzahl aus NAST-ANZAL",
+    "CONVERT_OTF (OTF → PDF)",
+    "CL_BCS / CL_DOCUMENT_BCS / CL_CAM_ADDRESS_BCS mit PDF-Anhang",
+    "NAST_PROTOCOL_UPDATE über Makro",
+    "COMMIT WORK in der Nachrichtenverarbeitung",
+    "Gruppenstufe AT END OF mit SUM"
+  ],
+  "scenario": "Kundeneigenes Druckprogramm der Transport-Nachrichtenarten: ZFB1 druckt beim Abfertigen des Transports den Frachtbrief mit Gefahrgutblock, ZFB5 sendet ihn als PDF an den Spediteur; die Gefahrgutdaten und die 1000-Punkte-Prüfung liefert ein eigener Funktionsbaustein aus einer Z-Stammdatentabelle.",
+  "s4_issues": [
+    "NAST-basierte Nachrichtensteuerung für Transporte; in S/4 strategisch Output Management bzw. im TM die PPF-Ausgabesteuerung",
+    "LE-TRA-Transporte (VTTK/VTTP) sind im S/4-Kompatibilitätsumfang; Zielarchitektur ist SAP TM (Frachtauftrag)",
+    "Kundeneigene Gefahrgutstammdaten (ZLE_GG_STAMM) statt EHS / Dangerous Goods Management",
+    "Smart Forms mit dynamischem Formularbaustein; Ablösung durch Adobe Forms / Output Management",
+    "COMMIT WORK innerhalb der Nachrichtenverarbeitung",
+    "Direktzugriffe auf LIKP/LIPS/LFA1/ADR6 statt freigegebener CDS-Views; LFA1 im Business-Partner-Kontext"
+  ],
+  "wave": 2,
+  "module": "LE-TRA",
+  "edge_constructs": [
+    "Makro (DEFINE prot) kapselt NAST_PROTOCOL_UPDATE",
+    "dynamischer CALL FUNCTION gv_fm_name",
+    "RETURN aus tiefem FORM (daten_lesen, formular_ausgeben, empfaenger_ermitteln, CATCH-Block)",
+    "MESSAGE … RAISING im Funktionsbaustein",
+    "SELECT … FOR ALL ENTRIES mit möglicherweise leerer Treibertabelle",
+    "CHECK mitten in Schleife und CONTINUE",
+    "AT END OF mit SUM",
+    "TRY … CATCH cx_bcs",
+    "COND #, SWITCH, xsdbool",
+    "nie erreichtes FORM (SAPscript-Altdruck) und auskommentierte Zweige",
+    "Debug-Hintertür IF sy-uname = …",
+    "CHECK als Pfadende eines FORM"
+  ]
+}

@@ -1,0 +1,258 @@
+{
+  "id": "BM-123",
+  "title": "PSM/FM: Finanzposition vor Haushaltsübernahme prüfen (FMCI, MESSAGE … RAISING)",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "FMCI",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-123-B01",
+      "text": "Es wird geprüft, ob die Finanzposition im angegebenen Finanzkreis und Geschäftsjahr angelegt ist.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-123-B02",
+      "text": "Fehlt sie, endet die Prüfung mit der Ausnahme NOT_FOUND und einer Fehlermeldung zu Position und Finanzkreis.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-123-B03",
+      "text": "Ist die Position keine Ausgabeposition (Positionstyp 3), endet die Prüfung mit der Ausnahme NO_EXPENDITURE.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-123-B04",
+      "text": "Sonst wird der Finanzvorgang der Position an den Aufrufer zurückgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Prüfung einer Finanzposition"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Finanzposition im Finanzkreis und Geschäftsjahr lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Finanzposition vorhanden?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Fehlermeldung „Finanzposition fehlt“ mit Ausnahme NOT_FOUND"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Abbruch: Finanzposition unbekannt"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Ist es eine Ausgabeposition?"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Abbruch: keine Ausgabeposition"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Prüfung bestanden, Finanzvorgang zurückgegeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "r",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m1",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "x2",
+        "condition": "ls_fmci-potyp <> '3'"
+      },
+      {
+        "from": "g2",
+        "to": "e",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:23 — kein Fachsatz „dem Anwender wird eine Fehlermeldung angezeigt“: mit RAISING wird bei behandelter Ausnahme nur die Ausnahme ausgelöst und die Meldung in sy-msg bereitgestellt",
+    "gesamte Scheibe — kein Fachsatz „der Haushaltsansatz wird übernommen oder gebucht“: der Baustein prüft nur Stammdaten",
+    "source.abap:18 — kein Fachsatz „die Gültigkeit der Finanzstelle wird geprüft“: es wird nur die Finanzposition gelesen"
+  ],
+  "processDescription": "Der Funktionsbaustein wird vor der Übernahme von Haushaltsansätzen je Finanzposition aufgerufen, mit Finanzkreis, Geschäftsjahr und Finanzposition. Er liest die Finanzposition für dieses Jahr. Gibt es sie nicht, endet er mit der Ausnahme NOT_FOUND; die Fehlermeldung mit Position und Finanzkreis steht dem Aufrufer zur Verfügung. Ist die Position keine Ausgabeposition (Positionstyp 3), endet er mit der Ausnahme NO_EXPENDITURE, weil Einnahmepositionen nicht beplant werden dürfen. Andernfalls gibt er den Finanzvorgang der Position zurück. Er ändert nichts."
+}

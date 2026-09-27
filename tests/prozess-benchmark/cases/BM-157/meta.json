@@ -1,0 +1,46 @@
+{
+  "id": "BM-157",
+  "title": "Überstundenfreigabe aus Zeitauswertungsergebnissen (Cluster B2) mit Zeitumbuchung, Ablehnung und Nachlauf",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "sehr komplex",
+  "loc": 402,
+  "constructs": [
+    "REPORT mit drei Includes",
+    "INITIALIZATION",
+    "AT SELECTION-SCREEN",
+    "END-OF-SELECTION mit LEAVE LIST-PROCESSING",
+    "HR_TIME_RESULTS_GET (Cluster B2, ZES)",
+    "RP_LAST_DAY_OF_MONTHS",
+    "REUSE_ALV_GRID_DISPLAY mit USER_COMMAND-Callback",
+    "SET PF-STATUS",
+    "SET PARAMETER ID",
+    "CALL TRANSACTION … AND SKIP FIRST SCREEN",
+    "AUTHORITY-CHECK",
+    "HR_EMPLOYEE_ENQUEUE/DEQUEUE",
+    "HR_INFOTYPE_OPERATION IT2012",
+    "MODIFY … FROM @( VALUE # )",
+    "SWE_EVENT_CREATE",
+    "JOB_OPEN/SUBMIT VIA JOB/JOB_CLOSE",
+    "COMMIT WORK"
+  ],
+  "scenario": "Monatlich prüft der Zeitbeauftragte die Überstunden seiner Bereiche: Stunden über der Kappungsgrenze werden als Zeitumbuchung zur Auszahlung freigegeben oder abgelehnt, anschließend wird die Zeitauswertung für die Betroffenen neu angestoßen.",
+  "s4_issues": [
+    "Clusterzugriff B2 über HR_TIME_RESULTS_GET",
+    "Direkter Lesezugriff auf PA0001",
+    "Kundentabellen ZPT_OT_LIMIT/ZPT_OT_DECISION",
+    "REUSE_ALV_* mit Callback-FORMs",
+    "SUBMIT RPTIME00 im Hintergrund"
+  ],
+  "wave": 2,
+  "module": "PT",
+  "edge_constructs": [
+    "INITIALIZATION / AT SELECTION-SCREEN / END-OF-SELECTION",
+    "LEAVE LIST-PROCESSING",
+    "Benutzeraktion über ALV-Callback (CASE r_ucomm)",
+    "SET PARAMETER ID mit CALL TRANSACTION … AND SKIP FIRST SCREEN",
+    "SUBMIT … VIA JOB",
+    "CHECK und CONTINUE mitten in der Schleife",
+    "VALUE # ( FOR … WHERE )",
+    "RETURN aus WHEN OTHERS"
+  ]
+}

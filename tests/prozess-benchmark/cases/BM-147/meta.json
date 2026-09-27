@@ -1,0 +1,34 @@
+{
+  "id": "BM-147",
+  "title": "Zeitauswertung: Kundenfunktion ZNZ bildet Nachtzuschlag aus der Tagesinputtabelle",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "mittel",
+  "loc": 76,
+  "constructs": [
+    "FORM FUNCZNZ (Kundenfunktion Zeitauswertung)",
+    "SELECT SINGLE Kundentabelle",
+    "LOOP AT TIP (Kopfzeile)",
+    "CHECK in LOOP",
+    "CONTINUE",
+    "COND #",
+    "APPEND ZL",
+    "EXIT aus FORM",
+    "IF 1 = 2",
+    "nie erreichtes FORM"
+  ],
+  "scenario": "Kundenfunktion im Zeitauswertungsschema: Für Schichtarbeiter wird aus den Anwesenheitszeitpaaren eines Tages der Nachtanteil ermittelt und als Zeitlohnart an die Abrechnung übergeben.",
+  "s4_issues": [
+    "Kundenfunktion im Schema (PE04) mit Zugriff auf globale Tabellen TIP/ZL/P0001/P0007 des Rahmenprogramms",
+    "Kopfzeilentabellen (LOOP AT tip ohne INTO)",
+    "Toter Code IF 1 = 2"
+  ],
+  "wave": 2,
+  "module": "PT",
+  "edge_constructs": [
+    "CHECK mitten in der Schleife",
+    "CONTINUE in der Schleife",
+    "EXIT als Verlassen des FORM",
+    "toter Code IF 1 = 2 mit nie erreichtem FORM",
+    "COND #"
+  ]
+}

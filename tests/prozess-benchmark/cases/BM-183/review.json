@@ -1,0 +1,14 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e2 (end) / pr (neu)",
+      "before": "e2 end auf source.abap:25 (rv_preis = COND #( …), Bedeutung „berechnen und zurückgeben“)",
+      "after": "pr action auf source.abap:25 (Preisberechnung), e2 end auf source.abap:28 (ENDMETHOD.); Kanten g -> pr [else], pr -> e2 [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION. Die Berechnung, die das Ergebnis festlegt, ist ein action-Knoten.",
+      "category": "Anker"
+    }
+  ],
+  "doubts": []
+}

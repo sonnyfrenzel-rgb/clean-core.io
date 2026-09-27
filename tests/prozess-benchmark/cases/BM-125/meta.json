@@ -1,0 +1,29 @@
+{
+  "id": "BM-125",
+  "title": "Treasury: am Stichtag fällige Festgelder listen (VTBFHA, STOP, toter Zweig IF 1 = 2)",
+  "domain": "FSCM/TRM / Treasury Geldhandel",
+  "band": "einfach",
+  "loc": 29,
+  "constructs": [
+    "REPORT",
+    "PARAMETERS",
+    "SELECT INTO TABLE",
+    "STOP",
+    "IF 1 = 2",
+    "LOOP AT",
+    "WRITE-Liste",
+    "nie erreichtes FORM"
+  ],
+  "scenario": "Tagesdisposition in der Konzern-Treasury: Der Händler sieht morgens, welche Festgeldanlagen am Stichtag fällig werden, um über Wiederanlage zu entscheiden.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf VTBFHA statt freigegebener Treasury-CDS-Views",
+    "stillgelegte Anbindung an Z-Kopie der Cash-Management-Tabelle"
+  ],
+  "wave": 2,
+  "module": "TRM",
+  "edge_constructs": [
+    "STOP",
+    "IF 1 = 2 (toter Zweig)",
+    "nie erreichtes FORM"
+  ]
+}

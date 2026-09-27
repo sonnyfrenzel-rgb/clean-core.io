@@ -1,0 +1,30 @@
+{
+  "id": "BM-184",
+  "title": "Ablaufhinweis Serviceverträge per E-Mail an den Innendienst (CL_BCS)",
+  "domain": "Technische Randbereiche — Mail-/Anhangsversand",
+  "band": "einfach",
+  "loc": 24,
+  "constructs": [
+    "Klassenmethode",
+    "VALUE #( FOR … ) mit String-Template",
+    "CL_BCS=>CREATE_PERSISTENT",
+    "CL_DOCUMENT_BCS=>CREATE_DOCUMENT",
+    "CL_CAM_ADDRESS_BCS",
+    "SEND + COMMIT WORK",
+    "CATCH CX_BCS"
+  ],
+  "scenario": "Hilfsklasse eines nächtlichen Jobs im Kundenservice: Die vom Job ermittelten, demnächst auslaufenden Serviceverträge werden als Textliste an ein Sammelpostfach des Vertriebsinnendienstes gemailt, damit Verlängerungsangebote rechtzeitig rausgehen.",
+  "s4_issues": [
+    "CL_BCS ist in S/4 Private Cloud nutzbar; in ABAP Cloud wird CL_BCS_MAIL_MESSAGE verwendet",
+    "COMMIT WORK innerhalb einer wiederverwendbaren Methode schreibt auch fremde offene Änderungen des Aufrufers fest"
+  ],
+  "wave": 2,
+  "module": "CS",
+  "edge_constructs": [
+    "TRY … CATCH",
+    "RAISE EXCEPTION TYPE als Pfadende",
+    "VALUE #( FOR … )",
+    "verkettete Methodenaufrufe (Funktionsaufruf als Parameter)",
+    "Inline-Deklarationen"
+  ]
+}

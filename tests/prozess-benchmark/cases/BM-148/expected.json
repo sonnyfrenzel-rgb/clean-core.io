@@ -1,0 +1,591 @@
+{
+  "id": "BM-148",
+  "title": "Organisationsmanagement: Führungsspanne rekursiv über die Linienhierarchie",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "RH_STRUC_GET",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 53,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:53"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HRP1001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:75"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 31,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:31"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-148-B01",
+      "text": "Ab der eingegebenen Wurzeleinheit wird die Linienhierarchie Einheit für Einheit abgelaufen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-148-B02",
+      "text": "Liegt eine Einheit tiefer als die zulässige Ebenenzahl, wird sie samt Teilbaum nicht ausgewertet und die Abschneidung vermerkt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-148-B03",
+      "text": "Für jede Einheit werden am Stichtag über Planstellen die direkt zugeordneten Personen ermittelt und gezählt; Personen in untergeordneten Einheiten zählen dort.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        {
+          "file": "source.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:66"
+        },
+        {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-148-B04",
+      "text": "Die Einheit wird mit ihrer Hierarchieebene und der Personenzahl vorgemerkt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-148-B05",
+      "text": "Die am Stichtag direkt untergeordneten Organisationseinheiten werden gelesen und jeweils auf der nächsten Ebene genauso ausgewertet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        },
+        {
+          "file": "source.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-148-B06",
+      "text": "Wurden Teilbäume wegen der Tiefe abgeschnitten, erhält der Anwender einen Hinweis.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-148-B07",
+      "text": "Alle ausgewerteten Einheiten werden mit Ebene und Personenzahl als Liste angezeigt; scheitert die Listanzeige, bricht der Report mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "c",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Hierarchie ab der Wurzeleinheit ablaufen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Tiefenbegrenzung gegriffen?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Hinweis: Teilbäume abgeschnitten"
+      },
+      {
+        "id": "c2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "ALV-Liste erzeugen"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Einheiten mit Ebene und Personenzahl anzeigen"
+      },
+      {
+        "id": "o3",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Abbruch mit Fehler der Listanzeige"
+      },
+      {
+        "id": "e5",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Report endet mit Fehlermeldung"
+      },
+      {
+        "id": "e4",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Ende des Reports nach der Listanzeige"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Eine Organisationseinheit auswerten"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Maximale Tiefe überschritten?"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        "meaning": "Teilbaum abschneiden"
+      },
+      {
+        "id": "c3",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        "meaning": "Planstellen und Personen der Einheit ermitteln"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:66"
+        },
+        "meaning": "Struktur gefunden?"
+      },
+      {
+        "id": "a",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        "meaning": "Personen der Einheit zählen"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        "meaning": "Direkt untergeordnete Einheiten lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        },
+        "meaning": "Je untergeordneter Einheit"
+      },
+      {
+        "id": "c4",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:87"
+        },
+        "meaning": "Untergeordnete Einheit rekursiv auswerten"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:89"
+        },
+        "meaning": "Einheit fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c",
+        "condition": "always"
+      },
+      {
+        "from": "c",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "o1",
+        "condition": "gv_too_deep = abap_true"
+      },
+      {
+        "from": "g1",
+        "to": "c2",
+        "condition": "else"
+      },
+      {
+        "from": "o1",
+        "to": "c2",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "o2",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "o3",
+        "condition": "CATCH cx_salv_msg"
+      },
+      {
+        "from": "s2",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "e2",
+        "condition": "pv_depth > p_maxd"
+      },
+      {
+        "from": "g2",
+        "to": "c3",
+        "condition": "else"
+      },
+      {
+        "from": "c3",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "a",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g3",
+        "to": "r",
+        "condition": "else"
+      },
+      {
+        "from": "a",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "r",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "c4",
+        "condition": "next row"
+      },
+      {
+        "from": "c4",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "e3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e2",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "e2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e3",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "e3",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "o3",
+        "to": "e5",
+        "condition": "always"
+      },
+      {
+        "from": "o2",
+        "to": "e4",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:53 — kein Fachsatz „die Personenzahl enthält alle Personen des Teilbaums“ (Weg O-S-P zählt nur die Einheit selbst)",
+    "source.abap:67 — kein Fachsatz „jede Person wird genau einmal gezählt“ (Mehrfachbesetzung zählt mehrfach)",
+    "source.abap:50 — kein Fachsatz „ein Zyklus in der Hierarchie wird erkannt“ (es gibt nur eine Tiefengrenze)",
+    "gesamte Scheibe — kein write-Knoten (die Organisationsstruktur wird nicht verändert)"
+  ],
+  "processDescription": "Die Personalleitung startet eine Auswertung der Führungsspanne ab einer Wurzeleinheit zu einem Stichtag. Der Report läuft die Linienhierarchie rekursiv ab: Für jede Einheit ermittelt er über den Auswertungsweg O-S-P die direkt über Planstellen zugeordneten Personen und zählt sie. Die Einheit wird mit Ebene und Personenzahl vorgemerkt, dann werden die direkt untergeordneten Einheiten gelesen und genauso ausgewertet. Einheiten jenseits der eingegebenen Höchsttiefe werden samt Teilbaum übergangen; der Anwender erhält dann einen Hinweis. Das Ergebnis wird als ALV-Liste angezeigt; scheitert die Anzeige, endet der Report mit einer Fehlermeldung. Personen mit mehreren Planstellen zählen mehrfach, und es wird nichts verändert."
+}

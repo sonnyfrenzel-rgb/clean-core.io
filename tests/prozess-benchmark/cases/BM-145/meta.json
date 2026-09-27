@@ -1,0 +1,29 @@
+{
+  "id": "BM-145",
+  "title": "Personalentwicklung: Liste ablaufender Qualifikationen mit Schalter und Benutzer-Hintertür",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "einfach",
+  "loc": 23,
+  "constructs": [
+    "REPORT",
+    "SELECT SINGLE TVARVC",
+    "IF sy-uname",
+    "LEAVE PROGRAM",
+    "SELECT HRP1001 (A032)",
+    "LOOP",
+    "WRITE"
+  ],
+  "scenario": "Die Personalentwicklung überwacht Pflichtqualifikationen (Staplerschein, Ersthelfer); ein Report listet bald ablaufende Qualifikationen, eingeschaltet über eine TVARVC-Variable.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf HRP1001",
+    "Benutzername fest im Code",
+    "Planvariante als Literal"
+  ],
+  "wave": 2,
+  "module": "PE",
+  "edge_constructs": [
+    "Schalter über TVARVC",
+    "Debug-Hintertür IF sy-uname = …",
+    "LEAVE PROGRAM als Pfadende"
+  ]
+}

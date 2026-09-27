@@ -1,0 +1,2292 @@
+{
+  "id": "BM-137",
+  "title": "RE-FX Indexmiete: Mietanpassung nach Verbraucherpreisindex mit Schwelle und Jahresfrist, Vertragsänderung, Mieterbrief per Smart Form und Fehlermail",
+  "classes": [
+    "K01",
+    "K03",
+    "K06",
+    "K12",
+    "K15",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VICNCN",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_indexmiete_f01.abap",
+        "line": 10,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f01.abap:10"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRE_INDEX_VTR",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_indexmiete_f01.abap",
+        "line": 10,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f01.abap:10"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRE_INDEX_WERT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_indexmiete_f01.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f01.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VICDCOND",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_indexmiete_f01.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f01.abap:65"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REUSE_ALV_FIELDCATALOG_MERGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_indexmiete_f01.abap",
+        "line": 91,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f01.abap:91"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REUSE_ALV_GRID_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_indexmiete_f01.abap",
+        "line": 101,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f01.abap:101"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZRE_INDEX",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_indexmiete_f02.abap",
+        "line": 17,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f02.abap:17"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_RE_CN_CHANGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_indexmiete_f02.abap",
+        "line": 35,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f02.abap:35"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_indexmiete_f02.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f02.abap:44"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_indexmiete_f02.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f02.abap:48"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRE_INDEX_VTR",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zre_indexmiete_f02.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f02.abap:51"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZRE_INDEX",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_indexmiete_f02.abap",
+        "line": 60,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f02.abap:60"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_indexmiete_f02.abap",
+        "line": 80,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f02.abap:80"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SSF_FUNCTION_MODULE_NAME",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_indexmiete_f02.abap",
+        "line": 87,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f02.abap:87"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "OPEN_FORM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_indexmiete_f02.abap",
+        "line": 134,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f02.abap:134"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "WRITE_FORM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_indexmiete_f02.abap",
+        "line": 141,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f02.abap:141"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CLOSE_FORM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_indexmiete_f02.abap",
+        "line": 145,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f02.abap:145"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRE_INDEX_VTR",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zre_indexmiete_f02.abap",
+        "line": 146,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f02.abap:146"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRE_BUKRS_MAIL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_indexmiete_f03.abap",
+        "line": 22,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f03.abap:22"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_indexmiete_f03.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_indexmiete_f03.abap:36"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-137-B01",
+      "text": "Auf dem Selektionsbild wird ein Wirksamkeitsdatum, das kein Monatserster ist, mit einer Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:18"
+        },
+        {
+          "file": "zre_indexmiete.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B02",
+      "text": "Es werden die zum Wirksamkeitsdatum laufenden Verträge des Buchungskreises mit aktiver Wertsicherungsklausel gelesen, samt Index, Basiswert, Schwelle, letzter Anpassung und anzupassender Konditionsart.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:10"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B03",
+      "text": "Die Indexwerte des gewählten Indexmonats werden gelesen.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B04",
+      "text": "Gibt es keine solchen Verträge, erscheint ein Hinweis und es wird weder berechnet noch eine Liste ausgegeben.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:24"
+        },
+        {
+          "file": "zre_indexmiete.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:25"
+        },
+        {
+          "file": "zre_indexmiete.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:26"
+        },
+        {
+          "file": "zre_indexmiete.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B05",
+      "text": "Fehlt für den Index eines Vertrags der Wert des Monats, wird der Vertrag als übersprungen gelistet.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:41"
+        },
+        {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B06",
+      "text": "Die Indexveränderung wird in Prozent gegenüber dem Basiswert des Vertrags berechnet; bleibt ihr Betrag unter der vereinbarten Schwelle, wird der Vertrag als übersprungen gelistet.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:52"
+        },
+        {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B07",
+      "text": "Verträge, deren letzte Anpassung weniger als 365 Tage vor dem Wirksamkeitsdatum liegt, werden ohne Eintrag in der Ergebnisliste übergangen.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B08",
+      "text": "Die zum Wirksamkeitsdatum gültige Miete der anzupassenden Kondition wird gelesen; fehlt sie, wird der Vertrag als übersprungen gelistet.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:65"
+        },
+        {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B09",
+      "text": "Die neue Miete ist die alte Miete mal aktueller Indexwert durch Basiswert, auf zwei Nachkommastellen gerundet.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B10",
+      "text": "Im Echtlauf wird jeder berechnete Vertrag gesperrt; ist er bereits gesperrt, wird er mit dem sperrenden Benutzer als gesperrt gekennzeichnet.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:29"
+        },
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:17"
+        },
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:25"
+        },
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B11",
+      "text": "Für jeden gesperrten Vertrag wird eine neue Konditionszeile mit der neuen Miete ab dem Wirksamkeitsdatum angelegt.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B12",
+      "text": "Scheitert die Änderung, wird zurückgerollt und die Fehlermeldung vermerkt.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:43"
+        },
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B13",
+      "text": "Gelingt sie, wird festgeschrieben und im Wertsicherungssatz des Vertrags der neue Indexwert als Basiswert, der Indexmonat und das Wirksamkeitsdatum als letzte Anpassung eingetragen.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:48"
+        },
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B14",
+      "text": "Nach jedem Vertrag wird die Sperre aufgehoben.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B15",
+      "text": "Anpassungsschreiben werden nur gedruckt, wenn der Briefdruck gewählt und zentral über die Variablentabelle eingeschaltet ist.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:77"
+        },
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:80"
+        },
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B16",
+      "text": "Fehlt das Formular ZRE_INDEX_BRIEF, erscheint ein Hinweis und es werden keine Briefe gedruckt.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:87"
+        },
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:96"
+        },
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B17",
+      "text": "Die Briefe gehen ohne Dialog sofort auf den Drucker LOCL; unter dem Benutzer AKR_TEST wird stattdessen nur eine Vorschau mit Dialog gezeigt.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:105"
+        },
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:106"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B18",
+      "text": "Für jeden erfolgreich angepassten Vertrag wird ein Anpassungsschreiben mit Wirksamkeitsdatum erzeugt; scheitert der Druck, wird der Vertrag als Druckfehler gekennzeichnet.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:111"
+        },
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:123"
+        },
+        {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:124"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B19",
+      "text": "Verträge mit Fehler, Sperre oder Druckfehler werden per Mail an die Objektbetreuung des Buchungskreises gemeldet.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:15"
+        },
+        {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:18"
+        },
+        {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:22"
+        },
+        {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:42"
+        },
+        {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B20",
+      "text": "Ist keine Mailadresse hinterlegt oder scheitert der Versand, erscheint nur ein Hinweis.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:24"
+        },
+        {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:25"
+        },
+        {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-137-B21",
+      "text": "Zum Schluss werden alle berechneten, angepassten und übersprungenen Verträge mit alter und neuer Miete, Veränderung, Status und Text als Liste angezeigt.",
+      "anchors": [
+        {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:101"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:17"
+        },
+        "meaning": "Prüfung des Selektionsbilds"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:18"
+        },
+        "meaning": "Wirksamkeitsdatum kein Monatserster?"
+      },
+      {
+        "id": "am",
+        "type": "output",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:19"
+        },
+        "meaning": "Fehler „nur zum Monatsersten“"
+      },
+      {
+        "id": "ame",
+        "type": "end",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:19"
+        },
+        "meaning": "Zurück auf das Selektionsbild"
+      },
+      {
+        "id": "e_as",
+        "type": "end",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:20"
+        },
+        "meaning": "Selektionsbild geprüft"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:22"
+        },
+        "meaning": "Anpassungslauf"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:23"
+        },
+        "meaning": "Verträge und Indexwerte lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:24"
+        },
+        "meaning": "Keine Verträge mit Wertsicherung?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:25"
+        },
+        "meaning": "Hinweis „keine Verträge“ als Fehler dargestellt"
+      },
+      {
+        "id": "st",
+        "type": "end",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:26"
+        },
+        "meaning": "Selektionsverarbeitung beenden"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:28"
+        },
+        "meaning": "Anpassung berechnen"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:29"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:30"
+        },
+        "meaning": "Konditionen ändern"
+      },
+      {
+        "id": "c4",
+        "type": "call",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:31"
+        },
+        "meaning": "Mieterbriefe drucken"
+      },
+      {
+        "id": "c5",
+        "type": "call",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:32"
+        },
+        "meaning": "Nacharbeit melden"
+      },
+      {
+        "id": "e_s",
+        "type": "end",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:33"
+        },
+        "meaning": "Anpassungslauf der Selektion beendet"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:35"
+        },
+        "meaning": "Ausgabe"
+      },
+      {
+        "id": "ec",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:36"
+        },
+        "meaning": "Ergebnisse vorhanden?"
+      },
+      {
+        "id": "c6",
+        "type": "call",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:37"
+        },
+        "meaning": "Ergebnisliste anzeigen"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zre_indexmiete.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete.abap:37"
+        },
+        "meaning": "Lauf fertig"
+      },
+      {
+        "id": "v",
+        "type": "start",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:9"
+        },
+        "meaning": "Selektion"
+      },
+      {
+        "id": "vq",
+        "type": "read",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:10"
+        },
+        "meaning": "Laufende Verträge mit aktiver Wertsicherungsklausel lesen"
+      },
+      {
+        "id": "vi",
+        "type": "read",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:23"
+        },
+        "meaning": "Indexwerte des Indexmonats lesen"
+      },
+      {
+        "id": "ve",
+        "type": "end",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:25"
+        },
+        "meaning": "Selektion fertig"
+      },
+      {
+        "id": "a",
+        "type": "start",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:32"
+        },
+        "meaning": "Berechnung"
+      },
+      {
+        "id": "al",
+        "type": "loop",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:37"
+        },
+        "meaning": "Verträge einzeln berechnen"
+      },
+      {
+        "id": "ar",
+        "type": "read",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:41"
+        },
+        "meaning": "Aktuellen Indexwert des Vertragsindex suchen"
+      },
+      {
+        "id": "ag1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:44"
+        },
+        "meaning": "Indexwert fehlt?"
+      },
+      {
+        "id": "ap",
+        "type": "action",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:52"
+        },
+        "meaning": "Prozentuale Indexveränderung gegen den Basiswert berechnen"
+      },
+      {
+        "id": "as2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:54"
+        },
+        "meaning": "Schwelle nicht erreicht?"
+      },
+      {
+        "id": "ac",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:62"
+        },
+        "meaning": "Erste Anpassung oder mindestens 365 Tage seit der letzten?"
+      },
+      {
+        "id": "ak",
+        "type": "read",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:65"
+        },
+        "meaning": "Zum Wirksamkeitsdatum gültige Miete der Vertragskondition lesen"
+      },
+      {
+        "id": "akg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:70"
+        },
+        "meaning": "Kondition nicht gültig?"
+      },
+      {
+        "id": "an",
+        "type": "action",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:77"
+        },
+        "meaning": "Neue Miete = alte Miete mal aktueller Index durch Basiswert, auf Cent gerundet"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:83"
+        },
+        "meaning": "Berechnung fertig"
+      },
+      {
+        "id": "o",
+        "type": "start",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:88"
+        },
+        "meaning": "Liste"
+      },
+      {
+        "id": "of",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:91"
+        },
+        "meaning": "Feldkatalog aufbauen"
+      },
+      {
+        "id": "od",
+        "type": "output",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:101"
+        },
+        "meaning": "Ergebnisliste anzeigen"
+      },
+      {
+        "id": "oe",
+        "type": "end",
+        "anchor": {
+          "file": "zre_indexmiete_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f01.abap:110"
+        },
+        "meaning": "Anzeige beendet"
+      },
+      {
+        "id": "x",
+        "type": "start",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:9"
+        },
+        "meaning": "Vertragsänderung"
+      },
+      {
+        "id": "xl",
+        "type": "loop",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:14"
+        },
+        "meaning": "Berechnete Anpassungen durchgehen"
+      },
+      {
+        "id": "xq",
+        "type": "lock",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:17"
+        },
+        "meaning": "Vertrag für die Anpassung sperren"
+      },
+      {
+        "id": "xg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:25"
+        },
+        "meaning": "Sperre nicht erhalten?"
+      },
+      {
+        "id": "xb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:35"
+        },
+        "meaning": "Neue Konditionszeile mit neuer Miete ab Wirksamkeitsdatum anlegen"
+      },
+      {
+        "id": "xbg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:43"
+        },
+        "meaning": "Änderung mit Fehler?"
+      },
+      {
+        "id": "xrb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:44"
+        },
+        "meaning": "Zurückrollen, Fehler vermerken"
+      },
+      {
+        "id": "xcm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:48"
+        },
+        "meaning": "Vertragsänderung festschreiben"
+      },
+      {
+        "id": "xw",
+        "type": "write",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:51"
+        },
+        "meaning": "Basiswert, Basismonat und letzte Anpassung fortschreiben, Status angepasst"
+      },
+      {
+        "id": "xd",
+        "type": "lock",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:60"
+        },
+        "meaning": "Vertrag entsperren"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:65"
+        },
+        "meaning": "Änderungen fertig"
+      },
+      {
+        "id": "b",
+        "type": "start",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:70"
+        },
+        "meaning": "Mieterbriefe"
+      },
+      {
+        "id": "bc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:77"
+        },
+        "meaning": "Briefdruck gewählt?"
+      },
+      {
+        "id": "br",
+        "type": "read",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:80"
+        },
+        "meaning": "Zentralen Schalter für den Briefdruck lesen"
+      },
+      {
+        "id": "bg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:83"
+        },
+        "meaning": "Briefdruck zentral abgeschaltet?"
+      },
+      {
+        "id": "bre",
+        "type": "end",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:84"
+        },
+        "meaning": "Keine Briefe"
+      },
+      {
+        "id": "bf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:87"
+        },
+        "meaning": "Funktionsbaustein des Formulars ZRE_INDEX_BRIEF ermitteln"
+      },
+      {
+        "id": "bfg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:96"
+        },
+        "meaning": "Formular nicht vorhanden?"
+      },
+      {
+        "id": "bfm",
+        "type": "output",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:97"
+        },
+        "meaning": "Hinweis „Formular fehlt“"
+      },
+      {
+        "id": "bfr",
+        "type": "end",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:98"
+        },
+        "meaning": "Keine Briefe"
+      },
+      {
+        "id": "bu",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:105"
+        },
+        "meaning": "Testbenutzer AKR_TEST?"
+      },
+      {
+        "id": "bl",
+        "type": "loop",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:110"
+        },
+        "meaning": "Angepasste Verträge durchgehen"
+      },
+      {
+        "id": "bcf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:111"
+        },
+        "meaning": "Anpassungsschreiben über den ermittelten Formularbaustein ausgeben"
+      },
+      {
+        "id": "bcg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:123"
+        },
+        "meaning": "Druck fehlgeschlagen?"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "anchor": {
+          "file": "zre_indexmiete_f02.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f02.abap:128"
+        },
+        "meaning": "Briefe fertig"
+      },
+      {
+        "id": "m",
+        "type": "start",
+        "anchor": {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:10"
+        },
+        "meaning": "Fehlermail"
+      },
+      {
+        "id": "mf",
+        "type": "action",
+        "anchor": {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:15"
+        },
+        "meaning": "Verträge mit Fehler, Sperre oder Druckfehler herausfiltern"
+      },
+      {
+        "id": "mg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:18"
+        },
+        "meaning": "Keine Nacharbeit?"
+      },
+      {
+        "id": "mr",
+        "type": "end",
+        "anchor": {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:19"
+        },
+        "meaning": "Keine Mail"
+      },
+      {
+        "id": "mq",
+        "type": "read",
+        "anchor": {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:22"
+        },
+        "meaning": "Mailadresse der Objektbetreuung des Buchungskreises lesen"
+      },
+      {
+        "id": "mqg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:24"
+        },
+        "meaning": "Keine Adresse hinterlegt?"
+      },
+      {
+        "id": "mqm",
+        "type": "output",
+        "anchor": {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:25"
+        },
+        "meaning": "Hinweis „keine Mailadresse“"
+      },
+      {
+        "id": "mqr",
+        "type": "end",
+        "anchor": {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:26"
+        },
+        "meaning": "Keine Mail"
+      },
+      {
+        "id": "mc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:36"
+        },
+        "meaning": "Sendeauftrag anlegen"
+      },
+      {
+        "id": "md",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:37"
+        },
+        "meaning": "Mailtext mit Vertrag, Status und Text als Dokument setzen"
+      },
+      {
+        "id": "mad",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:41"
+        },
+        "meaning": "Objektbetreuung als Empfänger"
+      },
+      {
+        "id": "ms",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:42"
+        },
+        "meaning": "Mail senden"
+      },
+      {
+        "id": "mcw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:43"
+        },
+        "meaning": "Versand festschreiben"
+      },
+      {
+        "id": "mx",
+        "type": "output",
+        "anchor": {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:45"
+        },
+        "meaning": "Versandfehler als Hinweis"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "anchor": {
+          "file": "zre_indexmiete_f03.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_indexmiete_f03.abap:47"
+        },
+        "meaning": "Mail fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "as",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "am",
+        "condition": "p_ab+6(2) <> '01'"
+      },
+      {
+        "from": "am",
+        "to": "ame",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "e_as",
+        "condition": "else"
+      },
+      {
+        "from": "s",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "v",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "gt_vtr IS INITIAL"
+      },
+      {
+        "from": "m1",
+        "to": "st",
+        "condition": "always"
+      },
+      {
+        "from": "st",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "c2",
+        "condition": "else"
+      },
+      {
+        "from": "c2",
+        "to": "a",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "c3",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "gt",
+        "to": "e_s",
+        "condition": "else"
+      },
+      {
+        "from": "c3",
+        "to": "x",
+        "condition": "always"
+      },
+      {
+        "from": "c4",
+        "to": "b",
+        "condition": "always"
+      },
+      {
+        "from": "c5",
+        "to": "m",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "ec",
+        "condition": "always"
+      },
+      {
+        "from": "ec",
+        "to": "c6",
+        "condition": "gt_erg IS NOT INITIAL"
+      },
+      {
+        "from": "ec",
+        "to": "ee",
+        "condition": "else"
+      },
+      {
+        "from": "c6",
+        "to": "o",
+        "condition": "always"
+      },
+      {
+        "from": "v",
+        "to": "vq",
+        "condition": "always"
+      },
+      {
+        "from": "vq",
+        "to": "vi",
+        "condition": "always"
+      },
+      {
+        "from": "vi",
+        "to": "ve",
+        "condition": "always"
+      },
+      {
+        "from": "a",
+        "to": "al",
+        "condition": "always"
+      },
+      {
+        "from": "al",
+        "to": "ar",
+        "condition": "next row"
+      },
+      {
+        "from": "ar",
+        "to": "ag1",
+        "condition": "always"
+      },
+      {
+        "from": "ag1",
+        "to": "al",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ag1",
+        "to": "ap",
+        "condition": "else"
+      },
+      {
+        "from": "ap",
+        "to": "as2",
+        "condition": "always"
+      },
+      {
+        "from": "as2",
+        "to": "al",
+        "condition": "abs( lv_proz ) < <ls_vtr>-schwelle"
+      },
+      {
+        "from": "as2",
+        "to": "ac",
+        "condition": "else"
+      },
+      {
+        "from": "ac",
+        "to": "ak",
+        "condition": "<ls_vtr>-letzte_anp IS INITIAL OR <ls_vtr>-letzte_anp + gc_min_tage <= p_ab"
+      },
+      {
+        "from": "ac",
+        "to": "al",
+        "condition": "else"
+      },
+      {
+        "from": "ak",
+        "to": "akg",
+        "condition": "always"
+      },
+      {
+        "from": "akg",
+        "to": "al",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "akg",
+        "to": "an",
+        "condition": "else"
+      },
+      {
+        "from": "an",
+        "to": "al",
+        "condition": "next iteration"
+      },
+      {
+        "from": "al",
+        "to": "ae",
+        "condition": "no more rows"
+      },
+      {
+        "from": "o",
+        "to": "of",
+        "condition": "always"
+      },
+      {
+        "from": "of",
+        "to": "od",
+        "condition": "always"
+      },
+      {
+        "from": "od",
+        "to": "oe",
+        "condition": "always"
+      },
+      {
+        "from": "x",
+        "to": "xl",
+        "condition": "always"
+      },
+      {
+        "from": "xl",
+        "to": "xq",
+        "condition": "next row"
+      },
+      {
+        "from": "xq",
+        "to": "xg",
+        "condition": "always"
+      },
+      {
+        "from": "xg",
+        "to": "xb",
+        "condition": "else"
+      },
+      {
+        "from": "xb",
+        "to": "xbg",
+        "condition": "always"
+      },
+      {
+        "from": "xbg",
+        "to": "xrb",
+        "condition": "line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] )"
+      },
+      {
+        "from": "xbg",
+        "to": "xcm",
+        "condition": "else"
+      },
+      {
+        "from": "xcm",
+        "to": "xw",
+        "condition": "always"
+      },
+      {
+        "from": "xrb",
+        "to": "xd",
+        "condition": "always"
+      },
+      {
+        "from": "xw",
+        "to": "xd",
+        "condition": "always"
+      },
+      {
+        "from": "xd",
+        "to": "xl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "xl",
+        "to": "xe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "b",
+        "to": "bc",
+        "condition": "always"
+      },
+      {
+        "from": "bc",
+        "to": "br",
+        "condition": "p_brief = 'X'"
+      },
+      {
+        "from": "bc",
+        "to": "be",
+        "condition": "else"
+      },
+      {
+        "from": "br",
+        "to": "bg",
+        "condition": "always"
+      },
+      {
+        "from": "bg",
+        "to": "bre",
+        "condition": "lv_aktiv <> 'X'"
+      },
+      {
+        "from": "bg",
+        "to": "bf",
+        "condition": "else"
+      },
+      {
+        "from": "bf",
+        "to": "bfg",
+        "condition": "always"
+      },
+      {
+        "from": "bfg",
+        "to": "bfm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "bfm",
+        "to": "bfr",
+        "condition": "always"
+      },
+      {
+        "from": "bfg",
+        "to": "bu",
+        "condition": "else"
+      },
+      {
+        "from": "bu",
+        "to": "bl",
+        "condition": "else"
+      },
+      {
+        "from": "bl",
+        "to": "bcf",
+        "condition": "next row"
+      },
+      {
+        "from": "bcf",
+        "to": "bcg",
+        "condition": "always"
+      },
+      {
+        "from": "bcg",
+        "to": "bl",
+        "condition": "else"
+      },
+      {
+        "from": "bl",
+        "to": "be",
+        "condition": "no more rows"
+      },
+      {
+        "from": "m",
+        "to": "mf",
+        "condition": "always"
+      },
+      {
+        "from": "mf",
+        "to": "mg",
+        "condition": "always"
+      },
+      {
+        "from": "mg",
+        "to": "mr",
+        "condition": "lt_fehler IS INITIAL"
+      },
+      {
+        "from": "mg",
+        "to": "mq",
+        "condition": "else"
+      },
+      {
+        "from": "mq",
+        "to": "mqg",
+        "condition": "always"
+      },
+      {
+        "from": "mqg",
+        "to": "mqm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mqm",
+        "to": "mqr",
+        "condition": "always"
+      },
+      {
+        "from": "mqg",
+        "to": "mc",
+        "condition": "else"
+      },
+      {
+        "from": "mc",
+        "to": "md",
+        "condition": "always"
+      },
+      {
+        "from": "md",
+        "to": "mad",
+        "condition": "always"
+      },
+      {
+        "from": "mad",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "mcw",
+        "condition": "always"
+      },
+      {
+        "from": "mcw",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "mc",
+        "to": "mx",
+        "condition": "CATCH cx_bcs INTO DATA(lx_bcs)"
+      },
+      {
+        "from": "md",
+        "to": "mx",
+        "condition": "CATCH cx_bcs INTO DATA(lx_bcs)"
+      },
+      {
+        "from": "mad",
+        "to": "mx",
+        "condition": "CATCH cx_bcs INTO DATA(lx_bcs)"
+      },
+      {
+        "from": "ms",
+        "to": "mx",
+        "condition": "CATCH cx_bcs INTO DATA(lx_bcs)"
+      },
+      {
+        "from": "mx",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "e_as",
+        "to": "s",
+        "condition": "always"
+      },
+      {
+        "from": "ve",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "c4",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "c5",
+        "condition": "always"
+      },
+      {
+        "from": "bre",
+        "to": "c5",
+        "condition": "always"
+      },
+      {
+        "from": "bfr",
+        "to": "c5",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "e_s",
+        "condition": "always"
+      },
+      {
+        "from": "mr",
+        "to": "e_s",
+        "condition": "always"
+      },
+      {
+        "from": "mqr",
+        "to": "e_s",
+        "condition": "always"
+      },
+      {
+        "from": "e_s",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "oe",
+        "to": "ee",
+        "condition": "always"
+      },
+      {
+        "from": "xg",
+        "to": "xl",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "bcg",
+        "to": "bl",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "bu",
+        "to": "bl",
+        "condition": "sy-uname = 'AKR_TEST'"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zre_indexmiete_f02.abap:134 — kein Fachsatz „der Brief wird per SAPscript gedruckt und das Briefdatum vermerkt“: die Routine BRIEF_SAPSCRIPT wird nirgends aufgerufen",
+    "zre_indexmiete_f01.abap:62 — kein Fachsatz „Verträge innerhalb der Jahresfrist werden als übersprungen gelistet“: sie fallen ohne Ergebniszeile heraus",
+    "zre_indexmiete_f02.abap:105 — kein Fachsatz „im Testlauf werden die Briefe nur in der Vorschau gezeigt“: die Vorschau hängt am Benutzernamen, im Testlauf werden gar keine Briefe erzeugt",
+    "zre_indexmiete_f02.abap:35 — kein Fachsatz „die bisherige Konditionszeile wird beendet“: übergeben wird nur eine neue Zeile ab dem Wirksamkeitsdatum",
+    "zre_indexmiete_f02.abap:51 — kein Fachsatz „die Fortschreibung von Basiswert und letzter Anpassung ist zusammen mit der Vertragsänderung festgeschrieben“: das UPDATE steht nach dem COMMIT und wird erst mit dem nächsten Commit wirksam; scheitert die Änderung des nächsten Vertrags, nimmt dessen Rollback die Fortschreibung mit zurück, während die neue Kondition bestehen bleibt"
+  ],
+  "processDescription": "Die Mietbuchhaltung startet den Report nach Veröffentlichung des Verbraucherpreisindex mit Buchungskreis, Indexmonat, Wirksamkeitsdatum, optional einzelnen Verträgen sowie Testlauf- und Briefschalter. Ein Wirksamkeitsdatum, das kein Monatserster ist, wird schon auf dem Selektionsbild abgewiesen. Der Report liest die laufenden Verträge mit aktiver Wertsicherungsklausel und die Indexwerte des Monats; gibt es keine Verträge, erscheint ein Hinweis und es wird nichts ausgegeben. Je Vertrag berechnet er die Indexveränderung gegen den Basiswert; fehlt der Indexwert, bleibt die Veränderung unter der Schwelle oder fehlt die gültige Mietkondition, wird der Vertrag als übersprungen gelistet. Verträge, deren letzte Anpassung weniger als ein Jahr zurückliegt, fallen ohne Eintrag heraus. Für die übrigen ergibt sich die neue Miete aus alter Miete mal Indexverhältnis, auf Cent gerundet. Im Echtlauf sperrt er jeden Vertrag, legt eine neue Konditionszeile ab dem Wirksamkeitsdatum an, schreibt bei Erfolg fest und schreibt Basiswert, Basismonat und Anpassungsdatum fort, bei Fehler rollt er zurück; danach entsperrt er. Sind Briefdruck gewählt und zentral eingeschaltet und ist das Formular vorhanden, druckt er für jeden angepassten Vertrag ein Anpassungsschreiben; unter dem Benutzer AKR_TEST nur als Vorschau. Verträge mit Fehler, Sperre oder Druckfehler meldet er per Mail an die Objektbetreuung. Zum Schluss zeigt er die Ergebnisliste. Eine alte SAPscript-Briefroutine steht noch im Code, wird aber nie aufgerufen. Die Fortschreibung des Basiswerts wird erst mit dem nächsten Commit wirksam; scheitert die Änderung des folgenden Vertrags, nimmt dessen Rollback sie wieder zurück, obwohl die neue Kondition bereits festgeschrieben ist."
+}

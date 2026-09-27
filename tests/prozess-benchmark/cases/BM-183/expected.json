@@ -1,0 +1,317 @@
+{
+  "id": "BM-183",
+  "title": "Frachtpreis aus Shared-Objects-Tarifcache: Neuaufbau bei fehlender Version, Gewichtsstaffel",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": null,
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZCL_TM_TARIF_AREA",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 9,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:9"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_TM_TARIF_LOADER",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:11"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-183-B01",
+      "text": "Für die Frachtpreisberechnung wird der im Hauptspeicher gehaltene Speditionstarif geöffnet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:9"
+        }
+      ]
+    },
+    {
+      "id": "BM-183-B02",
+      "text": "Liegt keine gültige Tarifversion im Speicher, wird der Tarifspeicher neu aufgebaut und danach geöffnet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-183-B03",
+      "text": "Zur angefragten Relation wird der Tarifsatz ermittelt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-183-B04",
+      "text": "Gibt es für die Relation keinen Tarif, wird die Kalkulation mit dem Fehler KEIN_TARIF abgebrochen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-183-B05",
+      "text": "Bis 1.000 kg gilt der Grundpreis, darüber wird das Mehrgewicht anteilig mit dem Satz je 100 kg aufgeschlagen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:4"
+        },
+        "meaning": "Frachtpreis für Relation und Gewicht anfragen"
+      },
+      {
+        "id": "a1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:9"
+        },
+        "meaning": "Tarifspeicher lesend öffnen"
+      },
+      {
+        "id": "b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        "meaning": "Tarifspeicher neu aufbauen"
+      },
+      {
+        "id": "a2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Neu aufgebauten Tarifspeicher öffnen"
+      },
+      {
+        "id": "rd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Tarifsatz der Relation ermitteln"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Tarif für Relation vorhanden?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Abbruch: kein Tarif"
+      },
+      {
+        "id": "pr",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Frachtpreis nach Gewichtsstaffel berechnen"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Frachtpreis an Kalkulation zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "a1",
+        "condition": "always"
+      },
+      {
+        "from": "a1",
+        "to": "b",
+        "condition": "CATCH cx_shm_no_active_version cx_shm_inconsistent"
+      },
+      {
+        "from": "a1",
+        "to": "rd",
+        "condition": "else"
+      },
+      {
+        "from": "b",
+        "to": "a2",
+        "condition": "always"
+      },
+      {
+        "from": "a2",
+        "to": "rd",
+        "condition": "always"
+      },
+      {
+        "from": "rd",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "e1",
+        "condition": "ls_satz IS INITIAL"
+      },
+      {
+        "from": "g",
+        "to": "pr",
+        "condition": "else"
+      },
+      {
+        "from": "pr",
+        "to": "e2",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:25 — kein Fachsatz „je angefangene 100 kg wird aufgeschlagen“: gerechnet wird anteilig ohne Aufrundung auf volle 100 kg",
+    "source.abap:12 — kein Fachsatz „schlägt auch der Neuaufbau fehl, wird ein Fehler gemeldet“: der zweite Öffnungsversuch steht außerhalb des TRY-Blocks, eine erneute Ausnahme bricht unbehandelt ab",
+    "gesamte Scheibe — kein Fachsatz „der Frachtpreis wird in der Lieferung oder im Transport gespeichert“: die Methode berechnet nur und gibt den Preis zurück"
+  ],
+  "processDescription": "Die Frachtkostenkalkulation fragt den Preis für eine Relation und ein Gewicht an. Die Methode öffnet den im Hauptspeicher des Applikationsservers gehaltenen Speditionstarif lesend. Gibt es dort keine aktive oder nur eine inkonsistente Version, baut ein Ladeprogramm den Tarifspeicher neu auf, und die Methode öffnet ihn erneut; scheitert auch das, bricht sie unbehandelt ab. Anschließend ermittelt sie den Tarifsatz der Relation und gibt den Speicher wieder frei. Fehlt ein Tarif für die Relation, bricht sie mit dem Fehler KEIN_TARIF ab. Sonst gilt bis 1.000 kg der Grundpreis; darüber wird das Mehrgewicht anteilig mit dem Satz je 100 kg aufgeschlagen. Der Preis wird nur zurückgegeben, nicht gespeichert."
+}

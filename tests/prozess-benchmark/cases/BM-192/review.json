@@ -1,0 +1,28 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_v (end) / a_ok (neu)",
+      "before": "e_v end auf zcl_isu_mr_validator.abap:140 (rv_ok = xsdbool( … ))",
+      "after": "a_ok action auf :140 (Ergebnis festlegen), e_v end auf :142 (ENDMETHOD.); l_reg -> a_ok [no more rows], a_ok -> e_v [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION. Die Berechnung des Rückgabewerts ist ein action-Knoten.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf c_val",
+      "before": "c_val -> g_val [always]",
+      "after": "e_v0 -> g_val [always]; e_v2 -> g_val [always]; e_v -> g_val [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_cde (end) / oc_copy (neu)",
+      "before": "e_cde end auf zcl_zisu_meter_dpc_ext.abap:131 (copy_data_to_ref( ), geerbte Methode der Gateway-Basisklasse)",
+      "after": "oc_copy opaque_call auf :131, e_cde end auf :137 (ENDMETHOD.); l_doc -> oc_copy [no more rows], oc_copy -> e_cde [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION. copy_data_to_ref ist ein Aufruf einer nicht im Fall liegenden geerbten Methode (opaque_call).",
+      "category": "Anker"
+    }
+  ],
+  "doubts": []
+}

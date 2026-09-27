@@ -1,0 +1,14 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten o1 (neu) vor e1",
+      "before": "e1 end auf source.abap:20 ohne output",
+      "after": "o1 output auf source.abap:20, Kante o1 -> e1 [always]; eingehende Kanten auf o1 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

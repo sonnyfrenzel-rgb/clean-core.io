@@ -1,0 +1,36 @@
+{
+  "id": "BM-166",
+  "title": "IS-Retail: Aktionsmenge nach Filialquote auf die Filialen eines Verteilzentrums aufteilen",
+  "domain": "Branchenlösung IS-Retail – Aufteilung",
+  "band": "mittel",
+  "loc": 82,
+  "constructs": [
+    "AT SELECTION-SCREEN ON",
+    "MESSAGE TYPE E im Selektionsbild",
+    "JOIN Z-Tabelle mit T001W",
+    "MESSAGE … DISPLAY LIKE + RETURN",
+    "REDUCE",
+    "CHECK in LOOP",
+    "CONV/trunc",
+    "READ TABLE … INDEX 1 ASSIGNING",
+    "VALUE # FOR",
+    "MODIFY … FROM TABLE",
+    "COMMIT WORK",
+    "CL_SALV_TABLE mit TRY/CATCH"
+  ],
+  "scenario": "Handelskette ersetzt für eine Region den Standard-Aufteiler durch einen Z-Report: der Disponent verteilt eine Aktionsmenge des Verteilzentrums nach gepflegter Filialquote auf die belieferten Filialen.",
+  "s4_issues": [
+    "Eigenbau neben der Aufteilung (Allocation Table, WA01 / Fiori-Aufteilung)",
+    "Direkter Zugriff auf T001W-Werkstyp statt Site-API",
+    "Materialnummer 40 Zeichen in Z-Tabelle ZRT_AUFTEIL"
+  ],
+  "wave": 2,
+  "module": "IS-Retail",
+  "edge_constructs": [
+    "AT SELECTION-SCREEN ON p_vz mit MESSAGE TYPE E",
+    "RETURN aus START-OF-SELECTION",
+    "CHECK mitten in der Schleife",
+    "REDUCE / VALUE # ( FOR … )",
+    "TRY … CATCH"
+  ]
+}

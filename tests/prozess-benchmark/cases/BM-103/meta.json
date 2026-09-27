@@ -1,0 +1,29 @@
+{
+  "id": "BM-103",
+  "title": "Servicemeldung beim Sichern: Priorität aus Kundenklasse ableiten (BAdI NOTIF_EVENT_SAVE)",
+  "domain": "CS — Servicemeldung",
+  "band": "einfach",
+  "loc": 23,
+  "constructs": [
+    "BAdI-Methode",
+    "CHECK als Methodenausstieg",
+    "IF sy-uname",
+    "RETURN",
+    "SELECT SINGLE neue Syntax",
+    "SWITCH #"
+  ],
+  "scenario": "Kundenservice-Hotline erfasst Servicemeldungen; ein BAdI setzt beim Sichern die Priorität abhängig von der Kundenklassifizierung aus dem Debitorenstamm.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf KNA1; in S/4 Kundenklassifizierung über Geschäftspartner/CVI",
+    "Hart kodierter Benutzername im produktiven Code",
+    "Klassischer BAdI NOTIF_EVENT_SAVE; Cloud-fähige Erweiterung erfordert freigegebenen BAdI"
+  ],
+  "wave": 2,
+  "module": "CS",
+  "edge_constructs": [
+    "Debug-Hintertür IF sy-uname",
+    "SWITCH #",
+    "CHECK als Methodenausstieg",
+    "auskommentierter Zweig"
+  ]
+}

@@ -1,0 +1,1256 @@
+{
+  "id": "BM-131",
+  "title": "PS-Budgetausschöpfung je PSP-Element: Ist und Obligo gegen Jahresbudget mit Toleranzampel und Mail an die Projektleitung",
+  "classes": [
+    "K01",
+    "K06",
+    "K10",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZPS_AVC_TOL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zps_budget_avc.abap",
+        "line": 33,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zps_budget_avc.abap:33"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PROJ",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zps_budget_avc_f01.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zps_budget_avc_f01.abap:15"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PRPS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zps_budget_avc_f01.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zps_budget_avc_f01.abap:15"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "COSP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zps_budget_avc_f01.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zps_budget_avc_f01.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BPJA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zps_budget_avc_f01.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zps_budget_avc_f01.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "COOI",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zps_budget_avc_f01.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zps_budget_avc_f01.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPS_MAIL_UTIL",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zps_budget_avc.abap",
+        "line": 55,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zps_budget_avc.abap:55"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-131-B01",
+      "text": "Auf dem Selektionsbild wird das eingegebene Toleranzprofil gelesen; ist es unbekannt, wird eine Fehlermeldung ausgegeben und die Eingabe erneut angefordert.",
+      "anchors": [
+        {
+          "file": "zps_budget_avc.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:33"
+        },
+        {
+          "file": "zps_budget_avc.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:35"
+        },
+        {
+          "file": "zps_budget_avc.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-131-B02",
+      "text": "Jede Listenseite erhält eine Überschrift mit Geschäftsjahr und Toleranzprofil.",
+      "anchors": [
+        {
+          "file": "zps_budget_avc.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-131-B03",
+      "text": "Es werden die nicht gelöschten PSP-Elemente der ausgewählten Projekte gelesen; ohne Treffer werden keine Werte ermittelt.",
+      "anchors": [
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:15"
+        },
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-131-B04",
+      "text": "Die Istkosten des Geschäftsjahres in Version 0 werden für alle PSP-Elemente gelesen.",
+      "anchors": [
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-131-B05",
+      "text": "Je PSP-Element wird das Jahresbudget aus Ursprungsbudget, Nachträgen und Rückgaben summiert.",
+      "anchors": [
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-131-B06",
+      "text": "Die Istkosten des Elements werden über die Perioden 1 bis 16 aufsummiert.",
+      "anchors": [
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:39"
+        },
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:40"
+        },
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-131-B07",
+      "text": "Das Obligo des Elements wird über alle Jahre summiert.",
+      "anchors": [
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-131-B08",
+      "text": "Werden keine PSP-Elemente gefunden, erscheint ein Warnhinweis und die Bewertung entfällt; die Listenausgabe läuft trotzdem.",
+      "anchors": [
+        {
+          "file": "zps_budget_avc.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:46"
+        },
+        {
+          "file": "zps_budget_avc.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:47"
+        },
+        {
+          "file": "zps_budget_avc.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-131-B09",
+      "text": "PSP-Elemente ohne Budget werden als „ohne Budget“ gekennzeichnet und nicht weiter bewertet.",
+      "anchors": [
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:60"
+        },
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-131-B10",
+      "text": "Die Ausschöpfung ist die Summe aus Ist und Obligo in Prozent des Jahresbudgets.",
+      "anchors": [
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-131-B11",
+      "text": "Ab der Fehlergrenze des Profils ist die Ampel rot, ab der Warngrenze gelb, sonst grün.",
+      "anchors": [
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-131-B12",
+      "text": "Die Anzahl der roten PSP-Elemente wird gezählt.",
+      "anchors": [
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-131-B13",
+      "text": "Die Liste zeigt je PSP-Element Budget, Ist, Obligo, Ausschöpfung und Ampel, nach Projekt sortiert, mit einer Summenzeile je Projekt.",
+      "anchors": [
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:82"
+        },
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:84"
+        },
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:86"
+        }
+      ]
+    },
+    {
+      "id": "BM-131-B14",
+      "text": "Am Listenende steht die Anzahl der PSP-Elemente über der Fehlergrenze.",
+      "anchors": [
+        {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:91"
+        }
+      ]
+    },
+    {
+      "id": "BM-131-B15",
+      "text": "Ist der Mailversand gewählt und gibt es rote Elemente, wird die Projektleitung über eine Routine eines anderen Programms informiert, sofern diese existiert.",
+      "anchors": [
+        {
+          "file": "zps_budget_avc.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:54"
+        },
+        {
+          "file": "zps_budget_avc.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:55"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:32"
+        },
+        "meaning": "Prüfung des Toleranzprofils auf dem Selektionsbild"
+      },
+      {
+        "id": "sr",
+        "type": "read",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:33"
+        },
+        "meaning": "Toleranzprofil lesen"
+      },
+      {
+        "id": "sg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:35"
+        },
+        "meaning": "Profil vorhanden?"
+      },
+      {
+        "id": "sm",
+        "type": "output",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:36"
+        },
+        "meaning": "Fehler „Profil unbekannt“, Eingabe erneut anfordern"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:36"
+        },
+        "meaning": "Zurück auf das Selektionsbild"
+      },
+      {
+        "id": "sx",
+        "type": "end",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:37"
+        },
+        "meaning": "Profil übernommen"
+      },
+      {
+        "id": "tp",
+        "type": "start",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:39"
+        },
+        "meaning": "Seitenkopf"
+      },
+      {
+        "id": "th",
+        "type": "output",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:40"
+        },
+        "meaning": "Überschrift mit Geschäftsjahr und Profil"
+      },
+      {
+        "id": "e_tp",
+        "type": "end",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:42"
+        },
+        "meaning": "Seitenkopf fertig"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:44"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:45"
+        },
+        "meaning": "Budget, Ist und Obligo je PSP-Element ermitteln"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:46"
+        },
+        "meaning": "Keine PSP-Elemente gefunden?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:47"
+        },
+        "meaning": "Hinweis „keine Daten“ als Warnung"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:48"
+        },
+        "meaning": "Selektionsverarbeitung beenden"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:50"
+        },
+        "meaning": "Ausschöpfung bewerten"
+      },
+      {
+        "id": "e_s",
+        "type": "end",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:50"
+        },
+        "meaning": "Selektionsverarbeitung fertig"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:52"
+        },
+        "meaning": "Listenaufbereitung"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:53"
+        },
+        "meaning": "Liste mit Projektsummen ausgeben"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:54"
+        },
+        "meaning": "Mailversand gewünscht und rote Elemente vorhanden?"
+      },
+      {
+        "id": "c4",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:55"
+        },
+        "meaning": "Mail an Projektleitung über fremdes Programm (falls vorhanden)"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "zps_budget_avc.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc.abap:57"
+        },
+        "meaning": "Lauf fertig"
+      },
+      {
+        "id": "d",
+        "type": "start",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:8"
+        },
+        "meaning": "Daten ermitteln"
+      },
+      {
+        "id": "dq",
+        "type": "read",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:15"
+        },
+        "meaning": "Nicht gelöschte PSP-Elemente der Projekte lesen"
+      },
+      {
+        "id": "dc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:20"
+        },
+        "meaning": "PSP-Elemente gefunden?"
+      },
+      {
+        "id": "dco",
+        "type": "read",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:23"
+        },
+        "meaning": "Istkosten des Geschäftsjahres lesen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:30"
+        },
+        "meaning": "PSP-Elemente durchgehen"
+      },
+      {
+        "id": "rb",
+        "type": "read",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:32"
+        },
+        "meaning": "Jahresbudget (Ursprung, Nachtrag, Rückgabe) summieren"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:39"
+        },
+        "meaning": "Istkostensätze des Elements durchgehen"
+      },
+      {
+        "id": "lo",
+        "type": "loop",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:40"
+        },
+        "meaning": "Perioden 1 bis 16"
+      },
+      {
+        "id": "as",
+        "type": "action",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:42"
+        },
+        "meaning": "Periodenwert über Feldnamen greifen und zum Ist addieren"
+      },
+      {
+        "id": "ro",
+        "type": "read",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:48"
+        },
+        "meaning": "Obligo des Elements über alle Jahre summieren"
+      },
+      {
+        "id": "dend",
+        "type": "end",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:51"
+        },
+        "meaning": "Daten ermittelt"
+      },
+      {
+        "id": "b",
+        "type": "start",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:56"
+        },
+        "meaning": "Bewertung"
+      },
+      {
+        "id": "bl",
+        "type": "loop",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:59"
+        },
+        "meaning": "PSP-Elemente bewerten"
+      },
+      {
+        "id": "bg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:60"
+        },
+        "meaning": "Kein Budget?"
+      },
+      {
+        "id": "bp",
+        "type": "action",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:64"
+        },
+        "meaning": "Ausschöpfung = (Ist + Obligo) in Prozent des Budgets"
+      },
+      {
+        "id": "ba",
+        "type": "action",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:65"
+        },
+        "meaning": "Ampel nach Fehler- und Warngrenze des Profils"
+      },
+      {
+        "id": "br",
+        "type": "action",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:69"
+        },
+        "meaning": "Rote Elemente zählen"
+      },
+      {
+        "id": "bend",
+        "type": "end",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:72"
+        },
+        "meaning": "Bewertung fertig"
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:77"
+        },
+        "meaning": "Listenausgabe"
+      },
+      {
+        "id": "ll",
+        "type": "loop",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:81"
+        },
+        "meaning": "Elemente nach Projekt sortiert durchgehen"
+      },
+      {
+        "id": "lw",
+        "type": "output",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:82"
+        },
+        "meaning": "Element mit Budget, Ist, Obligo, Prozent und Ampel listen"
+      },
+      {
+        "id": "lae",
+        "type": "gateway",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:84"
+        },
+        "meaning": "Letztes Element des Projekts?"
+      },
+      {
+        "id": "lws",
+        "type": "output",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:86"
+        },
+        "meaning": "Projektsummen von Budget, Ist und Obligo ausgeben"
+      },
+      {
+        "id": "lwt",
+        "type": "output",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:91"
+        },
+        "meaning": "Anzahl roter Elemente ausgeben"
+      },
+      {
+        "id": "lend",
+        "type": "end",
+        "anchor": {
+          "file": "zps_budget_avc_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_budget_avc_f01.abap:92"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "ss",
+        "to": "sr",
+        "condition": "always"
+      },
+      {
+        "from": "sr",
+        "to": "sg",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "sm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sm",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "sx",
+        "condition": "else"
+      },
+      {
+        "from": "tp",
+        "to": "th",
+        "condition": "always"
+      },
+      {
+        "from": "s",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "d",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "gt_erg IS INITIAL"
+      },
+      {
+        "from": "m1",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "c2",
+        "condition": "else"
+      },
+      {
+        "from": "c2",
+        "to": "b",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "c3",
+        "condition": "always"
+      },
+      {
+        "from": "c3",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "c4",
+        "condition": "p_mail = 'X' AND gv_rot > 0"
+      },
+      {
+        "from": "g2",
+        "to": "e2",
+        "condition": "else"
+      },
+      {
+        "from": "c4",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "d",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "dq",
+        "to": "dc",
+        "condition": "always"
+      },
+      {
+        "from": "dc",
+        "to": "dco",
+        "condition": "gt_erg IS NOT INITIAL"
+      },
+      {
+        "from": "dc",
+        "to": "dend",
+        "condition": "else"
+      },
+      {
+        "from": "dco",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "rb",
+        "condition": "next row"
+      },
+      {
+        "from": "rb",
+        "to": "l2",
+        "condition": "always"
+      },
+      {
+        "from": "l2",
+        "to": "lo",
+        "condition": "next row"
+      },
+      {
+        "from": "lo",
+        "to": "as",
+        "condition": "next row"
+      },
+      {
+        "from": "as",
+        "to": "lo",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lo",
+        "to": "l2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "l2",
+        "to": "ro",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ro",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l1",
+        "to": "dend",
+        "condition": "no more rows"
+      },
+      {
+        "from": "b",
+        "to": "bl",
+        "condition": "always"
+      },
+      {
+        "from": "bl",
+        "to": "bg",
+        "condition": "next row"
+      },
+      {
+        "from": "bg",
+        "to": "bp",
+        "condition": "else"
+      },
+      {
+        "from": "bp",
+        "to": "ba",
+        "condition": "always"
+      },
+      {
+        "from": "ba",
+        "to": "bl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "bl",
+        "to": "br",
+        "condition": "no more rows"
+      },
+      {
+        "from": "br",
+        "to": "bend",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "ll",
+        "condition": "always"
+      },
+      {
+        "from": "ll",
+        "to": "lw",
+        "condition": "next row"
+      },
+      {
+        "from": "lw",
+        "to": "lae",
+        "condition": "always"
+      },
+      {
+        "from": "lae",
+        "to": "lws",
+        "condition": "AT END OF pspid"
+      },
+      {
+        "from": "lws",
+        "to": "ll",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lae",
+        "to": "ll",
+        "condition": "else"
+      },
+      {
+        "from": "ll",
+        "to": "lwt",
+        "condition": "no more rows"
+      },
+      {
+        "from": "lwt",
+        "to": "lend",
+        "condition": "always"
+      },
+      {
+        "from": "th",
+        "to": "e_tp",
+        "condition": "always"
+      },
+      {
+        "from": "dend",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "e_s",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "lend",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "bg",
+        "to": "bl",
+        "condition": "<ls_erg>-budget = 0"
+      },
+      {
+        "from": "bend",
+        "to": "e_s",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zps_budget_avc.abap:55 — kein Fachsatz „die Projektleiter erhalten eine E-Mail“: die Routine liegt in einem anderen Programm, und wegen IF FOUND passiert ohne sie stillschweigend nichts",
+    "zps_budget_avc_f01.abap:48 — kein Fachsatz „das Obligo des Geschäftsjahres wird berücksichtigt“: summiert wird das Obligo aller Jahre",
+    "zps_budget_avc.abap:48 — kein Fachsatz „ohne Daten endet der Report ohne Liste“: RETURN beendet nur START-OF-SELECTION, END-OF-SELECTION gibt die leere Liste mit Zähler aus",
+    "gesamte Scheibe — kein Fachsatz „Buchungen werden gesperrt oder das Budget angepasst“: der Report liest und bewertet nur"
+  ],
+  "processDescription": "Der Controller startet den Report mit Projekten, Geschäftsjahr, Toleranzprofil und optionalem Mailversand. Schon auf dem Selektionsbild wird das Toleranzprofil gelesen; ist es unbekannt, erscheint eine Fehlermeldung und das Feld muss korrigiert werden. Der Report liest die nicht gelöschten PSP-Elemente der Projekte und die Istkosten des Geschäftsjahres. Je Element summiert er das Jahresbudget aus Ursprungsbudget, Nachträgen und Rückgaben, addiert die Istkosten der Perioden 1 bis 16 und summiert das Obligo über alle Jahre. Findet er keine Elemente, gibt er einen Warnhinweis aus und überspringt die Bewertung; die Liste wird trotzdem aufgebaut. Elemente ohne Budget werden als „ohne Budget“ gekennzeichnet. Für alle anderen berechnet er die Ausschöpfung als Ist plus Obligo in Prozent des Budgets und setzt die Ampel nach Fehler- und Warngrenze des Profils; die roten Elemente werden gezählt. Die Liste zeigt je Element die Werte mit Ampel, je Projekt eine Summenzeile und am Ende die Zahl der roten Elemente; jede Seite hat eine Überschrift. Ist Mailversand gewählt und gibt es rote Elemente, ruft er eine Mailroutine eines anderen Programms auf; fehlt sie, geschieht nichts. Es wird nichts gebucht oder gesperrt."
+}

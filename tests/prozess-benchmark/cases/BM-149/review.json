@@ -1,0 +1,35 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten o1 (neu)",
+      "before": "keine Knoten auf source.abap:26",
+      "after": "o1 output auf source.abap:26; g1 -> o1 [lt_trips IS INITIAL]; o1 -> e1 [always]",
+      "why": "Die Meldung MESSAGE s398 (Z. 26) ist die fachliche Ausgabe dieses Pfades (B02 verankert sie); jede Ausgabe, die den Prozess trägt, gehört ins Skelett.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o5 (neu)",
+      "before": "keine Knoten auf source.abap:55",
+      "after": "o5 output auf source.abap:55; g4 -> o5 [p_test = abap_true OR lr_pernr IS INITIAL]; o5 -> e4 [always]",
+      "why": "Die Listausgabe WRITE (Z. 55) ist das Ergebnis des Testlaufs bzw. des leeren Laufs; jede Ausgabe, die den Prozess trägt, gehört ins Skelett.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e5 (neu)",
+      "before": "o4 output auf source.abap:68 ohne end",
+      "after": "e5 end auf source.abap:68; o4 -> e5 [always]",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e6 (neu)",
+      "before": "kein end-Knoten auf source.abap:84",
+      "after": "e6 end auf source.abap:84; o6 -> e6 [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

@@ -1,0 +1,29 @@
+{
+  "id": "BM-181",
+  "title": "Lieferschein-Druck über Nachrichtensteuerung: ENTRY-Routine ruft Smart Form dynamisch",
+  "domain": "Technische Randbereiche — Formulardruck / Nachrichtensteuerung",
+  "band": "einfach",
+  "loc": 39,
+  "constructs": [
+    "FORM ENTRY (Nachrichtensteuerung)",
+    "NAST-Kopfzeile",
+    "SELECT SINGLE LIKP",
+    "SSF_FUNCTION_MODULE_NAME",
+    "CALL FUNCTION lv_fm (generierter Smart-Forms-Baustein)",
+    "return_code an RSNAST00"
+  ],
+  "scenario": "Kundeneigenes Druckprogramm für die Lieferschein-Nachrichtenart, das RSNAST00 bzw. die Nachrichtenverarbeitung beim Sichern der Auslieferung über die FORM ENTRY aufruft.",
+  "s4_issues": [
+    "Smart Forms sind in S/4 weiter lauffähig, strategisch aber durch Adobe Forms / Output Management (BRF+) abgelöst",
+    "NAST-basierte Nachrichtenfindung für Auslieferungen wird in S/4 durch das neue Output Management ersetzt",
+    "Direkter Lesezugriff auf LIKP statt freigegebenem CDS-View (I_DeliveryDocument)"
+  ],
+  "wave": 2,
+  "module": "LE-SHP",
+  "edge_constructs": [
+    "RETURN aus FORM",
+    "dynamischer CALL FUNCTION lv_fm",
+    "auskommentierter Fehlerzweig",
+    "xsdbool"
+  ]
+}

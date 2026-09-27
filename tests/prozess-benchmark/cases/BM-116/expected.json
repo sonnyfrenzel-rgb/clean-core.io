@@ -1,0 +1,2554 @@
+{
+  "id": "BM-116",
+  "title": "Leistungsabhängige Wartung im Massenlauf: Fälligkeit aus Zählerentwicklung hochrechnen, Aufträge parallel je Werk anlegen",
+  "classes": [
+    "K01",
+    "K04",
+    "K12",
+    "K02",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "SPBT_INITIALIZE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpm_mplan_perf.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_mplan_perf.abap:21"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpm_mplan_perf.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_mplan_perf.abap:44"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpm_mplan_perf.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_mplan_perf.abap:65"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MPLA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpm_mplan_perf_f01.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_mplan_perf_f01.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MPOS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpm_mplan_perf_f01.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_mplan_perf_f01.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MMPT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpm_mplan_perf_f01.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_mplan_perf_f01.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JEST",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpm_mplan_perf_f01.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_mplan_perf_f01.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_PM_MPLAN_CALC",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zpm_mplan_perf_f01.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_mplan_perf_f01.abap:45"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD_FREE_TEXT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpm_mplan_perf_f01.abap",
+        "line": 116,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_mplan_perf_f01.abap:116"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpm_mplan_perf_f01.abap",
+        "line": 132,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_mplan_perf_f01.abap:132"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MMPT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_pm_mplan_calc.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_pm_mplan_calc.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MPOS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_pm_mplan_calc.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_pm_mplan_calc.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZPM_MPLA",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_pm_mplan_calc.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_pm_mplan_calc.abap:30"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZPM_MPLA",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_pm_mplan_calc.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_pm_mplan_calc.abap:47"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFIH",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzpm_mplanf01.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzpm_mplanf01.abap:38"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AUFK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzpm_mplanf01.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzpm_mplanf01.abap:38"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ALM_ORDER_MAINTAIN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzpm_mplanf01.abap",
+        "line": 70,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzpm_mplanf01.abap:70"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzpm_mplanf01.abap",
+        "line": 78,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzpm_mplanf01.abap:78"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPM_MPLAN_RUN",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "lzpm_mplanf01.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzpm_mplanf01.abap:83"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzpm_mplanf01.abap",
+        "line": 89,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzpm_mplanf01.abap:89"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_PM_USAGE_FORECAST",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "lzpm_mplanf01.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzpm_mplanf01.abap:23"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPM_MPLAN_RUN",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pm_usage_forecast.abap",
+        "line": 62,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pm_usage_forecast.abap:62"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "IMRG",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pm_usage_forecast.abap",
+        "line": 76,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pm_usage_forecast.abap:76"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-116-B01",
+      "text": "Bei Eingabe der Servergruppe wird die Parallelverarbeitung für diese Gruppe initialisiert; ist die Gruppe unbrauchbar, wird die Eingabe mit Fehler abgewiesen.",
+      "anchors": [
+        {
+          "file": "zpm_mplan_perf.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:21"
+        },
+        {
+          "file": "zpm_mplan_perf.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:35"
+        },
+        {
+          "file": "zpm_mplan_perf.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B02",
+      "text": "Zu Beginn wird ein Anwendungslog für den Lauf angelegt.",
+      "anchors": [
+        {
+          "file": "zpm_mplan_perf.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B03",
+      "text": "Es werden die leistungsabhängigen Wartungspläne der Selektion ermittelt, also Pläne mit einem Zyklus auf einem Messpunkt, ohne Löschvormerkung und nicht inaktiv.",
+      "anchors": [
+        {
+          "file": "zpm_mplan_perf.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:52"
+        },
+        {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B04",
+      "text": "Gibt es keine solchen Pläne, wird ein Hinweis ausgegeben und direkt zum Abschluss gesprungen.",
+      "anchors": [
+        {
+          "file": "zpm_mplan_perf.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:53"
+        },
+        {
+          "file": "zpm_mplan_perf.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:54"
+        },
+        {
+          "file": "zpm_mplan_perf.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B05",
+      "text": "Die Pläne werden je Planungswerk zu einem Paket gebündelt.",
+      "anchors": [
+        {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:39"
+        },
+        {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B06",
+      "text": "Ohne Parallelverarbeitung wird jedes Paket direkt berechnet und sein Ergebnis übernommen.",
+      "anchors": [
+        {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:44"
+        },
+        {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B07",
+      "text": "Mit Parallelverarbeitung wird jedes Paket als asynchrone Aufgabe in der Servergruppe gestartet.",
+      "anchors": [
+        {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:58"
+        },
+        {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B08",
+      "text": "Sind keine Prozesse frei, wird bis zu fünf Sekunden auf fertige Pakete gewartet und der Start wiederholt; bei anderen RFC-Fehlern wird das Paket mit Fehler protokolliert und ausgelassen.",
+      "anchors": [
+        {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:71"
+        },
+        {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:77"
+        },
+        {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B09",
+      "text": "Nach dem Verteilen wartet der Lauf höchstens eine Stunde, bis alle gestarteten Pakete zurückgemeldet haben.",
+      "anchors": [
+        {
+          "file": "zpm_mplan_perf.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B10",
+      "text": "Meldet ein Paket zurück, wird es als erledigt gezählt; ist es abgebrochen, wird das protokolliert, sonst werden seine Ergebnisse übernommen.",
+      "anchors": [
+        {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:96"
+        },
+        {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:103"
+        },
+        {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:105"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B11",
+      "text": "Protokolleinträge werden als Freitext ins Anwendungslog geschrieben.",
+      "anchors": [
+        {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:116"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B12",
+      "text": "Ein leeres Paket wird nicht bearbeitet; sonst werden zu den Plänen die Zyklen mit Messpunkt, Zykluslänge, Equipment, Planungswerk, Auftragsart und Leistungsart gelesen.",
+      "anchors": [
+        {
+          "file": "z_pm_mplan_calc.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_mplan_calc.abap:16"
+        },
+        {
+          "file": "z_pm_mplan_calc.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_mplan_calc.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B13",
+      "text": "Jeder Wartungsplan wird vor der Bearbeitung gesperrt; ist er gesperrt, wird er mit Status L übersprungen.",
+      "anchors": [
+        {
+          "file": "z_pm_mplan_calc.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_mplan_calc.abap:30"
+        },
+        {
+          "file": "z_pm_mplan_calc.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_mplan_calc.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B14",
+      "text": "Nach der Bearbeitung wird die Sperre wieder aufgehoben.",
+      "anchors": [
+        {
+          "file": "z_pm_mplan_calc.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_mplan_calc.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B15",
+      "text": "Für den Zyklus wird das Fälligkeitsdatum hochgerechnet; scheitert die Hochrechnung, erhält der Plan Status F mit dem Grund.",
+      "anchors": [
+        {
+          "file": "z_pm_mplan_calc.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_mplan_calc.abap:44"
+        },
+        {
+          "file": "lzpm_mplanf01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:23"
+        },
+        {
+          "file": "lzpm_mplanf01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B16",
+      "text": "Grundlage sind die nicht stornierten Messbelege der letzten 365 Tage; gibt es weniger als zwei, ist keine Hochrechnung möglich.",
+      "anchors": [
+        {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:76"
+        },
+        {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:82"
+        },
+        {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B17",
+      "text": "Die Tagesleistung ist die Differenz zwischen letzter und erster Ablesung geteilt durch die Tage dazwischen; ist sie nicht positiv, ist keine Hochrechnung möglich.",
+      "anchors": [
+        {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:50"
+        },
+        {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:95"
+        },
+        {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:51"
+        },
+        {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B18",
+      "text": "Ausgangspunkt ist der höchste beim letzten Lauf festgehaltene Zählerstand des Messpunkts, ohne früheren Lauf die älteste Ablesung.",
+      "anchors": [
+        {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:62"
+        },
+        {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:65"
+        },
+        {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B19",
+      "text": "Fällig ist der Zyklus, wenn Ausgangspunkt plus Zykluslänge erreicht ist; die Tage bis dahin werden aus der Tagesleistung ab der letzten Ablesung berechnet, ein bereits überschrittener Stand ergibt das Datum der letzten Ablesung.",
+      "anchors": [
+        {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B20",
+      "text": "Liegt die Fälligkeit mehr als 30 Tage in der Zukunft, erhält der Plan Status N „noch nicht fällig“.",
+      "anchors": [
+        {
+          "file": "lzpm_mplanf01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:31"
+        },
+        {
+          "file": "lzpm_mplanf01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B21",
+      "text": "Gibt es zum Plan bereits einen nicht technisch abgeschlossenen, nicht gelöschten Auftrag, erhält er Status O mit diesem Auftrag.",
+      "anchors": [
+        {
+          "file": "lzpm_mplanf01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:38"
+        },
+        {
+          "file": "lzpm_mplanf01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:44"
+        },
+        {
+          "file": "lzpm_mplanf01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B22",
+      "text": "Im Testlauf wird ein fälliger Plan nur mit Status T gemeldet.",
+      "anchors": [
+        {
+          "file": "lzpm_mplanf01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:51"
+        },
+        {
+          "file": "lzpm_mplanf01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B23",
+      "text": "Sonst wird ein Instandhaltungsauftrag mit Auftragsart, Planungswerk, Equipment, Leistungsart und dem Fälligkeitsdatum als Starttermin angelegt.",
+      "anchors": [
+        {
+          "file": "lzpm_mplanf01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B24",
+      "text": "Meldet die Anlage einen Fehler, wird sie zurückgenommen und der Plan erhält Status F.",
+      "anchors": [
+        {
+          "file": "lzpm_mplanf01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:77"
+        },
+        {
+          "file": "lzpm_mplanf01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:78"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B25",
+      "text": "Gelingt sie, werden Plan, Messpunkt, Auftrag, Fälligkeit und aktueller Zählerstand als Abruf festgehalten, alles wird festgeschrieben und der Plan erhält Status A.",
+      "anchors": [
+        {
+          "file": "lzpm_mplanf01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:83"
+        },
+        {
+          "file": "lzpm_mplanf01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:89"
+        }
+      ]
+    },
+    {
+      "id": "BM-116-B26",
+      "text": "Zum Abschluss wird das Anwendungslog gesichert und das Ergebnis je Plan als Liste angezeigt.",
+      "anchors": [
+        {
+          "file": "zpm_mplan_perf.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:65"
+        },
+        {
+          "file": "zpm_mplan_perf.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:70"
+        },
+        {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:138"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s_sel",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:20"
+        },
+        "meaning": "Eingabe Servergruppe prüfen"
+      },
+      {
+        "id": "c_spbt",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:21"
+        },
+        "meaning": "Parallelverarbeitung initialisieren"
+      },
+      {
+        "id": "g_spbt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:35"
+        },
+        "meaning": "Servergruppe unbrauchbar?"
+      },
+      {
+        "id": "m_spbt",
+        "type": "output",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:36"
+        },
+        "meaning": "Fehler zur Servergruppe"
+      },
+      {
+        "id": "x_spbt",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:36"
+        },
+        "meaning": "Selektionsbild bleibt stehen"
+      },
+      {
+        "id": "e_sel",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:37"
+        },
+        "meaning": "Eingabe in Ordnung"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:40"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "c_log",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:44"
+        },
+        "meaning": "Anwendungslog anlegen"
+      },
+      {
+        "id": "c_sp",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:52"
+        },
+        "meaning": "Leistungsabhängige Pläne lesen"
+      },
+      {
+        "id": "g_emp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:53"
+        },
+        "meaning": "Keine Pläne?"
+      },
+      {
+        "id": "m_emp",
+        "type": "output",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:54"
+        },
+        "meaning": "Hinweis keine Pläne"
+      },
+      {
+        "id": "x_stop",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:55"
+        },
+        "meaning": "Zum Abschluss springen"
+      },
+      {
+        "id": "c_dis",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:58"
+        },
+        "meaning": "Pakete je Werk verteilen"
+      },
+      {
+        "id": "w_wait",
+        "type": "action",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:61"
+        },
+        "meaning": "Auf alle Pakete warten (max. 1 h)"
+      },
+      {
+        "id": "s_eos",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:64"
+        },
+        "meaning": "Abschluss"
+      },
+      {
+        "id": "c_save",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:65"
+        },
+        "meaning": "Anwendungslog sichern"
+      },
+      {
+        "id": "c_disp",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_mplan_perf.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf.abap:70"
+        },
+        "meaning": "Ergebnis anzeigen"
+      },
+      {
+        "id": "s_sp",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:11"
+        },
+        "meaning": "Planauswahl"
+      },
+      {
+        "id": "r_sp",
+        "type": "read",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:12"
+        },
+        "meaning": "Pläne mit Messpunktzyklus ohne LÖVM/INAK lesen"
+      },
+      {
+        "id": "e_sp",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:24"
+        },
+        "meaning": "Pläne gelesen"
+      },
+      {
+        "id": "s_d",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:31"
+        },
+        "meaning": "Verteilung"
+      },
+      {
+        "id": "l_g",
+        "type": "loop",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:39"
+        },
+        "meaning": "Pakete je Planungswerk"
+      },
+      {
+        "id": "g_p",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:44"
+        },
+        "meaning": "Sequentiell?"
+      },
+      {
+        "id": "c_seq",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:45"
+        },
+        "meaning": "Paket direkt berechnen"
+      },
+      {
+        "id": "l_do",
+        "type": "loop",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:58"
+        },
+        "meaning": "Startversuche des Pakets"
+      },
+      {
+        "id": "a_rfc",
+        "type": "async",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:59"
+        },
+        "meaning": "Paket als aRFC in Servergruppe starten"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:71"
+        },
+        "meaning": "Start gelungen, keine Ressourcen oder Fehler?"
+      },
+      {
+        "id": "w5",
+        "type": "action",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:77"
+        },
+        "meaning": "Kurz auf freie Prozesse warten"
+      },
+      {
+        "id": "c_la",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:80"
+        },
+        "meaning": "RFC-Fehler des Pakets protokollieren"
+      },
+      {
+        "id": "e_d",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:85"
+        },
+        "meaning": "Alle Pakete verteilt"
+      },
+      {
+        "id": "s_r",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:92"
+        },
+        "meaning": "Rückmeldung eines Pakets"
+      },
+      {
+        "id": "a_rcv",
+        "type": "async",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:96"
+        },
+        "meaning": "Ergebnis des Pakets abholen"
+      },
+      {
+        "id": "g_r",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:103"
+        },
+        "meaning": "Paket abgebrochen?"
+      },
+      {
+        "id": "c_lr",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:105"
+        },
+        "meaning": "Abbruch protokollieren"
+      },
+      {
+        "id": "x_r",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:106"
+        },
+        "meaning": "Rückmeldung ohne Ergebnis beenden"
+      },
+      {
+        "id": "e_r",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:109"
+        },
+        "meaning": "Ergebnis übernommen"
+      },
+      {
+        "id": "s_la",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:114"
+        },
+        "meaning": "Protokolleintrag"
+      },
+      {
+        "id": "c_bal",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:116"
+        },
+        "meaning": "Freitext ins Anwendungslog"
+      },
+      {
+        "id": "e_la",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:123"
+        },
+        "meaning": "Eintrag ergänzt"
+      },
+      {
+        "id": "s_dp",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:128"
+        },
+        "meaning": "Ergebnisanzeige"
+      },
+      {
+        "id": "c_fac",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:132"
+        },
+        "meaning": "ALV für Ergebnis erzeugen"
+      },
+      {
+        "id": "c_show",
+        "type": "output",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:138"
+        },
+        "meaning": "Ergebnis je Plan anzeigen"
+      },
+      {
+        "id": "m_dp",
+        "type": "output",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:140"
+        },
+        "meaning": "ALV-Fehler melden"
+      },
+      {
+        "id": "e_dp",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_mplan_perf_f01.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_mplan_perf_f01.abap:142"
+        },
+        "meaning": "Lauf beendet"
+      },
+      {
+        "id": "s_fm",
+        "type": "start",
+        "anchor": {
+          "file": "z_pm_mplan_calc.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_mplan_calc.abap:1"
+        },
+        "meaning": "Paket berechnen"
+      },
+      {
+        "id": "g_chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_pm_mplan_calc.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_mplan_calc.abap:16"
+        },
+        "meaning": "Paket nicht leer?"
+      },
+      {
+        "id": "r_cyc",
+        "type": "read",
+        "anchor": {
+          "file": "z_pm_mplan_calc.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_mplan_calc.abap:18"
+        },
+        "meaning": "Messpunktzyklen und Positionsdaten der Pläne lesen"
+      },
+      {
+        "id": "l_c",
+        "type": "loop",
+        "anchor": {
+          "file": "z_pm_mplan_calc.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_mplan_calc.abap:26"
+        },
+        "meaning": "Zyklen durchgehen"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "z_pm_mplan_calc.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_mplan_calc.abap:30"
+        },
+        "meaning": "Wartungsplan sperren"
+      },
+      {
+        "id": "g_lk",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_pm_mplan_calc.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_mplan_calc.abap:37"
+        },
+        "meaning": "Plan gesperrt?"
+      },
+      {
+        "id": "c_pp",
+        "type": "call",
+        "anchor": {
+          "file": "z_pm_mplan_calc.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_mplan_calc.abap:44"
+        },
+        "meaning": "Zyklus bearbeiten"
+      },
+      {
+        "id": "dq",
+        "type": "lock",
+        "anchor": {
+          "file": "z_pm_mplan_calc.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_mplan_calc.abap:47"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "e_fm",
+        "type": "end",
+        "anchor": {
+          "file": "z_pm_mplan_calc.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_mplan_calc.abap:51"
+        },
+        "meaning": "Ergebnisse zurückgeben"
+      },
+      {
+        "id": "s_pp",
+        "type": "start",
+        "anchor": {
+          "file": "lzpm_mplanf01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:10"
+        },
+        "meaning": "Zyklus bearbeiten"
+      },
+      {
+        "id": "c_due",
+        "type": "call",
+        "anchor": {
+          "file": "lzpm_mplanf01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:23"
+        },
+        "meaning": "Fälligkeit hochrechnen"
+      },
+      {
+        "id": "x_f",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_mplanf01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:28"
+        },
+        "meaning": "Status F: keine Hochrechnung"
+      },
+      {
+        "id": "g_hz",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzpm_mplanf01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:31"
+        },
+        "meaning": "Fälligkeit jenseits 30 Tage?"
+      },
+      {
+        "id": "x_nd",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_mplanf01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:34"
+        },
+        "meaning": "Status N: noch nicht fällig"
+      },
+      {
+        "id": "r_open",
+        "type": "read",
+        "anchor": {
+          "file": "lzpm_mplanf01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:38"
+        },
+        "meaning": "Offenen Auftrag zum Plan suchen"
+      },
+      {
+        "id": "g_open",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzpm_mplanf01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:44"
+        },
+        "meaning": "Offener Auftrag vorhanden?"
+      },
+      {
+        "id": "x_open",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_mplanf01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:48"
+        },
+        "meaning": "Status O: offener Auftrag"
+      },
+      {
+        "id": "g_test",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzpm_mplanf01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:51"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "x_test",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_mplanf01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:54"
+        },
+        "meaning": "Status T: fällig im Testlauf"
+      },
+      {
+        "id": "c_bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzpm_mplanf01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:70"
+        },
+        "meaning": "IH-Auftrag anlegen und sichern"
+      },
+      {
+        "id": "g_err",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzpm_mplanf01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:77"
+        },
+        "meaning": "Anlage fehlerhaft?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzpm_mplanf01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:78"
+        },
+        "meaning": "Anlage zurücknehmen, Status F"
+      },
+      {
+        "id": "w_run",
+        "type": "write",
+        "anchor": {
+          "file": "lzpm_mplanf01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:83"
+        },
+        "meaning": "Abruf mit Zählerstand festhalten"
+      },
+      {
+        "id": "tc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzpm_mplanf01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:89"
+        },
+        "meaning": "Auftrag und Abruf festschreiben, Status A"
+      },
+      {
+        "id": "e_pp",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_mplanf01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_mplanf01.abap:95"
+        },
+        "meaning": "Zyklus bearbeitet"
+      },
+      {
+        "id": "s_dd",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:43"
+        },
+        "meaning": "Fälligkeit hochrechnen"
+      },
+      {
+        "id": "c_load",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:48"
+        },
+        "meaning": "Messbelege laden"
+      },
+      {
+        "id": "c_rate",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:50"
+        },
+        "meaning": "Tagesleistung bestimmen"
+      },
+      {
+        "id": "g_rate",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:51"
+        },
+        "meaning": "Keine positive Leistung?"
+      },
+      {
+        "id": "x_rate",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:52"
+        },
+        "meaning": "Ausnahme: keine Nutzung"
+      },
+      {
+        "id": "r_max",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:62"
+        },
+        "meaning": "Zählerstand beim letzten Abruf lesen"
+      },
+      {
+        "id": "g_max",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:65"
+        },
+        "meaning": "Noch kein Abruf?"
+      },
+      {
+        "id": "a_max",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:66"
+        },
+        "meaning": "Älteste Ablesung als Ausgangspunkt"
+      },
+      {
+        "id": "a_days",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:70"
+        },
+        "meaning": "Fälligkeitsdatum berechnen"
+      },
+      {
+        "id": "e_dd",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:72"
+        },
+        "meaning": "Datum zurück"
+      },
+      {
+        "id": "s_lr",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:75"
+        },
+        "meaning": "Messbelege laden"
+      },
+      {
+        "id": "r_imrg",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:76"
+        },
+        "meaning": "Messbelege der letzten 365 Tage lesen"
+      },
+      {
+        "id": "g_lr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:82"
+        },
+        "meaning": "Weniger als zwei Ablesungen?"
+      },
+      {
+        "id": "x_lr",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:83"
+        },
+        "meaning": "Ausnahme: zu wenige Ablesungen"
+      },
+      {
+        "id": "e_lr",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:88"
+        },
+        "meaning": "Messbelege geladen"
+      },
+      {
+        "id": "s_du",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:91"
+        },
+        "meaning": "Tagesleistung"
+      },
+      {
+        "id": "a_du",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:95"
+        },
+        "meaning": "(letzte − erste Ablesung) / Tage"
+      },
+      {
+        "id": "e_du",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_usage_forecast.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_usage_forecast.abap:98"
+        },
+        "meaning": "Tagesleistung zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s_sel",
+        "to": "c_spbt",
+        "condition": "always"
+      },
+      {
+        "from": "c_spbt",
+        "to": "g_spbt",
+        "condition": "always"
+      },
+      {
+        "from": "g_spbt",
+        "to": "m_spbt",
+        "condition": "sy-subrc <> 0 AND sy-subrc <> 3"
+      },
+      {
+        "from": "m_spbt",
+        "to": "x_spbt",
+        "condition": "always"
+      },
+      {
+        "from": "g_spbt",
+        "to": "e_sel",
+        "condition": "else"
+      },
+      {
+        "from": "s",
+        "to": "c_log",
+        "condition": "always"
+      },
+      {
+        "from": "c_log",
+        "to": "c_sp",
+        "condition": "always"
+      },
+      {
+        "from": "c_sp",
+        "to": "s_sp",
+        "condition": "always"
+      },
+      {
+        "from": "g_emp",
+        "to": "m_emp",
+        "condition": "gt_plan IS INITIAL"
+      },
+      {
+        "from": "m_emp",
+        "to": "x_stop",
+        "condition": "always"
+      },
+      {
+        "from": "x_stop",
+        "to": "s_eos",
+        "condition": "always"
+      },
+      {
+        "from": "g_emp",
+        "to": "c_dis",
+        "condition": "else"
+      },
+      {
+        "from": "c_dis",
+        "to": "s_d",
+        "condition": "always"
+      },
+      {
+        "from": "w_wait",
+        "to": "s_eos",
+        "condition": "always"
+      },
+      {
+        "from": "s_eos",
+        "to": "c_save",
+        "condition": "always"
+      },
+      {
+        "from": "c_save",
+        "to": "c_disp",
+        "condition": "always"
+      },
+      {
+        "from": "c_disp",
+        "to": "s_dp",
+        "condition": "always"
+      },
+      {
+        "from": "s_sp",
+        "to": "r_sp",
+        "condition": "always"
+      },
+      {
+        "from": "r_sp",
+        "to": "e_sp",
+        "condition": "always"
+      },
+      {
+        "from": "s_d",
+        "to": "l_g",
+        "condition": "always"
+      },
+      {
+        "from": "l_g",
+        "to": "g_p",
+        "condition": "next row"
+      },
+      {
+        "from": "g_p",
+        "to": "c_seq",
+        "condition": "p_para IS INITIAL"
+      },
+      {
+        "from": "c_seq",
+        "to": "s_fm",
+        "condition": "always"
+      },
+      {
+        "from": "g_p",
+        "to": "l_do",
+        "condition": "else"
+      },
+      {
+        "from": "l_do",
+        "to": "a_rfc",
+        "condition": "next row"
+      },
+      {
+        "from": "a_rfc",
+        "to": "s_fm",
+        "condition": "always"
+      },
+      {
+        "from": "a_rfc",
+        "to": "s_r",
+        "condition": "always"
+      },
+      {
+        "from": "a_rfc",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "l_g",
+        "condition": "WHEN 0"
+      },
+      {
+        "from": "cs",
+        "to": "w5",
+        "condition": "WHEN 3"
+      },
+      {
+        "from": "w5",
+        "to": "l_do",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cs",
+        "to": "c_la",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "c_la",
+        "to": "s_la",
+        "condition": "always"
+      },
+      {
+        "from": "l_g",
+        "to": "e_d",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_r",
+        "to": "a_rcv",
+        "condition": "always"
+      },
+      {
+        "from": "a_rcv",
+        "to": "g_r",
+        "condition": "always"
+      },
+      {
+        "from": "g_r",
+        "to": "c_lr",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "c_lr",
+        "to": "s_la",
+        "condition": "always"
+      },
+      {
+        "from": "g_r",
+        "to": "e_r",
+        "condition": "else"
+      },
+      {
+        "from": "s_la",
+        "to": "c_bal",
+        "condition": "always"
+      },
+      {
+        "from": "c_bal",
+        "to": "e_la",
+        "condition": "always"
+      },
+      {
+        "from": "s_dp",
+        "to": "c_fac",
+        "condition": "always"
+      },
+      {
+        "from": "c_fac",
+        "to": "c_show",
+        "condition": "always"
+      },
+      {
+        "from": "c_fac",
+        "to": "m_dp",
+        "condition": "cx_salv_msg"
+      },
+      {
+        "from": "c_show",
+        "to": "e_dp",
+        "condition": "always"
+      },
+      {
+        "from": "m_dp",
+        "to": "e_dp",
+        "condition": "always"
+      },
+      {
+        "from": "s_fm",
+        "to": "g_chk",
+        "condition": "always"
+      },
+      {
+        "from": "g_chk",
+        "to": "r_cyc",
+        "condition": "it_warpl IS NOT INITIAL"
+      },
+      {
+        "from": "g_chk",
+        "to": "e_fm",
+        "condition": "else"
+      },
+      {
+        "from": "r_cyc",
+        "to": "l_c",
+        "condition": "always"
+      },
+      {
+        "from": "l_c",
+        "to": "lk",
+        "condition": "next row"
+      },
+      {
+        "from": "lk",
+        "to": "g_lk",
+        "condition": "always"
+      },
+      {
+        "from": "g_lk",
+        "to": "l_c",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_lk",
+        "to": "c_pp",
+        "condition": "else"
+      },
+      {
+        "from": "c_pp",
+        "to": "s_pp",
+        "condition": "always"
+      },
+      {
+        "from": "dq",
+        "to": "l_c",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_c",
+        "to": "e_fm",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_pp",
+        "to": "c_due",
+        "condition": "always"
+      },
+      {
+        "from": "c_due",
+        "to": "s_dd",
+        "condition": "always"
+      },
+      {
+        "from": "g_hz",
+        "to": "x_nd",
+        "condition": "ps_res-due > sy-datum + lc_horizon"
+      },
+      {
+        "from": "g_hz",
+        "to": "r_open",
+        "condition": "else"
+      },
+      {
+        "from": "r_open",
+        "to": "g_open",
+        "condition": "always"
+      },
+      {
+        "from": "g_open",
+        "to": "x_open",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_open",
+        "to": "g_test",
+        "condition": "else"
+      },
+      {
+        "from": "g_test",
+        "to": "x_test",
+        "condition": "pv_test = abap_true"
+      },
+      {
+        "from": "g_test",
+        "to": "c_bapi",
+        "condition": "else"
+      },
+      {
+        "from": "c_bapi",
+        "to": "g_err",
+        "condition": "always"
+      },
+      {
+        "from": "g_err",
+        "to": "rb",
+        "condition": "line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] )"
+      },
+      {
+        "from": "rb",
+        "to": "e_pp",
+        "condition": "always"
+      },
+      {
+        "from": "g_err",
+        "to": "w_run",
+        "condition": "else"
+      },
+      {
+        "from": "w_run",
+        "to": "tc",
+        "condition": "always"
+      },
+      {
+        "from": "tc",
+        "to": "e_pp",
+        "condition": "always"
+      },
+      {
+        "from": "s_dd",
+        "to": "c_load",
+        "condition": "always"
+      },
+      {
+        "from": "c_load",
+        "to": "s_lr",
+        "condition": "always"
+      },
+      {
+        "from": "c_rate",
+        "to": "s_du",
+        "condition": "always"
+      },
+      {
+        "from": "g_rate",
+        "to": "x_rate",
+        "condition": "lv_rate <= 0"
+      },
+      {
+        "from": "g_rate",
+        "to": "r_max",
+        "condition": "else"
+      },
+      {
+        "from": "r_max",
+        "to": "g_max",
+        "condition": "always"
+      },
+      {
+        "from": "g_max",
+        "to": "a_max",
+        "condition": "lv_call IS INITIAL"
+      },
+      {
+        "from": "g_max",
+        "to": "a_days",
+        "condition": "else"
+      },
+      {
+        "from": "a_max",
+        "to": "a_days",
+        "condition": "always"
+      },
+      {
+        "from": "a_days",
+        "to": "e_dd",
+        "condition": "always"
+      },
+      {
+        "from": "s_lr",
+        "to": "r_imrg",
+        "condition": "always"
+      },
+      {
+        "from": "r_imrg",
+        "to": "g_lr",
+        "condition": "always"
+      },
+      {
+        "from": "g_lr",
+        "to": "x_lr",
+        "condition": "lines( mt_read ) < 2"
+      },
+      {
+        "from": "g_lr",
+        "to": "e_lr",
+        "condition": "else"
+      },
+      {
+        "from": "s_du",
+        "to": "a_du",
+        "condition": "always"
+      },
+      {
+        "from": "a_du",
+        "to": "e_du",
+        "condition": "always"
+      },
+      {
+        "from": "e_sp",
+        "to": "g_emp",
+        "condition": "always"
+      },
+      {
+        "from": "e_d",
+        "to": "w_wait",
+        "condition": "always"
+      },
+      {
+        "from": "e_fm",
+        "to": "l_g",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_la",
+        "to": "l_g",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_la",
+        "to": "x_r",
+        "condition": "always"
+      },
+      {
+        "from": "e_pp",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "x_f",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "x_nd",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "x_open",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "x_test",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "x_rate",
+        "to": "x_f",
+        "condition": "zcx_pm_forecast"
+      },
+      {
+        "from": "x_lr",
+        "to": "x_f",
+        "condition": "zcx_pm_forecast"
+      },
+      {
+        "from": "e_dd",
+        "to": "g_hz",
+        "condition": "always"
+      },
+      {
+        "from": "e_lr",
+        "to": "c_rate",
+        "condition": "always"
+      },
+      {
+        "from": "e_du",
+        "to": "g_rate",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zpm_mplan_perf_f01.abap:77 — kein Fachsatz „ohne freie Prozesse wird das Paket sequentiell verarbeitet oder nach einigen Versuchen aufgegeben“: die DO-Schleife wiederholt den Start ohne Obergrenze",
+    "zpm_mplan_perf.abap:61 — kein Fachsatz „nach Ablauf der Wartezeit fehlende Pakete werden gemeldet“: nach dem Timeout wird nicht geprüft, ihre Ergebnisse fehlen stillschweigend in Liste und Protokoll",
+    "zcl_pm_usage_forecast.abap:95 — kein Fachsatz „die Tagesleistung ist der Durchschnitt oder Trend aller Ablesungen“: es zählen nur erste und letzte Ablesung des Zeitraums",
+    "gesamte Scheibe — kein Fachsatz „der Wartungsplan wird abgerufen oder terminiert“: es entstehen nur ein Auftrag und ein Eintrag in ZPM_MPLAN_RUN; Planhistorie und Abrufe des Wartungsplans bleiben unverändert"
+  ],
+  "processDescription": "Der Job wird mit Wartungsplänen, Planungswerken (Pflicht), einem Testlaufkennzeichen, einem Parallelkennzeichen und einer Servergruppe gestartet; die Servergruppe wird schon bei der Eingabe für die Parallelverarbeitung initialisiert und bei Fehlern abgewiesen. Zu Beginn legt er ein Anwendungslog an und liest die leistungsabhängigen Wartungspläne, also Pläne mit einem Zyklus auf einem Messpunkt, ohne Löschvormerkung und nicht inaktiv; ohne Treffer springt er nach einem Hinweis direkt zum Abschluss. Die Pläne werden je Planungswerk zu Paketen gebündelt. Ohne Parallelverarbeitung wird jedes Paket direkt berechnet, sonst als asynchrone Aufgabe in der Servergruppe gestartet; fehlen freie Prozesse, wartet der Job kurz und versucht es ohne Obergrenze erneut, andere RFC-Fehler werden protokolliert. Rückmeldende Pakete werden gezählt und ihre Ergebnisse übernommen, abgebrochene protokolliert; der Hauptlauf wartet höchstens eine Stunde auf alle Pakete. Im Paket wird jeder Plan gesperrt, ein gesperrter Plan wird mit Status L übersprungen. Für jeden Zyklus rechnet eine Klasse die Fälligkeit hoch: aus den Messbelegen der letzten 365 Tage (mindestens zwei) ergibt sich die Tagesleistung aus erster und letzter Ablesung, Ausgangspunkt ist der Zählerstand beim letzten Abruf laut Kundentabelle, sonst die älteste Ablesung, und fällig ist der Zyklus, wenn Ausgangspunkt plus Zykluslänge erreicht ist. Scheitert die Hochrechnung, erhält der Plan Status F; liegt die Fälligkeit mehr als 30 Tage in der Zukunft, Status N; gibt es schon einen offenen Auftrag, Status O; im Testlauf Status T. Sonst wird ein Instandhaltungsauftrag mit der Fälligkeit als Starttermin angelegt, bei Fehlern zurückgenommen (Status F), bei Erfolg zusammen mit dem Abruf samt aktuellem Zählerstand festgeschrieben (Status A). Danach wird die Sperre aufgehoben. Zum Abschluss wird das Anwendungslog gesichert und das Ergebnis je Plan als Liste angezeigt."
+}

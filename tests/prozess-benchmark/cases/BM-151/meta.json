@@ -1,0 +1,44 @@
+{
+  "id": "BM-151",
+  "title": "Rückrechnungsdifferenzen je Lohnart: neues gegen vorheriges Abrechnungsergebnis",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "komplex",
+  "loc": 248,
+  "constructs": [
+    "REPORT mit Includes",
+    "INITIALIZATION",
+    "AUTHORITY-CHECK P_PCLX",
+    "logische Datenbank PNPCE",
+    "GET peras",
+    "CU_READ_RGDIR",
+    "PYXX_READ_PAYROLL_RESULT",
+    "Abrechnungsverzeichnis SRTZA A/P",
+    "Tabelle RT",
+    "CHECK in LOOP",
+    "CONTINUE in verschachtelter Schleife",
+    "COND #",
+    "VALUE #",
+    "AT NEW / AT END OF / AT LAST mit SUM",
+    "REUSE_ALV_GRID_DISPLAY",
+    "nie aufgerufenes FORM"
+  ],
+  "scenario": "Nach einer rückwirkenden Tariferhöhung will die Entgeltabrechnung sehen, welche Mitarbeiter in welcher rückgerechneten Periode bei welchen Lohnarten Differenzen erhalten haben.",
+  "s4_issues": [
+    "Logische Datenbank PNPCE",
+    "Clusterzugriff mit fester Cluster-ID RD",
+    "REUSE_ALV_* statt SALV",
+    "nie aufgerufenes FORM write_list"
+  ],
+  "wave": 2,
+  "module": "PY",
+  "edge_constructs": [
+    "GET-Ereignis einer logischen Datenbank",
+    "INITIALIZATION",
+    "END-OF-SELECTION mit RETURN",
+    "CHECK und CONTINUE in verschachtelten Schleifen",
+    "AT NEW / AT END OF / AT LAST mit SUM",
+    "RETURN aus FORM",
+    "nie erreichtes FORM",
+    "COND #"
+  ]
+}

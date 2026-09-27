@@ -1,0 +1,308 @@
+{
+  "id": "BM-101",
+  "title": "Messbelege je Equipment: Messpunkte aus IMPTT, Ablesungen aus IMRG listen",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EQUI",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:15"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "IMPTT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 17,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:17"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "IMRG",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:21"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-101-B01",
+      "text": "Zum eingegebenen Equipment wird die Objektnummer ermittelt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-101-B02",
+      "text": "Es werden alle aktiven Messpunkte des Equipments gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-101-B03",
+      "text": "Zu diesen Messpunkten werden alle Messbelege ab dem eingegebenen Datum gelesen und je Messpunkt absteigend nach Ablesezeitpunkt sortiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-101-B04",
+      "text": "Stornierte Messbelege werden übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-101-B05",
+      "text": "Jeder übrige Messbeleg wird mit Messpunkt, Belegnummer, Datum, Messwert, Einheit und Bewertungscode ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Objektnummer des Equipments lesen"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Aktive Messpunkte des Equipments lesen"
+      },
+      {
+        "id": "r3",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Messbelege der Messpunkte ab Datum lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Messbelege durchgehen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Messbeleg storniert?"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Messbeleg listen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "r2",
+        "condition": "always"
+      },
+      {
+        "from": "r2",
+        "to": "r3",
+        "condition": "always"
+      },
+      {
+        "from": "r3",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "g",
+        "condition": "next row"
+      },
+      {
+        "from": "g",
+        "to": "o",
+        "condition": "ls_imrg-cancl IS INITIAL"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:21 — kein Fachsatz „ohne aktive Messpunkte wird eine leere Liste ausgegeben“: ohne Leermengenschutz liest FOR ALL ENTRIES bei leerer Messpunkttabelle die Messbelege aller Messpunkte ab dem Datum",
+    "source.abap:15 — kein Fachsatz „ein unbekanntes Equipment wird mit Fehlermeldung abgewiesen“: sy-subrc wird nicht ausgewertet",
+    "gesamte Scheibe — kein Fachsatz „es wird nur der letzte Messbeleg je Messpunkt angezeigt“: die Sortierung ordnet nur, ausgegeben werden alle nicht stornierten Belege"
+  ],
+  "processDescription": "Der Planer startet den Report mit einer Equipmentnummer (Pflicht) und einem Ab-Datum. Der Report ermittelt die Objektnummer des Equipments und liest dazu alle nicht inaktiven Messpunkte. Zu diesen Messpunkten liest er alle Messbelege ab dem Datum und sortiert sie je Messpunkt nach Datum und Uhrzeit absteigend. Stornierte Messbelege werden übersprungen, alle anderen werden mit Messpunkt, Belegnummer, Datum, Messwert, Einheit und Bewertungscode gelistet. Existiert das Equipment nicht oder hat es keine aktiven Messpunkte, bleibt die Treibertabelle leer, und die FOR-ALL-ENTRIES-Lesung liefert dann die Messbelege aller Messpunkte des Systems ab dem Datum. Es wird nichts geschrieben."
+}

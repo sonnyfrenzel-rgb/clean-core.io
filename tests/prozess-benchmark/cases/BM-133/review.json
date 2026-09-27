@@ -1,0 +1,77 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten ke (end)",
+      "before": "zcl_gm_sponsor_billing.abap:49",
+      "after": "zcl_gm_sponsor_billing.abap:50 (ENDMETHOD)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf rn",
+      "before": "rn -> rc [always]",
+      "after": "ke -> rc [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf rc",
+      "before": "rc -> rl [always]",
+      "after": "ue -> rl [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Ausnahmekante CATCH zcx_gm_billing INTO DATA(lx_err)",
+      "before": "rc -> rm [CATCH zcx_gm_billing INTO DATA(lx_err)]",
+      "after": "ux -> rm [CATCH zcx_gm_billing INTO DATA(lx_err)]",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION in einem Block ist ein end-Knoten; von dort führt die Kante in den CATCH-Zweig des Aufrufers (Bedingung: die Ausnahme), nicht vom Aufruf selbst.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf uc",
+      "before": "uc -> ul [next iteration]",
+      "after": "bend -> ul [next iteration]; bze -> ul [next iteration]; bte -> ul [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf bc",
+      "before": "bc -> bi [always]",
+      "after": "ce -> bi [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Ausnahmekante CATCH zcx_gm_locked",
+      "before": "bc -> ctry [CATCH zcx_gm_locked]",
+      "after": "cx1 -> ctry [CATCH zcx_gm_locked]",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION in einem Block ist ein end-Knoten; von dort führt die Kante in den CATCH-Zweig des Aufrufers (Bedingung: die Ausnahme), nicht vom Aufruf selbst.",
+      "category": "Kante"
+    },
+    {
+      "where": "Ausnahmekante CATCH zcx_gm_billing INTO DATA(lx_bill)",
+      "before": "bc -> cb [CATCH zcx_gm_billing INTO DATA(lx_bill)]",
+      "after": "cx2 -> cb [CATCH zcx_gm_billing INTO DATA(lx_bill)]",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION in einem Block ist ein end-Knoten; von dort führt die Kante in den CATCH-Zweig des Aufrufers (Bedingung: die Ausnahme), nicht vom Aufruf selbst.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten bcm",
+      "before": "transaction auf zcl_gm_sponsor_billing.abap:121",
+      "after": "opaque_call auf zcl_gm_sponsor_billing.abap:121",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call (Standardbaustein außerhalb des Falls); transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten cb",
+      "before": "transaction auf zcl_gm_sponsor_billing.abap:132",
+      "after": "opaque_call auf zcl_gm_sponsor_billing.abap:132",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call (Standardbaustein außerhalb des Falls); transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    }
+  ],
+  "doubts": []
+}

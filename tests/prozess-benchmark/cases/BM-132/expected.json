@@ -1,0 +1,1181 @@
+{
+  "id": "BM-132",
+  "title": "RE-FX Nebenkostenabrechnung: Kosten einer Abrechnungseinheit zeitanteilig nach Fläche oder Personen verteilen, mit Vorauszahlungen verrechnen und ins FI buchen",
+  "classes": [
+    "K01",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZRE_NK_AE",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_nk_abr.abap",
+        "line": 17,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_nk_abr.abap:17"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRE_NK_KOSTEN",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_nk_abr.abap",
+        "line": 24,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_nk_abr.abap:24"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRE_NK_TEILN",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_nk_abr_f01.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_nk_abr_f01.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VICNCN",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_nk_abr_f01.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_nk_abr_f01.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VICDCOND",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_nk_abr_f01.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_nk_abr_f01.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_DOCUMENT_POST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_nk_abr_f01.abap",
+        "line": 100,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_nk_abr_f01.abap:100"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_nk_abr_f01.abap",
+        "line": 112,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_nk_abr_f01.abap:112"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_nk_abr_f01.abap",
+        "line": 117,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_nk_abr_f01.abap:117"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRE_NK_ERG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zre_nk_abr_f01.abap",
+        "line": 121,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_nk_abr_f01.abap:121"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-132-B01",
+      "text": "Die Abrechnungseinheit wird mit Umlageschlüssel, Buchungskreis, Erlöskonto und Währung gelesen; ist sie unbekannt, bricht der Lauf mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zre_nk_abr.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:17"
+        },
+        {
+          "file": "zre_nk_abr.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:19"
+        },
+        {
+          "file": "zre_nk_abr.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-132-B02",
+      "text": "Die umlagefähigen Kosten der Einheit im Abrechnungsjahr werden summiert.",
+      "anchors": [
+        {
+          "file": "zre_nk_abr.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-132-B03",
+      "text": "Es werden die Mieter der Einheit gelesen, deren Nutzungszeitraum das Abrechnungsjahr berührt; Nutzungen ohne Ende-Datum fallen dabei aus der Selektion.",
+      "anchors": [
+        {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-132-B04",
+      "text": "Der Nutzungszeitraum jedes Mieters wird auf das Abrechnungsjahr begrenzt.",
+      "anchors": [
+        {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-132-B05",
+      "text": "Je Mieter wird die monatliche Nebenkostenvorauszahlung aus der Vertragskondition Z200 gelesen und mit der Zahl der Nutzungsmonate (Tage durch 30) multipliziert.",
+      "anchors": [
+        {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:28"
+        },
+        {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-132-B06",
+      "text": "Die Verteilungsbasis je Mieter ist die Personenzahl oder die Fläche, je nach Umlageschlüssel der Einheit, mal die Nutzungstage.",
+      "anchors": [
+        {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-132-B07",
+      "text": "Aus Gesamtkosten und Summe aller Basen wird ein Kostensatz je Basiseinheit berechnet.",
+      "anchors": [
+        {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-132-B08",
+      "text": "Jeder Mieter trägt Kostensatz mal Basis; sein Saldo ist dieser Anteil abzüglich der Vorauszahlungen.",
+      "anchors": [
+        {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-132-B09",
+      "text": "Ist bei vorhandenen Kosten keine Verteilungsbasis vorhanden, werden die Gesamtkosten zurückgesetzt und der Lauf bricht mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:69"
+        },
+        {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-132-B10",
+      "text": "Im Echtlauf wird für jeden Mieter mit Saldo ein FI-Beleg der Belegart NK gebucht: Nachzahlung oder Guthaben auf dem Debitor gegen das Erlöskonto der Einheit.",
+      "anchors": [
+        {
+          "file": "zre_nk_abr.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:30"
+        },
+        {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:86"
+        },
+        {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:100"
+        }
+      ]
+    },
+    {
+      "id": "BM-132-B11",
+      "text": "Meldet die Buchung einen Fehler, wird zurückgerollt und die Fehlermeldung beim Mieter vermerkt.",
+      "anchors": [
+        {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:111"
+        },
+        {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:112"
+        }
+      ]
+    },
+    {
+      "id": "BM-132-B12",
+      "text": "Eine erfolgreiche Buchung wird festgeschrieben und mit Belegnummer im Ergebnisprotokoll vermerkt; am Ende wird das Protokoll festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:117"
+        },
+        {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:121"
+        },
+        {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:127"
+        }
+      ]
+    },
+    {
+      "id": "BM-132-B13",
+      "text": "Für alle Mieter werden Kostenanteil, Vorauszahlung, Saldo, Belegnummer und Meldung gelistet, im Testlauf ohne Belegnummer.",
+      "anchors": [
+        {
+          "file": "zre_nk_abr.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:35"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zre_nk_abr.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:13"
+        },
+        "meaning": "Abrechnungslauf starten"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "zre_nk_abr.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:17"
+        },
+        "meaning": "Abrechnungseinheit mit Umlageschlüssel, Buchungskreis und Erlöskonto lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_nk_abr.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:19"
+        },
+        "meaning": "Abrechnungseinheit vorhanden?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "zre_nk_abr.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:20"
+        },
+        "meaning": "Fehler „Abrechnungseinheit unbekannt“"
+      },
+      {
+        "id": "em",
+        "type": "end",
+        "anchor": {
+          "file": "zre_nk_abr.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:20"
+        },
+        "meaning": "Programmabbruch"
+      },
+      {
+        "id": "rk",
+        "type": "read",
+        "anchor": {
+          "file": "zre_nk_abr.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:24"
+        },
+        "meaning": "Umlagefähige Gesamtkosten des Jahres summieren"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zre_nk_abr.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:28"
+        },
+        "meaning": "Mieter und Vorauszahlungen ermitteln"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "zre_nk_abr.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:29"
+        },
+        "meaning": "Kosten verteilen"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_nk_abr.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:30"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "c4",
+        "type": "call",
+        "anchor": {
+          "file": "zre_nk_abr.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:31"
+        },
+        "meaning": "Salden buchen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zre_nk_abr.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:34"
+        },
+        "meaning": "Mieter für das Protokoll durchgehen"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "zre_nk_abr.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:35"
+        },
+        "meaning": "Kosten, Vorauszahlung, Saldo, Beleg und Meldung je Mieter listen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zre_nk_abr.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr.abap:37"
+        },
+        "meaning": "Lauf fertig"
+      },
+      {
+        "id": "t",
+        "type": "start",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:8"
+        },
+        "meaning": "Mieter ermitteln"
+      },
+      {
+        "id": "tr",
+        "type": "read",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:12"
+        },
+        "meaning": "Mieter der Einheit mit Nutzungszeitraum im Jahr und Vertragsschlüssel lesen"
+      },
+      {
+        "id": "tl",
+        "type": "loop",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:22"
+        },
+        "meaning": "Mieter durchgehen"
+      },
+      {
+        "id": "tv",
+        "type": "action",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:24"
+        },
+        "meaning": "Nutzungszeitraum auf das Abrechnungsjahr begrenzen"
+      },
+      {
+        "id": "tvr",
+        "type": "read",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:28"
+        },
+        "meaning": "Monatliche NK-Vorauszahlung (Kondition Z200) lesen"
+      },
+      {
+        "id": "tva",
+        "type": "action",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:32"
+        },
+        "meaning": "Vorauszahlungen = Monatsbetrag mal Nutzungsmonate"
+      },
+      {
+        "id": "te",
+        "type": "end",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:34"
+        },
+        "meaning": "Mieter ermittelt"
+      },
+      {
+        "id": "v",
+        "type": "start",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:39"
+        },
+        "meaning": "Verteilung mit Fehlerbehandlung"
+      },
+      {
+        "id": "vc",
+        "type": "call",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:41"
+        },
+        "meaning": "Anteile und Salden berechnen"
+      },
+      {
+        "id": "vm",
+        "type": "output",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:43"
+        },
+        "meaning": "Fehler „Verteilung nicht möglich“"
+      },
+      {
+        "id": "vme",
+        "type": "end",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:43"
+        },
+        "meaning": "Programmabbruch"
+      },
+      {
+        "id": "ve",
+        "type": "end",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:45"
+        },
+        "meaning": "Verteilung fertig"
+      },
+      {
+        "id": "a",
+        "type": "start",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:50"
+        },
+        "meaning": "Anteilsberechnung"
+      },
+      {
+        "id": "al",
+        "type": "loop",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:55"
+        },
+        "meaning": "Mieter durchgehen"
+      },
+      {
+        "id": "ab",
+        "type": "action",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:56"
+        },
+        "meaning": "Basis = Personen oder Fläche mal Nutzungstage, Summe bilden"
+      },
+      {
+        "id": "asz",
+        "type": "action",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:63"
+        },
+        "meaning": "Kostensatz je Basiseinheit berechnen"
+      },
+      {
+        "id": "al2",
+        "type": "loop",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:64"
+        },
+        "meaning": "Mieter durchgehen"
+      },
+      {
+        "id": "ak",
+        "type": "action",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:65"
+        },
+        "meaning": "Kostenanteil und Saldo gegen Vorauszahlung berechnen"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:71"
+        },
+        "meaning": "Anteile berechnet"
+      },
+      {
+        "id": "b",
+        "type": "start",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:76"
+        },
+        "meaning": "Buchung"
+      },
+      {
+        "id": "bl",
+        "type": "loop",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:85"
+        },
+        "meaning": "Mieter durchgehen"
+      },
+      {
+        "id": "bc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:86"
+        },
+        "meaning": "Saldo vorhanden?"
+      },
+      {
+        "id": "bp",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:100"
+        },
+        "meaning": "Nachzahlung bzw. Guthaben gegen Erlöskonto buchen"
+      },
+      {
+        "id": "bg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:111"
+        },
+        "meaning": "Buchung mit Fehler?"
+      },
+      {
+        "id": "brb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:112"
+        },
+        "meaning": "Zurückrollen und Fehlermeldung merken"
+      },
+      {
+        "id": "bcm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:117"
+        },
+        "meaning": "Buchung festschreiben"
+      },
+      {
+        "id": "bi",
+        "type": "write",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:121"
+        },
+        "meaning": "Ergebnis mit Belegnummer protokollieren"
+      },
+      {
+        "id": "bcw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:127"
+        },
+        "meaning": "Protokoll festschreiben"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "anchor": {
+          "file": "zre_nk_abr_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_nk_abr_f01.abap:128"
+        },
+        "meaning": "Buchung fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "r",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "m",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m",
+        "to": "em",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "rk",
+        "condition": "else"
+      },
+      {
+        "from": "rk",
+        "to": "c2",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "t",
+        "condition": "always"
+      },
+      {
+        "from": "c3",
+        "to": "v",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "c4",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "gt",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "c4",
+        "to": "b",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "o",
+        "condition": "next row"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "t",
+        "to": "tr",
+        "condition": "always"
+      },
+      {
+        "from": "tr",
+        "to": "tl",
+        "condition": "always"
+      },
+      {
+        "from": "tl",
+        "to": "tv",
+        "condition": "next row"
+      },
+      {
+        "from": "tv",
+        "to": "tvr",
+        "condition": "always"
+      },
+      {
+        "from": "tvr",
+        "to": "tva",
+        "condition": "always"
+      },
+      {
+        "from": "tva",
+        "to": "tl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "tl",
+        "to": "te",
+        "condition": "no more rows"
+      },
+      {
+        "from": "v",
+        "to": "vc",
+        "condition": "always"
+      },
+      {
+        "from": "vc",
+        "to": "a",
+        "condition": "always"
+      },
+      {
+        "from": "vm",
+        "to": "vme",
+        "condition": "always"
+      },
+      {
+        "from": "a",
+        "to": "al",
+        "condition": "always"
+      },
+      {
+        "from": "al",
+        "to": "ab",
+        "condition": "next row"
+      },
+      {
+        "from": "ab",
+        "to": "al",
+        "condition": "next iteration"
+      },
+      {
+        "from": "al",
+        "to": "asz",
+        "condition": "no more rows"
+      },
+      {
+        "from": "asz",
+        "to": "al2",
+        "condition": "always"
+      },
+      {
+        "from": "al2",
+        "to": "ak",
+        "condition": "next row"
+      },
+      {
+        "from": "ak",
+        "to": "al2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "al2",
+        "to": "ae",
+        "condition": "no more rows"
+      },
+      {
+        "from": "b",
+        "to": "bl",
+        "condition": "always"
+      },
+      {
+        "from": "bl",
+        "to": "bc",
+        "condition": "next row"
+      },
+      {
+        "from": "bc",
+        "to": "bp",
+        "condition": "<ls_t>-saldo <> 0"
+      },
+      {
+        "from": "bc",
+        "to": "bl",
+        "condition": "else"
+      },
+      {
+        "from": "bp",
+        "to": "bg",
+        "condition": "always"
+      },
+      {
+        "from": "bg",
+        "to": "brb",
+        "condition": "line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] )"
+      },
+      {
+        "from": "brb",
+        "to": "bl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "bg",
+        "to": "bcm",
+        "condition": "else"
+      },
+      {
+        "from": "bcm",
+        "to": "bi",
+        "condition": "always"
+      },
+      {
+        "from": "bi",
+        "to": "bl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "bl",
+        "to": "bcw",
+        "condition": "no more rows"
+      },
+      {
+        "from": "bcw",
+        "to": "be",
+        "condition": "always"
+      },
+      {
+        "from": "te",
+        "to": "c3",
+        "condition": "always"
+      },
+      {
+        "from": "ve",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "ve",
+        "condition": "always"
+      },
+      {
+        "from": "asz",
+        "to": "vm",
+        "condition": "CATCH cx_sy_zerodivide"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zre_nk_abr_f01.abap:28 — kein Fachsatz „Mieter ohne Vorauszahlungskondition haben keine Vorauszahlung“: ohne Treffer bleibt der Betrag des vorher gelesenen Mieters stehen",
+    "zre_nk_abr_f01.abap:121 — kein Fachsatz „jede erfolgreiche Buchung steht sicher im Ergebnisprotokoll“: scheitert die Buchung des nächsten Mieters, rollt der Rollback den noch nicht festgeschriebenen Protokollsatz mit zurück",
+    "zre_nk_abr_f01.abap:25 — kein Fachsatz „unbefristete Nutzungen werden bis Jahresende abgerechnet“: sie sind schon in der Selektion ausgeschlossen, der Zweig für ein leeres Ende-Datum greift nie",
+    "zre_nk_abr_f01.abap:63 — kein Fachsatz „ohne erfasste Kosten bricht die Abrechnung ab“: bei null Kosten gibt es keine Division durch null, alle Mieter erhalten ihre Vorauszahlungen als Guthaben"
+  ],
+  "processDescription": "Der Report wird einmal jährlich je Abrechnungseinheit und Geschäftsjahr gestartet, standardmäßig als Testlauf. Er liest die Abrechnungseinheit; ist sie unbekannt, bricht er ab. Er summiert die umlagefähigen Kosten des Jahres und liest die Mieter, deren Nutzungszeitraum das Jahr berührt, wobei Nutzungen ohne Ende-Datum ausfallen. Je Mieter begrenzt er den Zeitraum auf das Jahr, liest die monatliche Vorauszahlung aus der Vertragskondition Z200 und rechnet sie auf die Nutzungsmonate hoch. Dann bildet er je Mieter eine Basis aus Personenzahl oder Fläche mal Nutzungstagen, berechnet daraus einen Kostensatz und verteilt die Gesamtkosten; der Saldo ist Kostenanteil minus Vorauszahlungen. Gibt es Kosten, aber keine Basis, setzt er die Gesamtkosten zurück und bricht mit einer Fehlermeldung ab. Im Echtlauf bucht er je Mieter mit Saldo einen FI-Beleg auf den Debitor gegen das Erlöskonto; bei Fehlern rollt er zurück und merkt sich die Meldung, sonst schreibt er fest und protokolliert Belegnummer und Saldo in einer eigenen Tabelle. Zum Schluss listet er alle Mieter mit Anteil, Vorauszahlung, Saldo, Beleg und Meldung. Ein Rollback nach einem Fehler kann den Protokollsatz des zuvor gebuchten Mieters mit zurücknehmen."
+}

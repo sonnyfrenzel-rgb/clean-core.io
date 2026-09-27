@@ -1,0 +1,33 @@
+{
+  "id": "BM-106",
+  "title": "Zählerstände aus BDE-Datei hochladen: plausibilisieren, Messbeleg anlegen, Testlauf",
+  "domain": "PM — Zähler und leistungsabhängige Wartung",
+  "band": "mittel",
+  "loc": 90,
+  "constructs": [
+    "REPORT",
+    "OPEN/READ/CLOSE DATASET",
+    "DO … EXIT",
+    "SPLIT",
+    "TRY … CATCH",
+    "CONTINUE",
+    "CALL FUNCTION Z-Baustein",
+    "CALL FUNCTION MEASUREM_DOCUM_RFC_SINGLE_001",
+    "COMMIT WORK je Satz",
+    "Testlauf-Schalter"
+  ],
+  "scenario": "Betriebsdatenerfassung legt nachts Zählerstände von Fahrzeugen und Anlagen als CSV auf dem Applikationsserver ab; ein Z-Job erzeugt daraus Messbelege, die die leistungsabhängige Wartungsplanung treiben.",
+  "s4_issues": [
+    "OPEN DATASET mit festem Pfad; in S/4 Cloud kein Dateizugriff auf den Applikationsserver",
+    "MEASUREM_DOCUM_RFC_SINGLE_001 ist nicht freigegeben; Nachfolger über API_MEASUREMENTDOCUMENT",
+    "COMMIT WORK je Satz im Massenlauf"
+  ],
+  "wave": 2,
+  "module": "PM",
+  "edge_constructs": [
+    "TRY … CATCH",
+    "CONTINUE in DO-Schleife",
+    "EXIT aus DO-Schleife",
+    "MESSAGE … TYPE 'E' als Pfadende"
+  ]
+}

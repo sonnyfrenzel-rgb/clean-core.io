@@ -1,0 +1,107 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_i (neu)",
+      "before": "i -> a1 [always] (INITIALIZATION ohne end-Knoten)",
+      "after": "e_i end auf zle_frachtkosten.abap:33 (letzte Anweisung); i -> e_i, e_i -> a1 [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (INITIALIZATION, AT SELECTION-SCREEN, START-OF-SELECTION, END-OF-SELECTION, TOP-OF-PAGE) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten ao (neu) vor am",
+      "before": "am end auf zle_frachtkosten.abap:40 ohne output",
+      "after": "ao output auf zle_frachtkosten.abap:40, Kante ao -> am [always]; eingehende Kanten auf ao umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_a1 (neu)",
+      "before": "kein end-Knoten auf zle_frachtkosten.abap:42",
+      "after": "e_a1 end auf zle_frachtkosten.abap:42; al -> e_a1 [no more rows] statt -> s; e_a1 -> s [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (INITIALIZATION, AT SELECTION-SCREEN, START-OF-SELECTION, END-OF-SELECTION, TOP-OF-PAGE) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten Aufruf ctl",
+      "before": "ctl -> g0 [always]",
+      "after": "et -> g0 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten o0 (neu)",
+      "before": "keine Knoten auf zle_frachtkosten.abap:47",
+      "after": "o0 output auf zle_frachtkosten.abap:47; g0 -> o0 [gt_tr IS INITIAL]; o0 -> x0 [always]",
+      "why": "Die Meldung (MESSAGE s002, Z. 47) ist die Ausgabe dieses Pfadendes (Fachsatz B05) und fehlte als output-Knoten.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz B05 Anker",
+      "before": ":46, :48",
+      "after": ":46, :47, :48",
+      "why": "Der Hinweis steht auf Zeile 47.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf cge",
+      "before": "cge -> l [always]",
+      "after": "r3 -> l [always]; eg -> l [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cfb",
+      "before": "cfb -> ch [always]",
+      "after": "r1 -> ch [always]; r2 -> ch [always]; r4 -> ch [always]; r5 -> ch [always]; ef -> ch [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf ckb",
+      "before": "ckb -> l [next iteration]",
+      "after": "ra -> l [next iteration]; rf -> l [next iteration]; ek -> l [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_sos (neu)",
+      "before": "kein end-Knoten auf zle_frachtkosten.abap:59",
+      "after": "e_sos end auf zle_frachtkosten.abap:59; l -> e_sos [no more rows] statt -> eos; e_sos -> eos [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (INITIALIZATION, AT SELECTION-SCREEN, START-OF-SELECTION, END-OF-SELECTION, TOP-OF-PAGE) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_eos (neu)",
+      "before": "kein end-Knoten für END-OF-SELECTION; ep ohne Rückkehr",
+      "after": "e_eos end auf zle_frachtkosten.abap:62 (letzte Anweisung); ep -> e_eos [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (INITIALIZATION, AT SELECTION-SCREEN, START-OF-SELECTION, END-OF-SELECTION, TOP-OF-PAGE) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146). Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_tp (neu)",
+      "before": "kein end-Knoten für TOP-OF-PAGE; eko ohne Rückkehr",
+      "after": "e_tp end auf zle_frachtkosten.abap:65 (letzte Anweisung); eko -> e_tp [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (INITIALIZATION, AT SELECTION-SCREEN, START-OF-SELECTION, END-OF-SELECTION, TOP-OF-PAGE) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146). Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten fe",
+      "before": "action auf zle_frachtkosten_f01.abap:64 (<ls_tr>-fehler = …); gk -> fe [lv_kg < 0]; fe -> l2 [next iteration]",
+      "after": "entfernt; gk -> l2 [lv_kg < 0] (EXIT verlässt die HU-Schleife, weiter mit der nächsten Lieferung)",
+      "why": "Reine Zuweisung des Fehlertexts; laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B07 (Anker f01:63, f01:64).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten an",
+      "before": "action auf zle_frachtkosten_f02.abap:58 (cs_tr-fknum = ls_msg-msgv1); gm -> an [sy-subrc = 0]; an -> wl [always]",
+      "after": "entfernt; gm -> wl [sy-subrc = 0] (neben gm -> wl [else])",
+      "why": "Reine Zuweisung der Belegnummer; laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B18 (Anker f02:58).",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": [
+    "sw, ad, cc, mn, dz, su als action belassen: Berechnungen, die Gewicht bzw. Fracht festlegen (Autorenbrief: Berechnung, die ein Ergebnis festlegt)."
+  ]
+}

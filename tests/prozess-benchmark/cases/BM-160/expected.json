@@ -1,0 +1,2534 @@
+{
+  "id": "BM-160",
+  "title": "ESS-Adressänderung mit Genehmigungsworkflow, Übernahme in Infotyp 0006 und Rückrechnungshinweis",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PA0105",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_ess_address_request.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ess_address_request.abap:29"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZESS_ADDR_REQ",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "z_ess_address_request.abap",
+        "line": 43,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ess_address_request.abap:43"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_ESS_ADDR_SERVICE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ess_address_request.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ess_address_request.abap:50"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZESS_ADDR_REQ",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_ess_address_request.abap",
+        "line": 68,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ess_address_request.abap:68"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SWE_EVENT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ess_address_request.abap",
+        "line": 74,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ess_address_request.abap:74"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_ESS_ADDR_STATUS_UPDATE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ess_address_request.abap",
+        "line": 94,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ess_address_request.abap:94"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZESS_ADDR_REQ",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "z_ess_address_decide.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ess_address_decide.abap:20"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_READ_INFOTYPE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ess_address_decide.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ess_address_decide.abap:30"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T005",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ess_addr_service.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ess_addr_service.abap:49"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ADDR_POSTAL_CODE_CHECK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ess_addr_service.abap",
+        "line": 57,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ess_addr_service.abap:57"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_EMPLOYEE_ENQUEUE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ess_addr_service.abap",
+        "line": 93,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ess_addr_service.abap:93"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_INFOTYPE_OPERATION",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ess_addr_service.abap",
+        "line": 124,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ess_addr_service.abap:124"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_EMPLOYEE_DEQUEUE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ess_addr_service.abap",
+        "line": 138,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ess_addr_service.abap:138"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_READ_SUBTYPE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ess_addr_service.abap",
+        "line": 155,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ess_addr_service.abap:155"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0003",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ess_addr_service.abap",
+        "line": 171,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ess_addr_service.abap:171"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ess_addr_service.abap",
+        "line": 182,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ess_addr_service.abap:182"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SO_NEW_DOCUMENT_SEND_API1",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ess_addr_service.abap",
+        "line": 196,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ess_addr_service.abap:196"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZESS_ADDR_REQ",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_ess_addr_status_update.abap",
+        "line": 9,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ess_addr_status_update.abap:9"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-160-B01",
+      "text": "Zum angemeldeten Benutzer wird die eigene Personalnummer ermittelt; ohne Zuordnung wird der Antrag abgewiesen.",
+      "anchors": [
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:29"
+        },
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:34"
+        },
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-160-B02",
+      "text": "Wird eine fremde Personalnummer übergeben, wird der Antrag abgewiesen, weil im ESS nur die eigenen Daten geändert werden dürfen.",
+      "anchors": [
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:37"
+        },
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-160-B03",
+      "text": "Hat der Mitarbeiter bereits einen neuen oder in Genehmigung befindlichen Antrag, wird der neue abgewiesen.",
+      "anchors": [
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:43"
+        },
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:46"
+        },
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-160-B04",
+      "text": "Die Anschrift wird abgewiesen, wenn Straße oder Ort fehlen, das Land unbekannt ist, die Postleitzahl zum Land nicht passt oder das Umzugsdatum mehr als drei Monate zurück oder mehr als ein Jahr voraus liegt.",
+      "anchors": [
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:53"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:44"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:49"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:57"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:71"
+        },
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-160-B05",
+      "text": "Ein gültiger Antrag wird mit neuer Antragsnummer und Status NEU gespeichert.",
+      "anchors": [
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:59"
+        },
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-160-B06",
+      "text": "Eine Genehmigung ist nötig, wenn sich das Land gegenüber der bisherigen Hauptanschrift ändert oder das Umzugsdatum nicht nach dem Abgerechnet-bis-Datum liegt.",
+      "anchors": [
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:70"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:79"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:81"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:171"
+        }
+      ]
+    },
+    {
+      "id": "BM-160-B07",
+      "text": "Genehmigungspflichtige Anträge gehen über ein Workflow-Ereignis an die Personalabteilung und erhalten den Status GENEHMIGUNG, bei gescheitertem Ereignis FEHLER.",
+      "anchors": [
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:72"
+        },
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:74"
+        },
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:82"
+        },
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-160-B08",
+      "text": "Andere Anträge werden sofort übernommen und erhalten den Status ÜBERNOMMEN, bei Fehler FEHLER.",
+      "anchors": [
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:87"
+        },
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:88"
+        },
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:90"
+        }
+      ]
+    },
+    {
+      "id": "BM-160-B09",
+      "text": "Der Antragsstatus wird mit Bearbeiter und Datum verbucht und festgeschrieben; Antragsnummer und Status gehen an die App zurück.",
+      "anchors": [
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:94"
+        },
+        {
+          "file": "z_ess_address_request.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:99"
+        },
+        {
+          "file": "z_ess_addr_status_update.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_addr_status_update.abap:9"
+        }
+      ]
+    },
+    {
+      "id": "BM-160-B10",
+      "text": "Findet die Verbuchung den Antrag nicht, bricht sie ab.",
+      "anchors": [
+        {
+          "file": "z_ess_addr_status_update.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_addr_status_update.abap:14"
+        },
+        {
+          "file": "z_ess_addr_status_update.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_addr_status_update.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-160-B11",
+      "text": "Im Workflow wird der Antrag gelesen; ein unbekannter oder nicht mehr in Genehmigung befindlicher Antrag wird abgewiesen.",
+      "anchors": [
+        {
+          "file": "z_ess_address_decide.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:20"
+        },
+        {
+          "file": "z_ess_address_decide.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:22"
+        },
+        {
+          "file": "z_ess_address_decide.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:23"
+        },
+        {
+          "file": "z_ess_address_decide.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:25"
+        },
+        {
+          "file": "z_ess_address_decide.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-160-B12",
+      "text": "Der Genehmiger braucht für die Organisationszuordnung des Mitarbeiters zum Umzugsdatum Schreibrecht auf Hauptanschriften, sonst wird abgewiesen.",
+      "anchors": [
+        {
+          "file": "z_ess_address_decide.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:30"
+        },
+        {
+          "file": "z_ess_address_decide.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:41"
+        },
+        {
+          "file": "z_ess_address_decide.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:49"
+        },
+        {
+          "file": "z_ess_address_decide.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-160-B13",
+      "text": "Bei Genehmigung wird die Anschrift übernommen (Status ÜBERNOMMEN oder FEHLER), bei Ablehnung der Status ABGELEHNT gesetzt; eine unbekannte Entscheidung wird abgewiesen; der Status wird verbucht und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "z_ess_address_decide.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:53"
+        },
+        {
+          "file": "z_ess_address_decide.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:57"
+        },
+        {
+          "file": "z_ess_address_decide.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:63"
+        },
+        {
+          "file": "z_ess_address_decide.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:65"
+        },
+        {
+          "file": "z_ess_address_decide.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:68"
+        },
+        {
+          "file": "z_ess_address_decide.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-160-B14",
+      "text": "Zur Übernahme wird der Mitarbeiter gesperrt; ist er gesperrt, wird nach je einer Sekunde bis zu dreimal insgesamt versucht, danach scheitert die Übernahme.",
+      "anchors": [
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:93"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:98"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:104"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:105"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:106"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:108"
+        }
+      ]
+    },
+    {
+      "id": "BM-160-B15",
+      "text": "Auf Basis der bisherigen Hauptanschrift wird ab Umzugsdatum eine neue unbefristete Hauptanschrift mit Straße, PLZ, Ort und Land angelegt und die Sperre gelöst; scheitert die Anlage, scheitert die Übernahme.",
+      "anchors": [
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:111"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:155"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:124"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:138"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:142"
+        }
+      ]
+    },
+    {
+      "id": "BM-160-B16",
+      "text": "Liegt das Umzugsdatum nicht nach dem Abgerechnet-bis-Datum, erhält die Entgeltabrechnung eine Nachricht mit Personalnummer, Datum, Land und PLZ – außer die Benachrichtigung ist per Schalter abgeschaltet; ein Versandfehler bleibt folgenlos.",
+      "anchors": [
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:147"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:148"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:182"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:186"
+        },
+        {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:196"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:1"
+        },
+        "meaning": "Mitarbeiter sendet neue Anschrift"
+      },
+      {
+        "id": "r_105",
+        "type": "read",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:29"
+        },
+        "meaning": "Eigene Personalnummer zum Benutzer lesen"
+      },
+      {
+        "id": "g_105",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:34"
+        },
+        "meaning": "Kein Mitarbeiter?"
+      },
+      {
+        "id": "e_105",
+        "type": "end",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:35"
+        },
+        "meaning": "Abweisen: kein Mitarbeiter"
+      },
+      {
+        "id": "g_own",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:37"
+        },
+        "meaning": "Fremde Personalnummer?"
+      },
+      {
+        "id": "e_own",
+        "type": "end",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:39"
+        },
+        "meaning": "Abweisen: nur eigene Daten"
+      },
+      {
+        "id": "r_open",
+        "type": "read",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:43"
+        },
+        "meaning": "Offenen Antrag suchen"
+      },
+      {
+        "id": "g_open",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:46"
+        },
+        "meaning": "Offener Antrag vorhanden?"
+      },
+      {
+        "id": "o_open",
+        "type": "output",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:47"
+        },
+        "meaning": "Fehlermeldung: offener Antrag vorhanden"
+      },
+      {
+        "id": "e_open",
+        "type": "end",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:47"
+        },
+        "meaning": "Abweisen: offener Antrag"
+      },
+      {
+        "id": "a_new",
+        "type": "action",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:50"
+        },
+        "meaning": "Adressdienst für den Mitarbeiter anlegen"
+      },
+      {
+        "id": "c_val",
+        "type": "call",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:53"
+        },
+        "meaning": "Anschrift prüfen"
+      },
+      {
+        "id": "o_inv",
+        "type": "output",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:56"
+        },
+        "meaning": "Fehlermeldung: ungültige Anschrift"
+      },
+      {
+        "id": "e_inv",
+        "type": "end",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:56"
+        },
+        "meaning": "Abweisen: ungültige Anschrift"
+      },
+      {
+        "id": "a_uuid",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:59"
+        },
+        "meaning": "Antragsnummer (UUID) erzeugen lassen"
+      },
+      {
+        "id": "w_ins",
+        "type": "write",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:68"
+        },
+        "meaning": "Antrag mit Status NEU speichern"
+      },
+      {
+        "id": "c_na",
+        "type": "call",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:70"
+        },
+        "meaning": "Genehmigungsbedarf ermitteln lassen"
+      },
+      {
+        "id": "g_appr",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:70"
+        },
+        "meaning": "Genehmigung nötig?"
+      },
+      {
+        "id": "c_swe",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:74"
+        },
+        "meaning": "Genehmigungsworkflow auslösen"
+      },
+      {
+        "id": "g_swe",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:82"
+        },
+        "meaning": "Ereignis gescheitert?"
+      },
+      {
+        "id": "c_apply",
+        "type": "call",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:87"
+        },
+        "meaning": "Anschrift sofort übernehmen"
+      },
+      {
+        "id": "u_st",
+        "type": "update_task",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:94"
+        },
+        "meaning": "Antragsstatus zur Verbuchung vormerken"
+      },
+      {
+        "id": "t_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:99"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "e_ok",
+        "type": "end",
+        "anchor": {
+          "file": "z_ess_address_request.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_request.abap:103"
+        },
+        "meaning": "Antragsnummer und Status an die App"
+      },
+      {
+        "id": "s_d",
+        "type": "start",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:1"
+        },
+        "meaning": "Personalabteilung entscheidet im Workflow"
+      },
+      {
+        "id": "r_req",
+        "type": "read",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:20"
+        },
+        "meaning": "Antrag lesen"
+      },
+      {
+        "id": "g_req",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:22"
+        },
+        "meaning": "Antrag unbekannt?"
+      },
+      {
+        "id": "e_req",
+        "type": "end",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:23"
+        },
+        "meaning": "Abweisen: Antrag unbekannt"
+      },
+      {
+        "id": "g_pend",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:25"
+        },
+        "meaning": "Nicht in Genehmigung?"
+      },
+      {
+        "id": "e_pend",
+        "type": "end",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:26"
+        },
+        "meaning": "Abweisen: nicht offen"
+      },
+      {
+        "id": "c_hr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:30"
+        },
+        "meaning": "Organisationszuordnung zum Umzugsdatum lesen"
+      },
+      {
+        "id": "au",
+        "type": "action",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:41"
+        },
+        "meaning": "Schreibberechtigung des Genehmigers auf Anschriften prüfen"
+      },
+      {
+        "id": "g_au",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:49"
+        },
+        "meaning": "Nicht berechtigt?"
+      },
+      {
+        "id": "e_au",
+        "type": "end",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:50"
+        },
+        "meaning": "Abweisen: keine Berechtigung"
+      },
+      {
+        "id": "g_dec",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:53"
+        },
+        "meaning": "Entscheidung?"
+      },
+      {
+        "id": "a_newd",
+        "type": "action",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:55"
+        },
+        "meaning": "Adressdienst anlegen"
+      },
+      {
+        "id": "c_ap2",
+        "type": "call",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:57"
+        },
+        "meaning": "Anschrift übernehmen"
+      },
+      {
+        "id": "e_inv2",
+        "type": "end",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:65"
+        },
+        "meaning": "Abweisen: unbekannte Entscheidung"
+      },
+      {
+        "id": "u_st2",
+        "type": "update_task",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:68"
+        },
+        "meaning": "Antragsstatus zur Verbuchung vormerken"
+      },
+      {
+        "id": "t_cm2",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:73"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "e_dok",
+        "type": "end",
+        "anchor": {
+          "file": "z_ess_address_decide.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_address_decide.abap:75"
+        },
+        "meaning": "Status an den Workflow zurückgeben"
+      },
+      {
+        "id": "s_v",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:43"
+        },
+        "meaning": "Anschrift prüfen"
+      },
+      {
+        "id": "g_c",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:44"
+        },
+        "meaning": "Straße oder Ort fehlt?"
+      },
+      {
+        "id": "x_c",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:45"
+        },
+        "meaning": "Fehler: unvollständig"
+      },
+      {
+        "id": "r_t005",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:49"
+        },
+        "meaning": "Land prüfen"
+      },
+      {
+        "id": "g_t005",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:52"
+        },
+        "meaning": "Land unbekannt?"
+      },
+      {
+        "id": "x_t005",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:53"
+        },
+        "meaning": "Fehler: Land"
+      },
+      {
+        "id": "c_plz",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:57"
+        },
+        "meaning": "Postleitzahl zum Land prüfen"
+      },
+      {
+        "id": "g_plz",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:65"
+        },
+        "meaning": "PLZ ungültig?"
+      },
+      {
+        "id": "x_plz",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:66"
+        },
+        "meaning": "Fehler: PLZ"
+      },
+      {
+        "id": "g_dt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:71"
+        },
+        "meaning": "Umzugsdatum außerhalb des Fensters?"
+      },
+      {
+        "id": "x_dt",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:72"
+        },
+        "meaning": "Fehler: Datum"
+      },
+      {
+        "id": "e_v",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:75"
+        },
+        "meaning": "Anschrift gültig"
+      },
+      {
+        "id": "s_na",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:78"
+        },
+        "meaning": "Genehmigungsbedarf"
+      },
+      {
+        "id": "c_cur1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:79"
+        },
+        "meaning": "Bisherige Anschrift zum Umzugsdatum lesen"
+      },
+      {
+        "id": "c_pdu1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:81"
+        },
+        "meaning": "Abgerechnet-bis-Datum ermitteln lassen"
+      },
+      {
+        "id": "a_need",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:81"
+        },
+        "meaning": "Genehmigung bei Landeswechsel oder Umzug bis abgerechnetem Datum"
+      },
+      {
+        "id": "e_na",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:83"
+        },
+        "meaning": "Genehmigungsbedarf zurückgeben"
+      },
+      {
+        "id": "s_ap",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:86"
+        },
+        "meaning": "Anschrift übernehmen"
+      },
+      {
+        "id": "lk_enq",
+        "type": "lock",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:93"
+        },
+        "meaning": "Mitarbeiter sperren"
+      },
+      {
+        "id": "g_lk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:98"
+        },
+        "meaning": "Gesperrt?"
+      },
+      {
+        "id": "x_lk",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:99"
+        },
+        "meaning": "Sperrfehler auslösen"
+      },
+      {
+        "id": "g_rt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:104"
+        },
+        "meaning": "Weitere Versuche?"
+      },
+      {
+        "id": "a_wait",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:105"
+        },
+        "meaning": "Eine Sekunde warten"
+      },
+      {
+        "id": "a_retry",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:106"
+        },
+        "meaning": "Sperrversuch wiederholen"
+      },
+      {
+        "id": "x_rt",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:108"
+        },
+        "meaning": "Fehler: Mitarbeiter gesperrt"
+      },
+      {
+        "id": "c_cur2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:111"
+        },
+        "meaning": "Bisherige Anschrift als Vorlage lesen"
+      },
+      {
+        "id": "c_ito",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:124"
+        },
+        "meaning": "Neue Hauptanschrift ab Umzugsdatum anlegen"
+      },
+      {
+        "id": "lk_deq",
+        "type": "lock",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:138"
+        },
+        "meaning": "Sperre lösen"
+      },
+      {
+        "id": "g_ito",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:142"
+        },
+        "meaning": "Anlage fehlerhaft?"
+      },
+      {
+        "id": "c_pdu2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:147"
+        },
+        "meaning": "Abgerechnet-bis-Datum ermitteln lassen"
+      },
+      {
+        "id": "x_upd",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:143"
+        },
+        "meaning": "Fehler: Übernahme gescheitert"
+      },
+      {
+        "id": "g_pay",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:147"
+        },
+        "meaning": "Umzug bis abgerechnetem Datum?"
+      },
+      {
+        "id": "c_ntf",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:148"
+        },
+        "meaning": "Entgeltabrechnung informieren"
+      },
+      {
+        "id": "s_ca",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:153"
+        },
+        "meaning": "Anschrift lesen"
+      },
+      {
+        "id": "c_rs",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:155"
+        },
+        "meaning": "Hauptanschrift zum Datum lesen"
+      },
+      {
+        "id": "e_ca",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:167"
+        },
+        "meaning": "Bisherige Anschrift zurückgeben"
+      },
+      {
+        "id": "s_pdu",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:170"
+        },
+        "meaning": "Abrechnungsstand"
+      },
+      {
+        "id": "r_pa3",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:171"
+        },
+        "meaning": "Abgerechnet-bis-Datum lesen"
+      },
+      {
+        "id": "e_pdu",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:173"
+        },
+        "meaning": "Abgerechnet-bis-Datum zurückgeben"
+      },
+      {
+        "id": "s_nt",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 176,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:176"
+        },
+        "meaning": "Hinweis an Abrechnung"
+      },
+      {
+        "id": "r_tv",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:182"
+        },
+        "meaning": "Abschaltschalter lesen"
+      },
+      {
+        "id": "g_tv",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:186"
+        },
+        "meaning": "Benachrichtigung abgeschaltet?"
+      },
+      {
+        "id": "e_tv",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 187,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:187"
+        },
+        "meaning": "Ohne Hinweis beenden"
+      },
+      {
+        "id": "c_so",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:196"
+        },
+        "meaning": "Nachricht an Verteiler HR_PAYROLL senden"
+      },
+      {
+        "id": "e_nt",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 207,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:207"
+        },
+        "meaning": "Nachricht versandt (Fehler ignoriert)"
+      },
+      {
+        "id": "e_ap",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ess_addr_service.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ess_addr_service.abap:150"
+        },
+        "meaning": "Anschrift übernommen"
+      },
+      {
+        "id": "s_u",
+        "type": "start",
+        "anchor": {
+          "file": "z_ess_addr_status_update.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_addr_status_update.abap:1"
+        },
+        "meaning": "Verbuchung Antragsstatus"
+      },
+      {
+        "id": "w_upd",
+        "type": "write",
+        "anchor": {
+          "file": "z_ess_addr_status_update.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_addr_status_update.abap:9"
+        },
+        "meaning": "Status, Bearbeiter und Datum schreiben"
+      },
+      {
+        "id": "g_u",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ess_addr_status_update.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_addr_status_update.abap:14"
+        },
+        "meaning": "Antrag nicht gefunden?"
+      },
+      {
+        "id": "o_u",
+        "type": "output",
+        "anchor": {
+          "file": "z_ess_addr_status_update.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_addr_status_update.abap:15"
+        },
+        "meaning": "Abbruchmeldung: Antrag nicht gefunden"
+      },
+      {
+        "id": "e_u2",
+        "type": "end",
+        "anchor": {
+          "file": "z_ess_addr_status_update.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_addr_status_update.abap:17"
+        },
+        "meaning": "Status verbucht"
+      },
+      {
+        "id": "e_u",
+        "type": "end",
+        "anchor": {
+          "file": "z_ess_addr_status_update.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ess_addr_status_update.abap:15"
+        },
+        "meaning": "Verbuchungsabbruch"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r_105",
+        "condition": "always"
+      },
+      {
+        "from": "r_105",
+        "to": "g_105",
+        "condition": "always"
+      },
+      {
+        "from": "g_105",
+        "to": "e_105",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_105",
+        "to": "g_own",
+        "condition": "else"
+      },
+      {
+        "from": "g_own",
+        "to": "e_own",
+        "condition": "iv_pernr IS NOT INITIAL AND iv_pernr <> lv_own"
+      },
+      {
+        "from": "g_own",
+        "to": "r_open",
+        "condition": "else"
+      },
+      {
+        "from": "r_open",
+        "to": "g_open",
+        "condition": "always"
+      },
+      {
+        "from": "g_open",
+        "to": "o_open",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_open",
+        "to": "a_new",
+        "condition": "else"
+      },
+      {
+        "from": "a_new",
+        "to": "c_val",
+        "condition": "always"
+      },
+      {
+        "from": "c_val",
+        "to": "s_v",
+        "condition": "always"
+      },
+      {
+        "from": "a_uuid",
+        "to": "w_ins",
+        "condition": "always"
+      },
+      {
+        "from": "w_ins",
+        "to": "c_na",
+        "condition": "always"
+      },
+      {
+        "from": "g_appr",
+        "to": "c_swe",
+        "condition": "lo_service->needs_approval( is_address = is_address iv_begda = iv_begda ) = abap_true"
+      },
+      {
+        "from": "c_swe",
+        "to": "g_swe",
+        "condition": "always"
+      },
+      {
+        "from": "g_swe",
+        "to": "u_st",
+        "condition": "else"
+      },
+      {
+        "from": "g_appr",
+        "to": "c_apply",
+        "condition": "else"
+      },
+      {
+        "from": "c_apply",
+        "to": "s_ap",
+        "condition": "always"
+      },
+      {
+        "from": "u_st",
+        "to": "t_cm",
+        "condition": "always"
+      },
+      {
+        "from": "t_cm",
+        "to": "e_ok",
+        "condition": "always"
+      },
+      {
+        "from": "s_d",
+        "to": "r_req",
+        "condition": "always"
+      },
+      {
+        "from": "r_req",
+        "to": "g_req",
+        "condition": "always"
+      },
+      {
+        "from": "g_req",
+        "to": "e_req",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_req",
+        "to": "g_pend",
+        "condition": "else"
+      },
+      {
+        "from": "g_pend",
+        "to": "e_pend",
+        "condition": "ls_req-status <> 'GENEHMIGUNG'"
+      },
+      {
+        "from": "g_pend",
+        "to": "c_hr",
+        "condition": "else"
+      },
+      {
+        "from": "c_hr",
+        "to": "au",
+        "condition": "always"
+      },
+      {
+        "from": "au",
+        "to": "g_au",
+        "condition": "always"
+      },
+      {
+        "from": "g_au",
+        "to": "e_au",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_au",
+        "to": "g_dec",
+        "condition": "else"
+      },
+      {
+        "from": "g_dec",
+        "to": "a_newd",
+        "condition": "WHEN 'A'"
+      },
+      {
+        "from": "a_newd",
+        "to": "c_ap2",
+        "condition": "always"
+      },
+      {
+        "from": "c_ap2",
+        "to": "s_ap",
+        "condition": "always"
+      },
+      {
+        "from": "g_dec",
+        "to": "e_inv2",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "u_st2",
+        "to": "t_cm2",
+        "condition": "always"
+      },
+      {
+        "from": "s_v",
+        "to": "g_c",
+        "condition": "always"
+      },
+      {
+        "from": "g_c",
+        "to": "x_c",
+        "condition": "is_address-stras IS INITIAL OR is_address-ort01 IS INITIAL"
+      },
+      {
+        "from": "g_c",
+        "to": "r_t005",
+        "condition": "else"
+      },
+      {
+        "from": "r_t005",
+        "to": "g_t005",
+        "condition": "always"
+      },
+      {
+        "from": "g_t005",
+        "to": "x_t005",
+        "condition": "lv_land_ok = abap_false"
+      },
+      {
+        "from": "g_t005",
+        "to": "c_plz",
+        "condition": "else"
+      },
+      {
+        "from": "c_plz",
+        "to": "g_plz",
+        "condition": "always"
+      },
+      {
+        "from": "g_plz",
+        "to": "x_plz",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_plz",
+        "to": "g_dt",
+        "condition": "else"
+      },
+      {
+        "from": "g_dt",
+        "to": "x_dt",
+        "condition": "iv_begda < sy-datum - 92 OR iv_begda > sy-datum + 365"
+      },
+      {
+        "from": "s_na",
+        "to": "c_cur1",
+        "condition": "always"
+      },
+      {
+        "from": "c_cur1",
+        "to": "s_ca",
+        "condition": "always"
+      },
+      {
+        "from": "s_ap",
+        "to": "lk_enq",
+        "condition": "always"
+      },
+      {
+        "from": "lk_enq",
+        "to": "g_lk",
+        "condition": "always"
+      },
+      {
+        "from": "g_lk",
+        "to": "x_lk",
+        "condition": "ls_return-type = 'E'"
+      },
+      {
+        "from": "g_lk",
+        "to": "c_cur2",
+        "condition": "else"
+      },
+      {
+        "from": "g_rt",
+        "to": "a_wait",
+        "condition": "mv_retry < gc_max_retry"
+      },
+      {
+        "from": "a_wait",
+        "to": "a_retry",
+        "condition": "always"
+      },
+      {
+        "from": "a_retry",
+        "to": "lk_enq",
+        "condition": "always"
+      },
+      {
+        "from": "g_rt",
+        "to": "x_rt",
+        "condition": "else"
+      },
+      {
+        "from": "c_cur2",
+        "to": "s_ca",
+        "condition": "always"
+      },
+      {
+        "from": "c_ito",
+        "to": "lk_deq",
+        "condition": "always"
+      },
+      {
+        "from": "lk_deq",
+        "to": "g_ito",
+        "condition": "always"
+      },
+      {
+        "from": "g_ito",
+        "to": "x_upd",
+        "condition": "ls_return-type CA 'EA'"
+      },
+      {
+        "from": "g_ito",
+        "to": "c_pdu2",
+        "condition": "else"
+      },
+      {
+        "from": "g_pay",
+        "to": "c_ntf",
+        "condition": "is_req-begda <= payroll_done_until( )"
+      },
+      {
+        "from": "c_ntf",
+        "to": "s_nt",
+        "condition": "always"
+      },
+      {
+        "from": "s_ca",
+        "to": "c_rs",
+        "condition": "always"
+      },
+      {
+        "from": "s_pdu",
+        "to": "r_pa3",
+        "condition": "always"
+      },
+      {
+        "from": "s_nt",
+        "to": "r_tv",
+        "condition": "always"
+      },
+      {
+        "from": "r_tv",
+        "to": "g_tv",
+        "condition": "always"
+      },
+      {
+        "from": "g_tv",
+        "to": "e_tv",
+        "condition": "lv_off = abap_true"
+      },
+      {
+        "from": "g_tv",
+        "to": "c_so",
+        "condition": "else"
+      },
+      {
+        "from": "s_u",
+        "to": "w_upd",
+        "condition": "always"
+      },
+      {
+        "from": "w_upd",
+        "to": "g_u",
+        "condition": "always"
+      },
+      {
+        "from": "g_u",
+        "to": "o_u",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o_open",
+        "to": "e_open",
+        "condition": "always"
+      },
+      {
+        "from": "o_inv",
+        "to": "e_inv",
+        "condition": "always"
+      },
+      {
+        "from": "o_u",
+        "to": "e_u",
+        "condition": "always"
+      },
+      {
+        "from": "x_c",
+        "to": "o_inv",
+        "condition": "CATCH zcx_ess_addr"
+      },
+      {
+        "from": "x_t005",
+        "to": "o_inv",
+        "condition": "CATCH zcx_ess_addr"
+      },
+      {
+        "from": "x_plz",
+        "to": "o_inv",
+        "condition": "CATCH zcx_ess_addr"
+      },
+      {
+        "from": "x_dt",
+        "to": "o_inv",
+        "condition": "CATCH zcx_ess_addr"
+      },
+      {
+        "from": "g_dt",
+        "to": "e_v",
+        "condition": "else"
+      },
+      {
+        "from": "e_v",
+        "to": "a_uuid",
+        "condition": "always"
+      },
+      {
+        "from": "c_na",
+        "to": "s_na",
+        "condition": "always"
+      },
+      {
+        "from": "a_need",
+        "to": "e_na",
+        "condition": "always"
+      },
+      {
+        "from": "e_na",
+        "to": "g_appr",
+        "condition": "always"
+      },
+      {
+        "from": "c_rs",
+        "to": "e_ca",
+        "condition": "always"
+      },
+      {
+        "from": "e_ca",
+        "to": "c_pdu1",
+        "condition": "always"
+      },
+      {
+        "from": "c_pdu1",
+        "to": "s_pdu",
+        "condition": "always"
+      },
+      {
+        "from": "r_pa3",
+        "to": "e_pdu",
+        "condition": "always"
+      },
+      {
+        "from": "e_pdu",
+        "to": "a_need",
+        "condition": "always"
+      },
+      {
+        "from": "g_swe",
+        "to": "u_st",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "x_lk",
+        "to": "g_rt",
+        "condition": "CATCH zcx_ess_addr INTO DATA(lx_lock)"
+      },
+      {
+        "from": "e_ca",
+        "to": "c_ito",
+        "condition": "always"
+      },
+      {
+        "from": "c_pdu2",
+        "to": "s_pdu",
+        "condition": "always"
+      },
+      {
+        "from": "e_pdu",
+        "to": "g_pay",
+        "condition": "always"
+      },
+      {
+        "from": "c_so",
+        "to": "e_nt",
+        "condition": "always"
+      },
+      {
+        "from": "g_pay",
+        "to": "e_ap",
+        "condition": "else"
+      },
+      {
+        "from": "e_tv",
+        "to": "e_ap",
+        "condition": "always"
+      },
+      {
+        "from": "e_nt",
+        "to": "e_ap",
+        "condition": "always"
+      },
+      {
+        "from": "e_ap",
+        "to": "u_st",
+        "condition": "always"
+      },
+      {
+        "from": "e_ap",
+        "to": "u_st2",
+        "condition": "always"
+      },
+      {
+        "from": "x_rt",
+        "to": "u_st",
+        "condition": "CATCH zcx_ess_addr"
+      },
+      {
+        "from": "x_rt",
+        "to": "u_st2",
+        "condition": "CATCH zcx_ess_addr"
+      },
+      {
+        "from": "x_upd",
+        "to": "u_st",
+        "condition": "CATCH zcx_ess_addr"
+      },
+      {
+        "from": "x_upd",
+        "to": "u_st2",
+        "condition": "CATCH zcx_ess_addr"
+      },
+      {
+        "from": "g_dec",
+        "to": "u_st2",
+        "condition": "WHEN 'R'"
+      },
+      {
+        "from": "t_cm2",
+        "to": "e_dok",
+        "condition": "always"
+      },
+      {
+        "from": "g_u",
+        "to": "e_u2",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_ess_addr_service.abap:148 — kein Fachsatz „die Rückrechnung wird im Code ausgelöst oder ein Rückrechnungsdatum gesetzt“ (nur Nachricht an die Abrechnung)",
+    "z_ess_address_request.abap:68 — kein Fachsatz „abgewiesene Anschriften werden als Antrag gespeichert“ (gespeichert wird erst nach bestandener Prüfung)",
+    "zcl_ess_addr_service.abap:106 — kein Fachsatz „die Sperre wird unbegrenzt wiederholt“ (höchstens drei Versuche)",
+    "z_ess_address_decide.abap:41 — kein Fachsatz „der Mitarbeiter selbst wird auf Berechtigung geprüft“ (geprüft wird der entscheidende Benutzer)"
+  ],
+  "processDescription": "Ein Mitarbeiter meldet in der ESS-App seine neue Anschrift mit Umzugsdatum. Der Baustein ermittelt die eigene Personalnummer, weist fremde Personalnummern, bereits offene Anträge und ungültige Anschriften (fehlende Straße/Ort, unbekanntes Land, falsche PLZ, Datum außerhalb drei Monate zurück bis ein Jahr voraus) ab. Ein gültiger Antrag wird mit Status NEU gespeichert. Ändert sich das Land oder liegt das Umzugsdatum nicht nach dem Abgerechnet-bis-Datum, startet ein Genehmigungsworkflow; sonst wird die Anschrift sofort übernommen. Die Übernahme sperrt den Mitarbeiter mit bis zu drei Versuchen, legt eine neue Hauptanschrift ab Umzugsdatum an und entsperrt; bei Rückwirkung erhält die Entgeltabrechnung eine Nachricht, sofern nicht per Schalter abgeschaltet. Im Workflow prüft ein zweiter Baustein Antrag und Schreibberechtigung des Genehmigers, übernimmt bei Genehmigung oder setzt ABGELEHNT. Der jeweilige Status wird in der Verbuchung mit Bearbeiter und Datum geschrieben und festgeschrieben."
+}

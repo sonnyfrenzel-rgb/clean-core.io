@@ -1,0 +1,274 @@
+{
+  "id": "BM-161",
+  "title": "IS-U: Verbrauch je Zähler aus aufeinanderfolgenden Ablesungen (EABL)",
+  "classes": [
+    "K01",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EABL",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:21"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-161-B01",
+      "text": "Es werden die Ablesungen der ausgewählten Zähler im eingegebenen Ablesezeitraum gelesen und je Zähler nach Ablesedatum sortiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-161-B02",
+      "text": "Mit jedem neuen Zähler beginnt die Verbrauchsrechnung ohne Vorablesung.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-161-B03",
+      "text": "Nur Ablesungen mit Ablesestatus 1 werden berücksichtigt; alle anderen werden übergangen und zählen auch nicht als Vorablesung.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-161-B04",
+      "text": "Liegt eine Vorablesung vor, wird der Verbrauch als Differenz der Zählerstände (Vorkommastellen) berechnet und mit Zähler, Ablesedatum und Zählerstand ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Ablesungen der Zähler im Zeitraum lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Ablesungen je Zähler chronologisch durchgehen"
+      },
+      {
+        "id": "ch",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Ablesung mit Status 1?"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Vorablesung des Zählers vorhanden?"
+      },
+      {
+        "id": "c",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Verbrauch seit Vorablesung berechnen"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Zähler, Datum, Stand und Verbrauch listen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "ch",
+        "condition": "next row"
+      },
+      {
+        "from": "ch",
+        "to": "g",
+        "condition": "gs_abl-ablstat = '1'"
+      },
+      {
+        "from": "ch",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "g",
+        "to": "c",
+        "condition": "gv_vorstand IS NOT INITIAL"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "c",
+        "to": "o",
+        "condition": "always"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:33 — kein Fachsatz „die erste Ablesung eines Zählers wird mit Verbrauch ausgegeben“: ohne Vorablesung wird nur der Ausgangsstand gemerkt; auch ein echter Vorstand 0 gilt als „keine Vorablesung“",
+    "source.abap:34 — kein Fachsatz „Zählerüberlauf bzw. Zählerwechsel wird berücksichtigt“: die Differenz wird ohne Prüfung gebildet und kann negativ werden",
+    "gesamte Scheibe — kein Fachsatz „Ablesungen werden plausibilisiert, geschätzt oder zur Abrechnung freigegeben“: der Report liest und listet nur"
+  ],
+  "processDescription": "Der Report wird mit einer Zählerauswahl und einem Pflichtzeitraum für das Ablesedatum gestartet. Er liest die Ablesungen dieser Zähler aus der IS-U-Ablesetabelle und sortiert sie je Zähler nach Datum. Beim Wechsel auf einen neuen Zähler wird die gemerkte Vorablesung verworfen. Ablesungen, deren Status nicht 1 ist, werden übergangen und dienen auch nicht als Vorablesung. Für jede weitere berücksichtigte Ablesung wird der Verbrauch als Differenz der Vorkommastellen des Zählerstands zur vorigen berücksichtigten Ablesung berechnet und mit Zähler, Ablesedatum und Stand ausgegeben. Die erste berücksichtigte Ablesung eines Zählers erscheint nicht in der Liste. Zählerüberläufe oder Gerätewechsel werden nicht erkannt, sodass negative Verbräuche möglich sind. Es wird nichts geschrieben."
+}

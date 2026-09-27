@@ -1,0 +1,27 @@
+{
+  "id": "BM-163",
+  "title": "Handling Units: Packinhalt einer Auslieferung aus VEKP/VEPO listen",
+  "domain": "Logistik-Randbereich Handling Units / Versand",
+  "band": "einfach",
+  "loc": 30,
+  "constructs": [
+    "PARAMETERS OBLIGATORY",
+    "SELECT INTO TABLE",
+    "SELECT … FOR ALL ENTRIES",
+    "verschachtelte LOOP AT … WHERE",
+    "WRITE-Liste",
+    "auskommentierter Abbruchzweig"
+  ],
+  "scenario": "Packlistenreport im Versand: vor dem Verladen druckt der Schichtführer die Handling Units einer Auslieferung mit ihren Materialpositionen.",
+  "s4_issues": [
+    "Direktzugriff auf VEKP/VEPO statt freigegebener HU-CDS-Views",
+    "FOR ALL ENTRIES ohne Leerprüfung: bei ungepackter Lieferung wird die gesamte VEPO gelesen",
+    "Materialnummernlänge 40 in WRITE-Liste"
+  ],
+  "wave": 2,
+  "module": "LE-HU",
+  "edge_constructs": [
+    "SELECT … FOR ALL ENTRIES mit möglicherweise leerer Treibertabelle",
+    "auskommentierter Zweig (LEAVE LIST-PROCESSING)"
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufruf c_sp",
+      "before": "c_sp -> g_emp [always]",
+      "after": "e_sp -> g_emp [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_dis",
+      "before": "c_dis -> w_wait [always]",
+      "after": "e_d -> w_wait [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_seq",
+      "before": "c_seq -> l_g [next iteration]",
+      "after": "e_fm -> l_g [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_la",
+      "before": "c_la -> l_g [next iteration]",
+      "after": "e_la -> l_g [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_lr",
+      "before": "c_lr -> x_r [always]",
+      "after": "e_la -> x_r [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_pp",
+      "before": "c_pp -> dq [always]",
+      "after": "e_pp -> dq [always]; x_f -> dq [always]; x_nd -> dq [always]; x_open -> dq [always]; x_test -> dq [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Ausnahmekanten nach x_f",
+      "before": "c_due -> x_f [CATCH zcx_pm_forecast INTO DATA(lx_fc)]",
+      "after": "x_rate -> x_f [zcx_pm_forecast]; x_lr -> x_f [zcx_pm_forecast]",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION in einem gerufenen Block des Falls ist ein end-Knoten; die Ausnahmekante geht von diesem end in den CATCH-Zweig des Aufrufers (Bedingung: Ausnahmename), nicht vom Aufrufknoten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_due",
+      "before": "c_due -> g_hz [always]",
+      "after": "e_dd -> g_hz [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_load",
+      "before": "c_load -> c_rate [always]",
+      "after": "e_lr -> c_rate [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_rate",
+      "before": "c_rate -> g_rate [always]",
+      "after": "e_du -> g_rate [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_fac -> m_dp",
+      "before": "[CATCH cx_salv_msg INTO DATA(lx_salv)]",
+      "after": "[cx_salv_msg]",
+      "why": "Vereinheitlichte Konvention: die Ausnahmekante trägt als Bedingung den Ausnahmenamen, nicht die CATCH-Anweisung.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten rb",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call; transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten tc",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call; transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten w_wait",
+      "before": "async",
+      "after": "action",
+      "why": "WAIT UNTIL … UP TO ist kein asynchroner Aufruf (async nur an STARTING NEW TASK, IN BACKGROUND TASK, RECEIVE RESULTS); als Warteschritt mit Wirkung ein action-Knoten, wie in den übrigen Fällen.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten w5",
+      "before": "async",
+      "after": "action",
+      "why": "WAIT UNTIL … UP TO ist kein asynchroner Aufruf (async nur an STARTING NEW TASK, IN BACKGROUND TASK, RECEIVE RESULTS); als Warteschritt mit Wirkung ein action-Knoten, wie in den übrigen Fällen.",
+      "category": "Knotenart"
+    }
+  ],
+  "doubts": [
+    "lzpm_mplanf01.abap:82 — Feldname AUFNR_NEW in BAPI_ALM_NUMBERS nicht gegen ein System geprüft.",
+    "z_pm_mplan_calc.abap:51 — e_fm hat eine Rückkante zum synchronen Aufrufer c_seq (-> l_g [next iteration]); für den aRFC-Start a_rfc gilt sie nicht (Rückweg dort über RECEIVE RESULTS in receive_result). Das Skelettformat kann die Rückkante nicht auf einen Aufrufer beschränken."
+  ]
+}

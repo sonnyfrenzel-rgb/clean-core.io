@@ -1,0 +1,272 @@
+{
+  "id": "BM-181",
+  "title": "Lieferschein-Druck über Nachrichtensteuerung: ENTRY-Routine ruft Smart Form dynamisch",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "LIKP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 8,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:8"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SSF_FUNCTION_MODULE_NAME",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:15"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-181-B01",
+      "text": "Beim Ausgeben einer Lieferschein-Nachricht wird der Auslieferungskopf zur Nachrichtenobjektnummer gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:8"
+        }
+      ]
+    },
+    {
+      "id": "BM-181-B02",
+      "text": "Existiert die Auslieferung nicht, wird die Nachricht mit Rückgabecode 1 als fehlerhaft gemeldet und nichts gedruckt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        }
+      ]
+    },
+    {
+      "id": "BM-181-B03",
+      "text": "Zum Formular ZLE_LIEFERSCHEIN_SF wird der generierte Formularbaustein ermittelt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-181-B04",
+      "text": "Der Lieferschein wird ohne Druckdialog ausgegeben, bei Bildschirmausgabe als Vorschau.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-181-B05",
+      "text": "Das Ergebnis des Formularaufrufs wird als Rückgabecode an die Nachrichtenverarbeitung gemeldet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 3,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:3"
+        },
+        "meaning": "Nachrichtenverarbeitung ruft Lieferscheindruck"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:8"
+        },
+        "meaning": "Auslieferungskopf zur Nachricht lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        "meaning": "Auslieferung gefunden?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Abbruch mit Rückgabecode 1"
+      },
+      {
+        "id": "fm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Formularbaustein zum Smart Form ermitteln"
+      },
+      {
+        "id": "pr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Lieferschein über generierten Formularbaustein ausgeben"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Druckergebnis zurückmelden"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "fm",
+        "condition": "else"
+      },
+      {
+        "from": "fm",
+        "to": "pr",
+        "condition": "always"
+      },
+      {
+        "from": "pr",
+        "to": "e3",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:31 — kein Fachsatz „der Lieferschein wird per E-Mail oder Fax versendet“: das Übertragungsmedium der Nachricht wird nicht ausgewertet, der Aufruf gibt nur über den Spool bzw. die Vorschau aus",
+    "source.abap:15 — kein Fachsatz „fehlt das Formular, wird die Nachricht mit Rückgabecode 2 als fehlerhaft gemeldet“: die Prüfung ist auskommentiert, der Rückgabewert der Ermittlung wird nicht ausgewertet; mit leerem Bausteinnamen bricht der folgende Aufruf mit Laufzeitfehler ab, statt einen Rückgabecode zu liefern",
+    "source.abap:31 — kein Fachsatz über den Formularinhalt (Positionen, Chargen, Gewichte): das Ziel ist ein zur Laufzeit ermittelter generierter Baustein, dessen Logik nicht im Fall liegt",
+    "gesamte Scheibe — kein Fachsatz „die Auslieferung wird geändert oder der Warenausgang gebucht“: die Routine liest nur und druckt"
+  ],
+  "processDescription": "Die Nachrichtenverarbeitung ruft beim Ausgeben einer Lieferschein-Nachricht die Routine ENTRY mit Rückgabeparameter und Bildschirmkennzeichen auf. Die Routine liest zur Objektnummer der Nachricht den Kopf der Auslieferung. Gibt es die Auslieferung nicht, meldet sie Rückgabecode 1 und bricht ab. Andernfalls ermittelt sie zum Smart Form ZLE_LIEFERSCHEIN_SF den generierten Formularbaustein; ob das gelingt, wird nicht geprüft, weil die frühere Prüfung auskommentiert ist. Dann ruft sie den ermittelten Baustein ohne Druckdialog auf, bei Bildschirmausgabe als Vorschau, und übergibt Auslieferungskopf und Nachricht. Fehlt der Formularbaustein, bricht dieser Aufruf mit einem Laufzeitfehler ab, statt einen Rückgabecode zu liefern. Der Rückgabewert des Aufrufs wird an die Nachrichtenverarbeitung gemeldet, die daraus den Verarbeitungsstatus der Nachricht setzt. Die Routine ändert keine Belegdaten."
+}

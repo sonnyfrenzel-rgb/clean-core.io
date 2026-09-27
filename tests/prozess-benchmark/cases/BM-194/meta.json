@@ -1,0 +1,41 @@
+{
+  "id": "BM-194",
+  "title": "CIF-Integrationsmodelle je Werk generieren und aktivieren, Queue-Prüfung, Materialfilter im CIF-Userexit",
+  "domain": "Technische Randbereiche — Core Interface (CIF) ERP–APO",
+  "band": "komplex",
+  "loc": 308,
+  "constructs": [
+    "SUBMIT RIMODGEN USING SELECTION-SET … WITH SELECTION-TABLE",
+    "SUBMIT RIMODAC2 WITH …",
+    "EXPORTING LIST TO MEMORY AND RETURN",
+    "LIST_FROM_MEMORY / LIST_TO_ASCI / LIST_FREE_MEMORY",
+    "SELECT TRFCQOUT / TBLSYSDEST",
+    "Anwendungslog BAL_LOG_CREATE / BAL_LOG_MSG_ADD_FREE_TEXT / BAL_DB_SAVE / BAL_DSP_LOG_DISPLAY",
+    "Kundenerweiterung CIFMAT01 EXIT_SAPLCMAT_001 (Include ZXCIFUU01)",
+    "SELECT … FOR ALL ENTRIES MARC",
+    "DELETE interne Tabelle im LOOP"
+  ],
+  "scenario": "Nächtlicher Job in einem ERP-System mit angebundenem SCM/APO, der nach Werkseinführungen die CIF-Integrationsmodelle neu generiert und aktiviert, zusammen mit einem Userexit, der nicht im APO geplante Materialien aus der Übertragung filtert; in der S/4-Transformation fällt beides mit dem Wechsel auf embedded PP/DS oder IBP weg bzw. muss neu bewertet werden.",
+  "s4_issues": [
+    "Mit embedded PP/DS in S/4HANA entfällt der CIF zum eigenen System; Integrationsmodelle werden nur noch für externes APO/IBP gebraucht",
+    "SUBMIT auf SAP-Standardreports RIMODGEN/RIMODAC2 mit Listenauswertung per Textsuche ist fragil und nicht Clean-Core-konform",
+    "Direkter Lesezugriff auf qRFC-Tabelle TRFCQOUT statt freigegebener Monitoring-API",
+    "MARC-Lesezugriff mit SELECT *; Materialnummernlänge (MATNR 40) in Schnittstellenstrukturen beachten",
+    "Kundenerweiterung CIFMAT01 (CMOD) ist klassischer Modifikationsersatz, in S/4 nur noch On-Premise/Private Cloud"
+  ],
+  "wave": 2,
+  "module": "SCM-APO",
+  "edge_constructs": [
+    "SUBMIT … AND RETURN mit EXPORTING LIST TO MEMORY",
+    "WAIT UP TO",
+    "STOP",
+    "END-OF-SELECTION",
+    "CHECK außerhalb von Schleifen im Ereignisblock",
+    "CONTINUE/EXIT in verschachtelten Schleifen",
+    "AT NEW/AT END OF",
+    "Makros (DEFINE)",
+    "SELECT … FOR ALL ENTRIES mit leerer Treibertabelle (Schutzabfrage)",
+    "Debug-Hintertür IF sy-uname = …",
+    "auskommentierte Zweige"
+  ]
+}

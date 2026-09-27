@@ -1,0 +1,29 @@
+{
+  "id": "BM-182",
+  "title": "Garantieantrag anlegen: Garantieprüfung, Antragsnummer aus Nummernkreis, Prüfstatus ab 5.000",
+  "domain": "Technische Randbereiche — Nummernkreise",
+  "band": "einfach",
+  "loc": 39,
+  "constructs": [
+    "Funktionsbaustein (RFC-fähig)",
+    "SELECT SINGLE BGMKOBJ",
+    "MESSAGE … RAISING",
+    "NUMBER_GET_NEXT",
+    "VALUE #( ) mit COND #",
+    "INSERT Z-Tabelle"
+  ],
+  "scenario": "Kundeneigener RFC-Baustein, über den ein Händlerportal Garantieanträge zu verkauften Geräten im ECC anlegt; die Antragsnummer kommt aus einem eigenen Nummernkreisobjekt.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf die Garantietabelle BGMKOBJ statt freigegebener API",
+    "Kundeneigene Garantieantragstabelle neben der Standard-Garantieabwicklung (LO-WTY)",
+    "NUMBER_GET_NEXT ohne Ausnahmebehandlung führt bei Nummernkreisproblemen zum Laufzeitfehler"
+  ],
+  "wave": 2,
+  "module": "LO-WTY",
+  "edge_constructs": [
+    "MESSAGE … RAISING als Pfadende",
+    "COND #",
+    "Inline-Deklarationen",
+    "Ausnahmen von NUMBER_GET_NEXT nicht behandelt (kein EXCEPTIONS-Zusatz)"
+  ]
+}

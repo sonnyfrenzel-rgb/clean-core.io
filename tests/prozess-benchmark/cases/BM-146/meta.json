@@ -1,0 +1,37 @@
+{
+  "id": "BM-146",
+  "title": "Abrechnungsplausibilität: Auszahlungsbetrag gegen Vorperiode aus dem Cluster RD",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "mittel",
+  "loc": 80,
+  "constructs": [
+    "REPORT",
+    "logische Datenbank PNPCE",
+    "GET peras",
+    "REJECT",
+    "CU_READ_RGDIR",
+    "PYXX_READ_PAYROLL_RESULT",
+    "Tabelle RT",
+    "REDUCE",
+    "CHECK in LOOP",
+    "CONTINUE",
+    "EXIT",
+    "END-OF-SELECTION",
+    "MESSAGE Typ S"
+  ],
+  "scenario": "Nach jedem Abrechnungslauf prüft die Entgeltabrechnung, bei welchen Mitarbeitern der Auszahlungsbetrag gegenüber der Vorperiode stärker als eine Schwelle schwankt, bevor der Zahlungsträger erzeugt wird.",
+  "s4_issues": [
+    "Logische Datenbank PNPCE",
+    "Clusterzugriff über PYXX_READ_PAYROLL_RESULT mit fester Cluster-ID RD",
+    "Lohnart /559 als Literal"
+  ],
+  "wave": 2,
+  "module": "PY",
+  "edge_constructs": [
+    "GET-Ereignis einer logischen Datenbank mit REJECT",
+    "CHECK mitten in der Schleife",
+    "CONTINUE und EXIT in derselben Schleife",
+    "REDUCE mit FOR … WHERE",
+    "CHECK nach der Schleife im GET-Ereignis"
+  ]
+}

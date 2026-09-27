@@ -1,0 +1,1288 @@
+{
+  "id": "BM-112",
+  "title": "IDoc-Eingang Equipmenttausch: Ausbau, Zählerstand bei Ausbau, Einbau mit Ausnahmeklasse und IDoc-Status",
+  "classes": [
+    "K03",
+    "K01",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EQUZ",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzpm_swapf01.abap",
+        "line": 24,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzpm_swapf01.abap:24"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ILOA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzpm_swapf01.abap",
+        "line": 24,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzpm_swapf01.abap:24"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "IMPTT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzpm_swapf01.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzpm_swapf01.abap:82"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EQUI",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzpm_swapf01.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzpm_swapf01.abap:82"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_EQUI_DISMANTLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzpm_swapf01.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzpm_swapf01.abap:58"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MEASUREM_DOCUM_RFC_SINGLE_001",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzpm_swapf01.abap",
+        "line": 92,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzpm_swapf01.abap:92"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_EQUI_INSTALL",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzpm_swapf01.abap",
+        "line": 120,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzpm_swapf01.abap:120"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_idoc_input_zequiswap.abap",
+        "line": 63,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_idoc_input_zequiswap.abap:63"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_idoc_input_zequiswap.abap",
+        "line": 71,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_idoc_input_zequiswap.abap:71"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCX_PM_SWAP",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_idoc_input_zequiswap.abap",
+        "line": 62,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_idoc_input_zequiswap.abap:62"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-112-B01",
+      "text": "Jedes eingehende IDoc beschreibt einen Equipmenttausch; seine Segmente liefern Technischen Platz mit Datum und Zeit, das ausgebaute Equipment mit Zählerstand und das eingebaute Equipment, unbekannte Segmente werden ignoriert.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:38"
+        },
+        {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:41"
+        },
+        {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-112-B02",
+      "text": "Fehlen Platz, ausgebautes oder eingebautes Equipment, wird das IDoc abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:16"
+        },
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-112-B03",
+      "text": "Das ausgebaute Equipment muss aktuell an genau diesem Technischen Platz eingebaut sein, sonst wird das IDoc abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:24"
+        },
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:29"
+        },
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-112-B04",
+      "text": "Das einzubauende Equipment darf aktuell an keinem Platz eingebaut sein, sonst wird das IDoc abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:37"
+        },
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:42"
+        },
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-112-B05",
+      "text": "Das alte Equipment wird zum gemeldeten Zeitpunkt vom Platz ausgebaut; meldet der Ausbau einen Fehler, wird das IDoc abgelehnt.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:56"
+        },
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:58"
+        },
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-112-B06",
+      "text": "Ist ein Zählerstand gemeldet und hat das ausgebaute Equipment einen aktiven Zähler, wird der Stand bei Ausbau als Messbeleg erfasst; ohne Zähler entfällt der Messbeleg ohne Fehler.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:57"
+        },
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:82"
+        },
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:88"
+        },
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:92"
+        }
+      ]
+    },
+    {
+      "id": "BM-112-B07",
+      "text": "Schlägt das Anlegen des Messbelegs fehl, wird das IDoc mit der Systemmeldung abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:102"
+        },
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:105"
+        }
+      ]
+    },
+    {
+      "id": "BM-112-B08",
+      "text": "Das neue Equipment wird zum selben Zeitpunkt am Platz eingebaut; meldet der Einbau einen Fehler, wird das IDoc abgelehnt.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:60"
+        },
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:120"
+        },
+        {
+          "file": "lzpm_swapf01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:128"
+        }
+      ]
+    },
+    {
+      "id": "BM-112-B09",
+      "text": "Bei jeder Ablehnung werden Ausbau, Messbeleg und Einbau dieses IDocs gemeinsam zurückgenommen, das IDoc erhält Status 51 mit dem Fehlertext und der Workflow wird über den Fehler informiert.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:62"
+        },
+        {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:63"
+        },
+        {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:65"
+        },
+        {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-112-B10",
+      "text": "Gelingt der ganze Tausch, wird er festgeschrieben und das IDoc erhält Status 53 „Equipmenttausch gebucht“.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:71"
+        },
+        {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:74"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:1"
+        },
+        "meaning": "IDoc-Paket ZEQUISWAP trifft ein"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:38"
+        },
+        "meaning": "IDocs einzeln verarbeiten"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:41"
+        },
+        "meaning": "Segmente des IDocs lesen"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:42"
+        },
+        "meaning": "Welches Segment?"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:55"
+        },
+        "meaning": "Eingaben und Einbausituation prüfen"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:56"
+        },
+        "meaning": "Altes Equipment ausbauen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:57"
+        },
+        "meaning": "Zählerstand gemeldet?"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:58"
+        },
+        "meaning": "Zählerstand bei Ausbau erfassen"
+      },
+      {
+        "id": "c4",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:60"
+        },
+        "meaning": "Neues Equipment einbauen"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:63"
+        },
+        "meaning": "Tausch vollständig zurücknehmen"
+      },
+      {
+        "id": "c6",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:65"
+        },
+        "meaning": "IDoc-Status 51 mit Fehlertext"
+      },
+      {
+        "id": "tc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:71"
+        },
+        "meaning": "Tausch festschreiben"
+      },
+      {
+        "id": "c5",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:74"
+        },
+        "meaning": "IDoc-Status 53"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "z_idoc_input_zequiswap.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zequiswap.abap:77"
+        },
+        "meaning": "Paket verarbeitet"
+      },
+      {
+        "id": "sc",
+        "type": "start",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:10"
+        },
+        "meaning": "Prüfung"
+      },
+      {
+        "id": "gc1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:16"
+        },
+        "meaning": "Pflichtangaben fehlen?"
+      },
+      {
+        "id": "xc1",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:18"
+        },
+        "meaning": "Ablehnung: Segment fehlt"
+      },
+      {
+        "id": "rc1",
+        "type": "read",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:24"
+        },
+        "meaning": "Aktuellen Einbauort des alten Equipments lesen"
+      },
+      {
+        "id": "gc2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:29"
+        },
+        "meaning": "Nicht an diesem Platz eingebaut?"
+      },
+      {
+        "id": "xc2",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:30"
+        },
+        "meaning": "Ablehnung: nicht eingebaut"
+      },
+      {
+        "id": "rc2",
+        "type": "read",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:37"
+        },
+        "meaning": "Aktuellen Einbauort des neuen Equipments lesen"
+      },
+      {
+        "id": "gc3",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:42"
+        },
+        "meaning": "Neues Equipment schon eingebaut?"
+      },
+      {
+        "id": "xc3",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:43"
+        },
+        "meaning": "Ablehnung: bereits eingebaut"
+      },
+      {
+        "id": "ec",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:48"
+        },
+        "meaning": "Prüfung bestanden"
+      },
+      {
+        "id": "sd",
+        "type": "start",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:53"
+        },
+        "meaning": "Ausbau"
+      },
+      {
+        "id": "cd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:58"
+        },
+        "meaning": "Equipment vom Platz ausbauen"
+      },
+      {
+        "id": "gd",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:66"
+        },
+        "meaning": "Ausbau fehlerhaft?"
+      },
+      {
+        "id": "xd",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:67"
+        },
+        "meaning": "Ablehnung: Ausbaufehler"
+      },
+      {
+        "id": "ed",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:72"
+        },
+        "meaning": "Ausgebaut"
+      },
+      {
+        "id": "sp",
+        "type": "start",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:79"
+        },
+        "meaning": "Zählerstand bei Ausbau"
+      },
+      {
+        "id": "rp",
+        "type": "read",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:82"
+        },
+        "meaning": "Aktiven Zähler des ausgebauten Equipments lesen"
+      },
+      {
+        "id": "gp1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:88"
+        },
+        "meaning": "Kein Zähler?"
+      },
+      {
+        "id": "xp1",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:89"
+        },
+        "meaning": "Ohne Messbeleg weiter"
+      },
+      {
+        "id": "cp",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:92"
+        },
+        "meaning": "Messbeleg „Stand bei Ausbau“ anlegen"
+      },
+      {
+        "id": "gp2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:102"
+        },
+        "meaning": "Messbeleg fehlgeschlagen?"
+      },
+      {
+        "id": "xp2",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:105"
+        },
+        "meaning": "Ablehnung mit Systemmeldung"
+      },
+      {
+        "id": "ep",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:110"
+        },
+        "meaning": "Zählerstand erfasst"
+      },
+      {
+        "id": "si",
+        "type": "start",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:115"
+        },
+        "meaning": "Einbau"
+      },
+      {
+        "id": "ci",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:120"
+        },
+        "meaning": "Equipment am Platz einbauen"
+      },
+      {
+        "id": "gi",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:128"
+        },
+        "meaning": "Einbau fehlerhaft?"
+      },
+      {
+        "id": "xi",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:129"
+        },
+        "meaning": "Ablehnung: Einbaufehler"
+      },
+      {
+        "id": "ei",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:134"
+        },
+        "meaning": "Eingebaut"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:139"
+        },
+        "meaning": "IDoc-Status vermerken (S bei 53, sonst E)"
+      },
+      {
+        "id": "es",
+        "type": "end",
+        "anchor": {
+          "file": "lzpm_swapf01.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzpm_swapf01.abap:150"
+        },
+        "meaning": "Status vermerkt"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "l2",
+        "condition": "next row"
+      },
+      {
+        "from": "l2",
+        "to": "cs",
+        "condition": "next row"
+      },
+      {
+        "from": "cs",
+        "to": "l2",
+        "condition": "WHEN 'Z1EQSWAP_HDR'"
+      },
+      {
+        "from": "cs",
+        "to": "l2",
+        "condition": "WHEN 'Z1EQSWAP_OUT'"
+      },
+      {
+        "from": "cs",
+        "to": "l2",
+        "condition": "WHEN 'Z1EQSWAP_IN'"
+      },
+      {
+        "from": "cs",
+        "to": "l2",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "l2",
+        "to": "c1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "c1",
+        "to": "sc",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "sd",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "c3",
+        "condition": "ls_out-zaehler IS NOT INITIAL"
+      },
+      {
+        "from": "g1",
+        "to": "c4",
+        "condition": "else"
+      },
+      {
+        "from": "c3",
+        "to": "sp",
+        "condition": "always"
+      },
+      {
+        "from": "c4",
+        "to": "si",
+        "condition": "always"
+      },
+      {
+        "from": "rb",
+        "to": "c6",
+        "condition": "always"
+      },
+      {
+        "from": "c6",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "tc",
+        "to": "c5",
+        "condition": "always"
+      },
+      {
+        "from": "c5",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sc",
+        "to": "gc1",
+        "condition": "always"
+      },
+      {
+        "from": "gc1",
+        "to": "xc1",
+        "condition": "ps_hdr-tplnr IS INITIAL OR ps_out-equnr IS INITIAL OR ps_in-equnr IS INITIAL"
+      },
+      {
+        "from": "gc1",
+        "to": "rc1",
+        "condition": "else"
+      },
+      {
+        "from": "rc1",
+        "to": "gc2",
+        "condition": "always"
+      },
+      {
+        "from": "gc2",
+        "to": "xc2",
+        "condition": "lv_tplnr <> ps_hdr-tplnr"
+      },
+      {
+        "from": "gc2",
+        "to": "rc2",
+        "condition": "else"
+      },
+      {
+        "from": "rc2",
+        "to": "gc3",
+        "condition": "always"
+      },
+      {
+        "from": "gc3",
+        "to": "xc3",
+        "condition": "lv_tplnr IS NOT INITIAL"
+      },
+      {
+        "from": "gc3",
+        "to": "ec",
+        "condition": "else"
+      },
+      {
+        "from": "sd",
+        "to": "cd",
+        "condition": "always"
+      },
+      {
+        "from": "cd",
+        "to": "gd",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "xd",
+        "condition": "ls_ret-type CA 'EA'"
+      },
+      {
+        "from": "gd",
+        "to": "ed",
+        "condition": "else"
+      },
+      {
+        "from": "sp",
+        "to": "rp",
+        "condition": "always"
+      },
+      {
+        "from": "rp",
+        "to": "gp1",
+        "condition": "always"
+      },
+      {
+        "from": "gp1",
+        "to": "xp1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gp1",
+        "to": "cp",
+        "condition": "else"
+      },
+      {
+        "from": "cp",
+        "to": "gp2",
+        "condition": "always"
+      },
+      {
+        "from": "gp2",
+        "to": "xp2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gp2",
+        "to": "ep",
+        "condition": "else"
+      },
+      {
+        "from": "si",
+        "to": "ci",
+        "condition": "always"
+      },
+      {
+        "from": "ci",
+        "to": "gi",
+        "condition": "always"
+      },
+      {
+        "from": "gi",
+        "to": "xi",
+        "condition": "ls_ret-type CA 'EA'"
+      },
+      {
+        "from": "gi",
+        "to": "ei",
+        "condition": "else"
+      },
+      {
+        "from": "ss",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "xc1",
+        "to": "rb",
+        "condition": "zcx_pm_swap"
+      },
+      {
+        "from": "xc2",
+        "to": "rb",
+        "condition": "zcx_pm_swap"
+      },
+      {
+        "from": "xc3",
+        "to": "rb",
+        "condition": "zcx_pm_swap"
+      },
+      {
+        "from": "xd",
+        "to": "rb",
+        "condition": "zcx_pm_swap"
+      },
+      {
+        "from": "xp2",
+        "to": "rb",
+        "condition": "zcx_pm_swap"
+      },
+      {
+        "from": "xi",
+        "to": "rb",
+        "condition": "zcx_pm_swap"
+      },
+      {
+        "from": "ec",
+        "to": "c2",
+        "condition": "always"
+      },
+      {
+        "from": "ed",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "ep",
+        "to": "c4",
+        "condition": "always"
+      },
+      {
+        "from": "xp1",
+        "to": "c4",
+        "condition": "always"
+      },
+      {
+        "from": "ei",
+        "to": "tc",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "l1",
+        "condition": "next iteration"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "lzpm_swapf01.abap:37 — kein Fachsatz „ein unbekanntes neues Equipment wird als unbekannt abgelehnt“: lv_tplnr wird vor der zweiten Lesung nicht geleert; ohne Treffer bleibt der Platz aus der ersten Lesung stehen und das IDoc wird mit „bereits eingebaut“ abgelehnt",
+    "z_idoc_input_zequiswap.abap:49 — kein Fachsatz „IDocs mit unbekannten Segmenten werden abgelehnt“: unbekannte Segmente werden übergangen, das CONTINUE ist ohne Wirkung",
+    "lzpm_swapf01.abap:89 — kein Fachsatz „ohne Zähler am Equipment wird das IDoc abgelehnt“: ohne aktiven Zähler endet nur die Messbelegroutine, der Tausch geht weiter",
+    "gesamte Scheibe — kein Fachsatz „ein fehlgeschlagener Einbau lässt das alte Equipment ausgebaut zurück“: Ausbau, Messbeleg und Einbau liegen in einer LUW und werden gemeinsam zurückgerollt"
+  ],
+  "processDescription": "Die Middleware schickt je Equipmenttausch ein IDoc ZEQUISWAP, und der Eingangsbaustein verarbeitet ein Paket solcher IDocs einzeln. Aus den Segmenten übernimmt er Technischen Platz, Datum und Zeit, das ausgebaute Equipment mit Zählerstand und das eingebaute Equipment; unbekannte Segmente werden ignoriert. Dann prüft er, dass alle drei Angaben vorhanden sind, dass das alte Equipment aktuell an genau diesem Platz eingebaut ist und dass das neue Equipment nirgends eingebaut ist; bei einem unbekannten neuen Equipment führt ein nicht geleertes Feld dazu, dass es als „bereits eingebaut“ abgelehnt wird. Danach baut er das alte Equipment zum gemeldeten Zeitpunkt aus. Ist ein Zählerstand gemeldet und besitzt das alte Equipment einen aktiven Zähler, erfasst er den Stand bei Ausbau als Messbeleg; ohne Zähler entfällt dieser Schritt. Anschließend baut er das neue Equipment ein. Jeder Fehler in diesen Schritten löst eine Ausnahme aus: Dann wird der gesamte Tausch dieses IDocs zurückgerollt, das IDoc erhält Status 51 mit dem Fehlertext und der Workflow wird informiert, und die Verarbeitung geht mit dem nächsten IDoc weiter. Gelingt alles, wird der Tausch festgeschrieben und das IDoc erhält Status 53."
+}

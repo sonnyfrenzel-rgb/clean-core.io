@@ -1,0 +1,638 @@
+{
+  "id": "BM-146",
+  "title": "Abrechnungsplausibilität: Auszahlungsbetrag gegen Vorperiode aus dem Cluster RD",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "CU_READ_RGDIR",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 26,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:26"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PYXX_READ_PAYROLL_RESULT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 43,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:43"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-146-B01",
+      "text": "Für jeden selektierten Mitarbeiter wird das Abrechnungsverzeichnis gelesen; hat er keines, wird er übergangen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-146-B02",
+      "text": "Die Abrechnungsergebnisse werden von der neuesten Periode rückwärts durchlaufen, wobei nur aktuelle Ergebnisse berücksichtigt werden.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-146-B03",
+      "text": "Jedes berücksichtigte Ergebnis wird aus dem deutschen Abrechnungscluster gelesen; ein nicht lesbares Ergebnis wird übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-146-B04",
+      "text": "Für die gewählte Abrechnungsperiode wird der Auszahlungsbetrag als Summe der Lohnart /559 ermittelt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-146-B05",
+      "text": "Für die erste ältere Periode wird ebenso der Auszahlungsbetrag ermittelt und die Suche beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        {
+          "file": "source.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-146-B06",
+      "text": "Ohne Auszahlung in der Vorperiode wird der Mitarbeiter nicht weiter geprüft.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-146-B07",
+      "text": "Die prozentuale Abweichung des Auszahlungsbetrags zur Vorperiode wird berechnet; fehlt ein Ergebnis der gewählten Periode, zählt es als null und ergibt 100 Prozent.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-146-B08",
+      "text": "Liegt die Abweichung über der eingegebenen Schwelle, wird der Mitarbeiter mit beiden Beträgen und der Abweichung gelistet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-146-B09",
+      "text": "Gab es keinen auffälligen Mitarbeiter, wird am Ende gemeldet, dass keine Abweichung über der Schwelle vorliegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        },
+        {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Verarbeitung je Mitarbeiter"
+      },
+      {
+        "id": "c1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Abrechnungsverzeichnis des Mitarbeiters lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Abrechnungsverzeichnis vorhanden?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "Mitarbeiter übergehen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Je Abrechnungsergebnis, neueste zuerst"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Nur aktuelle Ergebnisse"
+      },
+      {
+        "id": "c2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        "meaning": "Abrechnungsergebnis aus dem Cluster lesen"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        "meaning": "Ergebnis lesbar?"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        "meaning": "Gewählte Periode?"
+      },
+      {
+        "id": "a1",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "Auszahlungsbetrag der Periode summieren"
+      },
+      {
+        "id": "a2",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        "meaning": "Auszahlungsbetrag der Vorperiode summieren"
+      },
+      {
+        "id": "g6",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        "meaning": "Vorperiode mit Auszahlung vorhanden?"
+      },
+      {
+        "id": "a3",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        },
+        "meaning": "Prozentuale Abweichung berechnen"
+      },
+      {
+        "id": "g7",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "Abweichung über Schwelle?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        },
+        "meaning": "Mitarbeiter mit Beträgen und Abweichung ausgeben"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        "meaning": "Ende der Prüfung dieses Mitarbeiters"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Abschluss"
+      },
+      {
+        "id": "g8",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        },
+        "meaning": "Keine Auffälligkeit?"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        },
+        "meaning": "Meldung: keine Abweichung über Schwelle"
+      },
+      {
+        "id": "e4",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        },
+        "meaning": "Ende der Auswertung"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "g2",
+        "condition": "next row"
+      },
+      {
+        "from": "g2",
+        "to": "c2",
+        "condition": "gs_rgdir-srtza = 'A'"
+      },
+      {
+        "from": "g2",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "c2",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "l",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g4",
+        "to": "g5",
+        "condition": "else"
+      },
+      {
+        "from": "g5",
+        "to": "a1",
+        "condition": "gs_rgdir-fpper = gv_fpper"
+      },
+      {
+        "from": "a1",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "a2",
+        "to": "g6",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "g6",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g6",
+        "to": "a3",
+        "condition": "gv_prev <> 0"
+      },
+      {
+        "from": "g6",
+        "to": "e3",
+        "condition": "else"
+      },
+      {
+        "from": "a3",
+        "to": "g7",
+        "condition": "always"
+      },
+      {
+        "from": "g7",
+        "to": "o1",
+        "condition": "gv_dev > p_pct"
+      },
+      {
+        "from": "g7",
+        "to": "e3",
+        "condition": "else"
+      },
+      {
+        "from": "o1",
+        "to": "e3",
+        "condition": "always"
+      },
+      {
+        "from": "s2",
+        "to": "g8",
+        "condition": "always"
+      },
+      {
+        "from": "g8",
+        "to": "o2",
+        "condition": "gv_hits = 0"
+      },
+      {
+        "from": "g5",
+        "to": "a2",
+        "condition": "gs_rgdir-fpper < gv_fpper"
+      },
+      {
+        "from": "g5",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "o2",
+        "to": "e4",
+        "condition": "always"
+      },
+      {
+        "from": "g8",
+        "to": "e4",
+        "condition": "else"
+      },
+      {
+        "from": "e1",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "e3",
+        "to": "s2",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:42 — kein Fachsatz „Rückrechnungsdifferenzen werden ausgewertet“ (nur aktuelle Ergebnisse, keine Vergleiche alter und neuer Stände)",
+    "source.abap:74 — kein Fachsatz „die Auszahlung wird gesperrt oder korrigiert“ (nur Liste)",
+    "source.abap:56 — kein Fachsatz „der Nettobetrag wird aus Brutto minus Abzügen berechnet“ (summiert wird nur /559 aus dem Ergebnis)"
+  ],
+  "processDescription": "Nach dem Abrechnungslauf prüft ein Report über die logische Datenbank PNPCE je Mitarbeiter, ob der Auszahlungsbetrag gegenüber der Vorperiode auffällig schwankt. Er liest das Abrechnungsverzeichnis; fehlt es, wird der Mitarbeiter übergangen. Die aktuellen Ergebnisse werden von neu nach alt gelesen; nicht lesbare werden übersprungen. Für die gewählte Periode und die erste ältere Periode wird jeweils die Summe der Lohnart /559 gebildet, danach endet die Suche. Ohne Auszahlung in der Vorperiode entfällt die Prüfung. Sonst wird die prozentuale Abweichung berechnet; fehlt das Ergebnis der gewählten Periode, ergibt sich 100 Prozent. Mitarbeiter über der Schwelle werden mit beiden Beträgen gelistet. Gab es keinen Treffer, meldet der Report am Ende, dass keine Abweichung vorliegt. Er ändert keine Daten."
+}

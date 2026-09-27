@@ -1,0 +1,37 @@
+{
+  "id": "BM-129",
+  "title": "FSCM Collections: gebrochene Zahlungszusagen listen und in die Belegansicht abspringen (UDM_P2P_ATTR, AT LINE-SELECTION)",
+  "domain": "FSCM / Collections Management",
+  "band": "mittel",
+  "loc": 58,
+  "constructs": [
+    "REPORT",
+    "TOP-OF-PAGE",
+    "SELECT mit INNER JOIN",
+    "CHECK in Schleife",
+    "SELECT SINGLE BSID",
+    "CONTINUE",
+    "WRITE … CURRENCY",
+    "HIDE",
+    "END-OF-SELECTION",
+    "AT LINE-SELECTION",
+    "SET PARAMETER ID",
+    "CALL TRANSACTION … AND SKIP FIRST SCREEN"
+  ],
+  "scenario": "Forderungsmanagement mit FSCM Collections: Die Spezialisten prüfen morgens, welche Zahlungszusagen nach Karenzfrist nicht eingehalten wurden, und springen direkt in den offenen Beleg.",
+  "s4_issues": [
+    "BSID ist in S/4 nur noch Kompatibilitätssicht auf ACDOCA",
+    "Direkter Lesezugriff auf UDM_P2P_ATTR/SCMG_T_CASE_ATTR",
+    "WRITE-Liste mit HIDE und Absprung FB03 ohne Fiori-Pendant"
+  ],
+  "wave": 2,
+  "module": "FSCM-COL",
+  "edge_constructs": [
+    "AT LINE-SELECTION",
+    "TOP-OF-PAGE",
+    "END-OF-SELECTION",
+    "CHECK mitten in Schleife",
+    "CALL TRANSACTION … AND SKIP FIRST SCREEN",
+    "SET/GET PARAMETER ID"
+  ]
+}

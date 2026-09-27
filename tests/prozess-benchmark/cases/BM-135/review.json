@@ -1,0 +1,63 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufruf c1",
+      "before": "c1 -> c2 [always]",
+      "after": "ze -> c2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c2",
+      "before": "c2 -> g1 [always]",
+      "after": "fe -> g1 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c3",
+      "before": "c3 -> l [next iteration]",
+      "after": "pe -> l [next iteration]; pe1 -> l [next iteration]; pe2 -> l [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c4",
+      "before": "c4 -> c5 [always]",
+      "after": "je -> c5 [always]; jr -> c5 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c5",
+      "before": "c5 -> e [always]",
+      "after": "we -> e [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten za",
+      "before": "action ztrm_festgeld_rollover_f01.abap:13 „Tagesfixing als Zinsquelle verwenden“; zg -> za [sy-subrc <> 0 OR gv_tab IS INITIAL]; za -> ze [always]",
+      "after": "entfernt; überbrückt: zg -> ze [sy-subrc <> 0 OR gv_tab IS INITIAL]",
+      "why": "Reine Zuweisung (gv_tab = 'ZTRM_ZINS_TAG', f01:13); laut Autorenbrief kein Knoten, steuert keinen weiteren Fluss (so auch BM-093, BM-099, BM-100). Inhalt bleibt im Fachsatz (B01).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten prb",
+      "before": "transaction auf ztrm_festgeld_rollover_f01.abap:79",
+      "after": "opaque_call auf ztrm_festgeld_rollover_f01.abap:79",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call (Standardbaustein außerhalb des Falls); transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten pcm",
+      "before": "transaction auf ztrm_festgeld_rollover_f01.abap:83",
+      "after": "opaque_call auf ztrm_festgeld_rollover_f01.abap:83",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call (Standardbaustein außerhalb des Falls); transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    }
+  ],
+  "doubts": []
+}

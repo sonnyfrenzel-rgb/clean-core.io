@@ -1,0 +1,32 @@
+{
+  "id": "BM-141",
+  "title": "Abrechnungsvorprüfung: Mitarbeiter ohne Hauptbankverbindung mit IBAN",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "einfach",
+  "loc": 20,
+  "constructs": [
+    "REPORT",
+    "logische Datenbank PNP",
+    "NODES peras",
+    "INFOTYPES",
+    "GET peras",
+    "rp_provide_from_last",
+    "CHECK",
+    "END-OF-SELECTION",
+    "WRITE"
+  ],
+  "scenario": "Vor jedem Abrechnungslauf lässt die Entgeltabrechnung eine Liste der Mitarbeiter ziehen, denen im Abrechnungszeitraum eine Hauptbankverbindung mit IBAN fehlt, damit die Überweisung nicht scheitert.",
+  "s4_issues": [
+    "Logische Datenbank PNP statt PNPCE",
+    "Makro rp_provide_from_last aus DBPNPMAC",
+    "Listausgabe per WRITE"
+  ],
+  "wave": 2,
+  "module": "PY",
+  "edge_constructs": [
+    "GET-Ereignis einer logischen Datenbank",
+    "CHECK im GET-Ereignis (wirkt je Person)",
+    "END-OF-SELECTION",
+    "auskommentierter Zweig"
+  ]
+}

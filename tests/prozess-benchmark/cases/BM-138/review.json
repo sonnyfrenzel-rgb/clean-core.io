@@ -1,0 +1,163 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten o2me (neu)",
+      "before": "o2m output auf mzfm_mvb_o01.abap:44 ohne end (Pfadende ohne end-Knoten)",
+      "after": "o2me end auf mzfm_mvb_o01.abap:44; o2m -> o2me [always]",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E'/'A'/'X', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten cme (neu)",
+      "before": "cm output auf mzfm_mvb_i01.abap:25 ohne end (Pfadende ohne end-Knoten)",
+      "after": "cme end auf mzfm_mvb_i01.abap:25; cm -> cme [always]",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E'/'A'/'X', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten u1me (neu)",
+      "before": "u1m output auf mzfm_mvb_i01.abap:46 ohne end (Pfadende ohne end-Knoten)",
+      "after": "u1me end auf mzfm_mvb_i01.abap:46; u1m -> u1me [always]",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E'/'A'/'X', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten sme (neu)",
+      "before": "sm output auf mzfm_mvb_f01.abap:42 ohne end (Pfadende ohne end-Knoten)",
+      "after": "sme end auf mzfm_mvb_f01.abap:42; sm -> sme [always]",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E'/'A'/'X', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten dm1e (neu)",
+      "before": "dm1 output auf mzfm_mvb_f01.abap:81 ohne end (Pfadende ohne end-Knoten)",
+      "after": "dm1e end auf mzfm_mvb_f01.abap:81; dm1 -> dm1e [always]",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E'/'A'/'X', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten dm2e (neu)",
+      "before": "dm2 output auf mzfm_mvb_f01.abap:85 ohne end (Pfadende ohne end-Knoten)",
+      "after": "dm2e end auf mzfm_mvb_f01.abap:85; dm2 -> dm2e [always]",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E'/'A'/'X', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten dlme (neu)",
+      "before": "dlm output auf mzfm_mvb_f01.abap:96 ohne end (Pfadende ohne end-Knoten)",
+      "after": "dlme end auf mzfm_mvb_f01.abap:96; dlm -> dlme [always]",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E'/'A'/'X', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten dfme (neu)",
+      "before": "dfm output auf mzfm_mvb_f01.abap:118 ohne end (Pfadende ohne end-Knoten)",
+      "after": "dfme end auf mzfm_mvb_f01.abap:118; dfm -> dfme [always]",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E'/'A'/'X', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten zme (neu)",
+      "before": "zm output auf z_fm_mvb_verbuchen.abap:24 ohne end (Pfadende ohne end-Knoten)",
+      "after": "zme end auf z_fm_mvb_verbuchen.abap:24; zm -> zme [always]",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E'/'A'/'X', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten Aufruf u1p",
+      "before": "u1p -> u1e [always]",
+      "after": "ve -> u1e [always]; vre -> u1e [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf u1s",
+      "before": "u1s -> u1l [always]",
+      "after": "se -> u1l [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf u2g",
+      "before": "u2g -> u2gl [always]",
+      "after": "de -> u2gl [always]; dpr -> u2gl [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf u2r",
+      "before": "u2r -> u2rl [always]",
+      "after": "de -> u2rl [always]; dpr -> u2rl [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf sw",
+      "before": "sw -> sc [always]",
+      "after": "we -> sc [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf dw",
+      "before": "dw -> dc [always]",
+      "after": "we -> dc [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante su -> z",
+      "before": "su -> z [always]",
+      "after": "entfernt; die Direktkante zum nächsten Schritt bleibt",
+      "why": "Vereinheitlichte Konvention: CALL FUNCTION … IN UPDATE TASK behält die Direktkante zum nächsten Schritt, aber keine Kante in den Verbuchungsbaustein – er läuft erst nach COMMIT WORK in der Verbuchung.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante du -> z",
+      "before": "du -> z [always]",
+      "after": "entfernt; die Direktkante zum nächsten Schritt bleibt",
+      "why": "Vereinheitlichte Konvention: CALL FUNCTION … IN UPDATE TASK behält die Direktkante zum nächsten Schritt, aber keine Kante in den Verbuchungsbaustein – er läuft erst nach COMMIT WORK in der Verbuchung.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten ve (end)",
+      "before": "mzfm_mvb_f01.abap:26",
+      "after": "mzfm_mvb_f01.abap:27 (ENDFORM)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten ze (end)",
+      "before": "z_fm_mvb_verbuchen.abap:27 (INSERT zfm_mvb_log)",
+      "after": "z_fm_mvb_verbuchen.abap:32 (ENDFUNCTION)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten vok",
+      "before": "action mzfm_mvb_f01.abap:25 „Antrag als geprüft kennzeichnen“; vg -> vok [else]; vok -> vo [always]",
+      "after": "entfernt; überbrückt: vg -> vo [else]",
+      "why": "Reine Zuweisung (gv_geprueft = abap_true, f01:25); laut Autorenbrief kein Knoten, steuert keinen weiteren Fluss (so auch BM-093, BM-099, BM-100). Inhalt bleibt im Fachsatz (B07).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten cc",
+      "before": "action mzfm_mvb_i01.abap:29 (CLEAR gv_geprueft); cg -> cc [else]; cc -> ce [always]",
+      "after": "entfernt; cg -> ce [else]",
+      "why": "CLEAR ist laut Autorenbrief ausdrücklich kein Knoten. Inhalt bleibt in Fachsatz B04 (Anker i01:29).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten drb",
+      "before": "transaction auf mzfm_mvb_f01.abap:117",
+      "after": "opaque_call auf mzfm_mvb_f01.abap:117",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call (Standardbaustein außerhalb des Falls); transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    }
+  ],
+  "doubts": [
+    "Bandgrenze: Nach der Vereinheitlichung (neun MESSAGE E/A-Pfadenden als output + end, zwei reine Zuweisungen entfernt) hat das Skelett 96 Knoten (vorher 89) und liegt damit über der Obergrenze von 90 für „sehr komplex“. Bewusst so belassen: Korrektheit vor Bandgrenze (Vorgabe des Auftraggebers)."
+  ]
+}

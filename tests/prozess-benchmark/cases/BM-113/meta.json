@@ -1,0 +1,43 @@
+{
+  "id": "BM-113",
+  "title": "Serviceaufträge aufwandsbezogen fakturieren: DP90 per Batch-Input oder Dialog, DIP-Profil, Anwendungslog",
+  "domain": "CS — Serviceauftrag, aufwandsbezogene Fakturierung (DIP)",
+  "band": "komplex",
+  "loc": 215,
+  "constructs": [
+    "REPORT mit INCLUDE",
+    "Makros DEFINE",
+    "SELECT mit Join AUFK/JEST und NOT EXISTS",
+    "RETURN in START-OF-SELECTION",
+    "END-OF-SELECTION",
+    "CONTINUE",
+    "PERFORM … CHANGING",
+    "SELECT SUM",
+    "SET PARAMETER ID",
+    "CALL TRANSACTION … AND SKIP FIRST SCREEN",
+    "CALL TRANSACTION … USING … MESSAGES INTO",
+    "READ TABLE WITH KEY",
+    "INSERT FROM @( VALUE #( ) )",
+    "COMMIT WORK",
+    "MESSAGE … INTO",
+    "MESSAGE TYPE 'A'",
+    "BAL_LOG_CREATE/MSG_ADD/DB_SAVE/DSP"
+  ],
+  "scenario": "Serviceabteilung eines Anlagenbauers rechnet technisch abgeschlossene Serviceaufträge nach Aufwand ab; ein nächtlicher Job erzeugt die Fakturaanforderungen per Batch-Input in DP90, der Innendienst kann dieselbe Auswahl im Dialog abarbeiten.",
+  "s4_issues": [
+    "Batch-Input auf DP90 (SAP GUI) ist in S/4 Cloud nicht möglich; aufwandsbezogene Fakturierung über Serviceauftrag/Solution Order",
+    "COEP-Istkosten: in S/4 Einzelposten in ACDOCA, COEP nur Kompatibilitätsview",
+    "Kundenfeld AUFK-ZZGARANT als Garantiekennzeichen",
+    "Belegnummer aus Nachrichtenvariable der Erfolgsmeldung abgegriffen"
+  ],
+  "wave": 2,
+  "module": "CS",
+  "edge_constructs": [
+    "Makros (DEFINE)",
+    "CALL TRANSACTION … AND SKIP FIRST SCREEN",
+    "SET/GET PARAMETER ID",
+    "MESSAGE … TYPE 'A' als Pfadende",
+    "RETURN in START-OF-SELECTION mit folgendem END-OF-SELECTION",
+    "CONTINUE in Schleife"
+  ]
+}

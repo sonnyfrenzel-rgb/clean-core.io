@@ -1,0 +1,33 @@
+{
+  "id": "BM-168",
+  "title": "Variantenkonfiguration: Fertigungsvariante und Plangruppe aus der Merkmalbewertung einer Auftragsposition",
+  "domain": "Variantenkonfiguration LO-VC",
+  "band": "mittel",
+  "loc": 82,
+  "constructs": [
+    "globale Klasse mit RETURNING",
+    "SELECT SINGLE VBAP-CUOBJ",
+    "CALL FUNCTION VC_I_GET_CONFIGURATION",
+    "RAISE EXCEPTION TYPE",
+    "TRY … CATCH cx_sy_itab_line_not_found",
+    "Tabellenausdruck mit OPTIONAL",
+    "xsdbool( line_exists( ) )",
+    "SWITCH #",
+    "Offset-Zuweisung",
+    "String-Template"
+  ],
+  "scenario": "Antriebshersteller mit konfigurierbarem Material: die Arbeitsvorbereitung leitet aus Spannung, Gehäuse und ATEX-Merkmal der Auftragskonfiguration eine Fertigungsvariante und die zugehörige Plangruppe ab.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf VBAP-CUOBJ",
+    "VC_I_GET_CONFIGURATION nicht freigegeben – in S/4 Cloud über Konfigurations-API / Advanced Variant Configuration",
+    "Ableitungslogik neben dem Beziehungswissen (Constraints/Prozeduren) – Kandidat für Rückbau ins Modell"
+  ],
+  "wave": 2,
+  "module": "LO-VC",
+  "edge_constructs": [
+    "RAISE EXCEPTION TYPE als Pfadende (dreifach)",
+    "TRY … CATCH mit RAISE im CATCH",
+    "SWITCH # / xsdbool / VALUE # OPTIONAL",
+    "Inline-Deklaration im TRY-Block"
+  ]
+}

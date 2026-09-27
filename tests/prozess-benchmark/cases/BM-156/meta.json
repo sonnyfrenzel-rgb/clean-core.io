@@ -1,0 +1,48 @@
+{
+  "id": "BM-156",
+  "title": "bAV-Monatsmeldung an den Versorgungsträger aus Abrechnungsergebnissen mit Rückrechnungsdifferenzen",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "sehr komplex",
+  "loc": 411,
+  "constructs": [
+    "REPORT mit drei Includes",
+    "INITIALIZATION",
+    "AT SELECTION-SCREEN ON",
+    "logische Datenbank PNPCE / GET peras",
+    "END-OF-SELECTION",
+    "SELECT SINGLE T569V",
+    "IMPORT/EXPORT … FROM/TO DATABASE INDX",
+    "HR_READ_INFOTYPE Kundeninfotyp 9010",
+    "CU_READ_RGDIR",
+    "PYXX_READ_PAYROLL_RESULT",
+    "Tabellen RT und CRT",
+    "Rückrechnung SRTZA A/P",
+    "Makro DEFINE",
+    "PERFORM … IN PROGRAM (dynamisch) … IF FOUND",
+    "OPEN/TRANSFER/CLOSE/DELETE DATASET",
+    "COMMIT WORK",
+    "Application Log BAL_*"
+  ],
+  "scenario": "Die Entgeltabrechnung meldet monatlich die Beiträge zur betrieblichen Altersversorgung je Vertrag per Datei an den Versorgungsträger; Rückrechnungen werden als Differenzsätze nachgemeldet, eine Doppellaufsperre verhindert doppelte Meldungen.",
+  "s4_issues": [
+    "Logische Datenbank PNPCE",
+    "Clusterzugriff mit fester Cluster-ID RD",
+    "INDX als Ablage für den Laufstatus",
+    "Dynamischer PERFORM in trägerspezifische Programme",
+    "Dateischnittstelle über Applikationsserver-Pfad",
+    "Direkter Lesezugriff auf T569V"
+  ],
+  "wave": 2,
+  "module": "PY",
+  "edge_constructs": [
+    "GET-Ereignis einer logischen Datenbank",
+    "INITIALIZATION / AT SELECTION-SCREEN ON / END-OF-SELECTION",
+    "IMPORT/EXPORT … FROM/TO DATABASE",
+    "PERFORM … IN PROGRAM (dynamisch) … IF FOUND",
+    "Makro (DEFINE)",
+    "MESSAGE … TYPE 'E' in START-OF-SELECTION als Pfadende",
+    "CONTINUE in der Schleife",
+    "CHECK mitten in der Schleife",
+    "RETURN aus tiefem FORM"
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "id": "BM-131",
+  "title": "PS-Budgetausschöpfung je PSP-Element: Ist und Obligo gegen Jahresbudget mit Toleranzampel und Mail an die Projektleitung",
+  "domain": "PS / Projektsystem – Budget und Verfügbarkeit",
+  "band": "komplex",
+  "loc": 151,
+  "constructs": [
+    "REPORT mit INCLUDE",
+    "AT SELECTION-SCREEN ON",
+    "TOP-OF-PAGE",
+    "END-OF-SELECTION",
+    "RETURN aus Ereignisblock",
+    "PERFORM",
+    "CHECK in FORM",
+    "FOR ALL ENTRIES",
+    "SELECT SUM in Schleife",
+    "DO … TIMES",
+    "ASSIGN COMPONENT",
+    "COND #",
+    "REDUCE",
+    "AT END OF / SUM",
+    "PERFORM … IN PROGRAM … IF FOUND"
+  ],
+  "scenario": "Projektcontrolling im Anlagenbau: Monatlich wird die Budgetausschöpfung aller PSP-Elemente geprüft, bevor die Standard-Verfügbarkeitskontrolle Buchungen blockiert; bei Überschreitung werden die Projektleiter informiert.",
+  "s4_issues": [
+    "COSP/BPJA/COOI sind in S/4 teils Kompatibilitätssichten (Istwerte in ACDOCA)",
+    "SELECT SUM je PSP-Element in der Schleife (N+1-Zugriff)",
+    "Obligo über alle Jahre gegen Jahresbudget",
+    "dynamischer PERFORM in fremdes Programm"
+  ],
+  "wave": 2,
+  "module": "PS",
+  "edge_constructs": [
+    "AT SELECTION-SCREEN ON",
+    "TOP-OF-PAGE",
+    "END-OF-SELECTION",
+    "AT END OF",
+    "ASSIGN COMPONENT",
+    "PERFORM … IN PROGRAM … IF FOUND",
+    "RETURN aus Ereignisblock (END-OF-SELECTION läuft weiter)",
+    "COND #",
+    "REDUCE"
+  ]
+}

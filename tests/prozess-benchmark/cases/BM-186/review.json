@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "Filter AKTIV: der Filterwert selbst wird nicht ausgewertet (auch AKTIV eq false schränkt auf heute laufende Aktionen ein). Nicht als Fachsatz oder verbotener Schluss ergänzt, da der Fall das nicht zum Thema macht."
+  ]
+}

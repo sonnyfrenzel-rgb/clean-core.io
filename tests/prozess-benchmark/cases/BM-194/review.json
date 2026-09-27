@@ -1,0 +1,66 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten cq_e (neu)",
+      "before": "kein end-Knoten auf zapo_cif_imod.abap:193",
+      "after": "cq_e end auf zapo_cif_imod.abap:193; ql -> cq_e [no more rows] statt -> eos; cq_e -> eos [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten bd",
+      "before": "end auf zapo_cif_imod.abap:239 (CALL FUNCTION 'BAL_DSP_LOG_DISPLAY', „Protokoll im Dialog anzeigen, Ende“)",
+      "after": "output auf derselben Zeile",
+      "why": "Die Protokollanzeige ist eine Ausgabe, nicht das Pfadende; das Ende von LOG_SAVE liegt auf ENDFORM (neuer Knoten ls_e). Der else-Zweig von bg (Hintergrundlauf) hatte zudem keine Kante.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten ls_e (neu)",
+      "before": "kein end-Knoten auf zapo_cif_imod.abap:246",
+      "after": "ls_e end auf zapo_cif_imod.abap:246; ",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten bd/bg -> ls_e",
+      "before": "bg ohne else-Kante; bd ohne Nachfolger",
+      "after": "bd -> ls_e [always], bg -> ls_e [else]",
+      "why": "Im Hintergrundjob (sy-batch gesetzt) läuft LOG_SAVE ohne Anzeige aus; dieser Pfad fehlte.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_eos (neu)",
+      "before": "kein end-Knoten auf zapo_cif_imod.abap:157",
+      "after": "e_eos end auf zapo_cif_imod.abap:157; ",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante ls_e -> e_eos",
+      "before": "(keine Rückkante aus LOG_SAVE)",
+      "after": "ls_e -> e_eos [always]; e_eos end auf zapo_cif_imod.abap:157 (implizites Ende von END-OF-SELECTION auf der letzten Anweisung, wie BM-188)",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten x_end (neu)",
+      "before": "kein end-Knoten auf zxcifuu01.abap:62",
+      "after": "x_end end auf zxcifuu01.abap:62; ",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante x_loop -> x_end",
+      "before": "Schleife x_loop ohne Ausgang [no more rows]",
+      "after": "x_loop -> x_end [no more rows]",
+      "why": "Die Filterschleife des Userexits hatte keinen Ausgang; das Include endet implizit mit ENDLOOP (letzte Anweisung).",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "Selektionsparameter von RIMODGEN (MODEL, LOGSYS, APPLIC, S_WERKS) und RIMODAC2 (model, logsys, apo_app, p_activ) nicht gegen das Standardprogramm verifizierbar; für das Skelett ohne Belang (Ziel liegt nicht im Fall).",
+    "AT NEW qname (Zeile 184, Zähler zurücksetzen) ist nicht als Gateway modelliert; belassen, da ohne eigene fachliche Wirkung außer der Zählung, die AT END OF (aen) ausgibt."
+  ]
+}

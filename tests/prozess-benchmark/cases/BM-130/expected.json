@@ -1,0 +1,491 @@
+{
+  "id": "BM-130",
+  "title": "Treasury Devisenhandel: Marktgerechtigkeitsprüfung importierter Devisengeschäfte gegen den Mittelkurs (SWITCH, RAISE EVENT, REDUCE)",
+  "classes": [
+    "K01",
+    "K02",
+    "K03"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZTRM_FX_DEAL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 24,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:24"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "READ_EXCHANGE_RATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:40"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZTRM_FX_DEAL",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 67,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:67"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-130-B01",
+      "text": "Es werden die neu importierten, noch ungeprüften Devisengeschäfte des Buchungskreises vom Handelstag gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-130-B02",
+      "text": "Gibt es keine, endet die Prüfung mit der Ausnahme „nichts zu tun“.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-130-B03",
+      "text": "Die zulässige Abweichung beträgt für Kassageschäfte 0,5 %, für Termingeschäfte 1,5 % und für alle anderen Geschäftsarten 0,25 %.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-130-B04",
+      "text": "Für jedes Geschäft wird der Mittelkurs (Kurstyp M) des Handelstags für das Währungspaar ermittelt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-130-B05",
+      "text": "Ist kein Mittelkurs vorhanden, wird das Geschäft zur manuellen Prüfung gekennzeichnet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-130-B06",
+      "text": "Liegt die prozentuale Abweichung des Geschäftskurses vom Mittelkurs über der Toleranz, wird das Geschäft als auffällig gekennzeichnet und an die Überwachung gemeldet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-130-B07",
+      "text": "Sonst gilt das Geschäft als marktgerecht geprüft.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-130-B08",
+      "text": "Der Prüfstatus aller Geschäfte wird gespeichert und die Anzahl auffälliger Geschäfte zurückgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Tägliche Kursprüfung starten"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Neue Devisengeschäfte des Handelstags lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Nichts zu prüfen?"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Abbruch: nichts zu prüfen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Geschäfte einzeln prüfen"
+      },
+      {
+        "id": "at",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Toleranz je Geschäftsart festlegen"
+      },
+      {
+        "id": "fc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        "meaning": "Mittelkurs des Handelstags ermitteln"
+      },
+      {
+        "id": "gf",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        "meaning": "Kein Marktkurs gefunden?"
+      },
+      {
+        "id": "aa",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "Prozentuale Abweichung vom Mittelkurs berechnen"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        "meaning": "Abweichung über Toleranz?"
+      },
+      {
+        "id": "ev",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Abweichung an die Überwachung melden"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        "meaning": "Prüfstatus aller Geschäfte speichern"
+      },
+      {
+        "id": "ar",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        },
+        "meaning": "Anzahl auffälliger Geschäfte zählen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        },
+        "meaning": "Anzahl zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "x0",
+        "condition": "lt_deal IS INITIAL"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "at",
+        "condition": "next row"
+      },
+      {
+        "from": "at",
+        "to": "fc",
+        "condition": "always"
+      },
+      {
+        "from": "fc",
+        "to": "gf",
+        "condition": "always"
+      },
+      {
+        "from": "gf",
+        "to": "aa",
+        "condition": "else"
+      },
+      {
+        "from": "aa",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "ev",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "w",
+        "condition": "no more rows"
+      },
+      {
+        "from": "w",
+        "to": "ar",
+        "condition": "always"
+      },
+      {
+        "from": "ar",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "gf",
+        "to": "l",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gt",
+        "to": "ev",
+        "condition": "lv_abw > lv_tol"
+      },
+      {
+        "from": "gt",
+        "to": "l",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:59 — kein Fachsatz „die Überwachung erhält eine E-Mail“: ob und wie gemeldet wird, hängt vom registrierten Handler ab, der nicht im Fall ist",
+    "source.abap:67 — kein Fachsatz „die Prüfergebnisse werden festgeschrieben“: die Methode setzt kein COMMIT WORK, das übernimmt der Aufrufer",
+    "source.abap:58 — kein Fachsatz „auffällige Geschäfte werden storniert oder gesperrt“: es wird nur ein Status gesetzt"
+  ],
+  "processDescription": "Die Methode wird täglich mit Buchungskreis und Handelstag aufgerufen. Sie liest alle neu importierten, noch ungeprüften Devisengeschäfte dieses Tages; gibt es keine, endet sie mit einer Ausnahme „nichts zu tun“. Für jedes Geschäft legt sie die zulässige Abweichung nach Geschäftsart fest: 0,5 % für Kasse, 1,5 % für Termin, 0,25 % für alle anderen. Sie ermittelt den Mittelkurs des Handelstags für das Währungspaar; fehlt er, kennzeichnet sie das Geschäft zur manuellen Prüfung und geht weiter. Andernfalls berechnet sie die prozentuale Abweichung des Geschäftskurses vom Mittelkurs. Liegt sie über der Toleranz, wird das Geschäft als auffällig gekennzeichnet und ein Ereignis mit Geschäftsnummer und Abweichung ausgelöst; sonst gilt es als marktgerecht. Zum Schluss speichert sie den Status aller Geschäfte und gibt die Anzahl auffälliger Geschäfte zurück. Festgeschrieben wird erst durch den Aufrufer."
+}

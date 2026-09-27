@@ -1,0 +1,560 @@
+{
+  "id": "BM-147",
+  "title": "Zeitauswertung: Kundenfunktion ZNZ bildet Nachtzuschlag aus der Tagesinputtabelle",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZPT_NZ_CUST",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-147-B01",
+      "text": "Für den Personalteilbereich des Mitarbeiters wird die am Auswertungstag gültige Nachtzuschlagsregel gelesen; gibt es keine, entsteht kein Zuschlag.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-147-B02",
+      "text": "Die Zeitpaare des Tages werden durchlaufen, wobei nur Anwesenheiten berücksichtigt werden.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-147-B03",
+      "text": "Je Zeitpaar werden die Minuten nach 22 Uhr und vor 6 Uhr als Nachtanteil berechnet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-147-B04",
+      "text": "Zeitpaare, deren Nachtanteil unter der vereinbarten Mindestdauer liegt, zählen nicht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-147-B05",
+      "text": "Die übrigen Nachtminuten werden zu einer Tagessumme addiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-147-B06",
+      "text": "Ergibt sich keine Nachtzeit, wird die Funktion ohne Zuschlag verlassen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-147-B07",
+      "text": "Sonst wird für den Tag eine Zeitlohnart mit den Nachtstunden gebildet, bei Dauernachtschicht mit der eigenen Lohnart für den erhöhten Satz, und an die Abrechnung übergeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        "meaning": "Schema ruft Kundenfunktion ZNZ je Tag"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Zuschlagsregel des Personalteilbereichs am Tag lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Zuschlagsregel vorhanden?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Kein Zuschlag, Funktion verlassen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Je Zeitpaar des Tages"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Nur Anwesenheiten"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Endet das Paar nach 22 Uhr?"
+      },
+      {
+        "id": "a1",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Minuten nach 22 Uhr berechnen"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Beginnt das Paar vor 6 Uhr?"
+      },
+      {
+        "id": "a2",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Minuten vor 6 Uhr berechnen"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        "meaning": "Mindestdauer unterschritten?"
+      },
+      {
+        "id": "a3",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Nachtminuten des Tages aufsummieren"
+      },
+      {
+        "id": "g6",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        "meaning": "Keine Nachtminuten?"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        "meaning": "Ohne Zuschlag verlassen"
+      },
+      {
+        "id": "a4",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        "meaning": "Zuschlagsstunden für die Zeitlohnart festlegen"
+      },
+      {
+        "id": "g7",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Dauernachtschicht?"
+      },
+      {
+        "id": "a5",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Lohnart für Dauernachtschicht setzen"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        },
+        "meaning": "Ende der Kundenfunktion, Zeitlohnart steht für die Abrechnung bereit"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "r",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "g2",
+        "condition": "next row"
+      },
+      {
+        "from": "g2",
+        "to": "g3",
+        "condition": "tip-abwkz IS INITIAL"
+      },
+      {
+        "from": "g2",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "g3",
+        "to": "a1",
+        "condition": "tip-endtm > '220000'"
+      },
+      {
+        "from": "g3",
+        "to": "g4",
+        "condition": "else"
+      },
+      {
+        "from": "a1",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "a2",
+        "condition": "tip-begtm < '060000'"
+      },
+      {
+        "from": "g4",
+        "to": "g5",
+        "condition": "else"
+      },
+      {
+        "from": "a2",
+        "to": "g5",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "l",
+        "condition": "lv_min < ls_cust-minmin"
+      },
+      {
+        "from": "g5",
+        "to": "a3",
+        "condition": "else"
+      },
+      {
+        "from": "a3",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "g6",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g6",
+        "to": "e2",
+        "condition": "lv_total = 0"
+      },
+      {
+        "from": "g6",
+        "to": "a4",
+        "condition": "else"
+      },
+      {
+        "from": "a4",
+        "to": "g7",
+        "condition": "always"
+      },
+      {
+        "from": "g7",
+        "to": "a5",
+        "condition": "p0007-schkz(2) = 'NS'"
+      },
+      {
+        "from": "g7",
+        "to": "e3",
+        "condition": "else"
+      },
+      {
+        "from": "a5",
+        "to": "e3",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:66 — kein Fachsatz „der Nachtzuschlag wird als Zeitsaldo gebucht“ (Aufruf steht in IF 1 = 2, das FORM wird nie erreicht)",
+    "source.abap:62 — kein Fachsatz „der Zuschlag wird in Euro berechnet oder ausgezahlt“ (übergeben werden nur Stunden an eine Zeitlohnart; Bewertung erst in der Abrechnung)",
+    "source.abap:29 — kein Fachsatz „Abwesenheiten in der Nacht werden bezuschlagt“"
+  ],
+  "processDescription": "Die Zeitauswertung ruft für jeden Mitarbeiter und Tag die Kundenfunktion ZNZ auf. Sie liest die am Tag gültige Nachtzuschlagsregel für den Personalteilbereich; ohne Regel endet sie ohne Zuschlag. Dann werden die Anwesenheitszeitpaare des Tages durchlaufen und je Paar die Minuten nach 22 Uhr und vor 6 Uhr ermittelt. Paare unter der vereinbarten Mindestdauer zählen nicht, die übrigen werden aufsummiert. Ist die Summe null, endet die Funktion. Andernfalls wird eine Zeitlohnart mit den Nachtstunden gebildet, bei Dauernachtschicht mit einer eigenen Lohnart, und für die Abrechnung bereitgestellt. Die frühere Buchung als Zeitsaldo steht hinter IF 1 = 2 und wird nie ausgeführt."
+}

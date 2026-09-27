@@ -1,0 +1,555 @@
+{
+  "id": "BM-129",
+  "title": "FSCM Collections: gebrochene Zahlungszusagen listen und in die Belegansicht abspringen (UDM_P2P_ATTR, AT LINE-SELECTION)",
+  "classes": [
+    "K01",
+    "K17",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "UDM_P2P_ATTR",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:20"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SCMG_T_CASE_ATTR",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:20"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BSID",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 31,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:31"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FB03",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 57,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:57"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-129-B01",
+      "text": "Es werden die offenen Zahlungszusagen des Buchungskreises mit der zugehörigen Fallnummer gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-129-B02",
+      "text": "Zusagen, deren Datum zuzüglich der Karenztage noch nicht überschritten ist, werden übergangen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-129-B03",
+      "text": "Für jede überfällige Zusage wird geprüft, ob der zugesagte Posten beim Kunden noch offen ist; ist er ausgeglichen, gilt die Zusage als eingehalten.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-129-B04",
+      "text": "Jede gebrochene Zusage wird mit Fallnummer, Kunde, Beleg, Zusagedatum und zugesagtem Betrag gelistet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-129-B05",
+      "text": "Am Ende der Liste wird die Anzahl der gebrochenen Zusagen ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-129-B06",
+      "text": "Wählt der Spezialist eine Zeile mit Beleg, wird der Buchhaltungsbeleg direkt in der Belegansicht geöffnet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "tp",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Seitenkopf"
+      },
+      {
+        "id": "th",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Spaltenüberschriften ausgeben"
+      },
+      {
+        "id": "e_tp",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Seitenkopf fertig"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Offene Zahlungszusagen des Buchungskreises mit Fallnummer lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Zahlungszusagen durchgehen"
+      },
+      {
+        "id": "gd",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Zusagedatum plus Karenztage überschritten?"
+      },
+      {
+        "id": "rb",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Ist der zugesagte Posten noch offen?"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Posten ausgeglichen?"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        "meaning": "Gebrochene Zusage mit Fall, Kunde, Beleg, Datum und Betrag listen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Liste aufgebaut"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        },
+        "meaning": "Abschluss der Liste"
+      },
+      {
+        "id": "oe",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        "meaning": "Anzahl gebrochener Zusagen ausgeben"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        "meaning": "Listenende"
+      },
+      {
+        "id": "sl",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        "meaning": "Doppelklick auf eine Listenzeile"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        "meaning": "Zeile mit Beleg gewählt?"
+      },
+      {
+        "id": "p",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        "meaning": "Buchungskreis, Beleg und Jahr als Parameter übergeben"
+      },
+      {
+        "id": "t",
+        "type": "external_program",
+        "anchor": {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        "meaning": "Belegansicht direkt mit dem Beleg öffnen"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Zurück zur Liste"
+      }
+    ],
+    "edges": [
+      {
+        "from": "tp",
+        "to": "th",
+        "condition": "always"
+      },
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "gd",
+        "condition": "next row"
+      },
+      {
+        "from": "gd",
+        "to": "rb",
+        "condition": "ls_p2p-p2p_date + p_tol < sy-datum"
+      },
+      {
+        "from": "gd",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "l",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gb",
+        "to": "o",
+        "condition": "else"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "es",
+        "to": "oe",
+        "condition": "always"
+      },
+      {
+        "from": "oe",
+        "to": "ee",
+        "condition": "always"
+      },
+      {
+        "from": "sl",
+        "to": "gc",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "p",
+        "condition": "gv_belnr IS NOT INITIAL"
+      },
+      {
+        "from": "gc",
+        "to": "e2",
+        "condition": "else"
+      },
+      {
+        "from": "p",
+        "to": "t",
+        "condition": "always"
+      },
+      {
+        "from": "t",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "th",
+        "to": "e_tp",
+        "condition": "always"
+      },
+      {
+        "from": "e",
+        "to": "es",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:31 — kein Fachsatz „eine teilweise bezahlte Zusage gilt als eingehalten“: geprüft wird nur, ob der Posten noch offen ist, nicht der gezahlte Betrag",
+    "source.abap:43 — kein Fachsatz „die Zusage wird als gebrochen gekennzeichnet“: der Status im Collections Management wird nicht geändert",
+    "source.abap:57 — kein Fachsatz „der Beleg wird geändert oder gemahnt“: FB03 ist die Anzeige"
+  ],
+  "processDescription": "Der Collections-Spezialist startet den Report mit Buchungskreis und Karenztagen (Vorschlag 3). Der Report liest alle offenen Zahlungszusagen des Buchungskreises samt Fallnummer. Zusagen, deren Datum zuzüglich Karenz noch nicht überschritten ist, übergeht er. Für die übrigen prüft er, ob der zugesagte Posten beim Kunden noch offen ist; ist er ausgeglichen, gilt die Zusage als eingehalten. Noch offene Posten erscheinen als gebrochene Zusage mit Fall, Kunde, Beleg, Zusagedatum und Betrag in der Liste; jede Seite hat eine Spaltenüberschrift, am Ende steht die Anzahl. Per Doppelklick auf eine Zeile mit Beleg öffnet der Spezialist den Buchhaltungsbeleg direkt in der Belegansicht; Zeilen ohne Beleg lösen nichts aus. Es wird nichts geändert, auch der Status der Zusage nicht."
+}

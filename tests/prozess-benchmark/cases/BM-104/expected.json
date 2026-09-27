@@ -1,0 +1,290 @@
+{
+  "id": "BM-104",
+  "title": "Gefahrstoffe ohne freigegebenes Sicherheitsdatenblatt je Sprache (STVARV-Schalter)",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 14,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:14"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ESTRH",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:19"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CVDDH",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:19"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-104-B01",
+      "text": "Der Report liest den Aktivierungsschalter ZEHS_SDB_CHECK aus der Variablenpflege.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        }
+      ]
+    },
+    {
+      "id": "BM-104-B02",
+      "text": "Ist der Schalter nicht gesetzt, endet der Lauf ohne Ausgabe.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-104-B03",
+      "text": "Es werden alle nicht gelöschten realen Stoffe der Selektion ermittelt, zu denen in der gewählten Sprache kein freigegebenes Sicherheitsdatenblatt existiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-104-B04",
+      "text": "Jeder dieser Stoffe wird mit Stoff-ID, Satznummer und Sprache als „kein freigegebenes SDB“ gelistet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        "meaning": "Aktivierungsschalter lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Prüfung aktiviert?"
+      },
+      {
+        "id": "x",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Lauf ohne Prüfung beenden"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Reale Stoffe ohne freigegebenes SDB in der Sprache lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Stoffe durchgehen"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Stoff ohne SDB listen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "x",
+        "condition": "lv_aktiv <> 'X'"
+      },
+      {
+        "from": "g1",
+        "to": "r2",
+        "condition": "else"
+      },
+      {
+        "from": "r2",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "o",
+        "condition": "next row"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:30 — kein Fachsatz „für fehlende Stoffe wird ein Sicherheitsdatenblatt angefordert oder generiert“: der Zweig ist mit IF 1 = 2 tot, SDB_ANFORDERN wird nie ausgeführt",
+    "source.abap:36 — kein Knoten und kein Fachsatz zum Aufruf des Generators ZEHS_SDB_GENERATE: das FORM wird nie erreicht",
+    "gesamte Scheibe — kein Fachsatz „Sicherheitsdatenblätter werden versandt oder freigegeben“: der Report liest und listet nur"
+  ],
+  "processDescription": "Der Report wird mit einer optionalen Stoffauswahl und einer Sprache gestartet. Zuerst liest er den Schalter ZEHS_SDB_CHECK aus der Variablenpflege; ist dieser nicht auf X gesetzt, endet der Lauf sofort ohne Liste. Sonst ermittelt er alle nicht gelöschten realen Stoffe der Auswahl, zu denen in der gewählten Sprache kein Sicherheitsdatenblatt im Status freigegeben existiert. Jeder dieser Stoffe erscheint mit Stoff-ID, Satznummer und Sprache in einer Liste. Ein Zweig, der für diese Stoffe die Generierung eines Sicherheitsdatenblatts anstoßen würde, ist mit IF 1 = 2 stillgelegt und wird nie ausgeführt. Es wird nichts geschrieben."
+}

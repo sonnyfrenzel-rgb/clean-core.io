@@ -1,0 +1,30 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e2 (neu)",
+      "before": "kein end-Knoten auf source.abap:20",
+      "after": "e2 end auf source.abap:20; o2 -> e2 [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante e1 -> s2 (neu)",
+      "before": "keine Verbindung der Ereignisblöcke",
+      "after": "e1 -> s2 [always]",
+      "why": "Ereignisreihenfolge: nach dem Ende eines Ereignisblocks setzt die Laufzeit mit dem nächsten Ereignis fort (wie in BM-011/032/037 START-OF-SELECTION -> END-OF-SELECTION); bei der logischen Datenbank folgt END-OF-SELECTION, nachdem GET für alle selektierten Personen gelaufen ist.",
+      "category": "Kante"
+    },
+    {
+      "where": "processDescription",
+      "before": "„über die logische Datenbank PNP“",
+      "after": "„über die logische Datenbank PNPCE“",
+      "why": "NODES peras / GET peras gibt es nur in der logischen Datenbank PNPCE; PNP arbeitet mit GET pernr.",
+      "category": "Fachsatz"
+    }
+  ],
+  "doubts": [
+    "Die logische Datenbank ruft GET peras je selektierter Person erneut auf; dafür gibt es keine Schleifenanweisung und darum keinen loop-Knoten. Die Wiederholung ist im Skelett nur implizit (GET-Start je Person), das Ende des GET-Blocks führt zu END-OF-SELECTION."
+  ]
+}

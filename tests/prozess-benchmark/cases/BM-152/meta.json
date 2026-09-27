@@ -1,0 +1,41 @@
+{
+  "id": "BM-152",
+  "title": "Zeiterfassungsterminal: Buchungsdatei einlesen und als Zeitereignisse hochladen",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "komplex",
+  "loc": 269,
+  "constructs": [
+    "REPORT mit Include",
+    "ENQUEUE/DEQUEUE eigenes Sperrobjekt",
+    "MESSAGE Typ A",
+    "OPEN/READ/CLOSE DATASET",
+    "DO … ENDDO mit EXIT",
+    "SPLIT",
+    "CATCH SYSTEM-EXCEPTIONS",
+    "SELECT … FOR ALL ENTRIES PA0050/TEVEN",
+    "CASE mit CONTINUE in WHEN OTHERS",
+    "verschachtelte LOOPs mit EXIT und CONTINUE",
+    "BAPI_CC1_UPLOAD_TIMEEVENT",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "TRANSFER",
+    "DELETE DATASET",
+    "Application Log BAL_*"
+  ],
+  "scenario": "Ein Terminalserver legt alle 15 Minuten die Kommen-/Gehen-Buchungen eines Werks als Datei ab; ein Hintergrundjob lädt sie als Zeitereignisse ins HCM hoch und archiviert die Datei.",
+  "s4_issues": [
+    "Dateischnittstelle über Applikationsserver-Pfad (OPEN DATASET)",
+    "Direkter Lesezugriff auf PA0050 und TEVEN",
+    "Eigenes Sperrobjekt EZPT_TERMFILE",
+    "MESSAGE Typ A im Hintergrundjob"
+  ],
+  "wave": 2,
+  "module": "PT",
+  "edge_constructs": [
+    "CATCH SYSTEM-EXCEPTIONS",
+    "MESSAGE … TYPE 'A' als Pfadende",
+    "CONTINUE und EXIT in verschachtelten Schleifen",
+    "CONTINUE aus WHEN OTHERS",
+    "RETURN aus tiefem FORM",
+    "Testlauf-Schalter"
+  ]
+}

@@ -1,0 +1,1610 @@
+{
+  "id": "BM-194",
+  "title": "CIF-Integrationsmodelle je Werk generieren und aktivieren, Queue-Prüfung, Materialfilter im CIF-Userexit",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "T001W",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zapo_cif_imod.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zapo_cif_imod.abap:65"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RIMODGEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zapo_cif_imod.abap",
+        "line": 85,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zapo_cif_imod.abap:85"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LIST_FROM_MEMORY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zapo_cif_imod.abap",
+        "line": 90,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zapo_cif_imod.abap:90"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LIST_TO_ASCI",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zapo_cif_imod.abap",
+        "line": 102,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zapo_cif_imod.abap:102"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LIST_FREE_MEMORY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zapo_cif_imod.abap",
+        "line": 110,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zapo_cif_imod.abap:110"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RIMODAC2",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zapo_cif_imod.abap",
+        "line": 135,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zapo_cif_imod.abap:135"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "TBLSYSDEST",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zapo_cif_imod.abap",
+        "line": 169,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zapo_cif_imod.abap:169"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "TRFCQOUT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zapo_cif_imod.abap",
+        "line": 172,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zapo_cif_imod.abap:172"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zapo_cif_imod.abap",
+        "line": 213,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zapo_cif_imod.abap:213"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD_FREE_TEXT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zapo_cif_imod.abap",
+        "line": 222,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zapo_cif_imod.abap:222"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zapo_cif_imod.abap",
+        "line": 232,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zapo_cif_imod.abap:232"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DSP_LOG_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zapo_cif_imod.abap",
+        "line": 239,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zapo_cif_imod.abap:239"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZAPO_CIF_EXCL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zxcifuu01.abap",
+        "line": 35,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zxcifuu01.abap:35"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zxcifuu01.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zxcifuu01.abap:37"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-194-B01",
+      "text": "Es werden die Werke der Selektion gelesen, für die Integrationsmodelle erzeugt werden sollen.",
+      "anchors": [
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B02",
+      "text": "Gibt es keines der Werke, wird das im Protokoll vermerkt und die Verarbeitung direkt beim Sichern des Protokolls fortgesetzt.",
+      "anchors": [
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:67"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:68"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B03",
+      "text": "Je Werk wird ein Integrationsmodell aus Präfix und Werksnummer benannt und mit der vorgegebenen Variante für das APO-Zielsystem, die Anwendung PPDS und genau dieses Werk generiert.",
+      "anchors": [
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:74"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B04",
+      "text": "Liefert die Generierung kein Protokoll, wird das Werk als fehlerhaft protokolliert und übersprungen.",
+      "anchors": [
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:90"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:96"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B05",
+      "text": "Das Generierungsprotokoll wird in Text umgewandelt und nach dem ersten Vorkommen von „Fehler“ oder „Error“ durchsucht.",
+      "anchors": [
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:102"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:116"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:117"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B06",
+      "text": "Enthält das Protokoll einen Fehlertext, wird das Modell nicht aktiviert und das Werk als fehlerhaft protokolliert.",
+      "anchors": [
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:123"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:124"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B07",
+      "text": "Im Testlauf wird das Modell nur generiert, nicht aktiviert, und das so protokolliert.",
+      "anchors": [
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:128"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:129"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B08",
+      "text": "Andernfalls wird das generierte Integrationsmodell für das APO-Zielsystem aktiviert und als aktiviert protokolliert, ohne das Aktivierungsprotokoll auszuwerten.",
+      "anchors": [
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:135"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:143"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B09",
+      "text": "Nur im Echtlauf wird nach der eingestellten Wartezeit geprüft, ob die Übertragung ins APO in den CIF-Ausgangsqueues hängt.",
+      "anchors": [
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:148"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:151"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:153"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B10",
+      "text": "Zum APO-Zielsystem wird die RFC-Destination bestimmt, und es werden die CIF-Queues zu dieser Destination mit Status SYSFAIL, CPICERR oder STOP gelesen.",
+      "anchors": [
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:169"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:172"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B11",
+      "text": "Gibt es keine fehlerhaften Queues, wird „CIF-Queues ohne Fehler“ protokolliert.",
+      "anchors": [
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 176,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:176"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:177"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B12",
+      "text": "Je fehlerhafter Queue wird eine Fehlerzeile mit der Anzahl der hängenden LUWs protokolliert.",
+      "anchors": [
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 183,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:183"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 188,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:188"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:189"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B13",
+      "text": "Alle gesammelten Meldungen werden in einem Anwendungsprotokoll zum APO-Zielsystem und Tagesdatum gesichert, das 30 Tage aufbewahrt wird.",
+      "anchors": [
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 213,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:213"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 222,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:222"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 232,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:232"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B14",
+      "text": "Im Dialog wird das Protokoll anschließend angezeigt, im Hintergrundjob nicht.",
+      "anchors": [
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 238,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:238"
+        },
+        {
+          "file": "zapo_cif_imod.abap",
+          "line": 239,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:239"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B15",
+      "text": "Bei der Übertragung von Materialstammdaten ins APO wird für den Benutzer CIF_ADMIN nichts gefiltert.",
+      "anchors": [
+        {
+          "file": "zxcifuu01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:27"
+        },
+        {
+          "file": "zxcifuu01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B16",
+      "text": "Ohne zu übertragende Material-Werks-Kombinationen endet der Filter sofort.",
+      "anchors": [
+        {
+          "file": "zxcifuu01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:31"
+        },
+        {
+          "file": "zxcifuu01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B17",
+      "text": "Es werden die ausgeschlossenen Dispositionsmerkmale je Werk sowie die Werksdaten der zu übertragenden Materialien gelesen.",
+      "anchors": [
+        {
+          "file": "zxcifuu01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:35"
+        },
+        {
+          "file": "zxcifuu01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B18",
+      "text": "Material-Werks-Kombinationen ohne Werksdaten werden unverändert übertragen.",
+      "anchors": [
+        {
+          "file": "zxcifuu01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:45"
+        },
+        {
+          "file": "zxcifuu01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-194-B19",
+      "text": "Hat das Material im Werk ein ausgeschlossenes Dispositionsmerkmal, wird es für dieses Werk aus der Übertragung ins APO entfernt; der Materialkopf bleibt in der Übertragung.",
+      "anchors": [
+        {
+          "file": "zxcifuu01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:54"
+        },
+        {
+          "file": "zxcifuu01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:57"
+        },
+        {
+          "file": "zxcifuu01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:59"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "sos",
+        "type": "start",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:63"
+        },
+        "meaning": "Job startet Modellgenerierung"
+      },
+      {
+        "id": "w_read",
+        "type": "read",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:65"
+        },
+        "meaning": "Werke der Selektion lesen"
+      },
+      {
+        "id": "w_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:67"
+        },
+        "meaning": "Werke gefunden?"
+      },
+      {
+        "id": "w_stop",
+        "type": "end",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:69"
+        },
+        "meaning": "Abbruch der Selektion, weiter zum Protokoll"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:72"
+        },
+        "meaning": "je Werk"
+      },
+      {
+        "id": "gen",
+        "type": "external_program",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:85"
+        },
+        "meaning": "Integrationsmodell für das Werk generieren"
+      },
+      {
+        "id": "lfm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:90"
+        },
+        "meaning": "Generierungsprotokoll holen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:96"
+        },
+        "meaning": "Protokoll vorhanden?"
+      },
+      {
+        "id": "asc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:102"
+        },
+        "meaning": "Protokoll in Text umwandeln"
+      },
+      {
+        "id": "il",
+        "type": "loop",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:116"
+        },
+        "meaning": "je Protokollzeile"
+      },
+      {
+        "id": "ig",
+        "type": "gateway",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:117"
+        },
+        "meaning": "Fehlertext in der Zeile?"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:123"
+        },
+        "meaning": "Generierung fehlerhaft?"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:128"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "act",
+        "type": "external_program",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:135"
+        },
+        "meaning": "Integrationsmodell aktivieren"
+      },
+      {
+        "id": "chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:148"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "wt",
+        "type": "action",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:151"
+        },
+        "meaning": "auf Erstversorgung warten"
+      },
+      {
+        "id": "cq",
+        "type": "call",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:153"
+        },
+        "meaning": "CIF-Queues prüfen"
+      },
+      {
+        "id": "eos",
+        "type": "start",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:155"
+        },
+        "meaning": "Abschluss"
+      },
+      {
+        "id": "ls",
+        "type": "call",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:157"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "e_eos",
+        "type": "end",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:157"
+        },
+        "meaning": "Report beendet"
+      },
+      {
+        "id": "cq_s",
+        "type": "start",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:165"
+        },
+        "meaning": "Queue-Prüfung"
+      },
+      {
+        "id": "dst",
+        "type": "read",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:169"
+        },
+        "meaning": "RFC-Destination zum APO bestimmen"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:172"
+        },
+        "meaning": "fehlerhafte CIF-Queues lesen"
+      },
+      {
+        "id": "qg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 176,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:176"
+        },
+        "meaning": "fehlerhafte Queues vorhanden?"
+      },
+      {
+        "id": "qr",
+        "type": "end",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:178"
+        },
+        "meaning": "Queues fehlerfrei protokolliert"
+      },
+      {
+        "id": "ql",
+        "type": "loop",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 183,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:183"
+        },
+        "meaning": "je fehlerhafte Queue-LUW"
+      },
+      {
+        "id": "aen",
+        "type": "gateway",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 188,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:188"
+        },
+        "meaning": "letzte LUW der Queue?"
+      },
+      {
+        "id": "alog",
+        "type": "action",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:189"
+        },
+        "meaning": "Fehlerzeile je Queue mit LUW-Anzahl protokollieren"
+      },
+      {
+        "id": "cq_e",
+        "type": "end",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 193,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:193"
+        },
+        "meaning": "Queue-Prüfung abgeschlossen"
+      },
+      {
+        "id": "ls_s",
+        "type": "start",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 201,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:201"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "bc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 213,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:213"
+        },
+        "meaning": "Anwendungsprotokoll ZAPO/CIF_IMOD anlegen"
+      },
+      {
+        "id": "bl",
+        "type": "loop",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 221,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:221"
+        },
+        "meaning": "je gesammelte Meldung"
+      },
+      {
+        "id": "ba",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 222,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:222"
+        },
+        "meaning": "Meldung ins Protokoll"
+      },
+      {
+        "id": "bs",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 232,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:232"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "bg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 238,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:238"
+        },
+        "meaning": "Dialoglauf?"
+      },
+      {
+        "id": "bd",
+        "type": "output",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 239,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:239"
+        },
+        "meaning": "Protokoll im Dialog anzeigen"
+      },
+      {
+        "id": "ls_e",
+        "type": "end",
+        "anchor": {
+          "file": "zapo_cif_imod.abap",
+          "line": 246,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zapo_cif_imod.abap:246"
+        },
+        "meaning": "Protokoll gesichert"
+      },
+      {
+        "id": "x_start",
+        "type": "start",
+        "anchor": {
+          "file": "zxcifuu01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:17"
+        },
+        "meaning": "CIF übergibt Materialstamm vor Übertragung ins APO"
+      },
+      {
+        "id": "x_g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zxcifuu01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:27"
+        },
+        "meaning": "Benutzer CIF_ADMIN?"
+      },
+      {
+        "id": "x_e0",
+        "type": "end",
+        "anchor": {
+          "file": "zxcifuu01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:28"
+        },
+        "meaning": "ungefiltert übertragen"
+      },
+      {
+        "id": "x_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zxcifuu01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:31"
+        },
+        "meaning": "Material-Werks-Daten vorhanden?"
+      },
+      {
+        "id": "x_e1",
+        "type": "end",
+        "anchor": {
+          "file": "zxcifuu01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:32"
+        },
+        "meaning": "nichts zu filtern"
+      },
+      {
+        "id": "x_excl",
+        "type": "read",
+        "anchor": {
+          "file": "zxcifuu01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:35"
+        },
+        "meaning": "ausgeschlossene Dispomerkmale lesen"
+      },
+      {
+        "id": "x_marc",
+        "type": "read",
+        "anchor": {
+          "file": "zxcifuu01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:37"
+        },
+        "meaning": "Werksdaten der Materialien lesen"
+      },
+      {
+        "id": "x_loop",
+        "type": "loop",
+        "anchor": {
+          "file": "zxcifuu01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:42"
+        },
+        "meaning": "je Material und Werk"
+      },
+      {
+        "id": "x_chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zxcifuu01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:48"
+        },
+        "meaning": "Werksdaten gefunden?"
+      },
+      {
+        "id": "x_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zxcifuu01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:57"
+        },
+        "meaning": "Dispomerkmal ausgeschlossen?"
+      },
+      {
+        "id": "x_del",
+        "type": "action",
+        "anchor": {
+          "file": "zxcifuu01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:59"
+        },
+        "meaning": "Material-Werk aus der Übertragung entfernen"
+      },
+      {
+        "id": "x_end",
+        "type": "end",
+        "anchor": {
+          "file": "zxcifuu01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxcifuu01.abap:62"
+        },
+        "meaning": "gefilterte Material-Werks-Daten an CIF zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "sos",
+        "to": "w_read",
+        "condition": "always"
+      },
+      {
+        "from": "w_read",
+        "to": "w_g",
+        "condition": "always"
+      },
+      {
+        "from": "w_g",
+        "to": "w_stop",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "w_stop",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "w_g",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "lp",
+        "to": "gen",
+        "condition": "next row"
+      },
+      {
+        "from": "gen",
+        "to": "lfm",
+        "condition": "always"
+      },
+      {
+        "from": "lfm",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "lp",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "asc",
+        "condition": "else"
+      },
+      {
+        "from": "asc",
+        "to": "il",
+        "condition": "always"
+      },
+      {
+        "from": "il",
+        "to": "ig",
+        "condition": "next row"
+      },
+      {
+        "from": "ig",
+        "to": "g2",
+        "condition": "gs_ascii CS 'Fehler' OR gs_ascii CS 'Error'"
+      },
+      {
+        "from": "ig",
+        "to": "il",
+        "condition": "else"
+      },
+      {
+        "from": "il",
+        "to": "g2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g2",
+        "to": "lp",
+        "condition": "gv_fehler = abap_true"
+      },
+      {
+        "from": "g2",
+        "to": "g3",
+        "condition": "else"
+      },
+      {
+        "from": "g3",
+        "to": "lp",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "g3",
+        "to": "act",
+        "condition": "else"
+      },
+      {
+        "from": "act",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "chk",
+        "condition": "no more rows"
+      },
+      {
+        "from": "chk",
+        "to": "wt",
+        "condition": "p_test = abap_false"
+      },
+      {
+        "from": "chk",
+        "to": "eos",
+        "condition": "else"
+      },
+      {
+        "from": "wt",
+        "to": "cq",
+        "condition": "always"
+      },
+      {
+        "from": "cq",
+        "to": "cq_s",
+        "condition": "always"
+      },
+      {
+        "from": "cq_s",
+        "to": "dst",
+        "condition": "always"
+      },
+      {
+        "from": "dst",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "qg",
+        "condition": "always"
+      },
+      {
+        "from": "qg",
+        "to": "qr",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "qg",
+        "to": "ql",
+        "condition": "else"
+      },
+      {
+        "from": "ql",
+        "to": "aen",
+        "condition": "next row"
+      },
+      {
+        "from": "aen",
+        "to": "alog",
+        "condition": "AT END OF qname"
+      },
+      {
+        "from": "aen",
+        "to": "ql",
+        "condition": "else"
+      },
+      {
+        "from": "alog",
+        "to": "ql",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ql",
+        "to": "cq_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "qr",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "eos",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "ls_s",
+        "condition": "always"
+      },
+      {
+        "from": "ls_s",
+        "to": "bc",
+        "condition": "always"
+      },
+      {
+        "from": "bc",
+        "to": "bl",
+        "condition": "always"
+      },
+      {
+        "from": "bl",
+        "to": "ba",
+        "condition": "next row"
+      },
+      {
+        "from": "ba",
+        "to": "bl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "bl",
+        "to": "bs",
+        "condition": "no more rows"
+      },
+      {
+        "from": "bs",
+        "to": "bg",
+        "condition": "always"
+      },
+      {
+        "from": "bg",
+        "to": "bd",
+        "condition": "sy-batch IS INITIAL"
+      },
+      {
+        "from": "x_start",
+        "to": "x_g0",
+        "condition": "always"
+      },
+      {
+        "from": "x_g0",
+        "to": "x_e0",
+        "condition": "sy-uname = 'CIF_ADMIN'"
+      },
+      {
+        "from": "x_g0",
+        "to": "x_g1",
+        "condition": "else"
+      },
+      {
+        "from": "x_g1",
+        "to": "x_e1",
+        "condition": "ct_cif_matloc[] IS INITIAL"
+      },
+      {
+        "from": "x_g1",
+        "to": "x_excl",
+        "condition": "else"
+      },
+      {
+        "from": "x_excl",
+        "to": "x_marc",
+        "condition": "always"
+      },
+      {
+        "from": "x_marc",
+        "to": "x_loop",
+        "condition": "always"
+      },
+      {
+        "from": "x_loop",
+        "to": "x_chk",
+        "condition": "next row"
+      },
+      {
+        "from": "x_chk",
+        "to": "x_g2",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "x_chk",
+        "to": "x_loop",
+        "condition": "else"
+      },
+      {
+        "from": "x_g2",
+        "to": "x_del",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "x_g2",
+        "to": "x_loop",
+        "condition": "else"
+      },
+      {
+        "from": "x_del",
+        "to": "x_loop",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cq_e",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "bd",
+        "to": "ls_e",
+        "condition": "always"
+      },
+      {
+        "from": "bg",
+        "to": "ls_e",
+        "condition": "else"
+      },
+      {
+        "from": "ls_e",
+        "to": "e_eos",
+        "condition": "always"
+      },
+      {
+        "from": "x_loop",
+        "to": "x_end",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zapo_cif_imod.abap:135 — kein Fachsatz „schlägt die Aktivierung fehl, wird das Werk als fehlerhaft protokolliert“: die Aktivierungsliste wird in den Speicher gestellt, aber nie gelesen; protokolliert wird immer „aktiviert“",
+    "zapo_cif_imod.abap:128 — kein Fachsatz „im Testlauf wird nichts verändert“: RIMODGEN wird auch im Testlauf ausgeführt und generiert das Integrationsmodell; nur Aktivierung und Queue-Prüfung entfallen",
+    "zapo_cif_imod.abap:188 — kein Fachsatz „für jede Queue wird ihr Fehlerstatus protokolliert“: in der Gruppenstufe AT END OF qname trägt das Feld qstate rechts vom Gruppenschlüssel nicht mehr den Wert der Zeile, die Protokollzeile nennt verlässlich nur Queue-Name und LUW-Anzahl",
+    "zapo_cif_imod.abap:169 — kein Fachsatz „fehlt die RFC-Destination zum APO, wird ein Fehler gemeldet“: das Ergebnis wird nicht geprüft; mit leerer Destination werden keine Queues gefunden und „CIF-Queues ohne Fehler“ protokolliert",
+    "gesamte Scheibe — kein Fachsatz „die Eingabe des logischen Systems wird auf dem Selektionsbild geprüft“: die Prüfung AT SELECTION-SCREEN ON p_logsys ist auskommentiert",
+    "zxcifuu01.abap:59 — kein Fachsatz „das Material wird im APO gelöscht oder gesperrt“: der Userexit entfernt nur die Material-Werks-Zeile aus der aktuellen Übertragung, Materialkopf und bereits übertragene Daten im APO bleiben unberührt"
+  ],
+  "processDescription": "Der Report läuft als Schritt des nächtlichen CIF-Jobs und liest zuerst die selektierten Werke; gibt es keines, wird das protokolliert und über STOP direkt zum Sichern des Protokolls gesprungen. Je Werk bildet er aus Präfix und Werksnummer einen Modellnamen und startet die Standardgenerierung RIMODGEN mit einer Variante, die er um Modellname, APO-Zielsystem, Anwendung PPDS und das Werk übersteuert; die Ergebnisliste wird im Speicher abgelegt. Fehlt diese Liste, wird das Werk als fehlerhaft protokolliert und übersprungen. Sonst wandelt er die Liste in Text um und sucht nach „Fehler“ oder „Error“; bei einem Treffer bricht er die Suche ab, protokolliert die Generierung als fehlerhaft und aktiviert das Modell nicht. Im Testlauf bleibt es bei der Generierung, sonst wird das Modell mit RIMODAC2 aktiviert und ohne Auswertung der Aktivierungsliste als aktiviert protokolliert. Nur im Echtlauf wartet der Report danach die eingestellte Zeit und liest zur RFC-Destination des APO-Systems die CIF-Ausgangsqueues mit Fehlerstatus; ohne Treffer protokolliert er fehlerfreie Queues, sonst je Queue eine Fehlerzeile mit der Zahl der hängenden LUWs. Zum Schluss werden alle gesammelten Meldungen in ein Anwendungsprotokoll mit 30 Tagen Aufbewahrung geschrieben und im Dialog angezeigt. Bei jeder Übertragung von Materialstammdaten ins APO filtert der Userexit ZXCIFUU01 Material-Werks-Kombinationen heraus, deren Dispositionsmerkmal im Werk in der Ausschlusstabelle ZAPO_CIF_EXCL steht; der Materialkopf bleibt dabei in der Übertragung. Für den Benutzer CIF_ADMIN und bei leerer Übergabe wird nicht gefiltert, und Kombinationen ohne Werksdaten gehen unverändert durch."
+}

@@ -1,0 +1,2214 @@
+{
+  "id": "BM-118",
+  "title": "Zählerabrechnung Serviceverträge: Verbrauch je Equipment aus Messbelegen, Freimenge, Preis ZCPK, Lastschriftanforderung aus der Liste",
+  "classes": [
+    "K01",
+    "K04",
+    "K12",
+    "K18",
+    "K02"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_zaehler_faktura_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_zaehler_faktura_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_zaehler_faktura_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_zaehler_faktura_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VEDA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_zaehler_faktura_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_zaehler_faktura_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SER02",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_zaehler_faktura_f01.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_zaehler_faktura_f01.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "OBJK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_zaehler_faktura_f01.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_zaehler_faktura_f01.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "IMPTT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_zaehler_faktura_f01.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_zaehler_faktura_f01.abap:52"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EQUI",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_zaehler_faktura_f01.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_zaehler_faktura_f01.abap:52"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_CS_METER_PERIOD",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcs_zaehler_faktura_f01.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_zaehler_faktura_f01.abap:65"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KONV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_zaehler_faktura_f01.abap",
+        "line": 81,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_zaehler_faktura_f01.abap:81"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCS_ZF_LOG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_zaehler_faktura_f01.abap",
+        "line": 159,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_zaehler_faktura_f01.abap:159"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_SALESORDER_CREATEFROMDAT2",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcs_zaehler_faktura_f01.abap",
+        "line": 186,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_zaehler_faktura_f01.abap:186"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcs_zaehler_faktura_f01.abap",
+        "line": 197,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_zaehler_faktura_f01.abap:197"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCS_ZF_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcs_zaehler_faktura_f01.abap",
+        "line": 203,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_zaehler_faktura_f01.abap:203"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcs_zaehler_faktura_f01.abap",
+        "line": 210,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_zaehler_faktura_f01.abap:210"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "IMRG",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_cs_meter_period.abap",
+        "line": 62,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_cs_meter_period.abap:62"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "IMPTT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_cs_meter_period.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_cs_meter_period.abap:47"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-118-B01",
+      "text": "Es werden die Kontraktpositionen mit Zählerabrechnung (Abrechnungsart Z) der Selektion gelesen, deren Vertragslaufzeit die Abrechnungsperiode überlappt.",
+      "anchors": [
+        {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:26"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:11"
+        }
+      ]
+    },
+    {
+      "id": "BM-118-B02",
+      "text": "Ohne solche Positionen endet der Lauf mit einem Hinweis.",
+      "anchors": [
+        {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:27"
+        },
+        {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:28"
+        },
+        {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-118-B03",
+      "text": "Zu den Positionen werden die zugeordneten Equipments aus der Objektliste des Vertrags gelesen.",
+      "anchors": [
+        {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:32"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-118-B04",
+      "text": "Je Equipment wird der aktive Abrechnungszähler gesucht; ohne ihn wird das Equipment gemeldet und nicht berücksichtigt.",
+      "anchors": [
+        {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:33"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:52"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:59"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-118-B05",
+      "text": "Der Verbrauch in der Periode ist der Zählerstand der letzten gültigen Ablesung bis Periodenende minus dem der letzten Ablesung vor Periodenbeginn.",
+      "anchors": [
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:65"
+        },
+        {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:39"
+        },
+        {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:41"
+        },
+        {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-118-B06",
+      "text": "Fehlt eine solche Ablesung, wird das Equipment mit Fehlertext gemeldet und geht mit Verbrauch null ein.",
+      "anchors": [
+        {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:69"
+        },
+        {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:70"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-118-B07",
+      "text": "Ein negativer Verbrauch gilt als Zählerüberlauf und wird um den Überlaufwert des Zählers erhöht; ist keiner gepflegt, wird das Equipment als fehlerhaft gemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:45"
+        },
+        {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:47"
+        },
+        {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:50"
+        },
+        {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:51"
+        },
+        {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-118-B08",
+      "text": "Die Preise der Kondition ZCPK der Verträge werden gelesen.",
+      "anchors": [
+        {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:34"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-118-B09",
+      "text": "Je Vertragsposition wird der Verbrauch aller ihrer Equipments summiert; abgerechnet wird nur der Verbrauch über der Freimenge der Position.",
+      "anchors": [
+        {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:35"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:98"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:103"
+        }
+      ]
+    },
+    {
+      "id": "BM-118-B10",
+      "text": "Positionen ohne ZCPK-Preis werden gemeldet und nicht in die Abrechnungsliste übernommen.",
+      "anchors": [
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:107"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:110"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:111"
+        }
+      ]
+    },
+    {
+      "id": "BM-118-B11",
+      "text": "Der Betrag ist abzurechnende Menge mal Konditionsbetrag je Preiseinheit; ist er nicht berechenbar, wird die Position gemeldet und übergangen.",
+      "anchors": [
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:116"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:119"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:120"
+        }
+      ]
+    },
+    {
+      "id": "BM-118-B12",
+      "text": "Die Abrechnungsliste zeigt je Position Verbrauch, Freimenge, abzurechnende Menge und Betrag mit Periodenkopf und bietet die Funktion Fakturieren.",
+      "anchors": [
+        {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:36"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:133"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:135"
+        },
+        {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-118-B13",
+      "text": "Mit Fakturieren werden alle Positionen der Liste mit positivem Betrag bearbeitet; jede andere Funktion wird mit Hinweis abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:47"
+        },
+        {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:49"
+        },
+        {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:51"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:156"
+        }
+      ]
+    },
+    {
+      "id": "BM-118-B14",
+      "text": "Ist die Position für den Periodenbeginn schon abgerechnet, wird sie mit der vorhandenen Lastschriftanforderung gemeldet und übersprungen.",
+      "anchors": [
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:159"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:164"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:165"
+        }
+      ]
+    },
+    {
+      "id": "BM-118-B15",
+      "text": "Sonst wird eine Lastschriftanforderung ZL2 mit Bezug zur Vertragsposition über die abzurechnende Menge für den Kunden angelegt.",
+      "anchors": [
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:186"
+        }
+      ]
+    },
+    {
+      "id": "BM-118-B16",
+      "text": "Entsteht keine Anforderung, wird zurückgerollt und der Fehler zur Position gelistet.",
+      "anchors": [
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:196"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:197"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:199"
+        }
+      ]
+    },
+    {
+      "id": "BM-118-B17",
+      "text": "Sonst wird die Abrechnung der Periode mit Menge und Anforderungsnummer protokolliert, festgeschrieben und gelistet; am Ende wird die Anzahl der Anforderungen gemeldet.",
+      "anchors": [
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 203,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:203"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 210,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:210"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 214,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:214"
+        },
+        {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 217,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:217"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:25"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "c_v",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:26"
+        },
+        "meaning": "Vertragspositionen lesen"
+      },
+      {
+        "id": "g_e",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:27"
+        },
+        "meaning": "Keine Positionen?"
+      },
+      {
+        "id": "m_e",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:28"
+        },
+        "meaning": "Hinweis: nichts abzurechnen"
+      },
+      {
+        "id": "x_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:29"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "c_o",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:32"
+        },
+        "meaning": "Equipments der Positionen lesen"
+      },
+      {
+        "id": "c_vb",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:33"
+        },
+        "meaning": "Verbrauch je Equipment ermitteln"
+      },
+      {
+        "id": "c_pr",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:34"
+        },
+        "meaning": "Preise ZCPK lesen"
+      },
+      {
+        "id": "c_ab",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:35"
+        },
+        "meaning": "Abrechnung je Position berechnen"
+      },
+      {
+        "id": "c_li",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:36"
+        },
+        "meaning": "Abrechnungsliste ausgeben"
+      },
+      {
+        "id": "s_top",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:39"
+        },
+        "meaning": "Seitenkopf"
+      },
+      {
+        "id": "o_top",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:40"
+        },
+        "meaning": "Periode und Spaltenüberschrift"
+      },
+      {
+        "id": "e_top",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:43"
+        },
+        "meaning": "Kopf fertig"
+      },
+      {
+        "id": "s_uc",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:46"
+        },
+        "meaning": "Funktion in der Liste"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:47"
+        },
+        "meaning": "Welche Funktion?"
+      },
+      {
+        "id": "c_f",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:49"
+        },
+        "meaning": "Lastschriftanforderungen erzeugen"
+      },
+      {
+        "id": "m_uc",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:51"
+        },
+        "meaning": "Hinweis: Funktion nicht vorgesehen"
+      },
+      {
+        "id": "e_uc",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_zaehler_faktura.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura.abap:52"
+        },
+        "meaning": "Zurück zur Liste"
+      },
+      {
+        "id": "s_v",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:10"
+        },
+        "meaning": "Vertragsauswahl"
+      },
+      {
+        "id": "r_v",
+        "type": "read",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:11"
+        },
+        "meaning": "Kontraktpositionen mit Abrechnungsart Z in der Periode lesen"
+      },
+      {
+        "id": "e_v",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:24"
+        },
+        "meaning": "Positionen gelesen"
+      },
+      {
+        "id": "s_o",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:31"
+        },
+        "meaning": "Objektliste"
+      },
+      {
+        "id": "r_o",
+        "type": "read",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:32"
+        },
+        "meaning": "Equipments der Vertragspositionen lesen"
+      },
+      {
+        "id": "e_o",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:40"
+        },
+        "meaning": "Equipments gelesen"
+      },
+      {
+        "id": "s_vb",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:47"
+        },
+        "meaning": "Verbrauch"
+      },
+      {
+        "id": "l_vb",
+        "type": "loop",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:51"
+        },
+        "meaning": "Equipments durchgehen"
+      },
+      {
+        "id": "r_pt",
+        "type": "read",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:52"
+        },
+        "meaning": "Abrechnungszähler des Equipments lesen"
+      },
+      {
+        "id": "g_pt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:59"
+        },
+        "meaning": "Kein Abrechnungszähler?"
+      },
+      {
+        "id": "o_pt",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:60"
+        },
+        "meaning": "Equipment ohne Zähler melden"
+      },
+      {
+        "id": "c_us",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:65"
+        },
+        "meaning": "Periodenverbrauch berechnen"
+      },
+      {
+        "id": "o_us",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:70"
+        },
+        "meaning": "Zählerfehler melden"
+      },
+      {
+        "id": "e_vb",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:73"
+        },
+        "meaning": "Verbrauch ermittelt"
+      },
+      {
+        "id": "s_pr",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:80"
+        },
+        "meaning": "Preise"
+      },
+      {
+        "id": "r_pr",
+        "type": "read",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:81"
+        },
+        "meaning": "Konditionen ZCPK der Verträge lesen"
+      },
+      {
+        "id": "e_pr",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:85"
+        },
+        "meaning": "Preise gelesen"
+      },
+      {
+        "id": "s_ab",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:90"
+        },
+        "meaning": "Abrechnung"
+      },
+      {
+        "id": "l_ab",
+        "type": "loop",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:93"
+        },
+        "meaning": "Vertragspositionen durchgehen"
+      },
+      {
+        "id": "a_sum",
+        "type": "action",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:98"
+        },
+        "meaning": "Verbrauch der Equipments summieren"
+      },
+      {
+        "id": "a_abr",
+        "type": "action",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:103"
+        },
+        "meaning": "Menge über Freimenge bestimmen"
+      },
+      {
+        "id": "r_k",
+        "type": "read",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:107"
+        },
+        "meaning": "Preis der Position nachschlagen"
+      },
+      {
+        "id": "g_k",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:110"
+        },
+        "meaning": "Kein Preis?"
+      },
+      {
+        "id": "o_k",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:111"
+        },
+        "meaning": "Position ohne Preis melden"
+      },
+      {
+        "id": "a_calc",
+        "type": "action",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:116"
+        },
+        "meaning": "Preis je Einheit und Betrag berechnen"
+      },
+      {
+        "id": "g_ar",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:119"
+        },
+        "meaning": "Rechenfehler?"
+      },
+      {
+        "id": "o_ar",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:120"
+        },
+        "meaning": "Position mit Rechenfehler melden"
+      },
+      {
+        "id": "e_ab",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:127"
+        },
+        "meaning": "Abrechnung berechnet"
+      },
+      {
+        "id": "s_li",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:132"
+        },
+        "meaning": "Liste"
+      },
+      {
+        "id": "a_pf",
+        "type": "action",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:133"
+        },
+        "meaning": "Drucktaste Fakturieren anbieten"
+      },
+      {
+        "id": "l_li",
+        "type": "loop",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:134"
+        },
+        "meaning": "Abrechnungszeilen durchgehen"
+      },
+      {
+        "id": "o_li",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:135"
+        },
+        "meaning": "Position mit Mengen und Betrag listen"
+      },
+      {
+        "id": "e_li",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:139"
+        },
+        "meaning": "Liste fertig"
+      },
+      {
+        "id": "s_f",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:146"
+        },
+        "meaning": "Fakturieren"
+      },
+      {
+        "id": "l_f",
+        "type": "loop",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:155"
+        },
+        "meaning": "Alle Abrechnungszeilen durchgehen"
+      },
+      {
+        "id": "g_chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:156"
+        },
+        "meaning": "Positiver Betrag?"
+      },
+      {
+        "id": "r_log",
+        "type": "read",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:159"
+        },
+        "meaning": "Bisherige Abrechnung der Periode suchen"
+      },
+      {
+        "id": "g_log",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:164"
+        },
+        "meaning": "Schon abgerechnet?"
+      },
+      {
+        "id": "o_log",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:165"
+        },
+        "meaning": "Doppelte Abrechnung melden"
+      },
+      {
+        "id": "c_b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:186"
+        },
+        "meaning": "Lastschriftanforderung ZL2 zum Vertrag anlegen"
+      },
+      {
+        "id": "g_b",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:196"
+        },
+        "meaning": "Keine Anforderung entstanden?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:197"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "o_b",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:199"
+        },
+        "meaning": "Fehler zur Position listen"
+      },
+      {
+        "id": "w_l",
+        "type": "write",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 203,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:203"
+        },
+        "meaning": "Abrechnung der Periode protokollieren"
+      },
+      {
+        "id": "tc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 210,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:210"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "o_ok",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 214,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:214"
+        },
+        "meaning": "Angelegte Anforderung listen"
+      },
+      {
+        "id": "m_f",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 217,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:217"
+        },
+        "meaning": "Anzahl Anforderungen melden"
+      },
+      {
+        "id": "e_f",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_zaehler_faktura_f01.abap",
+          "line": 218,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_zaehler_faktura_f01.abap:218"
+        },
+        "meaning": "Fakturierung fertig"
+      },
+      {
+        "id": "s_u",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:38"
+        },
+        "meaning": "Periodenverbrauch"
+      },
+      {
+        "id": "c_r1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:39"
+        },
+        "meaning": "Stand vor Periodenbeginn"
+      },
+      {
+        "id": "c_r2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:41"
+        },
+        "meaning": "Stand bis Periodenende"
+      },
+      {
+        "id": "g_n",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:45"
+        },
+        "meaning": "Negativer Verbrauch?"
+      },
+      {
+        "id": "r_cj",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:47"
+        },
+        "meaning": "Überlaufwert des Zählers lesen"
+      },
+      {
+        "id": "g_cj",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:50"
+        },
+        "meaning": "Kein Überlauf gepflegt?"
+      },
+      {
+        "id": "x_cj",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:51"
+        },
+        "meaning": "Ausnahme: negativer Verbrauch"
+      },
+      {
+        "id": "a_cj",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:56"
+        },
+        "meaning": "Überlauf addieren"
+      },
+      {
+        "id": "e_u",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:58"
+        },
+        "meaning": "Verbrauch zurück"
+      },
+      {
+        "id": "s_ra",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:61"
+        },
+        "meaning": "Stand zum Stichtag"
+      },
+      {
+        "id": "r_ra",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:62"
+        },
+        "meaning": "Letzte gültige Ablesung bis Stichtag lesen"
+      },
+      {
+        "id": "g_ra",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:69"
+        },
+        "meaning": "Keine Ablesung?"
+      },
+      {
+        "id": "x_ra",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:70"
+        },
+        "meaning": "Ausnahme: keine Ablesung"
+      },
+      {
+        "id": "e_ra",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_cs_meter_period.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_meter_period.abap:77"
+        },
+        "meaning": "Stand zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c_v",
+        "condition": "always"
+      },
+      {
+        "from": "c_v",
+        "to": "s_v",
+        "condition": "always"
+      },
+      {
+        "from": "g_e",
+        "to": "m_e",
+        "condition": "gt_ctr IS INITIAL"
+      },
+      {
+        "from": "m_e",
+        "to": "x_e",
+        "condition": "always"
+      },
+      {
+        "from": "g_e",
+        "to": "c_o",
+        "condition": "else"
+      },
+      {
+        "from": "c_o",
+        "to": "s_o",
+        "condition": "always"
+      },
+      {
+        "from": "c_vb",
+        "to": "s_vb",
+        "condition": "always"
+      },
+      {
+        "from": "c_pr",
+        "to": "s_pr",
+        "condition": "always"
+      },
+      {
+        "from": "c_ab",
+        "to": "s_ab",
+        "condition": "always"
+      },
+      {
+        "from": "c_li",
+        "to": "s_li",
+        "condition": "always"
+      },
+      {
+        "from": "s_top",
+        "to": "o_top",
+        "condition": "always"
+      },
+      {
+        "from": "o_top",
+        "to": "e_top",
+        "condition": "always"
+      },
+      {
+        "from": "s_uc",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "c_f",
+        "condition": "WHEN 'FAKT'"
+      },
+      {
+        "from": "c_f",
+        "to": "s_f",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "m_uc",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "m_uc",
+        "to": "e_uc",
+        "condition": "always"
+      },
+      {
+        "from": "s_v",
+        "to": "r_v",
+        "condition": "always"
+      },
+      {
+        "from": "r_v",
+        "to": "e_v",
+        "condition": "always"
+      },
+      {
+        "from": "s_o",
+        "to": "r_o",
+        "condition": "always"
+      },
+      {
+        "from": "r_o",
+        "to": "e_o",
+        "condition": "always"
+      },
+      {
+        "from": "s_vb",
+        "to": "l_vb",
+        "condition": "always"
+      },
+      {
+        "from": "l_vb",
+        "to": "r_pt",
+        "condition": "next row"
+      },
+      {
+        "from": "r_pt",
+        "to": "g_pt",
+        "condition": "always"
+      },
+      {
+        "from": "g_pt",
+        "to": "o_pt",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o_pt",
+        "to": "l_vb",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g_pt",
+        "to": "c_us",
+        "condition": "else"
+      },
+      {
+        "from": "c_us",
+        "to": "s_u",
+        "condition": "always"
+      },
+      {
+        "from": "o_us",
+        "to": "l_vb",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_vb",
+        "to": "e_vb",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_pr",
+        "to": "r_pr",
+        "condition": "always"
+      },
+      {
+        "from": "r_pr",
+        "to": "e_pr",
+        "condition": "always"
+      },
+      {
+        "from": "s_ab",
+        "to": "l_ab",
+        "condition": "always"
+      },
+      {
+        "from": "l_ab",
+        "to": "a_sum",
+        "condition": "next row"
+      },
+      {
+        "from": "a_sum",
+        "to": "a_abr",
+        "condition": "always"
+      },
+      {
+        "from": "a_abr",
+        "to": "r_k",
+        "condition": "always"
+      },
+      {
+        "from": "r_k",
+        "to": "g_k",
+        "condition": "always"
+      },
+      {
+        "from": "g_k",
+        "to": "o_k",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o_k",
+        "to": "l_ab",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g_k",
+        "to": "a_calc",
+        "condition": "else"
+      },
+      {
+        "from": "a_calc",
+        "to": "g_ar",
+        "condition": "always"
+      },
+      {
+        "from": "g_ar",
+        "to": "o_ar",
+        "condition": "sy-subrc = 4"
+      },
+      {
+        "from": "o_ar",
+        "to": "l_ab",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g_ar",
+        "to": "l_ab",
+        "condition": "else"
+      },
+      {
+        "from": "l_ab",
+        "to": "e_ab",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_li",
+        "to": "a_pf",
+        "condition": "always"
+      },
+      {
+        "from": "a_pf",
+        "to": "l_li",
+        "condition": "always"
+      },
+      {
+        "from": "l_li",
+        "to": "o_li",
+        "condition": "next row"
+      },
+      {
+        "from": "o_li",
+        "to": "l_li",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_li",
+        "to": "e_li",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_f",
+        "to": "l_f",
+        "condition": "always"
+      },
+      {
+        "from": "l_f",
+        "to": "g_chk",
+        "condition": "next row"
+      },
+      {
+        "from": "g_chk",
+        "to": "r_log",
+        "condition": "ls_bill-betrag > 0"
+      },
+      {
+        "from": "g_chk",
+        "to": "l_f",
+        "condition": "else"
+      },
+      {
+        "from": "r_log",
+        "to": "g_log",
+        "condition": "always"
+      },
+      {
+        "from": "g_log",
+        "to": "o_log",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "o_log",
+        "to": "l_f",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g_log",
+        "to": "c_b",
+        "condition": "else"
+      },
+      {
+        "from": "c_b",
+        "to": "g_b",
+        "condition": "always"
+      },
+      {
+        "from": "g_b",
+        "to": "rb",
+        "condition": "lv_vbeln IS INITIAL"
+      },
+      {
+        "from": "rb",
+        "to": "o_b",
+        "condition": "always"
+      },
+      {
+        "from": "o_b",
+        "to": "l_f",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g_b",
+        "to": "w_l",
+        "condition": "else"
+      },
+      {
+        "from": "w_l",
+        "to": "tc",
+        "condition": "always"
+      },
+      {
+        "from": "tc",
+        "to": "o_ok",
+        "condition": "always"
+      },
+      {
+        "from": "o_ok",
+        "to": "l_f",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_f",
+        "to": "m_f",
+        "condition": "no more rows"
+      },
+      {
+        "from": "m_f",
+        "to": "e_f",
+        "condition": "always"
+      },
+      {
+        "from": "s_u",
+        "to": "c_r1",
+        "condition": "always"
+      },
+      {
+        "from": "c_r1",
+        "to": "s_ra",
+        "condition": "always"
+      },
+      {
+        "from": "c_r2",
+        "to": "s_ra",
+        "condition": "always"
+      },
+      {
+        "from": "g_n",
+        "to": "r_cj",
+        "condition": "rv_menge < 0"
+      },
+      {
+        "from": "g_n",
+        "to": "e_u",
+        "condition": "else"
+      },
+      {
+        "from": "r_cj",
+        "to": "g_cj",
+        "condition": "always"
+      },
+      {
+        "from": "g_cj",
+        "to": "x_cj",
+        "condition": "lv_cjump IS INITIAL"
+      },
+      {
+        "from": "g_cj",
+        "to": "a_cj",
+        "condition": "else"
+      },
+      {
+        "from": "a_cj",
+        "to": "e_u",
+        "condition": "always"
+      },
+      {
+        "from": "s_ra",
+        "to": "r_ra",
+        "condition": "always"
+      },
+      {
+        "from": "r_ra",
+        "to": "g_ra",
+        "condition": "always"
+      },
+      {
+        "from": "g_ra",
+        "to": "x_ra",
+        "condition": "lt_read IS INITIAL"
+      },
+      {
+        "from": "g_ra",
+        "to": "e_ra",
+        "condition": "else"
+      },
+      {
+        "from": "e_v",
+        "to": "g_e",
+        "condition": "always"
+      },
+      {
+        "from": "e_o",
+        "to": "c_vb",
+        "condition": "always"
+      },
+      {
+        "from": "e_vb",
+        "to": "c_pr",
+        "condition": "always"
+      },
+      {
+        "from": "e_pr",
+        "to": "c_ab",
+        "condition": "always"
+      },
+      {
+        "from": "e_ab",
+        "to": "c_li",
+        "condition": "always"
+      },
+      {
+        "from": "e_f",
+        "to": "e_uc",
+        "condition": "always"
+      },
+      {
+        "from": "x_cj",
+        "to": "o_us",
+        "condition": "zcx_cs_meter"
+      },
+      {
+        "from": "x_ra",
+        "to": "o_us",
+        "condition": "zcx_cs_meter"
+      },
+      {
+        "from": "e_u",
+        "to": "l_vb",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_ra",
+        "to": "c_r2",
+        "condition": "always"
+      },
+      {
+        "from": "e_ra",
+        "to": "g_n",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcs_zaehler_faktura_f01.abap:186 — kein Fachsatz „der in der Liste berechnete Betrag wird in Rechnung gestellt“: übergeben wird nur die abzurechnende Menge, der Preis der Anforderung entsteht in deren eigener Preisfindung",
+    "zcs_zaehler_faktura_f01.abap:155 — kein Fachsatz „nur die in der Liste gewählte Position wird fakturiert“: FAKT bearbeitet alle Zeilen mit positivem Betrag",
+    "zcs_zaehler_faktura_f01.abap:70 — kein Fachsatz „Positionen mit Zählerfehler werden nicht abgerechnet“: das betroffene Equipment geht mit Verbrauch null ein, die Position wird mit den übrigen Equipments abgerechnet",
+    "zcl_cs_meter_period.abap:62 — kein Fachsatz „ohne Ablesung in der Periode wird der Verbrauch geschätzt“: es gilt die letzte Ablesung bis zum Stichtag, auch aus früheren Perioden; ohne neue Ablesung ist der Verbrauch null"
+  ],
+  "processDescription": "Der Sachbearbeiter startet die Zählerabrechnung mit Verkaufsorganisationen, optional Verträgen und Kunden sowie der Abrechnungsperiode. Das Programm liest die Kontraktpositionen mit Abrechnungsart Z, deren Laufzeit die Periode überlappt; ohne Treffer endet es mit einem Hinweis. Zu den Positionen liest es die Equipments der Objektliste und für jedes Equipment den aktiven Abrechnungszähler; fehlt er, wird das gemeldet. Der Periodenverbrauch ist der Stand der letzten gültigen Ablesung bis Periodenende minus dem der letzten Ablesung vor Periodenbeginn; fehlt eine Ablesung oder ist der Verbrauch negativ ohne gepflegten Überlauf, wird das Equipment gemeldet und geht mit null ein, bei gepflegtem Überlauf wird dieser addiert. Danach liest es die Preise der Kondition ZCPK, summiert je Position den Verbrauch aller Equipments und rechnet nur die Menge über der Freimenge ab; Positionen ohne Preis oder mit Rechenfehler werden gemeldet und übergangen. Die Liste zeigt je Position Verbrauch, Freimenge, abzurechnende Menge und Betrag. Mit der Funktion Fakturieren werden alle Positionen mit positivem Betrag bearbeitet: Wurde die Periode schon abgerechnet, wird das gemeldet; sonst entsteht eine Lastschriftanforderung ZL2 mit Bezug zur Vertragsposition über die abzurechnende Menge, bei Fehler wird zurückgerollt und gelistet, bei Erfolg die Abrechnung protokolliert, festgeschrieben und gelistet. Am Ende wird die Anzahl der Anforderungen gemeldet."
+}

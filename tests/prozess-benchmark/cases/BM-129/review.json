@@ -1,0 +1,21 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_tp (neu)",
+      "before": "th output ohne ausgehende Kante (Validator-Warnung)",
+      "after": "e_tp end auf source.abap:17 (ULINE, letzte Anweisung von TOP-OF-PAGE); th -> e_tp [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante e -> es (neu)",
+      "before": "kein Übergang von START-OF-SELECTION nach END-OF-SELECTION",
+      "after": "e -> es [always]",
+      "why": "Nach dem impliziten Ende von START-OF-SELECTION löst die Laufzeit END-OF-SELECTION aus; die Anzahl (B05) wird erst danach ausgegeben. Ohne die Kante wäre END-OF-SELECTION vom Lauf abgekoppelt.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

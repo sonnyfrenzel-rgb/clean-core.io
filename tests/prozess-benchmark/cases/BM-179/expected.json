@@ -1,0 +1,2453 @@
+{
+  "id": "BM-179",
+  "title": "Transport und Handling Units: Frachtkosten aus HU-Gewicht und Spediteurtarif berechnen, Frachtkostenbelege per Batch-Input",
+  "classes": [
+    "K01",
+    "K12",
+    "K14",
+    "K17",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "LFA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zle_frachtkosten.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtkosten.abap:37"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VTTK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zle_frachtkosten_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtkosten_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VFKP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zle_frachtkosten_f01.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtkosten_f01.abap:21"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VTTP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zle_frachtkosten_f01.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtkosten_f01.abap:41"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VEKP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zle_frachtkosten_f01.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtkosten_f01.abap:49"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZLE_ROUTE_ZONE",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zle_frachtkosten_f01.abap",
+        "line": 86,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtkosten_f01.abap:86"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZLE_TARIF",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zle_frachtkosten_f01.abap",
+        "line": 94,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtkosten_f01.abap:94"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zle_frachtkosten_f01.abap",
+        "line": 120,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtkosten_f01.abap:120"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZLE_FK_LOG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zle_frachtkosten_f02.abap",
+        "line": 22,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtkosten_f02.abap:22"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VI01",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zle_frachtkosten_f02.abap",
+        "line": 43,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtkosten_f02.abap:43"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZLE_FK_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zle_frachtkosten_f02.abap",
+        "line": 68,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtkosten_f02.abap:68"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VI03",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zle_frachtkosten.abap",
+        "line": 71,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtkosten.abap:71"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-179-B01",
+      "text": "Der Abfertigungszeitraum wird mit den letzten sieben Tagen bis gestern vorbelegt.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:28"
+        },
+        {
+          "file": "zle_frachtkosten.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B02",
+      "text": "Einzeln eingegebene Spediteure, die nicht existieren, werden im Selektionsbild abgewiesen.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:36"
+        },
+        {
+          "file": "zle_frachtkosten.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:37"
+        },
+        {
+          "file": "zle_frachtkosten.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B03",
+      "text": "Es werden die abgefertigten Transporte der gewählten Spediteure und Transportarten im Zeitraum gelesen.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:11"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B04",
+      "text": "Transporte, zu denen bereits eine Frachtkostenposition existiert, werden entfernt.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:21"
+        },
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B05",
+      "text": "Bleibt kein Transport, wird ein Hinweis ausgegeben und die Verarbeitung beendet; die Liste wird trotzdem aufgebaut.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:46"
+        },
+        {
+          "file": "zle_frachtkosten.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:47"
+        },
+        {
+          "file": "zle_frachtkosten.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B06",
+      "text": "Das Frachtgewicht eines Transports ist die Summe der Bruttogewichte aller Handling Units der Lieferungen im Transport, umgerechnet in kg.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:41"
+        },
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:49"
+        },
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:58"
+        },
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B07",
+      "text": "Hat eine Handling Unit eine andere Gewichtseinheit als kg, g oder t, erhält der Transport einen Fehler und die übrigen Handling Units dieser Lieferung werden nicht mehr gezählt.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:63"
+        },
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B08",
+      "text": "Ohne Frachtgewicht wird keine Fracht berechnet, der Transport erhält einen Fehler.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B09",
+      "text": "Zur Route wird die Tarifzone ermittelt; fehlt sie, erhält der Transport einen Fehler.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:86"
+        },
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B10",
+      "text": "Aus dem Spediteurtarif wird die kleinste Gewichtsstaffel gewählt, die das Gewicht abdeckt, und davon der jüngste zum Abfertigungsdatum gültige Preis; ohne Tarif erhält der Transport einen Fehler.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:94"
+        },
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:103"
+        },
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:104"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B11",
+      "text": "Die Fracht ist Gewicht in 100 kg mal Preis je 100 kg, mindestens aber die Mindestfracht; ein Rechenfehler macht den Transport fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:110"
+        },
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:112"
+        },
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:117"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B12",
+      "text": "Ist ein Dieselzuschlag gepflegt, wird die Fracht um diesen Prozentsatz erhöht.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:120"
+        },
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:124"
+        },
+        {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:125"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B13",
+      "text": "Nur fehlerfreie Transporte werden weiterverarbeitet, und nur im Echtlauf wird ein Frachtkostenbeleg angelegt.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:55"
+        },
+        {
+          "file": "zle_frachtkosten.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B14",
+      "text": "Steht der Transport bereits im eigenen Frachtkostenprotokoll, wird kein weiterer Beleg angelegt und der Transport mit dem vorhandenen Beleg als bereits abgerechnet gekennzeichnet.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:22"
+        },
+        {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B15",
+      "text": "Fracht und Transportnummer werden für den Kalkulationsexit der Frachtkostenberechnung im ABAP-Memory bereitgestellt und nach der Anlage wieder freigegeben.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:30"
+        },
+        {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B16",
+      "text": "Der Frachtkostenbeleg wird mit Frachtkostenart und Transportnummer per Batch-Input angelegt und synchron verbucht.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:33"
+        },
+        {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B17",
+      "text": "Endet die Anlage mit Fehler- oder Abbruchmeldung, erhält der Transport einen Fehler.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B18",
+      "text": "Die Belegnummer wird aus der Erfolgsmeldung übernommen; Transport, Beleg, Spediteur, Fracht und Gewicht werden protokolliert.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:55"
+        },
+        {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:58"
+        },
+        {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B19",
+      "text": "Die Liste zeigt je Spediteur alle Transporte mit Gewicht, Fracht, Beleg bzw. Fehler und eine Frachtsumme je Spediteur.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:22"
+        },
+        {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:24"
+        },
+        {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:27"
+        },
+        {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:32"
+        },
+        {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:33"
+        },
+        {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B20",
+      "text": "Jede Seite erhält einen Kopf mit Zeitraum, Testkennzeichen, Datum und Seitennummer.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:64"
+        },
+        {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-179-B21",
+      "text": "Ein Doppelklick auf eine Transportzeile mit Beleg öffnet den Frachtkostenbeleg in der Anzeige.",
+      "anchors": [
+        {
+          "file": "zle_frachtkosten.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:67"
+        },
+        {
+          "file": "zle_frachtkosten.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:69"
+        },
+        {
+          "file": "zle_frachtkosten.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:70"
+        },
+        {
+          "file": "zle_frachtkosten.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:71"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "i",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:28"
+        },
+        "meaning": "Selektionszeitraum vorbelegen"
+      },
+      {
+        "id": "e_i",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:33"
+        },
+        "meaning": "Zeitraum vorbelegt"
+      },
+      {
+        "id": "a1",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:35"
+        },
+        "meaning": "Spediteure prüfen"
+      },
+      {
+        "id": "al",
+        "type": "loop",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:36"
+        },
+        "meaning": "Einzelwerte durchgehen"
+      },
+      {
+        "id": "aq",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:37"
+        },
+        "meaning": "Spediteur nachlesen"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:39"
+        },
+        "meaning": "Spediteur unbekannt?"
+      },
+      {
+        "id": "ao",
+        "type": "output",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:40"
+        },
+        "meaning": "Fehlermeldung: Spediteur unbekannt"
+      },
+      {
+        "id": "am",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:40"
+        },
+        "meaning": "Eingabe abweisen"
+      },
+      {
+        "id": "e_a1",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:42"
+        },
+        "meaning": "Spediteure geprüft"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:44"
+        },
+        "meaning": "Lauf starten"
+      },
+      {
+        "id": "ctl",
+        "type": "call",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:45"
+        },
+        "meaning": "Transporte lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:46"
+        },
+        "meaning": "Nichts abzurechnen?"
+      },
+      {
+        "id": "o0",
+        "type": "output",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:47"
+        },
+        "meaning": "Hinweis: nichts abzurechnen"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:48"
+        },
+        "meaning": "Verarbeitung beenden (STOP)"
+      },
+      {
+        "id": "cge",
+        "type": "call",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:51"
+        },
+        "meaning": "HU-Gewichte ermitteln"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:53"
+        },
+        "meaning": "Transporte durchgehen"
+      },
+      {
+        "id": "cfb",
+        "type": "call",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:54"
+        },
+        "meaning": "Fracht berechnen"
+      },
+      {
+        "id": "ch",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:55"
+        },
+        "meaning": "Transport fehlerfrei?"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:56"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "ckb",
+        "type": "call",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:57"
+        },
+        "meaning": "Frachtkostenbeleg anlegen"
+      },
+      {
+        "id": "e_sos",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:59"
+        },
+        "meaning": "Transporte abgearbeitet"
+      },
+      {
+        "id": "eos",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:61"
+        },
+        "meaning": "Liste"
+      },
+      {
+        "id": "cpa",
+        "type": "call",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:62"
+        },
+        "meaning": "Liste ausgeben"
+      },
+      {
+        "id": "e_eos",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:62"
+        },
+        "meaning": "Liste aufgebaut"
+      },
+      {
+        "id": "tp",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:64"
+        },
+        "meaning": "Seitenkopf"
+      },
+      {
+        "id": "ck",
+        "type": "call",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:65"
+        },
+        "meaning": "Kopf ausgeben"
+      },
+      {
+        "id": "e_tp",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:65"
+        },
+        "meaning": "Seitenkopf ausgegeben"
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:67"
+        },
+        "meaning": "Doppelklick"
+      },
+      {
+        "id": "lc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:69"
+        },
+        "meaning": "Beleg zur Zeile?"
+      },
+      {
+        "id": "lp",
+        "type": "action",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:70"
+        },
+        "meaning": "Belegnummer vorbelegen"
+      },
+      {
+        "id": "lt",
+        "type": "external_program",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:71"
+        },
+        "meaning": "Frachtkostenbeleg anzeigen"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten.abap:72"
+        },
+        "meaning": "Zurück zur Liste"
+      },
+      {
+        "id": "ft",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:10"
+        },
+        "meaning": "Transporte lesen"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:11"
+        },
+        "meaning": "Abgefertigte Transporte lesen"
+      },
+      {
+        "id": "c1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:18"
+        },
+        "meaning": "Transporte gefunden?"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:21"
+        },
+        "meaning": "Vorhandene Frachtkostenpositionen lesen"
+      },
+      {
+        "id": "ld",
+        "type": "loop",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:25"
+        },
+        "meaning": "Abgerechnete Transporte durchgehen"
+      },
+      {
+        "id": "dd",
+        "type": "action",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:26"
+        },
+        "meaning": "Abgerechneten Transport entfernen"
+      },
+      {
+        "id": "et",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:30"
+        },
+        "meaning": "Transporte gelesen"
+      },
+      {
+        "id": "fg",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:38"
+        },
+        "meaning": "Gewichte"
+      },
+      {
+        "id": "q3",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:41"
+        },
+        "meaning": "Lieferungen der Transporte lesen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:45"
+        },
+        "meaning": "Keine Lieferungen?"
+      },
+      {
+        "id": "r3",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:46"
+        },
+        "meaning": "ohne Gewicht zurück"
+      },
+      {
+        "id": "q4",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:49"
+        },
+        "meaning": "HUs der Lieferungen lesen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:55"
+        },
+        "meaning": "Transporte"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:56"
+        },
+        "meaning": "Lieferungen des Transports"
+      },
+      {
+        "id": "l3",
+        "type": "loop",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:57"
+        },
+        "meaning": "HUs der Lieferung"
+      },
+      {
+        "id": "sw",
+        "type": "action",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:58"
+        },
+        "meaning": "HU-Gewicht in kg umrechnen"
+      },
+      {
+        "id": "gk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:63"
+        },
+        "meaning": "Einheit unbekannt?"
+      },
+      {
+        "id": "ad",
+        "type": "action",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:67"
+        },
+        "meaning": "Gewicht aufaddieren"
+      },
+      {
+        "id": "eg",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:71"
+        },
+        "meaning": "Gewichte ermittelt"
+      },
+      {
+        "id": "ff",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:78"
+        },
+        "meaning": "Frachtberechnung"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:81"
+        },
+        "meaning": "Kein Gewicht?"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:83"
+        },
+        "meaning": "Fehler kein Gewicht"
+      },
+      {
+        "id": "qz",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:86"
+        },
+        "meaning": "Tarifzone der Route lesen"
+      },
+      {
+        "id": "gz",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:88"
+        },
+        "meaning": "Keine Zone?"
+      },
+      {
+        "id": "r2",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:90"
+        },
+        "meaning": "Fehler keine Zone"
+      },
+      {
+        "id": "qt",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:94"
+        },
+        "meaning": "Passende Tarifstaffel lesen"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:103"
+        },
+        "meaning": "Tarifzeile übernehmen"
+      },
+      {
+        "id": "gtf",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:104"
+        },
+        "meaning": "Kein Tarif?"
+      },
+      {
+        "id": "r4",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:106"
+        },
+        "meaning": "Fehler kein Tarif"
+      },
+      {
+        "id": "cc",
+        "type": "action",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:110"
+        },
+        "meaning": "Fracht aus Gewicht und Preis"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:112"
+        },
+        "meaning": "Rechenfehler?"
+      },
+      {
+        "id": "r5",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:114"
+        },
+        "meaning": "Fehler Rechnung"
+      },
+      {
+        "id": "mn",
+        "type": "action",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:117"
+        },
+        "meaning": "Mindestfracht anwenden"
+      },
+      {
+        "id": "qd",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:120"
+        },
+        "meaning": "Dieselzuschlag lesen"
+      },
+      {
+        "id": "gd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:124"
+        },
+        "meaning": "Zuschlag gepflegt?"
+      },
+      {
+        "id": "dz",
+        "type": "action",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:125"
+        },
+        "meaning": "Dieselzuschlag aufschlagen"
+      },
+      {
+        "id": "ef",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten_f01.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f01.abap:127"
+        },
+        "meaning": "Fracht berechnet"
+      },
+      {
+        "id": "fk",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:12"
+        },
+        "meaning": "Belegerstellung"
+      },
+      {
+        "id": "qa",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:22"
+        },
+        "meaning": "Eigenes Protokoll prüfen"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:24"
+        },
+        "meaning": "Schon abgerechnet?"
+      },
+      {
+        "id": "ra",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:27"
+        },
+        "meaning": "als abgerechnet markieren"
+      },
+      {
+        "id": "ex",
+        "type": "action",
+        "anchor": {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:30"
+        },
+        "meaning": "Fracht für Exit ins Memory"
+      },
+      {
+        "id": "ct",
+        "type": "transaction",
+        "anchor": {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:43"
+        },
+        "meaning": "Frachtkostenbeleg per Batch-Input anlegen"
+      },
+      {
+        "id": "fm",
+        "type": "action",
+        "anchor": {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:47"
+        },
+        "meaning": "Memory freigeben"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:49"
+        },
+        "meaning": "Anlage fehlerhaft?"
+      },
+      {
+        "id": "rf",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:51"
+        },
+        "meaning": "Fehler am Transport"
+      },
+      {
+        "id": "rm",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:55"
+        },
+        "meaning": "Erfolgsmeldung nachschlagen"
+      },
+      {
+        "id": "gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:57"
+        },
+        "meaning": "Meldung gefunden?"
+      },
+      {
+        "id": "wl",
+        "type": "write",
+        "anchor": {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:68"
+        },
+        "meaning": "Protokollsatz schreiben"
+      },
+      {
+        "id": "ek",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten_f02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f02.abap:88"
+        },
+        "meaning": "Beleg angelegt"
+      },
+      {
+        "id": "fp",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:18"
+        },
+        "meaning": "Liste"
+      },
+      {
+        "id": "lp2",
+        "type": "loop",
+        "anchor": {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:21"
+        },
+        "meaning": "Transporte je Spediteur"
+      },
+      {
+        "id": "an2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:22"
+        },
+        "meaning": "Neuer Spediteur?"
+      },
+      {
+        "id": "oh",
+        "type": "output",
+        "anchor": {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:24"
+        },
+        "meaning": "Spediteurkopf"
+      },
+      {
+        "id": "ol",
+        "type": "output",
+        "anchor": {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:27"
+        },
+        "meaning": "Transportzeile"
+      },
+      {
+        "id": "ae",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:32"
+        },
+        "meaning": "Letzter Transport des Spediteurs?"
+      },
+      {
+        "id": "su",
+        "type": "action",
+        "anchor": {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:33"
+        },
+        "meaning": "Summen bilden"
+      },
+      {
+        "id": "os",
+        "type": "output",
+        "anchor": {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:34"
+        },
+        "meaning": "Frachtsumme je Spediteur"
+      },
+      {
+        "id": "ep",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:37"
+        },
+        "meaning": "Liste fertig"
+      },
+      {
+        "id": "fko",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:42"
+        },
+        "meaning": "Seitenkopf"
+      },
+      {
+        "id": "ok",
+        "type": "output",
+        "anchor": {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:43"
+        },
+        "meaning": "Kopfzeile"
+      },
+      {
+        "id": "eko",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtkosten_f03.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtkosten_f03.abap:46"
+        },
+        "meaning": "Kopf fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "i",
+        "to": "e_i",
+        "condition": "always"
+      },
+      {
+        "from": "a1",
+        "to": "al",
+        "condition": "always"
+      },
+      {
+        "from": "al",
+        "to": "aq",
+        "condition": "next row"
+      },
+      {
+        "from": "aq",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "ao",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ag",
+        "to": "al",
+        "condition": "else"
+      },
+      {
+        "from": "al",
+        "to": "e_a1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s",
+        "to": "ctl",
+        "condition": "always"
+      },
+      {
+        "from": "ctl",
+        "to": "ft",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "o0",
+        "condition": "gt_tr IS INITIAL"
+      },
+      {
+        "from": "g0",
+        "to": "cge",
+        "condition": "else"
+      },
+      {
+        "from": "x0",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "cge",
+        "to": "fg",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "cfb",
+        "condition": "next row"
+      },
+      {
+        "from": "cfb",
+        "to": "ff",
+        "condition": "always"
+      },
+      {
+        "from": "ch",
+        "to": "gt",
+        "condition": "<gs_tr>-fehler IS INITIAL"
+      },
+      {
+        "from": "ch",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "gt",
+        "to": "ckb",
+        "condition": "p_test = abap_false"
+      },
+      {
+        "from": "gt",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "ckb",
+        "to": "fk",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "e_sos",
+        "condition": "no more rows"
+      },
+      {
+        "from": "eos",
+        "to": "cpa",
+        "condition": "always"
+      },
+      {
+        "from": "cpa",
+        "to": "fp",
+        "condition": "always"
+      },
+      {
+        "from": "tp",
+        "to": "ck",
+        "condition": "always"
+      },
+      {
+        "from": "ck",
+        "to": "fko",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "lc",
+        "condition": "always"
+      },
+      {
+        "from": "lc",
+        "to": "lp",
+        "condition": "gv_fknum IS NOT INITIAL"
+      },
+      {
+        "from": "lc",
+        "to": "le",
+        "condition": "else"
+      },
+      {
+        "from": "lp",
+        "to": "lt",
+        "condition": "always"
+      },
+      {
+        "from": "lt",
+        "to": "le",
+        "condition": "always"
+      },
+      {
+        "from": "ft",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "q2",
+        "condition": "gt_tr IS NOT INITIAL"
+      },
+      {
+        "from": "c1",
+        "to": "et",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "ld",
+        "condition": "always"
+      },
+      {
+        "from": "ld",
+        "to": "dd",
+        "condition": "next row"
+      },
+      {
+        "from": "dd",
+        "to": "ld",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ld",
+        "to": "et",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fg",
+        "to": "q3",
+        "condition": "always"
+      },
+      {
+        "from": "q3",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "r3",
+        "condition": "lt_vttp IS INITIAL"
+      },
+      {
+        "from": "g3",
+        "to": "q4",
+        "condition": "else"
+      },
+      {
+        "from": "q4",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "l2",
+        "condition": "next row"
+      },
+      {
+        "from": "l2",
+        "to": "l3",
+        "condition": "next row"
+      },
+      {
+        "from": "l3",
+        "to": "sw",
+        "condition": "next row"
+      },
+      {
+        "from": "sw",
+        "to": "gk",
+        "condition": "always"
+      },
+      {
+        "from": "gk",
+        "to": "ad",
+        "condition": "else"
+      },
+      {
+        "from": "ad",
+        "to": "l3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l3",
+        "to": "l2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "l2",
+        "to": "l1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "l1",
+        "to": "eg",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ff",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "r1",
+        "condition": "cs_tr-gewicht_kg <= 0"
+      },
+      {
+        "from": "g1",
+        "to": "qz",
+        "condition": "else"
+      },
+      {
+        "from": "qz",
+        "to": "gz",
+        "condition": "always"
+      },
+      {
+        "from": "gz",
+        "to": "r2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gz",
+        "to": "qt",
+        "condition": "else"
+      },
+      {
+        "from": "qt",
+        "to": "rt",
+        "condition": "always"
+      },
+      {
+        "from": "rt",
+        "to": "gtf",
+        "condition": "always"
+      },
+      {
+        "from": "gtf",
+        "to": "r4",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gtf",
+        "to": "cc",
+        "condition": "else"
+      },
+      {
+        "from": "cc",
+        "to": "gc",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "r5",
+        "condition": "sy-subrc = 4"
+      },
+      {
+        "from": "gc",
+        "to": "mn",
+        "condition": "else"
+      },
+      {
+        "from": "mn",
+        "to": "qd",
+        "condition": "always"
+      },
+      {
+        "from": "qd",
+        "to": "gd",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "dz",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gd",
+        "to": "ef",
+        "condition": "else"
+      },
+      {
+        "from": "dz",
+        "to": "ef",
+        "condition": "always"
+      },
+      {
+        "from": "fk",
+        "to": "qa",
+        "condition": "always"
+      },
+      {
+        "from": "qa",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "ra",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "ga",
+        "to": "ex",
+        "condition": "else"
+      },
+      {
+        "from": "ex",
+        "to": "ct",
+        "condition": "always"
+      },
+      {
+        "from": "ct",
+        "to": "fm",
+        "condition": "always"
+      },
+      {
+        "from": "fm",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "rf",
+        "condition": "line_exists( lt_msg[ msgtyp = 'E' ] ) OR line_exists( lt_msg[ msgtyp = 'A' ] )"
+      },
+      {
+        "from": "ge",
+        "to": "rm",
+        "condition": "else"
+      },
+      {
+        "from": "rm",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "gm",
+        "to": "wl",
+        "condition": "else"
+      },
+      {
+        "from": "wl",
+        "to": "ek",
+        "condition": "always"
+      },
+      {
+        "from": "fp",
+        "to": "lp2",
+        "condition": "always"
+      },
+      {
+        "from": "lp2",
+        "to": "an2",
+        "condition": "next row"
+      },
+      {
+        "from": "an2",
+        "to": "oh",
+        "condition": "AT NEW tdlnr"
+      },
+      {
+        "from": "an2",
+        "to": "ol",
+        "condition": "else"
+      },
+      {
+        "from": "oh",
+        "to": "ol",
+        "condition": "always"
+      },
+      {
+        "from": "ol",
+        "to": "ae",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "su",
+        "condition": "AT END OF tdlnr"
+      },
+      {
+        "from": "ae",
+        "to": "lp2",
+        "condition": "else"
+      },
+      {
+        "from": "su",
+        "to": "os",
+        "condition": "always"
+      },
+      {
+        "from": "os",
+        "to": "lp2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp2",
+        "to": "ep",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fko",
+        "to": "ok",
+        "condition": "always"
+      },
+      {
+        "from": "ok",
+        "to": "eko",
+        "condition": "always"
+      },
+      {
+        "from": "e_i",
+        "to": "a1",
+        "condition": "always"
+      },
+      {
+        "from": "ao",
+        "to": "am",
+        "condition": "always"
+      },
+      {
+        "from": "e_a1",
+        "to": "s",
+        "condition": "always"
+      },
+      {
+        "from": "et",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "o0",
+        "to": "x0",
+        "condition": "always"
+      },
+      {
+        "from": "r3",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "eg",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "ch",
+        "condition": "always"
+      },
+      {
+        "from": "r2",
+        "to": "ch",
+        "condition": "always"
+      },
+      {
+        "from": "r4",
+        "to": "ch",
+        "condition": "always"
+      },
+      {
+        "from": "r5",
+        "to": "ch",
+        "condition": "always"
+      },
+      {
+        "from": "ef",
+        "to": "ch",
+        "condition": "always"
+      },
+      {
+        "from": "ra",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rf",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ek",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_sos",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "ep",
+        "to": "e_eos",
+        "condition": "always"
+      },
+      {
+        "from": "eko",
+        "to": "e_tp",
+        "condition": "always"
+      },
+      {
+        "from": "gk",
+        "to": "l2",
+        "condition": "lv_kg < 0"
+      },
+      {
+        "from": "gm",
+        "to": "wl",
+        "condition": "sy-subrc = 0"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zle_frachtkosten_f01.abap:49 — kein Fachsatz „es zählen nur die äußeren Handling Units“: alle HUs der Lieferung werden addiert, geschachtelte HUs gehen doppelt ins Frachtgewicht ein",
+    "zle_frachtkosten_f01.abap:136 — kein Fachsatz „das Frachtgewicht kommt aus dem Bruttogewicht der Lieferung“: das FORM wird nie gerufen",
+    "zle_frachtkosten_f02.abap:30 — kein Fachsatz „der Frachtkostenbeleg enthält sicher den berechneten Betrag“: der Betrag wird nur ins Memory gestellt, ob der Kalkulationsexit ihn übernimmt, liegt außerhalb dieses Falls",
+    "gesamte Scheibe — kein Fachsatz „die Frachtkosten werden an die Finanzbuchhaltung übergeben“: der Batch-Input für VI02 ist auskommentiert"
+  ],
+  "processDescription": "Ein Nachtjob startet den Report mit Spediteuren, Transportarten, dem vorbelegten Zeitraum der letzten sieben Tage, Frachtkostenart, Batch-Input-Modus und Testkennzeichen; unbekannte Einzelspediteure werden abgewiesen. Er liest die abgefertigten Transporte des Zeitraums, entfernt die bereits mit Frachtkosten belegten und beendet die Verarbeitung mit Hinweis, wenn keiner übrig bleibt. Je Transport wird das Frachtgewicht als Summe der Bruttogewichte aller Handling Units seiner Lieferungen in kg gebildet; eine unbekannte Gewichtseinheit macht den Transport fehlerhaft. Die Fracht ergibt sich aus Tarifzone der Route und der passenden Gewichtsstaffel des Spediteurtarifs, mindestens die Mindestfracht, zuzüglich eines gepflegten Dieselzuschlags; fehlen Gewicht, Zone oder Tarif, erhält der Transport einen Fehler. Im Echtlauf wird für jeden fehlerfreien Transport, der noch nicht im eigenen Protokoll steht, die Fracht für den Kalkulationsexit ins Memory gestellt und der Frachtkostenbeleg per Batch-Input angelegt; Fehlermeldungen machen den Transport fehlerhaft, sonst werden Belegnummer und Werte protokolliert. Die Liste zeigt je Spediteur die Transporte mit Gewicht, Fracht, Beleg oder Fehler und eine Frachtsumme, jede Seite mit Kopf. Ein Doppelklick auf eine Zeile mit Beleg öffnet den Frachtkostenbeleg. Eine Übergabe an die Finanzbuchhaltung findet nicht statt."
+}

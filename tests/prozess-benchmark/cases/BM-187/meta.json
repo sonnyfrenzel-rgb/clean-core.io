@@ -1,0 +1,32 @@
+{
+  "id": "BM-187",
+  "title": "BOPF-Validierung Leihgeräteausgabe: Rückgabedatum, Kundensperre, höchstens drei Geräte je Kunde",
+  "domain": "Technische Randbereiche — BOPF-Determinationen/Validierungen",
+  "band": "mittel",
+  "loc": 62,
+  "constructs": [
+    "/BOBF/IF_FRW_VALIDATION~EXECUTE",
+    "IO_READ->RETRIEVE",
+    "LOOP ASSIGNING FIELD-SYMBOL",
+    "SELECT SINGLE KNA1",
+    "SELECT COUNT(*)",
+    "ET_FAILED_KEY",
+    "/BOBF/CL_FRW_FACTORY=>GET_MESSAGE",
+    "private Hilfsmethode"
+  ],
+  "scenario": "Kundeneigenes BOPF-Geschäftsobjekt im Kundenservice: Während ein Kundengerät in Reparatur ist, bekommt der Kunde ein Leihgerät; die Validierung läuft beim Ausgeben bzw. Sichern und verhindert unzulässige Ausgaben.",
+  "s4_issues": [
+    "BOPF ist in S/4 weiter lauffähig, für Neuentwicklungen aber durch RAP abgelöst",
+    "Direkter Lesezugriff auf KNA1 statt Business Partner/I_Customer",
+    "Kundeneigenes Geschäftsobjekt neben Standard-Serviceprozessen (Leihgeräte/Service-Ersatzteile)"
+  ],
+  "wave": 2,
+  "module": "CS",
+  "edge_constructs": [
+    "CONTINUE in Schleife",
+    "COND #",
+    "VALUE #( )",
+    "Inline-Deklarationen",
+    "auskommentierter Prüfzweig (Kautionspflicht)"
+  ]
+}

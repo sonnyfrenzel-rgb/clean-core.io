@@ -1,0 +1,39 @@
+{
+  "id": "BM-155",
+  "title": "Veranstaltungsmanagement: Pflichtschulung abteilungsweise buchen mit Kapazität, Voraussetzung und Warteliste",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "komplex",
+  "loc": 211,
+  "constructs": [
+    "REPORT mit lokaler Handlerklasse",
+    "NEW",
+    "TRY … CATCH",
+    "SET HANDLER … FOR",
+    "RAISE EVENT",
+    "SELECT HRP1000/HRP1024/HRP1001",
+    "SELECT COUNT(*)",
+    "RAISE EXCEPTION TYPE",
+    "CAST",
+    "RH_RELATION_MAINTAIN",
+    "COND #",
+    "COMMIT WORK AND WAIT / ROLLBACK WORK"
+  ],
+  "scenario": "Für Pflichtunterweisungen bucht die Personalentwicklung ganze Abteilungen auf eine Veranstaltung; eine Kundenklasse prüft Buchbarkeit, Voraussetzungsqualifikation und Kapazität und setzt überzählige Teilnehmer auf die Warteliste.",
+  "s4_issues": [
+    "Direkte Lesezugriffe auf HRP1000/HRP1001/HRP1024",
+    "Buchung über RH_RELATION_MAINTAIN statt Veranstaltungsmanagement-Anwendung",
+    "Prioritätswerte als Kundenkonvention",
+    "Zielsystem: Learning Solution/SuccessFactors Learning"
+  ],
+  "wave": 2,
+  "module": "PE",
+  "edge_constructs": [
+    "SET HANDLER / RAISE EVENT",
+    "CAST auf Ausnahmeklasse (Laufzeitfehler bei fremder Ausnahme)",
+    "RAISE EXCEPTION TYPE als Pfadende",
+    "RETURN nach RAISE EVENT",
+    "NEW",
+    "COND #",
+    "MESSAGE … TYPE 'E' aus CATCH als Pfadende"
+  ]
+}

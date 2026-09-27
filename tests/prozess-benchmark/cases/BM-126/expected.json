@@ -1,0 +1,538 @@
+{
+  "id": "BM-126",
+  "title": "PS-Meilensteinfakturierung: Fakturasperre im Fakturierungsplan nach erreichtem Meilenstein lösen (MLST/FPLT, FAE ohne Leermengenschutz)",
+  "classes": [
+    "K01",
+    "K04"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 26,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:26"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MLST",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PRPS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FPLT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:41"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FPLT",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 54,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:54"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-126-B01",
+      "text": "Der Sperrgrund, mit dem offene Meilensteintermine gesperrt sind, wird aus der Variablentabelle gelesen; ist er nicht gepflegt, gilt Z1.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-126-B02",
+      "text": "Es werden die Meilensteine der selektierten PSP-Elemente gelesen, die bereits ein Ist-Datum haben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-126-B03",
+      "text": "Zu diesen Meilensteinen werden die Termine der Fakturierungspläne gelesen, die noch mit dem Sperrgrund gesperrt sind.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-126-B04",
+      "text": "Planpositionen, deren Meilenstein nicht unter den erreichten ist, werden übergangen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-126-B05",
+      "text": "Im Echtlauf wird die Fakturasperre des Planungstermins direkt entfernt, sodass er fakturiert werden kann.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-126-B06",
+      "text": "Jede betroffene Planposition wird mit Plannummer, Termin, Fakturadatum, Betrag und Währung gelistet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-126-B07",
+      "text": "Im Echtlauf werden die Freigaben am Ende gemeinsam festgeschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        },
+        {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-126-B08",
+      "text": "Zum Schluss wird die Anzahl der Positionen gemeldet, im Testlauf als „würden freigegeben“.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "rv",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Sperrgrund „Meilenstein offen“ aus der Variablentabelle lesen"
+      },
+      {
+        "id": "gv",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Sperrgrund gepflegt? Sonst Z1"
+      },
+      {
+        "id": "rm",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Erreichte Meilensteine (mit Ist-Datum) der PSP-Elemente lesen"
+      },
+      {
+        "id": "rf",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Mit dem Sperrgrund gesperrte Planpositionen zu diesen Meilensteinen lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Gesperrte Planpositionen durchgehen"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Gehört die Planposition zu einem erreichten Meilenstein?"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        "meaning": "Meilenstein nicht erreicht?"
+      },
+      {
+        "id": "gp",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        "meaning": "Fakturasperre der Planposition entfernen"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Planposition mit Fakturadatum und Betrag listen"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "c",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        "meaning": "Freigaben festschreiben"
+      },
+      {
+        "id": "os",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        },
+        "meaning": "Anzahl freigegebener bzw. freizugebender Positionen melden"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        },
+        "meaning": "Lauf fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "rv",
+        "condition": "always"
+      },
+      {
+        "from": "rv",
+        "to": "gv",
+        "condition": "always"
+      },
+      {
+        "from": "gv",
+        "to": "rm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gv",
+        "to": "rm",
+        "condition": "else"
+      },
+      {
+        "from": "rm",
+        "to": "rf",
+        "condition": "always"
+      },
+      {
+        "from": "rf",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "rt",
+        "condition": "next row"
+      },
+      {
+        "from": "rt",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "l",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gt",
+        "to": "gp",
+        "condition": "else"
+      },
+      {
+        "from": "gp",
+        "to": "w",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "gp",
+        "to": "o",
+        "condition": "else"
+      },
+      {
+        "from": "w",
+        "to": "o",
+        "condition": "always"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "gc",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gc",
+        "to": "c",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "gc",
+        "to": "os",
+        "condition": "else"
+      },
+      {
+        "from": "c",
+        "to": "os",
+        "condition": "always"
+      },
+      {
+        "from": "os",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:41 — kein Fachsatz „ohne erreichte Meilensteine werden alle gesperrten Planpositionen freigegeben“: bei leerer Treibertabelle entfällt die gesamte WHERE-Bedingung und es werden alle Planungstermine gelesen, aber die Nachschlageprüfung überspringt jeden",
+    "source.abap:54 — kein Fachsatz „die Faktura wird erstellt“: es wird nur die Sperre am Planungstermin entfernt",
+    "source.abap:54 — kein Fachsatz „der Kundenauftrag wird gesperrt und geändert“: es gibt weder Sperre noch Änderung am Auftrag, nur ein direktes Tabellenupdate",
+    "source.abap:34 — kein Fachsatz „nur fakturierungsrelevante Meilensteine werden berücksichtigt“: gefiltert wird allein auf das Ist-Datum"
+  ],
+  "processDescription": "Der Report wird mit einer Auswahl von PSP-Elementen und dem Testlaufschalter (vorbelegt) gestartet. Zuerst liest er aus der Variablentabelle den Sperrgrund, mit dem offene Meilensteintermine im Fakturierungsplan gesperrt werden; fehlt er, gilt Z1. Dann liest er alle Meilensteine der gewählten PSP-Elemente, die schon ein Ist-Datum haben, und dazu alle Termine der Fakturierungspläne, die noch mit diesem Sperrgrund gesperrt sind. Für jede gesperrte Planposition prüft er, ob ihr Meilenstein erreicht ist; wenn nicht, geht er weiter. Im Echtlauf entfernt er die Fakturasperre direkt in der Tabelle der Planungstermine; in beiden Läufen listet er die Position mit Fakturadatum, Betrag und Währung. Am Ende schreibt er im Echtlauf alle Änderungen fest und meldet die Anzahl, im Testlauf mit dem Zusatz „würden freigegeben“. Werden keine erreichten Meilensteine gefunden, liest der Report wegen der leeren Treibertabelle ohne jede Einschränkung alle Termine aller Fakturierungspläne, gibt aber keinen davon frei. Die Faktura selbst entsteht erst in einem späteren Fakturalauf."
+}

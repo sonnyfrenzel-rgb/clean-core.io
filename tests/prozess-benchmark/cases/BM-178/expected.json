@@ -1,0 +1,2237 @@
+{
+  "id": "BM-178",
+  "title": "Variantenkonfiguration Kabel: Variantenfunktion für Trommel und Gewicht, Nachprüfung offener Aufträge mit Liefersperre",
+  "classes": [
+    "K01",
+    "K03",
+    "K04",
+    "K05",
+    "K09"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "CUOV_GET_FUNCTION_ARGUMENT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_vf_kabellaenge.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_vf_kabellaenge.abap:25"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CUOV_SET_FUNCTION_ARGUMENT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_vf_kabellaenge.abap",
+        "line": 73,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_vf_kabellaenge.abap:73"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_VC_KABEL",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_vf_kabellaenge.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_vf_kabellaenge.abap:64"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZVC_KABELTYP",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_vc_kabel.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_vc_kabel.abap:37"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZVC_TROMMEL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_vc_kabel.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_vc_kabel.abap:58"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zvc_konfig_pruefung_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zvc_konfig_pruefung_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zvc_konfig_pruefung_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zvc_konfig_pruefung_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zvc_konfig_pruefung_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zvc_konfig_pruefung_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VC_I_GET_CONFIGURATION",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zvc_konfig_pruefung_f01.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zvc_konfig_pruefung_f01.abap:37"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_SALESORDER_CHANGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zvc_konfig_pruefung_f01.abap",
+        "line": 113,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zvc_konfig_pruefung_f01.abap:113"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-178-B01",
+      "text": "Die Variantenfunktion liest Kabellänge und Querschnitt aus der Konfiguration; fehlt eines davon, endet sie mit einem internen Fehler.",
+      "anchors": [
+        {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:25"
+        },
+        {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:34"
+        },
+        {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:35"
+        },
+        {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:38"
+        },
+        {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B02",
+      "text": "Ist keine Verlegeart bewertet, gilt Erdverlegung.",
+      "anchors": [
+        {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:51"
+        },
+        {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B03",
+      "text": "Zum Querschnitt wird der Kabeltyp gelesen; ist er unbekannt, gilt die Konfiguration als inkonsistent.",
+      "anchors": [
+        {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:64"
+        },
+        {
+          "file": "zcl_vc_kabel.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:37"
+        },
+        {
+          "file": "zcl_vc_kabel.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:40"
+        },
+        {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B04",
+      "text": "Das Kabelgewicht ist Länge mal Metergewicht des Typs, bei Erdverlegung zuzüglich 12 % für die Armierung.",
+      "anchors": [
+        {
+          "file": "zcl_vc_kabel.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:48"
+        },
+        {
+          "file": "zcl_vc_kabel.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:50"
+        },
+        {
+          "file": "zcl_vc_kabel.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B05",
+      "text": "Als Trommel wird die kleinste für den Querschnitt zugelassene Trommel gewählt, die Länge und Gewicht aufnimmt; passt keine, gilt die Konfiguration als inkonsistent.",
+      "anchors": [
+        {
+          "file": "zcl_vc_kabel.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:58"
+        },
+        {
+          "file": "zcl_vc_kabel.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:65"
+        },
+        {
+          "file": "zcl_vc_kabel.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B06",
+      "text": "Trommel und Gewicht werden als Merkmalwerte in die Konfiguration zurückgeschrieben.",
+      "anchors": [
+        {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:73"
+        },
+        {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:84"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B07",
+      "text": "Die Nachprüfung mit Liefersperre setzt die Änderungsberechtigung für Kundenaufträge voraus; ohne sie wird die Eingabe abgewiesen.",
+      "anchors": [
+        {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:18"
+        },
+        {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:19"
+        },
+        {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B08",
+      "text": "Es werden die konfigurierten, noch nicht voll gelieferten Positionen der gewählten Aufträge, Verkaufsorganisationen und Materialien gelesen; gibt es keine, endet der Lauf mit Hinweis.",
+      "anchors": [
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:11"
+        },
+        {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:31"
+        },
+        {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:32"
+        },
+        {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B09",
+      "text": "Für jede Position wird die Konfiguration gelesen; ist sie nicht lesbar, wird das ohne Sperrvorschlag gemeldet.",
+      "anchors": [
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:37"
+        },
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B10",
+      "text": "Sind Länge oder Querschnitt nicht numerisch, wird das ohne Sperrvorschlag gemeldet.",
+      "anchors": [
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:54"
+        },
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B11",
+      "text": "Fehlt die Verlegeart, gilt auch in der Nachprüfung Erdverlegung.",
+      "anchors": [
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B12",
+      "text": "Die konfigurierte Trommel wird gegen die aktuell erforderliche Trommel geprüft; ebenso, ob die Länge die Fertigungsgrenze des Kabeltyps überschreitet.",
+      "anchors": [
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:72"
+        },
+        {
+          "file": "zcl_vc_kabel.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:86"
+        },
+        {
+          "file": "zcl_vc_kabel.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:90"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B13",
+      "text": "Passt keine Trommel mehr, wird das als einzige Abweichung gemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_vc_kabel.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:79"
+        },
+        {
+          "file": "zcl_vc_kabel.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B14",
+      "text": "Ein unbekannter Kabeltyp wird als Abweichung übernommen.",
+      "anchors": [
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B15",
+      "text": "Jede Abweichung wird mit Auftrag, Position und Material als sperrrelevant vorgemerkt; Positionen ohne Abweichung erscheinen nicht.",
+      "anchors": [
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:78"
+        },
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B16",
+      "text": "Nur mit Sperrkennzeichen wird je betroffenem Auftrag die Liefersperre am Auftragskopf gesetzt, sofern sie nicht schon gesetzt ist.",
+      "anchors": [
+        {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:40"
+        },
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:101"
+        },
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:105"
+        },
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:113"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B17",
+      "text": "Scheitert die Sperre, wird zurückgerollt und der Fehler protokolliert, sonst festgeschrieben und protokolliert.",
+      "anchors": [
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:121"
+        },
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:122"
+        },
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:126"
+        }
+      ]
+    },
+    {
+      "id": "BM-178-B18",
+      "text": "Am Ende werden die Sperrprotokolle als Liste und die Abweichungen als ALV ausgegeben.",
+      "anchors": [
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:142"
+        },
+        {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:148"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:1"
+        },
+        "meaning": "Variantenfunktion aus Beziehungswissen"
+      },
+      {
+        "id": "a1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:25"
+        },
+        "meaning": "Länge lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:34"
+        },
+        "meaning": "Länge fehlt?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:35"
+        },
+        "meaning": "Interner Fehler"
+      },
+      {
+        "id": "a2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:38"
+        },
+        "meaning": "Querschnitt lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:47"
+        },
+        "meaning": "Querschnitt fehlt?"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:48"
+        },
+        "meaning": "Interner Fehler"
+      },
+      {
+        "id": "a3",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:51"
+        },
+        "meaning": "Verlegeart lesen"
+      },
+      {
+        "id": "df",
+        "type": "action",
+        "anchor": {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:61"
+        },
+        "meaning": "Ohne Verlegeart: Erde"
+      },
+      {
+        "id": "nk",
+        "type": "call",
+        "anchor": {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:64"
+        },
+        "meaning": "Kabeltyp laden"
+      },
+      {
+        "id": "gw",
+        "type": "call",
+        "anchor": {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:66"
+        },
+        "meaning": "Gewicht berechnen"
+      },
+      {
+        "id": "tr",
+        "type": "call",
+        "anchor": {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:67"
+        },
+        "meaning": "Trommel ermitteln"
+      },
+      {
+        "id": "xf",
+        "type": "end",
+        "anchor": {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:70"
+        },
+        "meaning": "Konfiguration inkonsistent"
+      },
+      {
+        "id": "s1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:73"
+        },
+        "meaning": "Trommel zurückschreiben"
+      },
+      {
+        "id": "s2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:84"
+        },
+        "meaning": "Gewicht zurückschreiben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "z_vf_kabellaenge.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_vf_kabellaenge.abap:95"
+        },
+        "meaning": "Ende Variantenfunktion"
+      },
+      {
+        "id": "ctor",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:36"
+        },
+        "meaning": "Kabeltyp laden"
+      },
+      {
+        "id": "cq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:37"
+        },
+        "meaning": "Kabeltyp zum Querschnitt lesen"
+      },
+      {
+        "id": "cg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:39"
+        },
+        "meaning": "Typ unbekannt?"
+      },
+      {
+        "id": "cx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:40"
+        },
+        "meaning": "Ausnahme Typ unbekannt"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:44"
+        },
+        "meaning": "geladen"
+      },
+      {
+        "id": "gs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:47"
+        },
+        "meaning": "Gewicht"
+      },
+      {
+        "id": "gc",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:48"
+        },
+        "meaning": "Länge mal Metergewicht"
+      },
+      {
+        "id": "gi",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:50"
+        },
+        "meaning": "Erdverlegung?"
+      },
+      {
+        "id": "ga",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:51"
+        },
+        "meaning": "Armierungszuschlag 12 %"
+      },
+      {
+        "id": "ge",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:53"
+        },
+        "meaning": "Gewicht zurück"
+      },
+      {
+        "id": "ts",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:56"
+        },
+        "meaning": "Trommelwahl"
+      },
+      {
+        "id": "tq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:58"
+        },
+        "meaning": "Zulässige Trommeln aufsteigend lesen"
+      },
+      {
+        "id": "tl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:64"
+        },
+        "meaning": "Trommeln durchgehen"
+      },
+      {
+        "id": "ti",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:65"
+        },
+        "meaning": "Trommel groß genug?"
+      },
+      {
+        "id": "tr1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:67"
+        },
+        "meaning": "Trommel gefunden"
+      },
+      {
+        "id": "tx",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:71"
+        },
+        "meaning": "Ausnahme keine Trommel"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:76"
+        },
+        "meaning": "Nachprüfung"
+      },
+      {
+        "id": "pg",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:77"
+        },
+        "meaning": "Gewicht berechnen"
+      },
+      {
+        "id": "pt",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:79"
+        },
+        "meaning": "Solltrommel ermitteln"
+      },
+      {
+        "id": "pr",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:83"
+        },
+        "meaning": "Meldung keine Trommel"
+      },
+      {
+        "id": "pi",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:86"
+        },
+        "meaning": "Trommel weicht ab?"
+      },
+      {
+        "id": "pl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:90"
+        },
+        "meaning": "Über Fertigungsgrenze?"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_vc_kabel.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_vc_kabel.abap:93"
+        },
+        "meaning": "Meldungen zurück"
+      },
+      {
+        "id": "a",
+        "type": "start",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:17"
+        },
+        "meaning": "Eingabeprüfung"
+      },
+      {
+        "id": "ag",
+        "type": "gateway",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:18"
+        },
+        "meaning": "Sperren gewünscht?"
+      },
+      {
+        "id": "ac",
+        "type": "action",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:19"
+        },
+        "meaning": "Änderungsberechtigung prüfen"
+      },
+      {
+        "id": "ag2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:24"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "ao",
+        "type": "output",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:25"
+        },
+        "meaning": "Fehlermeldung: keine Änderungsberechtigung für Aufträge"
+      },
+      {
+        "id": "am",
+        "type": "end",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:25"
+        },
+        "meaning": "Eingabe abweisen"
+      },
+      {
+        "id": "e_a",
+        "type": "end",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:27"
+        },
+        "meaning": "Eingaben geprüft"
+      },
+      {
+        "id": "sm",
+        "type": "start",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:29"
+        },
+        "meaning": "Nachprüfung starten"
+      },
+      {
+        "id": "cpl",
+        "type": "call",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:30"
+        },
+        "meaning": "Positionen lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:31"
+        },
+        "meaning": "Keine Positionen?"
+      },
+      {
+        "id": "o0",
+        "type": "output",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:32"
+        },
+        "meaning": "Hinweis: keine offenen konfigurierten Positionen"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:33"
+        },
+        "meaning": "START-OF-SELECTION verlassen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:36"
+        },
+        "meaning": "Positionen durchgehen"
+      },
+      {
+        "id": "cpp",
+        "type": "call",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:37"
+        },
+        "meaning": "Position prüfen"
+      },
+      {
+        "id": "gsp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:40"
+        },
+        "meaning": "Sperren gewünscht?"
+      },
+      {
+        "id": "csp",
+        "type": "call",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:41"
+        },
+        "meaning": "Aufträge sperren"
+      },
+      {
+        "id": "e_sos",
+        "type": "end",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:42"
+        },
+        "meaning": "Prüfung und Sperren abgeschlossen"
+      },
+      {
+        "id": "eos",
+        "type": "start",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:44"
+        },
+        "meaning": "Ausgabe"
+      },
+      {
+        "id": "cau",
+        "type": "call",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:45"
+        },
+        "meaning": "Ergebnis ausgeben"
+      },
+      {
+        "id": "e_eos",
+        "type": "end",
+        "anchor": {
+          "file": "zvc_konfig_pruefung.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung.abap:45"
+        },
+        "meaning": "Ausgabe beendet"
+      },
+      {
+        "id": "fp",
+        "type": "start",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:10"
+        },
+        "meaning": "Positionen lesen"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:11"
+        },
+        "meaning": "Offene konfigurierte Positionen lesen"
+      },
+      {
+        "id": "e_p",
+        "type": "end",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:22"
+        },
+        "meaning": "gelesen"
+      },
+      {
+        "id": "fpp",
+        "type": "start",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:29"
+        },
+        "meaning": "Positionsprüfung"
+      },
+      {
+        "id": "vc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:37"
+        },
+        "meaning": "Konfiguration lesen"
+      },
+      {
+        "id": "gv",
+        "type": "gateway",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:44"
+        },
+        "meaning": "Konfiguration nicht lesbar?"
+      },
+      {
+        "id": "rv",
+        "type": "end",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:50"
+        },
+        "meaning": "Meldung ohne Sperre"
+      },
+      {
+        "id": "gcx",
+        "type": "gateway",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:58"
+        },
+        "meaning": "Werte nicht numerisch?"
+      },
+      {
+        "id": "rc",
+        "type": "end",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:64"
+        },
+        "meaning": "Meldung ohne Sperre"
+      },
+      {
+        "id": "nk2",
+        "type": "call",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:70"
+        },
+        "meaning": "Kabeltyp laden"
+      },
+      {
+        "id": "pr2",
+        "type": "call",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:72"
+        },
+        "meaning": "Gegen aktuelle Ableitung prüfen"
+      },
+      {
+        "id": "gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:78"
+        },
+        "meaning": "Keine Abweichung?"
+      },
+      {
+        "id": "rm",
+        "type": "end",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:79"
+        },
+        "meaning": "Position konsistent"
+      },
+      {
+        "id": "epp",
+        "type": "end",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:89"
+        },
+        "meaning": "Position geprüft"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:96"
+        },
+        "meaning": "Liefersperre"
+      },
+      {
+        "id": "lg",
+        "type": "loop",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:101"
+        },
+        "meaning": "Betroffene Aufträge (gruppiert)"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:104"
+        },
+        "meaning": "Aktuelle Liefersperre nachschlagen"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:105"
+        },
+        "meaning": "Schon gesperrt?"
+      },
+      {
+        "id": "bc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:113"
+        },
+        "meaning": "Liefersperre setzen"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:121"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:122"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:126"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "es",
+        "type": "end",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:133"
+        },
+        "meaning": "Sperren erledigt"
+      },
+      {
+        "id": "fa",
+        "type": "start",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:138"
+        },
+        "meaning": "Ausgabe"
+      },
+      {
+        "id": "ll",
+        "type": "loop",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:141"
+        },
+        "meaning": "Sperrprotokoll"
+      },
+      {
+        "id": "ow",
+        "type": "output",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:142"
+        },
+        "meaning": "Protokollzeile"
+      },
+      {
+        "id": "alv",
+        "type": "output",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:148"
+        },
+        "meaning": "Abweichungen als ALV"
+      },
+      {
+        "id": "ea",
+        "type": "end",
+        "anchor": {
+          "file": "zvc_konfig_pruefung_f01.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zvc_konfig_pruefung_f01.abap:152"
+        },
+        "meaning": "fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "a1",
+        "condition": "always"
+      },
+      {
+        "from": "a1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "x1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "a2",
+        "condition": "else"
+      },
+      {
+        "from": "a2",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "x2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "a3",
+        "condition": "else"
+      },
+      {
+        "from": "a3",
+        "to": "df",
+        "condition": "always"
+      },
+      {
+        "from": "df",
+        "to": "nk",
+        "condition": "always"
+      },
+      {
+        "from": "nk",
+        "to": "ctor",
+        "condition": "always"
+      },
+      {
+        "from": "gw",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "tr",
+        "to": "ts",
+        "condition": "always"
+      },
+      {
+        "from": "s1",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "s2",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "ctor",
+        "to": "cq",
+        "condition": "always"
+      },
+      {
+        "from": "cq",
+        "to": "cg",
+        "condition": "always"
+      },
+      {
+        "from": "cg",
+        "to": "cx",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "cg",
+        "to": "ce",
+        "condition": "else"
+      },
+      {
+        "from": "gs",
+        "to": "gc",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "gi",
+        "condition": "always"
+      },
+      {
+        "from": "gi",
+        "to": "ga",
+        "condition": "mv_verlegeart = 'ERDE'"
+      },
+      {
+        "from": "gi",
+        "to": "ge",
+        "condition": "else"
+      },
+      {
+        "from": "ga",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ts",
+        "to": "tq",
+        "condition": "always"
+      },
+      {
+        "from": "tq",
+        "to": "tl",
+        "condition": "always"
+      },
+      {
+        "from": "tl",
+        "to": "ti",
+        "condition": "next row"
+      },
+      {
+        "from": "ti",
+        "to": "tr1",
+        "condition": "ls_trommel-max_laenge >= iv_laenge AND ls_trommel-max_gewicht >= iv_gewicht"
+      },
+      {
+        "from": "ti",
+        "to": "tl",
+        "condition": "else"
+      },
+      {
+        "from": "tl",
+        "to": "tx",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ps",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "pt",
+        "to": "ts",
+        "condition": "always"
+      },
+      {
+        "from": "pi",
+        "to": "pl",
+        "condition": "else"
+      },
+      {
+        "from": "pl",
+        "to": "pe",
+        "condition": "else"
+      },
+      {
+        "from": "a",
+        "to": "ag",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "ac",
+        "condition": "p_sperr = abap_true"
+      },
+      {
+        "from": "ag",
+        "to": "e_a",
+        "condition": "else"
+      },
+      {
+        "from": "ac",
+        "to": "ag2",
+        "condition": "always"
+      },
+      {
+        "from": "ag2",
+        "to": "ao",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ag2",
+        "to": "e_a",
+        "condition": "else"
+      },
+      {
+        "from": "sm",
+        "to": "cpl",
+        "condition": "always"
+      },
+      {
+        "from": "cpl",
+        "to": "fp",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "o0",
+        "condition": "gt_pos IS INITIAL"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "cpp",
+        "condition": "next row"
+      },
+      {
+        "from": "cpp",
+        "to": "fpp",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "gsp",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gsp",
+        "to": "csp",
+        "condition": "p_sperr = abap_true"
+      },
+      {
+        "from": "gsp",
+        "to": "e_sos",
+        "condition": "else"
+      },
+      {
+        "from": "csp",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "eos",
+        "to": "cau",
+        "condition": "always"
+      },
+      {
+        "from": "cau",
+        "to": "fa",
+        "condition": "always"
+      },
+      {
+        "from": "fp",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "e_p",
+        "condition": "always"
+      },
+      {
+        "from": "fpp",
+        "to": "vc",
+        "condition": "always"
+      },
+      {
+        "from": "vc",
+        "to": "gv",
+        "condition": "always"
+      },
+      {
+        "from": "gv",
+        "to": "rv",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gv",
+        "to": "gcx",
+        "condition": "else"
+      },
+      {
+        "from": "gcx",
+        "to": "rc",
+        "condition": "sy-subrc = 4"
+      },
+      {
+        "from": "gcx",
+        "to": "nk2",
+        "condition": "else"
+      },
+      {
+        "from": "nk2",
+        "to": "ctor",
+        "condition": "always"
+      },
+      {
+        "from": "pr2",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "gm",
+        "to": "rm",
+        "condition": "lt_meld IS INITIAL"
+      },
+      {
+        "from": "fs",
+        "to": "lg",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "rt",
+        "condition": "next row"
+      },
+      {
+        "from": "rt",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "lg",
+        "condition": "ls_pos-lifsk = p_lifsk"
+      },
+      {
+        "from": "gl",
+        "to": "bc",
+        "condition": "else"
+      },
+      {
+        "from": "bc",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "rb",
+        "condition": "line_exists( lt_ret[ type = 'E' ] )"
+      },
+      {
+        "from": "gb",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "lg",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cm",
+        "to": "lg",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lg",
+        "to": "es",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fa",
+        "to": "ll",
+        "condition": "always"
+      },
+      {
+        "from": "ll",
+        "to": "ow",
+        "condition": "next row"
+      },
+      {
+        "from": "ow",
+        "to": "ll",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ll",
+        "to": "alv",
+        "condition": "no more rows"
+      },
+      {
+        "from": "alv",
+        "to": "ea",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "gw",
+        "condition": "always"
+      },
+      {
+        "from": "cx",
+        "to": "xf",
+        "condition": "zcx_vc_kabel"
+      },
+      {
+        "from": "ge",
+        "to": "tr",
+        "condition": "always"
+      },
+      {
+        "from": "tr1",
+        "to": "s1",
+        "condition": "always"
+      },
+      {
+        "from": "tx",
+        "to": "xf",
+        "condition": "zcx_vc_kabel"
+      },
+      {
+        "from": "ge",
+        "to": "pt",
+        "condition": "always"
+      },
+      {
+        "from": "tr1",
+        "to": "pi",
+        "condition": "always"
+      },
+      {
+        "from": "tx",
+        "to": "pr",
+        "condition": "zcx_vc_kabel"
+      },
+      {
+        "from": "pi",
+        "to": "pl",
+        "condition": "lv_soll <> iv_trommel"
+      },
+      {
+        "from": "pl",
+        "to": "pe",
+        "condition": "iv_laenge > ms_typ-max_fertigungslaenge"
+      },
+      {
+        "from": "ce",
+        "to": "pr2",
+        "condition": "always"
+      },
+      {
+        "from": "cx",
+        "to": "gm",
+        "condition": "zcx_vc_kabel"
+      },
+      {
+        "from": "pr",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "gm",
+        "to": "epp",
+        "condition": "else"
+      },
+      {
+        "from": "ao",
+        "to": "am",
+        "condition": "always"
+      },
+      {
+        "from": "e_a",
+        "to": "sm",
+        "condition": "always"
+      },
+      {
+        "from": "e_p",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "o0",
+        "to": "x0",
+        "condition": "always"
+      },
+      {
+        "from": "x0",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "rv",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rc",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rm",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "epp",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "es",
+        "to": "e_sos",
+        "condition": "always"
+      },
+      {
+        "from": "e_sos",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "ea",
+        "to": "e_eos",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zvc_konfig_pruefung_f01.abap:113 — kein Fachsatz „die Konfiguration des Auftrags wird korrigiert“: gesetzt wird nur die Liefersperre am Auftragskopf, für den ganzen Auftrag",
+    "zvc_konfig_pruefung_f01.abap:74 — kein Fachsatz „Positionen mit unbekanntem Kabeltyp werden nur gemeldet“: die Meldung wird wie jede Abweichung als sperrrelevant vorgemerkt",
+    "z_vf_kabellaenge.abap:61 — kein Fachsatz „ohne Verlegeart ist die Konfiguration unvollständig“: es gilt Erdverlegung mit 12 % Gewichtszuschlag",
+    "gesamte Scheibe — kein Fachsatz „die Nachprüfung vergleicht auch das konfigurierte Gewicht“: geprüft werden nur Trommel und Fertigungslänge"
+  ],
+  "processDescription": "Beim Konfigurieren eines Kabels ruft das Beziehungswissen die Variantenfunktion auf. Sie liest Länge und Querschnitt und endet ohne diese mit einem internen Fehler; fehlt die Verlegeart, gilt Erdverlegung. Über eine Kabelklasse wird der Kabeltyp zum Querschnitt geladen, das Gewicht als Länge mal Metergewicht (bei Erdverlegung plus 12 %) berechnet und die kleinste zugelassene Trommel gesucht, die Länge und Gewicht aufnimmt; ist der Typ unbekannt oder passt keine Trommel, meldet die Funktion die Konfiguration als inkonsistent. Sonst schreibt sie Trommel und Gewicht als Merkmalwerte zurück. Nach Stammdatenänderungen startet der Innendienst den Nachprüfreport; mit Sperrkennzeichen braucht er die Änderungsberechtigung für Aufträge. Der Report liest alle konfigurierten, nicht voll gelieferten Positionen der Auswahl, liest je Position die Konfiguration und prüft, ob die konfigurierte Trommel noch der erforderlichen entspricht und die Länge die Fertigungsgrenze einhält. Nicht lesbare oder nicht numerische Konfigurationen werden ohne Sperrvorschlag gemeldet, Abweichungen und unbekannte Kabeltypen mit Sperrvorschlag. Mit Sperrkennzeichen wird je betroffenem Auftrag, sofern noch nicht gesperrt, die Liefersperre am Kopf per BAPI gesetzt und festgeschrieben, Fehler werden zurückgerollt und protokolliert. Zum Schluss erscheinen das Sperrprotokoll als Liste und die Abweichungen als ALV."
+}

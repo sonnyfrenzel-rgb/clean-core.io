@@ -1,0 +1,46 @@
+{
+  "id": "BM-159",
+  "title": "IDoc-Eingang Reisebuchungsportal: Reisen mit Belegen und Verpflegungspauschale anlegen",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "sehr komplex",
+  "loc": 412,
+  "constructs": [
+    "IDoc-Eingangsbaustein (EDIDC/EDIDD/BDIDOCSTAT)",
+    "RAISE klassische Ausnahme",
+    "LOOP AT idoc_data mit CASE segnam",
+    "CONTINUE in WHEN OTHERS",
+    "TRY … CATCH … CLEANUP",
+    "RAISE EXCEPTION TYPE",
+    "SWITCH #",
+    "COND #",
+    "SELECT SINGLE PA0000/ZTV_PERDIEM/ZTV_EXT_TRIP",
+    "CONVERT_TO_LOCAL_CURRENCY",
+    "BAPI_TRIP_CREATE_FROM_DATA",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "CALL FUNCTION … IN UPDATE TASK",
+    "HR_EMPLOYEE_ENQUEUE/DEQUEUE",
+    "DO 3 TIMES mit WAIT UP TO",
+    "MESSAGE Typ A im Verbuchungsbaustein",
+    "workflow_result 99999"
+  ],
+  "scenario": "Ein externes Reisebuchungsportal schickt abgeschlossene Reisen samt Belegen als IDoc; der Eingangsbaustein legt daraus Reisen in der Reisekostenabrechnung an, berechnet die Verpflegungspauschale und vermerkt die externe Reise-ID gegen Doppelübernahme.",
+  "s4_issues": [
+    "Eigener IDoc-Basistyp ZTRIP01 mit Kundensegmenten",
+    "Direkter Lesezugriff auf PA0000",
+    "Kundentabellen ZTV_PERDIEM/ZTV_EXT_TRIP",
+    "WAIT UP TO in der Eingangsverarbeitung",
+    "Verpflegungspauschale im Kundencode statt im Reisekosten-Customizing"
+  ],
+  "wave": 2,
+  "module": "FI-TV",
+  "edge_constructs": [
+    "TRY … CATCH … CLEANUP",
+    "RAISE EXCEPTION TYPE aus tieferen Methoden",
+    "CONTINUE aus WHEN OTHERS in innerer Schleife (wirkungslos)",
+    "WAIT UP TO in Wiederholungsschleife",
+    "CALL FUNCTION … IN UPDATE TASK",
+    "MESSAGE … TYPE 'A' im Verbuchungsbaustein",
+    "SWITCH # / COND #",
+    "Dublette als Erfolg gemeldet"
+  ]
+}

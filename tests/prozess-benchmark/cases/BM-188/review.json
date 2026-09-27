@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "o3 (output) und e (end) liegen beide auf source.abap:81. Geprüft und belassen: START-OF-SELECTION hat keine Schlussanweisung, der Autorenbrief verankert das implizite Ende auf der letzten Anweisung; die ENDFORM/ENDMETHOD-Konvention greift für Ereignisblöcke nicht. Gleiches gilt für ei auf Zeile 21 (INITIALIZATION)."
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "id": "BM-108",
+  "title": "Serviceverträge vor Laufzeitende automatisch verlängern, gruppiert je Kunde",
+  "domain": "CS — Serviceverträge",
+  "band": "mittel",
+  "loc": 86,
+  "constructs": [
+    "REPORT",
+    "SELECT mit Join VBAK/VEDA",
+    "MESSAGE TYPE S + RETURN",
+    "HASHED TABLE",
+    "LOOP AT … GROUP BY",
+    "LOOP AT GROUP",
+    "READ TABLE WITH TABLE KEY",
+    "COND",
+    "VALUE #",
+    "BAPI_CUSTOMERCONTRACT_CHANGE",
+    "line_exists",
+    "BAPI_TRANSACTION_ROLLBACK/COMMIT",
+    "Testlauf"
+  ],
+  "scenario": "Serviceinnendienst eines Maschinenbauers verlängert Wartungsverträge, die in den nächsten Tagen auslaufen und nicht gekündigt sind, automatisch um eine je Vertragsart gepflegte Frist.",
+  "s4_issues": [
+    "Direkter Join auf VBAK/VEDA; in S/4 Serviceverträge im Service-Umfeld (CRM-basierte Servicevertragsabwicklung) statt SD-Kontrakt",
+    "BAPI_CUSTOMERCONTRACT_CHANGE nicht für Cloud freigegeben",
+    "Commit je Vertrag im Massenlauf"
+  ],
+  "wave": 2,
+  "module": "CS",
+  "edge_constructs": [
+    "LOOP AT … GROUP BY",
+    "COND #",
+    "CONTINUE in verschachtelter Schleife",
+    "Inline-Deklarationen"
+  ]
+}

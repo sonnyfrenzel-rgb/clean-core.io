@@ -1,0 +1,47 @@
+{
+  "id": "BM-138",
+  "title": "PSM-FM: Antrag auf Mittelvormerkung im Dynpro erfassen, prüfen, einreichen und im Vier-Augen-Prinzip genehmigen (Modulpool, Verbuchung, Workflow-Ereignisse)",
+  "domain": "PSM / Haushaltsmanagement öffentlicher Sektor – Mittelvormerkung",
+  "band": "sehr komplex",
+  "loc": 401,
+  "constructs": [
+    "Modulpool mit TOP-, O01-, I01-, F01-Include",
+    "PBO/PAI-Module",
+    "SET PF-STATUS / SET TITLEBAR",
+    "LOOP AT SCREEN / MODIFY SCREEN",
+    "GET PARAMETER ID",
+    "MESSAGE TYPE A in PBO",
+    "MODULE … AT EXIT-COMMAND",
+    "FIELD … MODULE … ON REQUEST",
+    "MESSAGE TYPE E in PAI",
+    "CASE ok_code",
+    "LEAVE TO SCREEN 0",
+    "NUMBER_GET_NEXT",
+    "CALL FUNCTION … IN UPDATE TASK",
+    "SWE_EVENT_CREATE",
+    "COMMIT WORK",
+    "ENQUEUE eigenes Sperrobjekt",
+    "FMFR_CREATE_FROM_DATA",
+    "BAPI_TRANSACTION_ROLLBACK",
+    "POPUP_TO_CONFIRM",
+    "Verbuchungsbaustein mit INSERT/UPDATE und MESSAGE TYPE A"
+  ],
+  "scenario": "Stadtkämmerei: Fachämter beantragen Mittelvormerkungen über eine eigene Dialogtransaktion; der Budgetverantwortliche genehmigt aus dem Workflow-Eingang, erst dann wird die Mittelvormerkung im Haushalt angelegt.",
+  "s4_issues": [
+    "SAP-GUI-Modulpool ohne Fiori-Pendant",
+    "eigene Verfügbarkeitssicht statt Standard-AVC",
+    "nicht freigegebener Baustein FMFR_CREATE_FROM_DATA",
+    "Workflow-Ereignis über SWE_EVENT_CREATE am eigenen BOR-Objekttyp"
+  ],
+  "wave": 2,
+  "module": "PSM-FM",
+  "edge_constructs": [
+    "LEAVE TO SCREEN",
+    "AT EXIT-COMMAND",
+    "MESSAGE … TYPE 'E'/'A' als Pfadende",
+    "SET/GET PARAMETER ID",
+    "IN UPDATE TASK",
+    "RETURN aus FORM",
+    "VALUE #"
+  ]
+}

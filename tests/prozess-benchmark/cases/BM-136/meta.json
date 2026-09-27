@@ -1,0 +1,52 @@
+{
+  "id": "BM-136",
+  "title": "PS-Netzpläne je Projekt parallel neu terminieren, Verzug gegen Basistermine bewerten, Anwendungslog und ALV mit Absprung (aRFC, RECEIVE RESULTS, SET HANDLER)",
+  "domain": "PS / Projektsystem – Terminplanung",
+  "band": "sehr komplex",
+  "loc": 402,
+  "constructs": [
+    "REPORT mit TOP-, C01- und F01-Include",
+    "lokale Ereignisbehandlerklasse",
+    "LEAVE PROGRAM",
+    "END-OF-SELECTION",
+    "CHECK in FORM",
+    "FOR ALL ENTRIES auf JEST",
+    "DELETE itab in LOOP",
+    "WAIT UNTIL",
+    "CALL FUNCTION … STARTING NEW TASK … DESTINATION IN GROUP … PERFORMING … ON END OF TASK",
+    "RECEIVE RESULTS",
+    "CASE sy-subrc mit RESOURCE_FAILURE",
+    "RFC-fähiger Funktionsbaustein",
+    "STATUS_CHECK",
+    "BAPI_PS_INITIALIZATION / BAPI_BUS2002_SCHEDULE / BAPI_PS_PRECOMMIT",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "Debug-Hintertür über sy-uname",
+    "COND #",
+    "CL_SALV_TABLE mit verketteten Aufrufen",
+    "SET HANDLER",
+    "SET PARAMETER ID / CALL TRANSACTION … AND SKIP FIRST SCREEN",
+    "BAL_LOG_CREATE / BAL_LOG_MSG_ADD / BAL_DB_SAVE"
+  ],
+  "scenario": "Großprojekt-Organisation (Anlagen- oder Infrastrukturbau): Nach der monatlichen Rückmeldung werden alle Netzpläne der freigegebenen Projekte parallel neu terminiert, der Verzug gegen eingefrorene Basistermine bewertet und Fehler im Anwendungslog festgehalten.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf PROJ/JEST/AUFK/AFKO statt freigegebener CDS-Views",
+    "aRFC-Parallelisierung über Servergruppe (nicht Cloud-fähig)",
+    "Hintertür über Benutzername umgeht die Statusprüfung",
+    "Absprung in SAP-GUI-Transaktionen CN23/CJ20N"
+  ],
+  "wave": 2,
+  "module": "PS",
+  "edge_constructs": [
+    "STARTING NEW TASK / RECEIVE RESULTS",
+    "WAIT UNTIL / WAIT UP TO",
+    "SET HANDLER",
+    "CALL TRANSACTION … AND SKIP FIRST SCREEN",
+    "SET/GET PARAMETER ID",
+    "Debug-Hintertür (IF sy-uname = '…')",
+    "LEAVE PROGRAM",
+    "CHECK in FORM",
+    "verkettete Methodenaufrufe",
+    "COND #",
+    "VALUE #"
+  ]
+}

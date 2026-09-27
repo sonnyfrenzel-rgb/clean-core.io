@@ -1,0 +1,33 @@
+{
+  "id": "BM-167",
+  "title": "Automotive: JIT-Sequenzabrufe des OEM per IDoc in die Abruftabelle übernehmen",
+  "domain": "Branchenlösung Automotive – JIT-/Lieferabrufe",
+  "band": "mittel",
+  "loc": 99,
+  "constructs": [
+    "IDoc-Eingangsbaustein (EDIDC/EDIDD, BDIDOCSTAT)",
+    "Tabellen mit Kopfzeile",
+    "CASE segnam",
+    "SELECT SINGLE KNMT",
+    "EXIT in CASE in LOOP",
+    "CATCH SYSTEM-EXCEPTIONS",
+    "INSERT … ACCEPTING DUPLICATE KEYS",
+    "IDoc-Status 51/53",
+    "RAISE wrong_function_called"
+  ],
+  "scenario": "Zulieferer eines Automobilherstellers empfängt Sequenzabrufe (VDA 4916) über einen Konverter als Z-IDoc und legt sie für die Linienversorgung in einer eigenen Abruftabelle ab statt im Standard-JIT-Abruf.",
+  "s4_issues": [
+    "Eigene JIT-Abruftabelle statt JIT-Abrufverarbeitung (JITH/JITO) bzw. JIT Supply to Customer",
+    "Z-IDoc-Typ ZDELJIT ohne freigegebene API",
+    "Tabellen mit Kopfzeile in der IDoc-Schnittstelle",
+    "Materialnummer 40 Zeichen in ZJIT_ABRUF"
+  ],
+  "wave": 2,
+  "module": "IS-Automotive / SD-JIT",
+  "edge_constructs": [
+    "EXIT in verschachtelter Schleife (verlässt nur die Segmentschleife)",
+    "CATCH SYSTEM-EXCEPTIONS conversion_errors",
+    "RAISE als Pfadende",
+    "CASE mit leerem WHEN OTHERS"
+  ]
+}

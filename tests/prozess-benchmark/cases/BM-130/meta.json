@@ -1,0 +1,34 @@
+{
+  "id": "BM-130",
+  "title": "Treasury Devisenhandel: Marktgerechtigkeitsprüfung importierter Devisengeschäfte gegen den Mittelkurs (SWITCH, RAISE EVENT, REDUCE)",
+  "domain": "FSCM/TRM / Treasury Devisen",
+  "band": "mittel",
+  "loc": 72,
+  "constructs": [
+    "CLASS mit EVENTS",
+    "METHOD",
+    "SELECT neue Syntax",
+    "RAISE EXCEPTION TYPE",
+    "LOOP ASSIGNING FIELD-SYMBOL",
+    "SWITCH #",
+    "CALL FUNCTION READ_EXCHANGE_RATE",
+    "CONTINUE",
+    "RAISE EVENT",
+    "MODIFY Z-Tabelle",
+    "REDUCE mit WHERE"
+  ],
+  "scenario": "Konzern-Treasury mit Handelsplattform-Anbindung: Die Marktgerechtigkeitsprüfung nach MaRisk prüft täglich alle neu importierten Devisengeschäfte gegen den Mittelkurs und meldet Auffälligkeiten an die Überwachung.",
+  "s4_issues": [
+    "READ_EXCHANGE_RATE ist nicht für ABAP Cloud freigegeben (Nachfolger CL_EXCHANGE_RATES)",
+    "Eigenbau-Marktgerechtigkeitsprüfung neben der TRM-Standardfunktion"
+  ],
+  "wave": 2,
+  "module": "TRM",
+  "edge_constructs": [
+    "SWITCH #",
+    "RAISE EXCEPTION TYPE",
+    "SET HANDLER/RAISE EVENT",
+    "REDUCE",
+    "Inline-Deklarationen"
+  ]
+}

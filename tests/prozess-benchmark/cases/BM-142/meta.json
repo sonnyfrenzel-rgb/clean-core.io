@@ -1,0 +1,27 @@
+{
+  "id": "BM-142",
+  "title": "Zeiterfassungsterminal: Ausweisnummer prüfen und Personalnummer zurückgeben",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "einfach",
+  "loc": 32,
+  "constructs": [
+    "FUNCTION (RFC-fähig)",
+    "SELECT SINGLE PA0050",
+    "SELECT SINGLE PA0000",
+    "MESSAGE … RAISING",
+    "RAISE"
+  ],
+  "scenario": "Das Zeiterfassungssubsystem ruft beim Stempeln per RFC einen Kundenbaustein, der die Ausweisnummer gegen den Infotyp 0050 prüft und die Personalnummer zurückliefert.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf PA0050/PA0000",
+    "Klassische Ausnahmen statt klassenbasierter Ausnahmen",
+    "RFC-Aufruf von außen ohne eigene Berechtigungsprüfung"
+  ],
+  "wave": 2,
+  "module": "PT",
+  "edge_constructs": [
+    "MESSAGE … RAISING als Pfadende",
+    "RAISE als Pfadende",
+    "sy-subrc-Prüfung nur beim ersten SELECT"
+  ]
+}

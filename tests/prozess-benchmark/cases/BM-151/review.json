@@ -1,0 +1,142 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten s1, c_ini, s_ini, g_ini, e_ini2, e_ini (neu)",
+      "before": "INITIALIZATION (Z. 14/15) und FORM init_lgart_defaults (f01:5–14) ohne Knoten, obwohl Fachsatz B01 dort verankert ist",
+      "after": "s1 start :14 -> c_ini call :15 -> s_ini start f01:5 -> g_ini gateway f01:7 [s_lgart[] IS INITIAL]/[else] -> e_ini2 end f01:14 -> e_ini end :15 -> s2 [always]",
+      "why": "Der Ereignisblock INITIALIZATION ruft ein FORM im Fall mit einer fachlichen Verzweigung (Vorschlag nur ohne eigene Auswahl); Aufruf, Einstieg und Verzweigung tragen B01. Die APPENDs in die Selektionstabelle sind keine Knoten, darum führen beide Zweige zum ENDFORM. Nach INITIALIZATION folgt (über das Selektionsbild) START-OF-SELECTION.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_au (neu)",
+      "before": "o_au output auf zpy_retro_diff.abap:22 ohne end",
+      "after": "e_au end auf zpy_retro_diff.abap:22; o_au -> e_au [always]",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_sos (neu)",
+      "before": "kein end-Knoten auf zpy_retro_diff.abap:24",
+      "after": "e_sos end auf zpy_retro_diff.abap:24; g_au -> e_sos [else]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante g_au -> s3",
+      "before": "g_au -> s3 [else]",
+      "after": "g_au -> e_sos [else]; e_sos -> s3 [always]",
+      "why": "START-OF-SELECTION endet implizit mit Z. 24; erst danach liest die logische Datenbank die Personen und löst GET peras aus.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_rg -> g_ok",
+      "before": "c_rg -> g_ok [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_rg1, e_rg2, e_rg3 -> g_ok [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_rg3 (neu)",
+      "before": "kein end-Knoten auf zpy_retro_diff_f01.abap:39",
+      "after": "e_rg3 end auf zpy_retro_diff_f01.abap:39; g_rg2 -> e_rg3 [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Rückkanten read_rgdir",
+      "before": "e_rg1, e_rg2 ohne ausgehende Kante",
+      "after": "e_rg1, e_rg2, e_rg3 -> g_ok [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_get (neu)",
+      "before": "kein end-Knoten auf zpy_retro_diff.abap:29",
+      "after": "e_get end auf zpy_retro_diff.abap:29; g_ok -> e_get [else]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_cmp (neu)",
+      "before": "kein end-Knoten auf zpy_retro_diff_f01.abap:85",
+      "after": "e_cmp end auf zpy_retro_diff_f01.abap:85; l1 -> e_cmp [no more rows]; e_cmp -> e_get [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante e_get -> s4 (neu)",
+      "before": "keine Verbindung der Ereignisblöcke",
+      "after": "e_get -> s4 [always]",
+      "why": "Ereignisreihenfolge: nach dem Ende eines Ereignisblocks setzt die Laufzeit mit dem nächsten Ereignis fort (wie in BM-011/032/037 START-OF-SELECTION -> END-OF-SELECTION); bei der logischen Datenbank folgt END-OF-SELECTION, nachdem GET für alle selektierten Personen gelaufen ist.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_rr1 -> g_c3",
+      "before": "c_rr1 -> g_c3 [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_rr -> g_c3 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_rr2 -> g_c4",
+      "before": "c_rr2 -> g_c4 [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_rr -> g_c4 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten a_err",
+      "before": "action auf zpy_retro_diff_f01.abap:110; g_rr -> a_err [sy-subrc <> 0]",
+      "after": "entfernt; g_rr führt in beiden Zweigen ([sy-subrc <> 0], [else]) zum neuen e_rr auf ENDFORM",
+      "why": "Reine Zuweisung (Fehlerzähler hochzählen, f01:110); laut Autorenbrief kein Knoten, steuert keinen Fluss. Inhalt bleibt in Fachsatz B06.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_rr (neu)",
+      "before": "kein end-Knoten auf zpy_retro_diff_f01.abap:115",
+      "after": "e_rr end auf zpy_retro_diff_f01.abap:115; g_rr -> e_rr [sy-subrc <> 0]; g_rr -> e_rr [else]; e_rr -> g_c3 [always]; e_rr -> g_c4 [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_sum -> c_alv",
+      "before": "c_sum -> c_alv [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_sum -> c_alv [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten g_new -> g_end, g_end -> g_last",
+      "before": "g_new -> g_end [always]; g_end -> g_last [always]",
+      "after": "g_new -> g_end [AT NEW pernr] und [else]; g_end -> g_last [AT END OF pernr] und [else]",
+      "why": "Ein Gateway hat Bedingungskanten, keine always-Kante; die Gruppenstufen verzweigen, auch wenn ihr Inhalt (CLEAR/APPEND) keinen Knoten bildet.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_sum (neu)",
+      "before": "kein end-Knoten auf zpy_retro_diff_f01.abap:138",
+      "after": "e_sum end auf zpy_retro_diff_f01.abap:138; l3 -> e_sum [no more rows]; e_sum -> c_alv [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_eos (neu)",
+      "before": "kein end-Knoten auf zpy_retro_diff.abap:37",
+      "after": "e_eos end auf zpy_retro_diff.abap:37; erreicht über e_alv -> e_eos [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_alv (neu)",
+      "before": "kein end-Knoten auf zpy_retro_diff_f01.abap:165",
+      "after": "e_alv end auf zpy_retro_diff_f01.abap:165; o_alv -> e_alv [always]; e_alv -> e_eos [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": [
+    "Die logische Datenbank ruft GET peras je selektierter Person erneut auf; dafür gibt es keine Schleifenanweisung und darum keinen loop-Knoten. Die Wiederholung ist im Skelett nur implizit (GET-Start je Person), das Ende des GET-Blocks führt zu END-OF-SELECTION."
+  ]
+}

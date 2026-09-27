@@ -1,0 +1,278 @@
+{
+  "id": "BM-163",
+  "title": "Handling Units: Packinhalt einer Auslieferung aus VEKP/VEPO listen",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VEKP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VEPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:20"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-163-B01",
+      "text": "Es werden die Handling Units gelesen, die der eingegebenen Auslieferung zugeordnet sind.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-163-B02",
+      "text": "Zu diesen Handling Units werden die Packpositionen gelesen; hat die Lieferung keine Handling Unit, liest der Zugriff sämtliche Packpositionen des Systems.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-163-B03",
+      "text": "Je Handling Unit werden externe HU-Nummer, Packmittel und Bruttogewicht ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-163-B04",
+      "text": "Darunter werden nur die Materialpositionen der Handling Unit mit Material, Charge und verpackter Menge gelistet; untergeordnete Handling Units erscheinen nicht als Inhalt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Handling Units der Lieferung lesen"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Packpositionen der Handling Units lesen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Handling Units durchgehen"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "HU-Kopf listen"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Materialpositionen der HU durchgehen"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Material, Charge, Menge listen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Packliste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "q2",
+        "condition": "always"
+      },
+      {
+        "from": "q2",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "o1",
+        "condition": "next row"
+      },
+      {
+        "from": "o1",
+        "to": "l2",
+        "condition": "always"
+      },
+      {
+        "from": "l2",
+        "to": "o2",
+        "condition": "next row"
+      },
+      {
+        "from": "o2",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l2",
+        "to": "l1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "l1",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:12 — kein Fachsatz „ist die Lieferung ungepackt, wird eine Meldung ausgegeben und abgebrochen“: der Abbruchzweig ist auskommentiert",
+    "source.abap:20 — kein Fachsatz „es werden nur Packpositionen der Lieferung gelesen“: bei leerer HU-Tabelle entfällt die WHERE-Bedingung von FOR ALL ENTRIES",
+    "gesamte Scheibe — kein Fachsatz „Handling Units werden gepackt, umgepackt oder gebucht“: der Report liest und listet nur"
+  ],
+  "processDescription": "Der Report wird mit einer Auslieferungsnummer gestartet. Er liest die Handling Units, deren Packobjekt diese Auslieferung ist, und danach deren Packpositionen. Ist die Lieferung nicht gepackt, liest der zweite Zugriff wegen der leeren Treibertabelle alle Packpositionen des Systems, die Liste bleibt trotzdem leer. Ein früherer Abbruch mit Meldung für ungepackte Lieferungen ist auskommentiert. Für jede Handling Unit wird eine Kopfzeile mit HU-Nummer, Packmittel und Bruttogewicht gedruckt. Darunter folgen nur die Materialpositionen dieser Handling Unit mit Material, Charge und Menge; geschachtelte Handling Units werden nicht als Inhalt gezeigt. Es wird nichts verändert."
+}

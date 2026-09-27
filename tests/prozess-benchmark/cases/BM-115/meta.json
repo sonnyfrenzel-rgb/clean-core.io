@@ -1,0 +1,41 @@
+{
+  "id": "BM-115",
+  "title": "Garantieprüfung beim Sichern der Meldung: Garantievererbung, Kundengarantie-Hinweis, Lieferantenregress mit dynamischer Nummernvergabe",
+  "domain": "PM/CS — Garantie und Lieferantenregress",
+  "band": "komplex",
+  "loc": 155,
+  "constructs": [
+    "Funktionsexit (CMOD QQMA0014) mit Include",
+    "CHECK als Bausteinausstieg",
+    "IMPORT FROM MEMORY",
+    "RETURN",
+    "CALL FUNCTION mit EXCEPTIONS",
+    "CASE",
+    "IF sy-batch",
+    "SELECT SINGLE TVARVC",
+    "dynamischer CALL FUNCTION",
+    "VALUE #",
+    "INSERT Z-Tabelle",
+    "MESSAGE … RAISING",
+    "EXPORT TO MEMORY",
+    "WHILE … EXIT",
+    "RAISE klassische Ausnahme"
+  ],
+  "scenario": "Maschinenhersteller mit Garantieverträgen: Beim Anlegen einer Stör- oder Servicemeldung prüft ein Kundenexit die Garantie des Equipments (auch geerbt vom Oberequipment); bei Lieferantengarantie wird ein Regress gegen den Lieferanten vorgemerkt.",
+  "s4_issues": [
+    "CMOD-Exit QQMA0014 statt freigegebenem BAdI",
+    "Dynamischer Bausteinaufruf mit Namen aus TVARVC (Ziel statisch nicht prüfbar, Dump bei fehlendem Eintrag)",
+    "Direkte Lesezugriffe auf BGMKOBJ, EQUZ, EQUI",
+    "Datenaustausch über ABAP-Memory"
+  ],
+  "wave": 2,
+  "module": "PM",
+  "edge_constructs": [
+    "dynamischer CALL FUNCTION (Name aus TVARVC)",
+    "IMPORT/EXPORT … FROM/TO MEMORY",
+    "MESSAGE … RAISING",
+    "EXIT aus WHILE",
+    "Schalter über TVARVC",
+    "RAISE"
+  ]
+}

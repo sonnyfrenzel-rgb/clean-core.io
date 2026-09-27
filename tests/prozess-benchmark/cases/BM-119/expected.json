@@ -1,0 +1,2464 @@
+{
+  "id": "BM-119",
+  "title": "Lieferanten-SDB (XML) ins Gefahrstoffkataster: Transformation, CAS-Zuordnung, Verbuchung, Archivierung, Zusammenlagerungsprüfung TRGS 510",
+  "classes": [
+    "K01",
+    "K04",
+    "K10",
+    "K12",
+    "K13"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "T001W",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zehs_sdb_inbound.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zehs_sdb_inbound.abap:20"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EPS2_GET_DIRECTORY_LISTING",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zehs_sdb_inbound.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zehs_sdb_inbound.abap:29"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEHS_SDB_TO_ABAP",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zehs_sdb_inbound_f01.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zehs_sdb_inbound_f01.abap:34"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ESTRI",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zehs_sdb_inbound_f01.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zehs_sdb_inbound_f01.abap:44"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ESTRH",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zehs_sdb_inbound_f01.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zehs_sdb_inbound_f01.abap:44"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEHS_KATASTER",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zehs_sdb_inbound_f01.abap",
+        "line": 59,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zehs_sdb_inbound_f01.abap:59"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_EHS_KATASTER_UPDATE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zehs_sdb_inbound_f01.abap",
+        "line": 81,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zehs_sdb_inbound_f01.abap:81"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEHS_KATASTER",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zehs_sdb_inbound_f01.abap",
+        "line": 124,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zehs_sdb_inbound_f01.abap:124"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_EHS_LAGERKLASSE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zehs_sdb_inbound_f01.abap",
+        "line": 129,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zehs_sdb_inbound_f01.abap:129"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEHS_AUFGABE",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zehs_sdb_inbound_f01.abap",
+        "line": 143,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zehs_sdb_inbound_f01.abap:143"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zehs_sdb_inbound_f01.abap",
+        "line": 171,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zehs_sdb_inbound_f01.abap:171"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEHS_ZL_MATRIX",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ehs_lagerklasse.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ehs_lagerklasse.abap:37"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEHS_KATASTER",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_ehs_kataster_update.abap",
+        "line": 17,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ehs_kataster_update.abap:17"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEHS_KAT_HIST",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_ehs_kataster_update.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ehs_kataster_update.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-119-B01",
+      "text": "Ein unbekanntes Werk wird schon auf dem Selektionsbild abgewiesen.",
+      "anchors": [
+        {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:20"
+        },
+        {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:22"
+        },
+        {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-119-B02",
+      "text": "Die Dateien des Eingangsverzeichnisses werden aufgelistet; ist das nicht möglich oder das Verzeichnis leer, endet der Lauf mit Hinweis und leerem Protokoll.",
+      "anchors": [
+        {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:29"
+        },
+        {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:43"
+        },
+        {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:44"
+        },
+        {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-119-B03",
+      "text": "Verarbeitet werden nur XML-Dateien.",
+      "anchors": [
+        {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:48"
+        },
+        {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-119-B04",
+      "text": "Jede Datei wird gelesen; ist sie nicht lesbar, wird das protokolliert und sie bleibt im Eingang.",
+      "anchors": [
+        {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:50"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:25"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:26"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:27"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-119-B05",
+      "text": "Der Dateiinhalt wird in die SDB-Struktur transformiert; ist das XML fehlerhaft, wird der Fehler protokolliert und die Datei bleibt liegen.",
+      "anchors": [
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:34"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-119-B06",
+      "text": "Über die CAS-Nummer wird der Stoff ermittelt; ohne Zuordnung wird eine Warnung protokolliert und die Datei bleibt für einen späteren Lauf liegen.",
+      "anchors": [
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:44"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:52"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-119-B07",
+      "text": "Ist das SDB nicht neuer als der Katasterstand des Stoffs im Werk, wird es nicht übernommen, aber als erledigt archiviert.",
+      "anchors": [
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:59"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:63"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-119-B08",
+      "text": "Im Testlauf werden Stoff, Lagerklasse und WGK nur protokolliert.",
+      "anchors": [
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:69"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-119-B09",
+      "text": "Sonst wird die Übernahme von Lagerklasse, WGK, SDB-Datum und Lieferant ins Kataster zur Verbuchung vorgemerkt und protokolliert.",
+      "anchors": [
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:81"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:86"
+        }
+      ]
+    },
+    {
+      "id": "BM-119-B10",
+      "text": "Erledigte Dateien werden im Echtlauf ins Archivverzeichnis geschrieben und im Eingang gelöscht; ist das Archiv nicht beschreibbar, bleibt die Datei mit Warnung liegen.",
+      "anchors": [
+        {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:51"
+        },
+        {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:52"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:105"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:106"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:107"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:110"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:112"
+        }
+      ]
+    },
+    {
+      "id": "BM-119-B11",
+      "text": "Danach werden je Lagerort des Werks die dort gelagerten Lagerklassen laut Kataster gegen die Zusammenlagerungsmatrix geprüft.",
+      "anchors": [
+        {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:56"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:124"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:129"
+        },
+        {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:37"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:131"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:138"
+        }
+      ]
+    },
+    {
+      "id": "BM-119-B12",
+      "text": "Für jede Lagerklasse gilt die werksspezifische Matrixzeile, ersatzweise die allgemeine; fehlt beides, ist die Lagerklasse unbekannt und der Lagerort gilt als fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:54"
+        },
+        {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:56"
+        },
+        {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:57"
+        },
+        {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:60"
+        },
+        {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-119-B13",
+      "text": "Jede Kombination zweier Lagerklassen ist mit Wert 1 oder 2 zulässig, mit jedem anderen Wert unzulässig; fehlt die Spalte in der Matrix, gilt sie als zulässig.",
+      "anchors": [
+        {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:67"
+        },
+        {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:69"
+        },
+        {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:70"
+        },
+        {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:73"
+        },
+        {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-119-B14",
+      "text": "Die erste unzulässige Zusammenlagerung eines Lagerorts wird protokolliert und erzeugt im Echtlauf eine offene Aufgabe ZUSLAG für den Gefahrstoffbeauftragten.",
+      "anchors": [
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:141"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:142"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:143"
+        }
+      ]
+    },
+    {
+      "id": "BM-119-B15",
+      "text": "Im Echtlauf wird am Ende festgeschrieben; erst dabei werden die vorgemerkten Katasteränderungen geschrieben.",
+      "anchors": [
+        {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:58"
+        },
+        {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-119-B16",
+      "text": "Die Verbuchung übernimmt die SDB-Daten des Stoffs an allen Lagerorten des Werks und historisiert die Änderung; ist der Stoff im Werk nicht im Kataster, bricht die Verbuchung ab.",
+      "anchors": [
+        {
+          "file": "z_ehs_kataster_update.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_kataster_update.abap:17"
+        },
+        {
+          "file": "z_ehs_kataster_update.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_kataster_update.abap:24"
+        },
+        {
+          "file": "z_ehs_kataster_update.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_kataster_update.abap:25"
+        },
+        {
+          "file": "z_ehs_kataster_update.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_kataster_update.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-119-B17",
+      "text": "Zum Abschluss wird das Protokoll aller Dateien und Lagerorte als Liste angezeigt.",
+      "anchors": [
+        {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:64"
+        },
+        {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:173"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s_ws",
+        "type": "start",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:19"
+        },
+        "meaning": "Werk prüfen"
+      },
+      {
+        "id": "r_ws",
+        "type": "read",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:20"
+        },
+        "meaning": "Werk nachlesen"
+      },
+      {
+        "id": "g_ws",
+        "type": "gateway",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:22"
+        },
+        "meaning": "Werk unbekannt?"
+      },
+      {
+        "id": "m_ws",
+        "type": "output",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:23"
+        },
+        "meaning": "Fehler: Werk unbekannt"
+      },
+      {
+        "id": "x_ws",
+        "type": "end",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:23"
+        },
+        "meaning": "Selektionsbild bleibt stehen"
+      },
+      {
+        "id": "e_ws",
+        "type": "end",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:24"
+        },
+        "meaning": "Werk in Ordnung"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:27"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "c_eps",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:29"
+        },
+        "meaning": "Eingangsverzeichnis auflisten"
+      },
+      {
+        "id": "g_e",
+        "type": "gateway",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:43"
+        },
+        "meaning": "Keine Dateien?"
+      },
+      {
+        "id": "m_e",
+        "type": "output",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:44"
+        },
+        "meaning": "Hinweis: nichts im Eingang"
+      },
+      {
+        "id": "x_e",
+        "type": "end",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:45"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:48"
+        },
+        "meaning": "Dateien durchgehen"
+      },
+      {
+        "id": "g_chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:49"
+        },
+        "meaning": "XML-Datei?"
+      },
+      {
+        "id": "c_dv",
+        "type": "call",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:50"
+        },
+        "meaning": "SDB verarbeiten"
+      },
+      {
+        "id": "g_ok",
+        "type": "gateway",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:51"
+        },
+        "meaning": "Erledigt und Echtlauf?"
+      },
+      {
+        "id": "c_arch",
+        "type": "call",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:52"
+        },
+        "meaning": "Datei archivieren"
+      },
+      {
+        "id": "c_lp",
+        "type": "call",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:56"
+        },
+        "meaning": "Zusammenlagerung prüfen"
+      },
+      {
+        "id": "g_t",
+        "type": "gateway",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:58"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "tc",
+        "type": "transaction",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:59"
+        },
+        "meaning": "Festschreiben, Verbuchung starten"
+      },
+      {
+        "id": "s_eos",
+        "type": "start",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:63"
+        },
+        "meaning": "Abschluss"
+      },
+      {
+        "id": "c_pa",
+        "type": "call",
+        "anchor": {
+          "file": "zehs_sdb_inbound.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound.abap:64"
+        },
+        "meaning": "Protokoll anzeigen"
+      },
+      {
+        "id": "s_dv",
+        "type": "start",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:14"
+        },
+        "meaning": "Ein SDB verarbeiten"
+      },
+      {
+        "id": "o_op",
+        "type": "output",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:25"
+        },
+        "meaning": "Datei zum Lesen öffnen"
+      },
+      {
+        "id": "g_op",
+        "type": "gateway",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:26"
+        },
+        "meaning": "Nicht lesbar?"
+      },
+      {
+        "id": "c_p1",
+        "type": "call",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:27"
+        },
+        "meaning": "Fehler protokollieren"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:28"
+        },
+        "meaning": "Datei bleibt im Eingang"
+      },
+      {
+        "id": "r_ds",
+        "type": "read",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:30"
+        },
+        "meaning": "Dateiinhalt lesen"
+      },
+      {
+        "id": "a_tr",
+        "type": "action",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:34"
+        },
+        "meaning": "XML in SDB-Struktur transformieren"
+      },
+      {
+        "id": "c_p2",
+        "type": "call",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:39"
+        },
+        "meaning": "XML-Fehler protokollieren"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:40"
+        },
+        "meaning": "Datei bleibt im Eingang"
+      },
+      {
+        "id": "r_spec",
+        "type": "read",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:44"
+        },
+        "meaning": "Stoff zur CAS-Nummer lesen"
+      },
+      {
+        "id": "g_spec",
+        "type": "gateway",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:52"
+        },
+        "meaning": "Kein Stoff?"
+      },
+      {
+        "id": "c_p3",
+        "type": "call",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:54"
+        },
+        "meaning": "Warnung CAS ohne Stoff"
+      },
+      {
+        "id": "x3",
+        "type": "end",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:55"
+        },
+        "meaning": "Datei bleibt im Eingang"
+      },
+      {
+        "id": "r_alt",
+        "type": "read",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:59"
+        },
+        "meaning": "SDB-Datum im Kataster lesen"
+      },
+      {
+        "id": "g_alt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:63"
+        },
+        "meaning": "SDB nicht neuer?"
+      },
+      {
+        "id": "c_p4",
+        "type": "call",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:64"
+        },
+        "meaning": "Hinweis protokollieren"
+      },
+      {
+        "id": "x4",
+        "type": "end",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:66"
+        },
+        "meaning": "Als erledigt zurück"
+      },
+      {
+        "id": "g_test",
+        "type": "gateway",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:69"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "c_p5",
+        "type": "call",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:71"
+        },
+        "meaning": "Testergebnis protokollieren"
+      },
+      {
+        "id": "x5",
+        "type": "end",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:72"
+        },
+        "meaning": "Ohne Übernahme zurück"
+      },
+      {
+        "id": "u_upd",
+        "type": "update_task",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:81"
+        },
+        "meaning": "Katasteränderung zur Verbuchung vormerken"
+      },
+      {
+        "id": "c_p6",
+        "type": "call",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:86"
+        },
+        "meaning": "Übernahme protokollieren"
+      },
+      {
+        "id": "e_dv",
+        "type": "end",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:88"
+        },
+        "meaning": "Als erledigt zurück"
+      },
+      {
+        "id": "s_ar",
+        "type": "start",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:97"
+        },
+        "meaning": "Archivierung"
+      },
+      {
+        "id": "o_out",
+        "type": "output",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:105"
+        },
+        "meaning": "Archivdatei öffnen"
+      },
+      {
+        "id": "g_ar",
+        "type": "gateway",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:106"
+        },
+        "meaning": "Archiv nicht beschreibbar?"
+      },
+      {
+        "id": "c_p7",
+        "type": "call",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:107"
+        },
+        "meaning": "Warnung protokollieren"
+      },
+      {
+        "id": "x_ar",
+        "type": "end",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:108"
+        },
+        "meaning": "Datei bleibt im Eingang"
+      },
+      {
+        "id": "o_tr",
+        "type": "output",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:110"
+        },
+        "meaning": "Inhalt ins Archiv schreiben"
+      },
+      {
+        "id": "a_del",
+        "type": "action",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:112"
+        },
+        "meaning": "Eingangsdatei löschen"
+      },
+      {
+        "id": "e_ar",
+        "type": "end",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:113"
+        },
+        "meaning": "Archiviert"
+      },
+      {
+        "id": "s_lp",
+        "type": "start",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:120"
+        },
+        "meaning": "Zusammenlagerungsprüfung"
+      },
+      {
+        "id": "r_kat",
+        "type": "read",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:124"
+        },
+        "meaning": "Lagerklassen je Lagerort aus Kataster lesen"
+      },
+      {
+        "id": "c_ct",
+        "type": "call",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:129"
+        },
+        "meaning": "Prüfer mit Matrix des Werks anlegen"
+      },
+      {
+        "id": "l_lo",
+        "type": "loop",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:131"
+        },
+        "meaning": "Lagerorte durchgehen"
+      },
+      {
+        "id": "c_pr",
+        "type": "call",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:138"
+        },
+        "meaning": "Lagerklassen des Lagerorts prüfen"
+      },
+      {
+        "id": "c_p8",
+        "type": "call",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:141"
+        },
+        "meaning": "Verstoß protokollieren"
+      },
+      {
+        "id": "g_t2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:142"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "w_auf",
+        "type": "write",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:143"
+        },
+        "meaning": "Aufgabe ZUSLAG anlegen"
+      },
+      {
+        "id": "e_lp",
+        "type": "end",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:152"
+        },
+        "meaning": "Prüfung fertig"
+      },
+      {
+        "id": "s_pr",
+        "type": "start",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:157"
+        },
+        "meaning": "Protokollzeile anhängen"
+      },
+      {
+        "id": "e_pr",
+        "type": "end",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:162"
+        },
+        "meaning": "Zeile angehängt"
+      },
+      {
+        "id": "s_pa",
+        "type": "start",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:167"
+        },
+        "meaning": "Protokollanzeige"
+      },
+      {
+        "id": "c_fac",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:171"
+        },
+        "meaning": "ALV erzeugen"
+      },
+      {
+        "id": "o_d",
+        "type": "output",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:173"
+        },
+        "meaning": "Protokoll anzeigen"
+      },
+      {
+        "id": "m_pa",
+        "type": "output",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:175"
+        },
+        "meaning": "Hinweis: Anzeige nicht möglich"
+      },
+      {
+        "id": "e_pa",
+        "type": "end",
+        "anchor": {
+          "file": "zehs_sdb_inbound_f01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zehs_sdb_inbound_f01.abap:177"
+        },
+        "meaning": "Lauf beendet"
+      },
+      {
+        "id": "s_c",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:35"
+        },
+        "meaning": "Matrix laden"
+      },
+      {
+        "id": "r_m",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:37"
+        },
+        "meaning": "Zusammenlagerungsmatrix für Werk und allgemein lesen"
+      },
+      {
+        "id": "e_c",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:41"
+        },
+        "meaning": "Matrix geladen"
+      },
+      {
+        "id": "s_p",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:44"
+        },
+        "meaning": "Lagerklassen prüfen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:50"
+        },
+        "meaning": "Lagerklassen durchgehen"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:54"
+        },
+        "meaning": "Werksspezifische Matrixzeile suchen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:56"
+        },
+        "meaning": "Keine werksspezifische Zeile?"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:57"
+        },
+        "meaning": "Allgemeine Matrixzeile suchen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:60"
+        },
+        "meaning": "Lagerklasse unbekannt?"
+      },
+      {
+        "id": "x_u",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:61"
+        },
+        "meaning": "Ausnahme: Lagerklasse unbekannt"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:67"
+        },
+        "meaning": "Mit jeder folgenden Lagerklasse kombinieren"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:70"
+        },
+        "meaning": "Spalte in Matrix fehlt?"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:73"
+        },
+        "meaning": "Zellwert zulässig?"
+      },
+      {
+        "id": "x_v",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:77"
+        },
+        "meaning": "Ausnahme: Zusammenlagerung verboten"
+      },
+      {
+        "id": "e_p",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ehs_lagerklasse.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_lagerklasse.abap:85"
+        },
+        "meaning": "Lagerort zulässig"
+      },
+      {
+        "id": "s_u",
+        "type": "start",
+        "anchor": {
+          "file": "z_ehs_kataster_update.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_kataster_update.abap:1"
+        },
+        "meaning": "Verbuchung Kataster"
+      },
+      {
+        "id": "w_u",
+        "type": "write",
+        "anchor": {
+          "file": "z_ehs_kataster_update.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_kataster_update.abap:17"
+        },
+        "meaning": "SDB-Daten an allen Lagerorten des Stoffs übernehmen"
+      },
+      {
+        "id": "g_u",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ehs_kataster_update.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_kataster_update.abap:24"
+        },
+        "meaning": "Kein Katastereintrag?"
+      },
+      {
+        "id": "m_u",
+        "type": "output",
+        "anchor": {
+          "file": "z_ehs_kataster_update.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_kataster_update.abap:25"
+        },
+        "meaning": "Abbruchmeldung"
+      },
+      {
+        "id": "x_u2",
+        "type": "end",
+        "anchor": {
+          "file": "z_ehs_kataster_update.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_kataster_update.abap:25"
+        },
+        "meaning": "Verbuchung abgebrochen"
+      },
+      {
+        "id": "w_h",
+        "type": "write",
+        "anchor": {
+          "file": "z_ehs_kataster_update.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_kataster_update.abap:28"
+        },
+        "meaning": "Änderung historisieren"
+      },
+      {
+        "id": "e_u",
+        "type": "end",
+        "anchor": {
+          "file": "z_ehs_kataster_update.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_kataster_update.abap:32"
+        },
+        "meaning": "Verbucht"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s_ws",
+        "to": "r_ws",
+        "condition": "always"
+      },
+      {
+        "from": "r_ws",
+        "to": "g_ws",
+        "condition": "always"
+      },
+      {
+        "from": "g_ws",
+        "to": "m_ws",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m_ws",
+        "to": "x_ws",
+        "condition": "always"
+      },
+      {
+        "from": "g_ws",
+        "to": "e_ws",
+        "condition": "else"
+      },
+      {
+        "from": "s",
+        "to": "c_eps",
+        "condition": "always"
+      },
+      {
+        "from": "c_eps",
+        "to": "g_e",
+        "condition": "always"
+      },
+      {
+        "from": "g_e",
+        "to": "m_e",
+        "condition": "sy-subrc <> 0 OR gt_files IS INITIAL"
+      },
+      {
+        "from": "m_e",
+        "to": "x_e",
+        "condition": "always"
+      },
+      {
+        "from": "x_e",
+        "to": "s_eos",
+        "condition": "always"
+      },
+      {
+        "from": "g_e",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "g_chk",
+        "condition": "next row"
+      },
+      {
+        "from": "g_chk",
+        "to": "c_dv",
+        "condition": "gs_file-name CP '*.xml' OR gs_file-name CP '*.XML'"
+      },
+      {
+        "from": "g_chk",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "c_dv",
+        "to": "s_dv",
+        "condition": "always"
+      },
+      {
+        "from": "g_ok",
+        "to": "c_arch",
+        "condition": "gv_ok = abap_true AND p_test IS INITIAL"
+      },
+      {
+        "from": "g_ok",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "c_arch",
+        "to": "s_ar",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "c_lp",
+        "condition": "no more rows"
+      },
+      {
+        "from": "c_lp",
+        "to": "s_lp",
+        "condition": "always"
+      },
+      {
+        "from": "g_t",
+        "to": "tc",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "g_t",
+        "to": "s_eos",
+        "condition": "else"
+      },
+      {
+        "from": "tc",
+        "to": "s_u",
+        "condition": "always"
+      },
+      {
+        "from": "tc",
+        "to": "s_eos",
+        "condition": "always"
+      },
+      {
+        "from": "s_eos",
+        "to": "c_pa",
+        "condition": "always"
+      },
+      {
+        "from": "c_pa",
+        "to": "s_pa",
+        "condition": "always"
+      },
+      {
+        "from": "s_dv",
+        "to": "o_op",
+        "condition": "always"
+      },
+      {
+        "from": "o_op",
+        "to": "g_op",
+        "condition": "always"
+      },
+      {
+        "from": "g_op",
+        "to": "c_p1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "c_p1",
+        "to": "s_pr",
+        "condition": "always"
+      },
+      {
+        "from": "g_op",
+        "to": "r_ds",
+        "condition": "else"
+      },
+      {
+        "from": "r_ds",
+        "to": "a_tr",
+        "condition": "always"
+      },
+      {
+        "from": "a_tr",
+        "to": "c_p2",
+        "condition": "cx_transformation_error"
+      },
+      {
+        "from": "c_p2",
+        "to": "s_pr",
+        "condition": "always"
+      },
+      {
+        "from": "a_tr",
+        "to": "r_spec",
+        "condition": "always"
+      },
+      {
+        "from": "r_spec",
+        "to": "g_spec",
+        "condition": "always"
+      },
+      {
+        "from": "g_spec",
+        "to": "c_p3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "c_p3",
+        "to": "s_pr",
+        "condition": "always"
+      },
+      {
+        "from": "g_spec",
+        "to": "r_alt",
+        "condition": "else"
+      },
+      {
+        "from": "r_alt",
+        "to": "g_alt",
+        "condition": "always"
+      },
+      {
+        "from": "g_alt",
+        "to": "c_p4",
+        "condition": "sy-subrc = 0 AND lv_alt >= ls_sdb-datum"
+      },
+      {
+        "from": "c_p4",
+        "to": "s_pr",
+        "condition": "always"
+      },
+      {
+        "from": "g_alt",
+        "to": "g_test",
+        "condition": "else"
+      },
+      {
+        "from": "g_test",
+        "to": "c_p5",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "c_p5",
+        "to": "s_pr",
+        "condition": "always"
+      },
+      {
+        "from": "g_test",
+        "to": "u_upd",
+        "condition": "else"
+      },
+      {
+        "from": "u_upd",
+        "to": "c_p6",
+        "condition": "always"
+      },
+      {
+        "from": "c_p6",
+        "to": "s_pr",
+        "condition": "always"
+      },
+      {
+        "from": "s_ar",
+        "to": "o_out",
+        "condition": "always"
+      },
+      {
+        "from": "o_out",
+        "to": "g_ar",
+        "condition": "always"
+      },
+      {
+        "from": "g_ar",
+        "to": "c_p7",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "c_p7",
+        "to": "s_pr",
+        "condition": "always"
+      },
+      {
+        "from": "g_ar",
+        "to": "o_tr",
+        "condition": "else"
+      },
+      {
+        "from": "o_tr",
+        "to": "a_del",
+        "condition": "always"
+      },
+      {
+        "from": "a_del",
+        "to": "e_ar",
+        "condition": "always"
+      },
+      {
+        "from": "s_lp",
+        "to": "r_kat",
+        "condition": "always"
+      },
+      {
+        "from": "r_kat",
+        "to": "c_ct",
+        "condition": "always"
+      },
+      {
+        "from": "c_ct",
+        "to": "s_c",
+        "condition": "always"
+      },
+      {
+        "from": "l_lo",
+        "to": "c_pr",
+        "condition": "next row"
+      },
+      {
+        "from": "c_pr",
+        "to": "s_p",
+        "condition": "always"
+      },
+      {
+        "from": "c_p8",
+        "to": "s_pr",
+        "condition": "always"
+      },
+      {
+        "from": "g_t2",
+        "to": "w_auf",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "g_t2",
+        "to": "l_lo",
+        "condition": "else"
+      },
+      {
+        "from": "w_auf",
+        "to": "l_lo",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_lo",
+        "to": "e_lp",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_pr",
+        "to": "e_pr",
+        "condition": "always"
+      },
+      {
+        "from": "s_pa",
+        "to": "c_fac",
+        "condition": "always"
+      },
+      {
+        "from": "c_fac",
+        "to": "o_d",
+        "condition": "always"
+      },
+      {
+        "from": "c_fac",
+        "to": "m_pa",
+        "condition": "cx_salv_msg"
+      },
+      {
+        "from": "o_d",
+        "to": "e_pa",
+        "condition": "always"
+      },
+      {
+        "from": "m_pa",
+        "to": "e_pa",
+        "condition": "always"
+      },
+      {
+        "from": "s_c",
+        "to": "r_m",
+        "condition": "always"
+      },
+      {
+        "from": "r_m",
+        "to": "e_c",
+        "condition": "always"
+      },
+      {
+        "from": "s_p",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "r1",
+        "condition": "next row"
+      },
+      {
+        "from": "r1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "r2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "r2",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "x_u",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "l2",
+        "to": "g3",
+        "condition": "next row"
+      },
+      {
+        "from": "g3",
+        "to": "l2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g3",
+        "to": "cs",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "l2",
+        "condition": "WHEN '1' OR '2'"
+      },
+      {
+        "from": "cs",
+        "to": "x_v",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "l2",
+        "to": "l1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "l1",
+        "to": "e_p",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_u",
+        "to": "w_u",
+        "condition": "always"
+      },
+      {
+        "from": "w_u",
+        "to": "g_u",
+        "condition": "always"
+      },
+      {
+        "from": "g_u",
+        "to": "m_u",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m_u",
+        "to": "x_u2",
+        "condition": "always"
+      },
+      {
+        "from": "g_u",
+        "to": "w_h",
+        "condition": "else"
+      },
+      {
+        "from": "w_h",
+        "to": "e_u",
+        "condition": "always"
+      },
+      {
+        "from": "e_dv",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "x1",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "x2",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "x3",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "x4",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "x5",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "e_ar",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "x_ar",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_lp",
+        "to": "g_t",
+        "condition": "always"
+      },
+      {
+        "from": "e_pr",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "e_pr",
+        "to": "x2",
+        "condition": "always"
+      },
+      {
+        "from": "e_pr",
+        "to": "x3",
+        "condition": "always"
+      },
+      {
+        "from": "e_pr",
+        "to": "x4",
+        "condition": "always"
+      },
+      {
+        "from": "e_pr",
+        "to": "x5",
+        "condition": "always"
+      },
+      {
+        "from": "e_pr",
+        "to": "e_dv",
+        "condition": "always"
+      },
+      {
+        "from": "e_pr",
+        "to": "x_ar",
+        "condition": "always"
+      },
+      {
+        "from": "e_pr",
+        "to": "g_t2",
+        "condition": "always"
+      },
+      {
+        "from": "e_c",
+        "to": "l_lo",
+        "condition": "always"
+      },
+      {
+        "from": "x_u",
+        "to": "c_p8",
+        "condition": "zcx_ehs_zusammenlagerung"
+      },
+      {
+        "from": "x_v",
+        "to": "c_p8",
+        "condition": "zcx_ehs_zusammenlagerung"
+      },
+      {
+        "from": "e_p",
+        "to": "l_lo",
+        "condition": "next iteration"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zehs_sdb_inbound.abap:56 — kein Fachsatz „die Zusammenlagerungsprüfung berücksichtigt die soeben eingelesenen Lagerklassen“: die Katasteränderungen sind nur zur Verbuchung vorgemerkt und werden erst beim COMMIT WORK danach geschrieben; geprüft wird der alte Stand",
+    "z_ehs_kataster_update.abap:25 — kein Fachsatz „ein Stoff ohne Katastereintrag im Werk wird übersprungen“: das UPDATE trifft keine Zeile, MESSAGE A bricht die gesamte Verbuchung des Laufs ab, auch die Übernahmen aller anderen Dateien, die zu diesem Zeitpunkt bereits archiviert sind",
+    "zcl_ehs_lagerklasse.abap:70 — kein Fachsatz „fehlt eine Lagerklasse als Spalte in der Matrix, wird die Zusammenlagerung abgelehnt“: dann gilt sie als zulässig; nur eine vorhandene Zelle ohne 1 oder 2 (auch leer) ist unzulässig",
+    "zehs_sdb_inbound_f01.abap:143 — kein Fachsatz „alle unzulässigen Kombinationen eines Lagerorts werden gemeldet“: die Prüfung bricht bei der ersten ab, je Lagerort entsteht höchstens eine Aufgabe"
+  ],
+  "processDescription": "Der Nachtjob wird mit Eingangsverzeichnis, Werk und Testlaufkennzeichen gestartet; ein unbekanntes Werk wird schon am Selektionsbild abgewiesen. Er listet die Dateien des Verzeichnisses und endet mit Hinweis, wenn keine vorhanden sind. Für jede XML-Datei liest er den Inhalt und transformiert ihn in die SDB-Struktur; nicht lesbare oder fehlerhafte Dateien werden protokolliert und bleiben im Eingang. Über die CAS-Nummer ermittelt er den Stoff; ohne Zuordnung bleibt die Datei mit Warnung liegen. Ist das SDB nicht neuer als der Katasterstand im Werk, wird es nur als erledigt vermerkt. Im Testlauf werden Stoff, Lagerklasse und WGK nur protokolliert, sonst wird die Übernahme von Lagerklasse, WGK, SDB-Datum und Lieferant ins Kataster zur Verbuchung vorgemerkt. Erledigte Dateien werden im Echtlauf sofort ins Archiv geschrieben und im Eingang gelöscht. Danach prüft der Job je Lagerort die gelagerten Lagerklassen paarweise gegen die Zusammenlagerungsmatrix, werksspezifisch vor allgemein; eine unbekannte Lagerklasse oder die erste unzulässige Kombination wird protokolliert und führt im Echtlauf zu einer offenen Aufgabe für den Gefahrstoffbeauftragten. Weil die Katasteränderungen erst beim abschließenden COMMIT WORK verbucht werden, prüft er dabei den alten Stand. Die Verbuchung übernimmt die Daten an allen Lagerorten des Stoffs und historisiert sie; fehlt der Stoff im Kataster des Werks, bricht sie mit MESSAGE A ab und verwirft alle Übernahmen des Laufs. Zum Schluss wird das Protokoll angezeigt."
+}

@@ -1,0 +1,298 @@
+{
+  "id": "BM-165",
+  "title": "Außenhandel: Sanktionslistenprüfung des Warenempfängers beim Sichern des Kundenauftrags",
+  "classes": [
+    "K01",
+    "K16"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 9,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:9"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZGTS_SANKTION",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:19"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-165-B01",
+      "text": "Die Prüfung läuft nur, wenn der Schalter ZSD_SANKTION_AKTIV in der Variablentabelle auf X steht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:9"
+        },
+        {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-165-B02",
+      "text": "Der Warenempfänger des Auftragskopfs wird aus den Partnern des Belegs ermittelt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-165-B03",
+      "text": "Es wird geprüft, ob das Land oder der Name des Warenempfängers exakt auf der Sanktionsliste steht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-165-B04",
+      "text": "Bei einem Treffer wird das Sichern des Auftrags mit einer Fehlermeldung zu Kunde und Land verhindert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:6"
+        },
+        "meaning": "Exit vor dem Sichern des Auftrags"
+      },
+      {
+        "id": "qv",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:9"
+        },
+        "meaning": "Aktivierungsschalter lesen"
+      },
+      {
+        "id": "c1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        "meaning": "Prüfung aktiv?"
+      },
+      {
+        "id": "rp",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Warenempfänger des Kopfs nachschlagen"
+      },
+      {
+        "id": "qs",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Sanktionsliste nach Land/Name durchsuchen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Treffer auf Sanktionsliste?"
+      },
+      {
+        "id": "mo",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Fehlermeldung Sanktionslistentreffer (Kunde, Land)"
+      },
+      {
+        "id": "m",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Sichern mit Fehlermeldung verhindern"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Sichern geht weiter"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "qv",
+        "condition": "always"
+      },
+      {
+        "from": "qv",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "rp",
+        "condition": "lv_aktiv = 'X'"
+      },
+      {
+        "from": "c1",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "rp",
+        "to": "qs",
+        "condition": "always"
+      },
+      {
+        "from": "qs",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "mo",
+        "condition": "sy-dbcnt > 0"
+      },
+      {
+        "from": "g",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "mo",
+        "to": "m",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:15 — kein Fachsatz „ohne Warenempfänger wird die Prüfung übersprungen“: die Erfolgsprüfung ist auskommentiert, ohne Treffer prüft der Exit mit dem zuletzt in der Kopfzeile stehenden Partner",
+    "source.abap:19 — kein Fachsatz „ähnliche Namen werden erkannt“: verglichen wird nur auf exakte Gleichheit von Name bzw. Land",
+    "source.abap:23 — kein Fachsatz „der Auftrag wird mit Liefersperre gesichert“: der Exit setzt keine Sperre, er verhindert das Sichern"
+  ],
+  "processDescription": "Der Exit läuft beim Sichern jedes Kundenauftrags kurz vor der Verbuchung. Zuerst liest er den Aktivierungsschalter ZSD_SANKTION_AKTIV aus der Variablentabelle und endet ohne Prüfung, wenn er nicht auf X steht. Sonst sucht er unter den Belegpartnern den Warenempfänger auf Kopfebene. Anschließend zählt er die Einträge der eigenen Sanktionsliste, deren Land oder Name exakt mit dem Warenempfänger übereinstimmt. Gibt es einen Treffer, bricht er das Sichern mit einer Fehlermeldung zu Kunde und Land ab, und der Anwender bleibt im Auftrag. Ohne Treffer wird normal gesichert. Die frühere Prüfung, ob überhaupt ein Warenempfänger gefunden wurde, ist auskommentiert."
+}

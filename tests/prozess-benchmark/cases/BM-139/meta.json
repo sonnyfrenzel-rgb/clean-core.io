@@ -1,0 +1,46 @@
+{
+  "id": "BM-139",
+  "title": "FSCM-Kreditprüfung beim Sichern des Kundenauftrags: RFC ins zentrale Kreditmanagement, dynamische Ersatzregel, Liefersperre, Protokoll und stündliche Nachprüfung",
+  "domain": "FSCM / Credit Management mit SD-Anbindung",
+  "band": "sehr komplex",
+  "loc": 400,
+  "constructs": [
+    "User-Exit-FORMs MV45AFZZ",
+    "CHECK im Exit",
+    "REDUCE über XVBAP",
+    "CASE auf Entscheidung",
+    "Ändern von VBAK im Exit",
+    "MESSAGE TYPE E im Sichern-Exit",
+    "EXPORT/IMPORT/FREE MEMORY",
+    "CALL FUNCTION … IN UPDATE TASK",
+    "Schalter über TVARVC",
+    "MESSAGE … RAISING",
+    "CALL FUNCTION … DESTINATION mit SYSTEM_FAILURE/COMMUNICATION_FAILURE",
+    "CALL METHOD (lv_class)=>(lv_meth)",
+    "CATCH cx_sy_dyn_call_error",
+    "statische Klassenmethoden mit COND #",
+    "BAPI_SALESORDER_CHANGE",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "END-OF-SELECTION nach RETURN"
+  ],
+  "scenario": "Konzern mit zentralem FSCM-Kreditmanagement in einem eigenen System: Beim Sichern von Kundenaufträgen wird per RFC im FSCM-System entschieden, bei Ausfall lokal nach Ersatzregel; gesperrte Aufträge prüft ein Job stündlich nach.",
+  "s4_issues": [
+    "Standard-Kreditprüfung in S/4 über SAP Credit Management integriert; Eigenbau-RFC und Liefersperre umgehen sie",
+    "Änderung von VBAK im Exit und MESSAGE E in USEREXIT_SAVE_DOCUMENT_PREPARE",
+    "dynamischer Methodenaufruf aus Customizing",
+    "Direkter Lesezugriff auf UKMBP_CMS_SGM und VBAK"
+  ],
+  "wave": 2,
+  "module": "FSCM-CR",
+  "edge_constructs": [
+    "CALL METHOD (lv_class)=>(lv_meth)",
+    "IMPORT/EXPORT … FROM/TO MEMORY",
+    "Schalter über TVARVC",
+    "MESSAGE … RAISING",
+    "CHECK im FORM",
+    "TRY … CATCH",
+    "REDUCE",
+    "COND #",
+    "RETURN aus Ereignisblock (END-OF-SELECTION läuft weiter)"
+  ]
+}

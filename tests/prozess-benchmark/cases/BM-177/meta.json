@@ -1,0 +1,51 @@
+{
+  "id": "BM-177",
+  "title": "IS-Retail Artikelstamm: Lieferantenkatalog per XML-Transformation übernehmen, Artikel anlegen, listen, auslaufen lassen",
+  "domain": "Branchenlösung IS-Retail – Artikelstamm",
+  "band": "sehr komplex",
+  "loc": 443,
+  "constructs": [
+    "AT SELECTION-SCREEN ON",
+    "Makro DEFINE prot",
+    "lokale Klasse mit ASSIGN COMPONENT",
+    "CREATE DATA",
+    "dynamischer Methodenaufruf CALL METHOD (klasse)=>(methode)",
+    "CATCH cx_sy_dyn_call_error",
+    "OPEN DATASET BINARY / READ DATASET",
+    "CALL TRANSFORMATION mit CATCH",
+    "LEAVE LIST-PROCESSING",
+    "IMPORT/EXPORT … FROM/TO DATABASE indx(zk)",
+    "DELETE FROM DATABASE",
+    "LOOP … FROM Startindex",
+    "CASE mit CONTINUE",
+    "BAPI_MATERIAL_GETINTNUMBERRET",
+    "BAPI_MATERIAL_MAINTAINDATA_RT",
+    "UPDATE MARA direkt",
+    "CALL FUNCTION … IN BACKGROUND TASK + COMMIT WORK",
+    "REDUCE",
+    "nie gerufenes FORM mit IF 1 = 2 und Batch-Input VK11"
+  ],
+  "scenario": "Drogeriefilialist übernimmt die Artikelkataloge seiner Lieferanten als XML: neue Artikel werden angelegt und in der Vertriebslinie gelistet, geänderte gepflegt, ausgelaufene auf Status AU gesetzt.",
+  "s4_issues": [
+    "Direktes UPDATE auf MARA (Materialstatus) ohne Änderungsbelege",
+    "Materialnummer 40 Zeichen und Artikel-BAPI in S/4 (Product Master, API_PRODUCT_SRV)",
+    "Dateiablage auf dem Applikationsserver",
+    "Dynamische Methodenaufrufe aus Customizing (Sicherheits- und Prüfbarkeitsthema)",
+    "Wiederaufsetzpunkt in INDX",
+    "tRFC IN BACKGROUND TASK statt bgRFC",
+    "Batch-Input auf VK11 (tot)"
+  ],
+  "wave": 2,
+  "module": "IS-Retail",
+  "edge_constructs": [
+    "CALL TRANSFORMATION",
+    "IMPORT/EXPORT … FROM/TO DATABASE (Wiederaufsetzpunkt)",
+    "ASSIGN COMPONENT / CREATE DATA",
+    "CALL METHOD (lv_class)=>(lv_meth)",
+    "Makros (DEFINE)",
+    "CHECK mitten in der Schleife",
+    "IN BACKGROUND TASK",
+    "nie erreichtes FORM mit IF 1 = 2",
+    "LEAVE LIST-PROCESSING"
+  ]
+}

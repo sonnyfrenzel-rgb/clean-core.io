@@ -1,0 +1,508 @@
+{
+  "id": "BM-187",
+  "title": "BOPF-Validierung Leihgeräteausgabe: Rückgabedatum, Kundensperre, höchstens drei Geräte je Kunde",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_leih_v_ausgabe.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_leih_v_ausgabe.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZLEIH_ROOT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_leih_v_ausgabe.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_leih_v_ausgabe.abap:38"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "/BOBF/CL_FRW_FACTORY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_leih_v_ausgabe.abap",
+        "line": 55,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_leih_v_ausgabe.abap:55"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-187-B01",
+      "text": "Beim Ausgeben werden die betroffenen Leihgeräte-Vorgänge gelesen und einzeln geprüft.",
+      "anchors": [
+        {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:11"
+        },
+        {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-187-B02",
+      "text": "Liegt die geplante Rückgabe vor dem Ausgabedatum, wird der Vorgang mit Meldung 001 abgelehnt und nicht weiter geprüft.",
+      "anchors": [
+        {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:21"
+        },
+        {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-187-B03",
+      "text": "Zum Kunden werden die zentrale Auftrags- und Liefersperre gelesen.",
+      "anchors": [
+        {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-187-B04",
+      "text": "Existiert der Kunde nicht oder ist er für Aufträge oder Lieferungen gesperrt, wird der Vorgang mit Meldung 002 abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:31"
+        },
+        {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-187-B05",
+      "text": "Es wird gezählt, wie viele andere Leihgeräte der Kunde derzeit ausgeliehen hat.",
+      "anchors": [
+        {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-187-B06",
+      "text": "Hat der Kunde bereits drei oder mehr Leihgeräte, wird der Vorgang mit Meldung 003 abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:43"
+        },
+        {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-187-B07",
+      "text": "Ein abgelehnter Vorgang wird als fehlgeschlagen markiert und erhält eine Fehlermeldung am Vorgang.",
+      "anchors": [
+        {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:54"
+        },
+        {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:57"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:6"
+        },
+        "meaning": "Validierung beim Ausgeben"
+      },
+      {
+        "id": "rt",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:11"
+        },
+        "meaning": "Leihgeräte-Vorgänge lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:18"
+        },
+        "meaning": "Vorgänge einzeln prüfen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:21"
+        },
+        "meaning": "Rückgabe vor Ausgabe?"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:22"
+        },
+        "meaning": "Ablehnen: Datumsfehler"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:28"
+        },
+        "meaning": "Sperren des Kunden lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:31"
+        },
+        "meaning": "Kunde unbekannt oder gesperrt?"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:32"
+        },
+        "meaning": "Ablehnen: Kunde gesperrt"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:38"
+        },
+        "meaning": "Andere ausgeliehene Geräte des Kunden zählen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:43"
+        },
+        "meaning": "Schon drei Geräte beim Kunden?"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:44"
+        },
+        "meaning": "Ablehnen: Höchstzahl erreicht"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:51"
+        },
+        "meaning": "Prüfergebnis an BOPF zurück"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:53"
+        },
+        "meaning": "Vorgang ablehnen"
+      },
+      {
+        "id": "gm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:55"
+        },
+        "meaning": "Meldungscontainer bei Bedarf anlegen"
+      },
+      {
+        "id": "am",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:57"
+        },
+        "meaning": "Fehlermeldung am Vorgang hinzufügen"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_leih_v_ausgabe.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_leih_v_ausgabe.abap:61"
+        },
+        "meaning": "Ablehnung vermerkt"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "rt",
+        "condition": "always"
+      },
+      {
+        "from": "rt",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "g1",
+        "condition": "next row"
+      },
+      {
+        "from": "g1",
+        "to": "c1",
+        "condition": "<ls_root>-rueckgabe_soll < <ls_root>-ausgabe_datum"
+      },
+      {
+        "from": "g1",
+        "to": "q1",
+        "condition": "else"
+      },
+      {
+        "from": "c1",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "c2",
+        "condition": "sy-subrc <> 0 OR ls_sperre-aufsd IS NOT INITIAL OR ls_sperre-lifsd IS NOT INITIAL"
+      },
+      {
+        "from": "g2",
+        "to": "q2",
+        "condition": "else"
+      },
+      {
+        "from": "c2",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "q2",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "c3",
+        "condition": "lv_anzahl >= 3"
+      },
+      {
+        "from": "g3",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "c3",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s2",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "gm",
+        "to": "am",
+        "condition": "always"
+      },
+      {
+        "from": "am",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "e2",
+        "to": "l",
+        "condition": "next iteration"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "gesamte Scheibe — kein Fachsatz „ohne hinterlegte Kaution wird die Ausgabe abgelehnt“: die Kautionsprüfung (Meldung 004) ist auskommentiert",
+    "zcl_leih_v_ausgabe.abap:38 — kein Fachsatz „die Validierung sperrt den Kunden oder die Leihgeräte“: gezählt und geprüft wird nur, es wird nichts gesperrt oder geändert",
+    "zcl_leih_v_ausgabe.abap:43 — kein Fachsatz „ein Kunde mit Datumsfehler wird zusätzlich auf Sperre und Höchstzahl geprüft“: nach der ersten Ablehnung geht es mit CONTINUE zum nächsten Vorgang, es erscheint höchstens eine Meldung je Vorgang"
+  ],
+  "processDescription": "Beim Ausgeben eines Leihgeräts ruft das BOPF-Framework die Validierung mit den betroffenen Vorgängen auf. Die Validierung liest die Vorgangsdaten und prüft jeden Vorgang einzeln. Liegt die geplante Rückgabe vor dem Ausgabedatum, wird der Vorgang mit Meldung 001 abgelehnt und nicht weiter geprüft. Sonst liest sie zum Kunden die zentrale Auftrags- und Liefersperre; existiert der Kunde nicht oder ist eine der Sperren gesetzt, wird mit Meldung 002 abgelehnt. Andernfalls zählt sie die anderen Leihgeräte, die der Kunde im Status A ausgeliehen hat; ab drei wird mit Meldung 003 abgelehnt. Eine Ablehnung trägt den Vorgang in die Liste der fehlgeschlagenen Schlüssel ein und hängt eine Fehlermeldung an den Vorgang, wobei der Meldungscontainer beim ersten Fehler angelegt wird. Die Kautionsprüfung ist auskommentiert. Die Validierung ändert keine Daten; das Framework verhindert die Ausgabe für die fehlgeschlagenen Vorgänge."
+}

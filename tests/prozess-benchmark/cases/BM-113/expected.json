@@ -1,0 +1,1359 @@
+{
+  "id": "BM-113",
+  "title": "Serviceaufträge aufwandsbezogen fakturieren: DP90 per Batch-Input oder Dialog, DIP-Profil, Anwendungslog",
+  "classes": [
+    "K01",
+    "K04",
+    "K14",
+    "K17",
+    "K12"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "AUFK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_sm_faktura.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_sm_faktura.abap:51"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JEST",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_sm_faktura.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_sm_faktura.abap:51"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCS_DIP_MAP",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_sm_faktura.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_sm_faktura.abap:51"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCS_SM_FAKLOG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_sm_faktura.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_sm_faktura.abap:51"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "COEP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_sm_faktura_f01.abap",
+        "line": 14,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_sm_faktura_f01.abap:14"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DP90",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcs_sm_faktura.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_sm_faktura.abap:83"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DP90",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcs_sm_faktura_f01.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_sm_faktura_f01.abap:41"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCS_SM_FAKLOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcs_sm_faktura_f01.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_sm_faktura_f01.abap:51"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcs_sm_faktura_f01.abap",
+        "line": 78,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_sm_faktura_f01.abap:78"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcs_sm_faktura_f01.abap",
+        "line": 103,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_sm_faktura_f01.abap:103"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcs_sm_faktura_f01.abap",
+        "line": 115,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_sm_faktura_f01.abap:115"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DSP_LOG_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcs_sm_faktura_f01.abap",
+        "line": 121,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_sm_faktura_f01.abap:121"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-113-B01",
+      "text": "Zu Beginn wird ein Anwendungslog für die Fakturierung eröffnet; gelingt das nicht, bricht das Programm ab.",
+      "anchors": [
+        {
+          "file": "zcs_sm_faktura.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:49"
+        },
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:78"
+        },
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:85"
+        },
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:86"
+        }
+      ]
+    },
+    {
+      "id": "BM-113-B02",
+      "text": "Es werden Serviceaufträge der Selektion ermittelt, die bis zum Stichtag technisch abgeschlossen sind, deren Auftragsart ein DIP-Profil zugeordnet ist und für die noch keine Fakturaanforderung protokolliert ist.",
+      "anchors": [
+        {
+          "file": "zcs_sm_faktura.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-113-B03",
+      "text": "Ohne solche Aufträge endet die Verarbeitung, das (leere) Protokoll wird dennoch gesichert und angezeigt.",
+      "anchors": [
+        {
+          "file": "zcs_sm_faktura.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:65"
+        },
+        {
+          "file": "zcs_sm_faktura.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:66"
+        },
+        {
+          "file": "zcs_sm_faktura.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:90"
+        }
+      ]
+    },
+    {
+      "id": "BM-113-B04",
+      "text": "Garantieaufträge werden nicht fakturiert, sondern mit einer Warnung protokolliert.",
+      "anchors": [
+        {
+          "file": "zcs_sm_faktura.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:70"
+        },
+        {
+          "file": "zcs_sm_faktura.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-113-B05",
+      "text": "Für jeden übrigen Auftrag werden die Istkosten summiert; sind sie nicht positiv, wird der Auftrag als ohne Istkosten markiert.",
+      "anchors": [
+        {
+          "file": "zcs_sm_faktura.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:75"
+        },
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:14"
+        },
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:17"
+        },
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-113-B06",
+      "text": "Markierte Aufträge werden mit der Warnung „Keine Istkosten“ protokolliert und nicht fakturiert.",
+      "anchors": [
+        {
+          "file": "zcs_sm_faktura.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:76"
+        },
+        {
+          "file": "zcs_sm_faktura.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-113-B07",
+      "text": "Im Dialogmodus wird die aufwandsbezogene Fakturierung mit vorbelegtem Auftrag ohne Einstiegsbild aufgerufen, der Sachbearbeiter schließt sie selbst ab.",
+      "anchors": [
+        {
+          "file": "zcs_sm_faktura.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:81"
+        },
+        {
+          "file": "zcs_sm_faktura.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:82"
+        },
+        {
+          "file": "zcs_sm_faktura.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-113-B08",
+      "text": "Im Hintergrund wird die Fakturaanforderung mit Auftrag, DIP-Profil und Stichtag per Batch-Input erzeugt und gesichert.",
+      "anchors": [
+        {
+          "file": "zcs_sm_faktura.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:85"
+        },
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-113-B09",
+      "text": "Meldet die Transaktion die gesicherte Anforderung, wird die Belegnummer zum Auftrag im Fakturaprotokoll gespeichert, festgeschrieben und im Anwendungslog als Erfolg vermerkt.",
+      "anchors": [
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:47"
+        },
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:49"
+        },
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:51"
+        },
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:55"
+        },
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-113-B10",
+      "text": "Sonst werden alle Fehler- und Abbruchmeldungen der Transaktion zum Auftrag ins Anwendungslog übernommen.",
+      "anchors": [
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:60"
+        },
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-113-B11",
+      "text": "Jeder Protokolleintrag wird mit Auftragsnummer und Text dem Anwendungslog hinzugefügt.",
+      "anchors": [
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:103"
+        }
+      ]
+    },
+    {
+      "id": "BM-113-B12",
+      "text": "Am Ende wird das Anwendungslog gesichert und angezeigt.",
+      "anchors": [
+        {
+          "file": "zcs_sm_faktura.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:91"
+        },
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:115"
+        },
+        {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:121"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:48"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "clo",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:49"
+        },
+        "meaning": "Anwendungslog eröffnen"
+      },
+      {
+        "id": "rso",
+        "type": "read",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:51"
+        },
+        "meaning": "Technisch abgeschlossene, nicht fakturierte Serviceaufträge mit DIP-Profil lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:65"
+        },
+        "meaning": "Keine Aufträge?"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:66"
+        },
+        "meaning": "Selektion beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:69"
+        },
+        "meaning": "Aufträge durchgehen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:70"
+        },
+        "meaning": "Garantieauftrag?"
+      },
+      {
+        "id": "cw",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:71"
+        },
+        "meaning": "Warnung Garantieauftrag protokollieren"
+      },
+      {
+        "id": "ccc",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:75"
+        },
+        "meaning": "Istkosten prüfen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:76"
+        },
+        "meaning": "Ohne Istkosten markiert?"
+      },
+      {
+        "id": "ck",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:77"
+        },
+        "meaning": "Warnung keine Istkosten protokollieren"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:81"
+        },
+        "meaning": "Dialogmodus?"
+      },
+      {
+        "id": "a3",
+        "type": "action",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:82"
+        },
+        "meaning": "Auftrag für DP90 vorbelegen"
+      },
+      {
+        "id": "t3",
+        "type": "external_program",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:83"
+        },
+        "meaning": "Aufwandsbezogene Fakturierung im Dialog"
+      },
+      {
+        "id": "cb",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:85"
+        },
+        "meaning": "Fakturaanforderung per Batch-Input"
+      },
+      {
+        "id": "seos",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:90"
+        },
+        "meaning": "Abschluss"
+      },
+      {
+        "id": "cls",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_sm_faktura.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura.abap:91"
+        },
+        "meaning": "Protokoll sichern und anzeigen"
+      },
+      {
+        "id": "scc",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:10"
+        },
+        "meaning": "Istkostenprüfung"
+      },
+      {
+        "id": "rcc",
+        "type": "read",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:14"
+        },
+        "meaning": "Istkosten des Auftrags summieren"
+      },
+      {
+        "id": "gcc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:17"
+        },
+        "meaning": "Keine positiven Istkosten?"
+      },
+      {
+        "id": "acc",
+        "type": "action",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:18"
+        },
+        "meaning": "Auftrag als ohne Istkosten markieren"
+      },
+      {
+        "id": "ecc",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:20"
+        },
+        "meaning": "Prüfung fertig"
+      },
+      {
+        "id": "sb",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:27"
+        },
+        "meaning": "Batch-Input DP90"
+      },
+      {
+        "id": "tb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:41"
+        },
+        "meaning": "Fakturaanforderung im Hintergrund erzeugen"
+      },
+      {
+        "id": "rb",
+        "type": "read",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:47"
+        },
+        "meaning": "Erfolgsmeldung mit Belegnummer suchen"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:49"
+        },
+        "meaning": "Anforderung gesichert?"
+      },
+      {
+        "id": "wb",
+        "type": "write",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:51"
+        },
+        "meaning": "Belegnummer zum Auftrag protokollieren"
+      },
+      {
+        "id": "tcb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:55"
+        },
+        "meaning": "Protokoll festschreiben"
+      },
+      {
+        "id": "cbs",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:57"
+        },
+        "meaning": "Erfolg ins Anwendungslog"
+      },
+      {
+        "id": "lb",
+        "type": "loop",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:60"
+        },
+        "meaning": "Fehlermeldungen der Transaktion durchgehen"
+      },
+      {
+        "id": "cbe",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:64"
+        },
+        "meaning": "Fehler ins Anwendungslog"
+      },
+      {
+        "id": "eb",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:67"
+        },
+        "meaning": "Auftrag verarbeitet"
+      },
+      {
+        "id": "slo",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:72"
+        },
+        "meaning": "Protokoll eröffnen"
+      },
+      {
+        "id": "clc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:78"
+        },
+        "meaning": "Anwendungslog ZCS/FAKTURA anlegen"
+      },
+      {
+        "id": "glo",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:85"
+        },
+        "meaning": "Log nicht angelegt?"
+      },
+      {
+        "id": "mlo",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:86"
+        },
+        "meaning": "Abbruchmeldung"
+      },
+      {
+        "id": "xlo",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:86"
+        },
+        "meaning": "Programm abgebrochen"
+      },
+      {
+        "id": "elo",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:88"
+        },
+        "meaning": "Log bereit"
+      },
+      {
+        "id": "slm",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:93"
+        },
+        "meaning": "Protokolleintrag"
+      },
+      {
+        "id": "clm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:103"
+        },
+        "meaning": "Meldung ins Anwendungslog"
+      },
+      {
+        "id": "elm",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:109"
+        },
+        "meaning": "Eintrag ergänzt"
+      },
+      {
+        "id": "sls",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:114"
+        },
+        "meaning": "Protokollabschluss"
+      },
+      {
+        "id": "cds",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:115"
+        },
+        "meaning": "Anwendungslog sichern"
+      },
+      {
+        "id": "cdd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:121"
+        },
+        "meaning": "Anwendungslog anzeigen"
+      },
+      {
+        "id": "els",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_sm_faktura_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_sm_faktura_f01.abap:124"
+        },
+        "meaning": "Lauf beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "clo",
+        "condition": "always"
+      },
+      {
+        "from": "clo",
+        "to": "slo",
+        "condition": "always"
+      },
+      {
+        "from": "rso",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "x0",
+        "condition": "gt_ord IS INITIAL"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "x0",
+        "to": "seos",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "g1",
+        "condition": "next row"
+      },
+      {
+        "from": "g1",
+        "to": "cw",
+        "condition": "ls_ord-zzgarant = 'X'"
+      },
+      {
+        "from": "cw",
+        "to": "slm",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "ccc",
+        "condition": "else"
+      },
+      {
+        "from": "ccc",
+        "to": "scc",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "ck",
+        "condition": "gv_skip = abap_true"
+      },
+      {
+        "from": "ck",
+        "to": "slm",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "g3",
+        "condition": "else"
+      },
+      {
+        "from": "g3",
+        "to": "a3",
+        "condition": "p_dial = 'X'"
+      },
+      {
+        "from": "a3",
+        "to": "t3",
+        "condition": "always"
+      },
+      {
+        "from": "t3",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g3",
+        "to": "cb",
+        "condition": "else"
+      },
+      {
+        "from": "cb",
+        "to": "sb",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "seos",
+        "condition": "no more rows"
+      },
+      {
+        "from": "seos",
+        "to": "cls",
+        "condition": "always"
+      },
+      {
+        "from": "cls",
+        "to": "sls",
+        "condition": "always"
+      },
+      {
+        "from": "scc",
+        "to": "rcc",
+        "condition": "always"
+      },
+      {
+        "from": "rcc",
+        "to": "gcc",
+        "condition": "always"
+      },
+      {
+        "from": "gcc",
+        "to": "acc",
+        "condition": "lv_sum <= 0"
+      },
+      {
+        "from": "acc",
+        "to": "ecc",
+        "condition": "always"
+      },
+      {
+        "from": "gcc",
+        "to": "ecc",
+        "condition": "else"
+      },
+      {
+        "from": "sb",
+        "to": "tb",
+        "condition": "always"
+      },
+      {
+        "from": "tb",
+        "to": "rb",
+        "condition": "always"
+      },
+      {
+        "from": "rb",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "wb",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "wb",
+        "to": "tcb",
+        "condition": "always"
+      },
+      {
+        "from": "tcb",
+        "to": "cbs",
+        "condition": "always"
+      },
+      {
+        "from": "cbs",
+        "to": "slm",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "lb",
+        "condition": "else"
+      },
+      {
+        "from": "lb",
+        "to": "cbe",
+        "condition": "next row"
+      },
+      {
+        "from": "cbe",
+        "to": "slm",
+        "condition": "always"
+      },
+      {
+        "from": "lb",
+        "to": "eb",
+        "condition": "no more rows"
+      },
+      {
+        "from": "slo",
+        "to": "clc",
+        "condition": "always"
+      },
+      {
+        "from": "clc",
+        "to": "glo",
+        "condition": "always"
+      },
+      {
+        "from": "glo",
+        "to": "mlo",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mlo",
+        "to": "xlo",
+        "condition": "always"
+      },
+      {
+        "from": "glo",
+        "to": "elo",
+        "condition": "else"
+      },
+      {
+        "from": "slm",
+        "to": "clm",
+        "condition": "always"
+      },
+      {
+        "from": "clm",
+        "to": "elm",
+        "condition": "always"
+      },
+      {
+        "from": "sls",
+        "to": "cds",
+        "condition": "always"
+      },
+      {
+        "from": "cds",
+        "to": "cdd",
+        "condition": "always"
+      },
+      {
+        "from": "cdd",
+        "to": "els",
+        "condition": "always"
+      },
+      {
+        "from": "elo",
+        "to": "rso",
+        "condition": "always"
+      },
+      {
+        "from": "elm",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ecc",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "eb",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "elm",
+        "to": "eb",
+        "condition": "always"
+      },
+      {
+        "from": "elm",
+        "to": "lb",
+        "condition": "next iteration"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcs_sm_faktura.abap:75 — kein Fachsatz „jeder Auftrag wird einzeln auf Istkosten geprüft“: gv_skip wird nie zurückgesetzt; nach dem ersten Auftrag ohne Istkosten gelten alle folgenden als kostenlos und werden nicht fakturiert",
+    "zcs_sm_faktura.abap:83 — kein Fachsatz „im Dialog fakturierte Aufträge werden protokolliert“: nur der Hintergrundweg schreibt ZCS_SM_FAKLOG, im Dialog abgerechnete Aufträge werden im nächsten Lauf erneut vorgeschlagen",
+    "zcs_sm_faktura_f01.abap:41 — kein Fachsatz „die Faktura wird erstellt“: DP90 erzeugt eine Fakturaanforderung (Lastschriftanforderung), die Faktura selbst entsteht außerhalb des Falls",
+    "gesamte Scheibe — kein Fachsatz „der Auftrag wird nach der Fakturierung abgeschlossen oder gesperrt“: der Auftragsstatus wird nicht verändert"
+  ],
+  "processDescription": "Der Report wird mit Aufträgen, Auftragsarten (Pflicht), Werken, einem Stichtag und einem Dialogkennzeichen gestartet. Zuerst eröffnet er ein Anwendungslog; gelingt das nicht, bricht er ab. Dann liest er alle Serviceaufträge, die bis zum Stichtag technisch abgeschlossen sind, deren Auftragsart ein DIP-Profil zugeordnet ist und für die noch keine Fakturaanforderung protokolliert ist; ohne Treffer springt er direkt zum Abschluss. Garantieaufträge werden nur als Warnung protokolliert. Für die übrigen summiert er die Istkosten und überspringt Aufträge ohne positive Kosten mit einer Warnung; weil das Kennzeichen dafür nie zurückgesetzt wird, gelten nach dem ersten solchen Auftrag auch alle folgenden als kostenlos. Im Dialogmodus öffnet er die aufwandsbezogene Fakturierung mit vorbelegtem Auftrag ohne Einstiegsbild, und der Sachbearbeiter schließt sie selbst ab, ohne dass das protokolliert wird. Im Hintergrund erzeugt er die Fakturaanforderung per Batch-Input mit Auftrag, DIP-Profil und Stichtag. Findet er die Erfolgsmeldung, speichert er die Belegnummer zum Auftrag in der Protokolltabelle, schreibt fest und vermerkt den Erfolg; sonst übernimmt er alle Fehlermeldungen der Transaktion ins Anwendungslog. Am Ende wird das Anwendungslog gesichert und angezeigt."
+}

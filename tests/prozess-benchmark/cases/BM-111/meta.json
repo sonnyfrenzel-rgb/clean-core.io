@@ -1,0 +1,45 @@
+{
+  "id": "BM-111",
+  "title": "Strukturliste Technische Plätze: rekursive IFLOT-Hierarchie mit Equipments, dynamischem Filter und Absprung",
+  "domain": "PM — Technische Plätze und Objekthierarchie",
+  "band": "komplex",
+  "loc": 184,
+  "constructs": [
+    "REPORT mit INCLUDE",
+    "AT SELECTION-SCREEN ON",
+    "START-OF-SELECTION",
+    "END-OF-SELECTION",
+    "AT LINE-SELECTION",
+    "rekursives FORM",
+    "dynamische WHERE-Klausel",
+    "SELECT auf View IFLO",
+    "SELECT SINGLE JEST in Schleife",
+    "CONTINUE",
+    "RETURN aus FORM",
+    "CHECK in FORM",
+    "HIDE",
+    "SET PARAMETER ID",
+    "CALL TRANSACTION … AND SKIP FIRST SCREEN",
+    "LEFT OUTER JOIN",
+    "nie aufgerufenes FORM"
+  ],
+  "scenario": "Große Standortstruktur (Raffinerie mit 40.000 Technischen Plätzen): weil die Standard-Strukturanzeige zu langsam war, entstand ein Z-Report, der die Hierarchie rekursiv auflöst, inaktive Plätze ausblendet und per Doppelklick in die Anzeige springt.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf IFLOT/IFLO, JEST, EQUZ/ILOA/EQKT; in S/4 Cloud CDS I_FunctionalLocation, I_Equipment",
+    "SELECT SINGLE je Knoten in rekursiver Schleife (N+1)",
+    "Dynamische WHERE-Klausel mit Selektionstabellen per Name",
+    "Klassische Liste mit HIDE/AT LINE-SELECTION und CALL TRANSACTION, nicht Fiori-fähig"
+  ],
+  "wave": 2,
+  "module": "PM",
+  "edge_constructs": [
+    "RETURN aus tiefem FORM (Rekursion)",
+    "dynamische WHERE-Klausel",
+    "AT LINE-SELECTION",
+    "AT SELECTION-SCREEN ON",
+    "CALL TRANSACTION … AND SKIP FIRST SCREEN",
+    "SET/GET PARAMETER ID",
+    "END-OF-SELECTION",
+    "nie erreichtes FORM"
+  ]
+}

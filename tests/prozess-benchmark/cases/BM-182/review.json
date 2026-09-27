@@ -1,0 +1,28 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "source.abap:19",
+      "before": "AND gaart   = '2'.",
+      "after": "AND gaart   = '1'.",
+      "why": "Garantieart (Domäne GAART) 1 = Kundengarantie, 2 = Lieferantengarantie. Fachsatz B01, B02 und Prosa sprechen von der Kundengarantie des Geräts (Händlerportal, Kundengarantieantrag); der Code las die Lieferantengarantie. Korrigiert im Quelltext, eine Zeichenstelle, keine Zeilenverschiebung.",
+      "category": "Quelltext"
+    },
+    {
+      "where": "Fachsatz B01, processDescription",
+      "before": "Kundengarantie (Garantieart 2)",
+      "after": "Kundengarantie (Garantieart 1)",
+      "why": "Folgeänderung zur Quelltextkorrektur Garantieart.",
+      "category": "Fachsatz"
+    },
+    {
+      "where": "Knoten o1 (neu) vor e1",
+      "before": "e1 end auf source.abap:21 ohne output",
+      "after": "o1 output auf source.abap:21, Kante o1 -> e1 [always]; eingehende Kanten auf o1 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

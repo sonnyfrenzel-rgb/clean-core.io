@@ -1,0 +1,2819 @@
+{
+  "id": "BM-196",
+  "title": "Frachtbrief mit Gefahrgutangaben je Transport: Druck und PDF-Mail an den Spediteur über die Nachrichtensteuerung",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "NAST_PROTOCOL_UPDATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zle_frachtbrief_top.abap",
+        "line": 57,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtbrief_top.abap:57"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VTTK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zle_frachtbrief_f01.abap",
+        "line": 46,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtbrief_f01.abap:46"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VTTP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zle_frachtbrief_f01.abap",
+        "line": 55,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtbrief_f01.abap:55"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LIKP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zle_frachtbrief_f01.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtbrief_f01.abap:65"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LIPS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zle_frachtbrief_f01.abap",
+        "line": 71,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtbrief_f01.abap:71"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LFA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zle_frachtbrief_f01.abap",
+        "line": 77,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtbrief_f01.abap:77"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_LE_GEFAHRGUT_DATEN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zle_frachtbrief_f01.abap",
+        "line": 92,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtbrief_f01.abap:92"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZLE_GG_STAMM",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "z_le_gefahrgut_daten.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_le_gefahrgut_daten.abap:44"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SSF_FUNCTION_MODULE_NAME",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zle_frachtbrief_f01.abap",
+        "line": 135,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtbrief_f01.abap:135"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CONVERT_OTF",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zle_frachtbrief_f01.abap",
+        "line": 215,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtbrief_f01.abap:215"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ADR6",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zle_frachtbrief_f02.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtbrief_f02.abap:50"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zle_frachtbrief_f02.abap",
+        "line": 99,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtbrief_f02.abap:99"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_DOCUMENT_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zle_frachtbrief_f02.abap",
+        "line": 101,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtbrief_f02.abap:101"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_BCS_CONVERT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zle_frachtbrief_f02.abap",
+        "line": 106,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtbrief_f02.abap:106"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_CAM_ADDRESS_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zle_frachtbrief_f02.abap",
+        "line": 114,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zle_frachtbrief_f02.abap:114"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-196-B01",
+      "text": "Beim Ausgeben einer Frachtbrief-Nachricht wird der Transportkopf zur Transportnummer der Nachricht gelesen.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B02",
+      "text": "Gibt es den Transport nicht, wird ein Fehler ins Nachrichtenprotokoll geschrieben und die Verarbeitung ohne Ausgabe als fehlerhaft beendet.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:48"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:49"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B03",
+      "text": "Die dem Transport zugeordneten Lieferungen werden gelesen; enthält der Transport keine Lieferung, wird dies protokolliert und die Nachricht als fehlerhaft beendet.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:55"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:58"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B04",
+      "text": "Zu den Lieferungen des Transports werden die Lieferköpfe für den Frachtbrief und die Lieferpositionen für die Gefahrgutermittlung gelesen.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:65"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B05",
+      "text": "Der Spediteur des Transports wird gelesen; ein Transport ohne Spediteur ist für den Druck kein Fehler.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B06",
+      "text": "Die Gefahrgutangaben und die Freistellung nach der 1000-Punkte-Regel werden über den kundeneigenen Gefahrgutbaustein ermittelt.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:83"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:92"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B07",
+      "text": "Hat der Transport keine Lieferpositionen, bricht der Gefahrgutbaustein mit einer Ausnahme ab und die Nachricht wird mit einem Protokolleintrag als fehlerhaft beendet.",
+      "anchors": [
+        {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:34"
+        },
+        {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:35"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:115"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B08",
+      "text": "Positionen ohne Liefermenge und Leergutpositionen werden bei der Gefahrgutermittlung nicht berücksichtigt.",
+      "anchors": [
+        {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:40"
+        },
+        {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B09",
+      "text": "Zu den Materialien der verbleibenden Positionen werden die am Tagesdatum gültigen Gefahrgutstammdaten gelesen.",
+      "anchors": [
+        {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B10",
+      "text": "Findet sich für kein Material ein Gefahrgutstammsatz, gilt der Transport als gefahrgutfrei und der Frachtbrief wird ohne Gefahrgutblock als freigestellt ausgegeben.",
+      "anchors": [
+        {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:50"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:113"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B11",
+      "text": "Je Lieferposition mit Gefahrgutmaterial wird eine Gefahrgutzeile mit UN-Nummer, Klasse, Verpackungsgruppe, Tunnelcode, Beförderungskategorie und dem Nettogewicht als Menge gebildet.",
+      "anchors": [
+        {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:54"
+        },
+        {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:57"
+        },
+        {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B12",
+      "text": "Gefahrgutpositionen, deren Gewicht nicht in Kilogramm geführt ist, werden ohne Umrechnung übergangen und fehlen damit im Gefahrgutblock und in der Punkteberechnung.",
+      "anchors": [
+        {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:61"
+        },
+        {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B13",
+      "text": "Je UN-Nummer und Beförderungskategorie wird die Menge summiert und mit dem Multiplikator der Kategorie (50, 3, 1 oder 0) zu Punkten nach ADR 1.1.3.6 aufaddiert.",
+      "anchors": [
+        {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:90"
+        },
+        {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B14",
+      "text": "Der Transport ist freigestellt, wenn kein Gefahrgut der Beförderungskategorie 0 geladen ist und die Summe höchstens 1000 Punkte beträgt.",
+      "anchors": [
+        {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:92"
+        },
+        {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:102"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B15",
+      "text": "Ist ein Transport mit Gefahrgut nicht freigestellt, wird ein Hinweis auf die Kennzeichnungspflicht ins Nachrichtenprotokoll geschrieben.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:106"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:108"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B16",
+      "text": "Zum Formular ZLE_FRACHTBRIEF_SF wird der generierte Formularbaustein ermittelt; fehlt er, wird ein Fehler protokolliert und nichts ausgegeben.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:135"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:144"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:145"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B17",
+      "text": "Beim Druck gehen Drucker, Sofortdruck und Löschen nach Ausgabe aus der Nachricht in die Ausgabe ein, bei Bildschirmausgabe wird eine Vorschau gezeigt.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:152"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:157"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B18",
+      "text": "Die Zahl der Ausdrucke richtet sich nach der Nachricht; bei nicht freigestelltem Gefahrgut wird eine zusätzliche Ausfertigung für die Fahrzeugmappe gedruckt.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:164"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B19",
+      "text": "Verlangt die Nachricht die Archivierung, wird der Frachtbrief mit Archivindex zum Transport im Archivobjekt ZLEFRACHTB abgelegt.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:171"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:172"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B20",
+      "text": "Der Frachtbrief wird mit Transport, Spediteur, Lieferungen, Gefahrgutzeilen, Punktesumme und Freistellungskennzeichen über den ermittelten Formularbaustein ausgegeben.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:185"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B21",
+      "text": "Schlägt die Formularausgabe fehl, wird ein Fehler protokolliert und die Nachricht als fehlerhaft gemeldet.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 206,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:206"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 207,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:207"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 209,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:209"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B22",
+      "text": "Die Druck-Nachricht meldet der Nachrichtensteuerung Rückgabecode 1 bei jedem protokollierten Fehler und sonst 0.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:28"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:29"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B23",
+      "text": "Für die Mail-Nachricht wird nach dem Lesen der Transportdaten die Mailadresse des Spediteurs bestimmt; fehlt der Spediteur, wird ein Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:20"
+        },
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:42"
+        },
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B24",
+      "text": "Empfänger ist die Standard-Mailadresse der Firmenadresse des Spediteurs; hat der Spediteur keine, wird ein Fehler protokolliert und nichts versendet.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:50"
+        },
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:54"
+        },
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B25",
+      "text": "Läuft die Verarbeitung unter dem Benutzer KRAUSE_M, geht die Mail statt an den Spediteur an eine feste Testadresse.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:66"
+        },
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B26",
+      "text": "Für die Mail wird der Frachtbrief ohne Druck und ohne Archivierung als Formulardaten erzeugt und in ein PDF umgewandelt; misslingt die Umwandlung, wird ein Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:24"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 212,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:212"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 215,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:215"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 230,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:230"
+        },
+        {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 231,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:231"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B27",
+      "text": "An den Spediteur wird eine Mail mit Betreff und Begleittext zum Transport und dem Frachtbrief als PDF-Anhang erstellt und sofort gesendet.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:99"
+        },
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:101"
+        },
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:107"
+        },
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:114"
+        },
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:119"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B28",
+      "text": "Scheitert das Erstellen oder Senden der Mail, wird ein Fehler protokolliert und die Nachricht als fehlerhaft gemeldet.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:121"
+        },
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:122"
+        },
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:131"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B29",
+      "text": "Nach erfolgreichem Senden wird die Sendung festgeschrieben, damit sie aus der Sendewarteschlange hinausgeht.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:127"
+        },
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:129"
+        }
+      ]
+    },
+    {
+      "id": "BM-196-B30",
+      "text": "Die Mail-Nachricht meldet Rückgabecode 0, wenn kein Schritt einen Fehler gesetzt hat, sonst 1.",
+      "anchors": [
+        {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:31"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "en_s",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:12"
+        },
+        "meaning": "Nachrichtensteuerung ruft Frachtbriefdruck (ZFB1)"
+      },
+      {
+        "id": "en_dl",
+        "type": "call",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:18"
+        },
+        "meaning": "Transport- und Gefahrgutdaten lesen"
+      },
+      {
+        "id": "en_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:20"
+        },
+        "meaning": "Daten fehlerfrei gelesen?"
+      },
+      {
+        "id": "en_fa",
+        "type": "call",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:21"
+        },
+        "meaning": "Frachtbrief drucken/archivieren"
+      },
+      {
+        "id": "en_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:28"
+        },
+        "meaning": "Fehler aufgetreten?"
+      },
+      {
+        "id": "en_e1",
+        "type": "action",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:29"
+        },
+        "meaning": "Rückgabecode 1: Nachricht fehlerhaft"
+      },
+      {
+        "id": "en_e0",
+        "type": "action",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:31"
+        },
+        "meaning": "Rückgabecode 0: Nachricht erfolgreich"
+      },
+      {
+        "id": "en_end",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:34"
+        },
+        "meaning": "Rückkehr zur Nachrichtensteuerung"
+      },
+      {
+        "id": "dl_s",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:41"
+        },
+        "meaning": "Datenbeschaffung zum Transport"
+      },
+      {
+        "id": "dl_r1",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:46"
+        },
+        "meaning": "Transportkopf zur Nachricht lesen"
+      },
+      {
+        "id": "dl_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:48"
+        },
+        "meaning": "Transport vorhanden?"
+      },
+      {
+        "id": "dl_p10",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:49"
+        },
+        "meaning": "Protokoll: Transport nicht gefunden"
+      },
+      {
+        "id": "dl_e10",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:51"
+        },
+        "meaning": "Abbruch Datenbeschaffung"
+      },
+      {
+        "id": "dl_r2",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:55"
+        },
+        "meaning": "Lieferungen des Transports lesen"
+      },
+      {
+        "id": "dl_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:58"
+        },
+        "meaning": "Transport enthält Lieferungen?"
+      },
+      {
+        "id": "dl_p12",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:59"
+        },
+        "meaning": "Protokoll: keine Lieferungen"
+      },
+      {
+        "id": "dl_e12",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:61"
+        },
+        "meaning": "Abbruch Datenbeschaffung"
+      },
+      {
+        "id": "dl_r3",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:65"
+        },
+        "meaning": "Lieferköpfe lesen"
+      },
+      {
+        "id": "dl_r4",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:71"
+        },
+        "meaning": "Lieferpositionen lesen"
+      },
+      {
+        "id": "dl_r5",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:77"
+        },
+        "meaning": "Spediteur lesen"
+      },
+      {
+        "id": "dl_gg",
+        "type": "call",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:83"
+        },
+        "meaning": "Gefahrgut ermitteln"
+      },
+      {
+        "id": "dl_end",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:85"
+        },
+        "meaning": "Datenbeschaffung abgeschlossen"
+      },
+      {
+        "id": "ge_s",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:90"
+        },
+        "meaning": "Gefahrgutermittlung"
+      },
+      {
+        "id": "ge_fm",
+        "type": "call",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:92"
+        },
+        "meaning": "Gefahrgutbaustein aufrufen"
+      },
+      {
+        "id": "ge_c",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:104"
+        },
+        "meaning": "Ergebnis der Gefahrgutermittlung"
+      },
+      {
+        "id": "ge_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:106"
+        },
+        "meaning": "Transport kennzeichnungspflichtig?"
+      },
+      {
+        "id": "ge_p20",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:108"
+        },
+        "meaning": "Protokollhinweis Kennzeichnungspflicht"
+      },
+      {
+        "id": "ge_p21",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:115"
+        },
+        "meaning": "Protokoll: Gefahrgutermittlung fehlgeschlagen"
+      },
+      {
+        "id": "ge_end",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:119"
+        },
+        "meaning": "Gefahrgutermittlung abgeschlossen"
+      },
+      {
+        "id": "fm_s",
+        "type": "start",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:1"
+        },
+        "meaning": "Gefahrgutdaten und 1000-Punkte-Prüfung"
+      },
+      {
+        "id": "fm_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:34"
+        },
+        "meaning": "Lieferpositionen übergeben?"
+      },
+      {
+        "id": "fm_m50",
+        "type": "output",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:35"
+        },
+        "meaning": "Fehlermeldung / Ausnahme KEINE_POSITIONEN"
+      },
+      {
+        "id": "fm_e50",
+        "type": "end",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:35"
+        },
+        "meaning": "Ausnahme KEINE_POSITIONEN"
+      },
+      {
+        "id": "fm_r",
+        "type": "read",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:44"
+        },
+        "meaning": "Gültige Gefahrgutstammdaten zu den Materialien lesen"
+      },
+      {
+        "id": "fm_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:49"
+        },
+        "meaning": "Gefahrgutmaterial im Transport?"
+      },
+      {
+        "id": "fm_m51",
+        "type": "output",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:50"
+        },
+        "meaning": "Fehlermeldung / Ausnahme KEINE_GEFAHRGUTDATEN"
+      },
+      {
+        "id": "fm_e51",
+        "type": "end",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:50"
+        },
+        "meaning": "Ausnahme KEINE_GEFAHRGUTDATEN"
+      },
+      {
+        "id": "fm_l1",
+        "type": "loop",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:54"
+        },
+        "meaning": "Je Lieferposition"
+      },
+      {
+        "id": "fm_chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:57"
+        },
+        "meaning": "Material ist Gefahrgut?"
+      },
+      {
+        "id": "fm_gkg",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:61"
+        },
+        "meaning": "Gewicht in kg geführt?"
+      },
+      {
+        "id": "fm_a1",
+        "type": "action",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:82"
+        },
+        "meaning": "Gefahrgutzeile mit Nettogewicht bilden"
+      },
+      {
+        "id": "fm_l2",
+        "type": "loop",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:89"
+        },
+        "meaning": "Je Gefahrgutzeile (sortiert nach Kategorie/UN-Nr.)"
+      },
+      {
+        "id": "fm_at",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:90"
+        },
+        "meaning": "Gruppenende UN-Nummer?"
+      },
+      {
+        "id": "fm_k0",
+        "type": "action",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:92"
+        },
+        "meaning": "Kategorie 0 vermerken"
+      },
+      {
+        "id": "fm_pt",
+        "type": "action",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:93"
+        },
+        "meaning": "Punkte der UN-Nummer aufaddieren"
+      },
+      {
+        "id": "fm_fr",
+        "type": "action",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:102"
+        },
+        "meaning": "Freistellung nach ADR 1.1.3.6 festlegen"
+      },
+      {
+        "id": "fm_end",
+        "type": "end",
+        "anchor": {
+          "file": "z_le_gefahrgut_daten.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_le_gefahrgut_daten.abap:104"
+        },
+        "meaning": "Gefahrgutdaten an Aufrufer zurück"
+      },
+      {
+        "id": "fa_s",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:127"
+        },
+        "meaning": "Formularausgabe"
+      },
+      {
+        "id": "fa_ssf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:135"
+        },
+        "meaning": "Formularbaustein ermitteln"
+      },
+      {
+        "id": "fa_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:144"
+        },
+        "meaning": "Formularbaustein vorhanden?"
+      },
+      {
+        "id": "fa_p30",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:145"
+        },
+        "meaning": "Protokoll: Formular fehlt"
+      },
+      {
+        "id": "fa_e30",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:147"
+        },
+        "meaning": "Abbruch Ausgabe"
+      },
+      {
+        "id": "fa_gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:152"
+        },
+        "meaning": "Ausgabe für Mail oder Druck?"
+      },
+      {
+        "id": "fa_kop",
+        "type": "action",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:164"
+        },
+        "meaning": "Kopienzahl festlegen (+1 bei Gefahrgut)"
+      },
+      {
+        "id": "fa_garc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:171"
+        },
+        "meaning": "Archivierung verlangt?"
+      },
+      {
+        "id": "fa_arc",
+        "type": "action",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:172"
+        },
+        "meaning": "Archivindex zum Transport vorbelegen"
+      },
+      {
+        "id": "fa_prt",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:185"
+        },
+        "meaning": "Frachtbrief über Formularbaustein ausgeben"
+      },
+      {
+        "id": "fa_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 206,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:206"
+        },
+        "meaning": "Ausgabe erfolgreich?"
+      },
+      {
+        "id": "fa_p31",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 207,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:207"
+        },
+        "meaning": "Protokoll: Ausgabefehler"
+      },
+      {
+        "id": "fa_e31",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 209,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:209"
+        },
+        "meaning": "Abbruch Ausgabe"
+      },
+      {
+        "id": "fa_chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 212,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:212"
+        },
+        "meaning": "PDF für Mail benötigt?"
+      },
+      {
+        "id": "fa_otf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 215,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:215"
+        },
+        "meaning": "Formulardaten in PDF umwandeln"
+      },
+      {
+        "id": "fa_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 230,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:230"
+        },
+        "meaning": "PDF erzeugt?"
+      },
+      {
+        "id": "fa_p42",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 231,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:231"
+        },
+        "meaning": "Protokoll: PDF-Umwandlung fehlgeschlagen"
+      },
+      {
+        "id": "fa_end",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtbrief_f01.abap",
+          "line": 235,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f01.abap:235"
+        },
+        "meaning": "Formularausgabe abgeschlossen"
+      },
+      {
+        "id": "em_s",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:11"
+        },
+        "meaning": "Nachrichtensteuerung ruft Frachtbrief-Mail (ZFB5)"
+      },
+      {
+        "id": "em_dl",
+        "type": "call",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:17"
+        },
+        "meaning": "Transport- und Gefahrgutdaten lesen"
+      },
+      {
+        "id": "em_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:19"
+        },
+        "meaning": "Daten fehlerfrei gelesen?"
+      },
+      {
+        "id": "em_emp",
+        "type": "call",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:20"
+        },
+        "meaning": "Mailempfänger bestimmen"
+      },
+      {
+        "id": "em_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:23"
+        },
+        "meaning": "Empfänger bestimmt?"
+      },
+      {
+        "id": "em_fa",
+        "type": "call",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:24"
+        },
+        "meaning": "Frachtbrief als PDF erzeugen"
+      },
+      {
+        "id": "em_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:27"
+        },
+        "meaning": "PDF erzeugt?"
+      },
+      {
+        "id": "em_ms",
+        "type": "call",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:28"
+        },
+        "meaning": "Mail senden"
+      },
+      {
+        "id": "em_e",
+        "type": "action",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:31"
+        },
+        "meaning": "Rückgabecode festlegen (0 ohne Fehler, sonst 1)"
+      },
+      {
+        "id": "em_end",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:33"
+        },
+        "meaning": "Rückkehr zur Nachrichtensteuerung"
+      },
+      {
+        "id": "ep_s",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:40"
+        },
+        "meaning": "Empfängerermittlung"
+      },
+      {
+        "id": "ep_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:42"
+        },
+        "meaning": "Spediteur vorhanden?"
+      },
+      {
+        "id": "ep_p40",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:44"
+        },
+        "meaning": "Protokoll: kein Spediteur"
+      },
+      {
+        "id": "ep_e40",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:46"
+        },
+        "meaning": "Abbruch Empfängerermittlung"
+      },
+      {
+        "id": "ep_r",
+        "type": "read",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:50"
+        },
+        "meaning": "Standard-Mailadresse des Spediteurs lesen"
+      },
+      {
+        "id": "ep_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:54"
+        },
+        "meaning": "Mailadresse vorhanden?"
+      },
+      {
+        "id": "ep_p41",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:55"
+        },
+        "meaning": "Protokoll: keine Mailadresse"
+      },
+      {
+        "id": "ep_e41",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:57"
+        },
+        "meaning": "Abbruch Empfängerermittlung"
+      },
+      {
+        "id": "ep_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:66"
+        },
+        "meaning": "Testbenutzer?"
+      },
+      {
+        "id": "ep_a",
+        "type": "action",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:67"
+        },
+        "meaning": "Empfänger auf Testadresse umlenken"
+      },
+      {
+        "id": "ep_end",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:70"
+        },
+        "meaning": "Empfänger bestimmt"
+      },
+      {
+        "id": "ms_s",
+        "type": "start",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:77"
+        },
+        "meaning": "Mailversand"
+      },
+      {
+        "id": "ms_c1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:99"
+        },
+        "meaning": "Sendeauftrag anlegen"
+      },
+      {
+        "id": "ms_c2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:101"
+        },
+        "meaning": "Maildokument mit Betreff und Text erstellen"
+      },
+      {
+        "id": "ms_c3",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:107"
+        },
+        "meaning": "Frachtbrief-PDF anhängen"
+      },
+      {
+        "id": "ms_c4",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:114"
+        },
+        "meaning": "Spediteur als Empfänger eintragen"
+      },
+      {
+        "id": "ms_c5",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:119"
+        },
+        "meaning": "Mail senden"
+      },
+      {
+        "id": "ms_p43",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:122"
+        },
+        "meaning": "Protokoll: Mailfehler"
+      },
+      {
+        "id": "ms_e43",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:124"
+        },
+        "meaning": "Abbruch Mailversand"
+      },
+      {
+        "id": "ms_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:127"
+        },
+        "meaning": "Versand angenommen?"
+      },
+      {
+        "id": "ms_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:129"
+        },
+        "meaning": "Sendung festschreiben"
+      },
+      {
+        "id": "ms_p45",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:131"
+        },
+        "meaning": "Protokoll: Versand abgelehnt"
+      },
+      {
+        "id": "ms_end",
+        "type": "end",
+        "anchor": {
+          "file": "zle_frachtbrief_f02.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zle_frachtbrief_f02.abap:135"
+        },
+        "meaning": "Mailversand abgeschlossen"
+      }
+    ],
+    "edges": [
+      {
+        "from": "en_s",
+        "to": "en_dl",
+        "condition": "always"
+      },
+      {
+        "from": "en_dl",
+        "to": "dl_s",
+        "condition": "always"
+      },
+      {
+        "from": "en_g1",
+        "to": "en_fa",
+        "condition": "gv_retcode = 0"
+      },
+      {
+        "from": "en_g1",
+        "to": "en_g2",
+        "condition": "else"
+      },
+      {
+        "from": "en_fa",
+        "to": "fa_s",
+        "condition": "always"
+      },
+      {
+        "from": "en_g2",
+        "to": "en_e1",
+        "condition": "gv_retcode <> 0"
+      },
+      {
+        "from": "en_g2",
+        "to": "en_e0",
+        "condition": "else"
+      },
+      {
+        "from": "dl_s",
+        "to": "dl_r1",
+        "condition": "always"
+      },
+      {
+        "from": "dl_r1",
+        "to": "dl_g1",
+        "condition": "always"
+      },
+      {
+        "from": "dl_g1",
+        "to": "dl_p10",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "dl_p10",
+        "to": "dl_e10",
+        "condition": "always"
+      },
+      {
+        "from": "dl_g1",
+        "to": "dl_r2",
+        "condition": "else"
+      },
+      {
+        "from": "dl_r2",
+        "to": "dl_g2",
+        "condition": "always"
+      },
+      {
+        "from": "dl_g2",
+        "to": "dl_p12",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "dl_p12",
+        "to": "dl_e12",
+        "condition": "always"
+      },
+      {
+        "from": "dl_g2",
+        "to": "dl_r3",
+        "condition": "else"
+      },
+      {
+        "from": "dl_r3",
+        "to": "dl_r4",
+        "condition": "always"
+      },
+      {
+        "from": "dl_r4",
+        "to": "dl_r5",
+        "condition": "always"
+      },
+      {
+        "from": "dl_r5",
+        "to": "dl_gg",
+        "condition": "always"
+      },
+      {
+        "from": "dl_gg",
+        "to": "ge_s",
+        "condition": "always"
+      },
+      {
+        "from": "dl_e10",
+        "to": "en_g1",
+        "condition": "always"
+      },
+      {
+        "from": "dl_e12",
+        "to": "en_g1",
+        "condition": "always"
+      },
+      {
+        "from": "dl_e10",
+        "to": "em_g1",
+        "condition": "always"
+      },
+      {
+        "from": "dl_e12",
+        "to": "em_g1",
+        "condition": "always"
+      },
+      {
+        "from": "ge_s",
+        "to": "ge_fm",
+        "condition": "always"
+      },
+      {
+        "from": "ge_fm",
+        "to": "fm_s",
+        "condition": "always"
+      },
+      {
+        "from": "ge_c",
+        "to": "ge_g",
+        "condition": "WHEN 0"
+      },
+      {
+        "from": "ge_g",
+        "to": "ge_p20",
+        "condition": "gv_freigest = abap_false"
+      },
+      {
+        "from": "ge_c",
+        "to": "ge_p21",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "ge_g",
+        "to": "ge_end",
+        "condition": "else"
+      },
+      {
+        "from": "ge_p20",
+        "to": "ge_end",
+        "condition": "always"
+      },
+      {
+        "from": "ge_c",
+        "to": "ge_end",
+        "condition": "WHEN 2"
+      },
+      {
+        "from": "ge_p21",
+        "to": "ge_end",
+        "condition": "always"
+      },
+      {
+        "from": "fm_s",
+        "to": "fm_g1",
+        "condition": "always"
+      },
+      {
+        "from": "fm_g1",
+        "to": "fm_m50",
+        "condition": "it_lips IS INITIAL"
+      },
+      {
+        "from": "fm_g1",
+        "to": "fm_r",
+        "condition": "else"
+      },
+      {
+        "from": "fm_r",
+        "to": "fm_g2",
+        "condition": "always"
+      },
+      {
+        "from": "fm_g2",
+        "to": "fm_m51",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "fm_g2",
+        "to": "fm_l1",
+        "condition": "else"
+      },
+      {
+        "from": "fm_l1",
+        "to": "fm_chk",
+        "condition": "next row"
+      },
+      {
+        "from": "fm_chk",
+        "to": "fm_gkg",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "fm_chk",
+        "to": "fm_l1",
+        "condition": "else"
+      },
+      {
+        "from": "fm_gkg",
+        "to": "fm_l1",
+        "condition": "ls_lips-gewei <> 'KG'"
+      },
+      {
+        "from": "fm_gkg",
+        "to": "fm_a1",
+        "condition": "else"
+      },
+      {
+        "from": "fm_a1",
+        "to": "fm_l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fm_l1",
+        "to": "fm_l2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fm_l2",
+        "to": "fm_at",
+        "condition": "next row"
+      },
+      {
+        "from": "fm_at",
+        "to": "fm_k0",
+        "condition": "AT END OF un_nr"
+      },
+      {
+        "from": "fm_at",
+        "to": "fm_l2",
+        "condition": "else"
+      },
+      {
+        "from": "fm_k0",
+        "to": "fm_pt",
+        "condition": "always"
+      },
+      {
+        "from": "fm_pt",
+        "to": "fm_l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fm_l2",
+        "to": "fm_fr",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fm_e50",
+        "to": "ge_c",
+        "condition": "always"
+      },
+      {
+        "from": "fm_e51",
+        "to": "ge_c",
+        "condition": "always"
+      },
+      {
+        "from": "fm_end",
+        "to": "ge_c",
+        "condition": "always"
+      },
+      {
+        "from": "fa_s",
+        "to": "fa_ssf",
+        "condition": "always"
+      },
+      {
+        "from": "fa_ssf",
+        "to": "fa_g1",
+        "condition": "always"
+      },
+      {
+        "from": "fa_g1",
+        "to": "fa_p30",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "fa_p30",
+        "to": "fa_e30",
+        "condition": "always"
+      },
+      {
+        "from": "fa_g1",
+        "to": "fa_gm",
+        "condition": "else"
+      },
+      {
+        "from": "fa_gm",
+        "to": "fa_prt",
+        "condition": "iv_mail = abap_true"
+      },
+      {
+        "from": "fa_gm",
+        "to": "fa_kop",
+        "condition": "else"
+      },
+      {
+        "from": "fa_kop",
+        "to": "fa_garc",
+        "condition": "always"
+      },
+      {
+        "from": "fa_garc",
+        "to": "fa_arc",
+        "condition": "nast-tdarmod = '2' OR nast-tdarmod = '3'"
+      },
+      {
+        "from": "fa_garc",
+        "to": "fa_prt",
+        "condition": "else"
+      },
+      {
+        "from": "fa_arc",
+        "to": "fa_prt",
+        "condition": "always"
+      },
+      {
+        "from": "fa_prt",
+        "to": "fa_g2",
+        "condition": "always"
+      },
+      {
+        "from": "fa_g2",
+        "to": "fa_p31",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "fa_p31",
+        "to": "fa_e31",
+        "condition": "always"
+      },
+      {
+        "from": "fa_g2",
+        "to": "fa_chk",
+        "condition": "else"
+      },
+      {
+        "from": "fa_chk",
+        "to": "fa_otf",
+        "condition": "iv_mail = abap_true"
+      },
+      {
+        "from": "fa_otf",
+        "to": "fa_g3",
+        "condition": "always"
+      },
+      {
+        "from": "fa_g3",
+        "to": "fa_p42",
+        "condition": "sy-subrc <> 0 OR gv_pdf IS INITIAL"
+      },
+      {
+        "from": "fa_e30",
+        "to": "en_g2",
+        "condition": "always"
+      },
+      {
+        "from": "fa_e31",
+        "to": "en_g2",
+        "condition": "always"
+      },
+      {
+        "from": "fa_chk",
+        "to": "fa_end",
+        "condition": "else"
+      },
+      {
+        "from": "fa_e30",
+        "to": "em_g3",
+        "condition": "always"
+      },
+      {
+        "from": "fa_e31",
+        "to": "em_g3",
+        "condition": "always"
+      },
+      {
+        "from": "fa_g3",
+        "to": "fa_end",
+        "condition": "else"
+      },
+      {
+        "from": "fa_p42",
+        "to": "fa_end",
+        "condition": "always"
+      },
+      {
+        "from": "em_s",
+        "to": "em_dl",
+        "condition": "always"
+      },
+      {
+        "from": "em_dl",
+        "to": "dl_s",
+        "condition": "always"
+      },
+      {
+        "from": "em_g1",
+        "to": "em_emp",
+        "condition": "gv_retcode = 0"
+      },
+      {
+        "from": "em_g1",
+        "to": "em_g2",
+        "condition": "else"
+      },
+      {
+        "from": "em_emp",
+        "to": "ep_s",
+        "condition": "always"
+      },
+      {
+        "from": "em_g2",
+        "to": "em_fa",
+        "condition": "gv_retcode = 0"
+      },
+      {
+        "from": "em_g2",
+        "to": "em_g3",
+        "condition": "else"
+      },
+      {
+        "from": "em_fa",
+        "to": "fa_s",
+        "condition": "always"
+      },
+      {
+        "from": "em_g3",
+        "to": "em_ms",
+        "condition": "gv_retcode = 0"
+      },
+      {
+        "from": "em_g3",
+        "to": "em_e",
+        "condition": "else"
+      },
+      {
+        "from": "em_ms",
+        "to": "ms_s",
+        "condition": "always"
+      },
+      {
+        "from": "ep_s",
+        "to": "ep_g1",
+        "condition": "always"
+      },
+      {
+        "from": "ep_g1",
+        "to": "ep_p40",
+        "condition": "gs_lfa1-lifnr IS INITIAL"
+      },
+      {
+        "from": "ep_p40",
+        "to": "ep_e40",
+        "condition": "always"
+      },
+      {
+        "from": "ep_g1",
+        "to": "ep_r",
+        "condition": "else"
+      },
+      {
+        "from": "ep_r",
+        "to": "ep_g2",
+        "condition": "always"
+      },
+      {
+        "from": "ep_g2",
+        "to": "ep_p41",
+        "condition": "sy-subrc <> 0 OR gv_smtp IS INITIAL"
+      },
+      {
+        "from": "ep_p41",
+        "to": "ep_e41",
+        "condition": "always"
+      },
+      {
+        "from": "ep_g2",
+        "to": "ep_g3",
+        "condition": "else"
+      },
+      {
+        "from": "ep_g3",
+        "to": "ep_a",
+        "condition": "sy-uname = 'KRAUSE_M'"
+      },
+      {
+        "from": "ep_e40",
+        "to": "em_g2",
+        "condition": "always"
+      },
+      {
+        "from": "ep_e41",
+        "to": "em_g2",
+        "condition": "always"
+      },
+      {
+        "from": "ep_g3",
+        "to": "ep_end",
+        "condition": "else"
+      },
+      {
+        "from": "ep_a",
+        "to": "ep_end",
+        "condition": "always"
+      },
+      {
+        "from": "ms_c1",
+        "to": "ms_c2",
+        "condition": "always"
+      },
+      {
+        "from": "ms_c2",
+        "to": "ms_c3",
+        "condition": "always"
+      },
+      {
+        "from": "ms_c3",
+        "to": "ms_c4",
+        "condition": "always"
+      },
+      {
+        "from": "ms_c4",
+        "to": "ms_c5",
+        "condition": "always"
+      },
+      {
+        "from": "ms_c5",
+        "to": "ms_g",
+        "condition": "always"
+      },
+      {
+        "from": "ms_p43",
+        "to": "ms_e43",
+        "condition": "always"
+      },
+      {
+        "from": "ms_g",
+        "to": "ms_cm",
+        "condition": "lv_ok = abap_true"
+      },
+      {
+        "from": "ms_g",
+        "to": "ms_p45",
+        "condition": "else"
+      },
+      {
+        "from": "ms_e43",
+        "to": "em_e",
+        "condition": "always"
+      },
+      {
+        "from": "ms_cm",
+        "to": "ms_end",
+        "condition": "always"
+      },
+      {
+        "from": "ms_p45",
+        "to": "ms_end",
+        "condition": "always"
+      },
+      {
+        "from": "en_e1",
+        "to": "en_end",
+        "condition": "always"
+      },
+      {
+        "from": "en_e0",
+        "to": "en_end",
+        "condition": "always"
+      },
+      {
+        "from": "dl_end",
+        "to": "en_g1",
+        "condition": "always"
+      },
+      {
+        "from": "dl_end",
+        "to": "em_g1",
+        "condition": "always"
+      },
+      {
+        "from": "ge_end",
+        "to": "dl_end",
+        "condition": "always"
+      },
+      {
+        "from": "fm_fr",
+        "to": "fm_end",
+        "condition": "always"
+      },
+      {
+        "from": "fm_m50",
+        "to": "fm_e50",
+        "condition": "always"
+      },
+      {
+        "from": "fm_m51",
+        "to": "fm_e51",
+        "condition": "always"
+      },
+      {
+        "from": "fa_end",
+        "to": "en_g2",
+        "condition": "always"
+      },
+      {
+        "from": "fa_end",
+        "to": "em_g3",
+        "condition": "always"
+      },
+      {
+        "from": "ep_end",
+        "to": "em_g2",
+        "condition": "always"
+      },
+      {
+        "from": "ms_s",
+        "to": "ms_c1",
+        "condition": "always"
+      },
+      {
+        "from": "ms_c1",
+        "to": "ms_p43",
+        "condition": "CATCH cx_bcs INTO lx_bcs"
+      },
+      {
+        "from": "ms_c2",
+        "to": "ms_p43",
+        "condition": "CATCH cx_bcs INTO lx_bcs"
+      },
+      {
+        "from": "ms_c3",
+        "to": "ms_p43",
+        "condition": "CATCH cx_bcs INTO lx_bcs"
+      },
+      {
+        "from": "ms_c4",
+        "to": "ms_p43",
+        "condition": "CATCH cx_bcs INTO lx_bcs"
+      },
+      {
+        "from": "ms_c5",
+        "to": "ms_p43",
+        "condition": "CATCH cx_bcs INTO lx_bcs"
+      },
+      {
+        "from": "ms_end",
+        "to": "em_e",
+        "condition": "always"
+      },
+      {
+        "from": "em_e",
+        "to": "em_end",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zle_frachtbrief_f01.abap:240 — kein Fachsatz „der Frachtbrief wird per SAPscript gedruckt“ oder „der GGVS-Freitext aus dem Transportkopf wird ausgegeben“: das FORM wird nirgends aufgerufen, der Aufruf in ENTRY ist auskommentiert",
+    "zle_frachtbrief_f01.abap:77 — kein Fachsatz „ohne Spediteur wird die Druck-Nachricht als fehlerhaft beendet“: die Prüfung ist auskommentiert; erst die Mail-Nachricht bricht ohne Spediteur ab",
+    "z_le_gefahrgut_daten.abap:44 — kein Fachsatz „ein Transport nur mit Leergut oder Nullmengen gilt als gefahrgutfrei, weil keine Stammdaten gefunden werden“: ist die Positionstabelle nach dem Aussortieren leer, entfällt bei FOR ALL ENTRIES die gesamte WHERE-Bedingung und es werden alle Stammsätze gelesen, die Ausnahme KEINE_GEFAHRGUTDATEN fällt nicht; das Ergebnis ist ein leerer Gefahrgutblock mit 0 Punkten und Freistellung über den regulären Rückgabeweg",
+    "z_le_gefahrgut_daten.abap:61 — kein Fachsatz „Gewichte in anderen Einheiten werden in Kilogramm umgerechnet“: der Umrechnungsbaustein ist auskommentiert, solche Positionen werden übersprungen",
+    "zle_frachtbrief_f02.abap:50 — kein Fachsatz „fehlt die Mailadresse, wird auf die Dispo-Kontakte des Spediteurs ausgewichen“: der Rückgriff auf ZLE_SPED_KONTAKT ist auskommentiert",
+    "zle_frachtbrief_f02.abap:24 — kein Fachsatz „bei Probeausgabe am Bildschirm wird keine Mail versendet“ oder „die Mail-Ausgabe wird archiviert“: im Mail-Zweig werden Bildschirmkennzeichen, Kopienzahl und Archivierungsmodus nicht ausgewertet",
+    "gesamte Scheibe — kein Fachsatz „der Transportstatus wird gesetzt oder der Transport geändert“: das Programm liest Transport- und Lieferdaten nur; geschrieben werden nur Nachrichtenprotokoll, Spool/Archiv und die Mailsendung"
+  ],
+  "processDescription": "Die Nachrichtensteuerung des Transports ruft für die Nachrichtenart ZFB1 die Routine ENTRY und für ZFB5 die Routine ENTRY_MAIL auf. Beide lesen zur Transportnummer der Nachricht den Transportkopf und die zugeordneten Lieferungen; fehlt eins davon, wird ein Fehler ins Nachrichtenprotokoll geschrieben und die Nachricht mit Rückgabecode 1 beendet. Anschließend werden Lieferköpfe, Lieferpositionen und der Spediteur gelesen und der kundeneigene Gefahrgutbaustein aufgerufen. Dieser verwirft Positionen ohne Menge und Leergut, liest die gültigen Gefahrgutstammdaten der Materialien, bildet je Gefahrgutposition mit Gewicht in kg eine Gefahrgutzeile (andere Einheiten werden übersprungen) und summiert je UN-Nummer und Beförderungskategorie die Punkte nach ADR 1.1.3.6; freigestellt ist der Transport ohne Kategorie 0 und mit höchstens 1000 Punkten. Findet der Baustein keine Gefahrgutstammdaten, gilt der Transport als gefahrgutfrei; fehlen Positionen, endet die Nachricht fehlerhaft. Nicht freigestellte Transporte erhalten einen Protokollhinweis auf die Kennzeichnungspflicht. Für den Druck ermittelt das Programm den Smart-Forms-Baustein, übernimmt Drucker, Sofortdruck und Vorschau aus der Nachricht, erhöht bei nicht freigestelltem Gefahrgut die Kopienzahl um eine Ausfertigung für die Fahrzeugmappe, belegt bei Archivierungsmodus 2 oder 3 den Archivindex vor und gibt den Frachtbrief aus. Für die Mail bestimmt das Programm die Standard-Mailadresse des Spediteurs, bricht ohne Spediteur oder Adresse mit Protokolleintrag ab und lenkt die Mail für den Benutzer KRAUSE_M auf eine Testadresse um. Dann erzeugt es den Frachtbrief ohne Druck als Formulardaten, wandelt sie in ein PDF und versendet eine Mail mit PDF-Anhang; nach erfolgreichem Versand wird festgeschrieben, Fehler beim Erstellen oder Senden werden protokolliert. Beide Einstiege melden Rückgabecode 0 oder 1 an die Nachrichtensteuerung."
+}

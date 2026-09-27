@@ -1,0 +1,45 @@
+{
+  "id": "BM-114",
+  "title": "Unfallmeldung aus dem Portal: Prüfung, Nummernvergabe, Meldepflicht § 193 SGB VII, BG-Anzeige, Ereignis an Workflow und SiFa",
+  "domain": "EHS — Arbeitsschutz / Unfallmeldung",
+  "band": "komplex",
+  "loc": 230,
+  "constructs": [
+    "RFC-Funktionsbaustein",
+    "AUTHORITY-CHECK",
+    "NEW #",
+    "TRY … CATCH",
+    "SET HANDLER",
+    "RAISE EVENT",
+    "Ereignisbehandler",
+    "RAISE EXCEPTION TYPE",
+    "SELECT SINGLE @abap_true",
+    "NUMBER_GET_NEXT",
+    "CORRESPONDING #",
+    "COND #",
+    "xsdbool",
+    "INSERT Z-Tabelle",
+    "COMMIT/ROLLBACK WORK",
+    "SAP_WAPI_CREATE_EVENT",
+    "CL_BCS verkettete Aufrufe",
+    "String-Template"
+  ],
+  "scenario": "Ein Industrieunternehmen löst das papierne Unfallbuch durch ein Mitarbeiterportal ab; der RFC-Baustein legt die Unfallmeldung im ERP an, erkennt meldepflichtige Unfälle und merkt die Unfallanzeige an die Berufsgenossenschaft mit Frist vor.",
+  "s4_issues": [
+    "Kundeneigene Unfallabwicklung statt EHS Incident Management (in S/4 EHS Incident Management neu)",
+    "Direkter Lesezugriff auf HR-Infotyp PA0000",
+    "RFC-Baustein statt freigegebener OData-/SOAP-Schnittstelle",
+    "SAP_WAPI_CREATE_EVENT und CL_BCS im Cloud-Kontext nur eingeschränkt verfügbar"
+  ],
+  "wave": 2,
+  "module": "EHS",
+  "edge_constructs": [
+    "SET HANDLER / RAISE EVENT",
+    "RAISE EXCEPTION TYPE",
+    "TRY … CATCH",
+    "COND #",
+    "xsdbool",
+    "NEW",
+    "verkettete Methodenaufrufe"
+  ]
+}

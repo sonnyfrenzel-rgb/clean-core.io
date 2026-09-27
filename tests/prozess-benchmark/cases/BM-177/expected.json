@@ -1,0 +1,2511 @@
+{
+  "id": "BM-177",
+  "title": "IS-Retail Artikelstamm: Lieferantenkatalog per XML-Transformation übernehmen, Artikel anlegen, listen, auslaufen lassen",
+  "classes": [
+    "K01",
+    "K03",
+    "K10",
+    "K12",
+    "K13",
+    "K14"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "LFA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zrt_katalog_import.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zrt_katalog_import.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRT_KATMAP",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zrt_katalog_import_f01.abap",
+        "line": 9,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zrt_katalog_import_f01.abap:9"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "INDX",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "zrt_katalog_import_f01.abap",
+        "line": 103,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zrt_katalog_import_f01.abap:103"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "INDX",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zrt_katalog_import_f01.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zrt_katalog_import_f01.abap:65"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MEAN",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zrt_katalog_import_f01.abap",
+        "line": 131,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zrt_katalog_import_f01.abap:131"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_MATERIAL_GETINTNUMBERRET",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zrt_katalog_import_f01.abap",
+        "line": 145,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zrt_katalog_import_f01.abap:145"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_MATERIAL_MAINTAINDATA_RT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zrt_katalog_import_f01.abap",
+        "line": 169,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zrt_katalog_import_f01.abap:169"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARA",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "zrt_katalog_import_f01.abap",
+        "line": 202,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zrt_katalog_import_f01.abap:202"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_RT_LISTUNG_ANLEGEN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zrt_katalog_import_f01.abap",
+        "line": 216,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zrt_katalog_import_f01.abap:216"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zrt_katalog_import_f02.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zrt_katalog_import_f02.abap:20"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-177-B01",
+      "text": "Ein unbekannter oder gesperrter Lieferant wird im Selektionsbild mit Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:23"
+        },
+        {
+          "file": "zrt_katalog_import.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:26"
+        },
+        {
+          "file": "zrt_katalog_import.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B02",
+      "text": "Die Feldzuordnung Katalog → Artikel wird für den Lieferanten gelesen; gibt es keine eigene, gilt die Standardzuordnung; fehlt auch die, bricht der Lauf mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:9"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:14"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:18"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B03",
+      "text": "Die Katalogdatei wird binär vom Applikationsserver gelesen; ist sie nicht zu öffnen, bricht der Lauf ab.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:29"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:30"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:31"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B04",
+      "text": "Das XML wird per Transformation in Katalogzeilen umgesetzt; ein Transformationsfehler bricht den Lauf mit dessen Text ab, ein leerer Katalog beendet ihn mit Hinweis.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:37"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:41"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:44"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:45"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B05",
+      "text": "Mit dem Neustart-Kennzeichen wird ein gespeicherter Wiederaufsetzpunkt gelöscht und von vorn begonnen.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:59"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B06",
+      "text": "Sonst wird der letzte gesicherte Stand des Lieferanten gelesen und, falls er innerhalb des Katalogs liegt, ab der folgenden Zeile weitergemacht.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:65"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:66"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B07",
+      "text": "Katalogzeilen mit Status N (neu) oder A (Änderung) führen zur Artikelpflege, Status D zum Auslauf; jeder andere Status wird als Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:86"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:88"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:90"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B08",
+      "text": "Der Artikel wird über die EAN gesucht; eine Änderung zu einer unbekannten EAN wird als Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:131"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:133"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B09",
+      "text": "Im Testlauf wird die Artikelpflege nur protokolliert und als erfolgreich gewertet.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:138"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B10",
+      "text": "Für einen neuen Artikel wird eine interne Artikelnummer der Artikelart HAWA gezogen.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:144"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:145"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B11",
+      "text": "Die Katalogfelder werden gemäß Zuordnung auf die Artikeldaten übertragen; Quell- oder Zielfelder, die es nicht gibt, werden übergangen.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:154"
+        },
+        {
+          "file": "zrt_katalog_import_c01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_c01.abap:32"
+        },
+        {
+          "file": "zrt_katalog_import_c01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_c01.abap:34"
+        },
+        {
+          "file": "zrt_katalog_import_c01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_c01.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B12",
+      "text": "Ist für ein Feld eine Konvertierungsmethode hinterlegt, wird sie dynamisch gerufen; existiert sie nicht, wird der Wert unverändert übernommen.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_c01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_c01.abap:40"
+        },
+        {
+          "file": "zrt_katalog_import_c01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_c01.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B13",
+      "text": "Der Artikel wird mit Grund-, Verkaufs- und Logistikdaten und der Warengruppe aus dem Katalog per Retail-Artikel-BAPI angelegt bzw. geändert.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:169"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B14",
+      "text": "Meldet das BAPI einen Fehler, wird zurückgerollt und der Fehler protokolliert; sonst wird festgeschrieben und der Erfolg protokolliert.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:177"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:178"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 183,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:183"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B15",
+      "text": "Ein erfolgreich gepflegter neuer Artikel wird, wenn gewünscht, asynchron in Verkaufsorganisation und Vertriebsweg gelistet.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:97"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 216,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:216"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 222,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:222"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B16",
+      "text": "Bei Status D wird der Artikel zur EAN gesucht und im Echtlauf direkt auf den Auslaufstatus AU gesetzt; unbekannte EANs werden stillschweigend übergangen.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 194,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:194"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:196"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 200,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:200"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 202,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:202"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B17",
+      "text": "Im Echtlauf wird alle 100 Katalogzeilen der Stand als Wiederaufsetzpunkt gesichert und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:102"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:103"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:104"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B18",
+      "text": "Nach erfolgreichem Durchlauf wird der Wiederaufsetzpunkt im Echtlauf gelöscht.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:108"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:109"
+        },
+        {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:110"
+        }
+      ]
+    },
+    {
+      "id": "BM-177-B19",
+      "text": "Am Ende wird die Zahl der Fehler gemeldet und das Protokoll als ALV angezeigt.",
+      "anchors": [
+        {
+          "file": "zrt_katalog_import_f02.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f02.abap:12"
+        },
+        {
+          "file": "zrt_katalog_import_f02.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f02.abap:15"
+        },
+        {
+          "file": "zrt_katalog_import_f02.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f02.abap:16"
+        },
+        {
+          "file": "zrt_katalog_import_f02.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f02.abap:23"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "a1",
+        "type": "start",
+        "anchor": {
+          "file": "zrt_katalog_import.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:22"
+        },
+        "meaning": "Lieferant prüfen"
+      },
+      {
+        "id": "a1q",
+        "type": "read",
+        "anchor": {
+          "file": "zrt_katalog_import.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:23"
+        },
+        "meaning": "Lieferant ohne Sperre nachlesen"
+      },
+      {
+        "id": "a1g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:26"
+        },
+        "meaning": "Lieferant unbekannt/gesperrt?"
+      },
+      {
+        "id": "a1o",
+        "type": "output",
+        "anchor": {
+          "file": "zrt_katalog_import.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:27"
+        },
+        "meaning": "Fehlermeldung: Lieferant unbekannt oder gesperrt"
+      },
+      {
+        "id": "a1m",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:27"
+        },
+        "meaning": "Eingabe abweisen"
+      },
+      {
+        "id": "e_a1",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:28"
+        },
+        "meaning": "Lieferant geprüft"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zrt_katalog_import.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:30"
+        },
+        "meaning": "Import starten"
+      },
+      {
+        "id": "cm",
+        "type": "call",
+        "anchor": {
+          "file": "zrt_katalog_import.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:31"
+        },
+        "meaning": "Feldzuordnung lesen"
+      },
+      {
+        "id": "cd",
+        "type": "call",
+        "anchor": {
+          "file": "zrt_katalog_import.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:33"
+        },
+        "meaning": "Katalog lesen"
+      },
+      {
+        "id": "cw",
+        "type": "call",
+        "anchor": {
+          "file": "zrt_katalog_import.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:34"
+        },
+        "meaning": "Startzeile bestimmen"
+      },
+      {
+        "id": "cv",
+        "type": "call",
+        "anchor": {
+          "file": "zrt_katalog_import.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:35"
+        },
+        "meaning": "Katalog verarbeiten"
+      },
+      {
+        "id": "e_sos",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:35"
+        },
+        "meaning": "Katalog verarbeitet, Selektion beendet"
+      },
+      {
+        "id": "eos",
+        "type": "start",
+        "anchor": {
+          "file": "zrt_katalog_import.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:37"
+        },
+        "meaning": "Ausgabe"
+      },
+      {
+        "id": "cp",
+        "type": "call",
+        "anchor": {
+          "file": "zrt_katalog_import.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:38"
+        },
+        "meaning": "Protokoll ausgeben"
+      },
+      {
+        "id": "e_eos",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import.abap:38"
+        },
+        "meaning": "Ausgabe beendet"
+      },
+      {
+        "id": "m_ab",
+        "type": "start",
+        "anchor": {
+          "file": "zrt_katalog_import_c01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_c01.abap:26"
+        },
+        "meaning": "Feldzuordnung anwenden"
+      },
+      {
+        "id": "lm",
+        "type": "loop",
+        "anchor": {
+          "file": "zrt_katalog_import_c01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_c01.abap:32"
+        },
+        "meaning": "Zuordnungen durchgehen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_c01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_c01.abap:34"
+        },
+        "meaning": "Quellfeld fehlt?"
+      },
+      {
+        "id": "ch",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_c01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_c01.abap:38"
+        },
+        "meaning": "Zielfeld vorhanden?"
+      },
+      {
+        "id": "gk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_c01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_c01.abap:40"
+        },
+        "meaning": "Konvertierung hinterlegt?"
+      },
+      {
+        "id": "ck",
+        "type": "call",
+        "anchor": {
+          "file": "zrt_katalog_import_c01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_c01.abap:41"
+        },
+        "meaning": "Wert konvertieren"
+      },
+      {
+        "id": "e_ab",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_c01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_c01.abap:51"
+        },
+        "meaning": "abgebildet"
+      },
+      {
+        "id": "m_kv",
+        "type": "start",
+        "anchor": {
+          "file": "zrt_katalog_import_c01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_c01.abap:53"
+        },
+        "meaning": "Konvertierung"
+      },
+      {
+        "id": "dyn",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zrt_katalog_import_c01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_c01.abap:60"
+        },
+        "meaning": "Konvertierungsmethode dynamisch rufen"
+      },
+      {
+        "id": "e_kv",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_c01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_c01.abap:69"
+        },
+        "meaning": "konvertiert"
+      },
+      {
+        "id": "fm",
+        "type": "start",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:8"
+        },
+        "meaning": "Zuordnung lesen"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:9"
+        },
+        "meaning": "Lieferantenzuordnung lesen"
+      },
+      {
+        "id": "g1f",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:12"
+        },
+        "meaning": "Keine Lieferantenzuordnung?"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:14"
+        },
+        "meaning": "Standardzuordnung lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:18"
+        },
+        "meaning": "Keine Zuordnung?"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:19"
+        },
+        "meaning": "Fehlermeldung: keine Feldzuordnung"
+      },
+      {
+        "id": "m2",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:19"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "e_m",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:21"
+        },
+        "meaning": "Zuordnung gelesen"
+      },
+      {
+        "id": "fd",
+        "type": "start",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:26"
+        },
+        "meaning": "Datei lesen"
+      },
+      {
+        "id": "od",
+        "type": "output",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:29"
+        },
+        "meaning": "Katalogdatei öffnen"
+      },
+      {
+        "id": "gd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:30"
+        },
+        "meaning": "Datei nicht lesbar?"
+      },
+      {
+        "id": "o3",
+        "type": "output",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:31"
+        },
+        "meaning": "Fehlermeldung: Datei nicht lesbar"
+      },
+      {
+        "id": "m3",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:31"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "rd",
+        "type": "action",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:33"
+        },
+        "meaning": "XML einlesen"
+      },
+      {
+        "id": "tr",
+        "type": "action",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:37"
+        },
+        "meaning": "XML in Katalogzeilen umsetzen"
+      },
+      {
+        "id": "ot",
+        "type": "output",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:41"
+        },
+        "meaning": "Fehlermeldung mit Text des Transformationsfehlers"
+      },
+      {
+        "id": "mt",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:41"
+        },
+        "meaning": "Abbruch mit Transformationsfehler"
+      },
+      {
+        "id": "gk2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:44"
+        },
+        "meaning": "Katalog leer?"
+      },
+      {
+        "id": "o4",
+        "type": "output",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:45"
+        },
+        "meaning": "Hinweis: Katalog leer"
+      },
+      {
+        "id": "ll",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:46"
+        },
+        "meaning": "Listverarbeitung verlassen"
+      },
+      {
+        "id": "e_d",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:48"
+        },
+        "meaning": "Katalog gelesen"
+      },
+      {
+        "id": "fw",
+        "type": "start",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:55"
+        },
+        "meaning": "Wiederaufsetzen"
+      },
+      {
+        "id": "gn",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:59"
+        },
+        "meaning": "Neustart?"
+      },
+      {
+        "id": "dx",
+        "type": "write",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:60"
+        },
+        "meaning": "Wiederaufsetzpunkt löschen"
+      },
+      {
+        "id": "rw1",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:62"
+        },
+        "meaning": "Start bei Zeile 1"
+      },
+      {
+        "id": "im",
+        "type": "read",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:65"
+        },
+        "meaning": "Letzten Stand lesen"
+      },
+      {
+        "id": "gi",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:66"
+        },
+        "meaning": "Stand im Katalog?"
+      },
+      {
+        "id": "si",
+        "type": "action",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:67"
+        },
+        "meaning": "Start nach letztem Stand"
+      },
+      {
+        "id": "e_w",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:73"
+        },
+        "meaning": "Startzeile bestimmt"
+      },
+      {
+        "id": "fv",
+        "type": "start",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:78"
+        },
+        "meaning": "Verarbeitung"
+      },
+      {
+        "id": "lv",
+        "type": "loop",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:82"
+        },
+        "meaning": "Katalogzeilen ab Startzeile"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:86"
+        },
+        "meaning": "Katalogstatus?"
+      },
+      {
+        "id": "cap",
+        "type": "call",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:88"
+        },
+        "meaning": "Artikel anlegen/ändern"
+      },
+      {
+        "id": "cau",
+        "type": "call",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:90"
+        },
+        "meaning": "Auslauf setzen"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:97"
+        },
+        "meaning": "Neu, erfolgreich, Listung gewünscht?"
+      },
+      {
+        "id": "cli",
+        "type": "call",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:98"
+        },
+        "meaning": "Artikel listen"
+      },
+      {
+        "id": "gx",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:102"
+        },
+        "meaning": "Sicherungspunkt erreicht?"
+      },
+      {
+        "id": "ex",
+        "type": "write",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:103"
+        },
+        "meaning": "Stand sichern"
+      },
+      {
+        "id": "cw1",
+        "type": "transaction",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:104"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:108"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "dx2",
+        "type": "write",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:109"
+        },
+        "meaning": "Wiederaufsetzpunkt löschen"
+      },
+      {
+        "id": "cw2",
+        "type": "transaction",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:110"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "e_v",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:112"
+        },
+        "meaning": "Katalog verarbeitet"
+      },
+      {
+        "id": "fa",
+        "type": "start",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:119"
+        },
+        "meaning": "Artikelpflege"
+      },
+      {
+        "id": "qm",
+        "type": "read",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:131"
+        },
+        "meaning": "Artikel zur EAN suchen"
+      },
+      {
+        "id": "gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:133"
+        },
+        "meaning": "Änderung zu unbekannter EAN?"
+      },
+      {
+        "id": "ra1",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:135"
+        },
+        "meaning": "Fehler protokolliert"
+      },
+      {
+        "id": "gt2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:138"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "ra2",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:141"
+        },
+        "meaning": "nur protokolliert"
+      },
+      {
+        "id": "gn2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:144"
+        },
+        "meaning": "Neuer Artikel?"
+      },
+      {
+        "id": "nr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:145"
+        },
+        "meaning": "Interne Artikelnummer ziehen"
+      },
+      {
+        "id": "mp",
+        "type": "call",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:154"
+        },
+        "meaning": "Katalogfelder abbilden"
+      },
+      {
+        "id": "bp",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:169"
+        },
+        "meaning": "Artikel pflegen"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:177"
+        },
+        "meaning": "BAPI-Fehler?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:178"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "ra3",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:180"
+        },
+        "meaning": "Fehler protokolliert"
+      },
+      {
+        "id": "bc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 183,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:183"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "e_a",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 188,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:188"
+        },
+        "meaning": "Artikel gepflegt"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 193,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:193"
+        },
+        "meaning": "Auslauf"
+      },
+      {
+        "id": "qm2",
+        "type": "read",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 194,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:194"
+        },
+        "meaning": "Artikel zur EAN suchen"
+      },
+      {
+        "id": "gs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:196"
+        },
+        "meaning": "EAN unbekannt?"
+      },
+      {
+        "id": "rs",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:197"
+        },
+        "meaning": "übergehen"
+      },
+      {
+        "id": "gp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 200,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:200"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "um",
+        "type": "write",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 202,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:202"
+        },
+        "meaning": "Auslaufstatus AU direkt setzen"
+      },
+      {
+        "id": "e_s",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 208,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:208"
+        },
+        "meaning": "Auslauf erledigt"
+      },
+      {
+        "id": "fl",
+        "type": "start",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 215,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:215"
+        },
+        "meaning": "Listung"
+      },
+      {
+        "id": "bt",
+        "type": "async",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 216,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:216"
+        },
+        "meaning": "Listung asynchron anstoßen"
+      },
+      {
+        "id": "cw3",
+        "type": "transaction",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 222,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:222"
+        },
+        "meaning": "tRFC auslösen"
+      },
+      {
+        "id": "e_l",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f01.abap",
+          "line": 223,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f01.abap:223"
+        },
+        "meaning": "Listung angestoßen"
+      },
+      {
+        "id": "fp",
+        "type": "start",
+        "anchor": {
+          "file": "zrt_katalog_import_f02.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f02.abap:8"
+        },
+        "meaning": "Protokollausgabe"
+      },
+      {
+        "id": "pg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zrt_katalog_import_f02.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f02.abap:15"
+        },
+        "meaning": "Fehler im Protokoll?"
+      },
+      {
+        "id": "po",
+        "type": "output",
+        "anchor": {
+          "file": "zrt_katalog_import_f02.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f02.abap:16"
+        },
+        "meaning": "Meldung mit Fehleranzahl"
+      },
+      {
+        "id": "alv",
+        "type": "output",
+        "anchor": {
+          "file": "zrt_katalog_import_f02.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f02.abap:23"
+        },
+        "meaning": "Protokoll als ALV"
+      },
+      {
+        "id": "e_p",
+        "type": "end",
+        "anchor": {
+          "file": "zrt_katalog_import_f02.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zrt_katalog_import_f02.abap:29"
+        },
+        "meaning": "Ausgabe fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "a1",
+        "to": "a1q",
+        "condition": "always"
+      },
+      {
+        "from": "a1q",
+        "to": "a1g",
+        "condition": "always"
+      },
+      {
+        "from": "a1g",
+        "to": "a1o",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "a1g",
+        "to": "e_a1",
+        "condition": "else"
+      },
+      {
+        "from": "s",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "fm",
+        "condition": "always"
+      },
+      {
+        "from": "cd",
+        "to": "fd",
+        "condition": "always"
+      },
+      {
+        "from": "cw",
+        "to": "fw",
+        "condition": "always"
+      },
+      {
+        "from": "cv",
+        "to": "fv",
+        "condition": "always"
+      },
+      {
+        "from": "eos",
+        "to": "cp",
+        "condition": "always"
+      },
+      {
+        "from": "cp",
+        "to": "fp",
+        "condition": "always"
+      },
+      {
+        "from": "m_ab",
+        "to": "lm",
+        "condition": "always"
+      },
+      {
+        "from": "lm",
+        "to": "g1",
+        "condition": "next row"
+      },
+      {
+        "from": "g1",
+        "to": "lm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "ch",
+        "condition": "else"
+      },
+      {
+        "from": "ch",
+        "to": "gk",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "ch",
+        "to": "lm",
+        "condition": "else"
+      },
+      {
+        "from": "gk",
+        "to": "ck",
+        "condition": "ls_map-konv_klasse IS NOT INITIAL"
+      },
+      {
+        "from": "gk",
+        "to": "lm",
+        "condition": "else"
+      },
+      {
+        "from": "ck",
+        "to": "m_kv",
+        "condition": "always"
+      },
+      {
+        "from": "lm",
+        "to": "e_ab",
+        "condition": "no more rows"
+      },
+      {
+        "from": "m_kv",
+        "to": "dyn",
+        "condition": "always"
+      },
+      {
+        "from": "dyn",
+        "to": "e_kv",
+        "condition": "always"
+      },
+      {
+        "from": "fm",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "g1f",
+        "condition": "always"
+      },
+      {
+        "from": "g1f",
+        "to": "q2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1f",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "o2",
+        "condition": "gt_map IS INITIAL"
+      },
+      {
+        "from": "g2",
+        "to": "e_m",
+        "condition": "else"
+      },
+      {
+        "from": "fd",
+        "to": "od",
+        "condition": "always"
+      },
+      {
+        "from": "od",
+        "to": "gd",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "o3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gd",
+        "to": "rd",
+        "condition": "else"
+      },
+      {
+        "from": "rd",
+        "to": "tr",
+        "condition": "always"
+      },
+      {
+        "from": "tr",
+        "to": "ot",
+        "condition": "cx_transformation_error"
+      },
+      {
+        "from": "tr",
+        "to": "gk2",
+        "condition": "always"
+      },
+      {
+        "from": "gk2",
+        "to": "o4",
+        "condition": "gt_kat IS INITIAL"
+      },
+      {
+        "from": "gk2",
+        "to": "e_d",
+        "condition": "else"
+      },
+      {
+        "from": "fw",
+        "to": "gn",
+        "condition": "always"
+      },
+      {
+        "from": "gn",
+        "to": "dx",
+        "condition": "p_neu = abap_true"
+      },
+      {
+        "from": "gn",
+        "to": "im",
+        "condition": "else"
+      },
+      {
+        "from": "dx",
+        "to": "rw1",
+        "condition": "always"
+      },
+      {
+        "from": "im",
+        "to": "gi",
+        "condition": "always"
+      },
+      {
+        "from": "gi",
+        "to": "si",
+        "condition": "sy-subrc = 0 AND lv_idx < lines( gt_kat )"
+      },
+      {
+        "from": "gi",
+        "to": "e_w",
+        "condition": "else"
+      },
+      {
+        "from": "si",
+        "to": "e_w",
+        "condition": "always"
+      },
+      {
+        "from": "fv",
+        "to": "lv",
+        "condition": "always"
+      },
+      {
+        "from": "lv",
+        "to": "cs",
+        "condition": "next row"
+      },
+      {
+        "from": "cs",
+        "to": "cap",
+        "condition": "WHEN 'N' OR 'A'"
+      },
+      {
+        "from": "cs",
+        "to": "cau",
+        "condition": "WHEN 'D'"
+      },
+      {
+        "from": "cs",
+        "to": "lv",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "cau",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "cap",
+        "to": "fa",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "cli",
+        "condition": "lv_ok = abap_true AND p_list = abap_true AND ls_kat-status = 'N'"
+      },
+      {
+        "from": "gl",
+        "to": "gx",
+        "condition": "else"
+      },
+      {
+        "from": "cli",
+        "to": "fl",
+        "condition": "always"
+      },
+      {
+        "from": "gx",
+        "to": "ex",
+        "condition": "lv_idx MOD 100 = 0 AND p_test = abap_false"
+      },
+      {
+        "from": "gx",
+        "to": "lv",
+        "condition": "else"
+      },
+      {
+        "from": "ex",
+        "to": "cw1",
+        "condition": "always"
+      },
+      {
+        "from": "cw1",
+        "to": "lv",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lv",
+        "to": "gt",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gt",
+        "to": "dx2",
+        "condition": "p_test = abap_false"
+      },
+      {
+        "from": "gt",
+        "to": "e_v",
+        "condition": "else"
+      },
+      {
+        "from": "dx2",
+        "to": "cw2",
+        "condition": "always"
+      },
+      {
+        "from": "cw2",
+        "to": "e_v",
+        "condition": "always"
+      },
+      {
+        "from": "fa",
+        "to": "qm",
+        "condition": "always"
+      },
+      {
+        "from": "qm",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "gm",
+        "to": "ra1",
+        "condition": "sy-subrc <> 0 AND us_kat-status = 'A'"
+      },
+      {
+        "from": "gm",
+        "to": "gt2",
+        "condition": "else"
+      },
+      {
+        "from": "gt2",
+        "to": "ra2",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "gt2",
+        "to": "gn2",
+        "condition": "else"
+      },
+      {
+        "from": "gn2",
+        "to": "nr",
+        "condition": "cv_matnr IS INITIAL"
+      },
+      {
+        "from": "gn2",
+        "to": "mp",
+        "condition": "else"
+      },
+      {
+        "from": "nr",
+        "to": "mp",
+        "condition": "always"
+      },
+      {
+        "from": "mp",
+        "to": "m_ab",
+        "condition": "always"
+      },
+      {
+        "from": "bp",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "rb",
+        "condition": "ls_ret-type CA 'EA'"
+      },
+      {
+        "from": "gr",
+        "to": "bc",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "ra3",
+        "condition": "always"
+      },
+      {
+        "from": "bc",
+        "to": "e_a",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "qm2",
+        "condition": "always"
+      },
+      {
+        "from": "qm2",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "rs",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gs",
+        "to": "gp",
+        "condition": "else"
+      },
+      {
+        "from": "gp",
+        "to": "um",
+        "condition": "p_test = abap_false"
+      },
+      {
+        "from": "gp",
+        "to": "e_s",
+        "condition": "else"
+      },
+      {
+        "from": "um",
+        "to": "e_s",
+        "condition": "always"
+      },
+      {
+        "from": "fl",
+        "to": "bt",
+        "condition": "always"
+      },
+      {
+        "from": "bt",
+        "to": "cw3",
+        "condition": "always"
+      },
+      {
+        "from": "cw3",
+        "to": "e_l",
+        "condition": "always"
+      },
+      {
+        "from": "fp",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "alv",
+        "to": "e_p",
+        "condition": "always"
+      },
+      {
+        "from": "a1o",
+        "to": "a1m",
+        "condition": "always"
+      },
+      {
+        "from": "e_a1",
+        "to": "s",
+        "condition": "always"
+      },
+      {
+        "from": "e_m",
+        "to": "cd",
+        "condition": "always"
+      },
+      {
+        "from": "e_d",
+        "to": "cw",
+        "condition": "always"
+      },
+      {
+        "from": "rw1",
+        "to": "cv",
+        "condition": "always"
+      },
+      {
+        "from": "e_w",
+        "to": "cv",
+        "condition": "always"
+      },
+      {
+        "from": "e_v",
+        "to": "e_sos",
+        "condition": "always"
+      },
+      {
+        "from": "e_sos",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "e_p",
+        "to": "e_eos",
+        "condition": "always"
+      },
+      {
+        "from": "e_ab",
+        "to": "bp",
+        "condition": "always"
+      },
+      {
+        "from": "e_kv",
+        "to": "lm",
+        "condition": "next iteration"
+      },
+      {
+        "from": "o2",
+        "to": "m2",
+        "condition": "always"
+      },
+      {
+        "from": "o3",
+        "to": "m3",
+        "condition": "always"
+      },
+      {
+        "from": "ot",
+        "to": "mt",
+        "condition": "always"
+      },
+      {
+        "from": "o4",
+        "to": "ll",
+        "condition": "always"
+      },
+      {
+        "from": "ra1",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "ra2",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "ra3",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "e_a",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "lv",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_s",
+        "to": "lv",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_l",
+        "to": "gx",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "po",
+        "condition": "lv_fehler > 0"
+      },
+      {
+        "from": "pg",
+        "to": "alv",
+        "condition": "else"
+      },
+      {
+        "from": "po",
+        "to": "alv",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zrt_katalog_import_f01.abap:98 — kein Fachsatz „im Testlauf wird nichts verändert“: für neue Katalogartikel gilt die Pflege im Testlauf als erfolgreich, der Listungsbaustein wird asynchron angestoßen und festgeschrieben – mit leerer Artikelnummer",
+    "zrt_katalog_import_f02.abap:37 — kein Fachsatz „Einkaufs- und Verkaufspreise aus dem Katalog werden als Konditionen gepflegt“: das FORM wird nie gerufen",
+    "zrt_katalog_import_c01.abap:60 — kein Fachsatz „nicht konvertierbare Katalogwerte werden abgewiesen“: fehlt die Methode, wird der Rohwert übernommen; andere Fehler der Methode werden nicht abgefangen",
+    "zrt_katalog_import_f01.abap:103 — kein Fachsatz „nach einem Abbruch setzt der Lauf genau nach der letzten verarbeiteten Zeile auf“: gesichert wird nur alle 100 Zeilen, bis zu 99 Zeilen werden erneut verarbeitet"
+  ],
+  "processDescription": "Der Report wird mit Lieferant, Dateipfad, Verkaufsorganisation, Vertriebsweg und Kennzeichen für Listung, Neustart und Testlauf gestartet; ein gesperrter oder unbekannter Lieferant wird abgewiesen. Er liest die Feldzuordnung des Lieferanten oder ersatzweise die Standardzuordnung und bricht ohne Zuordnung ab. Die XML-Katalogdatei wird vom Applikationsserver gelesen und per Transformation in Katalogzeilen umgesetzt; Lese- oder Transformationsfehler brechen ab, ein leerer Katalog endet mit Hinweis. Ohne Neustart setzt der Lauf nach dem zuletzt in INDX gesicherten Stand auf. Zeilen mit Status N oder A führen zur Artikelpflege: der Artikel wird über die EAN gesucht, eine Änderung zu unbekannter EAN ist ein Fehler, ein neuer Artikel erhält eine interne Nummer, die Katalogfelder werden über die Zuordnung – teils mit dynamisch gerufenen Konvertierungsmethoden – auf die Artikeldaten übertragen und per Retail-BAPI gepflegt, mit Rollback und Protokoll im Fehlerfall. Erfolgreich angelegte neue Artikel werden auf Wunsch asynchron gelistet, auch im Testlauf. Zeilen mit Status D setzen den Artikel im Echtlauf direkt auf den Auslaufstatus AU. Alle 100 Zeilen wird im Echtlauf ein Wiederaufsetzpunkt gesichert und am Ende gelöscht. Zum Schluss werden die Fehler gezählt und das Protokoll als ALV angezeigt."
+}

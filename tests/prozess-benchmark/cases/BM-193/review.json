@@ -1,0 +1,112 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten c_show (end)",
+      "before": "zwd_ehs_unfall_compctrl.abap:38",
+      "after": "zwd_ehs_unfall_compctrl.abap:40 (ENDMETHOD. load_unfall)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten v_end (neu)",
+      "before": "kein end-Knoten auf zwd_ehs_unfall_v_main.abap:19",
+      "after": "v_end end auf zwd_ehs_unfall_v_main.abap:19; ",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten Rückkehr load_unfall",
+      "before": "(keine; wddoinit endete ohne end-Knoten nach v_load)",
+      "after": "c_r1 -> v_end, c_r2 -> v_end, c_show -> v_end [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten c_err (neu)",
+      "before": "keine Knoten auf zwd_ehs_unfall_compctrl.abap:31",
+      "after": "c_err output auf zwd_ehs_unfall_compctrl.abap:31; c_g1 -> c_err [sy-subrc <> 0]; c_err -> c_r2 [always]",
+      "why": "Die Fehlermeldung an den Benutzer trägt den Pfad (Ausgabe über den Message Manager); im selben Fall sind report_attribute_error_message, report_success und report_warning bereits output-Knoten.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten m_end (neu)",
+      "before": "kein end-Knoten auf zwd_ehs_unfall_v_main.abap:73",
+      "after": "m_end end auf zwd_ehs_unfall_v_main.abap:73; m_loop -> m_end [no more rows] statt -> s_g1; m_end -> s_g1 [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten s_nav (end)",
+      "before": "zwd_ehs_unfall_v_main.abap:38",
+      "after": "zwd_ehs_unfall_v_main.abap:40 (ENDMETHOD. onactionsave)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten s_plg (neu)",
+      "before": "keine Knoten auf zwd_ehs_unfall_v_main.abap:38",
+      "after": "s_plg output auf zwd_ehs_unfall_v_main.abap:38; s_g2 -> s_plg [else]; s_plg -> s_nav [always]",
+      "why": "Die Navigation zur Bestätigungsseite (Outbound-Plug, entspricht einem Bildwechsel) ist ein fachlicher Schritt; sie lag bisher im end-Knoten, der nun auf ENDMETHOD steht.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten sv_err1 (neu)",
+      "before": "keine Knoten auf zwd_ehs_unfall_compctrl.abap:67",
+      "after": "sv_err1 output auf zwd_ehs_unfall_compctrl.abap:67; sv_g1 -> sv_err1 [sy-subrc <> 0]; sv_err1 -> sv_r1 [always]",
+      "why": "Die Fehlermeldung an den Benutzer trägt den Pfad (Ausgabe über den Message Manager); im selben Fall sind report_attribute_error_message, report_success und report_warning bereits output-Knoten.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten sv_err2 (neu)",
+      "before": "keine Knoten auf zwd_ehs_unfall_compctrl.abap:87",
+      "after": "sv_err2 output auf zwd_ehs_unfall_compctrl.abap:87; sv_rb -> sv_err2 [always]; sv_err2 -> sv_r2 [always]",
+      "why": "Die Fehlermeldung an den Benutzer trägt den Pfad (Ausgabe über den Message Manager); im selben Fall sind report_attribute_error_message, report_success und report_warning bereits output-Knoten.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten sv_end (neu)",
+      "before": "kein end-Knoten auf zwd_ehs_unfall_compctrl.abap:121",
+      "after": "sv_end end auf zwd_ehs_unfall_compctrl.abap:121; sv_ok -> sv_end [always] statt -> s_g2; sv_end -> s_g2 [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten ml_g2 (neu)",
+      "before": "keine Verzweigung auf zwd_ehs_unfall_compctrl.abap:146",
+      "after": "ml_g2 gateway auf :146; ml_sifa -> ml_g2 [always], ml_g2 -> ml_send [sy-subrc <> 0] (Sammelpostfach) und [else]",
+      "why": "Verzweigung trägt den Prozess (Fachsatz B18: Ersatzempfänger Sammelpostfach), fehlte im Skelett.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten ml_end (neu)",
+      "before": "kein end-Knoten auf zwd_ehs_unfall_compctrl.abap:174",
+      "after": "ml_end end auf zwd_ehs_unfall_compctrl.abap:174; ml_cmt -> ml_end [always] statt -> sv_ok; ml_warn -> ml_end [always] statt -> sv_ok; ml_end -> sv_ok [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz B13",
+      "before": "Schlägt das Schreiben fehl, wird alles zurückgenommen, der Benutzer erhält eine Fehlermeldung, und die bereits gezogene Nummer bleibt ungenutzt.",
+      "after": "Schlägt das Schreiben fehl, wird alles zurückgenommen und der Benutzer erhält eine Fehlermeldung.",
+      "why": "„die bereits gezogene Nummer bleibt ungenutzt“ trägt der Code nicht: ob eine Nummer durch ROLLBACK WORK verloren geht, hängt von der Pufferung des Nummernkreisobjekts ZEHS_UNF ab (Customizing, nicht im Fall); ungepuffert wird die NRIV-Fortschreibung mit zurückgerollt.",
+      "category": "Fachsatz"
+    },
+    {
+      "where": "Fachsatz B11",
+      "before": "Eine Meldung in Erfassung wird beim Sichern auf Status „erfasst“ gesetzt, und der ändernde Benutzer mit Datum wird festgehalten.",
+      "after": "Eine Meldung im Status 01 („in Erfassung“) wird beim Sichern auf Status 02 gesetzt, und der ändernde Benutzer mit Datum wird festgehalten.",
+      "why": "Die Bezeichnung „erfasst“ für Status 02 steht nirgends im Code (nur 01 ist per Kommentar als „in Erfassung“ benannt).",
+      "category": "Fachsatz"
+    },
+    {
+      "where": "processDescription",
+      "before": "… eine bereits gezogene Nummer bleibt dann ungenutzt … von „in Erfassung“ auf „erfasst“",
+      "after": "Satzteil zur ungenutzten Nummer gestrichen; Status 01 → 02",
+      "why": "Folgeänderung zu B11/B13.",
+      "category": "Fachsatz"
+    }
+  ],
+  "doubts": []
+}

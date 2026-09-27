@@ -1,0 +1,136 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_i (neu)",
+      "before": "i -> s [always] (INITIALIZATION ohne end-Knoten)",
+      "after": "e_i end auf zft_praeferenz.abap:26 (letzte Anweisung); i -> e_i, e_i -> s [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (INITIALIZATION, START-OF-SELECTION, END-OF-SELECTION) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten Aufruf csp",
+      "before": "csp -> cml [always]",
+      "after": "e_g -> cml [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cml",
+      "before": "cml -> g0 [always]",
+      "after": "e_m -> g0 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten o0 (neu)",
+      "before": "keine Knoten auf zft_praeferenz.abap:32",
+      "after": "o0 output auf zft_praeferenz.abap:32; g0 -> o0 [gt_mat IS INITIAL]; o0 -> x0 [always]",
+      "why": "Die Meldung (MESSAGE s001, Z. 32) ist die Ausgabe dieses Pfadendes (Fachsatz B03) und fehlte als output-Knoten.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz B03 Anker",
+      "before": ":31, :33",
+      "after": ":31, :32, :33",
+      "why": "Der Hinweis steht auf Zeile 32.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten cz, ra, ap / Kanten Aufruf cb",
+      "before": "cz action auf zft_praeferenz.abap:43 (ls_bew = VALUE #( … ) im CATCH), ra read auf zft_praeferenz.abap:48 (lv_alt = VALUE #( gt_alt[ … ] OPTIONAL )), ap action auf zft_praeferenz.abap:49 (APPEND VALUE #( … ) TO gt_erg); cb -> cz [CATCH lcx_zyklus], cb -> ra [always], cz -> ra, ra -> ap, ap -> l [next iteration]",
+      "after": "cz, ra, ap entfernt; Rückkanten r1 -> l, e_b -> l [next iteration]; xz -> l [lcx_zyklus]",
+      "why": "Zuweisung im CATCH-Handler, Zuweisung aus einer Tabellenausdrucks-Nachschlagung ohne folgende Entscheidung und APPEND in die Ergebnistabelle sind laut Autorenbrief und vereinheitlichter Konvention keine Knoten (wie BM-151/195). Inhalt bleibt in B05 und B12. Vereinheitlichte Konvention: RAISE EXCEPTION im gerufenen Block ist ein end-Knoten; von dort führt die Kante in den CATCH-Zweig des Aufrufers (Bedingung: der Ausnahmename); keine Kante vom Aufruf selbst in den Handler. Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_sos (neu), Rückkante ergebnisse_sichern",
+      "before": "gu -> eos [else]; cs -> eos [always] (Direktkante)",
+      "after": "e_sos end auf zft_praeferenz.abap:62 (letzte Anweisung); gu -> e_sos [else], e_s -> e_sos [always], e_sos -> eos [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (INITIALIZATION, START-OF-SELECTION, END-OF-SELECTION) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146). Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_eos (neu)",
+      "before": "kein end-Knoten für END-OF-SELECTION; e_a ohne Rückkehr",
+      "after": "e_eos end auf zft_praeferenz.abap:65 (letzte Anweisung); e_a -> e_eos [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (INITIALIZATION, START-OF-SELECTION, END-OF-SELECTION) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146). Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten Aufruf cz2",
+      "before": "cz2 -> dp [always]",
+      "after": "e_z -> dp [always]; rz -> dp [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf rk",
+      "before": "rk -> kw [always]",
+      "after": "r1 -> kw [always]; e_b -> kw [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cp",
+      "before": "cp -> gp [always]",
+      "after": "e_p -> gp [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf zp",
+      "before": "zp -> ql [always]",
+      "after": "e_p -> ql [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten nb",
+      "before": "action auf zft_praeferenz_c01.abap:91; gs -> nb [sy-subrc <> 0]; nb -> dp [always]",
+      "after": "entfernt; gs -> dp [sy-subrc <> 0]",
+      "why": "Reine Zuweisung; laut Autorenbrief kein Knoten, sie steuert keinen weiteren Fluss (wie BM-093/099/151). Inhalt bleibt im Fachsatz.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten aw",
+      "before": "action auf zft_praeferenz_c01.abap:107; gp -> aw [lv_preis > rs_bew-wert]; aw -> qs [always]",
+      "after": "entfernt; gp -> qs [lv_preis > rs_bew-wert]",
+      "why": "Reine Zuweisung; laut Autorenbrief kein Knoten, sie steuert keinen weiteren Fluss (wie BM-093/099/151). Inhalt bleibt im Fachsatz.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten dm",
+      "before": "action auf zft_praeferenz_c01.abap:118; gr -> dm [sy-subrc <> 0]; dm -> ur [always]",
+      "after": "entfernt; gr -> ur [sy-subrc <> 0]",
+      "why": "Reine Zuweisung; laut Autorenbrief kein Knoten, sie steuert keinen weiteren Fluss (wie BM-093/099/151). Inhalt bleibt im Fachsatz.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten gg",
+      "before": "action auf zft_praeferenz_c01.abap:123; gn -> gg [rs_bew-ursprung = abap_false]; gg -> dp [always]",
+      "after": "entfernt; gn -> dp [rs_bew-ursprung = abap_false]",
+      "why": "Reine Zuweisung; laut Autorenbrief kein Knoten, sie steuert keinen weiteren Fluss (wie BM-093/099/151). Inhalt bleibt im Fachsatz.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten nu",
+      "before": "action auf zft_praeferenz_c01.abap:150; gx -> nu [line_exists( lt_le[ praef_ursprung = abap_false ] )]; nu -> e_z [always]",
+      "after": "entfernt; gx -> e_z [line_exists( lt_le[ praef_ursprung = abap_false ] )]",
+      "why": "Reine Zuweisung; laut Autorenbrief kein Knoten, sie steuert keinen weiteren Fluss (wie BM-093/099/151). Inhalt bleibt im Fachsatz.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten ju",
+      "before": "action auf zft_praeferenz_c01.abap:153; gx -> ju [else]; ju -> e_z [always]",
+      "after": "entfernt; gx -> e_z [else]",
+      "why": "Reine Zuweisung; laut Autorenbrief kein Knoten, sie steuert keinen weiteren Fluss (wie BM-093/099/151). Inhalt bleibt im Fachsatz.",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": [
+    "nk (NEW lcl_kalkulation, Z. 36) als action belassen: der Konstruktor liegt im Fall, enthält aber nur Zuweisungen und hat keinen eigenen Knoten.",
+    "kw, an, ur, pc als action belassen: Berechnungen, die Komponentenwert, Wert ohne Ursprung, Ursprungsentscheidung bzw. Preis festlegen."
+  ]
+}

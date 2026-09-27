@@ -1,0 +1,2569 @@
+{
+  "id": "BM-157",
+  "title": "Überstundenfreigabe aus Zeitauswertungsergebnissen (Cluster B2) mit Zeitumbuchung, Ablehnung und Nachlauf",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "RP_LAST_DAY_OF_MONTHS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_ot_approval_f01.abap",
+        "line": 7,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_ot_approval_f01.abap:7"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpt_ot_approval_f01.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_ot_approval_f01.abap:15"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPT_OT_LIMIT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zpt_ot_approval_f01.abap",
+        "line": 24,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_ot_approval_f01.abap:24"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_TIME_RESULTS_GET",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_ot_approval_f01.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_ot_approval_f01.abap:42"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPT_OT_DECISION",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zpt_ot_approval_f01.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_ot_approval_f01.abap:83"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REUSE_ALV_GRID_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_ot_approval_f01.abap",
+        "line": 110,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_ot_approval_f01.abap:110"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA20",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_ot_approval_f02.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_ot_approval_f02.abap:15"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_EMPLOYEE_ENQUEUE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_ot_approval_f02.abap",
+        "line": 46,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_ot_approval_f02.abap:46"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_INFOTYPE_OPERATION",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_ot_approval_f02.abap",
+        "line": 66,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_ot_approval_f02.abap:66"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_EMPLOYEE_DEQUEUE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_ot_approval_f02.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_ot_approval_f02.abap:79"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPT_OT_DECISION",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zpt_ot_approval_f02.abap",
+        "line": 88,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_ot_approval_f02.abap:88"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPT_OT_DECISION",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zpt_ot_approval_f02.abap",
+        "line": 113,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_ot_approval_f02.abap:113"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SWE_EVENT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_ot_approval_f02.abap",
+        "line": 136,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_ot_approval_f02.abap:136"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_OPEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_ot_approval_f02.abap",
+        "line": 165,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_ot_approval_f02.abap:165"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RPTIME00",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_ot_approval_f02.abap",
+        "line": 180,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_ot_approval_f02.abap:180"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_CLOSE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_ot_approval_f02.abap",
+        "line": 187,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_ot_approval_f02.abap:187"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-157-B01",
+      "text": "Beim Aufruf wird der Vormonat als Abrechnungsperiode vorgeschlagen.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:22"
+        },
+        {
+          "file": "zpt_ot_approval.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B02",
+      "text": "Ohne Personalnummer und ohne Organisationseinheit wird die Auswahl abgewiesen.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:27"
+        },
+        {
+          "file": "zpt_ot_approval.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B03",
+      "text": "Es werden die Mitarbeiter der Auswahl gelesen, die am Monatsende der Periode zugeordnet sind, dazu die am Monatsende gültigen Kappungsgrenzen je Mitarbeiterkreis.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:7"
+        },
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:15"
+        },
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B04",
+      "text": "Für jeden Mitarbeiter wird das Zeitauswertungsergebnis der Periode gelesen; nicht lesbare Ergebnisse werden gezählt und übergangen.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:38"
+        },
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:42"
+        },
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:56"
+        },
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B05",
+      "text": "Die Salden der ungenehmigten Überstunden werden summiert; Mitarbeiter ohne solche Stunden entfallen.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:61"
+        },
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:62"
+        },
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B06",
+      "text": "Die Kappungsgrenze des Mitarbeiterkreises wird nachgeschlagen; ist keine gepflegt, gilt null und alle Stunden sind freigabepflichtig.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:66"
+        },
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B07",
+      "text": "Liegen die Stunden innerhalb der Grenze, entfällt der Mitarbeiter; sonst wird der Überschuss berechnet.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:71"
+        },
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B08",
+      "text": "Eine frühere Entscheidung zur Periode wird als Status übernommen, sonst gilt der Mitarbeiter als offen.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:83"
+        },
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B09",
+      "text": "Liegt niemand über der Grenze, endet der Report mit einem Hinweis ohne Liste.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:36"
+        },
+        {
+          "file": "zpt_ot_approval.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:37"
+        },
+        {
+          "file": "zpt_ot_approval.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B10",
+      "text": "Die Mitarbeiter werden mit Stunden, Grenze, Überschuss und Status in einer markierbaren Liste mit Freigabefunktionen angezeigt, im Titel die Zahl nicht lesbarer Ergebnisse.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:101"
+        },
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:110"
+        },
+        {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:126"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B11",
+      "text": "Ein Doppelklick auf eine Zeile öffnet die Personalstammdaten des Mitarbeiters direkt in der Anzeige.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:10"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:14"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B12",
+      "text": "Ohne Freigabeberechtigung wird die Freigabe mit Fehlermeldung abgebrochen.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:34"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:36"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B13",
+      "text": "Freigegeben werden nur markierte, noch offene Zeilen; ist der Mitarbeiter gesperrt, wird das gemeldet und er übersprungen.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:40"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:42"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:46"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B14",
+      "text": "Für den Überschuss wird zum Monatsletzten eine Zeitumbuchungsvorgabe zur Auszahlung angelegt und die Sperre wieder gelöst; scheitert die Anlage, wird das gemeldet und der Mitarbeiter übersprungen.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:66"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:79"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B15",
+      "text": "Die Freigabe wird mit Stunden, Benutzer und Datum vermerkt und der Mitarbeiter über ein Workflow-Ereignis benachrichtigt; scheitert das Ereignis, gibt es nur einen Hinweis.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:88"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:98"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:136"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:146"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B16",
+      "text": "Gab es mindestens eine Freigabe, werden alle Freigaben gemeinsam festgeschrieben und ihre Anzahl gemeldet.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:101"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:102"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:103"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B17",
+      "text": "Markierte offene Zeilen können abgelehnt werden; die Ablehnung wird vermerkt und festgeschrieben, ohne Treffer gibt es nur einen Hinweis.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:111"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:113"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:123"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:127"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B18",
+      "text": "Für alle markierten Mitarbeiter kann die Zeitauswertung ab Periodenbeginn als Hintergrundjob eingeplant werden; ohne Markierung oder wenn der Job nicht anlegbar ist, gibt es nur einen Hinweis.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:158"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:160"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:165"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:175"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:180"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 187,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:187"
+        }
+      ]
+    },
+    {
+      "id": "BM-157-B19",
+      "text": "Nach jeder Funktion außer unbekannten wird die Liste aufgefrischt.",
+      "anchors": [
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:25"
+        },
+        {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:23"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s_init",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:18"
+        },
+        "meaning": "Programmaufruf"
+      },
+      {
+        "id": "e_init",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:24"
+        },
+        "meaning": "Vormonat vorgeschlagen"
+      },
+      {
+        "id": "s_ss",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:26"
+        },
+        "meaning": "Eingaben prüfen"
+      },
+      {
+        "id": "g_ss",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:27"
+        },
+        "meaning": "Weder Personalnummer noch Org.-Einheit?"
+      },
+      {
+        "id": "o_ss",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:28"
+        },
+        "meaning": "Fehlermeldung, Auswahl ergänzen"
+      },
+      {
+        "id": "e_ssm",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:28"
+        },
+        "meaning": "Auswahl abgewiesen, Selektionsbild erneut"
+      },
+      {
+        "id": "e_ss",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:29"
+        },
+        "meaning": "Auswahl zulässig"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:31"
+        },
+        "meaning": "Auswertung startet"
+      },
+      {
+        "id": "c_sel",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:32"
+        },
+        "meaning": "Mitarbeiter und Grenzen lesen"
+      },
+      {
+        "id": "s_se",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:5"
+        },
+        "meaning": "Mitarbeiter selektieren"
+      },
+      {
+        "id": "c_ld",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:7"
+        },
+        "meaning": "Monatsende der Periode bestimmen"
+      },
+      {
+        "id": "r_emp",
+        "type": "read",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:15"
+        },
+        "meaning": "Mitarbeiter der Auswahl zum Monatsende lesen"
+      },
+      {
+        "id": "r_lim",
+        "type": "read",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:24"
+        },
+        "meaning": "Kappungsgrenzen je Mitarbeiterkreis lesen"
+      },
+      {
+        "id": "e_se",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:27"
+        },
+        "meaning": "Mitarbeiter und Grenzen gelesen"
+      },
+      {
+        "id": "c_rtr",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:33"
+        },
+        "meaning": "Zeitergebnisse auswerten"
+      },
+      {
+        "id": "s_rt",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:30"
+        },
+        "meaning": "Überstunden ermitteln"
+      },
+      {
+        "id": "l_emp",
+        "type": "loop",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:38"
+        },
+        "meaning": "Je Mitarbeiter"
+      },
+      {
+        "id": "c_b2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:42"
+        },
+        "meaning": "Zeitauswertungsergebnis der Periode lesen"
+      },
+      {
+        "id": "g_b2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:56"
+        },
+        "meaning": "Ergebnis nicht lesbar?"
+      },
+      {
+        "id": "l_zes",
+        "type": "loop",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:61"
+        },
+        "meaning": "Je Saldo ungenehmigter Überstunden"
+      },
+      {
+        "id": "a_sum",
+        "type": "action",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:62"
+        },
+        "meaning": "Überstunden aufsummieren"
+      },
+      {
+        "id": "g_hrs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:64"
+        },
+        "meaning": "Überstunden vorhanden?"
+      },
+      {
+        "id": "r_lim2",
+        "type": "read",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:66"
+        },
+        "meaning": "Grenze des Mitarbeiterkreises nachschlagen"
+      },
+      {
+        "id": "g_lim",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:67"
+        },
+        "meaning": "Keine Grenze gepflegt?"
+      },
+      {
+        "id": "g_le",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:71"
+        },
+        "meaning": "Innerhalb der Grenze?"
+      },
+      {
+        "id": "a_exc",
+        "type": "action",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:80"
+        },
+        "meaning": "Überschuss über der Grenze berechnen"
+      },
+      {
+        "id": "r_dec",
+        "type": "read",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:83"
+        },
+        "meaning": "Frühere Entscheidung zur Periode lesen"
+      },
+      {
+        "id": "g_dec",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:87"
+        },
+        "meaning": "Noch nicht entschieden?"
+      },
+      {
+        "id": "e_rt",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:92"
+        },
+        "meaning": "Überstunden ermittelt"
+      },
+      {
+        "id": "e_sos",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:33"
+        },
+        "meaning": "Auswertung abgeschlossen"
+      },
+      {
+        "id": "s_eos",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:35"
+        },
+        "meaning": "Ausgabe"
+      },
+      {
+        "id": "g_eos",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:36"
+        },
+        "meaning": "Nichts über der Grenze?"
+      },
+      {
+        "id": "o_eos",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:37"
+        },
+        "meaning": "Hinweis ausgeben"
+      },
+      {
+        "id": "e_eos",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:38"
+        },
+        "meaning": "Ohne Liste beenden"
+      },
+      {
+        "id": "c_alv",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:40"
+        },
+        "meaning": "Freigabeliste anzeigen"
+      },
+      {
+        "id": "s_da",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:95"
+        },
+        "meaning": "ALV aufbauen"
+      },
+      {
+        "id": "c_fc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:101"
+        },
+        "meaning": "Feldkatalog erzeugen"
+      },
+      {
+        "id": "o_alv",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:110"
+        },
+        "meaning": "Liste mit Markierspalte und Freigabefunktionen anzeigen"
+      },
+      {
+        "id": "e_da",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f01.abap:122"
+        },
+        "meaning": "Listanzeige beendet"
+      },
+      {
+        "id": "e_eos2",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval.abap:40"
+        },
+        "meaning": "Report beendet"
+      },
+      {
+        "id": "s_uc",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:5"
+        },
+        "meaning": "Benutzeraktion in der Liste"
+      },
+      {
+        "id": "g_uc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:9"
+        },
+        "meaning": "Welche Funktion?"
+      },
+      {
+        "id": "g_row",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:13"
+        },
+        "meaning": "Zeile gefunden?"
+      },
+      {
+        "id": "a_par",
+        "type": "action",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:14"
+        },
+        "meaning": "Personalnummer vorbelegen"
+      },
+      {
+        "id": "x_pa20",
+        "type": "transaction",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:15"
+        },
+        "meaning": "Personalstammdaten anzeigen"
+      },
+      {
+        "id": "c_ap",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:17"
+        },
+        "meaning": "Markierte freigeben"
+      },
+      {
+        "id": "c_rj",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:19"
+        },
+        "meaning": "Markierte ablehnen"
+      },
+      {
+        "id": "c_te",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:21"
+        },
+        "meaning": "Zeitauswertung einplanen"
+      },
+      {
+        "id": "e_uc",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:23"
+        },
+        "meaning": "Andere Funktion: nichts tun"
+      },
+      {
+        "id": "e_ucx",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:26"
+        },
+        "meaning": "Aktion abgeschlossen, Liste wird aufgefrischt"
+      },
+      {
+        "id": "s_ap",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:29"
+        },
+        "meaning": "Freigabe"
+      },
+      {
+        "id": "au",
+        "type": "action",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:34"
+        },
+        "meaning": "Freigabeberechtigung prüfen"
+      },
+      {
+        "id": "g_au",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:36"
+        },
+        "meaning": "Berechtigt?"
+      },
+      {
+        "id": "m_au",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:37"
+        },
+        "meaning": "Fehlermeldung: keine Freigabeberechtigung"
+      },
+      {
+        "id": "o_au",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:37"
+        },
+        "meaning": "Abbruch: keine Berechtigung"
+      },
+      {
+        "id": "l_ap",
+        "type": "loop",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:40"
+        },
+        "meaning": "Je markierter Zeile"
+      },
+      {
+        "id": "g_st",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:42"
+        },
+        "meaning": "Schon entschieden?"
+      },
+      {
+        "id": "lk_enq",
+        "type": "lock",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:46"
+        },
+        "meaning": "Mitarbeiter sperren"
+      },
+      {
+        "id": "g_enq",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:51"
+        },
+        "meaning": "Sperre gescheitert?"
+      },
+      {
+        "id": "o_enq",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:52"
+        },
+        "meaning": "Sperrfehler melden"
+      },
+      {
+        "id": "c_ito",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:66"
+        },
+        "meaning": "Zeitumbuchungsvorgabe zur Auszahlung anlegen"
+      },
+      {
+        "id": "lk_deq",
+        "type": "lock",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:79"
+        },
+        "meaning": "Sperre lösen"
+      },
+      {
+        "id": "g_ito",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:83"
+        },
+        "meaning": "Anlage fehlerhaft?"
+      },
+      {
+        "id": "o_ito",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:84"
+        },
+        "meaning": "Anlagefehler melden"
+      },
+      {
+        "id": "w_dec",
+        "type": "write",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:88"
+        },
+        "meaning": "Freigabe vermerken"
+      },
+      {
+        "id": "c_ntf",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:98"
+        },
+        "meaning": "Mitarbeiter benachrichtigen"
+      },
+      {
+        "id": "g_ok",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:101"
+        },
+        "meaning": "Mindestens eine Freigabe?"
+      },
+      {
+        "id": "t_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:102"
+        },
+        "meaning": "Freigaben festschreiben"
+      },
+      {
+        "id": "o_ok",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:103"
+        },
+        "meaning": "Anzahl Freigaben melden"
+      },
+      {
+        "id": "e_ap",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:105"
+        },
+        "meaning": "Freigabe abgeschlossen"
+      },
+      {
+        "id": "s_rj",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:108"
+        },
+        "meaning": "Ablehnung"
+      },
+      {
+        "id": "l_rj",
+        "type": "loop",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:111"
+        },
+        "meaning": "Je markierter offener Zeile"
+      },
+      {
+        "id": "w_rj",
+        "type": "write",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:113"
+        },
+        "meaning": "Ablehnung vermerken"
+      },
+      {
+        "id": "g_rj",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:123"
+        },
+        "meaning": "Nichts abgelehnt?"
+      },
+      {
+        "id": "o_rj",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:124"
+        },
+        "meaning": "Hinweis: keine offenen Zeilen markiert"
+      },
+      {
+        "id": "e_rj",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:125"
+        },
+        "meaning": "Hinweis, ohne Festschreiben"
+      },
+      {
+        "id": "t_rj",
+        "type": "transaction",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:127"
+        },
+        "meaning": "Ablehnungen festschreiben"
+      },
+      {
+        "id": "e_rj2",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:128"
+        },
+        "meaning": "Ablehnungen festgeschrieben"
+      },
+      {
+        "id": "s_nt",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:131"
+        },
+        "meaning": "Benachrichtigung"
+      },
+      {
+        "id": "c_swe",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:136"
+        },
+        "meaning": "Workflow-Ereignis „freigegeben“ auslösen"
+      },
+      {
+        "id": "g_swe",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:146"
+        },
+        "meaning": "Ereignis gescheitert?"
+      },
+      {
+        "id": "o_swe",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:148"
+        },
+        "meaning": "Hinweis: keine Benachrichtigung"
+      },
+      {
+        "id": "e_nt",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:150"
+        },
+        "meaning": "Benachrichtigung abgeschlossen"
+      },
+      {
+        "id": "s_te",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:153"
+        },
+        "meaning": "Nachlauf einplanen"
+      },
+      {
+        "id": "a_rng",
+        "type": "action",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:158"
+        },
+        "meaning": "Markierte Personalnummern sammeln"
+      },
+      {
+        "id": "g_rng",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:160"
+        },
+        "meaning": "Nichts markiert?"
+      },
+      {
+        "id": "o_rng",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:161"
+        },
+        "meaning": "Hinweis: keine Zeilen markiert"
+      },
+      {
+        "id": "e_rng",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:162"
+        },
+        "meaning": "Hinweis, kein Job"
+      },
+      {
+        "id": "c_jo",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:165"
+        },
+        "meaning": "Hintergrundjob anlegen"
+      },
+      {
+        "id": "g_jo",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:175"
+        },
+        "meaning": "Job nicht anlegbar?"
+      },
+      {
+        "id": "o_jo",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 176,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:176"
+        },
+        "meaning": "Hinweis: Job nicht anlegbar"
+      },
+      {
+        "id": "e_jo",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:177"
+        },
+        "meaning": "Fehlerhinweis, kein Job"
+      },
+      {
+        "id": "x_sub",
+        "type": "external_program",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:180"
+        },
+        "meaning": "Zeitauswertung für die Markierten ab Periodenbeginn in den Job stellen"
+      },
+      {
+        "id": "c_jc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 187,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:187"
+        },
+        "meaning": "Job zum Sofortstart freigeben"
+      },
+      {
+        "id": "o_te",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 194,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:194"
+        },
+        "meaning": "Jobnummer melden"
+      },
+      {
+        "id": "e_te",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_ot_approval_f02.abap",
+          "line": 195,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_ot_approval_f02.abap:195"
+        },
+        "meaning": "Nachlauf eingeplant"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s_ss",
+        "to": "g_ss",
+        "condition": "always"
+      },
+      {
+        "from": "g_ss",
+        "to": "o_ss",
+        "condition": "s_pernr[] IS INITIAL AND s_orgeh[] IS INITIAL"
+      },
+      {
+        "from": "s",
+        "to": "c_sel",
+        "condition": "always"
+      },
+      {
+        "from": "c_sel",
+        "to": "s_se",
+        "condition": "always"
+      },
+      {
+        "from": "s_se",
+        "to": "c_ld",
+        "condition": "always"
+      },
+      {
+        "from": "c_ld",
+        "to": "r_emp",
+        "condition": "always"
+      },
+      {
+        "from": "r_emp",
+        "to": "r_lim",
+        "condition": "always"
+      },
+      {
+        "from": "c_rtr",
+        "to": "s_rt",
+        "condition": "always"
+      },
+      {
+        "from": "s_rt",
+        "to": "l_emp",
+        "condition": "always"
+      },
+      {
+        "from": "l_emp",
+        "to": "c_b2",
+        "condition": "next row"
+      },
+      {
+        "from": "c_b2",
+        "to": "g_b2",
+        "condition": "always"
+      },
+      {
+        "from": "g_b2",
+        "to": "l_emp",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_b2",
+        "to": "l_zes",
+        "condition": "else"
+      },
+      {
+        "from": "l_zes",
+        "to": "a_sum",
+        "condition": "next row"
+      },
+      {
+        "from": "a_sum",
+        "to": "l_zes",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_zes",
+        "to": "g_hrs",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_hrs",
+        "to": "r_lim2",
+        "condition": "lv_hours > 0"
+      },
+      {
+        "from": "g_hrs",
+        "to": "l_emp",
+        "condition": "else"
+      },
+      {
+        "from": "r_lim2",
+        "to": "g_lim",
+        "condition": "always"
+      },
+      {
+        "from": "g_lim",
+        "to": "g_le",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_lim",
+        "to": "g_le",
+        "condition": "else"
+      },
+      {
+        "from": "g_le",
+        "to": "l_emp",
+        "condition": "lv_hours <= ls_limit-maxhours"
+      },
+      {
+        "from": "g_le",
+        "to": "a_exc",
+        "condition": "else"
+      },
+      {
+        "from": "a_exc",
+        "to": "r_dec",
+        "condition": "always"
+      },
+      {
+        "from": "r_dec",
+        "to": "g_dec",
+        "condition": "always"
+      },
+      {
+        "from": "g_dec",
+        "to": "l_emp",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_dec",
+        "to": "l_emp",
+        "condition": "else"
+      },
+      {
+        "from": "s_eos",
+        "to": "g_eos",
+        "condition": "always"
+      },
+      {
+        "from": "g_eos",
+        "to": "o_eos",
+        "condition": "gt_out IS INITIAL"
+      },
+      {
+        "from": "o_eos",
+        "to": "e_eos",
+        "condition": "always"
+      },
+      {
+        "from": "g_eos",
+        "to": "c_alv",
+        "condition": "else"
+      },
+      {
+        "from": "c_alv",
+        "to": "s_da",
+        "condition": "always"
+      },
+      {
+        "from": "s_da",
+        "to": "c_fc",
+        "condition": "always"
+      },
+      {
+        "from": "c_fc",
+        "to": "o_alv",
+        "condition": "always"
+      },
+      {
+        "from": "o_alv",
+        "to": "s_uc",
+        "condition": "always"
+      },
+      {
+        "from": "s_uc",
+        "to": "g_uc",
+        "condition": "always"
+      },
+      {
+        "from": "g_uc",
+        "to": "g_row",
+        "condition": "WHEN '&IC1'"
+      },
+      {
+        "from": "g_row",
+        "to": "a_par",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "a_par",
+        "to": "x_pa20",
+        "condition": "always"
+      },
+      {
+        "from": "g_uc",
+        "to": "c_ap",
+        "condition": "WHEN 'ZAPPR'"
+      },
+      {
+        "from": "g_uc",
+        "to": "c_rj",
+        "condition": "WHEN 'ZREJ'"
+      },
+      {
+        "from": "g_uc",
+        "to": "c_te",
+        "condition": "WHEN 'ZRETRO'"
+      },
+      {
+        "from": "g_uc",
+        "to": "e_uc",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "c_ap",
+        "to": "s_ap",
+        "condition": "always"
+      },
+      {
+        "from": "c_rj",
+        "to": "s_rj",
+        "condition": "always"
+      },
+      {
+        "from": "c_te",
+        "to": "s_te",
+        "condition": "always"
+      },
+      {
+        "from": "s_ap",
+        "to": "au",
+        "condition": "always"
+      },
+      {
+        "from": "au",
+        "to": "g_au",
+        "condition": "always"
+      },
+      {
+        "from": "g_au",
+        "to": "m_au",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_au",
+        "to": "l_ap",
+        "condition": "else"
+      },
+      {
+        "from": "l_ap",
+        "to": "g_st",
+        "condition": "next row"
+      },
+      {
+        "from": "g_st",
+        "to": "l_ap",
+        "condition": "<ls_out>-status <> gc_open"
+      },
+      {
+        "from": "g_st",
+        "to": "lk_enq",
+        "condition": "else"
+      },
+      {
+        "from": "lk_enq",
+        "to": "g_enq",
+        "condition": "always"
+      },
+      {
+        "from": "g_enq",
+        "to": "o_enq",
+        "condition": "ls_return-type = 'E'"
+      },
+      {
+        "from": "g_enq",
+        "to": "c_ito",
+        "condition": "else"
+      },
+      {
+        "from": "c_ito",
+        "to": "lk_deq",
+        "condition": "always"
+      },
+      {
+        "from": "lk_deq",
+        "to": "g_ito",
+        "condition": "always"
+      },
+      {
+        "from": "g_ito",
+        "to": "o_ito",
+        "condition": "ls_return-type CA 'EA'"
+      },
+      {
+        "from": "g_ito",
+        "to": "w_dec",
+        "condition": "else"
+      },
+      {
+        "from": "w_dec",
+        "to": "c_ntf",
+        "condition": "always"
+      },
+      {
+        "from": "c_ntf",
+        "to": "s_nt",
+        "condition": "always"
+      },
+      {
+        "from": "l_ap",
+        "to": "g_ok",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_ok",
+        "to": "t_cm",
+        "condition": "lv_ok > 0"
+      },
+      {
+        "from": "t_cm",
+        "to": "o_ok",
+        "condition": "always"
+      },
+      {
+        "from": "s_rj",
+        "to": "l_rj",
+        "condition": "always"
+      },
+      {
+        "from": "l_rj",
+        "to": "w_rj",
+        "condition": "next row"
+      },
+      {
+        "from": "w_rj",
+        "to": "l_rj",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_rj",
+        "to": "g_rj",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_rj",
+        "to": "o_rj",
+        "condition": "lv_cnt = 0"
+      },
+      {
+        "from": "g_rj",
+        "to": "t_rj",
+        "condition": "else"
+      },
+      {
+        "from": "s_nt",
+        "to": "c_swe",
+        "condition": "always"
+      },
+      {
+        "from": "c_swe",
+        "to": "g_swe",
+        "condition": "always"
+      },
+      {
+        "from": "g_swe",
+        "to": "o_swe",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "s_te",
+        "to": "a_rng",
+        "condition": "always"
+      },
+      {
+        "from": "a_rng",
+        "to": "g_rng",
+        "condition": "always"
+      },
+      {
+        "from": "g_rng",
+        "to": "o_rng",
+        "condition": "lr_pernr IS INITIAL"
+      },
+      {
+        "from": "g_rng",
+        "to": "c_jo",
+        "condition": "else"
+      },
+      {
+        "from": "c_jo",
+        "to": "g_jo",
+        "condition": "always"
+      },
+      {
+        "from": "g_jo",
+        "to": "o_jo",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_jo",
+        "to": "x_sub",
+        "condition": "else"
+      },
+      {
+        "from": "x_sub",
+        "to": "c_jc",
+        "condition": "always"
+      },
+      {
+        "from": "c_jc",
+        "to": "o_te",
+        "condition": "always"
+      },
+      {
+        "from": "s_init",
+        "to": "e_init",
+        "condition": "always"
+      },
+      {
+        "from": "o_ss",
+        "to": "e_ssm",
+        "condition": "always"
+      },
+      {
+        "from": "g_ss",
+        "to": "e_ss",
+        "condition": "else"
+      },
+      {
+        "from": "e_init",
+        "to": "s_ss",
+        "condition": "always"
+      },
+      {
+        "from": "e_ss",
+        "to": "s",
+        "condition": "always"
+      },
+      {
+        "from": "r_lim",
+        "to": "e_se",
+        "condition": "always"
+      },
+      {
+        "from": "e_se",
+        "to": "c_rtr",
+        "condition": "always"
+      },
+      {
+        "from": "l_emp",
+        "to": "e_rt",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e_rt",
+        "to": "e_sos",
+        "condition": "always"
+      },
+      {
+        "from": "e_sos",
+        "to": "s_eos",
+        "condition": "always"
+      },
+      {
+        "from": "o_alv",
+        "to": "e_da",
+        "condition": "always"
+      },
+      {
+        "from": "e_da",
+        "to": "e_eos2",
+        "condition": "always"
+      },
+      {
+        "from": "g_row",
+        "to": "e_ucx",
+        "condition": "else"
+      },
+      {
+        "from": "x_pa20",
+        "to": "e_ucx",
+        "condition": "always"
+      },
+      {
+        "from": "m_au",
+        "to": "o_au",
+        "condition": "always"
+      },
+      {
+        "from": "o_enq",
+        "to": "l_ap",
+        "condition": "next iteration"
+      },
+      {
+        "from": "o_ito",
+        "to": "l_ap",
+        "condition": "next iteration"
+      },
+      {
+        "from": "o_swe",
+        "to": "e_nt",
+        "condition": "always"
+      },
+      {
+        "from": "g_swe",
+        "to": "e_nt",
+        "condition": "else"
+      },
+      {
+        "from": "e_nt",
+        "to": "l_ap",
+        "condition": "next iteration"
+      },
+      {
+        "from": "o_ok",
+        "to": "e_ap",
+        "condition": "always"
+      },
+      {
+        "from": "g_ok",
+        "to": "e_ap",
+        "condition": "else"
+      },
+      {
+        "from": "o_rj",
+        "to": "e_rj",
+        "condition": "always"
+      },
+      {
+        "from": "t_rj",
+        "to": "e_rj2",
+        "condition": "always"
+      },
+      {
+        "from": "o_rng",
+        "to": "e_rng",
+        "condition": "always"
+      },
+      {
+        "from": "o_jo",
+        "to": "e_jo",
+        "condition": "always"
+      },
+      {
+        "from": "o_te",
+        "to": "e_te",
+        "condition": "always"
+      },
+      {
+        "from": "e_ap",
+        "to": "e_ucx",
+        "condition": "always"
+      },
+      {
+        "from": "e_rj",
+        "to": "e_ucx",
+        "condition": "always"
+      },
+      {
+        "from": "e_rj2",
+        "to": "e_ucx",
+        "condition": "always"
+      },
+      {
+        "from": "e_rng",
+        "to": "e_ucx",
+        "condition": "always"
+      },
+      {
+        "from": "e_jo",
+        "to": "e_ucx",
+        "condition": "always"
+      },
+      {
+        "from": "e_te",
+        "to": "e_ucx",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zpt_ot_approval_f02.abap:66 — kein Fachsatz „die Überstunden werden sofort ausgezahlt oder der Saldo abgebaut“ (angelegt wird nur eine Vorgabe; wirksam erst mit der nächsten Zeitauswertung und Abrechnung)",
+    "zpt_ot_approval_f02.abap:180 — kein Fachsatz „die Zeitauswertung läuft nur für freigegebene Mitarbeiter“ (alle markierten Zeilen, gleich welcher Status)",
+    "zpt_ot_approval_f02.abap:113 — kein Fachsatz „abgelehnte Stunden werden gelöscht oder umgebucht“ (nur Vermerk in der Kundentabelle)",
+    "zpt_ot_approval_f02.abap:136 — kein Fachsatz über Inhalt oder Empfänger der Benachrichtigung (Workflow nicht im Fall)"
+  ],
+  "processDescription": "Der Zeitbeauftragte prüft monatlich die Überstunden; vorgeschlagen wird der Vormonat, und ohne Personalnummer oder Organisationseinheit wird die Auswahl abgewiesen. Der Report liest die Mitarbeiter zum Monatsende und die Kappungsgrenzen je Mitarbeiterkreis. Je Mitarbeiter liest er das Zeitauswertungsergebnis der Periode (nicht lesbare werden gezählt), summiert die ungenehmigten Überstunden und vergleicht sie mit der Grenze (ohne Grenze null). Mitarbeiter über der Grenze erscheinen mit Überschuss und dem Status einer früheren Entscheidung oder „offen“; gibt es keine, endet der Report mit Hinweis. In der Liste öffnet ein Doppelklick die Personalstammdaten. Bei „Freigeben“ werden – mit Berechtigung – die markierten offenen Zeilen verarbeitet: Mitarbeiter sperren, Zeitumbuchungsvorgabe zur Auszahlung des Überschusses anlegen, entsperren, Freigabe vermerken und per Workflow-Ereignis benachrichtigen; am Ende wird alles festgeschrieben. „Ablehnen“ vermerkt markierte offene Zeilen als abgelehnt. „Nachlauf“ plant die Zeitauswertung für alle markierten Mitarbeiter als Hintergrundjob ein. Danach wird die Liste aufgefrischt."
+}

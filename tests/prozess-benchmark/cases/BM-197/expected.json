@@ -1,0 +1,2650 @@
+{
+  "id": "BM-197",
+  "title": "Frachtauftrag im TM freigeben: BOPF-Determination, Kapazitätsvalidierung, Freigabeaktion und Gateway-Service",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "/BOBF/CL_FRW_FACTORY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ztm_v_fo_capacity.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ztm_v_fo_capacity.abap:40"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZTM_VEH_CAP",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ztm_v_fo_capacity.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ztm_v_fo_capacity.abap:51"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ztm_v_fo_capacity.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ztm_v_fo_capacity.abap:58"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CHANGEDOCUMENT_OPEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ztm_a_fo_release.abap",
+        "line": 137,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ztm_a_fo_release.abap:137"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CHANGEDOCUMENT_SINGLE_CASE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ztm_a_fo_release.abap",
+        "line": 145,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ztm_a_fo_release.abap:145"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CHANGEDOCUMENT_CLOSE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ztm_a_fo_release.abap",
+        "line": 157,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ztm_a_fo_release.abap:157"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ztm_a_fo_release.abap",
+        "line": 181,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ztm_a_fo_release.abap:181"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_DOCUMENT_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ztm_a_fo_release.abap",
+        "line": 191,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ztm_a_fo_release.abap:191"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SAPUSER_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ztm_a_fo_release.abap",
+        "line": 197,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ztm_a_fo_release.abap:197"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_ZTM_FO_DPC",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ztm_fo_dpc_ext.abap",
+        "line": 43,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ztm_fo_dpc_ext.abap:43"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "/BOBF/CL_TRA_SERV_MGR_FACTORY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ztm_fo_dpc_ext.abap",
+        "line": 63,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ztm_fo_dpc_ext.abap:63"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "/BOBF/CL_TRA_TRANS_MGR_FACTORY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ztm_fo_dpc_ext.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ztm_fo_dpc_ext.abap:65"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "/IWBEP/CL_MGW_DATA_UTIL",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ztm_fo_dpc_ext.abap",
+        "line": 194,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ztm_fo_dpc_ext.abap:194"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-197-B01",
+      "text": "Ändern sich Positionen eines Frachtauftrags, werden die betroffenen Auftragsköpfe gelesen und nur Frachtaufträge weiterbearbeitet, nicht Frachtbuchungen oder Frachteinheiten.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:40"
+        },
+        {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:48"
+        },
+        {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B02",
+      "text": "Zu den Frachtaufträgen werden die Transportpositionen gelesen und je Frachtauftrag gruppiert.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:53"
+        },
+        {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B03",
+      "text": "Das Gesamtgewicht ist die Summe der Bruttogewichte der Produkt- und Packstückpositionen; Fahrzeug- und Anhängerpositionen zählen nicht, die Gewichtseinheit wird nicht umgerechnet und als KG gesetzt.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:74"
+        },
+        {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B04",
+      "text": "Der Frachtauftrag erhält das Gefahrgutkennzeichen, sobald mindestens eine Position als Gefahrgut gekennzeichnet ist.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B05",
+      "text": "Gesamtgewicht und Gefahrgutkennzeichen werden nur dann am Frachtauftrag fortgeschrieben, wenn sich einer der Werte geändert hat.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:88"
+        },
+        {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:96"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B06",
+      "text": "Bei der Kapazitätsprüfung werden die Frachtaufträge gelesen und zu ihren Fahrzeugtypen die zulässigen Ladegewichte und die ADR-Zulassung aus der Fahrzeugkapazitätstabelle gelesen.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:42"
+        },
+        {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:50"
+        },
+        {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B07",
+      "text": "Die zulässige Überplanung in Prozent wird aus einem Disponenten-Schalter gelesen; ist er nicht gepflegt, gilt keine Toleranz.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:58"
+        },
+        {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B08",
+      "text": "Frachtaufträge ohne Fahrzeugtyp werden nicht geprüft.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:68"
+        },
+        {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B09",
+      "text": "Ist der Fahrzeugtyp in der Kapazitätstabelle nicht gepflegt, wird nur eine Warnung ausgegeben und der Frachtauftrag gilt als konsistent.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:73"
+        },
+        {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B10",
+      "text": "Übersteigt das Gesamtgewicht das zulässige Ladegewicht zuzüglich Toleranz, wird der Frachtauftrag mit einer Fehlermeldung am Gewichtsfeld als nicht konsistent markiert.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:83"
+        },
+        {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:85"
+        },
+        {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:90"
+        },
+        {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:94"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B11",
+      "text": "Ein Frachtauftrag mit Gefahrgut auf einem nicht ADR-zugelassenen Fahrzeugtyp wird mit Fehlermeldung als nicht konsistent markiert.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:98"
+        },
+        {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:102"
+        },
+        {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:105"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B12",
+      "text": "Die Freigabe setzt die Freigabeberechtigung der Disposition voraus; fehlt sie, wird die Aktion für alle übergebenen Frachtaufträge mit Fehlermeldung abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:54"
+        },
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:56"
+        },
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:58"
+        },
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B13",
+      "text": "Ein bereits freigegebener Frachtauftrag wird nicht erneut freigegeben; es gibt nur einen Hinweis und keinen Fehler.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:74"
+        },
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B14",
+      "text": "Ein Frachtauftrag ohne Frachtführer kann nicht freigegeben werden und wird mit Fehlermeldung abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:83"
+        },
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:85"
+        },
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B15",
+      "text": "Bei der Freigabe erhält der Frachtauftrag den Status freigegeben, den freigebenden Benutzer und den Freigabezeitpunkt.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:99"
+        },
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:101"
+        },
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:103"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B16",
+      "text": "Zur Freigabe wird ein Änderungsbeleg mit altem und neuem Freigabestand geschrieben; ob das gelingt, wird nicht geprüft.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:112"
+        },
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:137"
+        },
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:145"
+        },
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:157"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B17",
+      "text": "Ist ein Disponent am Frachtauftrag hinterlegt, erhält er eine Info-Mail mit Auftragsnummer, Frachtführer, Fahrzeugtyp, Gesamtgewicht und gegebenenfalls einem Gefahrguthinweis.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:115"
+        },
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 183,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:183"
+        },
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 191,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:191"
+        },
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:197"
+        },
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 200,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:200"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B18",
+      "text": "Fehler beim Erstellen der Mail werden verworfen und verhindern die Freigabe nicht.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 203,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:203"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B19",
+      "text": "Der Service nimmt die Freigabe als Funktionsaufruf ReleaseFreightOrder an; andere Funktionsaufrufe werden an die generierte Standardverarbeitung weitergereicht.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:42"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B20",
+      "text": "Fehlt die Frachtauftragsnummer im Aufruf, wird die Anfrage mit einem Geschäftsfehler abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:55"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B21",
+      "text": "Die Frachtauftragsnummer wird in den internen Schlüssel des Frachtauftrags umgesetzt; gibt es den Frachtauftrag nicht, wird mit „nicht gefunden“ abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:68"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:75"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B22",
+      "text": "Für den Frachtauftrag wird die Freigabeaktion ausgeführt.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B23",
+      "text": "Schlägt die Freigabe fehl, werden alle Änderungen der Anfrage verworfen und die Meldungen der Aktion als Fehler an die App zurückgegeben.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:90"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:91"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:92"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B24",
+      "text": "Andernfalls wird der Frachtauftrag gesichert; lehnt das Sichern ab, werden dessen Meldungen als Fehler an die App zurückgegeben.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:96"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:100"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:101"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B25",
+      "text": "Die BOPF-Meldungen werden als Texte in den Meldungscontainer des Service übernommen und die Anfrage mit einem Geschäftsfehler beendet.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 207,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:207"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 211,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:211"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 216,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:216"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B26",
+      "text": "Nach erfolgreichem Sichern liefert der Service den aktuellen Stand des Frachtauftrags mit Frachtführer, Fahrzeugtyp, Gewicht, Gefahrgutkennzeichen und Freigabestatus zurück.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:105"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:122"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B27",
+      "text": "Die Liste der Frachtaufträge enthält nur Frachtaufträge und lässt sich nach Frachtauftragsnummer, Frachtführer und Freigabestatus filtern; andere Filter werden stillschweigend ignoriert.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:140"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:144"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:149"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:152"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B28",
+      "text": "Die passenden Frachtaufträge werden gesucht; ohne Treffer bleibt die Liste leer.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:164"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:170"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:171"
+        }
+      ]
+    },
+    {
+      "id": "BM-197-B29",
+      "text": "Zu den Treffern werden Nummer, Frachtführer, Fahrzeugtyp, Gesamtgewicht, Gefahrgutkennzeichen, Freigabestatus und Freigeber geliefert, die Gesamtzahl gemeldet und erst danach auf die angeforderte Seite gekürzt.",
+      "anchors": [
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:174"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 181,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:181"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 191,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:191"
+        },
+        {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 194,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:194"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "d_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:25"
+        },
+        "meaning": "Determination Gewicht/Gefahrgut ausgelöst"
+      },
+      {
+        "id": "d_rr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:40"
+        },
+        "meaning": "Frachtauftragsköpfe lesen"
+      },
+      {
+        "id": "d_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:49"
+        },
+        "meaning": "Frachtaufträge (Kategorie TO) betroffen?"
+      },
+      {
+        "id": "d_e1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:50"
+        },
+        "meaning": "nichts zu tun"
+      },
+      {
+        "id": "d_rba",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:53"
+        },
+        "meaning": "Transportpositionen lesen"
+      },
+      {
+        "id": "d_lg",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:64"
+        },
+        "meaning": "Je Frachtauftrag (Positionsgruppe)"
+      },
+      {
+        "id": "d_chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:69"
+        },
+        "meaning": "Kopf zur Gruppe vorhanden?"
+      },
+      {
+        "id": "d_tot",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:74"
+        },
+        "meaning": "Bruttogewicht der Ladung summieren"
+      },
+      {
+        "id": "d_dg",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:82"
+        },
+        "meaning": "Gefahrgutkennzeichen bestimmen"
+      },
+      {
+        "id": "d_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:88"
+        },
+        "meaning": "Werte unverändert?"
+      },
+      {
+        "id": "d_upd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:96"
+        },
+        "meaning": "Gewicht und Gefahrgutkennzeichen fortschreiben"
+      },
+      {
+        "id": "d_end",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ztm_d_fo_weight.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_d_fo_weight.abap:107"
+        },
+        "meaning": "Determination abgeschlossen"
+      },
+      {
+        "id": "v_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:24"
+        },
+        "meaning": "Kapazitätsvalidierung ausgelöst"
+      },
+      {
+        "id": "v_msg",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:40"
+        },
+        "meaning": "Meldungsobjekt anlegen"
+      },
+      {
+        "id": "v_rr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:42"
+        },
+        "meaning": "Frachtauftragsköpfe lesen"
+      },
+      {
+        "id": "v_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:50"
+        },
+        "meaning": "Fahrzeugtypen vorhanden?"
+      },
+      {
+        "id": "v_rc",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:51"
+        },
+        "meaning": "Kapazität und ADR-Zulassung je Fahrzeugtyp lesen"
+      },
+      {
+        "id": "v_rt",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:58"
+        },
+        "meaning": "Überplanungstoleranz lesen"
+      },
+      {
+        "id": "v_tol",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:63"
+        },
+        "meaning": "Toleranz festlegen (sonst 0 %)"
+      },
+      {
+        "id": "v_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:65"
+        },
+        "meaning": "Je Frachtauftrag"
+      },
+      {
+        "id": "v_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:68"
+        },
+        "meaning": "Fahrzeugtyp disponiert?"
+      },
+      {
+        "id": "v_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:73"
+        },
+        "meaning": "Kapazität gepflegt?"
+      },
+      {
+        "id": "v_m101",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:76"
+        },
+        "meaning": "Warnung: Fahrzeugtyp ohne Kapazität"
+      },
+      {
+        "id": "v_max",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:83"
+        },
+        "meaning": "Zulässiges Gewicht inkl. Toleranz berechnen"
+      },
+      {
+        "id": "v_g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:85"
+        },
+        "meaning": "Überladen?"
+      },
+      {
+        "id": "v_m100",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:90"
+        },
+        "meaning": "Fehler: Kapazität überschritten, Auftrag inkonsistent"
+      },
+      {
+        "id": "v_g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:98"
+        },
+        "meaning": "Gefahrgut auf nicht ADR-zugelassenem Fahrzeug?"
+      },
+      {
+        "id": "v_m102",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:102"
+        },
+        "meaning": "Fehler: Fahrzeug nicht ADR-zugelassen, Auftrag inkonsistent"
+      },
+      {
+        "id": "v_end",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ztm_v_fo_capacity.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_v_fo_capacity.abap:114"
+        },
+        "meaning": "Validierungsergebnis an BOPF zurück"
+      },
+      {
+        "id": "a_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:38"
+        },
+        "meaning": "Aktion Freigeben ausgelöst"
+      },
+      {
+        "id": "a_msg",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:51"
+        },
+        "meaning": "Meldungsobjekt anlegen"
+      },
+      {
+        "id": "a_auth",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:54"
+        },
+        "meaning": "Freigabeberechtigung prüfen"
+      },
+      {
+        "id": "a_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:56"
+        },
+        "meaning": "Berechtigt?"
+      },
+      {
+        "id": "a_m110",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:58"
+        },
+        "meaning": "Fehler: keine Berechtigung"
+      },
+      {
+        "id": "a_e1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:61"
+        },
+        "meaning": "Aktion für alle Aufträge abgelehnt"
+      },
+      {
+        "id": "a_rr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:64"
+        },
+        "meaning": "Frachtauftragsköpfe lesen"
+      },
+      {
+        "id": "a_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:71"
+        },
+        "meaning": "Je Frachtauftrag"
+      },
+      {
+        "id": "a_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:74"
+        },
+        "meaning": "Bereits freigegeben?"
+      },
+      {
+        "id": "a_m111",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:76"
+        },
+        "meaning": "Hinweis: bereits freigegeben"
+      },
+      {
+        "id": "a_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:83"
+        },
+        "meaning": "Frachtführer zugeordnet?"
+      },
+      {
+        "id": "a_m112",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:85"
+        },
+        "meaning": "Fehler: kein Frachtführer, Auftrag abgelehnt"
+      },
+      {
+        "id": "a_upd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:103"
+        },
+        "meaning": "Freigabestatus, Freigeber, Zeitpunkt setzen"
+      },
+      {
+        "id": "a_cd",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:112"
+        },
+        "meaning": "Änderungsbeleg schreiben"
+      },
+      {
+        "id": "a_g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:115"
+        },
+        "meaning": "Disponent hinterlegt?"
+      },
+      {
+        "id": "a_nd",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:116"
+        },
+        "meaning": "Disponent benachrichtigen"
+      },
+      {
+        "id": "a_end",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:124"
+        },
+        "meaning": "Aktionsergebnis an BOPF zurück"
+      },
+      {
+        "id": "cd_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:127"
+        },
+        "meaning": "Änderungsbeleg"
+      },
+      {
+        "id": "cd_o",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:137"
+        },
+        "meaning": "Änderungsbeleg eröffnen"
+      },
+      {
+        "id": "cd_sc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:145"
+        },
+        "meaning": "Alt/Neu-Stand der Freigabe erfassen"
+      },
+      {
+        "id": "cd_c",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:157"
+        },
+        "meaning": "Änderungsbeleg abschließen"
+      },
+      {
+        "id": "cd_end",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:175"
+        },
+        "meaning": "Änderungsbeleg geschrieben (Ergebnis ungeprüft)"
+      },
+      {
+        "id": "nd_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:178"
+        },
+        "meaning": "Info-Mail an Disponenten"
+      },
+      {
+        "id": "nd_c1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 181,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:181"
+        },
+        "meaning": "Sendeauftrag anlegen"
+      },
+      {
+        "id": "nd_c2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 191,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:191"
+        },
+        "meaning": "Mail mit Freigabetext erstellen"
+      },
+      {
+        "id": "nd_c3",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:197"
+        },
+        "meaning": "Disponent als Empfänger"
+      },
+      {
+        "id": "nd_c4",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 200,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:200"
+        },
+        "meaning": "Mail senden (mit dem Sichern)"
+      },
+      {
+        "id": "nd_end",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ztm_a_fo_release.abap",
+          "line": 207,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_a_fo_release.abap:207"
+        },
+        "meaning": "Benachrichtigung abgeschlossen (Fehler verworfen)"
+      },
+      {
+        "id": "x_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:30"
+        },
+        "meaning": "Function Import aus der Fiori-App"
+      },
+      {
+        "id": "x_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:42"
+        },
+        "meaning": "Freigabe angefordert?"
+      },
+      {
+        "id": "x_sup",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:43"
+        },
+        "meaning": "Andere Funktion an generierte Verarbeitung"
+      },
+      {
+        "id": "x_e1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:50"
+        },
+        "meaning": "Ende andere Funktion"
+      },
+      {
+        "id": "x_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:55"
+        },
+        "meaning": "Frachtauftragsnummer übergeben?"
+      },
+      {
+        "id": "x_e2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:56"
+        },
+        "meaning": "Abbruch: Parameter fehlt"
+      },
+      {
+        "id": "x_alt",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:68"
+        },
+        "meaning": "Frachtauftragsnummer in Schlüssel umsetzen"
+      },
+      {
+        "id": "x_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:75"
+        },
+        "meaning": "Frachtauftrag gefunden?"
+      },
+      {
+        "id": "x_e3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:76"
+        },
+        "meaning": "Abbruch: nicht gefunden"
+      },
+      {
+        "id": "x_do",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:83"
+        },
+        "meaning": "Freigabeaktion ausführen"
+      },
+      {
+        "id": "x_g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:90"
+        },
+        "meaning": "Freigabe fehlgeschlagen?"
+      },
+      {
+        "id": "x_cl",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:91"
+        },
+        "meaning": "Änderungen verwerfen"
+      },
+      {
+        "id": "x_r1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:92"
+        },
+        "meaning": "Fehlermeldungen an App"
+      },
+      {
+        "id": "x_sv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:96"
+        },
+        "meaning": "Frachtauftrag sichern"
+      },
+      {
+        "id": "x_g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:100"
+        },
+        "meaning": "Sichern abgelehnt?"
+      },
+      {
+        "id": "x_r2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:101"
+        },
+        "meaning": "Fehlermeldungen an App"
+      },
+      {
+        "id": "x_rt",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:105"
+        },
+        "meaning": "Stand nach dem Sichern lesen"
+      },
+      {
+        "id": "x_copy",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:122"
+        },
+        "meaning": "Frachtauftrag als Antwort an die App übergeben"
+      },
+      {
+        "id": "x_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:128"
+        },
+        "meaning": "Antwort geliefert"
+      },
+      {
+        "id": "rb_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 203,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:203"
+        },
+        "meaning": "Meldungen übernehmen"
+      },
+      {
+        "id": "rb_get",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 207,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:207"
+        },
+        "meaning": "BOPF-Meldungen holen"
+      },
+      {
+        "id": "rb_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 210,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:210"
+        },
+        "meaning": "Je Meldung"
+      },
+      {
+        "id": "rb_add",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 211,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:211"
+        },
+        "meaning": "Meldungstext in Container"
+      },
+      {
+        "id": "rb_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 216,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:216"
+        },
+        "meaning": "Abbruch mit Geschäftsfehler"
+      },
+      {
+        "id": "es_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:131"
+        },
+        "meaning": "Liste Frachtaufträge angefordert"
+      },
+      {
+        "id": "es_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:143"
+        },
+        "meaning": "Je Filter der App"
+      },
+      {
+        "id": "es_sw",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:144"
+        },
+        "meaning": "Filterfeld auf BO-Attribut abbilden"
+      },
+      {
+        "id": "es_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:149"
+        },
+        "meaning": "Filter unterstützt?"
+      },
+      {
+        "id": "es_a",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:152"
+        },
+        "meaning": "Filterwerte in Selektion übernehmen"
+      },
+      {
+        "id": "es_q",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:164"
+        },
+        "meaning": "Frachtaufträge suchen"
+      },
+      {
+        "id": "es_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:170"
+        },
+        "meaning": "Treffer?"
+      },
+      {
+        "id": "es_e1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:171"
+        },
+        "meaning": "leere Liste"
+      },
+      {
+        "id": "es_rt",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:174"
+        },
+        "meaning": "Auftragsköpfe lesen"
+      },
+      {
+        "id": "es_map",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 181,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:181"
+        },
+        "meaning": "Listenzeilen bilden"
+      },
+      {
+        "id": "es_pgc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 194,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:194"
+        },
+        "meaning": "Liste auf die angeforderte Seite kürzen"
+      },
+      {
+        "id": "es_pg",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ztm_fo_dpc_ext.abap",
+          "line": 200,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ztm_fo_dpc_ext.abap:200"
+        },
+        "meaning": "Liste an die App geliefert"
+      }
+    ],
+    "edges": [
+      {
+        "from": "d_s",
+        "to": "d_rr",
+        "condition": "always"
+      },
+      {
+        "from": "d_rr",
+        "to": "d_g1",
+        "condition": "always"
+      },
+      {
+        "from": "d_g1",
+        "to": "d_e1",
+        "condition": "lt_root IS INITIAL"
+      },
+      {
+        "from": "d_g1",
+        "to": "d_rba",
+        "condition": "else"
+      },
+      {
+        "from": "d_rba",
+        "to": "d_lg",
+        "condition": "always"
+      },
+      {
+        "from": "d_lg",
+        "to": "d_chk",
+        "condition": "next row"
+      },
+      {
+        "from": "d_chk",
+        "to": "d_tot",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "d_chk",
+        "to": "d_lg",
+        "condition": "else"
+      },
+      {
+        "from": "d_tot",
+        "to": "d_dg",
+        "condition": "always"
+      },
+      {
+        "from": "d_dg",
+        "to": "d_g2",
+        "condition": "always"
+      },
+      {
+        "from": "d_g2",
+        "to": "d_lg",
+        "condition": "lr_root->zz_total_weight = lv_total AND lr_root->zz_dg_indicator = lv_dg"
+      },
+      {
+        "from": "d_g2",
+        "to": "d_upd",
+        "condition": "else"
+      },
+      {
+        "from": "d_upd",
+        "to": "d_lg",
+        "condition": "next iteration"
+      },
+      {
+        "from": "v_s",
+        "to": "v_msg",
+        "condition": "always"
+      },
+      {
+        "from": "v_msg",
+        "to": "v_rr",
+        "condition": "always"
+      },
+      {
+        "from": "v_rr",
+        "to": "v_g1",
+        "condition": "always"
+      },
+      {
+        "from": "v_g1",
+        "to": "v_rc",
+        "condition": "lt_mtr IS NOT INITIAL"
+      },
+      {
+        "from": "v_g1",
+        "to": "v_rt",
+        "condition": "else"
+      },
+      {
+        "from": "v_rc",
+        "to": "v_rt",
+        "condition": "always"
+      },
+      {
+        "from": "v_rt",
+        "to": "v_tol",
+        "condition": "always"
+      },
+      {
+        "from": "v_tol",
+        "to": "v_l",
+        "condition": "always"
+      },
+      {
+        "from": "v_l",
+        "to": "v_g2",
+        "condition": "next row"
+      },
+      {
+        "from": "v_g2",
+        "to": "v_l",
+        "condition": "ls_root-mtr IS INITIAL"
+      },
+      {
+        "from": "v_g2",
+        "to": "v_g3",
+        "condition": "else"
+      },
+      {
+        "from": "v_g3",
+        "to": "v_m101",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "v_m101",
+        "to": "v_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "v_g3",
+        "to": "v_max",
+        "condition": "else"
+      },
+      {
+        "from": "v_max",
+        "to": "v_g4",
+        "condition": "always"
+      },
+      {
+        "from": "v_g4",
+        "to": "v_m100",
+        "condition": "ls_root-zz_total_weight > lv_max"
+      },
+      {
+        "from": "v_g4",
+        "to": "v_g5",
+        "condition": "else"
+      },
+      {
+        "from": "v_m100",
+        "to": "v_g5",
+        "condition": "always"
+      },
+      {
+        "from": "v_g5",
+        "to": "v_m102",
+        "condition": "ls_root-zz_dg_indicator = abap_true AND ls_cap-adr_zugelassen = abap_false"
+      },
+      {
+        "from": "v_g5",
+        "to": "v_l",
+        "condition": "else"
+      },
+      {
+        "from": "v_m102",
+        "to": "v_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "a_s",
+        "to": "a_msg",
+        "condition": "always"
+      },
+      {
+        "from": "a_msg",
+        "to": "a_auth",
+        "condition": "always"
+      },
+      {
+        "from": "a_auth",
+        "to": "a_g1",
+        "condition": "always"
+      },
+      {
+        "from": "a_g1",
+        "to": "a_m110",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "a_m110",
+        "to": "a_e1",
+        "condition": "always"
+      },
+      {
+        "from": "a_g1",
+        "to": "a_rr",
+        "condition": "else"
+      },
+      {
+        "from": "a_rr",
+        "to": "a_l",
+        "condition": "always"
+      },
+      {
+        "from": "a_l",
+        "to": "a_g2",
+        "condition": "next row"
+      },
+      {
+        "from": "a_g2",
+        "to": "a_m111",
+        "condition": "lr_root->zz_release_status = gc_status_released"
+      },
+      {
+        "from": "a_m111",
+        "to": "a_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "a_g2",
+        "to": "a_g3",
+        "condition": "else"
+      },
+      {
+        "from": "a_g3",
+        "to": "a_m112",
+        "condition": "lr_root->tspid IS INITIAL"
+      },
+      {
+        "from": "a_m112",
+        "to": "a_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "a_g3",
+        "to": "a_upd",
+        "condition": "else"
+      },
+      {
+        "from": "a_upd",
+        "to": "a_cd",
+        "condition": "always"
+      },
+      {
+        "from": "a_cd",
+        "to": "cd_s",
+        "condition": "always"
+      },
+      {
+        "from": "cd_s",
+        "to": "cd_o",
+        "condition": "always"
+      },
+      {
+        "from": "cd_o",
+        "to": "cd_sc",
+        "condition": "always"
+      },
+      {
+        "from": "cd_sc",
+        "to": "cd_c",
+        "condition": "always"
+      },
+      {
+        "from": "cd_c",
+        "to": "cd_end",
+        "condition": "always"
+      },
+      {
+        "from": "a_g4",
+        "to": "a_nd",
+        "condition": "lr_root->zz_dispatcher IS NOT INITIAL"
+      },
+      {
+        "from": "a_g4",
+        "to": "a_l",
+        "condition": "else"
+      },
+      {
+        "from": "a_nd",
+        "to": "nd_s",
+        "condition": "always"
+      },
+      {
+        "from": "nd_c1",
+        "to": "nd_c2",
+        "condition": "always"
+      },
+      {
+        "from": "nd_c2",
+        "to": "nd_c3",
+        "condition": "always"
+      },
+      {
+        "from": "nd_c3",
+        "to": "nd_c4",
+        "condition": "always"
+      },
+      {
+        "from": "nd_c4",
+        "to": "nd_end",
+        "condition": "always"
+      },
+      {
+        "from": "x_s",
+        "to": "x_g1",
+        "condition": "always"
+      },
+      {
+        "from": "x_g1",
+        "to": "x_sup",
+        "condition": "iv_action_name <> 'ReleaseFreightOrder'"
+      },
+      {
+        "from": "x_sup",
+        "to": "x_e1",
+        "condition": "always"
+      },
+      {
+        "from": "x_g1",
+        "to": "x_g2",
+        "condition": "else"
+      },
+      {
+        "from": "x_g2",
+        "to": "x_e2",
+        "condition": "sy-subrc <> 0 OR ls_param-value IS INITIAL"
+      },
+      {
+        "from": "x_g2",
+        "to": "x_alt",
+        "condition": "else"
+      },
+      {
+        "from": "x_alt",
+        "to": "x_g3",
+        "condition": "always"
+      },
+      {
+        "from": "x_g3",
+        "to": "x_e3",
+        "condition": "lt_key IS INITIAL OR lt_key[ 1 ]-key IS INITIAL"
+      },
+      {
+        "from": "x_g3",
+        "to": "x_do",
+        "condition": "else"
+      },
+      {
+        "from": "x_do",
+        "to": "x_g4",
+        "condition": "always"
+      },
+      {
+        "from": "x_g4",
+        "to": "x_cl",
+        "condition": "lt_failed IS NOT INITIAL"
+      },
+      {
+        "from": "x_cl",
+        "to": "x_r1",
+        "condition": "always"
+      },
+      {
+        "from": "x_r1",
+        "to": "rb_s",
+        "condition": "always"
+      },
+      {
+        "from": "x_g4",
+        "to": "x_sv",
+        "condition": "else"
+      },
+      {
+        "from": "x_sv",
+        "to": "x_g5",
+        "condition": "always"
+      },
+      {
+        "from": "x_g5",
+        "to": "x_r2",
+        "condition": "lv_rejected = abap_true"
+      },
+      {
+        "from": "x_r2",
+        "to": "rb_s",
+        "condition": "always"
+      },
+      {
+        "from": "x_g5",
+        "to": "x_rt",
+        "condition": "else"
+      },
+      {
+        "from": "x_rt",
+        "to": "x_copy",
+        "condition": "always"
+      },
+      {
+        "from": "rb_s",
+        "to": "rb_get",
+        "condition": "always"
+      },
+      {
+        "from": "rb_get",
+        "to": "rb_l",
+        "condition": "always"
+      },
+      {
+        "from": "rb_l",
+        "to": "rb_add",
+        "condition": "next row"
+      },
+      {
+        "from": "rb_add",
+        "to": "rb_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rb_l",
+        "to": "rb_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "es_s",
+        "to": "es_l",
+        "condition": "always"
+      },
+      {
+        "from": "es_l",
+        "to": "es_sw",
+        "condition": "next row"
+      },
+      {
+        "from": "es_sw",
+        "to": "es_g",
+        "condition": "always"
+      },
+      {
+        "from": "es_g",
+        "to": "es_l",
+        "condition": "lv_attr IS INITIAL"
+      },
+      {
+        "from": "es_g",
+        "to": "es_a",
+        "condition": "else"
+      },
+      {
+        "from": "es_a",
+        "to": "es_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "es_l",
+        "to": "es_q",
+        "condition": "no more rows"
+      },
+      {
+        "from": "es_q",
+        "to": "es_g2",
+        "condition": "always"
+      },
+      {
+        "from": "es_g2",
+        "to": "es_e1",
+        "condition": "lt_key IS INITIAL"
+      },
+      {
+        "from": "es_g2",
+        "to": "es_rt",
+        "condition": "else"
+      },
+      {
+        "from": "es_rt",
+        "to": "es_map",
+        "condition": "always"
+      },
+      {
+        "from": "es_map",
+        "to": "es_pgc",
+        "condition": "always"
+      },
+      {
+        "from": "d_lg",
+        "to": "d_end",
+        "condition": "no more rows"
+      },
+      {
+        "from": "v_l",
+        "to": "v_end",
+        "condition": "no more rows"
+      },
+      {
+        "from": "a_l",
+        "to": "a_end",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cd_end",
+        "to": "a_g4",
+        "condition": "always"
+      },
+      {
+        "from": "nd_s",
+        "to": "nd_c1",
+        "condition": "always"
+      },
+      {
+        "from": "nd_c1",
+        "to": "nd_end",
+        "condition": "CATCH cx_bcs"
+      },
+      {
+        "from": "nd_c2",
+        "to": "nd_end",
+        "condition": "CATCH cx_bcs"
+      },
+      {
+        "from": "nd_c3",
+        "to": "nd_end",
+        "condition": "CATCH cx_bcs"
+      },
+      {
+        "from": "nd_c4",
+        "to": "nd_end",
+        "condition": "CATCH cx_bcs"
+      },
+      {
+        "from": "nd_end",
+        "to": "a_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "x_copy",
+        "to": "x_e",
+        "condition": "always"
+      },
+      {
+        "from": "es_pgc",
+        "to": "es_pg",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_ztm_a_fo_release.abap:210 — kein Fachsatz „freigegebene Frachtaufträge werden per RFC an das Frachtführerportal übertragen“: die Methode wird nirgends aufgerufen, der Aufruf in der Aktion ist auskommentiert",
+    "zcl_ztm_d_fo_weight.abap:74 — kein Fachsatz „Gewichte in anderen Einheiten werden in KG umgerechnet“: die Bruttogewichte werden ohne Blick auf die Einheit addiert und das Ergebnis als KG gekennzeichnet",
+    "zcl_ztm_d_fo_weight.abap:64 — kein Fachsatz „ein Frachtauftrag ohne Positionen erhält Gewicht 0 und kein Gefahrgutkennzeichen“: Aufträge ohne Positionen bilden keine Gruppe, ihre bisherigen Werte bleiben unverändert stehen",
+    "zcl_ztm_fo_dpc_ext.abap:96 — kein Fachsatz „die Freigabe prüft Fahrzeugkapazität und ADR-Zulassung und wird bei Überladung abgelehnt“ als gesicherte Aussage: die Aktion selbst prüft beides nicht (die Gefahrgutprüfung ist auskommentiert), und ob die Kapazitätsvalidierung beim Sichern oder bei der Aktion läuft, legt die BOPF-Konfiguration fest, die nicht im Fall liegt",
+    "zcl_ztm_a_fo_release.abap:200 — kein Fachsatz „die Mail an den Disponenten ist mit der Freigabe sicher versendet“: ohne eigenes COMMIT geht sie erst mit dem Sichern hinaus, und Fehler beim Erstellen werden verworfen",
+    "zcl_ztm_v_fo_capacity.abap:65 — kein Fachsatz „für einen bestimmten Benutzer wird die Kapazitätsprüfung übersteuert“: die Benutzerabfrage ist auskommentiert",
+    "zcl_ztm_fo_dpc_ext.abap:144 — kein Fachsatz „die Liste wird nach Suchbegriff oder $orderby sortiert bzw. nach Fahrzeugtyp gefiltert“: nur drei Filterfelder werden übernommen, Suche und Sortierung werden nicht ausgewertet"
+  ],
+  "processDescription": "Die Disposition arbeitet mit einer Fiori-App, deren OData-Service den Arbeitsvorrat an Frachtaufträgen liefert und die Freigabe auslöst. Für die Liste übersetzt der Service die Filter Frachtauftragsnummer, Frachtführer und Freigabestatus in eine Suche über Frachtaufträge, ignoriert andere Filter, liest die Treffer mit Frachtführer, Fahrzeugtyp, Gesamtgewicht, Gefahrgutkennzeichen und Freigabestand und kürzt erst danach auf die angeforderte Seite. Für die Freigabe nimmt er die Frachtauftragsnummer entgegen, lehnt ohne Nummer oder bei unbekanntem Auftrag mit einem Geschäftsfehler ab und führt sonst die Freigabeaktion aus. Die Aktion prüft die Freigabeberechtigung und lehnt ohne sie alle Aufträge ab; bereits freigegebene Aufträge erhalten nur einen Hinweis, Aufträge ohne Frachtführer werden abgelehnt. Freigegebene Aufträge erhalten Status, Freigeber und Zeitpunkt, einen Änderungsbeleg und, wenn ein Disponent hinterlegt ist, eine Info-Mail; Mailfehler werden verworfen. Schlägt die Aktion fehl, verwirft der Service alle Änderungen und gibt die Meldungen als Fehler zurück; sonst sichert er und liefert den neuen Stand, oder gibt bei abgelehntem Sichern dessen Meldungen zurück. Unabhängig davon schreibt eine Determination bei Positionsänderungen am Frachtauftrag das Bruttogewicht der Ladungspositionen ohne Einheitenumrechnung und das Gefahrgutkennzeichen fort, sofern sich etwas geändert hat. Eine Validierung prüft je disponiertem Frachtauftrag das Gesamtgewicht gegen das Ladegewicht des Fahrzeugtyps zuzüglich einer über TVARVC gepflegten Toleranz sowie Gefahrgut gegen die ADR-Zulassung und markiert Verstöße als inkonsistent; ein ungepflegter Fahrzeugtyp ergibt nur eine Warnung. Wann Determination, Validierung und Aktion laufen, bestimmt die BOPF-Konfiguration, die nicht im Fall liegt."
+}

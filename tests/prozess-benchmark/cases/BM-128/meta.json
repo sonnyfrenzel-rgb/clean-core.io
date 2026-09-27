@@ -1,0 +1,34 @@
+{
+  "id": "BM-128",
+  "title": "PSM-FM: Mittelvorbindungen aus freigegebenen Beschaffungsanträgen anlegen, mit Vorab-Verfügbarkeitsprüfung (dynamisches WHERE, EXIT in innerer Schleife)",
+  "domain": "PSM / Haushaltsmanagement öffentlicher Sektor",
+  "band": "mittel",
+  "loc": 83,
+  "constructs": [
+    "REPORT",
+    "COND # mit String-Templates",
+    "dynamische WHERE-Klausel",
+    "MESSAGE TYPE E",
+    "FOR ALL ENTRIES",
+    "verschachtelte LOOP AT … WHERE",
+    "EXIT",
+    "CONTINUE",
+    "CALL FUNCTION FMFR_CREATE_FROM_DATA",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "UPDATE Z-Tabelle"
+  ],
+  "scenario": "Stadtverwaltung mit Antragsportal: freigegebene Beschaffungsanträge werden nachts als Mittelvorbindungen im Haushalt angelegt, vorher prüft ein Z-View die verfügbaren Mittel je Finanzstelle und Finanzposition.",
+  "s4_issues": [
+    "Dynamisches WHERE aus String-Templates mit Parameterwerten (Injektionsrisiko bei Zeichenfeldern)",
+    "Z-Verfügbarkeitssicht parallel zur Standard-AVC",
+    "nicht freigegebener Baustein FMFR_CREATE_FROM_DATA"
+  ],
+  "wave": 2,
+  "module": "PSM-FM",
+  "edge_constructs": [
+    "dynamische WHERE-Klausel",
+    "CONTINUE/EXIT in verschachtelten Schleifen",
+    "MESSAGE … TYPE 'E' als Pfadende",
+    "COND #"
+  ]
+}

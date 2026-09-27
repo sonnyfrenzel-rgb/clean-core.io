@@ -1,0 +1,1214 @@
+{
+  "id": "BM-174",
+  "title": "Exportkontrolle: Auslieferung beim Sichern per RFC gegen GTS prüfen und mit Liefersperre belegen",
+  "classes": [
+    "K01",
+    "K03",
+    "K12",
+    "K16"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "Z_GTS_EXPORT_PRUEFUNG",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "mv50afz1.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mv50afz1.abap:16"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_gts_export_pruefung.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_gts_export_pruefung.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_GTS_CHECK_DELIVERY",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_gts_export_pruefung.abap",
+        "line": 43,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_gts_export_pruefung.abap:43"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzgtsf01.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzgtsf01.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzgtsf01.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzgtsf01.abap:27"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZGTS_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "lzgtsf01.abap",
+        "line": 54,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzgtsf01.abap:54"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-174-B01",
+      "text": "Geprüft werden nur Auslieferungen, und nicht im Anzeigemodus.",
+      "anchors": [
+        {
+          "file": "mv50afz1.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:11"
+        },
+        {
+          "file": "mv50afz1.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:12"
+        },
+        {
+          "file": "mv50afz1.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-174-B02",
+      "text": "Die Exportprüfung wird mit Lieferkopf und Lieferpositionen aufgerufen und liefert ein Ergebnis O (frei), S (gesperrt) oder F (technischer Fehler).",
+      "anchors": [
+        {
+          "file": "mv50afz1.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:16"
+        },
+        {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-174-B03",
+      "text": "Ist in der Variablentabelle keine RFC-Destination zum GTS-System gepflegt, gilt die Lieferung ohne Prüfung als frei.",
+      "anchors": [
+        {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:22"
+        },
+        {
+          "file": "lzgtsf01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzgtsf01.abap:12"
+        },
+        {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-174-B04",
+      "text": "Für den Benutzer GTS_TEST und im System DEV gilt die Lieferung ohne Prüfung als frei.",
+      "anchors": [
+        {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-174-B05",
+      "text": "Liegt das Land des Warenempfängers in Deutschland, gilt die Lieferung ohne Prüfung als frei.",
+      "anchors": [
+        {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:32"
+        },
+        {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-174-B06",
+      "text": "Für GTS werden alle nicht gelöschten Lieferpositionen mit positiver Liefermenge mit Material, Warennummer, Menge und Einheit aufbereitet; gibt es keine, gilt die Lieferung als frei.",
+      "anchors": [
+        {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:38"
+        },
+        {
+          "file": "lzgtsf01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzgtsf01.abap:25"
+        },
+        {
+          "file": "lzgtsf01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzgtsf01.abap:26"
+        },
+        {
+          "file": "lzgtsf01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzgtsf01.abap:27"
+        },
+        {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-174-B07",
+      "text": "Das GTS-System prüft die Lieferung synchron per RFC und gibt Status und Text zurück; bei Kommunikations- oder Systemfehler ist das Ergebnis F mit der Fehlermeldung.",
+      "anchors": [
+        {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:43"
+        },
+        {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:57"
+        },
+        {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-174-B08",
+      "text": "Jede tatsächlich an GTS gestellte Prüfung wird mit Lieferung, Zeitpunkt, Ergebnis, Text und Benutzer protokolliert.",
+      "anchors": [
+        {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:62"
+        },
+        {
+          "file": "lzgtsf01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzgtsf01.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-174-B09",
+      "text": "Ist die Lieferung gesperrt (S), erhält sie die Liefersperre GT und der Anwender eine Information.",
+      "anchors": [
+        {
+          "file": "mv50afz1.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:26"
+        },
+        {
+          "file": "mv50afz1.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:27"
+        },
+        {
+          "file": "mv50afz1.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-174-B10",
+      "text": "Ist GTS nicht erreichbar (F), wird im Dialog das Sichern mit Fehlermeldung verhindert; im Hintergrund wird die Lieferung mit Liefersperre GT gesichert.",
+      "anchors": [
+        {
+          "file": "mv50afz1.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:29"
+        },
+        {
+          "file": "mv50afz1.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:30"
+        },
+        {
+          "file": "mv50afz1.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:31"
+        },
+        {
+          "file": "mv50afz1.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-174-B11",
+      "text": "In allen anderen Fällen wird eine vorhandene Liefersperre GT wieder entfernt.",
+      "anchors": [
+        {
+          "file": "mv50afz1.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:34"
+        },
+        {
+          "file": "mv50afz1.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:36"
+        },
+        {
+          "file": "mv50afz1.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:37"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "mv50afz1.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:7"
+        },
+        "meaning": "Exit vor dem Sichern der Lieferung"
+      },
+      {
+        "id": "c1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv50afz1.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:11"
+        },
+        "meaning": "Auslieferung?"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv50afz1.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:12"
+        },
+        "meaning": "Anzeigemodus?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "mv50afz1.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:13"
+        },
+        "meaning": "Exit verlassen"
+      },
+      {
+        "id": "cf",
+        "type": "call",
+        "anchor": {
+          "file": "mv50afz1.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:16"
+        },
+        "meaning": "Exportprüfung aufrufen"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv50afz1.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:25"
+        },
+        "meaning": "Prüfergebnis?"
+      },
+      {
+        "id": "ls",
+        "type": "action",
+        "anchor": {
+          "file": "mv50afz1.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:27"
+        },
+        "meaning": "Liefersperre GT setzen"
+      },
+      {
+        "id": "mi",
+        "type": "output",
+        "anchor": {
+          "file": "mv50afz1.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:28"
+        },
+        "meaning": "Anwender informieren"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv50afz1.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:30"
+        },
+        "meaning": "Dialog?"
+      },
+      {
+        "id": "mo",
+        "type": "output",
+        "anchor": {
+          "file": "mv50afz1.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:31"
+        },
+        "meaning": "Fehlermeldung: GTS nicht erreichbar"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "anchor": {
+          "file": "mv50afz1.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:31"
+        },
+        "meaning": "Sichern verhindern"
+      },
+      {
+        "id": "lf",
+        "type": "action",
+        "anchor": {
+          "file": "mv50afz1.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:33"
+        },
+        "meaning": "Liefersperre GT setzen (Hintergrund)"
+      },
+      {
+        "id": "gg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv50afz1.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:36"
+        },
+        "meaning": "Eigene Sperre gesetzt?"
+      },
+      {
+        "id": "cl",
+        "type": "action",
+        "anchor": {
+          "file": "mv50afz1.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:37"
+        },
+        "meaning": "Liefersperre entfernen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "mv50afz1.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv50afz1.abap:40"
+        },
+        "meaning": "Sichern geht weiter"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:1"
+        },
+        "meaning": "Exportprüfung"
+      },
+      {
+        "id": "ps",
+        "type": "call",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:22"
+        },
+        "meaning": "Destination lesen"
+      },
+      {
+        "id": "gd",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:23"
+        },
+        "meaning": "Prüfung ausgeschaltet?"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:24"
+        },
+        "meaning": "frei ohne Prüfung"
+      },
+      {
+        "id": "gu",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:28"
+        },
+        "meaning": "Testbenutzer oder Entwicklungssystem?"
+      },
+      {
+        "id": "r2",
+        "type": "end",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:29"
+        },
+        "meaning": "frei ohne Prüfung"
+      },
+      {
+        "id": "qk",
+        "type": "read",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:32"
+        },
+        "meaning": "Land des Warenempfängers lesen"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:34"
+        },
+        "meaning": "Inland?"
+      },
+      {
+        "id": "r3",
+        "type": "end",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:35"
+        },
+        "meaning": "frei ohne Prüfung"
+      },
+      {
+        "id": "pp",
+        "type": "call",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:38"
+        },
+        "meaning": "Positionen aufbereiten"
+      },
+      {
+        "id": "gi",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:39"
+        },
+        "meaning": "Keine Positionen?"
+      },
+      {
+        "id": "r4",
+        "type": "end",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:40"
+        },
+        "meaning": "frei ohne Prüfung"
+      },
+      {
+        "id": "rfc",
+        "type": "rfc",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:43"
+        },
+        "meaning": "Prüfung im GTS-System"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:57"
+        },
+        "meaning": "RFC fehlgeschlagen?"
+      },
+      {
+        "id": "af",
+        "type": "action",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:58"
+        },
+        "meaning": "Ergebnis technischer Fehler"
+      },
+      {
+        "id": "pl",
+        "type": "call",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:62"
+        },
+        "meaning": "Prüfung protokollieren"
+      },
+      {
+        "id": "ef",
+        "type": "end",
+        "anchor": {
+          "file": "z_gts_export_pruefung.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gts_export_pruefung.abap:64"
+        },
+        "meaning": "Ergebnis zurück"
+      },
+      {
+        "id": "fsl",
+        "type": "start",
+        "anchor": {
+          "file": "lzgtsf01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzgtsf01.abap:10"
+        },
+        "meaning": "Schalter lesen"
+      },
+      {
+        "id": "qt",
+        "type": "read",
+        "anchor": {
+          "file": "lzgtsf01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzgtsf01.abap:12"
+        },
+        "meaning": "Destination aus Variablentabelle"
+      },
+      {
+        "id": "esl",
+        "type": "end",
+        "anchor": {
+          "file": "lzgtsf01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzgtsf01.abap:16"
+        },
+        "meaning": "Schalter gelesen"
+      },
+      {
+        "id": "fpa",
+        "type": "start",
+        "anchor": {
+          "file": "lzgtsf01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzgtsf01.abap:23"
+        },
+        "meaning": "Positionen aufbereiten"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "lzgtsf01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzgtsf01.abap:25"
+        },
+        "meaning": "Nicht gelöschte Positionen"
+      },
+      {
+        "id": "ck",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzgtsf01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzgtsf01.abap:26"
+        },
+        "meaning": "Liefermenge positiv?"
+      },
+      {
+        "id": "qm",
+        "type": "read",
+        "anchor": {
+          "file": "lzgtsf01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzgtsf01.abap:27"
+        },
+        "meaning": "Warennummer lesen"
+      },
+      {
+        "id": "epa",
+        "type": "end",
+        "anchor": {
+          "file": "lzgtsf01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzgtsf01.abap:38"
+        },
+        "meaning": "Positionen fertig"
+      },
+      {
+        "id": "fpr",
+        "type": "start",
+        "anchor": {
+          "file": "lzgtsf01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzgtsf01.abap:43"
+        },
+        "meaning": "Protokoll"
+      },
+      {
+        "id": "wl",
+        "type": "write",
+        "anchor": {
+          "file": "lzgtsf01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzgtsf01.abap:54"
+        },
+        "meaning": "Prüfprotokoll schreiben"
+      },
+      {
+        "id": "epr",
+        "type": "end",
+        "anchor": {
+          "file": "lzgtsf01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzgtsf01.abap:55"
+        },
+        "meaning": "Protokolliert"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "g1",
+        "condition": "likp-vbtyp = 'J'"
+      },
+      {
+        "from": "c1",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "g1",
+        "to": "x1",
+        "condition": "t180-trtyp = 'A'"
+      },
+      {
+        "from": "g1",
+        "to": "cf",
+        "condition": "else"
+      },
+      {
+        "from": "cf",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "ls",
+        "condition": "WHEN 'S'"
+      },
+      {
+        "from": "ls",
+        "to": "mi",
+        "condition": "always"
+      },
+      {
+        "from": "mi",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "gb",
+        "condition": "WHEN 'F'"
+      },
+      {
+        "from": "gb",
+        "to": "mo",
+        "condition": "sy-batch = abap_false"
+      },
+      {
+        "from": "gb",
+        "to": "lf",
+        "condition": "else"
+      },
+      {
+        "from": "lf",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "gg",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "gg",
+        "to": "cl",
+        "condition": "likp-lifsk = 'GT'"
+      },
+      {
+        "from": "gg",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "cl",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "fsl",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "r1",
+        "condition": "lv_dest IS INITIAL"
+      },
+      {
+        "from": "gd",
+        "to": "gu",
+        "condition": "else"
+      },
+      {
+        "from": "gu",
+        "to": "r2",
+        "condition": "sy-uname = 'GTS_TEST' OR sy-sysid = 'DEV'"
+      },
+      {
+        "from": "gu",
+        "to": "qk",
+        "condition": "else"
+      },
+      {
+        "from": "qk",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "r3",
+        "condition": "lv_land = 'DE'"
+      },
+      {
+        "from": "gl",
+        "to": "pp",
+        "condition": "else"
+      },
+      {
+        "from": "pp",
+        "to": "fpa",
+        "condition": "always"
+      },
+      {
+        "from": "gi",
+        "to": "r4",
+        "condition": "lt_items IS INITIAL"
+      },
+      {
+        "from": "gi",
+        "to": "rfc",
+        "condition": "else"
+      },
+      {
+        "from": "rfc",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "af",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gr",
+        "to": "pl",
+        "condition": "else"
+      },
+      {
+        "from": "af",
+        "to": "pl",
+        "condition": "always"
+      },
+      {
+        "from": "pl",
+        "to": "fpr",
+        "condition": "always"
+      },
+      {
+        "from": "fsl",
+        "to": "qt",
+        "condition": "always"
+      },
+      {
+        "from": "qt",
+        "to": "esl",
+        "condition": "always"
+      },
+      {
+        "from": "fpa",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "lp",
+        "to": "ck",
+        "condition": "next row"
+      },
+      {
+        "from": "ck",
+        "to": "qm",
+        "condition": "it_lips-lfimg > 0"
+      },
+      {
+        "from": "ck",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "qm",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "epa",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fpr",
+        "to": "wl",
+        "condition": "always"
+      },
+      {
+        "from": "wl",
+        "to": "epr",
+        "condition": "always"
+      },
+      {
+        "from": "ef",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "r2",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "r3",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "r4",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "esl",
+        "to": "gd",
+        "condition": "always"
+      },
+      {
+        "from": "epa",
+        "to": "gi",
+        "condition": "always"
+      },
+      {
+        "from": "epr",
+        "to": "ef",
+        "condition": "always"
+      },
+      {
+        "from": "mo",
+        "to": "me",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "mv50afz1.abap:36 — kein Fachsatz „die Sperre GT wird nur nach positiver GTS-Prüfung entfernt“: auch bei ausgeschalteter Prüfung, Inlandsempfänger, Testbenutzer oder DEV-System ist das Ergebnis O und die Sperre wird entfernt",
+    "lzgtsf01.abap:27 — kein Fachsatz „Positionen ohne Warennummer werden ohne Warennummer übergeben“: das Ergebnis wird nicht geprüft, die Warennummer der vorigen Position bleibt stehen",
+    "z_gts_export_pruefung.abap:34 — kein Fachsatz „EU-Lieferungen werden nicht geprüft“: ausgenommen ist nur das Land DE",
+    "gesamte Scheibe — kein Fachsatz „Ausfuhranmeldung oder Exportlizenz wird angelegt“: es wird nur geprüft, protokolliert und die Liefersperre gesetzt oder entfernt"
+  ],
+  "processDescription": "Beim Sichern einer Auslieferung, außer im Anzeigemodus, ruft der Exit die eigene Exportprüfung mit Lieferkopf und Positionen auf. Diese gibt ohne Prüfung „frei“ zurück, wenn keine RFC-Destination zum GTS-System gepflegt ist, wenn der Benutzer GTS_TEST ist oder im System DEV gearbeitet wird, wenn der Warenempfänger in Deutschland sitzt oder wenn keine nicht gelöschte Position mit Liefermenge übrig bleibt. Sonst werden die Positionen mit Material, Warennummer und Menge aufbereitet und synchron per RFC an das GTS-System übergeben, das Status und Text zurückgibt; ein Kommunikations- oder Systemfehler ergibt den Status „technischer Fehler“. Jede tatsächlich gestellte Prüfung wird protokolliert. Sperrt GTS die Lieferung, setzt der Exit die Liefersperre GT und informiert den Anwender. Ist GTS nicht erreichbar, wird im Dialog das Sichern mit Fehlermeldung verhindert, im Hintergrund wird die Lieferung mit Liefersperre GT gesichert. In allen anderen Fällen wird eine vorhandene Liefersperre GT entfernt."
+}

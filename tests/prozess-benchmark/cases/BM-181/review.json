@@ -1,0 +1,14 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e3 (end)",
+      "before": "source.abap:38 (return_code = sy-subrc.)",
+      "after": "source.abap:39 (ENDFORM.)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION. Die Rückmeldung des Rückgabecodes bleibt im Fachsatz B05 auf Zeile 38.",
+      "category": "Anker"
+    }
+  ],
+  "doubts": []
+}

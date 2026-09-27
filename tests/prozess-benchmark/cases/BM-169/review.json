@@ -1,0 +1,14 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "verbotener Schluss zu :73",
+      "before": "source.abap:73 — kein Fachsatz „Klicks außerhalb einer Absprachezeile bleiben ohne Wirkung“: ohne HIDE-Information steht noch die letzte Absprache der Liste im Feld, sie wird geöffnet",
+      "after": "source.abap:73 — kein Fachsatz „Klicks außerhalb einer Absprachezeile bleiben ohne Wirkung“: ohne HIDE-Information steht beim ersten Klick noch die letzte Absprache der Liste im Feld, sie wird geöffnet (erst nach einem Absprung ist das Feld geleert)",
+      "why": "CLEAR gs_abs-knuma (Z. 76) leert das Feld nach jedem Absprung; die Aussage gilt nur bis zum ersten Absprung.",
+      "category": "verbotener Schluss"
+    }
+  ],
+  "doubts": []
+}

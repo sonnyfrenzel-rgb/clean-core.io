@@ -1,0 +1,1008 @@
+{
+  "id": "BM-153",
+  "title": "MSS-Teamkalender: Abwesenheiten der direkt Unterstellten mit P_ORGIN-Prüfung",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PA0105",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_mss_team_absences.abap",
+        "line": 33,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_mss_team_absences.abap:33"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_MSS_TEAM_READER",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_mss_team_absences.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_mss_team_absences.abap:42"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RH_STRUC_GET",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mss_team_reader.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mss_team_reader.abap:52"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_READ_INFOTYPE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mss_team_reader.abap",
+        "line": 89,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mss_team_reader.abap:89"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_READ_INFOTYPE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mss_team_reader.abap",
+        "line": 111,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mss_team_reader.abap:111"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-153-B01",
+      "text": "Wird die Übersicht für einen anderen als den angemeldeten Benutzer angefordert, muss der Aufrufer eine Vertretungsberechtigung haben, sonst wird die Anfrage abgewiesen.",
+      "anchors": [
+        {
+          "file": "z_mss_team_absences.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:24"
+        },
+        {
+          "file": "z_mss_team_absences.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:25"
+        },
+        {
+          "file": "z_mss_team_absences.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:27"
+        },
+        {
+          "file": "z_mss_team_absences.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-153-B02",
+      "text": "Zum Benutzer wird über den Kommunikationssatz die Personalnummer der Führungskraft im Zeitraum ermittelt; ohne Zuordnung wird die Anfrage abgewiesen.",
+      "anchors": [
+        {
+          "file": "z_mss_team_absences.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:33"
+        },
+        {
+          "file": "z_mss_team_absences.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:38"
+        },
+        {
+          "file": "z_mss_team_absences.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-153-B03",
+      "text": "Über den Auswertungsweg der Leiterplanstelle werden die Personen der geleiteten Einheit ermittelt, ohne die Führungskraft selbst.",
+      "anchors": [
+        {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:52"
+        },
+        {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-153-B04",
+      "text": "Liefert die Struktur nichts oder bleibt niemand übrig, wird die Teamliste verworfen und die Anfrage mit „keine Führungskraft“ abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:65"
+        },
+        {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:73"
+        },
+        {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:76"
+        },
+        {
+          "file": "z_mss_team_absences.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-153-B05",
+      "text": "Für jedes Teammitglied wird die organisatorische Zuordnung am Ende des Zeitraums gelesen; fehlt sie, bleibt das Mitglied unberücksichtigt.",
+      "anchors": [
+        {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:88"
+        },
+        {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:89"
+        },
+        {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:100"
+        }
+      ]
+    },
+    {
+      "id": "BM-153-B06",
+      "text": "Hat der aufrufende Benutzer für dessen Personalbereich, Mitarbeitergruppe, -kreis und Organisationsschlüssel keine Leseberechtigung auf Abwesenheiten, wird das Mitglied ausgeblendet und mitgezählt.",
+      "anchors": [
+        {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:105"
+        },
+        {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:143"
+        },
+        {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:106"
+        }
+      ]
+    },
+    {
+      "id": "BM-153-B07",
+      "text": "Für berechtigte Mitglieder werden die Abwesenheiten im Zeitraum gelesen und ihre Abwesenheitstage summiert.",
+      "anchors": [
+        {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:111"
+        },
+        {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:126"
+        }
+      ]
+    },
+    {
+      "id": "BM-153-B08",
+      "text": "Jedes Mitglied wird ohne Abwesenheit als „FREI“, bei mehr als zehn Tagen als „HOCH“ und sonst als „NORMAL“ eingestuft.",
+      "anchors": [
+        {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:129"
+        }
+      ]
+    },
+    {
+      "id": "BM-153-B09",
+      "text": "Die Übersicht wird nach Abwesenheitstagen absteigend sortiert und mit der Zahl ausgeblendeter Mitarbeiter an das Portal zurückgegeben.",
+      "anchors": [
+        {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:137"
+        },
+        {
+          "file": "z_mss_team_absences.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:51"
+        },
+        {
+          "file": "z_mss_team_absences.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:52"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "z_mss_team_absences.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:1"
+        },
+        "meaning": "Portal fragt Teamabwesenheiten an"
+      },
+      {
+        "id": "g_px",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mss_team_absences.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:24"
+        },
+        "meaning": "Aufruf für fremden Benutzer?"
+      },
+      {
+        "id": "au",
+        "type": "action",
+        "anchor": {
+          "file": "z_mss_team_absences.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:25"
+        },
+        "meaning": "Vertretungsberechtigung prüfen"
+      },
+      {
+        "id": "g_au",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mss_team_absences.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:27"
+        },
+        "meaning": "Vertretung erlaubt?"
+      },
+      {
+        "id": "e_px",
+        "type": "end",
+        "anchor": {
+          "file": "z_mss_team_absences.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:28"
+        },
+        "meaning": "Abweisen: keine Vertretungsberechtigung"
+      },
+      {
+        "id": "r_105",
+        "type": "read",
+        "anchor": {
+          "file": "z_mss_team_absences.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:33"
+        },
+        "meaning": "Personalnummer zum Benutzer lesen"
+      },
+      {
+        "id": "g_105",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mss_team_absences.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:38"
+        },
+        "meaning": "Benutzer einem Mitarbeiter zugeordnet?"
+      },
+      {
+        "id": "o_ne",
+        "type": "output",
+        "anchor": {
+          "file": "z_mss_team_absences.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:39"
+        },
+        "meaning": "Fehlermeldung: Benutzer keinem Mitarbeiter zugeordnet"
+      },
+      {
+        "id": "e_ne",
+        "type": "end",
+        "anchor": {
+          "file": "z_mss_team_absences.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:39"
+        },
+        "meaning": "Abweisen: kein Mitarbeiter"
+      },
+      {
+        "id": "a_new",
+        "type": "action",
+        "anchor": {
+          "file": "z_mss_team_absences.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:42"
+        },
+        "meaning": "Leser für Führungskraft und Zeitraum anlegen"
+      },
+      {
+        "id": "c_rt",
+        "type": "call",
+        "anchor": {
+          "file": "z_mss_team_absences.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:46"
+        },
+        "meaning": "Direkt Unterstellte ermitteln"
+      },
+      {
+        "id": "o_nm",
+        "type": "output",
+        "anchor": {
+          "file": "z_mss_team_absences.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:48"
+        },
+        "meaning": "Fehlermeldung: keine Führungskraft"
+      },
+      {
+        "id": "e_nm",
+        "type": "end",
+        "anchor": {
+          "file": "z_mss_team_absences.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:48"
+        },
+        "meaning": "Abweisen: keine Führungskraft"
+      },
+      {
+        "id": "c_bo",
+        "type": "call",
+        "anchor": {
+          "file": "z_mss_team_absences.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:51"
+        },
+        "meaning": "Abwesenheitsübersicht aufbauen"
+      },
+      {
+        "id": "e_ok",
+        "type": "end",
+        "anchor": {
+          "file": "z_mss_team_absences.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mss_team_absences.abap:54"
+        },
+        "meaning": "Übersicht und Zahl ausgeblendeter Mitarbeiter zurückgeben"
+      },
+      {
+        "id": "s_rt",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:48"
+        },
+        "meaning": "Team lesen"
+      },
+      {
+        "id": "c_sg",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:52"
+        },
+        "meaning": "Struktur über Leiterplanstelle auswerten"
+      },
+      {
+        "id": "g_sg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:65"
+        },
+        "meaning": "Struktur gefunden?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:66"
+        },
+        "meaning": "Ausnahme: keine Organisation"
+      },
+      {
+        "id": "a_mem",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:70"
+        },
+        "meaning": "Personen außer der Führungskraft übernehmen"
+      },
+      {
+        "id": "g_mem",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:73"
+        },
+        "meaning": "Niemand unterstellt?"
+      },
+      {
+        "id": "e_rt",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:79"
+        },
+        "meaning": "Team ermittelt"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:74"
+        },
+        "meaning": "Ausnahme: kein Team"
+      },
+      {
+        "id": "s_bo",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:82"
+        },
+        "meaning": "Übersicht aufbauen"
+      },
+      {
+        "id": "l_m",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:88"
+        },
+        "meaning": "Je Teammitglied"
+      },
+      {
+        "id": "c_r1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:89"
+        },
+        "meaning": "Organisatorische Zuordnung am Periodenende lesen"
+      },
+      {
+        "id": "g_r1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:100"
+        },
+        "meaning": "Zuordnung vorhanden?"
+      },
+      {
+        "id": "c_ia",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:105"
+        },
+        "meaning": "Leseberechtigung für das Mitglied prüfen lassen"
+      },
+      {
+        "id": "g_auth",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:105"
+        },
+        "meaning": "Berechtigt für Abwesenheiten?"
+      },
+      {
+        "id": "c_r2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:111"
+        },
+        "meaning": "Abwesenheiten im Zeitraum lesen"
+      },
+      {
+        "id": "a_days",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:126"
+        },
+        "meaning": "Abwesenheitstage summieren"
+      },
+      {
+        "id": "a_lvl",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:129"
+        },
+        "meaning": "Einstufung FREI/NORMAL/HOCH festlegen"
+      },
+      {
+        "id": "e_bo",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:138"
+        },
+        "meaning": "Übersicht nach Tagen absteigend"
+      },
+      {
+        "id": "s_ia",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:141"
+        },
+        "meaning": "Berechtigung prüfen"
+      },
+      {
+        "id": "au2",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:143"
+        },
+        "meaning": "Leseberechtigung Infotyp 2001 für Organisationszuordnung prüfen"
+      },
+      {
+        "id": "a_ok",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:151"
+        },
+        "meaning": "Ergebnis der Prüfung festlegen"
+      },
+      {
+        "id": "e_ia",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mss_team_reader.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mss_team_reader.abap:152"
+        },
+        "meaning": "Prüfergebnis zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "g_px",
+        "condition": "always"
+      },
+      {
+        "from": "g_px",
+        "to": "au",
+        "condition": "iv_uname <> sy-uname"
+      },
+      {
+        "from": "g_px",
+        "to": "r_105",
+        "condition": "else"
+      },
+      {
+        "from": "au",
+        "to": "g_au",
+        "condition": "always"
+      },
+      {
+        "from": "g_au",
+        "to": "e_px",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_au",
+        "to": "r_105",
+        "condition": "else"
+      },
+      {
+        "from": "r_105",
+        "to": "g_105",
+        "condition": "always"
+      },
+      {
+        "from": "g_105",
+        "to": "o_ne",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_105",
+        "to": "a_new",
+        "condition": "else"
+      },
+      {
+        "from": "a_new",
+        "to": "c_rt",
+        "condition": "always"
+      },
+      {
+        "from": "c_rt",
+        "to": "s_rt",
+        "condition": "always"
+      },
+      {
+        "from": "c_bo",
+        "to": "s_bo",
+        "condition": "always"
+      },
+      {
+        "from": "s_rt",
+        "to": "c_sg",
+        "condition": "always"
+      },
+      {
+        "from": "c_sg",
+        "to": "g_sg",
+        "condition": "always"
+      },
+      {
+        "from": "g_sg",
+        "to": "x1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_sg",
+        "to": "a_mem",
+        "condition": "else"
+      },
+      {
+        "from": "a_mem",
+        "to": "g_mem",
+        "condition": "always"
+      },
+      {
+        "from": "g_mem",
+        "to": "x2",
+        "condition": "mt_member IS INITIAL"
+      },
+      {
+        "from": "s_bo",
+        "to": "l_m",
+        "condition": "always"
+      },
+      {
+        "from": "l_m",
+        "to": "c_r1",
+        "condition": "next row"
+      },
+      {
+        "from": "c_r1",
+        "to": "g_r1",
+        "condition": "always"
+      },
+      {
+        "from": "g_r1",
+        "to": "l_m",
+        "condition": "sy-subrc <> 0 OR lt_p0001 IS INITIAL"
+      },
+      {
+        "from": "g_r1",
+        "to": "c_ia",
+        "condition": "else"
+      },
+      {
+        "from": "g_auth",
+        "to": "c_r2",
+        "condition": "else"
+      },
+      {
+        "from": "c_r2",
+        "to": "a_days",
+        "condition": "always"
+      },
+      {
+        "from": "a_days",
+        "to": "a_lvl",
+        "condition": "always"
+      },
+      {
+        "from": "a_lvl",
+        "to": "l_m",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_m",
+        "to": "e_bo",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_ia",
+        "to": "au2",
+        "condition": "always"
+      },
+      {
+        "from": "au2",
+        "to": "a_ok",
+        "condition": "always"
+      },
+      {
+        "from": "o_ne",
+        "to": "e_ne",
+        "condition": "always"
+      },
+      {
+        "from": "o_nm",
+        "to": "e_nm",
+        "condition": "always"
+      },
+      {
+        "from": "x1",
+        "to": "o_nm",
+        "condition": "CATCH zcx_mss_no_org"
+      },
+      {
+        "from": "x2",
+        "to": "o_nm",
+        "condition": "CATCH zcx_mss_no_org"
+      },
+      {
+        "from": "g_mem",
+        "to": "e_rt",
+        "condition": "else"
+      },
+      {
+        "from": "e_rt",
+        "to": "c_bo",
+        "condition": "always"
+      },
+      {
+        "from": "e_bo",
+        "to": "e_ok",
+        "condition": "always"
+      },
+      {
+        "from": "c_ia",
+        "to": "s_ia",
+        "condition": "always"
+      },
+      {
+        "from": "a_ok",
+        "to": "e_ia",
+        "condition": "always"
+      },
+      {
+        "from": "e_ia",
+        "to": "g_auth",
+        "condition": "always"
+      },
+      {
+        "from": "g_auth",
+        "to": "l_m",
+        "condition": "is_authorized( ls_p0001 ) = abap_false"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_mss_team_reader.abap:126 — kein Fachsatz „es werden nur die Abwesenheitstage innerhalb des Zeitraums gezählt“ (summiert werden die Tage ganzer Sätze, die in den Zeitraum ragen)",
+    "zcl_mss_team_reader.abap:143 — kein Fachsatz „die Berechtigung wird für die angefragte Führungskraft geprüft“ (geprüft wird der aufrufende Benutzer sy-uname)",
+    "zcl_mss_team_reader.abap:70 — kein Fachsatz „auch indirekt Unterstellte werden geliefert“ (Kundenweg ZMSS_DIR, lt. Kommentar nur direkt)",
+    "gesamte Scheibe — kein write-Knoten (es werden keine Abwesenheiten angelegt oder genehmigt)"
+  ],
+  "processDescription": "Der MSS-Teamkalender ruft per RFC einen Baustein, der zu einer Führungskraft die Abwesenheiten ihres Teams in einem Zeitraum liefert. Wird er für einen fremden Benutzer aufgerufen, braucht der Aufrufer eine Vertretungsberechtigung, sonst wird abgewiesen. Zum Benutzer wird die Personalnummer über den Kommunikationssatz ermittelt; fehlt sie, wird abgewiesen. Über den Auswertungsweg der Leiterplanstelle werden die geführten Personen ohne die Führungskraft selbst gelesen; ist die Struktur leer, wird die Liste verworfen und mit „keine Führungskraft“ abgewiesen. Für jedes Teammitglied wird die organisatorische Zuordnung am Periodenende gelesen; ohne Leseberechtigung des aufrufenden Benutzers auf Abwesenheiten wird es ausgeblendet und gezählt. Für die übrigen werden die Abwesenheitstage der in den Zeitraum ragenden Sätze summiert und als FREI, NORMAL oder HOCH (über zehn Tage) eingestuft. Die Übersicht geht absteigend nach Tagen sortiert mit der Zahl ausgeblendeter Mitarbeiter zurück."
+}

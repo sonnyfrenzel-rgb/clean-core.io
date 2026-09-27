@@ -1,0 +1,1253 @@
+{
+  "id": "BM-171",
+  "title": "IS-U: Ableseergebnisse der Ablesefirma aus CSV plausibilisieren und per BAPI hochladen",
+  "classes": [
+    "K01",
+    "K03",
+    "K12",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EQUI",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zisu_ablupload_f01.abap",
+        "line": 60,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_ablupload_f01.abap:60"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EABL",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zisu_ablupload_f01.abap",
+        "line": 67,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_ablupload_f01.abap:67"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_MTRREADDOC_UPLOAD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zisu_ablupload.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_ablupload.abap:65"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zisu_ablupload.abap",
+        "line": 70,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_ablupload.abap:70"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zisu_ablupload.abap",
+        "line": 74,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_ablupload.abap:74"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-171-B01",
+      "text": "Die CSV-Datei der Ablesefirma wird vom Applikationsserver gelesen; lässt sie sich nicht öffnen, bricht der Lauf mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:13"
+        },
+        {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:14"
+        },
+        {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-171-B02",
+      "text": "Jede Zeile wird in Gerät, Zählwerk, Ablesedatum, Zählerstand und Hinweis zerlegt.",
+      "anchors": [
+        {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:18"
+        },
+        {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-171-B03",
+      "text": "Enthält die Datei keine Sätze, endet der Lauf mit einem als Fehler angezeigten Hinweis.",
+      "anchors": [
+        {
+          "file": "zisu_ablupload.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:39"
+        },
+        {
+          "file": "zisu_ablupload.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:40"
+        },
+        {
+          "file": "zisu_ablupload.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-171-B04",
+      "text": "Zu Beginn der Liste werden Dateiname und Testkennzeichen ausgegeben.",
+      "anchors": [
+        {
+          "file": "zisu_ablupload.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:45"
+        },
+        {
+          "file": "zisu_ablupload.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-171-B05",
+      "text": "Ein Zählerstand, der nicht als Zahl lesbar ist, macht den Satz fehlerhaft (Fehler 030).",
+      "anchors": [
+        {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:49"
+        },
+        {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-171-B06",
+      "text": "Ein Ablesedatum in der Zukunft macht den Satz fehlerhaft (Fehler 031).",
+      "anchors": [
+        {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-171-B07",
+      "text": "Ein im System unbekanntes Gerät macht den Satz fehlerhaft (Fehler 032).",
+      "anchors": [
+        {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:60"
+        },
+        {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-171-B08",
+      "text": "Die beiden letzten Ablesungen desselben Zählwerks werden gelesen; liegt der neue Stand unter dem letzten, gilt der Satz als Zählerrücklauf und ist fehlerhaft (Fehler 033).",
+      "anchors": [
+        {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:67"
+        },
+        {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-171-B09",
+      "text": "Weicht der neue Tagesverbrauch um mehr als die Toleranz in Prozent vom Tagesverbrauch der Vorperiode ab, wird nur eine Warnung gelistet; der Satz bleibt gültig.",
+      "anchors": [
+        {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:81"
+        },
+        {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:87"
+        },
+        {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:88"
+        },
+        {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:89"
+        }
+      ]
+    },
+    {
+      "id": "BM-171-B10",
+      "text": "Fehlerhafte Sätze werden mit Fehlernummer gelistet, gezählt und nicht hochgeladen.",
+      "anchors": [
+        {
+          "file": "zisu_ablupload.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:51"
+        },
+        {
+          "file": "zisu_ablupload.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-171-B11",
+      "text": "Nur ohne Testkennzeichen wird jeder gültige Satz als Ablesebeleg per BAPI hochgeladen.",
+      "anchors": [
+        {
+          "file": "zisu_ablupload.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:58"
+        },
+        {
+          "file": "zisu_ablupload.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-171-B12",
+      "text": "Meldet das BAPI einen Fehler, wird zurückgerollt und der Satz mit der Fehlermeldung gelistet; sonst wird der Ablesebeleg sofort festgeschrieben und gezählt.",
+      "anchors": [
+        {
+          "file": "zisu_ablupload.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:69"
+        },
+        {
+          "file": "zisu_ablupload.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:70"
+        },
+        {
+          "file": "zisu_ablupload.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:72"
+        },
+        {
+          "file": "zisu_ablupload.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-171-B13",
+      "text": "Nach dem letzten Satz werden die Anzahl gelesener, fehlerhafter und hochgeladener Sätze ausgegeben – außer der letzte Satz war fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zisu_ablupload.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:81"
+        },
+        {
+          "file": "zisu_ablupload.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:83"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:37"
+        },
+        "meaning": "Uploadlauf starten"
+      },
+      {
+        "id": "cdl",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:38"
+        },
+        "meaning": "Datei einlesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:39"
+        },
+        "meaning": "Datei leer?"
+      },
+      {
+        "id": "o0",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:40"
+        },
+        "meaning": "Hinweis: Datei ohne Sätze (als Fehler angezeigt)"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:41"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:44"
+        },
+        "meaning": "Ablesesätze durchgehen"
+      },
+      {
+        "id": "af",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:45"
+        },
+        "meaning": "Erster Satz?"
+      },
+      {
+        "id": "oh",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:46"
+        },
+        "meaning": "Listkopf ausgeben"
+      },
+      {
+        "id": "csp",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:50"
+        },
+        "meaning": "Satz umsetzen und plausibilisieren"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:51"
+        },
+        "meaning": "Satz fehlerhaft?"
+      },
+      {
+        "id": "of",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:53"
+        },
+        "meaning": "Fehlerhaften Satz listen"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:58"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "bu",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:65"
+        },
+        "meaning": "Ablesebeleg hochladen"
+      },
+      {
+        "id": "gh",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:69"
+        },
+        "meaning": "Upload fehlerhaft?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:70"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "oe",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:72"
+        },
+        "meaning": "Satz mit BAPI-Fehler listen"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:74"
+        },
+        "meaning": "Ablesebeleg festschreiben"
+      },
+      {
+        "id": "al",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:81"
+        },
+        "meaning": "Letzter Satz erreicht?"
+      },
+      {
+        "id": "os",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:83"
+        },
+        "meaning": "Summen ausgeben"
+      },
+      {
+        "id": "em",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_ablupload.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload.abap:87"
+        },
+        "meaning": "Lauf beendet"
+      },
+      {
+        "id": "fdl",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:10"
+        },
+        "meaning": "Datei lesen"
+      },
+      {
+        "id": "od",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:13"
+        },
+        "meaning": "Datei öffnen"
+      },
+      {
+        "id": "god",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:14"
+        },
+        "meaning": "Datei nicht lesbar?"
+      },
+      {
+        "id": "ood",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:15"
+        },
+        "meaning": "Fehlermeldung: Datei nicht lesbar"
+      },
+      {
+        "id": "xod",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:15"
+        },
+        "meaning": "Abbruch: Datei fehlt"
+      },
+      {
+        "id": "dd",
+        "type": "loop",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:17"
+        },
+        "meaning": "Zeilen lesen"
+      },
+      {
+        "id": "rd",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:18"
+        },
+        "meaning": "Nächste Zeile lesen"
+      },
+      {
+        "id": "grd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:19"
+        },
+        "meaning": "Dateiende?"
+      },
+      {
+        "id": "edl",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:29"
+        },
+        "meaning": "Datei gelesen"
+      },
+      {
+        "id": "fsp",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:37"
+        },
+        "meaning": "Satzprüfung"
+      },
+      {
+        "id": "cv",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:49"
+        },
+        "meaning": "Datum und Zählerstand umsetzen"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:52"
+        },
+        "meaning": "Fehler 030: Stand nicht numerisch"
+      },
+      {
+        "id": "gd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:55"
+        },
+        "meaning": "Ablesedatum in der Zukunft?"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:57"
+        },
+        "meaning": "Fehler 031"
+      },
+      {
+        "id": "qe",
+        "type": "read",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:60"
+        },
+        "meaning": "Gerät nachlesen"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:62"
+        },
+        "meaning": "Gerät unbekannt?"
+      },
+      {
+        "id": "x3",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:64"
+        },
+        "meaning": "Fehler 032"
+      },
+      {
+        "id": "qa",
+        "type": "read",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:67"
+        },
+        "meaning": "Letzte zwei Ablesungen lesen"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:74"
+        },
+        "meaning": "Zählerrücklauf?"
+      },
+      {
+        "id": "x4",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:77"
+        },
+        "meaning": "Fehler 033"
+      },
+      {
+        "id": "gp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:81"
+        },
+        "meaning": "Vorperiode auswertbar?"
+      },
+      {
+        "id": "ab",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:87"
+        },
+        "meaning": "Abweichung Tagesverbrauch in % berechnen"
+      },
+      {
+        "id": "gw",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:88"
+        },
+        "meaning": "Abweichung über Toleranz?"
+      },
+      {
+        "id": "ow",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:89"
+        },
+        "meaning": "Warnung listen"
+      },
+      {
+        "id": "esp",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_ablupload_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_ablupload_f01.abap:93"
+        },
+        "meaning": "Satz gültig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "cdl",
+        "condition": "always"
+      },
+      {
+        "from": "cdl",
+        "to": "fdl",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "o0",
+        "condition": "gt_satz IS INITIAL"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "af",
+        "condition": "next row"
+      },
+      {
+        "from": "af",
+        "to": "oh",
+        "condition": "AT FIRST"
+      },
+      {
+        "from": "af",
+        "to": "csp",
+        "condition": "else"
+      },
+      {
+        "from": "oh",
+        "to": "csp",
+        "condition": "always"
+      },
+      {
+        "from": "csp",
+        "to": "fsp",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "of",
+        "condition": "gv_msgno IS NOT INITIAL"
+      },
+      {
+        "from": "g1",
+        "to": "gt",
+        "condition": "else"
+      },
+      {
+        "from": "of",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gt",
+        "to": "bu",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "gt",
+        "to": "al",
+        "condition": "else"
+      },
+      {
+        "from": "bu",
+        "to": "gh",
+        "condition": "always"
+      },
+      {
+        "from": "gh",
+        "to": "rb",
+        "condition": "line_exists( gt_ret[ type = 'E' ] )"
+      },
+      {
+        "from": "gh",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "oe",
+        "condition": "always"
+      },
+      {
+        "from": "oe",
+        "to": "al",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "al",
+        "condition": "always"
+      },
+      {
+        "from": "al",
+        "to": "os",
+        "condition": "AT LAST"
+      },
+      {
+        "from": "al",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "os",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "em",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fdl",
+        "to": "od",
+        "condition": "always"
+      },
+      {
+        "from": "od",
+        "to": "god",
+        "condition": "always"
+      },
+      {
+        "from": "god",
+        "to": "ood",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "god",
+        "to": "dd",
+        "condition": "else"
+      },
+      {
+        "from": "dd",
+        "to": "rd",
+        "condition": "next row"
+      },
+      {
+        "from": "rd",
+        "to": "grd",
+        "condition": "always"
+      },
+      {
+        "from": "grd",
+        "to": "edl",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "grd",
+        "to": "dd",
+        "condition": "else"
+      },
+      {
+        "from": "fsp",
+        "to": "cv",
+        "condition": "always"
+      },
+      {
+        "from": "cv",
+        "to": "x1",
+        "condition": "cx_sy_conversion_no_number"
+      },
+      {
+        "from": "cv",
+        "to": "gd",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "x2",
+        "condition": "gs_satz-adat > sy-datum"
+      },
+      {
+        "from": "gd",
+        "to": "qe",
+        "condition": "else"
+      },
+      {
+        "from": "qe",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "x3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ge",
+        "to": "qa",
+        "condition": "else"
+      },
+      {
+        "from": "qa",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "x4",
+        "condition": "lt_alt IS NOT INITIAL AND gs_satz-stand < lt_alt[ 1 ]-v_zwstand"
+      },
+      {
+        "from": "gr",
+        "to": "gp",
+        "condition": "else"
+      },
+      {
+        "from": "gp",
+        "to": "ab",
+        "condition": "lines( lt_alt ) = 2 AND gs_satz-adat > lt_alt[ 1 ]-adat AND lt_alt[ 1 ]-v_zwstand > lt_alt[ 2 ]-v_zwstand"
+      },
+      {
+        "from": "gp",
+        "to": "esp",
+        "condition": "else"
+      },
+      {
+        "from": "ab",
+        "to": "gw",
+        "condition": "always"
+      },
+      {
+        "from": "gw",
+        "to": "ow",
+        "condition": "lv_abw > p_tol"
+      },
+      {
+        "from": "gw",
+        "to": "esp",
+        "condition": "else"
+      },
+      {
+        "from": "ow",
+        "to": "esp",
+        "condition": "always"
+      },
+      {
+        "from": "edl",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "x1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "x2",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "x3",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "x4",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "esp",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "ood",
+        "to": "xod",
+        "condition": "always"
+      },
+      {
+        "from": "o0",
+        "to": "x0",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zisu_ablupload.abap:81 — kein Fachsatz „am Ende wird immer eine Summenzeile ausgegeben“: ist der letzte Satz fehlerhaft, überspringt CONTINUE den AT-LAST-Block",
+    "zisu_ablupload_f01.abap:88 — kein Fachsatz „Sätze mit auffälligem Verbrauch werden abgewiesen“: die Fehlerbewertung ist auskommentiert, es gibt nur eine Warnzeile",
+    "zisu_ablupload_f01.abap:74 — kein Fachsatz „Zählerüberläufe werden erkannt und korrekt verarbeitet“: jeder Stand unter dem letzten wird als Rücklauf abgewiesen",
+    "gesamte Scheibe — kein Fachsatz „Ablesungen werden geschätzt oder Abrechnungen angestoßen“: es werden nur Ablesebelege hochgeladen"
+  ],
+  "processDescription": "Der Report wird mit Dateipfad, Toleranz in Prozent und Testkennzeichen gestartet und liest die CSV-Datei der Ablesefirma vom Applikationsserver; ist sie nicht lesbar, bricht er mit Fehlermeldung ab, ist sie leer, endet er mit Hinweis. Jeder Satz wird geprüft: ein nicht numerischer Zählerstand, ein Ablesedatum in der Zukunft, ein unbekanntes Gerät oder ein Stand unter der letzten Ablesung desselben Zählwerks machen ihn fehlerhaft. Weicht der Tagesverbrauch um mehr als die Toleranz vom Tagesverbrauch der Vorperiode ab, wird nur eine Warnung gelistet, weil die Fehlerbewertung auskommentiert ist. Fehlerhafte Sätze werden mit Fehlernummer gelistet und gezählt. Im Echtlauf wird jeder gültige Satz einzeln als Ablesebeleg per BAPI hochgeladen; bei Fehler wird zurückgerollt und die Meldung gelistet, sonst sofort festgeschrieben. Die Liste beginnt mit Dateiname und Testkennzeichen und endet mit den Zählern, die aber fehlen, wenn der letzte Satz fehlerhaft war. Im Testlauf wird nichts hochgeladen."
+}

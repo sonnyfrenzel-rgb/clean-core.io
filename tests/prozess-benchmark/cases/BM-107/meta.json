@@ -1,0 +1,34 @@
+{
+  "id": "BM-107",
+  "title": "Auftragsfreigabe nur mit erteilten Genehmigungen und aktiver Freischaltung (BAdI WORKORDER_UPDATE)",
+  "domain": "PM — Arbeitsfreigabe / Arbeitssicherheit (WCM)",
+  "band": "mittel",
+  "loc": 74,
+  "constructs": [
+    "Klassen-BAdI",
+    "CHECK als Methodenausstieg",
+    "SELECT neue Syntax",
+    "REDUCE",
+    "MESSAGE … RAISING",
+    "FOR ALL ENTRIES",
+    "verschachtelte LOOP AT … WHERE",
+    "EXIT",
+    "sy-subrc nach ENDLOOP"
+  ],
+  "scenario": "Arbeitsschutzprojekt eines Chemiestandorts: Instandhaltungsaufträge dürfen erst freigegeben werden, wenn Feuer-/Befahrerlaubnisse erteilt und die sicherheitskritischen Vorgänge in einer kundeneigenen Freischalttabelle aktiv freigeschaltet sind — ein Vorläufer von WCM.",
+  "s4_issues": [
+    "Direkte Lesezugriffe auf IHGNS und AFVC",
+    "Kundeneigene Freischaltlogik statt Work Clearance Management (in S/4 WCM neu implementiert)",
+    "Hart kodiertes Werk 2000",
+    "FOR ALL ENTRIES ohne Leermengenschutz (Schutz auskommentiert)"
+  ],
+  "wave": 2,
+  "module": "PM",
+  "edge_constructs": [
+    "REDUCE",
+    "MESSAGE … RAISING",
+    "EXIT in verschachtelten Schleifen",
+    "SELECT … FOR ALL ENTRIES mit leerer Treibertabelle",
+    "auskommentierter Zweig"
+  ]
+}

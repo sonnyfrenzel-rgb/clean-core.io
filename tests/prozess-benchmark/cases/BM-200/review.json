@@ -1,0 +1,140 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten g_test",
+      "before": "gateway auf zre_index_main.abap:75 (ELSEIF p_test = abap_true.) mit g_adj -> g_test [else], g_test -> oc_blc [p_test = abap_true], g_test -> c_disp [else]",
+      "after": "entfernt; g_adj -> oc_blc [p_test = abap_true], g_adj -> c_disp [else]",
+      "why": "Vereinheitlichte Konvention: ELSEIF ist eine Bedingungskante des ursprünglichen Gateways, kein eigenes Gateway.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_gv (end)",
+      "before": "zcl_re_vpi_client.abap:105",
+      "after": "zcl_re_vpi_client.abap:107 (ENDMETHOD. get_value)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf c_vpi",
+      "before": "c_vpi -> c_calc [always]",
+      "after": "e_gv -> c_calc [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Ausnahmekanten get_value",
+      "before": "c_vpi -> e_vpi [CATCH zcx_re_vpi …]",
+      "after": "e_http, e_pt -> e_vpi [CATCH zcx_re_vpi INTO DATA(lx_vpi)]",
+      "why": "Vereinheitlichte Konvention (Nachtrag): RAISE EXCEPTION im gerufenen Block ist ein end-Knoten, von dort führt die Kante in den CATCH-Zweig des Aufrufers.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten o_vpi (neu) vor e_vpi",
+      "before": "e_vpi end auf zre_index_main.abap:68 ohne output",
+      "after": "o_vpi output auf zre_index_main.abap:68, Kante o_vpi -> e_vpi [always]; eingehende Kanten auf o_vpi umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "forbiddenConclusions (neu)",
+      "before": "—",
+      "after": "zcl_re_vpi_client.abap:58 — kein Fachsatz „ist die Verbindung … nicht anlegbar, bricht der Lauf mit Fehlermeldung ab“ …",
+      "why": "create_by_destination hat nur EXCEPTIONS OTHERS = 1 ohne sy-subrc-Prüfung; Fachsatz B05 („Scheitert die Abfrage …“) wird sonst leicht auf diesen Fall ausgedehnt.",
+      "category": "verbotener Schluss"
+    },
+    {
+      "where": "Knoten e_calc (neu)",
+      "before": "kein end-Knoten auf zre_index_f01.abap:60",
+      "after": "e_calc end auf zre_index_f01.abap:60; e_calc -> g_adj [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten calculate_rents",
+      "before": "l_calc ohne Ausgang [no more rows]; Direktkante c_calc -> g_adj",
+      "after": "l_calc -> e_calc [no more rows], e_calc -> g_adj [always]; Direktkante entfernt",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_dp (neu)",
+      "before": "kein end-Knoten auf zre_index_f01.abap:113",
+      "after": "e_dp end auf zre_index_f01.abap:113; e_dp -> a_wait [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten dispatch_packages",
+      "before": "l_dp ohne Ausgang [no more rows]; Direktkante c_disp -> a_wait",
+      "after": "l_dp -> e_dp [no more rows], e_dp -> a_wait [always]; Direktkante entfernt",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_rr (end)",
+      "before": "zre_index_f01.abap:140",
+      "after": "zre_index_f01.abap:142 (ENDFORM. receive_result)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten fm_end (neu)",
+      "before": "kein end-Knoten auf z_re_index_task.abap:126",
+      "after": "fm_end end auf z_re_index_task.abap:126; ",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante l_adj -> fm_end",
+      "before": "l_adj ohne Ausgang [no more rows]",
+      "after": "l_adj -> fm_end [no more rows]",
+      "why": "Die Paketschleife der Task hatte keinen Ausgang. Keine Rückkante zum Aufrufer: STARTING NEW TASK wartet nicht, das Ergebnis kommt über RECEIVE RESULTS (Nachtrag Konvention 1).",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_sm2 (end)",
+      "before": "zre_index_f02.abap:141",
+      "after": "zre_index_f02.abap:148 (ENDFORM. send_mail)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten e_sm3",
+      "before": "end auf zre_index_f02.abap:144 (APPEND VALUE #( … ) TO gt_msg im CATCH-Block), Kante oc_msnd -> e_sm3 [CATCH …]",
+      "after": "entfernt; Ausnahmekanten oc_doc, oc_att, oc_rcp, oc_msnd -> e_sm2 [CATCH cx_bcs INTO DATA(lx_bcs)]",
+      "why": "APPEND in eine interne Tabelle ist laut Brief kein Knoten und kein Pfadende; der Handler läuft zum ENDFORM (e_sm2). Die Ausnahme kann von jedem BCS-Aufruf kommen (so auch BM-184, BM-196).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kanten Aufruf c_mail",
+      "before": "c_mail -> l_let [next iteration]",
+      "after": "e_sm1 -> l_let [next iteration]; e_sm2 -> l_let [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_cl (end)",
+      "before": "zre_index_f02.abap:91",
+      "after": "zre_index_f02.abap:94 (ENDFORM. create_letters)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf c_let",
+      "before": "c_let -> oc_blc [always]",
+      "after": "e_fpo -> oc_blc [always]; e_cl -> oc_blc [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten o_sum (neu)",
+      "before": "keine Knoten auf zre_index_main.abap:130",
+      "after": "o_sum output auf zre_index_main.abap:130; oc_dbs -> o_sum [always]; o_sum -> e_sum [always]",
+      "why": "Die Summenliste ist eine Ausgabe; das implizite Ende von START-OF-SELECTION liegt auf derselben letzten Anweisung (wie BM-188).",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

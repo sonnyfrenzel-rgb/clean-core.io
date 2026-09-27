@@ -1,0 +1,40 @@
+{
+  "id": "BM-172",
+  "title": "IS-Retail POS-Eingang: Kassenumsätze je Filiale per IDoc verdichten und fortschreiben",
+  "domain": "Branchenlösung IS-Retail – POS-Schnittstelle",
+  "band": "komplex",
+  "loc": 201,
+  "constructs": [
+    "IDoc-Eingangsbaustein",
+    "Makro DEFINE für IDoc-Status",
+    "PERFORM … TABLES … USING",
+    "CASE segnam mit CONTINUE",
+    "ENQUEUE/DEQUEUE je Filiale und Tag",
+    "CHECK vor FOR ALL ENTRIES",
+    "READ TABLE … BINARY SEARCH",
+    "DELETE itab WHERE",
+    "IF 1 = 2 (Verwendungsnachweis)",
+    "AT END OF",
+    "CALL FUNCTION … IN UPDATE TASK",
+    "INSERT … ACCEPTING DUPLICATE KEYS",
+    "nie gerufenes FORM"
+  ],
+  "scenario": "Lebensmittelfilialist: der Kassenserver schickt nach Tagesabschluss je Filiale und Kasse ein IDoc mit Verkäufen je EAN; ein Z-Baustein ersetzt die WPUUMS-Standardverarbeitung und schreibt eine eigene Umsatzstatistik fort.",
+  "s4_issues": [
+    "Eigene POS-Verarbeitung statt POS-Eingang (WPUUMS) / SAP Customer Activity Repository",
+    "Direktzugriff auf MEAN statt Produkt-API",
+    "Sperre wird vor der Verbuchung freigegeben",
+    "Direktes INSERT neben Verbuchungsbaustein mischt LUW-Anteile",
+    "Materialnummer 40 Zeichen in ZPOS-Tabellen"
+  ],
+  "wave": 2,
+  "module": "IS-Retail",
+  "edge_constructs": [
+    "Makros (DEFINE status_setzen)",
+    "AT END OF mit Feld links vom Gruppenschlüssel",
+    "CONTINUE in CASE in LOOP",
+    "SELECT … FOR ALL ENTRIES mit CHECK auf leere Treibertabelle",
+    "toter Code IF 1 = 2 und nie gerufenes FORM",
+    "DEQUEUE vor Ausführung der Verbuchung"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "id": "BM-153",
+  "title": "MSS-Teamkalender: Abwesenheiten der direkt Unterstellten mit P_ORGIN-Prüfung",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "komplex",
+  "loc": 208,
+  "constructs": [
+    "FUNCTION (RFC) mit klassischen Ausnahmen",
+    "AUTHORITY-CHECK Kundenobjekt",
+    "SELECT SINGLE PA0105",
+    "MESSAGE … RAISING",
+    "NEW",
+    "TRY … CATCH … CLEANUP",
+    "RAISE EXCEPTION TYPE",
+    "RH_STRUC_GET mit Kundenauswertungsweg",
+    "VALUE # ( FOR … WHERE )",
+    "HR_READ_INFOTYPE",
+    "AUTHORITY-CHECK P_ORGIN",
+    "xsdbool",
+    "REDUCE",
+    "SWITCH # mit COND #",
+    "CONTINUE"
+  ],
+  "scenario": "Der MSS-Teamkalender im Portal ruft per RFC einen Kundenbaustein, der zu einer Führungskraft die direkt unterstellten Mitarbeiter und deren Abwesenheitstage im Zeitraum liefert; Vertreter dürfen ihn für eine fremde Führungskraft aufrufen.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf PA0105",
+    "RFC-Baustein mit frei wählbarem Benutzernamen",
+    "Kundenauswertungsweg ZMSS_DIR",
+    "Portal-Systembenutzer mit weiten Rechten"
+  ],
+  "wave": 2,
+  "module": "ESS",
+  "edge_constructs": [
+    "TRY … CATCH … CLEANUP",
+    "RAISE EXCEPTION TYPE innerhalb TRY ohne passenden CATCH",
+    "MESSAGE … RAISING als Pfadende",
+    "VALUE # ( FOR … WHERE )",
+    "SWITCH # mit geschachteltem COND #",
+    "xsdbool",
+    "CONTINUE in der Schleife"
+  ]
+}

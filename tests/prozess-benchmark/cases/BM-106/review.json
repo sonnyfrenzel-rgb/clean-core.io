@@ -1,0 +1,16 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante cv -> o2",
+      "before": "[CATCH cx_sy_conversion_no_number]",
+      "after": "[cx_sy_conversion_no_number]",
+      "why": "Vereinheitlichte Konvention: die Ausnahmekante trägt als Bedingung den Ausnahmenamen, nicht die CATCH-Anweisung.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "source.abap:42 — Knoten cv (action) liegt auf der Zuweisung gv_readg = gs_rec-recdc; belassen, weil sie die Konvertierungsausnahme auslöst und Quelle der Ausnahmekante ist."
+  ]
+}

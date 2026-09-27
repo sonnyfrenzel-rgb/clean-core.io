@@ -1,0 +1,38 @@
+{
+  "id": "BM-134",
+  "title": "FSCM Dispute Management: Klärungsfälle aus EDI-Zahlungsavis mit Kürzungen anlegen (IDoc-Eingang, CATCH SYSTEM-EXCEPTIONS, EXIT in verschachtelten Schleifen)",
+  "domain": "FSCM / Dispute Management",
+  "band": "komplex",
+  "loc": 186,
+  "constructs": [
+    "IDoc-Eingangsbaustein (EDIDC/EDIDD/BDIDOCSTAT)",
+    "CASE auf Segmentname",
+    "PERFORM TABLES/USING/CHANGING",
+    "CATCH SYSTEM-EXCEPTIONS",
+    "EXIT in verschachtelten Schleifen",
+    "CHECK in Schleife",
+    "SELECT BSID",
+    "VALUE # mit DEFAULT",
+    "fremder Z-Baustein",
+    "MESSAGE … INTO",
+    "INSERT mit Host-Ausdruck",
+    "ROLLBACK WORK",
+    "COND # mit line_exists"
+  ],
+  "scenario": "Konsumgüterhersteller mit Handelskunden, die per EDI Zahlungsavise mit Kürzungen schicken: Für jede gekürzte Rechnung wird automatisch ein Klärungsfall im FSCM Dispute Management angelegt.",
+  "s4_issues": [
+    "BSID ist in S/4 nur Kompatibilitätssicht",
+    "eigene Zuordnungstabelle ZDSP_ITEMS neben der Standard-Verknüpfung Posten–Klärungsfall",
+    "ROLLBACK WORK im Eingangsbaustein bei Massenverarbeitung"
+  ],
+  "wave": 2,
+  "module": "FSCM-DM",
+  "edge_constructs": [
+    "CATCH SYSTEM-EXCEPTIONS",
+    "CONTINUE/EXIT in verschachtelten Schleifen",
+    "CHECK mitten in Schleife",
+    "RETURN aus FORM",
+    "VALUE # … DEFAULT",
+    "COND #"
+  ]
+}

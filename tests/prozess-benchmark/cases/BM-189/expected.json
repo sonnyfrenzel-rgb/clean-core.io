@@ -1,0 +1,464 @@
+{
+  "id": "BM-189",
+  "title": "BW-Extraktor Projektmeilensteine: generische DataSource mit Pseudo-Delta, Paketweise, Terminverzug",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": null,
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZV_PS_MEILENSTEIN",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:52"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-189-B01",
+      "text": "Beim Initialisierungsaufruf aus dem BW wird geprüft, ob die angeforderte DataSource ZPS_MEILENSTEIN ist; sonst wird der Aufruf mit Fehler abgebrochen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-189-B02",
+      "text": "Die Selektionen und die Paketgröße der Anforderung werden für die folgenden Datenaufrufe gemerkt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-189-B03",
+      "text": "Beim ersten Datenaufruf werden die Projektselektion übernommen und, falls angegeben, nur Meilensteine ab dem angeforderten Änderungsdatum berücksichtigt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-189-B04",
+      "text": "Die Projektmeilensteine der Selektion werden zum paketweisen Lesen geöffnet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-189-B05",
+      "text": "Je Aufruf wird das nächste Paket Meilensteine in der angeforderten Paketgröße gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-189-B06",
+      "text": "Sind keine Meilensteine mehr vorhanden, wird das Ende der Datenübertragung gemeldet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-189-B07",
+      "text": "Für jeden Meilenstein wird der Terminverzug in Tagen berechnet: bei offenem, überfälligem Meilenstein bis heute, bei verspätet erreichtem bis zum Ist-Termin, sonst null.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "BW fordert Meilensteindaten an"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Initialisierungsaufruf?"
+      },
+      {
+        "id": "c",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Bekannte DataSource?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Abbruch: unbekannte DataSource"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        "meaning": "Erstes Datenpaket?"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Delta-Selektion Änderungsdatum nachschlagen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        },
+        "meaning": "Änderungsdatum angefordert?"
+      },
+      {
+        "id": "aw",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        "meaning": "Auf Meilensteine ab Änderungsdatum einschränken"
+      },
+      {
+        "id": "oc",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        "meaning": "Meilensteine der Selektion öffnen"
+      },
+      {
+        "id": "f",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Nächstes Datenpaket lesen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        "meaning": "Noch Daten vorhanden?"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        },
+        "meaning": "Ende der Übertragung melden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        "meaning": "Meilensteine des Pakets durchgehen"
+      },
+      {
+        "id": "cv",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        },
+        "meaning": "Terminverzug berechnen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Paket bzw. Initialisierung an BW zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "c",
+        "condition": "i_initflag = sbiwa_c_flag_on"
+      },
+      {
+        "from": "g0",
+        "to": "g1",
+        "condition": "else"
+      },
+      {
+        "from": "c",
+        "to": "e",
+        "condition": "WHEN 'ZPS_MEILENSTEIN'"
+      },
+      {
+        "from": "c",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "g1",
+        "to": "rt",
+        "condition": "s_counter_datapakid = 0"
+      },
+      {
+        "from": "g1",
+        "to": "f",
+        "condition": "else"
+      },
+      {
+        "from": "rt",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "aw",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g2",
+        "to": "oc",
+        "condition": "else"
+      },
+      {
+        "from": "aw",
+        "to": "oc",
+        "condition": "always"
+      },
+      {
+        "from": "oc",
+        "to": "f",
+        "condition": "always"
+      },
+      {
+        "from": "f",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "e2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g3",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "cv",
+        "condition": "next row"
+      },
+      {
+        "from": "cv",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:33 — kein Fachsatz „bei unbekannter DataSource wird die Meldung R3 009 ausgegeben“: der Zweig IF 1 = 2 wird nie ausgeführt und dient nur dem Verwendungsnachweis; es wird auch kein Protokolleintrag geschrieben",
+    "source.abap:50 — kein Fachsatz „es werden nur seit der letzten Extraktion geänderte Meilensteine geliefert“: der Baustein führt keinen Deltazeiger; eingeschränkt wird nur, wenn das BW ein Änderungsdatum in der Selektion mitgibt, sonst wird alles geliefert",
+    "gesamte Scheibe — kein Fachsatz „Meilensteine werden im Projekt aktualisiert oder als verspätet gekennzeichnet“: der Terminverzug wird nur im Extraktionspaket berechnet, nichts wird zurückgeschrieben"
+  ],
+  "processDescription": "Das BW ruft den Extraktor zuerst zur Initialisierung und danach wiederholt zur Datenübertragung auf. Bei der Initialisierung prüft der Baustein, ob die DataSource ZPS_MEILENSTEIN angefordert ist, und bricht sonst mit Fehler ab; im Erfolgsfall merkt er sich Selektionen, Anforderungsnummer und Paketgröße. Beim ersten Datenaufruf übernimmt er die Projektselektion und schränkt, falls das BW ein Änderungsdatum mitgibt, auf Meilensteine ab diesem Datum ein; ohne Änderungsdatum liest er alle. Er öffnet dann die Meilensteine aus dem kundeneigenen View zum paketweisen Lesen. Bei jedem Aufruf liest er das nächste Paket in der angeforderten Größe; ist nichts mehr vorhanden, schließt er den Cursor und meldet das Ende der Übertragung. Für jeden gelieferten Meilenstein berechnet er den Terminverzug: bei offenem, überfälligem Meilenstein die Tage bis heute, bei verspätet erreichtem die Tage bis zum Ist-Termin, sonst null. Das Paket geht ans BW zurück. Im System wird nichts geändert."
+}

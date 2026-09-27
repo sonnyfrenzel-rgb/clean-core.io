@@ -1,0 +1,14 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_si (neu)",
+      "before": "gp -> s [always]; INITIALIZATION ohne end",
+      "after": "e_si end auf source.abap:12; gp -> e_si [always]; e_si -> s [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (hier INITIALIZATION) steht ein end-Knoten auf der letzten Anweisung; START-OF-SELECTION folgt erst nach dem Selektionsbild.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

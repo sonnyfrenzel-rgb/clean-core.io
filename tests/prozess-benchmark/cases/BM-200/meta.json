@@ -1,0 +1,48 @@
+{
+  "id": "BM-200",
+  "title": "Indexmietanpassung nach Verbraucherpreisindex mit paralleler Konditionsänderung und Mieteranschreiben per Mail",
+  "domain": "Technische Randbereiche — Parallelverarbeitung / HTTP-JSON / Adobe Forms / Mailversand",
+  "band": "sehr komplex",
+  "loc": 734,
+  "constructs": [
+    "Report mit TOP-, F01-, F02-Include",
+    "VICNCN/VICDCOND mit Z-Indexvereinbarung ZRE_IDXAGR",
+    "HTTP-Client über SM59-Destination + /UI2/CL_JSON=>deserialize",
+    "CALL FUNCTION … STARTING NEW TASK … DESTINATION IN GROUP / RECEIVE RESULTS",
+    "WAIT UNTIL … UP TO",
+    "RFC-Baustein Z_RE_INDEX_TASK im Fall",
+    "direktes UPDATE/INSERT auf VICDCOND",
+    "CHANGEDOCUMENT_OPEN/_SINGLE_CASE/_CLOSE",
+    "ENQUEUE/DEQUEUE auf Kundensperrobjekt",
+    "FP_JOB_OPEN mit getpdf, FP_FUNCTION_MODULE_NAME, dynamischer Formularaufruf, FP_JOB_CLOSE",
+    "CL_BCS mit PDF-Anhang",
+    "Application Log BAL_LOG_CREATE/BAL_LOG_MSG_ADD/BAL_DB_SAVE"
+  ],
+  "scenario": "Monatlicher Job der Immobilienverwaltung (RE-FX), der Miet- und Gewerbeverträge mit Indexklausel gegen den aktuellen Verbraucherpreisindex prüft, die Grundmiete in parallelen Paketen anpasst und den Mietern ein Anschreiben als PDF per Mail schickt.",
+  "s4_issues": [
+    "Direkte Schreibzugriffe auf VICDCOND umgehen die RE-FX-Vertragsverarbeitung (Konditionsverwaltung, Sollstellung, Berechtigungen); in S/4 ist das nicht supportfähig",
+    "Die kundeneigene Indexlogik dupliziert die RE-FX-Standardfunktion Mietanpassung (Anpassungsregeln, RERAIX)",
+    "HTTP-Aufruf über SM59-Destination und /UI2/CL_JSON statt freigegebenem Kommunikationsszenario und XCO/JSON-Bibliothek",
+    "aRFC-Parallelisierung über Servergruppen (STARTING NEW TASK) ist in ABAP Cloud nicht verfügbar; Nachfolger bgPF bzw. Application Jobs",
+    "Formularausgabe über FP_JOB_OPEN und Mail über CL_BCS statt Output Management"
+  ],
+  "wave": 2,
+  "module": "RE-FX",
+  "edge_constructs": [
+    "CHECK mitten in Schleife",
+    "EXIT in verschachtelter Schleife (DO in LOOP)",
+    "CONTINUE in Schleife",
+    "RETURN aus START-OF-SELECTION und aus FORM",
+    "TRY … CATCH",
+    "MESSAGE … TYPE 'E' als Pfadende",
+    "WAIT UNTIL … UP TO",
+    "COND #",
+    "SWITCH #",
+    "VALUE #( BASE … FOR … WHERE )",
+    "NEW mit verkettetem Methodenaufruf",
+    "nie erreichtes FORM",
+    "auskommentierte Zweige (Protokollanzeige, VIRAADJUST, Vorläufigwerte)",
+    "dynamischer CALL FUNCTION lv_fm",
+    "Callback PERFORMING … ON END OF TASK"
+  ]
+}

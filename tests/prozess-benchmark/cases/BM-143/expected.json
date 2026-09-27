@@ -1,0 +1,285 @@
+{
+  "id": "BM-143",
+  "title": "OM-Datenqualität: Organisationseinheiten ohne Leiterplanstelle",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "HRP1000",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:15"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HRP1001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:19"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-143-B01",
+      "text": "Es werden die aktiven Organisationseinheiten der Planvariante gelesen, die am Stichtag gültig sind und in die Auswahl fallen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-143-B02",
+      "text": "Zu diesen Organisationseinheiten werden die am Stichtag gültigen Beziehungen „wird geleitet von“ zu einer Planstelle gelesen; wurde keine Organisationseinheit gefunden, liest die Abfrage alle solchen Beziehungen der Planvariante, ohne dass sich die Ausgabe dadurch ändert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-143-B03",
+      "text": "Für jede Organisationseinheit wird nachgeschlagen, ob eine Leitungsbeziehung besteht; nur Einheiten ohne Leitung werden weiterverarbeitet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-143-B04",
+      "text": "Organisationseinheiten ohne leitende Planstelle werden mit Objekt-ID und Kurztext ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Aktive Organisationseinheiten am Stichtag lesen"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Leitungsbeziehungen B012 zu diesen Einheiten lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Je Organisationseinheit"
+      },
+      {
+        "id": "r3",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Nachschlagen, ob eine Leitungsbeziehung existiert"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Nur Einheiten ohne Leitung weiter"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Einheit ohne Leiter ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Ende der Liste"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "r2",
+        "condition": "always"
+      },
+      {
+        "from": "r2",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "r3",
+        "condition": "next row"
+      },
+      {
+        "from": "r3",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "o",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:19 — kein Fachsatz „bei leerer Auswahl werden alle Organisationseinheiten als ohne Leiter gelistet“ (die Liste stammt aus lt_org und bleibt leer)",
+    "source.abap:28 — kein Fachsatz „es wird geprüft, ob die Leiterplanstelle besetzt ist“ (geprüft wird nur die Beziehung O–S, nicht die Besetzung durch eine Person)",
+    "gesamte Scheibe — kein Fachsatz „fehlende Leiter werden zugeordnet“ (kein Schreibzugriff)"
+  ],
+  "processDescription": "Ein Prüfreport des Organisationsmanagements liest die aktiven Organisationseinheiten der gewählten Planvariante, die am Stichtag gültig sind. Dazu liest er die am Stichtag gültigen Beziehungen „wird geleitet von“ (B012) zu Planstellen; die Abfrage hat keinen Schutz gegen eine leere Einheitenmenge und liest in diesem Fall alle solchen Beziehungen, was die Ausgabe aber nicht ändert. Für jede Einheit wird nachgeschlagen, ob eine Leitungsbeziehung existiert. Einheiten ohne Leitungsbeziehung werden mit Objekt-ID und Kurztext ausgegeben. Ob die Leiterplanstelle besetzt ist, prüft der Report nicht, und er ändert keine Daten."
+}

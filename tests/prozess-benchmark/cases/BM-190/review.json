@@ -1,0 +1,28 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten o1 (neu) vor e1",
+      "before": "e1 end auf source.abap:37 ohne output",
+      "after": "o1 output auf source.abap:37, Kante o1 -> e1 [always]; eingehende Kanten auf o1 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o2 (neu) vor e2",
+      "before": "e2 end auf source.abap:41 ohne output",
+      "after": "o2 output auf source.abap:41, Kante o2 -> e2 [always]; eingehende Kanten auf o2 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o3 (neu) vor e3",
+      "before": "e3 end auf source.abap:52 ohne output",
+      "after": "o3 output auf source.abap:52, Kante o3 -> e3 [always]; eingehende Kanten auf o3 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

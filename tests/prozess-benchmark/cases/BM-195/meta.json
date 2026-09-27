@@ -1,0 +1,40 @@
+{
+  "id": "BM-195",
+  "title": "Embargoprüfung beim Sichern des Kundenauftrags: implizite Erweiterung ruft gefilterten Kernel-BAdI mit Russland- und Standardimplementierung",
+  "domain": "Technische Randbereiche — Enhancement Framework / Außenhandel",
+  "band": "komplex",
+  "loc": 244,
+  "constructs": [
+    "implizite Erweiterung ENHANCEMENT … ENDENHANCEMENT in FORM BELEG_SICHERN (SAPMV45A)",
+    "GET BADI … FILTERS",
+    "CALL BADI",
+    "CX_BADI_NOT_IMPLEMENTED",
+    "zwei BAdI-Implementierungsklassen (IF_BADI_INTERFACE)",
+    "globale Daten SAPMV45A: VBAK, XVBAP, XVBPA, T180, KUAGV",
+    "Liefersperre VBAK-LIFSK",
+    "INSERT Z-Protokolltabelle",
+    "SELECT … FOR ALL ENTRIES MARC",
+    "Musterabgleich CP auf Warennummer",
+    "MESSAGE TYPE 'A' / 'I'"
+  ],
+  "scenario": "Kundeneigene Exportkontrolle, die 2022 wegen der Russland-Sanktionen per impliziter Erweiterung in das Sichern des Kundenauftrags eingebaut wurde, statt SAP GTS anzubinden; in der S/4-Transformation fällt sie bei der Bewertung von Modifikationen und impliziten Erweiterungen in SAPMV45A auf.",
+  "s4_issues": [
+    "Implizite Erweiterungen in SAP-Standard-FORMs (SAPMV45A) sind nicht Clean-Core-konform und bei jedem Upgrade zu prüfen",
+    "Exportkontrolle gehört in S/4 in SAP Global Trade Services bzw. SAP Global Trade Services, edition for SAP HANA / Compliance Management",
+    "Zugriff auf globale Daten des Standardprogramms (XVBAP, XVBPA, T180) ist nicht freigegeben und in RAP-basierten Aufträgen nicht verfügbar",
+    "Kundenfeld MARA-ZZ_RUESTUNG und direkte Lesezugriffe auf MARC/MARA statt freigegebener CDS-Views"
+  ],
+  "wave": 2,
+  "module": "SD-FT",
+  "edge_constructs": [
+    "TRY … CATCH (CX_BADI_NOT_IMPLEMENTED)",
+    "MESSAGE … TYPE 'A' als Pfadende",
+    "SELECT … FOR ALL ENTRIES mit leerer Treibertabelle",
+    "CONTINUE/EXIT in verschachtelten Schleifen",
+    "CHECK mitten in Schleifen",
+    "COND #",
+    "Inline-Deklarationen",
+    "Schalter über TVARVC/Customizingtabelle",
+    "auskommentierte Zweige"
+  ]
+}

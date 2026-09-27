@@ -1,0 +1,227 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten m_au (neu) vor o_au",
+      "before": "o_au end auf zom_reorg_upload.abap:29 ohne output",
+      "after": "m_au output auf zom_reorg_upload.abap:29, Kante m_au -> o_au [always]; eingehende Kanten auf m_au umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten m_batch (neu) vor o_batch",
+      "before": "o_batch end auf zom_reorg_upload_f01.abap:7 ohne output",
+      "after": "m_batch output auf zom_reorg_upload_f01.abap:7, Kante m_batch -> o_batch [always]; eingehende Kanten auf m_batch umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten m_up (neu) vor o_up",
+      "before": "o_up end auf zom_reorg_upload_f01.abap:19 ohne output",
+      "after": "m_up output auf zom_reorg_upload_f01.abap:19, Kante m_up -> o_up [always]; eingehende Kanten auf m_up umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten s_prot, e_prot, c_p64 … c_p159 (neu)",
+      "before": "FORM prot_add ohne Knoten; nur der Aufruf c_strict war modelliert (ohne Kante in das FORM); neun weitere Aufrufe fehlten",
+      "after": "s_prot start f01:103 -> e_prot end f01:108; Aufrufe f01:64, 71, 91, 94 und f02:25, 75, 97, 113, 159 je als call mit Kante in s_prot; Rückkanten von e_prot zum jeweils nächsten Schritt",
+      "why": "Die Protokollzeilen sind das einzige Ergebnis der Fehler-, Warn- und Erfolgspfade (B04, B05, B08, B11) und werden am Ende angezeigt; die Aufrufe liegen im Fall. Die Batch-Input-Hilfsroutinen bdc_dynpro/bdc_field (nur Aufbau der Dynprotabelle) sind dagegen kein Knoten.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_up (neu)",
+      "before": "kein end-Knoten auf zom_reorg_upload_f01.abap:21",
+      "after": "e_up end auf zom_reorg_upload_f01.abap:21; g_up -> e_up [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_up -> c_parse",
+      "before": "c_up -> c_parse [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_up -> c_parse [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten a_split",
+      "before": "action auf zom_reorg_upload_f01.abap:36; g_hdr -> a_split [else]; a_split -> l_raw [next iteration]",
+      "after": "entfernt; g_hdr -> l_raw [else]",
+      "why": "SPLIT … INTO und die folgenden Zuweisungen/APPEND (f01:36–41) übertragen nur Felder in eine interne Tabelle; laut Autorenbrief kein Knoten (so auch BM-096). Inhalt bleibt in Fachsatz B03.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_pa (neu)",
+      "before": "kein end-Knoten auf zom_reorg_upload_f01.abap:43",
+      "after": "e_pa end auf zom_reorg_upload_f01.abap:43; l_raw -> e_pa [no more rows]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_parse -> c_val",
+      "before": "c_parse -> c_val [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_pa -> c_val [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten a_unk",
+      "before": "action auf zom_reorg_upload_f01.abap:63; g_act -> a_unk [WHEN OTHERS]; a_unk -> l_va [next iteration]",
+      "after": "entfernt; g_act -> c_p64 [WHEN OTHERS]",
+      "why": "<ls_line>-error = abap_true (f01:63) ist eine reine Zuweisung; laut Autorenbrief kein Knoten. Der Zweig führt zum Protokollaufruf f01:64.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten a_err",
+      "before": "action auf zom_reorg_upload_f01.abap:70; g_cnt -> a_err [lv_count = 0]; a_err -> l_va [next iteration]",
+      "after": "entfernt; g_cnt -> c_p71 [lv_count = 0]",
+      "why": "<ls_line>-error = abap_true (f01:70) ist eine reine Zuweisung; laut Autorenbrief kein Knoten. Der Zweig führt zum Protokollaufruf f01:71.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_va (neu)",
+      "before": "kein end-Knoten auf zom_reorg_upload_f01.abap:77",
+      "after": "e_va end auf zom_reorg_upload_f01.abap:77; a_red -> e_va [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_val -> g_strict",
+      "before": "c_val -> g_strict [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_va -> g_strict [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_sos (neu)",
+      "before": "kein end-Knoten auf zom_reorg_upload.abap:40",
+      "after": "e_sos end auf zom_reorg_upload.abap:40; e_prot -> e_sos [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten c_strict -> s_eos, c_exec -> s_eos",
+      "before": "Direktkanten vom Aufruf in END-OF-SELECTION",
+      "after": "Rückkehr e_prot -> e_sos, e_ex -> e_sos; e_sos -> s_eos",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt. START-OF-SELECTION endet implizit mit ENDIF Z. 40, danach folgt END-OF-SELECTION.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten a_form",
+      "before": "action auf zom_reorg_upload_f01.abap:85; l_ex -> a_form [next row]; a_form -> c_dyn [always]",
+      "after": "entfernt; l_ex -> c_dyn [next row]",
+      "why": "lv_form = |ACT_{ … }| (f01:85) ist eine reine Zuweisung; laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B07.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kanten t_cm -> l_ex, t_rb -> l_ex",
+      "before": "t_cm -> l_ex, t_rb -> l_ex [next iteration]",
+      "after": "t_cm -> c_p91, t_rb -> c_p94 [always]; Rückkehr e_prot -> l_ex [next iteration]",
+      "why": "Nach Commit bzw. Rollback wird die Zeile protokolliert (B08 „und das protokolliert“).",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_ex (neu)",
+      "before": "kein end-Knoten auf zom_reorg_upload_f01.abap:100",
+      "after": "e_ex end auf zom_reorg_upload_f01.abap:100; l_ex -> e_ex [no more rows]; e_ex -> e_sos [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_sp (neu)",
+      "before": "kein end-Knoten auf zom_reorg_upload_f01.abap:123",
+      "after": "e_sp end auf zom_reorg_upload_f01.abap:123; o_disp -> e_sp [always]; l_prot -> e_sp [no more rows]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_eos (neu)",
+      "before": "kein end-Knoten auf zom_reorg_upload.abap:43",
+      "after": "e_eos end auf zom_reorg_upload.abap:43; e_sp -> e_eos [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten l_prot (neu)",
+      "before": "c_salv -> o_wr [CATCH cx_salv_msg]; WRITE ohne Schleife",
+      "after": "l_prot loop f01:119; c_salv -> l_prot [CATCH cx_salv_msg]; l_prot -> o_wr [next row]; o_wr -> l_prot [next iteration]; l_prot -> e_sp [no more rows]",
+      "why": "Die Ersatzausgabe steht in LOOP AT gt_prot; die Schleife fehlte.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_n (neu)",
+      "before": "kein end-Knoten auf zom_reorg_upload_f02.abap:47",
+      "after": "e_n end auf zom_reorg_upload_f02.abap:47; a_ok1 -> e_n [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten a_ok2",
+      "before": "action auf zom_reorg_upload_f02.abap:100; g_rm2 -> a_ok2 [else]; a_ok2 -> r_hold [always]",
+      "after": "entfernt; g_rm2 -> r_hold [else]",
+      "why": "cv_ok = abap_true (f02:100) ist eine reine Zuweisung; laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B10.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante c_pa -> g_pa",
+      "before": "c_pa -> g_pa [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_mE, e_mA, e_pa2 -> g_pa [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_m (neu)",
+      "before": "kein end-Knoten auf zom_reorg_upload_f02.abap:117",
+      "after": "e_m end auf zom_reorg_upload_f02.abap:117; l_hold -> e_m [no more rows]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_r2 (neu)",
+      "before": "kein end-Knoten auf zom_reorg_upload_f02.abap:144",
+      "after": "e_r2 end auf zom_reorg_upload_f02.abap:144; a_ok3 -> e_r2 [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_d (neu)",
+      "before": "kein end-Knoten auf zom_reorg_upload_f02.abap:177",
+      "after": "e_d end auf zom_reorg_upload_f02.abap:177; a_ok4 -> e_d [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten a_mode",
+      "before": "action auf zom_reorg_upload_f03.abap:35; g_dbg -> a_mode [sy-uname = 'OMADMIN1']; a_mode -> x_pa40 [always]",
+      "after": "entfernt; g_dbg -> x_pa40 [sy-uname = 'OMADMIN1']",
+      "why": "lv_mode = 'A' (f03:35) ist eine reine Zuweisung; laut Autorenbrief kein Knoten. Die Hintertür bleibt als Gateway g_dbg mit beiden Zweigen zu x_pa40; Inhalt in Fachsatz B12.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten a_ok5",
+      "before": "action auf zom_reorg_upload_f03.abap:51; g_mA -> a_ok5 [else]",
+      "after": "entfernt; g_mA [else] -> e_pa2 (ENDFORM f03:52, eigener Eintrag)",
+      "why": "cv_ok = abap_true (f03:51) ist eine reine Zuweisung; laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B12.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_pa2 (neu)",
+      "before": "kein end-Knoten auf zom_reorg_upload_f03.abap:52",
+      "after": "e_pa2 end auf zom_reorg_upload_f03.abap:52; g_mA -> e_pa2 [else]; e_pa2 -> g_pa [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Rückkanten pa_org_reassign",
+      "before": "c_pa -> g_pa [always] (Direktkante); e_mE, e_mA ohne ausgehende Kante",
+      "after": "e_mE, e_mA, e_pa2 -> g_pa [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "Die Aufrufe der Batch-Input-Hilfsroutinen bdc_dynpro/bdc_field (f03:17–31) sind nicht modelliert: sie bauen nur die Dynprotabelle auf (APPEND), ohne Verzweigung oder Wirkung außerhalb des Programms. Die ebenfalls triviale Routine prot_add ist dagegen aufgenommen, weil ihre Einträge das Ergebnis der Fehler- und Warnpfade sind.",
+    "Die ACT_-Routinen bleiben eigene Einstiege ohne Kante vom dynamischen PERFORM (f01:87), weil das Ziel erst zur Laufzeit aus der Dateizeile gebildet wird; ihre Rückkehr ist daher ebenfalls nicht verdrahtet."
+  ]
+}

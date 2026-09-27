@@ -1,0 +1,51 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufruf cv",
+      "before": "cv -> gk [always]",
+      "after": "ve -> gk [always]; vr -> gk [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf vd",
+      "before": "vd -> vdg [always]",
+      "after": "de -> vdg [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten sa / se",
+      "before": "sa action auf lzdsp_f01.abap:110 (APPEND VALUE #( … ) TO ct_status); se end auf lzdsp_f01.abap:110; st -> sa -> se",
+      "after": "sa entfernt; se end auf lzdsp_f01.abap:116 (ENDFORM); st -> se [always]",
+      "why": "APPEND eines Statussatzes in eine interne Tabelle ist laut Autorenbrief kein Knoten (so auch BM-167); der end-Knoten gehört nach der vereinheitlichten Konvention auf ENDFORM. Inhalt bleibt in Fachsatz B11 (Anker f01:110).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kanten Aufruf c53",
+      "before": "c53 -> l1 [next iteration]",
+      "after": "se -> l1 [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c51",
+      "before": "c51 -> l1 [next iteration]",
+      "after": "entfällt; Rückkehr über se -> l1 [next iteration] (gemeinsamer end-Knoten beider Aufrufe)",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e (end)",
+      "before": "z_idoc_input_zdispute.abap:62 (Zuweisung call_transaction_done = space)",
+      "after": "z_idoc_input_zdispute.abap:63 (ENDFUNCTION)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    }
+  ],
+  "doubts": [
+    "lzdsp_f01.abap:83 — ob der fremde Wrapper Z_FSCM_DISPUTE_CREATE intern festschreibt, ist im Fall nicht zu sehen; der verbotene Schluss zu Z. 53 (Rollback trifft auch früher mit 53 gemeldete IDocs) gilt nur, solange der Wrapper nicht selbst COMMIT WORK ausführt. Der Schluss bleibt, weil er nur eine Zusicherung verbietet."
+  ]
+}

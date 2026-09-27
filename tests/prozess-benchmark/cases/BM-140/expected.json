@@ -1,0 +1,2327 @@
+{
+  "id": "BM-140",
+  "title": "Treasury Devisen: tägliche Marktbewertung offener Termingeschäfte, Vortagesvergleich über INDX, Kontrahentenlimite per Ereignis, XML-Export und Positionsliste aus dem Listenspeicher",
+  "classes": [
+    "K01",
+    "K03",
+    "K09",
+    "K17",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VTBFHA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "ztrm_fx_mtm_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_fx_mtm_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZTRM_FX_POS",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "ztrm_fx_mtm_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_fx_mtm_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZTRM_FWD_PTS",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "ztrm_fx_mtm_f01.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_fx_mtm_f01.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "READ_EXCHANGE_RATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "ztrm_fx_mtm_f01.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_fx_mtm_f01.abap:50"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "INDX",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "ztrm_fx_mtm_f01.abap",
+        "line": 89,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_fx_mtm_f01.abap:89"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "INDX",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "ztrm_fx_mtm_f02.abap",
+        "line": 68,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_fx_mtm_f02.abap:68"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_TRM_CPTY_LIMIT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "ztrm_fx_mtm_f02.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_fx_mtm_f02.abap:20"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZTRM_POSITION_LISTE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "ztrm_fx_mtm_f02.abap",
+        "line": 109,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_fx_mtm_f02.abap:109"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LIST_FROM_MEMORY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "ztrm_fx_mtm_f02.abap",
+        "line": 114,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_fx_mtm_f02.abap:114"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "WRITE_LIST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "ztrm_fx_mtm_f02.abap",
+        "line": 121,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_fx_mtm_f02.abap:121"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_trm_cpty_limit.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_trm_cpty_limit.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZTRM_CPTY_LIMIT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_trm_cpty_limit.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_trm_cpty_limit.abap:39"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-140-B01",
+      "text": "Es werden die offenen Devisengeschäfte (Produktart 60A) der gewählten Buchungskreise und Kontrahenten mit Fälligkeit ab Stichtag gelesen, samt Fremdwährungsbetrag und Geschäftskurs aus der Tagesposition.",
+      "anchors": [
+        {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:11"
+        }
+      ]
+    },
+    {
+      "id": "BM-140-B02",
+      "text": "Gibt es keine, erscheint ein Hinweis und es wird weder exportiert noch gesichert noch gelistet.",
+      "anchors": [
+        {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:24"
+        },
+        {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:25"
+        },
+        {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:26"
+        },
+        {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-140-B03",
+      "text": "Die Terminpunkte des Stichtags werden für die gehandelten Währungen gelesen.",
+      "anchors": [
+        {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-140-B04",
+      "text": "Je Geschäft wird der Mittelkurs der Fremdwährung gegen EUR am Stichtag ermittelt; fehlt er, wird ein Hinweis ausgegeben und das Geschäft nicht bewertet.",
+      "anchors": [
+        {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:50"
+        },
+        {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:61"
+        },
+        {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-140-B05",
+      "text": "Zum Mittelkurs werden die Terminpunkte des kleinsten Laufzeitbands addiert, das die Restlaufzeit abdeckt; deckt keines sie ab, gilt der Mittelkurs.",
+      "anchors": [
+        {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:67"
+        },
+        {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:68"
+        },
+        {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-140-B06",
+      "text": "Der Marktwert eines Geschäfts ist der Fremdwährungsbetrag mal der Differenz aus Marktterminkurs und Geschäftskurs.",
+      "anchors": [
+        {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-140-B07",
+      "text": "Die Marktwerte des Vortags werden aus dem Datencluster gelesen; gibt es keinen Vortagesstand, wird keine Veränderung ausgewiesen.",
+      "anchors": [
+        {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:89"
+        },
+        {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:90"
+        },
+        {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:92"
+        }
+      ]
+    },
+    {
+      "id": "BM-140-B08",
+      "text": "Je Geschäft ist die Veränderung der heutige Marktwert minus der Vortageswert; neue Geschäfte ohne Vortageswert zeigen den vollen Marktwert als Veränderung.",
+      "anchors": [
+        {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:97"
+        },
+        {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:99"
+        },
+        {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:102"
+        }
+      ]
+    },
+    {
+      "id": "BM-140-B09",
+      "text": "Je Kontrahent werden die positiven Marktwerte zur Auslastung summiert; negative Marktwerte zählen nicht.",
+      "anchors": [
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:26"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:30"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-140-B10",
+      "text": "Nach dem letzten Geschäft eines Kontrahenten wird seine Auslastung gegen sein zum Stichtag gültiges Limit geprüft; ohne gepflegtes Limit gilt das Standardlimit aus der Variablentabelle, ohne dieses null.",
+      "anchors": [
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:34"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:35"
+        },
+        {
+          "file": "zcl_trm_cpty_limit.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_trm_cpty_limit.abap:39"
+        },
+        {
+          "file": "zcl_trm_cpty_limit.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_trm_cpty_limit.abap:44"
+        },
+        {
+          "file": "zcl_trm_cpty_limit.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_trm_cpty_limit.abap:32"
+        },
+        {
+          "file": "zcl_trm_cpty_limit.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_trm_cpty_limit.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-140-B11",
+      "text": "Übersteigt die Auslastung das Limit, wird die Überschreitung mit Auslastung und Limit gemeldet und vorgemerkt.",
+      "anchors": [
+        {
+          "file": "zcl_trm_cpty_limit.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_trm_cpty_limit.abap:47"
+        },
+        {
+          "file": "zcl_trm_cpty_limit.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_trm_cpty_limit.abap:48"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:22"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:7"
+        }
+      ]
+    },
+    {
+      "id": "BM-140-B12",
+      "text": "Stichtag und Marktwerte werden als XML in eine Datei auf dem Anwendungsserver für das Risikosystem geschrieben; lässt sich die Datei nicht öffnen, erscheint ein Hinweis.",
+      "anchors": [
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:47"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:52"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:53"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:54"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-140-B13",
+      "text": "Im Echtlauf werden die heutigen Marktwerte unter dem Stichtag im Datencluster gesichert und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:36"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:68"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-140-B14",
+      "text": "Die Liste zeigt je Kontrahent eine Kopfzeile und je Geschäft Währung, Restlaufzeit, Marktkurs, Marktwert und Veränderung.",
+      "anchors": [
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:86"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:88"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:91"
+        }
+      ]
+    },
+    {
+      "id": "BM-140-B15",
+      "text": "Gibt es Limitüberschreitungen, werden sie hervorgehoben gelistet.",
+      "anchors": [
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:95"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:102"
+        }
+      ]
+    },
+    {
+      "id": "BM-140-B16",
+      "text": "Für die betroffenen Kontrahenten wird die Positionsliste erzeugt und an die eigene Liste angehängt, sofern sie im Speicher ankommt.",
+      "anchors": [
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:109"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:114"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:120"
+        },
+        {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:121"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:22"
+        },
+        "meaning": "Abendliche Bewertung"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:23"
+        },
+        "meaning": "Offene Devisengeschäfte lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:24"
+        },
+        "meaning": "Keine offenen Geschäfte?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:25"
+        },
+        "meaning": "Hinweis „keine Geschäfte“"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:26"
+        },
+        "meaning": "Selektionsverarbeitung beenden"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:28"
+        },
+        "meaning": "Terminpunkte lesen"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:29"
+        },
+        "meaning": "Geschäfte bewerten"
+      },
+      {
+        "id": "c4",
+        "type": "call",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:30"
+        },
+        "meaning": "Veränderung zum Vortag"
+      },
+      {
+        "id": "c5",
+        "type": "call",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:31"
+        },
+        "meaning": "Kontrahentenlimite prüfen"
+      },
+      {
+        "id": "e_s",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:31"
+        },
+        "meaning": "Bewertung und Limitprüfung abgeschlossen, Selektionsblock endet"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:33"
+        },
+        "meaning": "Export und Ausgabe"
+      },
+      {
+        "id": "ec",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:34"
+        },
+        "meaning": "Marktwerte vorhanden?"
+      },
+      {
+        "id": "c6",
+        "type": "call",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:35"
+        },
+        "meaning": "XML an das Risikosystem"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:36"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "c7",
+        "type": "call",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:37"
+        },
+        "meaning": "Tagesstand sichern"
+      },
+      {
+        "id": "c8",
+        "type": "call",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:39"
+        },
+        "meaning": "Liste ausgeben"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_fx_mtm.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm.abap:39"
+        },
+        "meaning": "Lauf fertig"
+      },
+      {
+        "id": "a",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:10"
+        },
+        "meaning": "Geschäftsselektion"
+      },
+      {
+        "id": "aq",
+        "type": "read",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:11"
+        },
+        "meaning": "Devisengeschäfte (60A) mit Fälligkeit ab Stichtag samt Betrag und Geschäftskurs lesen"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:22"
+        },
+        "meaning": "Geschäfte gelesen"
+      },
+      {
+        "id": "t",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:27"
+        },
+        "meaning": "Terminpunkte"
+      },
+      {
+        "id": "tq",
+        "type": "read",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:28"
+        },
+        "meaning": "Terminpunkte des Stichtags für die gehandelten Währungen lesen"
+      },
+      {
+        "id": "te",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:32"
+        },
+        "meaning": "Terminpunkte gelesen"
+      },
+      {
+        "id": "b",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:40"
+        },
+        "meaning": "Bewertung"
+      },
+      {
+        "id": "bl",
+        "type": "loop",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:45"
+        },
+        "meaning": "Geschäfte einzeln bewerten"
+      },
+      {
+        "id": "bs",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:50"
+        },
+        "meaning": "Mittelkurs Fremdwährung/EUR am Stichtag ermitteln"
+      },
+      {
+        "id": "bg",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:61"
+        },
+        "meaning": "Kein Mittelkurs?"
+      },
+      {
+        "id": "bm",
+        "type": "output",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:62"
+        },
+        "meaning": "Hinweis „kein Kurs“, Geschäft nicht bewerten"
+      },
+      {
+        "id": "bf",
+        "type": "loop",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:67"
+        },
+        "meaning": "Laufzeitbänder der Währung durchgehen"
+      },
+      {
+        "id": "bfg",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:68"
+        },
+        "meaning": "Band deckt die Restlaufzeit?"
+      },
+      {
+        "id": "bk",
+        "type": "action",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:74"
+        },
+        "meaning": "Marktterminkurs = Mittelkurs + Terminpunkte / 10000"
+      },
+      {
+        "id": "bmt",
+        "type": "action",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:75"
+        },
+        "meaning": "Marktwert = Fremdwährungsbetrag mal (Marktterminkurs minus Geschäftskurs)"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:78"
+        },
+        "meaning": "Bewertung fertig"
+      },
+      {
+        "id": "v",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:83"
+        },
+        "meaning": "Vortagesvergleich"
+      },
+      {
+        "id": "vi",
+        "type": "read",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:89"
+        },
+        "meaning": "Marktwerte des Vortags aus dem Datencluster lesen"
+      },
+      {
+        "id": "vg",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:90"
+        },
+        "meaning": "Kein Vortagesstand?"
+      },
+      {
+        "id": "vr",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:92"
+        },
+        "meaning": "Keine Veränderung ausweisen"
+      },
+      {
+        "id": "vl",
+        "type": "loop",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:96"
+        },
+        "meaning": "Heutige Marktwerte durchgehen"
+      },
+      {
+        "id": "vrt",
+        "type": "read",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:97"
+        },
+        "meaning": "Vortageswert des Geschäfts suchen"
+      },
+      {
+        "id": "vrg",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:99"
+        },
+        "meaning": "Vortageswert vorhanden?"
+      },
+      {
+        "id": "vd",
+        "type": "action",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:102"
+        },
+        "meaning": "Veränderung = heutiger Marktwert minus Vortageswert (sonst minus null)"
+      },
+      {
+        "id": "ve",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f01.abap:104"
+        },
+        "meaning": "Vergleich fertig"
+      },
+      {
+        "id": "h",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:6"
+        },
+        "meaning": "Limitüberschreitung empfangen"
+      },
+      {
+        "id": "he",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:9"
+        },
+        "meaning": "Kontrahent mit Auslastung und Limit vormerken"
+      },
+      {
+        "id": "l",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:16"
+        },
+        "meaning": "Limitprüfung"
+      },
+      {
+        "id": "ln",
+        "type": "call",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:20"
+        },
+        "meaning": "Limitprüfer für den Stichtag anlegen"
+      },
+      {
+        "id": "lh",
+        "type": "action",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:22"
+        },
+        "meaning": "Behandlung von Limitüberschreitungen registrieren"
+      },
+      {
+        "id": "ll",
+        "type": "loop",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:25"
+        },
+        "meaning": "Marktwerte nach Kontrahent sortiert durchgehen"
+      },
+      {
+        "id": "lan",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:26"
+        },
+        "meaning": "Neuer Kontrahent? Auslastung zurücksetzen"
+      },
+      {
+        "id": "lp",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:30"
+        },
+        "meaning": "Positiver Marktwert?"
+      },
+      {
+        "id": "la",
+        "type": "action",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:31"
+        },
+        "meaning": "Zur Auslastung des Kontrahenten addieren"
+      },
+      {
+        "id": "lae",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:34"
+        },
+        "meaning": "Letztes Geschäft des Kontrahenten?"
+      },
+      {
+        "id": "lc",
+        "type": "call",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:35"
+        },
+        "meaning": "Auslastung gegen das Limit prüfen"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:39"
+        },
+        "meaning": "Limitprüfung fertig"
+      },
+      {
+        "id": "x",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:44"
+        },
+        "meaning": "Export"
+      },
+      {
+        "id": "xt",
+        "type": "action",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:47"
+        },
+        "meaning": "Stichtag und Marktwerte in XML umwandeln"
+      },
+      {
+        "id": "xo",
+        "type": "output",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:52"
+        },
+        "meaning": "Exportdatei auf dem Anwendungsserver öffnen"
+      },
+      {
+        "id": "xg",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:53"
+        },
+        "meaning": "Datei nicht zu öffnen?"
+      },
+      {
+        "id": "xm",
+        "type": "output",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:54"
+        },
+        "meaning": "Hinweis „Datei nicht geschrieben“"
+      },
+      {
+        "id": "xr",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:55"
+        },
+        "meaning": "Kein Export"
+      },
+      {
+        "id": "xtr",
+        "type": "output",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:57"
+        },
+        "meaning": "XML in die Datei schreiben und schließen"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:59"
+        },
+        "meaning": "Export fertig"
+      },
+      {
+        "id": "st",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:66"
+        },
+        "meaning": "Sicherung"
+      },
+      {
+        "id": "se",
+        "type": "write",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:68"
+        },
+        "meaning": "Heutige Marktwerte im Datencluster unter dem Stichtag speichern"
+      },
+      {
+        "id": "sc",
+        "type": "transaction",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:69"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "see",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:70"
+        },
+        "meaning": "Stand gesichert"
+      },
+      {
+        "id": "o",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:79"
+        },
+        "meaning": "Liste"
+      },
+      {
+        "id": "ol",
+        "type": "loop",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:85"
+        },
+        "meaning": "Marktwerte durchgehen"
+      },
+      {
+        "id": "oan",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:86"
+        },
+        "meaning": "Neuer Kontrahent?"
+      },
+      {
+        "id": "ok",
+        "type": "output",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:88"
+        },
+        "meaning": "Kontrahentenkopfzeile"
+      },
+      {
+        "id": "ow",
+        "type": "output",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:91"
+        },
+        "meaning": "Geschäft mit Währung, Restlaufzeit, Marktkurs, Marktwert und Veränderung listen"
+      },
+      {
+        "id": "og",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:95"
+        },
+        "meaning": "Keine Limitüberschreitung?"
+      },
+      {
+        "id": "or",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:96"
+        },
+        "meaning": "Liste fertig"
+      },
+      {
+        "id": "obl",
+        "type": "loop",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:101"
+        },
+        "meaning": "Überschreitungen durchgehen"
+      },
+      {
+        "id": "obw",
+        "type": "output",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:102"
+        },
+        "meaning": "Kontrahent mit Auslastung und Limit hervorgehoben listen"
+      },
+      {
+        "id": "osu",
+        "type": "external_program",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:109"
+        },
+        "meaning": "Positionsliste der betroffenen Kontrahenten erzeugen, Liste in den Speicher"
+      },
+      {
+        "id": "olf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:114"
+        },
+        "meaning": "Positionsliste aus dem Speicher holen"
+      },
+      {
+        "id": "olg",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:120"
+        },
+        "meaning": "Liste vorhanden?"
+      },
+      {
+        "id": "olw",
+        "type": "output",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:121"
+        },
+        "meaning": "Positionsliste an die eigene Liste anhängen"
+      },
+      {
+        "id": "oe",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_fx_mtm_f02.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_fx_mtm_f02.abap:125"
+        },
+        "meaning": "Liste fertig"
+      },
+      {
+        "id": "k",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_trm_cpty_limit.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_trm_cpty_limit.abap:30"
+        },
+        "meaning": "Limitprüfer anlegen"
+      },
+      {
+        "id": "kr",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_trm_cpty_limit.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_trm_cpty_limit.abap:32"
+        },
+        "meaning": "Standardlimit aus der Variablentabelle lesen"
+      },
+      {
+        "id": "ka",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_trm_cpty_limit.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_trm_cpty_limit.abap:35"
+        },
+        "meaning": "Standardlimit übernehmen, ohne Eintrag null"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_trm_cpty_limit.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_trm_cpty_limit.abap:36"
+        },
+        "meaning": "Prüfer bereit"
+      },
+      {
+        "id": "p",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_trm_cpty_limit.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_trm_cpty_limit.abap:38"
+        },
+        "meaning": "Limitprüfung eines Kontrahenten"
+      },
+      {
+        "id": "pr",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_trm_cpty_limit.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_trm_cpty_limit.abap:39"
+        },
+        "meaning": "Zum Stichtag gültiges Limit des Kontrahenten lesen"
+      },
+      {
+        "id": "pg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_trm_cpty_limit.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_trm_cpty_limit.abap:43"
+        },
+        "meaning": "Kein Limit gepflegt?"
+      },
+      {
+        "id": "pc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_trm_cpty_limit.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_trm_cpty_limit.abap:47"
+        },
+        "meaning": "Auslastung über Limit?"
+      },
+      {
+        "id": "pe",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_trm_cpty_limit.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_trm_cpty_limit.abap:48"
+        },
+        "meaning": "Limitüberschreitung melden"
+      },
+      {
+        "id": "pend",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_trm_cpty_limit.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_trm_cpty_limit.abap:53"
+        },
+        "meaning": "Prüfung fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "a",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "gt_deal IS INITIAL"
+      },
+      {
+        "from": "m1",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "c2",
+        "condition": "else"
+      },
+      {
+        "from": "c2",
+        "to": "t",
+        "condition": "always"
+      },
+      {
+        "from": "c3",
+        "to": "b",
+        "condition": "always"
+      },
+      {
+        "from": "c4",
+        "to": "v",
+        "condition": "always"
+      },
+      {
+        "from": "c5",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "ec",
+        "condition": "always"
+      },
+      {
+        "from": "ec",
+        "to": "c6",
+        "condition": "gt_mtm IS NOT INITIAL"
+      },
+      {
+        "from": "ec",
+        "to": "ee",
+        "condition": "else"
+      },
+      {
+        "from": "c6",
+        "to": "x",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "c7",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "gt",
+        "to": "c8",
+        "condition": "else"
+      },
+      {
+        "from": "c7",
+        "to": "st",
+        "condition": "always"
+      },
+      {
+        "from": "c8",
+        "to": "o",
+        "condition": "always"
+      },
+      {
+        "from": "a",
+        "to": "aq",
+        "condition": "always"
+      },
+      {
+        "from": "aq",
+        "to": "ae",
+        "condition": "always"
+      },
+      {
+        "from": "t",
+        "to": "tq",
+        "condition": "always"
+      },
+      {
+        "from": "tq",
+        "to": "te",
+        "condition": "always"
+      },
+      {
+        "from": "b",
+        "to": "bl",
+        "condition": "always"
+      },
+      {
+        "from": "bl",
+        "to": "bs",
+        "condition": "next row"
+      },
+      {
+        "from": "bs",
+        "to": "bg",
+        "condition": "always"
+      },
+      {
+        "from": "bg",
+        "to": "bm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "bm",
+        "to": "bl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "bg",
+        "to": "bf",
+        "condition": "else"
+      },
+      {
+        "from": "bf",
+        "to": "bfg",
+        "condition": "next row"
+      },
+      {
+        "from": "bfg",
+        "to": "bk",
+        "condition": "ls_fwd-tage_bis >= ls_mtm-restlz"
+      },
+      {
+        "from": "bfg",
+        "to": "bf",
+        "condition": "else"
+      },
+      {
+        "from": "bf",
+        "to": "bk",
+        "condition": "no more rows"
+      },
+      {
+        "from": "bk",
+        "to": "bmt",
+        "condition": "always"
+      },
+      {
+        "from": "bmt",
+        "to": "bl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "bl",
+        "to": "be",
+        "condition": "no more rows"
+      },
+      {
+        "from": "v",
+        "to": "vi",
+        "condition": "always"
+      },
+      {
+        "from": "vi",
+        "to": "vg",
+        "condition": "always"
+      },
+      {
+        "from": "vg",
+        "to": "vr",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "vg",
+        "to": "vl",
+        "condition": "else"
+      },
+      {
+        "from": "vl",
+        "to": "vrt",
+        "condition": "next row"
+      },
+      {
+        "from": "vrt",
+        "to": "vrg",
+        "condition": "always"
+      },
+      {
+        "from": "vrg",
+        "to": "vd",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "vrg",
+        "to": "vd",
+        "condition": "else"
+      },
+      {
+        "from": "vd",
+        "to": "vl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "vl",
+        "to": "ve",
+        "condition": "no more rows"
+      },
+      {
+        "from": "h",
+        "to": "he",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "ln",
+        "condition": "always"
+      },
+      {
+        "from": "ln",
+        "to": "k",
+        "condition": "always"
+      },
+      {
+        "from": "lh",
+        "to": "ll",
+        "condition": "always"
+      },
+      {
+        "from": "ll",
+        "to": "lan",
+        "condition": "next row"
+      },
+      {
+        "from": "lan",
+        "to": "lp",
+        "condition": "AT NEW kontrh"
+      },
+      {
+        "from": "lan",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "lp",
+        "to": "la",
+        "condition": "ls_mtm-mtm > 0"
+      },
+      {
+        "from": "lp",
+        "to": "lae",
+        "condition": "else"
+      },
+      {
+        "from": "la",
+        "to": "lae",
+        "condition": "always"
+      },
+      {
+        "from": "lae",
+        "to": "lc",
+        "condition": "AT END OF kontrh"
+      },
+      {
+        "from": "lc",
+        "to": "p",
+        "condition": "always"
+      },
+      {
+        "from": "lae",
+        "to": "ll",
+        "condition": "else"
+      },
+      {
+        "from": "ll",
+        "to": "le",
+        "condition": "no more rows"
+      },
+      {
+        "from": "x",
+        "to": "xt",
+        "condition": "always"
+      },
+      {
+        "from": "xt",
+        "to": "xo",
+        "condition": "always"
+      },
+      {
+        "from": "xo",
+        "to": "xg",
+        "condition": "always"
+      },
+      {
+        "from": "xg",
+        "to": "xm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "xm",
+        "to": "xr",
+        "condition": "always"
+      },
+      {
+        "from": "xg",
+        "to": "xtr",
+        "condition": "else"
+      },
+      {
+        "from": "xtr",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "st",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "sc",
+        "condition": "always"
+      },
+      {
+        "from": "sc",
+        "to": "see",
+        "condition": "always"
+      },
+      {
+        "from": "o",
+        "to": "ol",
+        "condition": "always"
+      },
+      {
+        "from": "ol",
+        "to": "oan",
+        "condition": "next row"
+      },
+      {
+        "from": "oan",
+        "to": "ok",
+        "condition": "AT NEW kontrh"
+      },
+      {
+        "from": "ok",
+        "to": "ow",
+        "condition": "always"
+      },
+      {
+        "from": "oan",
+        "to": "ow",
+        "condition": "else"
+      },
+      {
+        "from": "ow",
+        "to": "ol",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ol",
+        "to": "og",
+        "condition": "no more rows"
+      },
+      {
+        "from": "og",
+        "to": "or",
+        "condition": "gt_breach IS INITIAL"
+      },
+      {
+        "from": "og",
+        "to": "obl",
+        "condition": "else"
+      },
+      {
+        "from": "obl",
+        "to": "obw",
+        "condition": "next row"
+      },
+      {
+        "from": "obw",
+        "to": "obl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "obl",
+        "to": "osu",
+        "condition": "no more rows"
+      },
+      {
+        "from": "osu",
+        "to": "olf",
+        "condition": "always"
+      },
+      {
+        "from": "olf",
+        "to": "olg",
+        "condition": "always"
+      },
+      {
+        "from": "olg",
+        "to": "olw",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "olg",
+        "to": "oe",
+        "condition": "else"
+      },
+      {
+        "from": "olw",
+        "to": "oe",
+        "condition": "always"
+      },
+      {
+        "from": "k",
+        "to": "kr",
+        "condition": "always"
+      },
+      {
+        "from": "kr",
+        "to": "ka",
+        "condition": "always"
+      },
+      {
+        "from": "ka",
+        "to": "ke",
+        "condition": "always"
+      },
+      {
+        "from": "p",
+        "to": "pr",
+        "condition": "always"
+      },
+      {
+        "from": "pr",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pc",
+        "condition": "else"
+      },
+      {
+        "from": "pc",
+        "to": "pe",
+        "condition": "iv_expo > lv_limit"
+      },
+      {
+        "from": "pc",
+        "to": "pend",
+        "condition": "else"
+      },
+      {
+        "from": "pe",
+        "to": "h",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "te",
+        "to": "c3",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "c4",
+        "condition": "always"
+      },
+      {
+        "from": "ve",
+        "to": "c5",
+        "condition": "always"
+      },
+      {
+        "from": "vr",
+        "to": "c5",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "e_s",
+        "condition": "always"
+      },
+      {
+        "from": "e_s",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "xr",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "see",
+        "to": "c8",
+        "condition": "always"
+      },
+      {
+        "from": "oe",
+        "to": "ee",
+        "condition": "always"
+      },
+      {
+        "from": "or",
+        "to": "ee",
+        "condition": "always"
+      },
+      {
+        "from": "ke",
+        "to": "lh",
+        "condition": "always"
+      },
+      {
+        "from": "pend",
+        "to": "ll",
+        "condition": "next iteration"
+      },
+      {
+        "from": "he",
+        "to": "pend",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pc",
+        "condition": "sy-subrc <> 0"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "ztrm_fx_mtm_f01.abap:62 — kein Fachsatz „Geschäfte ohne Kurs gehen mit dem Vortageswert in die Limitprüfung“: sie werden gar nicht bewertet und fehlen in Limitprüfung, Export und Liste",
+    "ztrm_fx_mtm_f02.abap:30 — kein Fachsatz „die Auslastung ist der saldierte Marktwert je Kontrahent“: negative Marktwerte werden nicht gegengerechnet",
+    "zcl_trm_cpty_limit.abap:35 — kein Fachsatz „Kontrahenten ohne Limit werden nicht geprüft“: ohne Standardlimit gilt null, jeder positive Marktwert ist dann eine Überschreitung",
+    "ztrm_fx_mtm_f02.abap:109 — kein Fachsatz „die Positionsliste wird gedruckt oder gemailt“: sie wird nur in die eigene Liste übernommen"
+  ],
+  "processDescription": "Der Report läuft abends nach dem Kursimport mit Buchungskreisen, optional Kontrahenten, Stichtag, Exportdatei und Testlaufschalter. Er liest die offenen Devisentermingeschäfte mit Fälligkeit ab Stichtag samt Betrag und Geschäftskurs; gibt es keine, meldet er das und gibt nichts weiter aus. Er liest die Terminpunkte des Stichtags und bewertet jedes Geschäft: Mittelkurs gegen EUR plus Terminpunkte des passenden Laufzeitbands ergeben den Marktterminkurs, der Marktwert ist Fremdwährungsbetrag mal Kursdifferenz zum Geschäftskurs; ohne Mittelkurs bleibt das Geschäft unbewertet. Dann vergleicht er mit den Marktwerten des Vortags aus dem Datencluster; fehlt der Vortagesstand, weist er keine Veränderung aus. Je Kontrahent summiert er die positiven Marktwerte und prüft sie gegen das Limit, ersatzweise gegen das Standardlimit; Überschreitungen werden als Ereignis gemeldet und gesammelt. Anschließend schreibt er Stichtag und Marktwerte als XML in die Exportdatei, sichert im Echtlauf den heutigen Stand im Datencluster und listet die Marktwerte je Kontrahent. Bei Limitüberschreitungen listet er diese hervorgehoben und hängt die Positionsliste der betroffenen Kontrahenten aus einem zweiten Programm über den Listenspeicher an."
+}

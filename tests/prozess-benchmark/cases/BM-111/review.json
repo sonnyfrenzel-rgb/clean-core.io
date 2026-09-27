@@ -1,0 +1,42 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufruf c1",
+      "before": "c1 -> c2 [always]",
+      "after": "eb -> c2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c2",
+      "before": "c2 -> s3 [always]",
+      "after": "ex -> s3 [always]; xx -> s3 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cq",
+      "before": "cq -> cr [always]",
+      "after": "el -> cr [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cr",
+      "before": "cr -> lx [next iteration]",
+      "after": "ex -> lx [next iteration]; xx -> lx [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten g5",
+      "before": "eigenes gateway auf zpm_tplatz_baum.abap:66 (ELSEIF), g4 -> g5 [else]",
+      "after": "entfernt; g4 -> a5 [gv_tplnr IS NOT INITIAL]; g4 -> e4 [else]",
+      "why": "Vereinheitlichte Konvention: ELSEIF ist eine Bedingungskante des ursprünglichen Gateways, kein eigenes Gateway.",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": []
+}

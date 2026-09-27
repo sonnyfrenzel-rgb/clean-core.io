@@ -1,0 +1,283 @@
+{
+  "id": "BM-121",
+  "title": "PSP-Elemente ohne Verantwortlichen je Projekt (PROJ/PRPS, Gruppenwechsel und CHECK in der Schleife)",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PRPS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PROJ",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-121-B01",
+      "text": "Es werden alle nicht zur Löschung vorgemerkten PSP-Elemente der ausgewählten Projekte gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-121-B02",
+      "text": "Zu Beginn jedes Projekts wird eine Kopfzeile mit dem Projekt ausgegeben, auch wenn danach kein Element dieses Projekts gelistet wird.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-121-B03",
+      "text": "PSP-Elemente, für die ein Verantwortlicher gepflegt ist, werden übergangen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-121-B04",
+      "text": "Jedes PSP-Element ohne Verantwortlichen wird mit Nummer und Bezeichnung gelistet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Nicht gelöschte PSP-Elemente der gewählten Projekte lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "PSP-Elemente je Projekt durchgehen"
+      },
+      {
+        "id": "gn",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Neues Projekt beginnt?"
+      },
+      {
+        "id": "oh",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Projektkopfzeile ausgeben"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Kein Verantwortlicher gepflegt?"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "PSP-Element ohne Verantwortlichen listen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "gn",
+        "condition": "next row"
+      },
+      {
+        "from": "gn",
+        "to": "oh",
+        "condition": "AT NEW psphi"
+      },
+      {
+        "from": "gn",
+        "to": "gc",
+        "condition": "else"
+      },
+      {
+        "from": "oh",
+        "to": "gc",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "o",
+        "condition": "gs_psp-vernr IS INITIAL"
+      },
+      {
+        "from": "gc",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:25 — kein Fachsatz „es werden nur Projekte mit fehlendem Verantwortlichen ausgegeben“: die Projektkopfzeile erscheint vor dem CHECK für jedes Projekt",
+    "source.abap:28 — kein Fachsatz „der Verantwortliche wird nachgepflegt oder vorgeschlagen“: der Report liest und listet nur",
+    "source.abap:18 — kein Fachsatz „nur freigegebene PSP-Elemente werden geprüft“: es wird kein Systemstatus gelesen, nur das Löschkennzeichen"
+  ],
+  "processDescription": "Der Report wird mit einer Projektselektion (Pflicht) gestartet. Er liest alle PSP-Elemente der gewählten Projekte, die nicht zur Löschung vorgemerkt sind, und sortiert sie nach Projekt und PSP-Nummer. Beim Wechsel auf ein neues Projekt schreibt er eine Kopfzeile mit dem Projekt. Hat ein PSP-Element einen Verantwortlichen, wird es übergangen. Elemente ohne Verantwortlichen werden mit Nummer und Bezeichnung gelistet. Da die Kopfzeile vor der Prüfung ausgegeben wird, erscheinen auch Projekte ohne einen einzigen Treffer in der Liste. Es wird nichts geändert."
+}

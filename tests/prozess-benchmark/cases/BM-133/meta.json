@@ -1,0 +1,44 @@
+{
+  "id": "BM-133",
+  "title": "PSM Grants Management: kostenbasierte Sponsorenabrechnung als Lastschriftanforderung mit RETRY bei Sperre",
+  "domain": "PSM / Grants Management (Fördermittel)",
+  "band": "komplex",
+  "loc": 200,
+  "constructs": [
+    "REPORT",
+    "NEW",
+    "TRY … CATCH",
+    "MESSAGE oref TYPE E",
+    "CLASS mit privaten Methoden",
+    "SELECT mit Kundenfeld",
+    "RAISE EXCEPTION TYPE",
+    "funktionaler Methodenaufruf in APPEND",
+    "SELECT … GROUP BY mit SUM",
+    "line_exists",
+    "SELECT SUM",
+    "RETURN",
+    "RETRY",
+    "WAIT UP TO",
+    "INSERT mit Host-Ausdruck",
+    "BAPI_SALESORDER_CREATEFROMDAT2",
+    "VALUE #"
+  ],
+  "scenario": "Hochschule oder Forschungseinrichtung mit Drittmitteln: Ein Monatsjob rechnet die förderfähigen Ausgaben kostenbasierter Förderungen beim Sponsor ab, indem er Lastschriftanforderungen im Vertrieb anlegt.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf GMGR/GMIA/GMSPONSOR statt freigegebener Grants-APIs",
+    "Standard-Sponsorenabrechnung (Resource Related Billing) wird umgangen",
+    "Hart codierte Verkaufsorganisation, Währung EUR und Material"
+  ],
+  "wave": 2,
+  "module": "PSM-GM",
+  "edge_constructs": [
+    "RETRY",
+    "WAIT UP TO",
+    "RAISE EXCEPTION TYPE",
+    "MESSAGE … TYPE 'E' als Pfadende",
+    "NEW",
+    "VALUE #",
+    "Inline-Deklarationen",
+    "RETURN aus Methode"
+  ]
+}

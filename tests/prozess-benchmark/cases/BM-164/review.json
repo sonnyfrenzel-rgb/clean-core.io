@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "REDUCE … ( INIT s = 0 …): s erhält den Typ des Literals 0 (i); die Summe wird daher je Schritt auf ganze Zahlen gerundet. Bei ganzzahligen Leergutmengen ohne Wirkung; nicht als Fachsatz oder verbotener Schluss ergänzt, da der Datentyp der Kundentabelle nicht im Fall steht."
+  ]
+}

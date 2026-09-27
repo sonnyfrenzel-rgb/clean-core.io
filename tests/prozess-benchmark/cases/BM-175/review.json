@@ -1,0 +1,56 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufruf cal",
+      "before": "cal -> g0 [always]",
+      "after": "eal -> g0 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cvp",
+      "before": "cvp -> ch [always]",
+      "after": "rf -> ch [always]; evp -> ch [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf ctl",
+      "before": "ctl -> l [next iteration]",
+      "after": "etl -> l [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cj",
+      "before": "cj -> l [next iteration]",
+      "after": "rj -> l [next iteration]; ej -> l [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten mo (neu) vor mj",
+      "before": "mj end auf zsd_bonus_endabr_f01.abap:69 ohne output",
+      "after": "mo output auf zsd_bonus_endabr_f01.abap:69, Kante mo -> mj [always]; eingehende Kanten auf mo umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o0 (neu)",
+      "before": "keine Knoten auf zsd_bonus_endabr.abap:35",
+      "after": "o0 output auf zsd_bonus_endabr.abap:35; g0 -> o0 [gt_abs IS INITIAL]; o0 -> x0 [always]",
+      "why": "Die Meldung (MESSAGE … TYPE 'S', ggf. DISPLAY LIKE 'E') ist die Ausgabe dieses Pfadendes und fehlte als output-Knoten; das folgende RETURN bleibt end.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz B02 Anker",
+      "before": ":34, :36",
+      "after": ":34, :35, :36",
+      "why": "Der Hinweis steht auf Zeile 35.",
+      "category": "Anker"
+    }
+  ],
+  "doubts": []
+}

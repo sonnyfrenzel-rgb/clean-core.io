@@ -1,0 +1,641 @@
+{
+  "id": "BM-127",
+  "title": "RE-FX Umsatzmiete: Jahresabrechnung aus Mieter-Umsatzmeldungen mit Staffel und Mindestmiete (GROUP BY, REDUCE, TRY/CATCH)",
+  "classes": [
+    "K01",
+    "K02"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZRE_UMSATZ",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:15"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VICNCN",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:15"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VICDCOND",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:37"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRE_UMS_STAFFEL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:47"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRE_UMS_ABR",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 71,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:71"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:75"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-127-B01",
+      "text": "Es werden die Umsatzmeldungen aller Monate des Geschäftsjahres für die Mietverträge des Buchungskreises gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-127-B02",
+      "text": "Liegen keine Meldungen vor, wird ein Hinweis ausgegeben und der Lauf beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-127-B03",
+      "text": "Je Mietvertrag und Währung wird der gemeldete Jahresumsatz summiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-127-B04",
+      "text": "Die monatliche Mindestmiete wird aus der Vertragskondition Z100 gelesen; Verträge ohne diese Kondition werden nicht abgerechnet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-127-B05",
+      "text": "Der höchste Staffelsatz, dessen Umsatzschwelle erreicht ist, wird ermittelt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-127-B06",
+      "text": "Die Jahresmiete ist der größere Betrag aus Umsatz mal Staffelsatz und zwölf Mindestmieten; die Nachforderung ist ihr Überschuss über die Mindestmieten.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-127-B07",
+      "text": "Die Mietbelastungsquote ist die Jahresmiete in Prozent des Umsatzes; bei einem Umsatz von null und einer Miete über null wird sie auf 999 gesetzt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-127-B08",
+      "text": "Auf Wunsch wird das Abrechnungsergebnis je Vertrag gespeichert und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        },
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-127-B09",
+      "text": "Die Abrechnungsliste wird am Bildschirm angezeigt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Umsatzmeldungen des Jahres mit Vertragsschlüssel lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Keine Umsatzmeldungen?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Hinweis „keine Meldungen für Buchungskreis und Jahr“"
+      },
+      {
+        "id": "r",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Meldungen je Vertrag und Währung gruppiert durchgehen"
+      },
+      {
+        "id": "a1",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Jahresumsatz des Vertrags summieren"
+      },
+      {
+        "id": "rc",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "Mindestmiete aus Vertragskondition Z100 lesen"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Vertrag ohne Umsatzmietvereinbarung?"
+      },
+      {
+        "id": "rs",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Höchsten erreichten Staffelsatz lesen"
+      },
+      {
+        "id": "a2",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        "meaning": "Jahresmiete = Maximum aus Umsatzanteil und zwölf Mindestmieten"
+      },
+      {
+        "id": "aq",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        "meaning": "Mietbelastungsquote berechnen"
+      },
+      {
+        "id": "gu",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        "meaning": "Ergebnis speichern?"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        },
+        "meaning": "Abrechnungsergebnis je Vertrag speichern"
+      },
+      {
+        "id": "c",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "Speicherung festschreiben"
+      },
+      {
+        "id": "af",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        "meaning": "ALV für Abrechnungsliste erzeugen"
+      },
+      {
+        "id": "ad",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Abrechnungsliste anzeigen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Lauf fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "m",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "a1",
+        "condition": "next row"
+      },
+      {
+        "from": "a1",
+        "to": "rc",
+        "condition": "always"
+      },
+      {
+        "from": "rc",
+        "to": "gc",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "l",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gc",
+        "to": "rs",
+        "condition": "else"
+      },
+      {
+        "from": "rs",
+        "to": "a2",
+        "condition": "always"
+      },
+      {
+        "from": "a2",
+        "to": "aq",
+        "condition": "always"
+      },
+      {
+        "from": "aq",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "gu",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gu",
+        "to": "w",
+        "condition": "p_upd = abap_true"
+      },
+      {
+        "from": "gu",
+        "to": "af",
+        "condition": "else"
+      },
+      {
+        "from": "w",
+        "to": "c",
+        "condition": "always"
+      },
+      {
+        "from": "c",
+        "to": "af",
+        "condition": "always"
+      },
+      {
+        "from": "af",
+        "to": "ad",
+        "condition": "always"
+      },
+      {
+        "from": "ad",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "aq",
+        "to": "l",
+        "condition": "CATCH cx_sy_zerodivide"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:47 — kein Fachsatz „ohne Staffel wird der Vertrag übersprungen“: ohne Staffel ist der Satz null und es gilt die Mindestmiete",
+    "source.abap:71 — kein Fachsatz „die Nachforderung wird im Vertrag gebucht oder fakturiert“: gespeichert wird nur in eine eigene Ergebnistabelle",
+    "source.abap:37 — kein Fachsatz „die zum Abrechnungsjahr gültige Mindestmiete wird verwendet“: gelesen wird eine beliebige bis heute gültig gewordene Z100-Kondition"
+  ],
+  "processDescription": "Der Report wird nach Jahresende mit Buchungskreis, Geschäftsjahr und optionalem Speicherkennzeichen gestartet. Er liest alle Monatsumsätze, die Mieter für Verträge des Buchungskreises im Jahr gemeldet haben. Gibt es keine, meldet er das und endet. Sonst summiert er je Vertrag und Währung den Jahresumsatz. Für jeden Vertrag liest er die monatliche Mindestmiete aus der Kondition Z100; fehlt sie, wird der Vertrag nicht abgerechnet. Er ermittelt den höchsten Staffelsatz, dessen Umsatzschwelle erreicht ist, und setzt die Jahresmiete auf den größeren Betrag aus Umsatzanteil und zwölf Mindestmieten; die Differenz ist die Nachforderung. Zusätzlich berechnet er die Mietbelastungsquote; bei Umsatz null (und Miete über null) setzt er sie auf 999. Ist das Speicherkennzeichen gesetzt, schreibt er alle Ergebnisse in die eigene Abrechnungstabelle und schreibt sie fest. Zum Schluss zeigt er die Abrechnungsliste an. Eine Buchung oder Faktura der Nachforderung erfolgt nicht."
+}

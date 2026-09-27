@@ -1,0 +1,995 @@
+{
+  "id": "BM-115",
+  "title": "Garantieprüfung beim Sichern der Meldung: Garantievererbung, Kundengarantie-Hinweis, Lieferantenregress mit dynamischer Nummernvergabe",
+  "classes": [
+    "K16",
+    "K06",
+    "K01",
+    "K03"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EXIT_SAPMIWO0_020",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "exit_sapmiwo0_020.abap",
+        "line": 1,
+        "token": null,
+        "expressionPath": null,
+        "raw": "exit_sapmiwo0_020.abap:1"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_PM_WARRANTY_CHECK",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zxqqmu20.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zxqqmu20.abap:30"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zxqqmu20.abap",
+        "line": 53,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zxqqmu20.abap:53"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPM_REGRESS",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zxqqmu20.abap",
+        "line": 70,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zxqqmu20.abap:70"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BGMKOBJ",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_pm_warranty_check.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_pm_warranty_check.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EQUZ",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_pm_warranty_check.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_pm_warranty_check.abap:41"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EQUI",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_pm_warranty_check.abap",
+        "line": 54,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_pm_warranty_check.abap:54"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-115-B01",
+      "text": "Die Garantieprüfung greift nur beim Anlegen von Stör- (M2) oder Servicemeldungen (S2) mit Equipment.",
+      "anchors": [
+        {
+          "file": "zxqqmu20.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-115-B02",
+      "text": "Hat der Massenupload das Überspringen angefordert, wird die Meldung ohne Garantieprüfung gesichert.",
+      "anchors": [
+        {
+          "file": "zxqqmu20.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:25"
+        },
+        {
+          "file": "zxqqmu20.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:26"
+        },
+        {
+          "file": "zxqqmu20.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-115-B03",
+      "text": "Für das Equipment wird die am Meldungsdatum gültige Garantie ermittelt; gibt es keine, wird ohne weitere Prüfung gesichert.",
+      "anchors": [
+        {
+          "file": "zxqqmu20.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:30"
+        },
+        {
+          "file": "zxqqmu20.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:39"
+        },
+        {
+          "file": "zxqqmu20.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-115-B04",
+      "text": "Eine Garantie wird zuerst am Equipment selbst gesucht.",
+      "anchors": [
+        {
+          "file": "z_pm_warranty_check.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:30"
+        },
+        {
+          "file": "z_pm_warranty_check.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-115-B05",
+      "text": "Hat das Equipment keine gültige Garantie, wird sie über bis zu fünf Stufen vom jeweils übergeordneten Equipment geerbt; ohne übergeordnetes Equipment endet die Suche.",
+      "anchors": [
+        {
+          "file": "z_pm_warranty_check.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:26"
+        },
+        {
+          "file": "z_pm_warranty_check.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:41"
+        },
+        {
+          "file": "z_pm_warranty_check.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-115-B06",
+      "text": "Wird keine Garantie gefunden, meldet der Prüfbaustein „keine Garantie“.",
+      "anchors": [
+        {
+          "file": "z_pm_warranty_check.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:49"
+        },
+        {
+          "file": "z_pm_warranty_check.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-115-B07",
+      "text": "Als Garantielieferant wird der Lieferant aus dem Stamm des gemeldeten Equipments übernommen.",
+      "anchors": [
+        {
+          "file": "z_pm_warranty_check.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-115-B08",
+      "text": "Bei Kundengarantie erhält der Erfasser im Dialog einen Hinweis mit Garantieende.",
+      "anchors": [
+        {
+          "file": "zxqqmu20.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:43"
+        },
+        {
+          "file": "zxqqmu20.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:46"
+        },
+        {
+          "file": "zxqqmu20.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-115-B09",
+      "text": "Bei Lieferantengarantie wird der Baustein für die Regressnummer des Buchungskreises aus der Variablenpflege gelesen und damit eine Regressnummer gezogen.",
+      "anchors": [
+        {
+          "file": "zxqqmu20.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:53"
+        },
+        {
+          "file": "zxqqmu20.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-115-B10",
+      "text": "Der Regress wird mit Meldung, Garantie-Equipment, Lieferant, Garantie und Status NEU vorgemerkt; scheitert das, wird das Sichern der Meldung mit Fehler verhindert.",
+      "anchors": [
+        {
+          "file": "zxqqmu20.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:70"
+        },
+        {
+          "file": "zxqqmu20.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:71"
+        },
+        {
+          "file": "zxqqmu20.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-115-B11",
+      "text": "Die Regressnummer wird für das Regressschreiben bereitgelegt und der Erfasser im Dialog informiert.",
+      "anchors": [
+        {
+          "file": "zxqqmu20.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:76"
+        },
+        {
+          "file": "zxqqmu20.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:77"
+        },
+        {
+          "file": "zxqqmu20.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:78"
+        }
+      ]
+    },
+    {
+      "id": "BM-115-B12",
+      "text": "Andere Garantiearten werden nicht behandelt.",
+      "anchors": [
+        {
+          "file": "zxqqmu20.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:81"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "exit_sapmiwo0_020.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "exit_sapmiwo0_020.abap:1"
+        },
+        "meaning": "Meldung wird gesichert (Exit vor dem Sichern)"
+      },
+      {
+        "id": "gck",
+        "type": "gateway",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:20"
+        },
+        "meaning": "Neue M2/S2-Meldung mit Equipment?"
+      },
+      {
+        "id": "rm",
+        "type": "read",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:25"
+        },
+        "meaning": "Überspringen-Flag aus Memory lesen"
+      },
+      {
+        "id": "gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:26"
+        },
+        "meaning": "Massenupload?"
+      },
+      {
+        "id": "xm",
+        "type": "end",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:27"
+        },
+        "meaning": "Ohne Prüfung sichern"
+      },
+      {
+        "id": "cw",
+        "type": "call",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:30"
+        },
+        "meaning": "Gültige Garantie ermitteln"
+      },
+      {
+        "id": "gw",
+        "type": "gateway",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:39"
+        },
+        "meaning": "Keine Garantie?"
+      },
+      {
+        "id": "xw",
+        "type": "end",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:40"
+        },
+        "meaning": "Ohne Garantie sichern"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:43"
+        },
+        "meaning": "Garantieart?"
+      },
+      {
+        "id": "gb1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:46"
+        },
+        "meaning": "Dialog?"
+      },
+      {
+        "id": "mk",
+        "type": "output",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:47"
+        },
+        "meaning": "Hinweis Kundengarantie mit Garantieende"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:53"
+        },
+        "meaning": "Nummernbaustein des Buchungskreises lesen"
+      },
+      {
+        "id": "cd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:57"
+        },
+        "meaning": "Regressnummer ziehen (dynamischer Baustein)"
+      },
+      {
+        "id": "wr",
+        "type": "write",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:70"
+        },
+        "meaning": "Regress vormerken"
+      },
+      {
+        "id": "gi",
+        "type": "gateway",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:71"
+        },
+        "meaning": "Vormerkung fehlgeschlagen?"
+      },
+      {
+        "id": "mi",
+        "type": "output",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:72"
+        },
+        "meaning": "Fehlermeldung"
+      },
+      {
+        "id": "xi",
+        "type": "end",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:72"
+        },
+        "meaning": "Sichern verhindert (EXIT_FROM_SAVE)"
+      },
+      {
+        "id": "ex",
+        "type": "action",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:76"
+        },
+        "meaning": "Regressnummer für Regressschreiben bereitlegen"
+      },
+      {
+        "id": "gb2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:77"
+        },
+        "meaning": "Dialog?"
+      },
+      {
+        "id": "mv",
+        "type": "output",
+        "anchor": {
+          "file": "zxqqmu20.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxqqmu20.abap:78"
+        },
+        "meaning": "Hinweis Regress beim Lieferanten"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "exit_sapmiwo0_020.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "exit_sapmiwo0_020.abap:16"
+        },
+        "meaning": "Meldung wird gesichert"
+      },
+      {
+        "id": "sf",
+        "type": "start",
+        "anchor": {
+          "file": "z_pm_warranty_check.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:1"
+        },
+        "meaning": "Garantie ermitteln"
+      },
+      {
+        "id": "lw",
+        "type": "loop",
+        "anchor": {
+          "file": "z_pm_warranty_check.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:26"
+        },
+        "meaning": "Equipmenthierarchie aufwärts (max. 5 Stufen)"
+      },
+      {
+        "id": "rbg",
+        "type": "read",
+        "anchor": {
+          "file": "z_pm_warranty_check.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:30"
+        },
+        "meaning": "Am Stichtag gültige Garantie des Equipments lesen"
+      },
+      {
+        "id": "gf",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_pm_warranty_check.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:35"
+        },
+        "meaning": "Garantie gefunden?"
+      },
+      {
+        "id": "rh",
+        "type": "read",
+        "anchor": {
+          "file": "z_pm_warranty_check.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:41"
+        },
+        "meaning": "Übergeordnetes Equipment lesen"
+      },
+      {
+        "id": "gh",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_pm_warranty_check.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:44"
+        },
+        "meaning": "Kein übergeordnetes Equipment?"
+      },
+      {
+        "id": "gnf",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_pm_warranty_check.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:49"
+        },
+        "meaning": "Keine Garantie gefunden?"
+      },
+      {
+        "id": "xnf",
+        "type": "end",
+        "anchor": {
+          "file": "z_pm_warranty_check.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:50"
+        },
+        "meaning": "Ausnahme NO_WARRANTY"
+      },
+      {
+        "id": "rl",
+        "type": "read",
+        "anchor": {
+          "file": "z_pm_warranty_check.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:54"
+        },
+        "meaning": "Lieferant des gemeldeten Equipments lesen"
+      },
+      {
+        "id": "ef",
+        "type": "end",
+        "anchor": {
+          "file": "z_pm_warranty_check.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_warranty_check.abap:56"
+        },
+        "meaning": "Garantie zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "gck",
+        "condition": "always"
+      },
+      {
+        "from": "gck",
+        "to": "rm",
+        "condition": "i_aktyp = 'H' AND ( i_viqmel-qmart = 'M2' OR i_viqmel-qmart = 'S2' ) AND i_viqmel-equnr IS NOT INITIAL"
+      },
+      {
+        "from": "gck",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "rm",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "gm",
+        "to": "xm",
+        "condition": "lv_skip = abap_true"
+      },
+      {
+        "from": "gm",
+        "to": "cw",
+        "condition": "else"
+      },
+      {
+        "from": "cw",
+        "to": "sf",
+        "condition": "always"
+      },
+      {
+        "from": "gw",
+        "to": "xw",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gw",
+        "to": "cs",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "gb1",
+        "condition": "WHEN '1'"
+      },
+      {
+        "from": "cs",
+        "to": "rt",
+        "condition": "WHEN '2'"
+      },
+      {
+        "from": "cs",
+        "to": "e",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "gb1",
+        "to": "mk",
+        "condition": "sy-batch IS INITIAL"
+      },
+      {
+        "from": "gb1",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "mk",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "rt",
+        "to": "cd",
+        "condition": "always"
+      },
+      {
+        "from": "cd",
+        "to": "wr",
+        "condition": "always"
+      },
+      {
+        "from": "wr",
+        "to": "gi",
+        "condition": "always"
+      },
+      {
+        "from": "gi",
+        "to": "mi",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mi",
+        "to": "xi",
+        "condition": "always"
+      },
+      {
+        "from": "gi",
+        "to": "ex",
+        "condition": "else"
+      },
+      {
+        "from": "ex",
+        "to": "gb2",
+        "condition": "always"
+      },
+      {
+        "from": "gb2",
+        "to": "mv",
+        "condition": "sy-batch IS INITIAL"
+      },
+      {
+        "from": "gb2",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "mv",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "sf",
+        "to": "lw",
+        "condition": "always"
+      },
+      {
+        "from": "lw",
+        "to": "rbg",
+        "condition": "next row"
+      },
+      {
+        "from": "rbg",
+        "to": "gf",
+        "condition": "always"
+      },
+      {
+        "from": "gf",
+        "to": "gnf",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gf",
+        "to": "rh",
+        "condition": "else"
+      },
+      {
+        "from": "rh",
+        "to": "gh",
+        "condition": "always"
+      },
+      {
+        "from": "gh",
+        "to": "gnf",
+        "condition": "sy-subrc <> 0 OR lv_equnr IS INITIAL"
+      },
+      {
+        "from": "gh",
+        "to": "lw",
+        "condition": "else"
+      },
+      {
+        "from": "lw",
+        "to": "gnf",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gnf",
+        "to": "xnf",
+        "condition": "es_warranty-gaart IS INITIAL"
+      },
+      {
+        "from": "gnf",
+        "to": "rl",
+        "condition": "else"
+      },
+      {
+        "from": "rl",
+        "to": "ef",
+        "condition": "always"
+      },
+      {
+        "from": "ef",
+        "to": "gw",
+        "condition": "always"
+      },
+      {
+        "from": "xnf",
+        "to": "gw",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "z_pm_warranty_check.abap:30 — kein Fachsatz „die Lieferantengarantie hat Vorrang vor der Kundengarantie“: SELECT SINGLE ohne Sortierung liefert bei mehreren gültigen Garantien eine beliebige",
+    "z_pm_warranty_check.abap:54 — kein Fachsatz „der Regress geht an den Lieferanten des garantiegebenden Equipments“: der Lieferant wird immer vom gemeldeten Equipment gelesen, auch wenn die Garantie geerbt ist",
+    "zxqqmu20.abap:57 — kein Fachsatz „ohne gepflegten Nummernbaustein wird der Regress ohne Nummer vorgemerkt“: bei fehlendem TVARVC-Eintrag ist der Bausteinname leer und der Aufruf bricht mit Laufzeitfehler ab; das Ziel ist aus dem Fall nicht bekannt",
+    "gesamte Scheibe — kein Fachsatz „der Regress wird beim Lieferanten eingereicht oder gebucht“: er wird nur in ZPM_REGRESS mit Status NEU vorgemerkt"
+  ],
+  "processDescription": "Beim Sichern einer Meldung ruft das System den Kundenexit auf. Die Prüfung greift nur beim Anlegen von Stör- oder Servicemeldungen der Arten M2 und S2 mit Equipment; hat ein Massenupload über das ABAP-Memory das Überspringen angefordert, wird ohne Prüfung gesichert. Sonst ermittelt ein Kundenbaustein die am Meldungsdatum gültige Garantie, zuerst am Equipment, dann bis zu fünf Stufen aufwärts über das jeweils übergeordnete Equipment; den Lieferanten übernimmt er stets aus dem gemeldeten Equipment. Ohne Garantie wird die Meldung ohne weitere Wirkung gesichert. Bei Kundengarantie erhält der Erfasser im Dialog einen Hinweis mit dem Garantieende. Bei Lieferantengarantie liest der Exit aus der Variablenpflege den Namen des Nummernbausteins für den Buchungskreis, zieht damit dynamisch eine Regressnummer und merkt den Regress mit Status NEU in einer Kundentabelle vor; scheitert das, verhindert er das Sichern mit Fehlermeldung. Die Regressnummer wird für das Regressschreiben im Memory abgelegt und dem Erfasser im Dialog gemeldet. Andere Garantiearten bleiben unbehandelt."
+}

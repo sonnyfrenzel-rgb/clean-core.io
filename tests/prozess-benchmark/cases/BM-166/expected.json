@@ -1,0 +1,663 @@
+{
+  "id": "BM-166",
+  "title": "IS-Retail: Aktionsmenge nach Filialquote auf die Filialen eines Verteilzentrums aufteilen",
+  "classes": [
+    "K01",
+    "K04",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "T001W",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 26,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:26"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRT_QUOTE",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRT_AUFTEIL",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 72,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:72"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 77,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:77"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-166-B01",
+      "text": "Das eingegebene Werk muss ein Verteilzentrum sein; andernfalls wird die Eingabe mit einer Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-166-B02",
+      "text": "Es werden die Filialen des Verteilzentrums mit ihrer gepflegten Quote gelesen; nur Werke vom Typ Filiale zählen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-166-B03",
+      "text": "Gibt es keine Filialquote, endet der Lauf mit einer als Fehler angezeigten Hinweismeldung ohne Aufteilung.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-166-B04",
+      "text": "Die Summe aller positiven Quoten bildet die Bezugsgröße der Aufteilung.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-166-B05",
+      "text": "Jede Filiale mit positiver Quote erhält den abgerundeten Anteil der Aktionsmenge nach ihrem Quotenanteil; Filialen ohne positive Quote gehen leer aus.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-166-B06",
+      "text": "Der Rundungsrest wird der Filiale mit der größten Zuteilung zugeschlagen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-166-B07",
+      "text": "Nur ohne Testkennzeichen wird die Aufteilung je Filiale mit Material, Verteilzentrum, Datum und Benutzer gespeichert und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-166-B08",
+      "text": "Die Zuteilung je Filiale wird als Liste angezeigt, im Testlauf ebenso wie im Echtlauf.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Prüfung der Eingabe Verteilzentrum"
+      },
+      {
+        "id": "qv",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Werk als Verteilzentrum nachlesen"
+      },
+      {
+        "id": "gv",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Kein Verteilzentrum?"
+      },
+      {
+        "id": "es",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Eingabe Verteilzentrum geprüft"
+      },
+      {
+        "id": "mo",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Fehlermeldung: Werk ist kein Verteilzentrum"
+      },
+      {
+        "id": "mv",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Eingabe abweisen"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Aufteilung starten"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Filialen mit Quote lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        "meaning": "Keine Filialquoten?"
+      },
+      {
+        "id": "o0",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Meldung: keine Filialquoten (als Fehler angezeigt)"
+      },
+      {
+        "id": "r0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Lauf ohne Aufteilung beenden"
+      },
+      {
+        "id": "c",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        },
+        "meaning": "Quotensumme bilden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        "meaning": "Filialen durchgehen"
+      },
+      {
+        "id": "ch",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        "meaning": "Quote positiv?"
+      },
+      {
+        "id": "a",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        "meaning": "Filialanteil abgerundet berechnen"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Mindestens eine Zuteilung?"
+      },
+      {
+        "id": "ar",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        "meaning": "Rundungsrest der größten Zuteilung zuschlagen"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "Aufteilung speichern"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        },
+        "meaning": "Zuteilung als ALV anzeigen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        },
+        "meaning": "Ende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s1",
+        "to": "qv",
+        "condition": "always"
+      },
+      {
+        "from": "qv",
+        "to": "gv",
+        "condition": "always"
+      },
+      {
+        "from": "gv",
+        "to": "mo",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gv",
+        "to": "es",
+        "condition": "else"
+      },
+      {
+        "from": "s2",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "o0",
+        "condition": "lt_filq IS INITIAL"
+      },
+      {
+        "from": "g0",
+        "to": "c",
+        "condition": "else"
+      },
+      {
+        "from": "c",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "ch",
+        "condition": "next row"
+      },
+      {
+        "from": "ch",
+        "to": "a",
+        "condition": "ls_filq-quote > 0"
+      },
+      {
+        "from": "ch",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "a",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "gr",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gr",
+        "to": "ar",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gr",
+        "to": "gt",
+        "condition": "else"
+      },
+      {
+        "from": "ar",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "w",
+        "condition": "p_test = abap_false"
+      },
+      {
+        "from": "gt",
+        "to": "o",
+        "condition": "else"
+      },
+      {
+        "from": "w",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "o",
+        "condition": "always"
+      },
+      {
+        "from": "o",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "mo",
+        "to": "mv",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "o0",
+        "to": "r0",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:72 — kein Fachsatz „es werden Aufteiler, Filialbestellungen oder Lieferungen angelegt“: geschrieben wird nur die eigene Tabelle ZRT_AUFTEIL",
+    "source.abap:52 — kein Fachsatz „die Menge wird kaufmännisch gerundet“: der Anteil wird abgeschnitten, der gesamte Rest landet bei einer einzigen Filiale",
+    "source.abap:73 — kein Fachsatz „bei Schreibfehlern wird zurückgerollt“: der Rückgabewert von MODIFY wird nicht geprüft"
+  ],
+  "processDescription": "Der Disponent startet den Report mit Material, Aktionsmenge, Verteilzentrum und Testkennzeichen. Schon im Selektionsbild wird geprüft, dass das Werk ein Verteilzentrum ist, sonst wird die Eingabe mit Fehlermeldung abgewiesen. Danach liest der Report aus einer Quotentabelle alle Filialen dieses Verteilzentrums, die als Filiale angelegt sind; ohne Quote endet er mit einer Meldung. Die Summe der positiven Quoten ist die Bezugsgröße. Jede Filiale mit positiver Quote erhält den abgeschnittenen Anteil der Aktionsmenge, der verbleibende Rest geht vollständig an die Filiale mit der größten Zuteilung. Im Echtlauf wird die Aufteilung je Filiale in einer eigenen Tabelle gespeichert und festgeschrieben, ohne Fehlerprüfung. In beiden Läufen wird die Zuteilung als ALV-Liste gezeigt. Standard-Aufteiler oder Folgebelege entstehen nicht."
+}

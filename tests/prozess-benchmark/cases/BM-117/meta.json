@@ -1,0 +1,49 @@
+{
+  "id": "BM-117",
+  "title": "Rückrufaktion: ausgelieferte Serialnummern ermitteln, Rückruf anlegen, Servicemeldung je Kunde, Landeskanal dynamisch, Briefe, Equipmentstatus",
+  "domain": "CS — Rückruf / Serialnummern / Servicemeldung",
+  "band": "sehr komplex",
+  "loc": 418,
+  "constructs": [
+    "REPORT mit TOP/F01",
+    "AT SELECTION-SCREEN",
+    "RETURN in START-OF-SELECTION",
+    "SELECT mit Join OBJK/SER01",
+    "FOR ALL ENTRIES mit Leermengenschutz",
+    "DELETE itab in LOOP",
+    "VALUE … OPTIONAL mit Tabellenausdruck",
+    "AT NEW",
+    "ENQUEUE",
+    "INSERT … FROM TABLE @( VALUE #( FOR … ) )",
+    "LOOP AT … GROUP BY",
+    "NEW …( )->create( ) verkettet",
+    "TRY … CATCH",
+    "UPDATE Z-Tabelle",
+    "CALL METHOD (lv_class)=>(lv_meth)",
+    "SUBMIT … EXPORTING LIST TO MEMORY AND RETURN",
+    "LIST_FROM_MEMORY/WRITE_LIST",
+    "STATUS_CHANGE_EXTERN",
+    "BAPI_ALM_NOTIF_CREATE/SAVE",
+    "nie aufgerufenes FORM"
+  ],
+  "scenario": "Elektronikhersteller muss ein fehlerhaftes Steuergerät zurückrufen: ein Z-Programm ermittelt aus der Serialnummernhistorie der Lieferungen alle betroffenen Kunden, legt je Kunde eine Servicemeldung an, informiert über einen je Land konfigurierten Kanal und sperrt die betroffenen Equipments per Anwenderstatus.",
+  "s4_issues": [
+    "Direkte Lesezugriffe auf OBJK, SER01, LIPS, LIKP, KNA1",
+    "Dynamischer Klassen-/Methodenaufruf aus Customizingtabelle (Ziel statisch nicht bekannt)",
+    "SUBMIT … EXPORTING LIST TO MEMORY und klassische Listen, nicht Cloud-fähig",
+    "BAPI_ALM_NOTIF_* und STATUS_CHANGE_EXTERN nicht freigegeben",
+    "Mehrere COMMIT WORK und ein BAPI-Rollback mitten in der Kundenschleife"
+  ],
+  "wave": 2,
+  "module": "CS",
+  "edge_constructs": [
+    "AT NEW (Gruppenwechsel auf nicht führendem Feld)",
+    "LOOP AT … GROUP BY",
+    "CALL METHOD (lv_class)=>(lv_meth)",
+    "SUBMIT … AND RETURN mit EXPORTING LIST TO MEMORY",
+    "verkettete Methodenaufrufe / NEW",
+    "RAISE EXCEPTION TYPE",
+    "nie erreichtes FORM",
+    "SELECT … FOR ALL ENTRIES mit Leermengenschutz"
+  ]
+}

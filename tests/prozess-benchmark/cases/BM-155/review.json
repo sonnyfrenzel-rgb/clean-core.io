@@ -1,0 +1,114 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten o_errm (neu) vor o_err",
+      "before": "o_err end auf zpe_book_participants.abap:44 ohne output",
+      "after": "o_errm output auf zpe_book_participants.abap:44, Kante o_errm -> o_err [always]; eingehende Kanten auf o_errm umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante a_new -> o_err [CATCH zcx_pe_booking]",
+      "before": "vom Aufruf in den Handler",
+      "after": "x_st -> o_errm [CATCH zcx_pe_booking]",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION im gerufenen Block ist ein end-Knoten, von dort führt die Kante in den CATCH-Zweig des Aufrufers (Bedingung: der Ausnahmename); keine Kante vom Aufruf selbst in den Handler.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_ctor (neu)",
+      "before": "kein end-Knoten auf zcl_pe_booking.abap:72",
+      "after": "e_ctor end auf zcl_pe_booking.abap:72; g_typ -> e_ctor [else]; r_pre -> e_ctor [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante a_new -> a_hdl",
+      "before": "a_new -> a_hdl [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_ctor -> a_hdl [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_book -> a_cast [CATCH cx_static_check]",
+      "before": "vom Aufruf in den Handler",
+      "after": "x_ex, x_q, x_rm -> a_cast [CATCH cx_static_check] (x_rm über create_relation und book hinweg, beide ohne eigenes TRY)",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION im gerufenen Block ist ein end-Knoten, von dort führt die Kante in den CATCH-Zweig des Aufrufers (Bedingung: der Ausnahmename); keine Kante vom Aufruf selbst in den Handler.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_cr (neu)",
+      "before": "kein end-Knoten auf zcl_pe_booking.abap:138",
+      "after": "e_cr end auf zcl_pe_booking.abap:138; g_rm -> e_cr [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_cr1 -> ev_w",
+      "before": "c_cr1 -> ev_w [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_cr -> ev_w [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_cr2 -> ev_b",
+      "before": "c_cr2 -> ev_b [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_cr -> ev_b [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_hw (neu)",
+      "before": "kein end-Knoten auf zpe_book_participants.abap:32",
+      "after": "e_hw end auf zpe_book_participants.abap:32; o_hw -> e_hw [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_hb (neu)",
+      "before": "kein end-Knoten auf zpe_book_participants.abap:28",
+      "after": "e_hb end auf zpe_book_participants.abap:28; o_hb -> e_hb [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_book (neu)",
+      "before": "kein end-Knoten auf zcl_pe_booking.abap:110",
+      "after": "e_book end auf zcl_pe_booking.abap:110; erreicht über e_hb -> e_book (Rückkehr aus dem Handler on_booked); e_book -> l_p [next iteration]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante ev_w -> e_w",
+      "before": "ev_w -> e_w [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_hw -> e_w [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Rückkante e_hb -> e_book (neu)",
+      "before": "ev_b -> s_hb ohne Rückkehr; book endete nach RAISE EVENT booked ohne end-Knoten",
+      "after": "e_hb -> e_book [always]",
+      "why": "RAISE EVENT ruft die registrierten Handler synchron wie einen Aufruf; danach endet book auf ENDMETHOD.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_book -> l_p",
+      "before": "c_book -> l_p [next iteration] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_w -> l_p [next iteration], e_book -> l_p [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_sos (neu)",
+      "before": "kein end-Knoten auf zpe_book_participants.abap:71",
+      "after": "e_sos end auf zpe_book_participants.abap:71; o_sum -> e_sos [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": [
+    "Der CATCH cx_static_check im Report fängt die Buchungsfehler nur, wenn ZCX_PE_BOOKING (nicht im Fall) von CX_STATIC_CHECK erbt; das ist angenommen. Mit dem heutigen Code kann book( ) keine andere statische Ausnahme werfen, der CAST-Laufzeitfehler ist also eine latente Falle (verbotener Schluss zu :60 bleibt richtig)."
+  ]
+}

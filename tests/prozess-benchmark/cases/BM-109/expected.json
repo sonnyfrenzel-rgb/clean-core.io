@@ -1,0 +1,751 @@
+{
+  "id": "BM-109",
+  "title": "Sicherheitsdatenblatt-Erstversand: fällige Kunden/Stoffe ermitteln, Versandjob einplanen",
+  "classes": [
+    "K01",
+    "K04",
+    "K17"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "LIKP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LIPS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ESTMJ",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:47"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ESTRH",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:47"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEHS_SDB_LOG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 54,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:54"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_OPEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 81,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:81"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "INDX",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 88,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:88"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEHS_SDB_VERSAND",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 89,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:89"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_CLOSE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 92,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:92"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-109-B01",
+      "text": "Es werden Kunde und Material aller Lieferungen gelesen, deren Warenausgang im eingegebenen Zeitraum vollständig gebucht ist; jede Kombination aus Kunde und Material zählt einmal.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-109-B02",
+      "text": "Ohne solche Lieferungen endet der Lauf.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-109-B03",
+      "text": "Zu den gelieferten Materialien werden die zugeordneten realen Stoffe ermittelt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-109-B04",
+      "text": "Nur wenn Gefahrstoffe gefunden wurden, wird gelesen, welche Kunden das Sicherheitsdatenblatt zu diesen Stoffen bereits erhalten haben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-109-B05",
+      "text": "Lieferpositionen ohne zugeordneten realen Stoff werden übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-109-B06",
+      "text": "Hat der Kunde das Sicherheitsdatenblatt zum Stoff schon erhalten, wird die Kombination übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-109-B07",
+      "text": "Jede fällige Kombination wird vorgemerkt und mit Kunde, Stoff und Lieferung als „SDB fällig“ gelistet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-109-B08",
+      "text": "Ohne Versandkennzeichen oder ohne fällige Kombination endet der Lauf nach der Liste.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        }
+      ]
+    },
+    {
+      "id": "BM-109-B09",
+      "text": "Mit Versandkennzeichen wird ein Hintergrundjob ZEHS_SDB_VERSAND angelegt, die fälligen Kombinationen werden unter der Jobnummer in der Datenbank abgelegt, der Versandreport wird in den Job eingeplant und der Job zum sofortigen Start freigegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        {
+          "file": "source.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:88"
+        },
+        {
+          "file": "source.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:89"
+        },
+        {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Warenausgebuchte Lieferpositionen lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Keine Lieferungen?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Reale Stoffe zu den Materialien lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        "meaning": "Gefahrstoffe gefunden?"
+      },
+      {
+        "id": "r3",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        "meaning": "Bisherige SDB-Versände lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Kunde/Material-Kombinationen durchgehen"
+      },
+      {
+        "id": "rl",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Stoff zum Material nachschlagen"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        "meaning": "Kein Gefahrstoff?"
+      },
+      {
+        "id": "rg",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        "meaning": "Nachschlagen, ob SDB schon versandt"
+      },
+      {
+        "id": "gg",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        "meaning": "Schon versandt?"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        },
+        "meaning": "Fällige Kombination listen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Versand gewünscht und etwas fällig?"
+      },
+      {
+        "id": "x3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        },
+        "meaning": "Lauf nach Liste beenden"
+      },
+      {
+        "id": "jo",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        "meaning": "Versandjob anlegen"
+      },
+      {
+        "id": "ex",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:88"
+        },
+        "meaning": "Fällige Kombinationen für den Job ablegen"
+      },
+      {
+        "id": "sb",
+        "type": "external_program",
+        "anchor": {
+          "file": "source.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:89"
+        },
+        "meaning": "Versandreport in den Job einplanen"
+      },
+      {
+        "id": "jc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        },
+        "meaning": "Job zum Sofortstart freigeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        },
+        "meaning": "Lauf beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "x1",
+        "condition": "gt_pos IS INITIAL"
+      },
+      {
+        "from": "g1",
+        "to": "r2",
+        "condition": "else"
+      },
+      {
+        "from": "r2",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "r3",
+        "condition": "gt_link IS NOT INITIAL"
+      },
+      {
+        "from": "g2",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "r3",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "rl",
+        "condition": "next row"
+      },
+      {
+        "from": "rl",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "l",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gl",
+        "to": "rg",
+        "condition": "else"
+      },
+      {
+        "from": "rg",
+        "to": "gg",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "l",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gg",
+        "to": "o",
+        "condition": "else"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "g3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g3",
+        "to": "x3",
+        "condition": "p_vers IS INITIAL OR gt_todo IS INITIAL"
+      },
+      {
+        "from": "g3",
+        "to": "jo",
+        "condition": "else"
+      },
+      {
+        "from": "jo",
+        "to": "ex",
+        "condition": "always"
+      },
+      {
+        "from": "ex",
+        "to": "sb",
+        "condition": "always"
+      },
+      {
+        "from": "sb",
+        "to": "jc",
+        "condition": "always"
+      },
+      {
+        "from": "jc",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:104 — kein Knoten und kein Fachsatz „der Versand wird im Protokoll vermerkt“: LOG_SCHREIBEN wird nirgends aufgerufen; ob der Versandjob protokolliert, ist aus dem Fall nicht zu wissen",
+    "source.abap:89 — kein Fachsatz „das Sicherheitsdatenblatt wird versandt“: der Report plant den Versandjob nur ein, der Versand selbst liegt außerhalb des Falls",
+    "source.abap:81 — kein Fachsatz „schlägt das Anlegen des Jobs fehl, wird abgebrochen“: sy-subrc wird nicht ausgewertet"
+  ],
+  "processDescription": "Der Report wird mit einem Zeitraum für den Warenausgang und einem Versandkennzeichen gestartet. Er liest Kunde und Material aller Lieferungen, deren Warenausgang in diesem Zeitraum vollständig gebucht ist, und verdichtet sie auf eindeutige Kombinationen; ohne Lieferungen endet er. Zu den Materialien ermittelt er die zugeordneten realen Stoffe und liest, falls es solche gibt, welche Kunden das Sicherheitsdatenblatt zu diesen Stoffen bereits erhalten haben. Je Kombination werden Materialien ohne Gefahrstoff und bereits belieferte Kunden übersprungen; alle übrigen werden als „SDB fällig“ gelistet und vorgemerkt. Ist kein Versand gewünscht oder nichts fällig, endet der Lauf nach der Liste. Andernfalls legt er einen Hintergrundjob an, legt die fälligen Kombinationen unter der Jobnummer in der Datenbank ab, plant den Versandreport in den Job ein und gibt den Job zum sofortigen Start frei. Fehler beim Anlegen des Jobs werden nicht ausgewertet, und die Protokollierung des Versands geschieht in diesem Report nicht mehr."
+}

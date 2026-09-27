@@ -1,0 +1,151 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "zrt_katalog_import_c01.abap:11, zrt_katalog_import_f01.abap:124/126",
+      "before": "TYPE bapie1mararx",
+      "after": "TYPE bapie1marartx",
+      "why": "Die X-Struktur zu BAPIE1MARART heißt BAPIE1MARARTX (Tabellenparameter CLIENTDATAX von BAPI_MATERIAL_MAINTAINDATA_RT); BAPIE1MARARX gibt es nicht, der Fall wäre nicht aktivierbar. Gleiche Zeilen, keine Ankerverschiebung.",
+      "category": "Quelltext"
+    },
+    {
+      "where": "Knoten a1o (neu) vor a1m",
+      "before": "a1m end auf zrt_katalog_import.abap:27 ohne output",
+      "after": "a1o output auf zrt_katalog_import.abap:27, Kante a1o -> a1m [always]; eingehende Kanten auf a1o umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_a1 (neu)",
+      "before": "kein end-Knoten auf zrt_katalog_import.abap:28",
+      "after": "e_a1 end auf zrt_katalog_import.abap:28; a1g -> e_a1 [else] statt -> s; e_a1 -> s [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, AT SELECTION-SCREEN) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten Aufruf cm",
+      "before": "cm -> cd [always]",
+      "after": "e_m -> cd [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cd",
+      "before": "cd -> cw [always]",
+      "after": "e_d -> cw [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cw",
+      "before": "cw -> cv [always]",
+      "after": "rw1 -> cv [always]; e_w -> cv [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_sos (neu), Rückkante verarbeiten",
+      "before": "cv -> eos [always] (Direktkante, kein end-Knoten für START-OF-SELECTION)",
+      "after": "e_sos end auf zrt_katalog_import.abap:35 (letzte Anweisung); e_v -> e_sos [always], e_sos -> eos [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, AT SELECTION-SCREEN) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146). Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_eos (neu)",
+      "before": "kein end-Knoten für END-OF-SELECTION; e_p ohne Rückkehr",
+      "after": "e_eos end auf zrt_katalog_import.abap:38 (letzte Anweisung); e_p -> e_eos [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, AT SELECTION-SCREEN) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146). Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten Aufruf mp",
+      "before": "mp -> bp [always]",
+      "after": "e_ab -> bp [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf ck",
+      "before": "ck -> lm [next iteration]",
+      "after": "e_kv -> lm [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten o2 (neu) vor m2",
+      "before": "m2 end auf zrt_katalog_import_f01.abap:19 ohne output",
+      "after": "o2 output auf zrt_katalog_import_f01.abap:19, Kante o2 -> m2 [always]; eingehende Kanten auf o2 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o3 (neu) vor m3",
+      "before": "m3 end auf zrt_katalog_import_f01.abap:31 ohne output",
+      "after": "o3 output auf zrt_katalog_import_f01.abap:31, Kante o3 -> m3 [always]; eingehende Kanten auf o3 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante tr -> mt",
+      "before": "[CATCH cx_transformation_error INTO DATA(lx_trafo)]",
+      "after": "[cx_transformation_error]",
+      "why": "Vereinheitlichte Konvention: die Kante in einen CATCH-Zweig trägt als Bedingung den Ausnahmenamen.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten ot (neu) vor mt",
+      "before": "mt end auf zrt_katalog_import_f01.abap:41 ohne output",
+      "after": "ot output auf zrt_katalog_import_f01.abap:41, Kante ot -> mt [always]; eingehende Kanten auf ot umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o4 (neu)",
+      "before": "keine Knoten auf zrt_katalog_import_f01.abap:45",
+      "after": "o4 output auf zrt_katalog_import_f01.abap:45; gk2 -> o4 [gt_kat IS INITIAL]; o4 -> ll [always]",
+      "why": "Die Meldung (MESSAGE … TYPE 'S' DISPLAY LIKE …) ist die Ausgabe dieses Pfadendes und fehlte als output-Knoten; das folgende LEAVE LIST-PROCESSING bleibt end.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz B04 Anker",
+      "before": "… f01:44, f01:46",
+      "after": "… f01:44, f01:45, f01:46",
+      "why": "Der Hinweis steht auf Zeile 45.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf cap",
+      "before": "cap -> gl [always]",
+      "after": "ra1 -> gl [always]; ra2 -> gl [always]; ra3 -> gl [always]; e_a -> gl [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cau",
+      "before": "cau -> lv [next iteration]",
+      "after": "rs -> lv [next iteration]; e_s -> lv [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cli",
+      "before": "cli -> gx [always]",
+      "after": "e_l -> gx [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten pg, po (neu)",
+      "before": "keine Knoten auf zrt_katalog_import_f02.abap:15/16; fp -> alv [always]",
+      "after": "pg gateway :15, po output :16; fp -> pg [always], pg -> po [lv_fehler > 0], pg -> alv [else], po -> alv [always]",
+      "why": "Verzweigung und Meldung der Fehleranzahl tragen Fachsatz B19 (Anker :15, :16) und fehlten im Skelett.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": [
+    "CATCH cx_salv_msg in protokoll_ausgeben (f02:24–27, Ersatzliste per WRITE) und die CATCH-Behandlung cx_sy_dyn_call_error in konvertieren (c01:65–67, reine Zuweisung) nicht im Skelett; belassen.",
+    "si (f01:67, gv_start_idx = lv_idx + 1) als action belassen: Berechnung, die die Startzeile festlegt.",
+    "LEAVE LIST-PROCESSING (f01:46) in START-OF-SELECTION: ll bleibt ohne Folgekante; END-OF-SELECTION läuft danach nicht mehr."
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "id": "BM-161",
+  "title": "IS-U: Verbrauch je Zähler aus aufeinanderfolgenden Ablesungen (EABL)",
+  "domain": "Branchenlösung IS-U / Versorger",
+  "band": "einfach",
+  "loc": 38,
+  "constructs": [
+    "REPORT",
+    "SELECT-OPTIONS",
+    "SELECT INTO TABLE mit Feldliste",
+    "SORT",
+    "LOOP AT",
+    "AT NEW",
+    "CHECK",
+    "WRITE-Liste"
+  ],
+  "scenario": "Auswertung der Abrechnungsvorbereitung eines Stadtwerks: Sachbearbeiter prüfen vor dem Turnuslauf die Verbräuche zwischen zwei Ablesungen je Zähler.",
+  "s4_issues": [
+    "Direktlesen der IS-U-Ablesetabelle EABL statt freigegebener Schnittstelle",
+    "Zählerstandsfelder V_ZWSTAND/N_ZWSTAND getrennt (Vor-/Nachkommastellen) – Verbrauch ohne Nachkommastellen",
+    "WRITE-Liste statt ALV/Fiori-App"
+  ],
+  "wave": 2,
+  "module": "IS-U",
+  "edge_constructs": [
+    "AT NEW in LOOP (Gruppenwechsel je Zähler)",
+    "CHECK mitten in der Schleife"
+  ]
+}

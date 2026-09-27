@@ -1,0 +1,1283 @@
+{
+  "id": "BM-173",
+  "title": "Automotive Kanban: Scanner-Dialog meldet Behälter leer, bei Doppelscan Eil-Nachschub",
+  "classes": [
+    "K01",
+    "K03",
+    "K07",
+    "K15"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PKPS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzkanbanf01.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzkanbanf01.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PKHD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzkanbanf01.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzkanbanf01.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_KANBAN_CHANGESTATUS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzkanbanf01.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzkanbanf01.abap:41"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzkanbanf01.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzkanbanf01.abap:58"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZKANBAN_EIL",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "mzkanbanf01.abap",
+        "line": 93,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzkanbanf01.abap:93"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-173-B01",
+      "text": "Ist kein Versorgungsbereich gesetzt, wird er aus dem Benutzerparameter vorbelegt.",
+      "anchors": [
+        {
+          "file": "mzkanbani01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:12"
+        },
+        {
+          "file": "mzkanbani01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-173-B02",
+      "text": "Mit Zurück oder Beenden verlässt der Werker den Scanner.",
+      "anchors": [
+        {
+          "file": "mzkanbani01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:25"
+        },
+        {
+          "file": "mzkanbani01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-173-B03",
+      "text": "Der gescannte Behälter wird gelesen; ist er unbekannt, bleibt die Scanmaske mit Fehlermeldung stehen.",
+      "anchors": [
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:12"
+        },
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:14"
+        },
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-173-B04",
+      "text": "Zum Behälter wird der Regelkreis gelesen; gehört er zu einem anderen als dem gesetzten Versorgungsbereich, wird der Scan abgewiesen.",
+      "anchors": [
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:18"
+        },
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:21"
+        },
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-173-B05",
+      "text": "Ohne Berechtigung für das Werk des Regelkreises wird der Scan abgewiesen.",
+      "anchors": [
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:25"
+        },
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:28"
+        },
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-173-B06",
+      "text": "Ein voller oder in Benutzung befindlicher Behälter wird per BAPI auf „leer“ gesetzt und sofort festgeschrieben; lehnt das BAPI ab, wird zurückgerollt und der Scan mit Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:40"
+        },
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:41"
+        },
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:47"
+        },
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:48"
+        },
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-173-B07",
+      "text": "Ist der Behälter bereits leer, wird der Werker gefragt, ob ein Eil-Nachschub ausgelöst werden soll.",
+      "anchors": [
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:56"
+        },
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-173-B08",
+      "text": "Bei Zustimmung wird ein Eil-Nachschub mit Regelkreis, Material, Werk, Versorgungsbereich und Anforderer gespeichert – höchstens einer je Regelkreis und Tag; ein zweiter wird mit Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:65"
+        },
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:93"
+        },
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:94"
+        },
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-173-B09",
+      "text": "Behälter in jedem anderen Status können nicht leer gemeldet werden.",
+      "anchors": [
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:72"
+        },
+        {
+          "file": "mzkanbanf01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-173-B10",
+      "text": "Nach erfolgreicher Verarbeitung erscheint die Rückmeldemaske; von dort geht es zum nächsten Scan oder aus dem Programm.",
+      "anchors": [
+        {
+          "file": "mzkanbani01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:30"
+        },
+        {
+          "file": "mzkanbani01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:54"
+        },
+        {
+          "file": "mzkanbani01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:56"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "p1",
+        "type": "start",
+        "anchor": {
+          "file": "mzkanbani01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:8"
+        },
+        "meaning": "Scanmaske aufbauen"
+      },
+      {
+        "id": "gp",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzkanbani01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:12"
+        },
+        "meaning": "Versorgungsbereich noch leer?"
+      },
+      {
+        "id": "gpa",
+        "type": "action",
+        "anchor": {
+          "file": "mzkanbani01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:13"
+        },
+        "meaning": "Versorgungsbereich aus Benutzerparameter"
+      },
+      {
+        "id": "ep1",
+        "type": "end",
+        "anchor": {
+          "file": "mzkanbani01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:16"
+        },
+        "meaning": "Maske bereit"
+      },
+      {
+        "id": "u1",
+        "type": "start",
+        "anchor": {
+          "file": "mzkanbani01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:21"
+        },
+        "meaning": "Eingabe auf Scanmaske"
+      },
+      {
+        "id": "c1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzkanbani01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:24"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "mzkanbani01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:26"
+        },
+        "meaning": "Scanner verlassen"
+      },
+      {
+        "id": "cbl",
+        "type": "call",
+        "anchor": {
+          "file": "mzkanbani01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:28"
+        },
+        "meaning": "Behälter prüfen"
+      },
+      {
+        "id": "clm",
+        "type": "call",
+        "anchor": {
+          "file": "mzkanbani01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:29"
+        },
+        "meaning": "Leermeldung"
+      },
+      {
+        "id": "l200",
+        "type": "end",
+        "anchor": {
+          "file": "mzkanbani01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:30"
+        },
+        "meaning": "Rückmeldemaske zeigen"
+      },
+      {
+        "id": "eu1",
+        "type": "end",
+        "anchor": {
+          "file": "mzkanbani01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:35"
+        },
+        "meaning": "Maske erneut zeigen"
+      },
+      {
+        "id": "u2",
+        "type": "start",
+        "anchor": {
+          "file": "mzkanbani01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:48"
+        },
+        "meaning": "Eingabe auf Rückmeldemaske"
+      },
+      {
+        "id": "c2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzkanbani01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:51"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "l100",
+        "type": "end",
+        "anchor": {
+          "file": "mzkanbani01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:54"
+        },
+        "meaning": "Zum nächsten Scan"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "mzkanbani01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:56"
+        },
+        "meaning": "Scanner verlassen"
+      },
+      {
+        "id": "eu2",
+        "type": "end",
+        "anchor": {
+          "file": "mzkanbani01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbani01.abap:58"
+        },
+        "meaning": "Maske bleibt"
+      },
+      {
+        "id": "fb",
+        "type": "start",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:11"
+        },
+        "meaning": "Behälterprüfung"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:12"
+        },
+        "meaning": "Behälter lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:14"
+        },
+        "meaning": "Behälter unbekannt?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:15"
+        },
+        "meaning": "Fehlermeldung: Behälter unbekannt"
+      },
+      {
+        "id": "m1",
+        "type": "end",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:15"
+        },
+        "meaning": "Scan abweisen: unbekannt"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:18"
+        },
+        "meaning": "Regelkreis lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:21"
+        },
+        "meaning": "Fremder Versorgungsbereich?"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:22"
+        },
+        "meaning": "Fehlermeldung: Behälter gehört zu anderem Versorgungsbereich"
+      },
+      {
+        "id": "m2",
+        "type": "end",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:22"
+        },
+        "meaning": "Scan abweisen: falscher Bereich"
+      },
+      {
+        "id": "ac",
+        "type": "action",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:25"
+        },
+        "meaning": "Berechtigung Werk prüfen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:28"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "o3",
+        "type": "output",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:29"
+        },
+        "meaning": "Fehlermeldung: keine Berechtigung für das Werk"
+      },
+      {
+        "id": "m3",
+        "type": "end",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:29"
+        },
+        "meaning": "Scan abweisen: keine Berechtigung"
+      },
+      {
+        "id": "eb",
+        "type": "end",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:31"
+        },
+        "meaning": "Behälter geprüft"
+      },
+      {
+        "id": "fl",
+        "type": "start",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:36"
+        },
+        "meaning": "Leermeldung"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:39"
+        },
+        "meaning": "Behälterstatus?"
+      },
+      {
+        "id": "bk",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:41"
+        },
+        "meaning": "Status auf leer setzen"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:47"
+        },
+        "meaning": "BAPI-Fehler?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:48"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "o10",
+        "type": "output",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:49"
+        },
+        "meaning": "Fehlermeldung mit BAPI-Meldungstext"
+      },
+      {
+        "id": "m10",
+        "type": "end",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:49"
+        },
+        "meaning": "Scan abweisen mit BAPI-Meldung"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:51"
+        },
+        "meaning": "Statuswechsel festschreiben"
+      },
+      {
+        "id": "pc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:58"
+        },
+        "meaning": "Eil-Nachschub abfragen"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:65"
+        },
+        "meaning": "Werker stimmt zu?"
+      },
+      {
+        "id": "csk",
+        "type": "call",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:66"
+        },
+        "meaning": "Eil-Nachschub anlegen"
+      },
+      {
+        "id": "o11",
+        "type": "output",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:73"
+        },
+        "meaning": "Fehlermeldung: Status erlaubt keine Leermeldung"
+      },
+      {
+        "id": "m11",
+        "type": "end",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:73"
+        },
+        "meaning": "Scan abweisen: Status unzulässig"
+      },
+      {
+        "id": "el",
+        "type": "end",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:75"
+        },
+        "meaning": "Leermeldung erledigt"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:83"
+        },
+        "meaning": "Eil-Nachschub"
+      },
+      {
+        "id": "wi",
+        "type": "write",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:93"
+        },
+        "meaning": "Eil-Nachschub speichern"
+      },
+      {
+        "id": "gi",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:94"
+        },
+        "meaning": "Heute schon angefordert?"
+      },
+      {
+        "id": "o12",
+        "type": "output",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:95"
+        },
+        "meaning": "Fehlermeldung: Eil-Nachschub heute schon angefordert"
+      },
+      {
+        "id": "m12",
+        "type": "end",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:95"
+        },
+        "meaning": "Abweisen: bereits angefordert"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:97"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "es",
+        "type": "end",
+        "anchor": {
+          "file": "mzkanbanf01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzkanbanf01.abap:98"
+        },
+        "meaning": "Eil-Nachschub angelegt"
+      }
+    ],
+    "edges": [
+      {
+        "from": "p1",
+        "to": "gp",
+        "condition": "always"
+      },
+      {
+        "from": "gp",
+        "to": "gpa",
+        "condition": "gv_prvbe IS INITIAL"
+      },
+      {
+        "from": "gp",
+        "to": "ep1",
+        "condition": "else"
+      },
+      {
+        "from": "gpa",
+        "to": "ep1",
+        "condition": "always"
+      },
+      {
+        "from": "ep1",
+        "to": "u1",
+        "condition": "always"
+      },
+      {
+        "from": "u1",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "x1",
+        "condition": "WHEN 'BACK' OR 'EXIT'"
+      },
+      {
+        "from": "c1",
+        "to": "cbl",
+        "condition": "WHEN 'ENTER' OR space"
+      },
+      {
+        "from": "c1",
+        "to": "eu1",
+        "condition": "else"
+      },
+      {
+        "from": "cbl",
+        "to": "fb",
+        "condition": "always"
+      },
+      {
+        "from": "clm",
+        "to": "fl",
+        "condition": "always"
+      },
+      {
+        "from": "l200",
+        "to": "u2",
+        "condition": "always"
+      },
+      {
+        "from": "eu1",
+        "to": "p1",
+        "condition": "always"
+      },
+      {
+        "from": "u2",
+        "to": "c2",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "l100",
+        "condition": "WHEN 'NEXT' OR 'ENTER' OR space"
+      },
+      {
+        "from": "c2",
+        "to": "x2",
+        "condition": "WHEN 'EXIT'"
+      },
+      {
+        "from": "c2",
+        "to": "eu2",
+        "condition": "else"
+      },
+      {
+        "from": "l100",
+        "to": "p1",
+        "condition": "always"
+      },
+      {
+        "from": "fb",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "o1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "q2",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "o2",
+        "condition": "gs_pkhd-prvbe <> gv_prvbe AND gv_prvbe IS NOT INITIAL"
+      },
+      {
+        "from": "g2",
+        "to": "ac",
+        "condition": "else"
+      },
+      {
+        "from": "ac",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "o3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g3",
+        "to": "eb",
+        "condition": "else"
+      },
+      {
+        "from": "fl",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "bk",
+        "condition": "WHEN gc_voll OR gc_inbenutz"
+      },
+      {
+        "from": "cs",
+        "to": "pc",
+        "condition": "WHEN gc_leer"
+      },
+      {
+        "from": "cs",
+        "to": "o11",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "bk",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "rb",
+        "condition": "ls_ret-type CA 'EA'"
+      },
+      {
+        "from": "gr",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "o10",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "el",
+        "condition": "always"
+      },
+      {
+        "from": "pc",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "csk",
+        "condition": "gv_answer = '1'"
+      },
+      {
+        "from": "ga",
+        "to": "el",
+        "condition": "else"
+      },
+      {
+        "from": "csk",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "wi",
+        "condition": "always"
+      },
+      {
+        "from": "wi",
+        "to": "gi",
+        "condition": "always"
+      },
+      {
+        "from": "gi",
+        "to": "o12",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gi",
+        "to": "cw",
+        "condition": "else"
+      },
+      {
+        "from": "cw",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "eb",
+        "to": "clm",
+        "condition": "always"
+      },
+      {
+        "from": "el",
+        "to": "l200",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "el",
+        "condition": "always"
+      },
+      {
+        "from": "o1",
+        "to": "m1",
+        "condition": "always"
+      },
+      {
+        "from": "o2",
+        "to": "m2",
+        "condition": "always"
+      },
+      {
+        "from": "o3",
+        "to": "m3",
+        "condition": "always"
+      },
+      {
+        "from": "o10",
+        "to": "m10",
+        "condition": "always"
+      },
+      {
+        "from": "o11",
+        "to": "m11",
+        "condition": "always"
+      },
+      {
+        "from": "o12",
+        "to": "m12",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "mzkanbanf01.abap:21 — kein Fachsatz „jeder Scan wird gegen den Versorgungsbereich geprüft“: ist weder eingegeben noch als Benutzerparameter gepflegt, entfällt die Prüfung",
+    "mzkanbanf01.abap:18 — kein Fachsatz „fehlt der Regelkreis, wird der Scan abgewiesen“: der Lesezugriff wird nicht geprüft",
+    "mzkanbani01.abap:30 — kein Fachsatz „der Werker kann aus dem Scanner den Regelkreis anzeigen“: der Absprung per CALL TRANSACTION ist auskommentiert",
+    "gesamte Scheibe — kein Fachsatz „eine Bestellung oder ein Fertigungsauftrag für den Nachschub wird angelegt“: der Scanner setzt nur den Behälterstatus bzw. schreibt eine Eil-Anforderung in eine Z-Tabelle"
+  ],
+  "processDescription": "Der Werker startet den Scanner auf dem MDE-Gerät; ist noch kein Versorgungsbereich gesetzt, wird er aus seinem Benutzerparameter vorbelegt. Nach dem Scan eines Behälters wird dieser gelesen und der Scan abgewiesen, wenn der Behälter unbekannt ist, sein Regelkreis zu einem anderen Versorgungsbereich gehört oder der Werker keine Berechtigung für das Werk hat; die Scanmaske bleibt dann mit Fehlermeldung stehen. Ist der Behälter voll oder in Benutzung, setzt ein BAPI den Status auf leer, was sofort festgeschrieben wird; lehnt das BAPI ab, wird zurückgerollt und der Scan abgewiesen. Ist der Behälter bereits leer, wird gefragt, ob ein Eil-Nachschub ausgelöst werden soll, und bei Zustimmung wird er in einer eigenen Tabelle gespeichert, höchstens einmal je Regelkreis und Tag. Behälter in anderen Status werden abgewiesen. Nach erfolgreicher Verarbeitung erscheint eine Rückmeldemaske, von der es zum nächsten Scan oder aus dem Programm geht. Mit Zurück oder Beenden verlässt der Werker den Scanner."
+}

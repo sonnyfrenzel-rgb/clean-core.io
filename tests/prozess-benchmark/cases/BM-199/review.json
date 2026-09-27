@@ -1,0 +1,184 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten fm_e (end)",
+      "before": "z_ser_commission.abap:261",
+      "after": "z_ser_commission.abap:262 (ENDFUNCTION.)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf fm_c_gtin",
+      "before": "fm_c_gtin -> fm_g_gtin [always]",
+      "after": "c_e -> fm_g_gtin [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Ausnahmekanten get_gtin",
+      "before": "fm_c_gtin -> fm_e_cache [CATCH zcx_ser_cache …]",
+      "after": "c_x1, c_x2, b_x -> fm_e_cache [CATCH zcx_ser_cache INTO DATA(lx_cache)]",
+      "why": "Vereinheitlichte Konvention (Nachtrag): RAISE EXCEPTION im gerufenen Block ist ein end-Knoten, von dort führt die Kante in den CATCH-Zweig des Aufrufers (hier über die RAISING-Deklaration bis in den TRY des Bausteins). b_x (build_area) wird aus einem CATCH-Block von get_gtin gerufen; die Ausnahme verlässt get_gtin unbehandelt und landet im TRY des Bausteins.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten c_e (end)",
+      "before": "zcl_ser_gtin_cache.abap:54",
+      "after": "zcl_ser_gtin_cache.abap:55 (ENDMETHOD. get_gtin)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf c_b",
+      "before": "c_b -> c_att [always]",
+      "after": "b_ret -> c_att [always]; b_e -> c_att [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten b_e (end) / b_cm (neu)",
+      "before": "b_e end auf zcl_ser_gtin_cache.abap:78 (lo_area->detach_commit( ))",
+      "after": "b_cm opaque_call auf :78 (Freigabe der neuen Version, Fachsatz B05), b_e end auf :79 (ENDMETHOD.)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten r_e (end)",
+      "before": "zcl_ser_gtin_cache_root.abap:30",
+      "after": "zcl_ser_gtin_cache_root.abap:31 (ENDMETHOD. load)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf b_ld",
+      "before": "b_ld -> b_set [always]",
+      "after": "r_e -> b_set [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten eu_re (end)",
+      "before": "zcl_ser_market_eu.abap:34",
+      "after": "zcl_ser_market_eu.abap:35 (ENDMETHOD. get_rules EU)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten us_re (end)",
+      "before": "zcl_ser_market_us.abap:30",
+      "after": "zcl_ser_market_us.abap:32 (ENDMETHOD. get_rules US)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf fm_rules",
+      "before": "fm_rules -> fm_lk_l [always]",
+      "after": "eu_re -> fm_lk_l [always]; us_re -> fm_lk_l [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Ausnahmekanten get_rules",
+      "before": "fm_rules -> fm_e_rule [CATCH zcx_ser_rule …]",
+      "after": "eu_x, us_x -> fm_e_rule [CATCH zcx_ser_rule INTO DATA(lx_rule)]",
+      "why": "Vereinheitlichte Konvention (Nachtrag): RAISE EXCEPTION im gerufenen Block ist ein end-Knoten, von dort führt die Kante in den CATCH-Zweig des Aufrufers (hier über die RAISING-Deklaration bis in den TRY des Bausteins).",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten eu_fe (end)",
+      "before": "zcl_ser_market_eu.abap:51",
+      "after": "zcl_ser_market_eu.abap:53 (ENDMETHOD. format_serial EU)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten us_fe (end) / us_fmt (neu)",
+      "before": "us_fe end auf zcl_ser_market_us.abap:37 (ev_serial = iv_number.)",
+      "after": "us_fmt action auf :37, us_fe end auf :38 (ENDMETHOD.)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf fm_fmt",
+      "before": "fm_fmt -> fm_dup [always]",
+      "after": "eu_fe -> fm_dup [always]; us_fe -> fm_dup [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fm_m_qty (neu) vor fm_e_qty",
+      "before": "fm_e_qty end auf z_ser_commission.abap:64 ohne output",
+      "after": "fm_m_qty output auf z_ser_commission.abap:64, Kante fm_m_qty -> fm_e_qty [always]; eingehende Kanten auf fm_m_qty umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten fm_m_cache (neu) vor fm_e_cache",
+      "before": "fm_e_cache end auf z_ser_commission.abap:71 ohne output",
+      "after": "fm_m_cache output auf z_ser_commission.abap:71, Kante fm_m_cache -> fm_e_cache [always]; eingehende Kanten auf fm_m_cache umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten fm_m_gtin (neu) vor fm_e_gtin",
+      "before": "fm_e_gtin end auf z_ser_commission.abap:74 ohne output",
+      "after": "fm_m_gtin output auf z_ser_commission.abap:74, Kante fm_m_gtin -> fm_e_gtin [always]; eingehende Kanten auf fm_m_gtin umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten fm_m_badi (neu) vor fm_e_badi",
+      "before": "fm_e_badi end auf z_ser_commission.abap:83 ohne output",
+      "after": "fm_m_badi output auf z_ser_commission.abap:83, Kante fm_m_badi -> fm_e_badi [always]; eingehende Kanten auf fm_m_badi umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten fm_m_rule (neu) vor fm_e_rule",
+      "before": "fm_e_rule end auf z_ser_commission.abap:94 ohne output",
+      "after": "fm_m_rule output auf z_ser_commission.abap:94, Kante fm_m_rule -> fm_e_rule [always]; eingehende Kanten auf fm_m_rule umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten fm_m_lke (neu) vor fm_lk_e",
+      "before": "fm_lk_e end auf z_ser_commission.abap:116 ohne output",
+      "after": "fm_m_lke output auf z_ser_commission.abap:116, Kante fm_m_lke -> fm_lk_e [always]; eingehende Kanten auf fm_m_lke umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten fm_m_lk (neu) vor fm_e_lk",
+      "before": "fm_e_lk end auf z_ser_commission.abap:120 ohne output",
+      "after": "fm_m_lk output auf z_ser_commission.abap:120, Kante fm_m_lk -> fm_e_lk [always]; eingehende Kanten auf fm_m_lk umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten fm_m_nr (neu) vor fm_e_nr",
+      "before": "fm_e_nr end auf z_ser_commission.abap:152 ohne output",
+      "after": "fm_m_nr output auf z_ser_commission.abap:152, Kante fm_m_nr -> fm_e_nr [always]; eingehende Kanten auf fm_m_nr umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten fm_m_tr (neu) vor fm_e_tr",
+      "before": "fm_e_tr end auf z_ser_commission.abap:212 ohne output",
+      "after": "fm_m_tr output auf z_ser_commission.abap:212, Kante fm_m_tr -> fm_e_tr [always]; eingehende Kanten auf fm_m_tr umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten fm_m_ins (neu) vor fm_e_ins",
+      "before": "fm_e_ins end auf z_ser_commission.abap:219 ohne output",
+      "after": "fm_m_ins output auf z_ser_commission.abap:219, Kante fm_m_ins -> fm_e_ins [always]; eingehende Kanten auf fm_m_ins umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": [
+    "NUMBER_GET_NEXT mit QUANTITY > 1: Der Code (Kommentar Zeile 155) nimmt an, dass NUMBER die erste Nummer des Blocks liefert, und zählt aufwärts. Ob der Baustein die erste oder die letzte Nummer des Blocks zurückgibt, konnte ich nicht belegen; liefert er die letzte, überschneiden sich die Blöcke und die Duplikatprüfung (Zeile 169) fängt das nur teilweise ab. Nicht geändert."
+  ]
+}

@@ -1,0 +1,171 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufruf nk",
+      "before": "nk -> gw [always]",
+      "after": "ce -> gw [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante nk -> xf",
+      "before": "nk -> xf [CATCH zcx_vc_kabel]",
+      "after": "cx -> xf [zcx_vc_kabel]",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION im gerufenen Block ist ein end-Knoten; von dort führt die Kante in den CATCH-Zweig des Aufrufers (Bedingung: der Ausnahmename); keine Kante vom Aufruf selbst in den Handler.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf gw",
+      "before": "gw -> tr [always]",
+      "after": "ge -> tr [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf tr",
+      "before": "tr -> s1 [always]",
+      "after": "tr1 -> s1 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante tr -> xf",
+      "before": "tr -> xf [CATCH zcx_vc_kabel]",
+      "after": "tx -> xf [zcx_vc_kabel]",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION im gerufenen Block ist ein end-Knoten; von dort führt die Kante in den CATCH-Zweig des Aufrufers (Bedingung: der Ausnahmename); keine Kante vom Aufruf selbst in den Handler.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf pg",
+      "before": "pg -> pt [always]",
+      "after": "ge -> pt [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf pt",
+      "before": "pt -> pi [always]",
+      "after": "tr1 -> pi [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante pt -> pr",
+      "before": "pt -> pr [CATCH zcx_vc_kabel]",
+      "after": "tx -> pr [zcx_vc_kabel] (in pruefen selbst gefangen)",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION im gerufenen Block ist ein end-Knoten; von dort führt die Kante in den CATCH-Zweig des Aufrufers (Bedingung: der Ausnahmename); keine Kante vom Aufruf selbst in den Handler.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten pa",
+      "before": "action auf zcl_vc_kabel.abap:87; pi -> pa [lv_soll <> iv_trommel]; pa -> pl [always]",
+      "after": "entfernt; pi -> pl [lv_soll <> iv_trommel]",
+      "why": "Reines APPEND in eine interne Tabelle; laut Autorenbrief und vereinheitlichter Konvention kein Knoten (wie BM-151/152). Inhalt bleibt in den Fachsätzen.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten pb",
+      "before": "action auf zcl_vc_kabel.abap:91; pl -> pb [iv_laenge > ms_typ-max_fertigungslaenge]; pb -> pe [always]",
+      "after": "entfernt; pl -> pe [iv_laenge > ms_typ-max_fertigungslaenge]",
+      "why": "Reines APPEND in eine interne Tabelle; laut Autorenbrief und vereinheitlichter Konvention kein Knoten (wie BM-151/152). Inhalt bleibt in den Fachsätzen.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kanten Aufruf nk2",
+      "before": "nk2 -> pr2 [always]",
+      "after": "ce -> pr2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten ax / Kante nk2 -> ax",
+      "before": "action auf zvc_konfig_pruefung_f01.abap:75 (APPEND lx_kabel->get_text( ) TO lt_meld); nk2 -> ax [CATCH zcx_vc_kabel INTO DATA(lx_kabel)]; ax -> gm [always]",
+      "after": "ax entfernt; cx -> gm [zcx_vc_kabel]",
+      "why": "Reines APPEND in eine interne Tabelle; laut Autorenbrief und vereinheitlichter Konvention kein Knoten (wie BM-151/152). Inhalt bleibt in den Fachsätzen. Vereinheitlichte Konvention: RAISE EXCEPTION im gerufenen Block ist ein end-Knoten; von dort führt die Kante in den CATCH-Zweig des Aufrufers (Bedingung: der Ausnahmename); keine Kante vom Aufruf selbst in den Handler.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kanten Aufruf pr2",
+      "before": "pr2 -> gm [always]",
+      "after": "pr -> gm [always]; pe -> gm [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten lm, am2",
+      "before": "loop auf zvc_konfig_pruefung_f01.abap:82 mit action am2 auf zvc_konfig_pruefung_f01.abap:83 (APPEND VALUE #( … ) TO gt_erg); gm -> lm [else]",
+      "after": "beide entfernt; gm -> epp [else]",
+      "why": "Der Schleifenkörper ist nur ein APPEND in die Ergebnistabelle; laut Autorenbrief kein Knoten, eine Schleife ohne Körperknoten trägt keinen Schritt. Inhalt bleibt in Fachsatz B15 (Anker f01:78, f01:82).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten ao (neu) vor am",
+      "before": "am end auf zvc_konfig_pruefung.abap:25 ohne output",
+      "after": "ao output auf zvc_konfig_pruefung.abap:25, Kante ao -> am [always]; eingehende Kanten auf ao umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_a (neu)",
+      "before": "kein end-Knoten für AT SELECTION-SCREEN; ag -> sm [else], ag2 -> sm [else]",
+      "after": "e_a end auf zvc_konfig_pruefung.abap:27 (letzte Anweisung); ag -> e_a [else], ag2 -> e_a [else], e_a -> sm [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, AT SELECTION-SCREEN) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten Aufruf cpl",
+      "before": "cpl -> g0 [always]",
+      "after": "e_p -> g0 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten o0 (neu)",
+      "before": "keine Knoten auf zvc_konfig_pruefung.abap:32",
+      "after": "o0 output auf zvc_konfig_pruefung.abap:32; g0 -> o0 [gt_pos IS INITIAL]; o0 -> x0 [always]",
+      "why": "Die Meldung (MESSAGE s001, Z. 32) ist die Ausgabe dieses Pfadendes (Fachsatz B08) und fehlte als output-Knoten.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz B08 Anker",
+      "before": "f01:11, :31, :33",
+      "after": "f01:11, :31, :32, :33",
+      "why": "Der Hinweis steht auf Zeile 32.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kante x0 -> eos (neu)",
+      "before": "x0 (RETURN in START-OF-SELECTION) ohne Folgekante",
+      "after": "x0 -> eos [always]",
+      "why": "RETURN verlässt nur START-OF-SELECTION; END-OF-SELECTION läuft danach trotzdem (Ausgabe des leeren Protokolls), wie in BM-170.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cpp",
+      "before": "cpp -> l [next iteration]",
+      "after": "rv -> l [next iteration]; rc -> l [next iteration]; rm -> l [next iteration]; epp -> l [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_sos (neu), Rückkante sperren",
+      "before": "gsp -> eos [else]; csp -> eos [always] (Direktkante)",
+      "after": "e_sos end auf zvc_konfig_pruefung.abap:42 (letzte Anweisung); gsp -> e_sos [else], es -> e_sos [always], e_sos -> eos [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, AT SELECTION-SCREEN) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146). Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_eos (neu)",
+      "before": "kein end-Knoten für END-OF-SELECTION; ea ohne Rückkehr",
+      "after": "e_eos end auf zvc_konfig_pruefung.abap:45 (letzte Anweisung); ea -> e_eos [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, AT SELECTION-SCREEN) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146). Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": [
+    "CATCH cx_salv_msg in ausgabe (f01:149/150) nicht im Skelett; technischer Anzeigefehler, belassen.",
+    "CONF_OUT-ATWRT enthält bei numerischen Merkmalen den aufbereiteten Wert (ggf. mit Einheit/Tausenderpunkt); dass die Umsetzung dann in den Zweig „nicht numerisch“ läuft, ist vom Fall gewollt (B10) und wurde nicht geändert."
+  ]
+}

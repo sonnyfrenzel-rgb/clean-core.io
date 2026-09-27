@@ -1,0 +1,34 @@
+{
+  "id": "BM-188",
+  "title": "Jobkette POS-Abverkaufsverbuchung: ein Job je Filiale mit Kassendaten, nacheinander über Vorgängerjob",
+  "domain": "Technische Randbereiche — Hintergrundjob-Ketten",
+  "band": "mittel",
+  "loc": 81,
+  "constructs": [
+    "REPORT",
+    "INITIALIZATION",
+    "SELECT T001W (VLFKZ = A)",
+    "SELECT COUNT(*)",
+    "JOB_OPEN",
+    "SUBMIT … VIA JOB … AND RETURN",
+    "JOB_CLOSE mit PRED_JOBNAME/PREDJOB_CHECKSTAT",
+    "WRITE-Protokoll"
+  ],
+  "scenario": "Nächtlicher Steuerreport im Handel: Die Kassendaten (POS-Abverkäufe) des Vortags werden je Filiale von einem eigenen Verbuchungsreport verarbeitet; der Steuerreport plant dafür eine Kette von Hintergrundjobs.",
+  "s4_issues": [
+    "JOB_OPEN/JOB_CLOSE weiter nutzbar; in ABAP Cloud Application Jobs (CL_APJ_RT_API)",
+    "Direkter Lesezugriff auf T001W",
+    "Kundeneigene POS-Eingangstabelle neben dem Standard-POS-Eingang (WPUUMS/Retail POS-Schnittstelle)"
+  ],
+  "wave": 2,
+  "module": "IS-Retail",
+  "edge_constructs": [
+    "SUBMIT … VIA JOB (JOB_OPEN/JOB_CLOSE)",
+    "CHECK mitten in Schleife",
+    "CONTINUE in Schleife",
+    "STOP",
+    "INITIALIZATION",
+    "xsdbool",
+    "auskommentierte Fehlerbehandlung"
+  ]
+}

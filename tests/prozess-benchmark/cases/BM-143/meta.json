@@ -1,0 +1,27 @@
+{
+  "id": "BM-143",
+  "title": "OM-Datenqualität: Organisationseinheiten ohne Leiterplanstelle",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "einfach",
+  "loc": 30,
+  "constructs": [
+    "REPORT",
+    "SELECT HRP1000",
+    "SELECT … FOR ALL ENTRIES HRP1001",
+    "READ TABLE BINARY SEARCH",
+    "CHECK in LOOP",
+    "WRITE"
+  ],
+  "scenario": "Vor einer Reorganisation prüft das OM-Team, welche aktiven Organisationseinheiten keine leitende Planstelle haben, weil dort die Genehmigungswege im MSS ins Leere laufen.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf HRP1000/HRP1001",
+    "FOR ALL ENTRIES ohne IS NOT INITIAL-Prüfung",
+    "Listausgabe per WRITE"
+  ],
+  "wave": 2,
+  "module": "OM",
+  "edge_constructs": [
+    "SELECT … FOR ALL ENTRIES ohne Schutz gegen leere Treibertabelle",
+    "CHECK mitten in der Schleife"
+  ]
+}

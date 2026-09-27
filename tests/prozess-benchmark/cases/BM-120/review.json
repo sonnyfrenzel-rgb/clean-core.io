@@ -1,0 +1,65 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufruf c_al",
+      "before": "c_al -> c_sl [always]",
+      "after": "e_al -> c_sl [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_sl",
+      "before": "c_sl -> a_set [always]",
+      "after": "e_sl -> a_set [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_set",
+      "before": "c_set -> e_2 [always]",
+      "after": "e_st -> e_2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_pr",
+      "before": "c_pr -> e_2 [always]",
+      "after": "e_pr -> e_2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_zu",
+      "before": "c_zu -> e_2 [always]",
+      "after": "e_zu -> e_2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_sv",
+      "before": "c_sv -> e_2 [always]",
+      "after": "e_sv -> e_2 [always]; x_sv -> e_2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_sv2",
+      "before": "c_sv2 -> dq_2 [always]",
+      "after": "e_sv -> dq_2 [always]; x_sv -> dq_2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten g_a",
+      "before": "eigenes gateway auf mzpm_freischalt_i01.abap:83 (ELSEIF), g_ans -> g_a [else]",
+      "after": "entfernt; g_ans -> x_ret [lv_answer = 'A']; g_ans -> dq_2 [else]",
+      "why": "Vereinheitlichte Konvention: ELSEIF ist eine Bedingungskante des ursprünglichen Gateways, kein eigenes Gateway.",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": [
+    "mzpm_freischalt_f01.abap:93/113/134 — a_st/a_pr/a_zu sind Zuweisungen an Tabellenzeilen; belassen, weil sie den fachlichen Status (GESETZT/AKT/ZURUECK) des Schritts festlegen und ohne sie Gateways bzw. Schleifen leer liefen."
+  ]
+}

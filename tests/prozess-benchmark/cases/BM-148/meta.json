@@ -1,0 +1,32 @@
+{
+  "id": "BM-148",
+  "title": "Organisationsmanagement: Führungsspanne rekursiv über die Linienhierarchie",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "mittel",
+  "loc": 89,
+  "constructs": [
+    "REPORT",
+    "rekursives FORM",
+    "RETURN aus tiefem FORM",
+    "RH_STRUC_GET (Auswertungsweg O-S-P)",
+    "REDUCE",
+    "SELECT HRP1001 (B002)",
+    "CL_SALV_TABLE",
+    "TRY … CATCH",
+    "MESSAGE Typ I/E"
+  ],
+  "scenario": "Vor einer Reorganisation will die Personalleitung die Führungsspanne je Organisationseinheit sehen; ein Report läuft die Linienhierarchie ab einer Wurzeleinheit rekursiv ab.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf HRP1001",
+    "Planvariante 01 fest im Code",
+    "Personen mit mehreren Planstellen werden mehrfach gezählt"
+  ],
+  "wave": 2,
+  "module": "OM",
+  "edge_constructs": [
+    "RETURN aus tiefem, rekursivem FORM",
+    "TRY … CATCH mit MESSAGE Typ E als Pfadende",
+    "REDUCE mit FOR … WHERE",
+    "Inline-Deklarationen"
+  ]
+}

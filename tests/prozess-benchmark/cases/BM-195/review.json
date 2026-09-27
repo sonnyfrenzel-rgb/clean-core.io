@@ -1,0 +1,58 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_catch",
+      "before": "gateway auf zei_ft_export_check.abap:61 (CATCH cx_badi_not_implemented.) mit Kanten e_gb -> e_catch [CATCH …], e_catch -> e_rd [always]",
+      "after": "entfernt; Kante e_gb -> e_rd [CATCH cx_badi_not_implemented]",
+      "why": "CATCH ist keine Verzweigung mit eigener Bedingung, sondern das Ziel der Ausnahmekante; der Handler enthält nur CLEAR. Im selben Wellenteil (BM-183, BM-184, BM-191) wird CATCH einheitlich als Kantenbedingung vom auslösenden Knoten modelliert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_abo (neu) vor e_abort",
+      "before": "e_abort end auf zei_ft_export_check.abap:71 ohne output",
+      "after": "e_abo output auf zei_ft_export_check.abap:71, Kante e_abo -> e_abort [always]; eingehende Kanten auf e_abo umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_msg",
+      "before": "end auf zei_ft_export_check.abap:89 (MESSAGE i152(zft) …)",
+      "after": "output auf derselben Zeile",
+      "why": "Eine Informationsmeldung (Typ I) beendet den Pfad nicht, das Sichern läuft weiter; das Ende der Erweiterung liegt auf ENDENHANCEMENT (neuer Knoten e_end).",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten e_end (neu)",
+      "before": "kein end-Knoten auf zei_ft_export_check.abap:95",
+      "after": "e_end end auf zei_ft_export_check.abap:95; ",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten e_g1/e_g2/e_g4 -> e_end",
+      "before": "e_g1, e_g2 und e_g4 ohne else-Kante",
+      "after": "e_g1 -> e_end [else], e_g2 -> e_end [else], e_g4 -> e_end [else], e_msg -> e_end [always]",
+      "why": "Die Pfade „Prüfung aus/anderer Vorgang“, „Inland/EU“ und „keine Sperre verlangt“ liefen ins Leere; alle enden am Schluss der Erweiterung.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten r_end (neu)",
+      "before": "kein end-Knoten auf zcl_ft_embargo_ru.abap:81",
+      "after": "r_end end auf zcl_ft_embargo_ru.abap:81; r_lp -> r_end [no more rows] statt -> e_rd; r_end -> e_rd [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten d_end (neu)",
+      "before": "kein end-Knoten auf zcl_ft_embargo_default.abap:64",
+      "after": "d_end end auf zcl_ft_embargo_default.abap:64; d_lp -> d_end [no more rows] statt -> e_rd; d_tot -> d_end [always] statt -> e_rd; d_case -> d_end [WHEN OTHERS] statt -> e_rd; d_end -> e_rd [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": [
+    "Zu Beginn von BELEG_SICHERN ist bei Neuanlage vermutlich noch die vorläufige Auftragsnummer ($…) in VBAK-VBELN gesetzt, die Nummernvergabe folgt erst später in BELEG_SICHERN; dann stünde im Embargoprotokoll (Zeile 81/87) nicht die endgültige Auftragsnummer. Nicht geändert, da vom SAPMV45A-Ablauf abhängig und nicht aus dem Fall ableitbar."
+  ]
+}

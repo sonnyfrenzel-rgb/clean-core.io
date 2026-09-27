@@ -1,0 +1,776 @@
+{
+  "id": "BM-149",
+  "title": "Reisekosten-Monatslauf: genehmigte Reisen freigeben und Reiseabrechnung als Job einplanen",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PTRV_PERIO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PTRV_SREC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PTRV_PERIO",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_OPEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 60,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:60"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RPRTEC00",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 71,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:71"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_CLOSE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 77,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:77"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-149-B01",
+      "text": "Es werden die genehmigten, noch nicht zur Abrechnung freigegebenen Reisen der Mitarbeiter gelesen, die aktuell dem eingegebenen Buchungskreis angehören.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        }
+      ]
+    },
+    {
+      "id": "BM-149-B02",
+      "text": "Gibt es keine solche Reise, endet der Lauf mit einem Hinweis.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-149-B03",
+      "text": "Zu den Reisen werden die erfassten Belege gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-149-B04",
+      "text": "Reisen ohne Beleg werden nicht freigegeben, sondern in der Liste als „ohne Belege“ ausgewiesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-149-B05",
+      "text": "Im Echtlauf wird jede Reise mit Beleg direkt in der Reisetabelle auf „abzurechnen“ gesetzt, und ihr Mitarbeiter wird für die Abrechnung vorgemerkt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-149-B06",
+      "text": "Im Testlauf oder wenn keine Reise freigegeben wurde, endet der Lauf ohne Job.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-149-B07",
+      "text": "Sonst werden die Statusänderungen festgeschrieben und ein Hintergrundjob angelegt; scheitert das, bricht der Lauf mit Fehlermeldung ab, während die Freigaben bestehen bleiben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-149-B08",
+      "text": "In den Job wird die Standard-Reiseabrechnung mit der Variante ZMONAT für alle vorgemerkten Mitarbeiter eingestellt und der Job zum Sofortstart freigegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        },
+        {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-149-B09",
+      "text": "Zum Schluss werden Jobname und Jobnummer ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Monatslauf startet"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Genehmigte offene Reisen des Buchungskreises lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Keine Reise gefunden?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Hinweis: keine genehmigten offenen Reisen"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Lauf mit Hinweis beenden"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Belege zu den Reisen lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Je Reise"
+      },
+      {
+        "id": "r3",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Nachschlagen, ob die Reise Belege hat"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Reise ohne Belege?"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        "meaning": "Reise ohne Belege protokollieren"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Reise auf „abzurechnen“ setzen"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        "meaning": "Testlauf oder nichts freigegeben?"
+      },
+      {
+        "id": "o5",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        "meaning": "Hinweis: Testlauf oder nichts freizugeben, kein Job"
+      },
+      {
+        "id": "e4",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "Ohne Job beenden"
+      },
+      {
+        "id": "t",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Statusänderungen festschreiben"
+      },
+      {
+        "id": "c1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Hintergrundjob anlegen"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        "meaning": "Job angelegt?"
+      },
+      {
+        "id": "o4",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        },
+        "meaning": "Abbruch: Job nicht angelegt"
+      },
+      {
+        "id": "e5",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        },
+        "meaning": "Lauf bricht ab, Freigaben bleiben festgeschrieben"
+      },
+      {
+        "id": "x",
+        "type": "external_program",
+        "anchor": {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        },
+        "meaning": "Reiseabrechnung für die Mitarbeiter in den Job stellen"
+      },
+      {
+        "id": "c2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Job zum Sofortstart freigeben"
+      },
+      {
+        "id": "o6",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        },
+        "meaning": "Jobname und -nummer ausgeben"
+      },
+      {
+        "id": "e6",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        },
+        "meaning": "Monatslauf beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "o1",
+        "condition": "lt_trips IS INITIAL"
+      },
+      {
+        "from": "g1",
+        "to": "r2",
+        "condition": "else"
+      },
+      {
+        "from": "r2",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "r3",
+        "condition": "next row"
+      },
+      {
+        "from": "r3",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "o2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g2",
+        "to": "g3",
+        "condition": "else"
+      },
+      {
+        "from": "g3",
+        "to": "w",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "g3",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "w",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "g4",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g4",
+        "to": "o5",
+        "condition": "p_test = abap_true OR lr_pernr IS INITIAL"
+      },
+      {
+        "from": "g4",
+        "to": "t",
+        "condition": "else"
+      },
+      {
+        "from": "t",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "g5",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "o4",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g5",
+        "to": "x",
+        "condition": "else"
+      },
+      {
+        "from": "x",
+        "to": "c2",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "o6",
+        "condition": "always"
+      },
+      {
+        "from": "o1",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "o5",
+        "to": "e4",
+        "condition": "always"
+      },
+      {
+        "from": "o4",
+        "to": "e5",
+        "condition": "always"
+      },
+      {
+        "from": "o6",
+        "to": "e6",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:68 — kein Fachsatz „bei Jobfehler werden die Freigaben zurückgenommen“ (COMMIT ist vorher erfolgt)",
+    "source.abap:71 — kein Fachsatz „die Abrechnung läuft nur für die freigegebenen Reisen“ (übergeben werden nur Personalnummern; welche Reisen RPRTEC00 abrechnet, bestimmt Variante und Status)",
+    "source.abap:77 — kein Fachsatz „der Report prüft, ob der Job eingeplant wurde“ (Rückgabe von JOB_CLOSE wird nicht ausgewertet)",
+    "source.abap:48 — kein Fachsatz „die Reise wird abgerechnet oder gebucht“ (nur Status gesetzt)"
+  ],
+  "processDescription": "Die Reisestelle startet monatlich für einen Buchungskreis einen Freigabelauf, standardmäßig als Testlauf. Er liest die genehmigten, noch offenen Reisen der Mitarbeiter, die aktuell dem Buchungskreis angehören; gibt es keine, endet er mit Hinweis. Zu den Reisen werden die Belege gelesen; Reisen ohne Beleg werden nur gelistet und nicht freigegeben. Im Echtlauf setzt der Lauf jede Reise mit Beleg direkt in der Reisetabelle auf „abzurechnen“ und merkt den Mitarbeiter vor. Im Testlauf oder ohne Freigaben endet er ohne Job. Sonst schreibt er die Statusänderungen fest, legt einen Hintergrundjob an, stellt die Standard-Reiseabrechnung mit der Variante ZMONAT für die vorgemerkten Mitarbeiter hinein und gibt den Job zum Sofortstart frei. Scheitert das Anlegen des Jobs, bricht der Lauf ab, die Freigaben bleiben aber bestehen. Ob der Job freigegeben wurde, wird nicht geprüft."
+}

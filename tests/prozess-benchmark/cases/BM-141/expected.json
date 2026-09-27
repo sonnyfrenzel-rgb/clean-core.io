@@ -1,0 +1,285 @@
+{
+  "id": "BM-141",
+  "title": "Abrechnungsvorprüfung: Mitarbeiter ohne Hauptbankverbindung mit IBAN",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PA0009",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 7,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:7"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-141-B01",
+      "text": "Für jeden selektierten Mitarbeiter wird die im Auswahlzeitraum zuletzt gültige Hauptbankverbindung ermittelt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        }
+      ]
+    },
+    {
+      "id": "BM-141-B02",
+      "text": "Mitarbeiter, deren Hauptbankverbindung den Zahlweg Barzahlung trägt, werden übergangen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-141-B03",
+      "text": "Fehlt die Hauptbankverbindung im Zeitraum oder hat sie keine IBAN, wird der Mitarbeiter gezählt und mit Personalnummer ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-141-B04",
+      "text": "Am Ende wird die Anzahl der Mitarbeiter ohne verwendbare Bankverbindung ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        "meaning": "Verarbeitung je selektiertem Mitarbeiter"
+      },
+      {
+        "id": "a1",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        "meaning": "Letzte Hauptbankverbindung (Subtyp 0) im Zeitraum ermitteln"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Barzahler ausschließen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        "meaning": "Keine Bankverbindung oder keine IBAN?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Mitarbeiter als fehlend ausgeben"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Ende der Verarbeitung dieses Mitarbeiters"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Abschluss nach allen Mitarbeitern"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Anzahl fehlender Bankverbindungen ausgeben"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Ende der Auswertung"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "a1",
+        "condition": "always"
+      },
+      {
+        "from": "a1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "p0009-zlsch <> 'C'"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "o1",
+        "condition": "pnp-sw-found = '0' OR p0009-iban IS INITIAL"
+      },
+      {
+        "from": "g2",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "o1",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "s2",
+        "to": "o2",
+        "condition": "always"
+      },
+      {
+        "from": "o2",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "e1",
+        "to": "s2",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:12 — kein Fachsatz „Mitarbeiter ohne Bankverbindungssatz werden ausgeschlossen“ (ohne Satz ist der Zahlweg leer, die Prüfung lässt ihn durch)",
+    "source.abap:15 — kein Fachsatz „die Abrechnung wird gesperrt oder die Bankverbindung angelegt“ (es wird nur gelistet)",
+    "gesamte Scheibe — kein Fachsatz über die Kontonummer (BANKN) — die Prüfung darauf ist auskommentiert"
+  ],
+  "processDescription": "Vor dem Abrechnungslauf prüft ein Report über die logische Datenbank PNPCE die selektierten Mitarbeiter. Für jeden Mitarbeiter wird die im Auswahlzeitraum zuletzt gültige Hauptbankverbindung (Infotyp 0009, Subtyp 0) ermittelt. Mitarbeiter mit Zahlweg Barzahlung werden übergangen; fehlt der Satz ganz, greift diese Ausnahme nicht. Fehlt die Bankverbindung oder ist keine IBAN gepflegt, wird der Mitarbeiter gezählt und mit Personalnummer aufgelistet. Zum Schluss wird die Anzahl ausgegeben. Der Report ändert keine Daten."
+}

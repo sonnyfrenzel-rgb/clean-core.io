@@ -1,0 +1,63 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_sd (end)",
+      "before": "zpe_teilnbest_f01.abap:49",
+      "after": "zpe_teilnbest_f01.abap:51 (ENDFORM. SELECT_DATA)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten e_pc2 (end)",
+      "before": "zpe_teilnbest_f01.abap:105",
+      "after": "zpe_teilnbest_f01.abap:107 (ENDFORM. PRINT_CONFIRMATION)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf c_sd",
+      "before": "c_sd -> oc_open [always]",
+      "after": "e_sd -> oc_open [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_pr",
+      "before": "c_pr -> g_atend [always]",
+      "after": "e_pc1 -> g_atend [always]; e_pc2 -> g_atend [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten o_open (neu) vor e_open",
+      "before": "e_open end auf zpe_teilnbest.abap:37 ohne output",
+      "after": "o_open output auf zpe_teilnbest.abap:37, Kante o_open -> e_open [always]; eingehende Kanten auf o_open umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o_fmn (neu) vor e_fmn",
+      "before": "e_fmn end auf zpe_teilnbest.abap:48 ohne output",
+      "after": "o_fmn output auf zpe_teilnbest.abap:48, Kante o_fmn -> e_fmn [always]; eingehende Kanten auf o_fmn umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante g_atend -> l_rel",
+      "before": "[next iteration]",
+      "after": "[else]",
+      "why": "Sonst-Zweig des Gateways AT END OF objid; Gateway-Kanten zurück in die Schleife tragen die Bedingung des Zweigs (so auch AT NEW in BM-185 und die übrigen Gateways dieses Falls).",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten o_errtot (neu)",
+      "before": "e_sos end auf zpe_teilnbest.abap:118 trug zugleich die Ausgabe der Fehlerzahl",
+      "after": "o_errtot output auf zpe_teilnbest.abap:118 vor e_sos (implizites Ende des Ereignisblocks auf derselben letzten Anweisung, wie in BM-188)",
+      "why": "Jede Ausgabe, die den Prozess trägt, ist ein Knoten; das Ende des Ereignisblocks liegt auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

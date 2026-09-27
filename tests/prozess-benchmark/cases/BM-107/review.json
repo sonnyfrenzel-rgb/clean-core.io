@@ -1,0 +1,9 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "zcl_im_pm_wcm_release.abap:55/61 — f4/f5 sind action-Knoten auf reinen Merkerzuweisungen; belassen, weil ohne f5 das Gateway g5 mit beiden Zweigen auf g6 zeigen würde und der Merker die Ablehnung trägt.",
+    "zcl_im_pm_wcm_release.abap:28 — Feldnamen von IHGNS (permit, gendatum, genvname, geloe) nicht gegen ein System geprüft."
+  ]
+}

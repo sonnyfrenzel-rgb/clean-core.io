@@ -1,0 +1,168 @@
+{
+ "BM-101": {
+  "expected.json": "7350cbcb0b86a3b73077ba52fd436043ea41dd671edac5394f20afae062c30ed",
+  "meta.json": "249ef41ee4370e4334262882aefb36a02f8ae0b0180303ebbc4c92e57e14d8f8",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "7afe06a14d2ab60d738527d70a293d144c934e248e1773e2cd5facf4502af05e",
+  "source.abap": "58f9a2bde1e301d01f071f0777f07a1d9e8b5ecc28105911a3933d36fce3ea3a"
+ },
+ "BM-102": {
+  "expected.json": "9f1147ccfade124a1ea9c4e8376621fd06f0b20c9244228fce360746f02cdb13",
+  "meta.json": "e3404dfdad1f1b09537ebe38d39ccd6587e983a75311f33ef19dd8b321ae1f6e",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "7afe06a14d2ab60d738527d70a293d144c934e248e1773e2cd5facf4502af05e",
+  "source.abap": "e66318404de2c949f0c077188447333e533cf2108142c9a9fb7aa87ec686f6fc"
+ },
+ "BM-103": {
+  "expected.json": "d424651eb263dda4b6549249437c652487bdf465ae984106f3c4429381627360",
+  "meta.json": "bb36aa472109ecdf21fe191e4ee47ec2345f50b9da169311a67b1856988f2f0c",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "7afe06a14d2ab60d738527d70a293d144c934e248e1773e2cd5facf4502af05e",
+  "source.abap": "873e30c899dd44bf47328438b8b0e9aa4ccbffaef3cbf5e1991639b6e89752ae"
+ },
+ "BM-104": {
+  "expected.json": "6639aeafc34e94b45522c4b5c8466c3625eb70018e6a24a13b9f3dd3d3cfc6e9",
+  "meta.json": "7f531dd20ed2e05f40195fb40bd2dc17ca2ddafef0d79f1cb070cb8703724c0f",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "2d730f7def11d624b526da4669d48e3a4f178fe6d835d9e309606b694ab8ebe3",
+  "source.abap": "ebf13435a1223e49ac71a525fc850305bc72fb324dad1c4ccb57aef13694694f"
+ },
+ "BM-105": {
+  "expected.json": "ead140e9f08469b490b1e12f9caa386290df4e24db4714186d4ae451bad43370",
+  "meta.json": "65fb869cf30ac54a57595c109b1c242fe6d189a1576df650e64bf8b0a9975de5",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "7afe06a14d2ab60d738527d70a293d144c934e248e1773e2cd5facf4502af05e",
+  "source.abap": "5e85d0b7545c1c538b079e7509a2f00124b88d7523667e3b5f71d5eba3c36d0e"
+ },
+ "BM-106": {
+  "expected.json": "c78c48defdd24c8c0c92c3a70eca4c91ebe84de300a5edfd7306dc199da8062c",
+  "meta.json": "6c61853253e1f4fcacaac8ddca1064d46ec8c3a1f9f0a71ca80747cf0f63c74f",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "d63ec36a485e11412db50934220dcfbd1918da7ee0ad76e9df2053862842786f",
+  "source.abap": "4bfaaaf7c064eff004545c59b792631e94333a43f2b726a78f899fba1294754a"
+ },
+ "BM-107": {
+  "expected.json": "1685631fe3e0c5a0c9ddffa41eb249856fce194527227f799695dcf65fe82070",
+  "meta.json": "9bce5fdac5cb22532ff20da563cbe094fa7890f5e33ce7415abb31dfad7ad2a5",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "a296d7c6302598a3eb6b3dea3f08b8072d7047f9d82fed8300f2dac8cc5aa467",
+  "zcl_im_pm_wcm_release.abap": "a2a388fe6ed53e9351132cbf9663f6fef2a944475ddd3655cacb69bde75fc5fa"
+ },
+ "BM-108": {
+  "expected.json": "5dc8c384e094889f2afc16a1f7ccb5feb6722e82eb2938b72c114529b739528e",
+  "meta.json": "7daa4b03f3433583d7e243a8b096ae67ec718a6e3cde1d6c713be0f0aca9b35a",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "a469267caa818c13295610cfd2ce0fd900ef427490a2e0edbb9920de10000a04",
+  "source.abap": "3d5f4c933a72e92c835cfb5f9984422841bf13379ce50e4fb216756cfb6cb64f"
+ },
+ "BM-109": {
+  "expected.json": "8fa8afcf9f9b8996ce64125eea1a82f6f470e91827dbba5b4896e9e5b3afce44",
+  "meta.json": "66e2a7593aa0b062859f8c62836d301ae28d4d1f2bcd5b3b0dacd929a336f43f",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "7afe06a14d2ab60d738527d70a293d144c934e248e1773e2cd5facf4502af05e",
+  "source.abap": "f4d716f650f20c994a0dc8ae1c415db8eafb1719687160c357e1a6ce64638ee9"
+ },
+ "BM-110": {
+  "expected.json": "e035d5bd3dc31e7e6a3dde4aa71f74a72a7d45e2cd1eb7870f9ba944b43e0b2b",
+  "meta.json": "1f3c1299e48d8a2da5a0de5f3027b352c88a3cb58173fcdee515049e50a7c893",
+  "mzpm_kalib_i01.abap": "ac01221c26bc47ba689e03176783e3b0cd3d8f35016be33b2965591fb31258d4",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "7afe06a14d2ab60d738527d70a293d144c934e248e1773e2cd5facf4502af05e"
+ },
+ "BM-111": {
+  "expected.json": "3409e444276eaf86526505db0a6bc460827fde4ef4c5031cd6148da210eb1d09",
+  "meta.json": "203a7f6ccef8bab939c2091afc937162371100bdf5fd215291cdd0112b6a220e",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "86738fa855b3a3e067d702a95a7940221c72967061e570a8bd3de7a3c9d4650c",
+  "zpm_tplatz_baum.abap": "91f8cc8b3956d34e1f576ac59dccfe63d16933624254a2924d648b059df5e6dc",
+  "zpm_tplatz_baum_f01.abap": "9816ec87aa5680217d2a85614c13bc3207982ef423041529a8f86acdc0aef74c"
+ },
+ "BM-112": {
+  "expected.json": "acf83ea51680cc186a4d5af38765492522ab688de31a40a836e8a034ecfcf463",
+  "lzpm_swapf01.abap": "cd7f59b1d462a35051e946397c7b6c4c9ff64f70139dec8c94d6487c36f22373",
+  "meta.json": "0b5ef27c750f39ecef19492d21d1a8b54278aa4535b9a628b9ec801ddf827798",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "dc2048b8b4e0f9621b605580ffe95fd18722233bc6d15bdb55e0c18abb0526f4",
+  "z_idoc_input_zequiswap.abap": "0b2296b90628cde4a8b11574f32279377fa96c6a92978b525130ffee8b27e53e"
+ },
+ "BM-113": {
+  "expected.json": "534102f3a3595f12d0fe4cbb57a7a76f2389beab8610129ff58a1f3121dc4072",
+  "meta.json": "4d6ab5483f63181721b33b92f86fb71efbb184ebbf5d2bb0cba4ba8bd9dc981a",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "a43f9f1c6a1ae73e6fca9001e0810cea2609808df53ddef06e95d1627af6e450",
+  "zcs_sm_faktura.abap": "ac487603b4470d8a2a395143728bd435d13d82b73d40bff3eab6000d2734b93f",
+  "zcs_sm_faktura_f01.abap": "3bab0c54e343fc183212c2b10ab06872d9229684baba770df026894bfceb1599"
+ },
+ "BM-114": {
+  "expected.json": "3496e5f8e3dc001401a233bf7967bc88c8a09af35b0a48dc9a2635e8fc9c91b4",
+  "meta.json": "df6c9f0813ffcb66d8ffe63f3c1fce40bb34e521d78e9242e6c310701c76395b",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "8694dd42df94c94b595775bc126433f05e27eb555d6d82ee2e5a689a5e140e02",
+  "z_ehs_unfall_anlegen.abap": "386572cd6cbe5bb834b19ca614edf2588e0d34b9c81c5ffba4cbb0a5d55a4bf4",
+  "zcl_ehs_unfall.abap": "9e723fea1ee117f74eff25a63059dca07cd36d7b70e3a44469b0499ab4e517a6",
+  "zcl_ehs_unfall_handler.abap": "b5d38f328460b3b07c29cbc312cbc4d0f934d9a7ad7042f4db116d43e4c2bd68"
+ },
+ "BM-115": {
+  "exit_sapmiwo0_020.abap": "bffec84748c6de58216d94e6bb35a5d9ad9dfb877770f42eb2f217f5a79e3477",
+  "expected.json": "131415c1175f460996d271a46e64ace78a928d44870eb4a4664ebfd45c2a6338",
+  "meta.json": "53d340763408a3254aa47f1f4db9ac9f6bda43f52581ec3125dfabd8e82dcc27",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "6405795e918fec5e8a580dfed39d246121432363a2b7d29e93cf5d39265374f8",
+  "z_pm_warranty_check.abap": "ca6038f62bc17ac95b111b3234a992a0e099480238ed3fde800c1ba2124e9898",
+  "zxqqmu20.abap": "aad0336cf6a9425c7c50c9bbdec80fb3c007d8592fb4516e5a675a3d3ef7d5f0"
+ },
+ "BM-116": {
+  "expected.json": "3eecebc3dcc77aa177c9a0c47d3056ac75678a0df93a7cf1e2cee838fd1ce8c5",
+  "lzpm_mplanf01.abap": "b8ca0b1c48b19187928012725bc02f4add1ea17f69c7a685f8e0719487eb8bce",
+  "meta.json": "aec48f7a12e1531bd6caf1c234e8dffe0edd5812530e91a9dd6f7c38f2485da9",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "cd6cbf8e317b76e1d4f691fdd7c8dceb78cebc056e780bb9caa90507ba71e17e",
+  "z_pm_mplan_calc.abap": "303136d7769226b92b01b84493bcced01e62a8d9747e1a798b8a31f66ebaa7a9",
+  "zcl_pm_usage_forecast.abap": "14a44c23a6a9c1c81ffec57305303034f8eb736545c002323a4a8b479ecc9382",
+  "zpm_mplan_perf.abap": "b7a1d1ee8d23bb947c2972db057737639cdb94c77ca14833ce6088c271b6e57e",
+  "zpm_mplan_perf_f01.abap": "8f85a37af7f2362801e9ebd8bf7fe2ca51d33b4ac55a399029522e63da9edef9",
+  "zpm_mplan_perf_top.abap": "77bff3a317b80ec1252f8f49d343deae716b91b2a6b31d1bdfb5d4665172bf42"
+ },
+ "BM-117": {
+  "expected.json": "998f246d998e8915ba2415cb76b12bf1f00aae96db783a9ea6d9ae48afb6281f",
+  "meta.json": "254486a482aa8a9015cacc7249c8c02e051c4874ef937aaa0b3782ff9e79a8c2",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "4ea46e1bdc0e3ce96caee4bfa7821d9e10e5961c4058b52cf94c40ccaf31f092",
+  "zcl_cs_rr_notif.abap": "ab2c9dfd17a31e3c399a3a59289cb4b84232de00eb8d35978833e88e834952e7",
+  "zcs_rueckruf.abap": "fff621d1459007b3f9de23eab1c0b2273fdf32c7ee015d9625d8932aae85e7d4",
+  "zcs_rueckruf_f01.abap": "3569b64573c8f25dfc0a2aff950310aa0fb3836eba4336418c00270243d84081",
+  "zcs_rueckruf_top.abap": "6ec1c395559b536e662b5d2a6df8c4f7624a647266ff6acf86ec974a38fe0188"
+ },
+ "BM-118": {
+  "expected.json": "3b5b5a04922d7e79ac19871977cde0ad56f79f5ce80e77149c5a9e7877270553",
+  "meta.json": "b5c11e985e2e4371cfc4ddbbfe67a3d26cc95b5df8503f3296802bfb02833ef4",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "4cbd9271b2ae3d19aa6d9622d99f119b6752f1d206d1f07792ad830c7a5311cd",
+  "zcl_cs_meter_period.abap": "ace6f7ddfc75a7c7f3a49247aa0aadb41c2a7bba68cbd8221751a59baf6a57a0",
+  "zcs_zaehler_faktura.abap": "3ef73d024751f032adeb56a4e231c40c6f5eb4062830181e5c706640476dfd31",
+  "zcs_zaehler_faktura_f01.abap": "4a25a95ccf9f02ad5c4968e2f771b1a69e473c6e8bba6758231ccb199493c0db",
+  "zcs_zaehler_faktura_top.abap": "725bf5caafd8a71e85961db064fe0fb75a5f6675604abc0ebd66e452c92be4a1"
+ },
+ "BM-119": {
+  "expected.json": "f1c691203fe82cffa5aa056819e8940be12840308e084b3bfc10bd42d2924bf6",
+  "meta.json": "64c543700da6bf63adcdcb345a5bd3fad9875b2060ffb252f7001abdf75c5759",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "58558cd5114e058ff18ab3c95c14186306afa46b5b91cd1b0731d2680efeca06",
+  "z_ehs_kataster_update.abap": "075653307ac41b252dec7b00e8d8e40e0461e9489be34b4318b4a697f5798b0d",
+  "zcl_ehs_lagerklasse.abap": "696fdde4c9aebf13bd62a9cff857f5727c95c5d3f0ab5afd11561f2bc6ef9b74",
+  "zehs_sdb_inbound.abap": "565e78dce2cfda184c4633c97838f2bc43118b71d350f054fc0416036bb37753",
+  "zehs_sdb_inbound_f01.abap": "e69d6098a76e161a2820346992efba239244cc5cf22c328cf0f84c3d801a803a",
+  "zehs_sdb_inbound_top.abap": "378113fde525800b3f809cef9e3a0b41f38a50f21287a3992b70e12b08deb6bc"
+ },
+ "BM-120": {
+  "expected.json": "05aa3f0d40b3d5ed9b4695031f0a0a0b2c2a3983b0c50288409eac1c2596a17f",
+  "meta.json": "e77027ebf2d9eac14cc07ae1a34b54eb706151fad0a6942ea40e321aa6ad9f19",
+  "mzpm_freischalt_f01.abap": "1c333263db950f047f8daedea1b090493eab9b27de114c803d666f8aed6065b0",
+  "mzpm_freischalt_i01.abap": "06fa52ae82f32c379ef2b08822fae2eb9217a4d7d807faddb863fb76ed40d4a9",
+  "mzpm_freischalt_top.abap": "4377e40bcda14356064f0a3379080d43a9f655b8f28069da1bfa276adc238192",
+  "profile.json": "3e3d03d057fcc0f59e410f8812269a3a6b9cbdf957c465413b4389113f576fb3",
+  "review.json": "23e693d4da388a4e323efe0876ba8e6bec35f0a4940369b6561986d69d80bc2d",
+  "sapmzpm_freischalt.abap": "cb958a479adf5c521bdea12e35b78c36dfbc000739c3cce3052ad7145fce97c5",
+  "z_pm_freisch_verbuchen.abap": "2671cdfac51fc82ae018288797cb56fb7f8c89bdb8811c308ac157634873712e"
+ }
+}

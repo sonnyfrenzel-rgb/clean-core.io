@@ -1,0 +1,36 @@
+{
+  "id": "BM-170",
+  "title": "Transport: beladene Transporte per BAPI abfertigen, mit Wiederholung bei Sperre",
+  "domain": "Logistik-Randbereich Transport LE-TRA",
+  "band": "mittel",
+  "loc": 73,
+  "constructs": [
+    "dynamische WHERE-Klausel aus String-Tabelle",
+    "SELECT … WHERE (lt_where)",
+    "RETURN aus START-OF-SELECTION",
+    "END-OF-SELECTION",
+    "DO 3 TIMES mit EXIT",
+    "BAPI_SHIPMENT_CHANGE",
+    "BAPI_TRANSACTION_ROLLBACK/COMMIT",
+    "WAIT UP TO",
+    "line_exists / Tabellenausdruck",
+    "CONTINUE",
+    "MESSAGE TYPE E im Job"
+  ],
+  "scenario": "Versandstelle eines Baustoffhändlers: ein Job fertigt alle 30 Minuten die Transporte ab, deren Beladung gemeldet ist, damit Frachtpapiere und Warenausgang folgen können.",
+  "s4_issues": [
+    "Klassischer Transport LE-TRA (VTTK) – in S/4 strategisch TM",
+    "Dynamische WHERE-Klausel auf VTTK-Statusfelder",
+    "Fehlertext über lt_ret[ type = E ] – Laufzeitfehler, wenn nur A-Meldungen zurückkommen",
+    "Warten mit WAIT UP TO im Job"
+  ],
+  "wave": 2,
+  "module": "LE-TRA",
+  "edge_constructs": [
+    "dynamische WHERE-Klausel",
+    "EXIT aus DO in LOOP (verschachtelte Schleife)",
+    "WAIT UP TO",
+    "RETURN aus START-OF-SELECTION, danach läuft END-OF-SELECTION",
+    "MESSAGE … TYPE E als Pfadende (Jobabbruch)"
+  ]
+}

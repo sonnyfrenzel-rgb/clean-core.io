@@ -1,0 +1,35 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten ak",
+      "before": "action source.abap:52 „Geschäft zur manuellen Prüfung kennzeichnen“; gf -> ak [sy-subrc <> 0]; ak -> l [next iteration]",
+      "after": "entfernt; überbrückt: gf -> l [sy-subrc <> 0]",
+      "why": "Reine Zuweisung (Status K, Z. 52); laut Autorenbrief kein Knoten, steuert keinen weiteren Fluss (so auch BM-093, BM-099, BM-100). Inhalt bleibt im Fachsatz (B05).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten as",
+      "before": "action source.abap:58 „Geschäft als auffällig kennzeichnen“; gt -> as [lv_abw > lv_tol]; as -> ev [always]",
+      "after": "entfernt; überbrückt: gt -> ev [lv_abw > lv_tol]",
+      "why": "Reine Zuweisung (Status A, Z. 58); laut Autorenbrief kein Knoten, steuert keinen weiteren Fluss (so auch BM-093, BM-099, BM-100). Inhalt bleibt im Fachsatz (B06).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten ap",
+      "before": "action source.abap:63 „Geschäft als marktgerecht kennzeichnen“; gt -> ap [else]; ap -> l [next iteration]",
+      "after": "entfernt; überbrückt: gt -> l [else]",
+      "why": "Reine Zuweisung (Status P, Z. 63); laut Autorenbrief kein Knoten, steuert keinen weiteren Fluss (so auch BM-093, BM-099, BM-100). Inhalt bleibt im Fachsatz (B07).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e (end)",
+      "before": "source.abap:68",
+      "after": "source.abap:71 (ENDMETHOD)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    }
+  ],
+  "doubts": []
+}

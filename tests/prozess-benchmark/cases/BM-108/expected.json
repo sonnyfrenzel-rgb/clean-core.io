@@ -1,0 +1,689 @@
+{
+  "id": "BM-108",
+  "title": "Serviceverträge vor Laufzeitende automatisch verlängern, gruppiert je Kunde",
+  "classes": [
+    "K01",
+    "K04",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VEDA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCS_VERL_REGEL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:45"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_CUSTOMERCONTRACT_CHANGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:64"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 73,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:73"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 77,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:77"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-108-B01",
+      "text": "Es werden nicht gekündigte Kontrakte (Belegtyp G) der Selektion ermittelt, deren Laufzeit zwischen heute und der eingegebenen Anzahl Tage endet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-108-B02",
+      "text": "Gibt es keine solchen Verträge, endet der Lauf mit einer Hinweismeldung.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-108-B03",
+      "text": "Die Verlängerungsregeln je Vertragsart werden gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-108-B04",
+      "text": "Die Verträge werden je Kunde verarbeitet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-108-B05",
+      "text": "Verträge, für deren Vertragsart keine Verlängerungsregel gepflegt ist, werden übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-108-B06",
+      "text": "Das neue Laufzeitende ist das alte Ende plus die in der Regel gepflegten Tage, ohne gepflegte Tage plus 365 Tage.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-108-B07",
+      "text": "Im Echtlauf wird das Laufzeitende des Vertrags auf das neue Datum geändert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-108-B08",
+      "text": "Meldet die Änderung einen Fehler, wird sie zurückgenommen und der Vertrag als fehlgeschlagen gelistet; sonst wird sie festgeschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        },
+        {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-108-B09",
+      "text": "Jeder verlängerte Vertrag wird mit altem und neuem Laufzeitende gelistet, je Kunde folgt eine Summenzeile mit der Anzahl.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        },
+        {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Auslaufende, nicht gekündigte Kontrakte lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Keine Verträge gefunden?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Hinweis: nichts zu verlängern"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        },
+        "meaning": "Verlängerungsregeln lesen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Kundengruppen durchgehen"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        "meaning": "Verträge des Kunden durchgehen"
+      },
+      {
+        "id": "r3",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        "meaning": "Regel zur Vertragsart nachschlagen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        "meaning": "Keine Regel gepflegt?"
+      },
+      {
+        "id": "a",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "Neues Laufzeitende berechnen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "c1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        "meaning": "Laufzeitende im Vertrag ändern"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "Änderung fehlerhaft?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        "meaning": "Änderung zurücknehmen"
+      },
+      {
+        "id": "o4",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        },
+        "meaning": "Fehlgeschlagenen Vertrag listen"
+      },
+      {
+        "id": "tc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Änderung festschreiben"
+      },
+      {
+        "id": "o5",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        },
+        "meaning": "Vertrag mit altem und neuem Ende listen"
+      },
+      {
+        "id": "o6",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        },
+        "meaning": "Summenzeile je Kunde"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:86"
+        },
+        "meaning": "Lauf beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "gt_ctr IS INITIAL"
+      },
+      {
+        "from": "m1",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "r2",
+        "condition": "else"
+      },
+      {
+        "from": "r2",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "l2",
+        "condition": "next row"
+      },
+      {
+        "from": "l2",
+        "to": "r3",
+        "condition": "next row"
+      },
+      {
+        "from": "r3",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "l2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "a",
+        "condition": "else"
+      },
+      {
+        "from": "a",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "c1",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "g3",
+        "to": "o5",
+        "condition": "else"
+      },
+      {
+        "from": "c1",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "rb",
+        "condition": "line_exists( gt_return[ type = 'E' ] )"
+      },
+      {
+        "from": "rb",
+        "to": "o4",
+        "condition": "always"
+      },
+      {
+        "from": "o4",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g4",
+        "to": "tc",
+        "condition": "else"
+      },
+      {
+        "from": "tc",
+        "to": "o5",
+        "condition": "always"
+      },
+      {
+        "from": "o5",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l2",
+        "to": "o6",
+        "condition": "no more rows"
+      },
+      {
+        "from": "o6",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l1",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:84 — kein Fachsatz „im Testlauf werden keine Verträge als verlängert gezählt“: der Zähler und die Liste laufen auch im Testlauf, die Summenzeile meldet dort simulierte Verlängerungen",
+    "source.abap:53 — kein Fachsatz „Verträge ohne Regel werden um ein Jahr verlängert“: ohne Regel wird der Vertrag übersprungen; die 365 Tage gelten nur für Regeln ohne gepflegte Tage",
+    "gesamte Scheibe — kein Fachsatz „der Kunde wird über die Verlängerung benachrichtigt“: es gibt nur die Liste",
+    "source.abap:32 — kein Fachsatz „nur Serviceverträge einer bestimmten Vertragsart werden verlängert“: selektiert wird jeder Kontrakt (Belegtyp G); die Art steuert erst über die Regeltabelle"
+  ],
+  "processDescription": "Der Report wird mit Verkaufsorganisationen, optionalen Kunden, einer Vorlaufzeit in Tagen und einem Testlaufkennzeichen gestartet. Er liest alle nicht gekündigten Kontrakte der Selektion, deren Laufzeit zwischen heute und dem Vorlaufdatum endet; gibt es keine, endet er mit einem Hinweis. Danach liest er die Verlängerungsregeln je Vertragsart und verarbeitet die Verträge gruppiert je Kunde. Verträge, deren Vertragsart keine Regel hat, werden übersprungen. Für die übrigen wird das neue Laufzeitende als altes Ende plus die in der Regel gepflegten Tage berechnet, ohne gepflegte Tage plus 365 Tage. Im Echtlauf wird das Laufzeitende über den Kontrakt-BAPI geändert; meldet dieser einen Fehler, wird die Änderung zurückgenommen und der Vertrag als fehlgeschlagen gelistet, sonst wird sie festgeschrieben. Jeder verlängerte, im Testlauf nur simulierte Vertrag erscheint mit altem und neuem Ende, und je Kunde folgt eine Summenzeile mit der Anzahl."
+}

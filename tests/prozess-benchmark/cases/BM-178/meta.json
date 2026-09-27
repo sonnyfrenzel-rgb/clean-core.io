@@ -1,0 +1,42 @@
+{
+  "id": "BM-178",
+  "title": "Variantenkonfiguration Kabel: Variantenfunktion für Trommel und Gewicht, Nachprüfung offener Aufträge mit Liefersperre",
+  "domain": "Variantenkonfiguration LO-VC",
+  "band": "sehr komplex",
+  "loc": 422,
+  "constructs": [
+    "Variantenfunktion (GLOBALS/QUERY/MATCH, FAIL/INTERNAL_ERROR)",
+    "CUOV_GET_FUNCTION_ARGUMENT / CUOV_SET_FUNCTION_ARGUMENT",
+    "klassische RAISE-Ausnahmen im CATCH-Block",
+    "globale Klasse mit Konstruktor-Ausnahme",
+    "SELECT … ORDER BY + LOOP mit RETURN",
+    "TRY … CATCH in Methode",
+    "COND # / VALUE # … OPTIONAL / DEFAULT",
+    "CATCH SYSTEM-EXCEPTIONS conversion_errors",
+    "AUTHORITY-CHECK mit DUMMY",
+    "JOIN VBAK/VBAP/VBUP",
+    "LOOP AT … GROUP BY … INTO",
+    "BAPI_SALESORDER_CHANGE mit Kopf-Liefersperre",
+    "END-OF-SELECTION"
+  ],
+  "scenario": "Kabelhersteller mit konfigurierbarem Material: eine Variantenfunktion leitet aus Länge, Querschnitt und Verlegeart die Trommel und das Gewicht ab; nach Stammdatenänderungen prüft ein Report offene Aufträge nach und sperrt abweichende zur Lieferung.",
+  "s4_issues": [
+    "Variantenfunktionen in S/4 AVC nur eingeschränkt, Beziehungswissen muss migriert werden",
+    "VBUP entfällt in S/4 (Status in VBAP)",
+    "VC_I_GET_CONFIGURATION nicht freigegeben",
+    "Direktlesen VBAK/VBAP statt CDS",
+    "Objekt-Neuanlage je Position mit DB-Zugriff (N+1)"
+  ],
+  "wave": 2,
+  "module": "LO-VC",
+  "edge_constructs": [
+    "RAISE (klassisch) als Pfadende im Funktionsbaustein",
+    "RAISE EXCEPTION TYPE aus Konstruktor und Methode",
+    "TRY … CATCH",
+    "CATCH SYSTEM-EXCEPTIONS",
+    "LOOP AT … GROUP BY",
+    "COND # / VALUE # OPTIONAL/DEFAULT / NEW",
+    "RETURN aus Schleife in Methode",
+    "CONTINUE in Gruppenschleife"
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten d_end (neu)",
+      "before": "kein end-Knoten auf zcl_ztm_d_fo_weight.abap:107",
+      "after": "d_end end auf zcl_ztm_d_fo_weight.abap:107; ",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten v_end (neu)",
+      "before": "kein end-Knoten auf zcl_ztm_v_fo_capacity.abap:114",
+      "after": "v_end end auf zcl_ztm_v_fo_capacity.abap:114; ",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten a_end (neu)",
+      "before": "kein end-Knoten auf zcl_ztm_a_fo_release.abap:124",
+      "after": "a_end end auf zcl_ztm_a_fo_release.abap:124; ",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten d_lg/v_l/a_l -> *_end",
+      "before": "Schleifen d_lg, v_l, a_l ohne Ausgang [no more rows]",
+      "after": "d_lg -> d_end, v_l -> v_end, a_l -> a_end [no more rows]",
+      "why": "Die Hauptschleifen von Determination, Validierung und Aktion hatten keinen Ausgang; die Methoden liefen ins Leere.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten cd_end (neu)",
+      "before": "kein end-Knoten auf zcl_ztm_a_fo_release.abap:175",
+      "after": "cd_end end auf zcl_ztm_a_fo_release.abap:175; cd_c -> cd_end [always] statt -> a_g4; cd_end -> a_g4 [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten nd_try",
+      "before": "gateway auf zcl_ztm_a_fo_release.abap:180 (TRY.) mit Kante [CATCH cx_bcs]",
+      "after": "entfernt; nd_s -> nd_c1 [always]; Ausnahmekanten [CATCH cx_bcs] von nd_c1, nd_c2, nd_c3, nd_c4",
+      "why": "TRY ist keine Verzweigung; im Wellenteil (BM-183, BM-184, BM-191) wird die Ausnahme als Kante vom auslösenden Aufruf zum Handler modelliert.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten nd_end (neu)",
+      "before": "notify_dispatcher ohne end-Knoten; nd_c4 -> a_l [next iteration], Ausnahmekante direkt nach a_l",
+      "after": "nd_end end auf zcl_ztm_a_fo_release.abap:207; nd_c4 -> nd_end [always], nd_c1..nd_c4 -> nd_end [CATCH cx_bcs] (leerer Handler), nd_end -> a_l [next iteration]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus. Rückkante in die Schleife heißt next iteration.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_e (end) / x_copy (neu)",
+      "before": "x_e end auf zcl_ztm_fo_dpc_ext.abap:122 (copy_data_to_ref( ))",
+      "after": "x_copy opaque_call auf :122, x_e end auf :128 (ENDMETHOD.)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION. copy_data_to_ref ist eine geerbte Methode außerhalb des Falls.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten es_pg (end) / es_pgc (neu)",
+      "before": "es_pg end auf zcl_ztm_fo_dpc_ext.abap:194 (/iwbep/cl_mgw_data_util=>paging( ))",
+      "after": "es_pgc opaque_call auf :194, es_pg end auf :200 (ENDMETHOD.)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    }
+  ],
+  "doubts": []
+}

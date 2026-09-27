@@ -1,0 +1,339 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten a_init",
+      "before": "action auf zpy_bav_export.abap:18; s_init -> a_init [always]",
+      "after": "entfernt; s_init -> e_init (end auf Z. 18, eigener Eintrag)",
+      "why": "CONCATENATE … INTO p_file (Z. 18) ist eine reine Zuweisung des Vorschlagswerts; laut Autorenbrief kein Knoten (so auch BM-097). Inhalt bleibt in Fachsatz B01.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_init (neu)",
+      "before": "kein end-Knoten auf zpy_bav_export.abap:18",
+      "after": "e_init end auf zpy_bav_export.abap:18; s_init -> e_init [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_path (neu)",
+      "before": "o_path output ohne end",
+      "after": "e_path end auf zpy_bav_export.abap:23; o_path -> e_path [always]",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_ss (neu)",
+      "before": "kein end-Knoten auf zpy_bav_export.abap:24",
+      "after": "e_ss end auf zpy_bav_export.abap:24; g_path -> e_ss [else]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante e_init -> s_ss (neu)",
+      "before": "keine Verbindung der Ereignisblöcke",
+      "after": "e_init -> s_ss [always]",
+      "why": "Ereignisreihenfolge: nach dem Ende eines Ereignisblocks setzt die Laufzeit mit dem nächsten Ereignis fort (wie in BM-011/032/037 START-OF-SELECTION -> END-OF-SELECTION); bei der logischen Datenbank folgt END-OF-SELECTION, nachdem GET für alle selektierten Personen gelaufen ist.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante e_ss -> s (neu)",
+      "before": "keine Verbindung der Ereignisblöcke",
+      "after": "e_ss -> s [always]",
+      "why": "Ereignisreihenfolge: nach dem Ende eines Ereignisblocks setzt die Laufzeit mit dem nächsten Ereignis fort (wie in BM-011/032/037 START-OF-SELECTION -> END-OF-SELECTION); bei der logischen Datenbank folgt END-OF-SELECTION, nachdem GET für alle selektierten Personen gelaufen ist.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten s_la, c_lmsg, e_la, c_la1 … c_la5 (neu)",
+      "before": "FORM log_add und seine fünf Aufrufe ohne Knoten, obwohl B10/B11/B19/B20 die Protokollierung nennen und f01:89/98 verankern",
+      "after": "s_la start f02:108 -> c_lmsg opaque_call f02:113 -> e_la end f02:120; Aufrufe f01:89, f01:98, f02:76, f02:81, f02:89 je als call mit Kante in s_la und Rückkante von e_la zum jeweils nächsten Schritt",
+      "why": "Die Aufrufe liegen im Fall und tragen die Warn-, Fehler- und Erfolgspfade des Laufs.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten s_lc, c_balc, e_lc (neu)",
+      "before": "FORM log_create ohne Knoten (B03 verankert f02:98)",
+      "after": "c_lc -> s_lc -> c_balc (BAL_LOG_CREATE) -> e_lc -> c_cr",
+      "why": "FORM im Fall mit Standardbaustein; Aufruf und Rückkehr nach Konvention.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_lc -> c_cr",
+      "before": "c_lc -> c_cr [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_lc -> c_cr [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten m_569a (neu) vor o_569a",
+      "before": "o_569a end auf zpy_bav_export_f01.abap:27 ohne output",
+      "after": "m_569a output auf zpy_bav_export_f01.abap:27, Kante m_569a -> o_569a [always]; eingehende Kanten auf m_569a umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten m_569b (neu) vor o_569b",
+      "before": "o_569b end auf zpy_bav_export_f01.abap:32 ohne output",
+      "after": "m_569b output auf zpy_bav_export_f01.abap:32, Kante m_569b -> o_569b [always]; eingehende Kanten auf m_569b umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_ccr (neu)",
+      "before": "kein end-Knoten auf zpy_bav_export_f01.abap:34",
+      "after": "e_ccr end auf zpy_bav_export_f01.abap:34; g_569b -> e_ccr [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_cr -> c_dr",
+      "before": "c_cr -> c_dr [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_ccr -> c_dr [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten m_dr (neu) vor o_dr",
+      "before": "o_dr end auf zpy_bav_export_f01.abap:11 ohne output",
+      "after": "m_dr output auf zpy_bav_export_f01.abap:11, Kante m_dr -> o_dr [always]; eingehende Kanten auf m_dr umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_cdr (neu)",
+      "before": "kein end-Knoten auf zpy_bav_export_f01.abap:13",
+      "after": "e_cdr end auf zpy_bav_export_f01.abap:13; g_dr -> e_cdr [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_dr -> c_cust",
+      "before": "c_dr -> c_cust [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_cdr -> c_cust [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten m_lg (neu) vor o_lg",
+      "before": "o_lg end auf zpy_bav_export_f01.abap:41 ohne output",
+      "after": "m_lg output auf zpy_bav_export_f01.abap:41, Kante m_lg -> o_lg [always]; eingehende Kanten auf m_lg umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten a_prog",
+      "before": "action auf zpy_bav_export_f01.abap:43; g_lg -> a_prog [else]",
+      "after": "entfernt; g_lg [else] -> e_lcu (ENDFORM, eigener Eintrag)",
+      "why": "CONCATENATE 'ZPY_BAV_FORMAT_' p_trag INTO gv_prog (f01:43) ist eine reine Zuweisung; laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B07.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_lcu (neu)",
+      "before": "kein end-Knoten auf zpy_bav_export_f01.abap:44",
+      "after": "e_lcu end auf zpy_bav_export_f01.abap:44; g_lg -> e_lcu [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_cust -> c_open",
+      "before": "c_cust -> c_open [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_lcu -> c_open [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten m_ode (neu) vor o_ode",
+      "before": "o_ode end auf zpy_bav_export_f02.abap:8 ohne output",
+      "after": "m_ode output auf zpy_bav_export_f02.abap:8, Kante m_ode -> o_ode [always]; eingehende Kanten auf m_ode umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_of (neu)",
+      "before": "kein end-Knoten auf zpy_bav_export_f02.abap:19",
+      "after": "e_of end auf zpy_bav_export_f02.abap:19; o_hdr -> e_of [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_sos (neu)",
+      "before": "kein end-Knoten auf zpy_bav_export.abap:32",
+      "after": "e_sos end auf zpy_bav_export.abap:32; e_of -> e_sos [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_open -> s_get",
+      "before": "c_open -> s_get [always] (Direktkante vom Aufruf in das nächste Ereignis)",
+      "after": "e_of -> e_sos [always]; e_sos -> s_get [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt. Nach START-OF-SELECTION liest die logische Datenbank die Personen und löst GET peras aus.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_get (neu)",
+      "before": "kein end-Knoten auf zpy_bav_export.abap:36",
+      "after": "e_get end auf zpy_bav_export.abap:36; erreicht über e_ctr, e_rg, e_pe -> e_get; e_get -> s_eos",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_rr1 -> g_ok1",
+      "before": "c_rr1 -> g_ok1 [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_rr -> g_ok1 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_rr (neu)",
+      "before": "kein end-Knoten auf zpy_bav_export_f01.abap:151",
+      "after": "e_rr end auf zpy_bav_export_f01.abap:151; c_py -> e_rr [always]; e_rr -> g_ok1 [always]; e_rr -> g_ok2 [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_ca1 -> g_cur",
+      "before": "c_ca1 -> g_cur [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_ca -> g_cur [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_rr2 -> g_ok2",
+      "before": "c_rr2 -> g_ok2 [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_rr -> g_ok2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_ca2 -> a_delta",
+      "before": "c_ca2 -> a_delta [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_ca -> a_delta [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante g_art -> l_rt [else] (neu)",
+      "before": "CASE ls_lg-art nur mit WHEN 'AG'/'AN'",
+      "after": "g_art -> l_rt [else]",
+      "why": "CASE ohne WHEN OTHERS: eine andere Einteilung fällt durch zur nächsten Lohnart; der Sonst-Zweig fehlte.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten r_crt (neu)",
+      "before": "l_crt -> g_crt [next row]",
+      "after": "r_crt read f01:173; l_crt -> r_crt [next row] -> g_crt",
+      "why": "Nachschlage-Entscheidung wie r_lg2 in der RT-Schleife (READ TABLE … TRANSPORTING NO FIELDS mit folgender sy-subrc-Auswertung); gleich behandeln.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_ca (neu)",
+      "before": "kein end-Knoten auf zpy_bav_export_f01.abap:179",
+      "after": "e_ca end auf zpy_bav_export_f01.abap:179; l_crt -> e_ca [no more rows]; e_ca -> g_cur [always]; e_ca -> a_delta [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Rückkanten collect_amounts",
+      "before": "c_ca1 -> g_cur, c_ca2 -> a_delta (Direktkanten)",
+      "after": "e_ca -> g_cur, e_ca -> a_delta [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Rückkanten read_result",
+      "before": "c_rr1 -> g_ok1, c_rr2 -> g_ok2 (Direktkanten)",
+      "after": "e_rr -> g_ok1, e_rr -> g_ok2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_wr (neu)",
+      "before": "kein end-Knoten auf zpy_bav_export_f02.abap:48",
+      "after": "e_wr end auf zpy_bav_export_f02.abap:48; o_rec -> e_wr [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_wr -> l_rg",
+      "before": "c_wr -> l_rg [next iteration] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_wr -> l_rg [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_pe (neu)",
+      "before": "kein end-Knoten auf zpy_bav_export_f01.abap:133",
+      "after": "e_pe end auf zpy_bav_export_f01.abap:133; l_rg -> e_pe [no more rows]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Rückkanten process_employee",
+      "before": "e_ctr, e_rg ohne ausgehende Kante; c_pe ohne Rückkehr",
+      "after": "e_ctr, e_rg, e_pe -> e_get [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante e_get -> s_eos (neu)",
+      "before": "keine Verbindung der Ereignisblöcke",
+      "after": "e_get -> s_eos [always]",
+      "why": "Ereignisreihenfolge: nach dem Ende eines Ereignisblocks setzt die Laufzeit mit dem nächsten Ereignis fort (wie in BM-011/032/037 START-OF-SELECTION -> END-OF-SELECTION); bei der logischen Datenbank folgt END-OF-SELECTION, nachdem GET für alle selektierten Personen gelaufen ist.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_wt (neu)",
+      "before": "kein end-Knoten auf zpy_bav_export_f02.abap:66",
+      "after": "e_wt end auf zpy_bav_export_f02.abap:66; g_wt -> e_wt [else]; o_trl -> e_wt [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_tr -> c_cl",
+      "before": "c_tr -> c_cl [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_wt -> c_cl [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_cl (neu)",
+      "before": "kein end-Knoten auf zpy_bav_export_f02.abap:90",
+      "after": "e_cl end auf zpy_bav_export_f02.abap:90; g_cl -> e_cl [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_cl -> c_ld",
+      "before": "c_cl -> c_ld [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_test -> c_ld [always], e_cnt -> c_ld [always], e_cl -> c_ld [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_eos (neu)",
+      "before": "kein end-Knoten auf zpy_bav_export.abap:41",
+      "after": "e_eos end auf zpy_bav_export.abap:41; erreicht über e_ld -> e_eos",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten s_ld, c_bsave, g_batch, o_disp, e_ld (neu)",
+      "before": "FORM log_display ohne Knoten (B22 verankert f02:126/132)",
+      "after": "c_ld -> s_ld -> c_bsave (BAL_DB_SAVE) -> g_batch [sy-batch = abap_false] -> o_disp (BAL_DSP_LOG_DISPLAY) -> e_ld; g_batch [else] -> e_ld; e_ld -> e_eos",
+      "why": "FORM im Fall mit Verzweigung Dialog/Hintergrund; Aufruf und Rückkehr nach Konvention.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz B09",
+      "before": "Für jeden selektierten Mitarbeiter wird der bAV-Vertrag beim gewählten Träger zum Periodenende gesucht; ohne Vertrag wird er übergangen.",
+      "after": "Für jeden selektierten Mitarbeiter wird der bAV-Vertrag beim gewählten Träger zum Ende des Auswahlzeitraums der logischen Datenbank gesucht; ohne Vertrag wird er übergangen.",
+      "why": "HR_READ_INFOTYPE liest zum Stichtag pn-endda, dem Ende des Personenauswahlzeitraums von PNPCE; das ist nicht das Ende der über p_pabrj/p_pabrp gewählten Abrechnungsperiode, und der Code gleicht beide nicht ab.",
+      "category": "Fachsatz"
+    }
+  ],
+  "doubts": [
+    "Die logische Datenbank ruft GET peras je selektierter Person erneut auf; dafür gibt es keine Schleifenanweisung und darum keinen loop-Knoten. Die Wiederholung ist im Skelett nur implizit, das Ende des GET-Blocks führt zu END-OF-SELECTION.",
+    "Die IF-Verzweigung im Makro add_field (top:48) ist technisch (Trennzeichen) und an keiner Aufrufstelle als Knoten modelliert."
+  ]
+}

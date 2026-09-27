@@ -1,0 +1,32 @@
+{
+  "id": "BM-186",
+  "title": "OData-Filial-App Werbeaktionen: GET_ENTITYSET mit Pflichtfilter, Berechtigung je Filiale, dynamischem WHERE",
+  "domain": "Technische Randbereiche — SAP Gateway / OData",
+  "band": "mittel",
+  "loc": 72,
+  "constructs": [
+    "*_DPC_EXT~*_GET_ENTITYSET",
+    "GET_FILTER_SELECT_OPTIONS",
+    "CASE property",
+    "RAISE EXCEPTION /IWBEP/CX_MGW_BUSI_EXCEPTION",
+    "AUTHORITY-CHECK M_MATE_WRK",
+    "SELECT JOIN mit dynamischer WHERE-Klausel",
+    "manuelles Paging",
+    "inlinecount"
+  ],
+  "scenario": "OData-Service einer Filial-App im Handel: Filialleiter sehen auf dem Tablet die Werbeaktionen ihrer Filiale, optional nur die heute laufenden; die Aktionen liegen in kundeneigenen Tabellen.",
+  "s4_issues": [
+    "SEGW-Service mit DPC_EXT-Code; in S/4 strategisch RAP/CDS-basierte OData-Services",
+    "Dynamische WHERE-Klausel als String aus Filterwerten",
+    "Paging nach dem vollständigen Lesen im ABAP statt in der Datenbank"
+  ],
+  "wave": 2,
+  "module": "IS-Retail",
+  "edge_constructs": [
+    "dynamische WHERE-Klausel (leer = keine Einschränkung)",
+    "RAISE EXCEPTION TYPE als Pfadende",
+    "verkettete Methodenaufrufe",
+    "Inline-Deklarationen",
+    "DELETE der aktuellen Zeile in LOOP"
+  ]
+}

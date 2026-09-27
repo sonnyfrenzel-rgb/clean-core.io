@@ -1,0 +1,28 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten st53",
+      "before": "action auf source.abap:77; w -> st53 [always]; st53 -> l1 [next iteration]",
+      "after": "entfernt; w -> l1 [next iteration]",
+      "why": "Reine Zuweisungen der Statusfelder in den Statussatz (danach APPEND idoc_status); laut Autorenbrief kein Knoten, sie steuern keinen weiteren Fluss (wie BM-096). Inhalt bleibt in Fachsatz B06.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten st51",
+      "before": "action auf source.abap:82; gs -> st51 [else]; st51 -> l1 [next iteration]",
+      "after": "entfernt; gs -> l1 [else]",
+      "why": "Reine Zuweisungen der Statusfelder in den Statussatz (danach APPEND idoc_status); laut Autorenbrief kein Knoten, sie steuern keinen weiteren Fluss (wie BM-096). Inhalt bleibt in Fachsatz B06.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten l3, rv",
+      "before": "loop auf source.abap:93 mit action rv auf :94 (return_variables-doc_number = …); gw -> l3 [workflow_result IS INITIAL]",
+      "after": "beide entfernt; gw -> e [workflow_result IS INITIAL] (neben gw -> e [else])",
+      "why": "Der Schleifenkörper besteht nur aus Zuweisung und APPEND in die Rückgabetabelle; laut Autorenbrief keine Knoten, eine Schleife ohne Körperknoten trägt keinen Schritt. Inhalt bleibt in Fachsatz B07 (Anker :91, :94).",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": []
+}

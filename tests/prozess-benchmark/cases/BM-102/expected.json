@@ -1,0 +1,282 @@
+{
+  "id": "BM-102",
+  "title": "Zählerstand plausibilisieren: letzter Messbeleg, Rückwärtszählung, Zählerüberlauf",
+  "classes": [
+    "K01",
+    "K03"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "IMPTT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:15"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "IMRG",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:20"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-102-B01",
+      "text": "Zum Messpunkt wird, sofern er ein Zähler ist, der Zählerüberlaufwert gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-102-B02",
+      "text": "Es wird der jüngste nicht stornierte Messbeleg bis zum Ablesedatum ermittelt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-102-B03",
+      "text": "Der Zuwachs ergibt sich aus neuem Zählerstand minus letztem Zählerstand; ohne Vorbeleg zählt der volle neue Stand.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-102-B04",
+      "text": "Ist der neue Zählerstand kleiner als der letzte und für den Zähler kein Überlauf gepflegt, wird die Erfassung mit der Ausnahme READING_TOO_LOW abgelehnt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-102-B05",
+      "text": "Ist ein Überlauf gepflegt, wird ein negativer Zuwachs als Zählerüberlauf gewertet und um den Überlaufwert erhöht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Plausibilisierung eines neuen Zählerstands"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Zählerüberlauf des Messpunkts lesen"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Letzten gültigen Messbeleg lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Zählerstand rückläufig ohne Überlauf?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Fehler: Zählerstand zu niedrig"
+      },
+      {
+        "id": "x",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Baustein bricht mit READING_TOO_LOW ab"
+      },
+      {
+        "id": "a",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Zuwachs festlegen, bei Überlauf korrigiert"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Zuwachs zurückgegeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "r2",
+        "condition": "always"
+      },
+      {
+        "from": "r2",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "m",
+        "condition": "ev_diff < 0 AND lv_cjump IS INITIAL"
+      },
+      {
+        "from": "m",
+        "to": "x",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "a",
+        "condition": "else"
+      },
+      {
+        "from": "a",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:15 — kein Fachsatz „Messpunkte ohne Zählerkennzeichen werden abgewiesen“: sy-subrc wird nicht geprüft, ein Nicht-Zähler läuft ohne Überlaufwert weiter",
+    "gesamte Scheibe — kein Fachsatz „der Messbeleg wird angelegt“: der Baustein liest und rechnet nur",
+    "source.abap:28 — kein Fachsatz „ohne Vorbeleg wird die Erfassung abgelehnt“: ohne Vorbeleg ist der letzte Stand 0 und der volle Stand gilt als Zuwachs"
+  ],
+  "processDescription": "Der Baustein wird vor dem Anlegen eines Zählerstands mit Messpunkt, neuem Zählerstand und Ablesedatum aufgerufen. Er liest zum Messpunkt den Zählerüberlaufwert, sofern der Messpunkt als Zähler gekennzeichnet ist; ist er kein Zähler, bleibt der Überlaufwert leer, ohne dass das auffällt. Danach ermittelt er den jüngsten nicht stornierten Messbeleg bis zum Ablesedatum und berechnet den Zuwachs als Differenz; ohne Vorbeleg gilt der volle neue Stand als Zuwachs. Ist der Zuwachs negativ und kein Überlauf gepflegt, bricht der Baustein mit der Ausnahme READING_TOO_LOW ab. Andernfalls wird ein negativer Zuwachs als Zählerüberlauf gedeutet und um den Überlaufwert erhöht, und der Zuwachs wird zurückgegeben. Geschrieben wird nichts."
+}

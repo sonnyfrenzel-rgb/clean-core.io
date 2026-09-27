@@ -1,0 +1,86 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufruf c1",
+      "before": "c1 -> g_e [always]",
+      "after": "e1 -> g_e [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c2",
+      "before": "c2 -> g_t [always]",
+      "after": "e2 -> g_t [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c_p",
+      "before": "c_p -> x_t [always]",
+      "after": "e3 -> x_t [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c3",
+      "before": "c3 -> c4 [always]",
+      "after": "e4 -> c4 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c4",
+      "before": "c4 -> c5 [always]",
+      "after": "e5 -> c5 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c5",
+      "before": "c5 -> c6 [always]",
+      "after": "e7 -> c6 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Ausnahmekanten nach o5",
+      "before": "c5m -> o5 [CATCH zcx_cs_rr INTO DATA(lx_rr)]",
+      "after": "xk -> o5 [zcx_cs_rr]; xe -> o5 [zcx_cs_rr]",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION in einem gerufenen Block des Falls ist ein end-Knoten; die Ausnahmekante geht von diesem end in den CATCH-Zweig des Aufrufers (Bedingung: Ausnahmename), nicht vom Aufrufknoten.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf c5m",
+      "before": "c5m -> wu [always]",
+      "after": "ec -> wu [always]; xc -> wu [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf ck",
+      "before": "ck -> l5 [next iteration]",
+      "after": "e6 -> l5 [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer, auch von RETURN-/CHECK-Enden); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante cd -> o6",
+      "before": "[CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn)]",
+      "after": "[cx_sy_dyn_call_error]",
+      "why": "Vereinheitlichte Konvention: die Ausnahmekante trägt als Bedingung den Ausnahmenamen, nicht die CATCH-Anweisung.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten rb",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call; transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    }
+  ],
+  "doubts": [
+    "zcs_rueckruf_f01.abap:33/53 — ad (DELETE gt_ser) und a2 (Zuweisung Kunde/Land) sind Operationen auf internen Tabellen bzw. Zuweisungen; belassen, weil sie den Chargenfilter bzw. die Kundenzuordnung tragen und ohne sie Gateway gd entartet bzw. Schleife l2 leer wäre."
+  ]
+}

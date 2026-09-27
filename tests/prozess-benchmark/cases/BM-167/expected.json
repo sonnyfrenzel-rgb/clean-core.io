@@ -1,0 +1,476 @@
+{
+  "id": "BM-167",
+  "title": "Automotive: JIT-Sequenzabrufe des OEM per IDoc in die Abruftabelle übernehmen",
+  "classes": [
+    "K01",
+    "K03"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "KNMT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:44"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZJIT_ABRUF",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 76,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:76"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-167-B01",
+      "text": "Der Baustein verarbeitet nur Nachrichten vom Typ ZDELJIT und bricht sonst mit der Ausnahme „falscher Baustein“ ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-167-B02",
+      "text": "Je IDoc werden Kopfsegment (Kunde, Abrufnummer) und Positionssegmente des Sequenzabrufs ausgewertet; andere Segmente werden ignoriert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-167-B03",
+      "text": "Zu jeder Abrufposition wird über die Kunden-Material-Info das eigene Material zur Kundenmaterialnummer ermittelt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-167-B04",
+      "text": "Ist das Kundenmaterial unbekannt oder die Menge nicht numerisch, wird die Segmentauswertung des IDocs abgebrochen und ein Fehlergrund gemerkt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-167-B05",
+      "text": "Fehlerfreie Abrufe werden mit Sequenznummer, Liefertermin und Lieferzeit in die Abruftabelle eingefügt; bereits vorhandene Abrufpositionen werden stillschweigend übergangen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-167-B06",
+      "text": "Das IDoc erhält Status 53 mit der Abrufnummer, im Fehlerfall Status 51 mit dem Fehlergrund, und das Workflow-Ergebnis wird auf Fehler gesetzt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-167-B07",
+      "text": "Nur wenn kein IDoc des Pakets fehlerhaft war, werden alle IDocs als verarbeitet zurückgemeldet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:91"
+        },
+        {
+          "file": "source.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:94"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "IDoc-Eingang Sequenzabruf"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Falscher Nachrichtentyp?"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Abbruch: falscher Baustein"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "IDocs des Pakets durchgehen"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "Segmente des IDocs durchgehen"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Segmentart?"
+      },
+      {
+        "id": "qm",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        "meaning": "Material zur Kundenmaterialnummer ermitteln"
+      },
+      {
+        "id": "gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Kundenmaterial unbekannt?"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        "meaning": "Menge nicht numerisch?"
+      },
+      {
+        "id": "gs",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        "meaning": "IDoc fehlerfrei?"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        "meaning": "Abrufpositionen speichern"
+      },
+      {
+        "id": "gw",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:91"
+        },
+        "meaning": "Ganzes Paket fehlerfrei?"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:99"
+        },
+        "meaning": "Ende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "x0",
+        "condition": "idoc_contrl-mestyp <> 'ZDELJIT'"
+      },
+      {
+        "from": "g0",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "l1",
+        "to": "l2",
+        "condition": "next row"
+      },
+      {
+        "from": "l2",
+        "to": "cs",
+        "condition": "next row"
+      },
+      {
+        "from": "cs",
+        "to": "l2",
+        "condition": "WHEN 'ZE1JITK'"
+      },
+      {
+        "from": "cs",
+        "to": "qm",
+        "condition": "WHEN 'ZE1JITP'"
+      },
+      {
+        "from": "cs",
+        "to": "l2",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "qm",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "gm",
+        "to": "gs",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gm",
+        "to": "gc",
+        "condition": "else"
+      },
+      {
+        "from": "gc",
+        "to": "gs",
+        "condition": "sy-subrc = 1"
+      },
+      {
+        "from": "gc",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "l2",
+        "to": "gs",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gs",
+        "to": "w",
+        "condition": "lv_msgno IS INITIAL"
+      },
+      {
+        "from": "l1",
+        "to": "gw",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gw",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "w",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gs",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "gw",
+        "to": "e",
+        "condition": "workflow_result IS INITIAL"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:76 — kein Fachsatz „geänderte Abrufe überschreiben den bisherigen Stand“: vorhandene Schlüssel werden wegen ACCEPTING DUPLICATE KEYS übergangen, das IDoc bekommt trotzdem Status 53",
+    "source.abap:91 — kein Fachsatz „erfolgreich verbuchte IDocs werden immer als verarbeitet gemeldet“: schon ein fehlerhaftes IDoc im Paket unterdrückt die Rückmeldung für alle",
+    "source.abap:37 — kein Fachsatz „fehlt das Kopfsegment, wird das IDoc abgelehnt“: der Kopf wird zwischen IDocs nicht zurückgesetzt, der Kunde des vorigen IDocs wirkt weiter",
+    "gesamte Scheibe — kein Fachsatz „Lieferungen oder JIT-Abrufe des Standards werden angelegt“: geschrieben wird nur die Abruftabelle, ein COMMIT setzt erst die IDoc-Verarbeitung"
+  ],
+  "processDescription": "Die IDoc-Eingangsverarbeitung ruft den Baustein mit einem Paket von JIT-Sequenzabrufen des Automobilherstellers. Ist der Nachrichtentyp nicht ZDELJIT, bricht er mit der Ausnahme „falscher Baustein“ ab. Für jedes IDoc liest er das Kopfsegment mit Kunde und Abrufnummer und je Positionssegment die Kundenmaterialnummer, Menge, Sequenz und Liefertermin. Das eigene Material wird über die Kunden-Material-Info ermittelt; ist es unbekannt oder ist die Menge nicht numerisch, bricht die Segmentauswertung dieses IDocs ab. Fehlerfreie IDocs werden in die eigene Abruftabelle geschrieben, wobei bereits vorhandene Positionen stillschweigend übergangen werden, und erhalten Status 53. Fehlerhafte IDocs erhalten Status 51 mit dem Grund, und das Workflow-Ergebnis zeigt einen Fehler. Nur wenn das gesamte Paket fehlerfrei war, werden alle IDocs als verarbeitet zurückgemeldet. Festgeschrieben wird durch die aufrufende IDoc-Verarbeitung."
+}

@@ -1,0 +1,1306 @@
+{
+  "id": "BM-191",
+  "title": "Massendruck Teilnahmebestätigungen im Veranstaltungsmanagement als Adobe Form mit Druckprotokoll",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "HRP1000",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpe_teilnbest_f01.abap",
+        "line": 14,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpe_teilnbest_f01.abap:14"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HRP1026",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpe_teilnbest_f01.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpe_teilnbest_f01.abap:29"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HRP1001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpe_teilnbest_f01.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpe_teilnbest_f01.abap:40"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FP_JOB_OPEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpe_teilnbest.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpe_teilnbest.abap:27"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FP_FUNCTION_MODULE_NAME",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpe_teilnbest.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpe_teilnbest.abap:42"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0002",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpe_teilnbest.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpe_teilnbest.abap:64"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPE_TB_LOG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zpe_teilnbest.abap",
+        "line": 90,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpe_teilnbest.abap:90"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPE_TB_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zpe_teilnbest_f01.abap",
+        "line": 101,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpe_teilnbest_f01.abap:101"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FP_JOB_CLOSE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpe_teilnbest.abap",
+        "line": 106,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpe_teilnbest.abap:106"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-191-B01",
+      "text": "Es werden die aktiven Veranstaltungen der Planvariante gelesen, deren Ende im gewählten Zeitraum liegt.",
+      "anchors": [
+        {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:14"
+        }
+      ]
+    },
+    {
+      "id": "BM-191-B02",
+      "text": "Gibt es keine solche Veranstaltung, wird ein Hinweis ausgegeben und die Verarbeitung ohne Druck beendet.",
+      "anchors": [
+        {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:22"
+        },
+        {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:23"
+        },
+        {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-191-B03",
+      "text": "Abgesagte Veranstaltungen werden aus der Druckmenge entfernt.",
+      "anchors": [
+        {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:29"
+        },
+        {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-191-B04",
+      "text": "Zu den verbleibenden Veranstaltungen werden die aktiven Teilnahmebeziehungen zu den Teilnehmern gelesen.",
+      "anchors": [
+        {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-191-B05",
+      "text": "Für alle Bestätigungen wird ein gemeinsamer Druckauftrag ohne Dialog geöffnet, bei Vorschau ohne sofortige Ausgabe; scheitert das, bricht der Lauf mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:26"
+        },
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:27"
+        },
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-191-B06",
+      "text": "Zum Formular ZPE_TEILNAHMEBEST wird der Formularbaustein ermittelt; ist das Formular nicht verwendbar, bricht der Lauf mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:42"
+        },
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-191-B07",
+      "text": "Für interne Mitarbeiter wird der zum Veranstaltungsende gültige Name aus den Personaldaten gelesen, ersatzweise die Personalnummer verwendet.",
+      "anchors": [
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:64"
+        },
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-191-B08",
+      "text": "Für externe Personen wird die Bezeichnung des Personenobjekts als Name verwendet.",
+      "anchors": [
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-191-B09",
+      "text": "Andere Teilnehmerarten wie Firmen oder Kunden erhalten keine Einzelbestätigung.",
+      "anchors": [
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:61"
+        },
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:86"
+        }
+      ]
+    },
+    {
+      "id": "BM-191-B10",
+      "text": "Eine bereits protokollierte Bestätigung wird nur bei gesetztem Wiederholungskennzeichen erneut gedruckt.",
+      "anchors": [
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:90"
+        },
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:95"
+        }
+      ]
+    },
+    {
+      "id": "BM-191-B11",
+      "text": "Die Teilnahmebestätigung wird mit Veranstaltungs- und Teilnehmerdaten über das Adobe-Formular ausgegeben.",
+      "anchors": [
+        {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-191-B12",
+      "text": "Scheitert die Ausgabe, wird der Teilnehmer als Fehler in der Liste gezählt und nicht protokolliert.",
+      "anchors": [
+        {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:86"
+        },
+        {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-191-B13",
+      "text": "Außerhalb der Vorschau wird der erfolgreiche Druck mit Datum und Benutzer im Druckprotokoll festgehalten.",
+      "anchors": [
+        {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:94"
+        },
+        {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:101"
+        }
+      ]
+    },
+    {
+      "id": "BM-191-B14",
+      "text": "Am Ende einer Veranstaltung wird eine Zeile mit der Zahl der für sie gedruckten Bestätigungen ausgegeben.",
+      "anchors": [
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:99"
+        },
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:100"
+        }
+      ]
+    },
+    {
+      "id": "BM-191-B15",
+      "text": "Der Druckauftrag wird geschlossen und die Gesamtzahl gedruckter und fehlerhafter Bestätigungen ausgegeben.",
+      "anchors": [
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:106"
+        },
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:117"
+        },
+        {
+          "file": "zpe_teilnbest.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:118"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s_sos",
+        "type": "start",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:18"
+        },
+        "meaning": "Massendruck starten"
+      },
+      {
+        "id": "c_sd",
+        "type": "call",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:20"
+        },
+        "meaning": "Veranstaltungen und Teilnehmer ermitteln"
+      },
+      {
+        "id": "s_sd",
+        "type": "start",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:10"
+        },
+        "meaning": "Datenselektion"
+      },
+      {
+        "id": "r_ev",
+        "type": "read",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:14"
+        },
+        "meaning": "Beendete aktive Veranstaltungen lesen"
+      },
+      {
+        "id": "g_ev",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:22"
+        },
+        "meaning": "Veranstaltungen gefunden?"
+      },
+      {
+        "id": "o_ev",
+        "type": "output",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:23"
+        },
+        "meaning": "Hinweis: keine Veranstaltungen"
+      },
+      {
+        "id": "e_stop",
+        "type": "end",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:24"
+        },
+        "meaning": "Selektion abbrechen, kein Druck"
+      },
+      {
+        "id": "r_1026",
+        "type": "read",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:29"
+        },
+        "meaning": "Absagen der Veranstaltungen lesen"
+      },
+      {
+        "id": "l_1026",
+        "type": "loop",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:35"
+        },
+        "meaning": "Je abgesagte Veranstaltung"
+      },
+      {
+        "id": "a_del",
+        "type": "action",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:36"
+        },
+        "meaning": "Abgesagte Veranstaltung aus Druckmenge nehmen"
+      },
+      {
+        "id": "r_rel",
+        "type": "read",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:40"
+        },
+        "meaning": "Teilnahmebeziehungen lesen (FOR ALL ENTRIES)"
+      },
+      {
+        "id": "e_sd",
+        "type": "end",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:51"
+        },
+        "meaning": "Teilnehmer nach Veranstaltung sortiert, Rückkehr"
+      },
+      {
+        "id": "oc_open",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:27"
+        },
+        "meaning": "Druckauftrag öffnen"
+      },
+      {
+        "id": "g_open",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:36"
+        },
+        "meaning": "Druckauftrag geöffnet?"
+      },
+      {
+        "id": "o_open",
+        "type": "output",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:37"
+        },
+        "meaning": "Fehlermeldung Druckauftrag nicht zu öffnen"
+      },
+      {
+        "id": "e_open",
+        "type": "end",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:37"
+        },
+        "meaning": "Abbruch: Druckauftrag nicht zu öffnen"
+      },
+      {
+        "id": "oc_fmn",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:42"
+        },
+        "meaning": "Formularbaustein zum Adobe-Formular ermitteln"
+      },
+      {
+        "id": "o_fmn",
+        "type": "output",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:48"
+        },
+        "meaning": "Fehlermeldung Formular nicht verwendbar"
+      },
+      {
+        "id": "e_fmn",
+        "type": "end",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:48"
+        },
+        "meaning": "Abbruch: Formular nicht verwendbar"
+      },
+      {
+        "id": "l_rel",
+        "type": "loop",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:51"
+        },
+        "meaning": "Je Teilnahmebeziehung"
+      },
+      {
+        "id": "r_evt",
+        "type": "read",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:53"
+        },
+        "meaning": "Zugehörige Veranstaltung nachschlagen"
+      },
+      {
+        "id": "g_chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:55"
+        },
+        "meaning": "Veranstaltung in Druckmenge?"
+      },
+      {
+        "id": "g_case",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:61"
+        },
+        "meaning": "Art des Teilnehmers"
+      },
+      {
+        "id": "r_pa",
+        "type": "read",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:64"
+        },
+        "meaning": "Name des Mitarbeiters lesen"
+      },
+      {
+        "id": "g_pa",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:69"
+        },
+        "meaning": "Name gefunden?"
+      },
+      {
+        "id": "r_h",
+        "type": "read",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:77"
+        },
+        "meaning": "Name der externen Person lesen"
+      },
+      {
+        "id": "r_log",
+        "type": "read",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:90"
+        },
+        "meaning": "Druckprotokoll prüfen"
+      },
+      {
+        "id": "g_rept",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:95"
+        },
+        "meaning": "Noch nicht gedruckt oder Wiederholung?"
+      },
+      {
+        "id": "c_pr",
+        "type": "call",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:97"
+        },
+        "meaning": "Bestätigung drucken"
+      },
+      {
+        "id": "s_pc",
+        "type": "start",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:58"
+        },
+        "meaning": "Einzeldruck"
+      },
+      {
+        "id": "oc_form",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:74"
+        },
+        "meaning": "Adobe-Formular ausgeben (dynamischer Baustein)"
+      },
+      {
+        "id": "g_pc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:86"
+        },
+        "meaning": "Ausgabe fehlgeschlagen?"
+      },
+      {
+        "id": "o_err",
+        "type": "output",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:88"
+        },
+        "meaning": "Fehlerzeile in Liste"
+      },
+      {
+        "id": "e_pc1",
+        "type": "end",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:90"
+        },
+        "meaning": "Rückkehr ohne Protokoll"
+      },
+      {
+        "id": "g_prev",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:94"
+        },
+        "meaning": "Echter Druck (keine Vorschau)?"
+      },
+      {
+        "id": "w_log",
+        "type": "write",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:101"
+        },
+        "meaning": "Druck protokollieren"
+      },
+      {
+        "id": "e_pc2",
+        "type": "end",
+        "anchor": {
+          "file": "zpe_teilnbest_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest_f01.abap:107"
+        },
+        "meaning": "Erfolgreich gezählt, Rückkehr"
+      },
+      {
+        "id": "g_atend",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:99"
+        },
+        "meaning": "Letzter Teilnehmer der Veranstaltung?"
+      },
+      {
+        "id": "o_sum",
+        "type": "output",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:100"
+        },
+        "meaning": "Summenzeile je Veranstaltung"
+      },
+      {
+        "id": "oc_close",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:106"
+        },
+        "meaning": "Druckauftrag schließen"
+      },
+      {
+        "id": "g_close",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:112"
+        },
+        "meaning": "Schließen fehlgeschlagen?"
+      },
+      {
+        "id": "o_close",
+        "type": "output",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:113"
+        },
+        "meaning": "Warnung: Druckauftrag nicht sauber geschlossen"
+      },
+      {
+        "id": "o_tot",
+        "type": "output",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:117"
+        },
+        "meaning": "Zahl gedruckter Bestätigungen"
+      },
+      {
+        "id": "o_errtot",
+        "type": "output",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:118"
+        },
+        "meaning": "Zahl fehlerhafter Ausgaben ausgeben"
+      },
+      {
+        "id": "e_sos",
+        "type": "end",
+        "anchor": {
+          "file": "zpe_teilnbest.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_teilnbest.abap:118"
+        },
+        "meaning": "Zahl fehlerhafter Ausgaben, Ende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s_sos",
+        "to": "c_sd",
+        "condition": "always"
+      },
+      {
+        "from": "c_sd",
+        "to": "s_sd",
+        "condition": "always"
+      },
+      {
+        "from": "s_sd",
+        "to": "r_ev",
+        "condition": "always"
+      },
+      {
+        "from": "r_ev",
+        "to": "g_ev",
+        "condition": "always"
+      },
+      {
+        "from": "g_ev",
+        "to": "o_ev",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o_ev",
+        "to": "e_stop",
+        "condition": "always"
+      },
+      {
+        "from": "g_ev",
+        "to": "r_1026",
+        "condition": "else"
+      },
+      {
+        "from": "r_1026",
+        "to": "l_1026",
+        "condition": "always"
+      },
+      {
+        "from": "l_1026",
+        "to": "a_del",
+        "condition": "next row"
+      },
+      {
+        "from": "a_del",
+        "to": "l_1026",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_1026",
+        "to": "r_rel",
+        "condition": "no more rows"
+      },
+      {
+        "from": "r_rel",
+        "to": "e_sd",
+        "condition": "always"
+      },
+      {
+        "from": "oc_open",
+        "to": "g_open",
+        "condition": "always"
+      },
+      {
+        "from": "g_open",
+        "to": "o_open",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_open",
+        "to": "oc_fmn",
+        "condition": "else"
+      },
+      {
+        "from": "oc_fmn",
+        "to": "o_fmn",
+        "condition": "CATCH cx_fp_api INTO DATA(lx_fp)"
+      },
+      {
+        "from": "oc_fmn",
+        "to": "l_rel",
+        "condition": "always"
+      },
+      {
+        "from": "l_rel",
+        "to": "r_evt",
+        "condition": "next row"
+      },
+      {
+        "from": "r_evt",
+        "to": "g_chk",
+        "condition": "always"
+      },
+      {
+        "from": "g_chk",
+        "to": "g_case",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_chk",
+        "to": "l_rel",
+        "condition": "else"
+      },
+      {
+        "from": "g_case",
+        "to": "r_pa",
+        "condition": "WHEN 'P'"
+      },
+      {
+        "from": "g_case",
+        "to": "r_h",
+        "condition": "WHEN 'H'"
+      },
+      {
+        "from": "g_case",
+        "to": "l_rel",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "r_pa",
+        "to": "g_pa",
+        "condition": "always"
+      },
+      {
+        "from": "g_pa",
+        "to": "r_log",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_pa",
+        "to": "r_log",
+        "condition": "else"
+      },
+      {
+        "from": "r_h",
+        "to": "r_log",
+        "condition": "always"
+      },
+      {
+        "from": "r_log",
+        "to": "g_rept",
+        "condition": "always"
+      },
+      {
+        "from": "g_rept",
+        "to": "c_pr",
+        "condition": "sy-subrc <> 0 OR p_rept = abap_true"
+      },
+      {
+        "from": "g_rept",
+        "to": "l_rel",
+        "condition": "else"
+      },
+      {
+        "from": "c_pr",
+        "to": "s_pc",
+        "condition": "always"
+      },
+      {
+        "from": "s_pc",
+        "to": "oc_form",
+        "condition": "always"
+      },
+      {
+        "from": "oc_form",
+        "to": "g_pc",
+        "condition": "always"
+      },
+      {
+        "from": "g_pc",
+        "to": "o_err",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o_err",
+        "to": "e_pc1",
+        "condition": "always"
+      },
+      {
+        "from": "g_pc",
+        "to": "g_prev",
+        "condition": "else"
+      },
+      {
+        "from": "g_prev",
+        "to": "w_log",
+        "condition": "p_prev = abap_false"
+      },
+      {
+        "from": "g_prev",
+        "to": "e_pc2",
+        "condition": "else"
+      },
+      {
+        "from": "w_log",
+        "to": "e_pc2",
+        "condition": "always"
+      },
+      {
+        "from": "g_atend",
+        "to": "o_sum",
+        "condition": "AT END OF objid"
+      },
+      {
+        "from": "g_atend",
+        "to": "l_rel",
+        "condition": "else"
+      },
+      {
+        "from": "o_sum",
+        "to": "l_rel",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_rel",
+        "to": "oc_close",
+        "condition": "no more rows"
+      },
+      {
+        "from": "oc_close",
+        "to": "g_close",
+        "condition": "always"
+      },
+      {
+        "from": "g_close",
+        "to": "o_close",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_close",
+        "to": "o_tot",
+        "condition": "else"
+      },
+      {
+        "from": "o_close",
+        "to": "o_tot",
+        "condition": "always"
+      },
+      {
+        "from": "o_tot",
+        "to": "o_errtot",
+        "condition": "always"
+      },
+      {
+        "from": "e_sd",
+        "to": "oc_open",
+        "condition": "always"
+      },
+      {
+        "from": "e_pc1",
+        "to": "g_atend",
+        "condition": "always"
+      },
+      {
+        "from": "e_pc2",
+        "to": "g_atend",
+        "condition": "always"
+      },
+      {
+        "from": "o_open",
+        "to": "e_open",
+        "condition": "always"
+      },
+      {
+        "from": "o_fmn",
+        "to": "e_fmn",
+        "condition": "always"
+      },
+      {
+        "from": "o_errtot",
+        "to": "e_sos",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zpe_teilnbest_f01.abap:40 — kein Fachsatz „sind alle Veranstaltungen abgesagt, werden keine Teilnehmer gelesen“: FOR ALL ENTRIES mit leerer Treibertabelle ignoriert die gesamte WHERE-Bedingung und liest alle Beziehungssätze; gedruckt wird trotzdem nichts, weil die Veranstaltungsprüfung in der Schleife jeden Satz verwirft",
+    "zpe_teilnbest.abap:99 — kein Fachsatz „für jede Veranstaltung wird eine Summenzeile ausgegeben“: CONTINUE und die beiden CHECKs überspringen die Gruppenstufe; ist der letzte Teilnehmer einer Veranstaltung übersprungen (Firma, bereits gedruckt), fehlt deren Summenzeile und ihr Zähler läuft in die nächste Veranstaltung weiter",
+    "zpe_teilnbest_f01.abap:114 — kein Fachsatz „die Teilnahmebestätigung wird per E-Mail versendet“: das FORM wird nirgends aufgerufen, der Druck geht nur in den Spool bzw. die Vorschau",
+    "zpe_teilnbest.abap:84 — kein Fachsatz „Firmen erhalten eine Sammelbestätigung“: das steht nur im Kommentar; dieses Programm überspringt andere Teilnehmerarten lediglich"
+  ],
+  "processDescription": "Der Report läuft als täglicher Job und druckt Teilnahmebestätigungen für Veranstaltungen des Veranstaltungsmanagements. Er liest die aktiven Veranstaltungen der Planvariante, deren Ende im Selektionszeitraum liegt; gibt es keine, meldet er das und beendet die Selektion ohne Druck. Abgesagte Veranstaltungen werden entfernt, danach werden zu den übrigen die aktiven Teilnahmebeziehungen gelesen; sind alle abgesagt, liest dieser Zugriff wegen der leeren Treibertabelle alle Beziehungssätze, die Schleife verwirft sie aber. Dann öffnet er einen gemeinsamen Druckauftrag ohne Dialog und ermittelt den Formularbaustein zum Adobe-Formular ZPE_TEILNAHMEBEST; scheitert eines davon, bricht der Lauf mit Fehlermeldung ab. Je Teilnahmebeziehung wird die Veranstaltung nachgeschlagen und der Teilnehmername bestimmt: für Mitarbeiter aus den Personaldaten (ersatzweise die Personalnummer), für externe Personen aus dem Personenobjekt; andere Teilnehmerarten werden übersprungen. Bereits im Druckprotokoll stehende Bestätigungen werden nur mit Wiederholungskennzeichen erneut gedruckt. Die Bestätigung wird über den dynamisch ermittelten Formularbaustein ausgegeben; scheitert das, wird eine Fehlerzeile geschrieben, sonst außerhalb der Vorschau ein Protokollsatz mit Datum und Benutzer geschrieben und gezählt. Am Gruppenende einer Veranstaltung wird eine Summenzeile ausgegeben, die bei übersprungenem letztem Teilnehmer entfällt. Zum Schluss wird der Druckauftrag geschlossen, bei Fehlern mit Warnung, und die Zahl gedruckter und fehlerhafter Bestätigungen ausgegeben."
+}

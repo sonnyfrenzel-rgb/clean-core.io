@@ -1,0 +1,38 @@
+{
+  "id": "BM-191",
+  "title": "Massendruck Teilnahmebestätigungen im Veranstaltungsmanagement als Adobe Form mit Druckprotokoll",
+  "domain": "Technische Randbereiche — Formulardruck / Adobe Forms",
+  "band": "komplex",
+  "loc": 305,
+  "constructs": [
+    "Report mit TOP- und F01-Include",
+    "HRP1000/HRP1001/HRP1026 (PD-Infotypen)",
+    "Beziehung B025 Veranstaltung→Teilnehmer",
+    "PA0002 direkt gelesen",
+    "FP_JOB_OPEN / FP_FUNCTION_MODULE_NAME / FP_JOB_CLOSE",
+    "dynamischer CALL FUNCTION gv_fm_name (generierter Formularbaustein)",
+    "Druckprotokoll-Z-Tabelle ZPE_TB_LOG mit MODIFY",
+    "Listausgabe mit WRITE"
+  ],
+  "scenario": "Täglicher Hintergrundjob im Schulungswesen (Veranstaltungsmanagement PE), der für kürzlich beendete, nicht abgesagte Veranstaltungen je Teilnehmer eine Teilnahmebestätigung als Adobe Form in einen Spoolauftrag druckt und den Druck in einer Z-Tabelle protokolliert.",
+  "s4_issues": [
+    "Das klassische Veranstaltungsmanagement (PE) ist in S/4HANA nur im Kompatibilitätsumfang enthalten; strategischer Nachfolger ist SAP SuccessFactors Learning",
+    "Direkter Lesezugriff auf PA0002 ohne HR_READ_INFOTYPE umgeht die HR-Berechtigungsprüfung",
+    "SELECT … FOR ALL ENTRIES auf HRP1001 ohne Prüfung der Treibertabelle liest bei leerer Tabelle die gesamte Beziehungstabelle",
+    "Adobe-Formulardruck über FP_JOB_OPEN bleibt lauffähig, das Output Management (BRF+) ist in S/4 der vorgesehene Weg"
+  ],
+  "wave": 2,
+  "module": "PE",
+  "edge_constructs": [
+    "STOP aus FORM",
+    "CHECK mitten in Schleife",
+    "CONTINUE überspringt AT END OF",
+    "AT END OF",
+    "SELECT … FOR ALL ENTRIES mit leerer Treibertabelle",
+    "TRY … CATCH",
+    "MESSAGE … TYPE 'E' als Pfadende",
+    "nie erreichtes FORM",
+    "auskommentierter Smart-Forms-Zweig",
+    "xsdbool"
+  ]
+}

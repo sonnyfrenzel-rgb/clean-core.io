@@ -1,0 +1,27 @@
+{
+  "id": "BM-162",
+  "title": "IS-Oil: Temperaturkorrektur einer Tankmenge auf 15 °C mit Ausdehnungskoeffizient",
+  "domain": "Branchenlösung IS-Oil / Mineralöl",
+  "band": "einfach",
+  "loc": 33,
+  "constructs": [
+    "FUNCTION mit klassischen EXCEPTIONS",
+    "RAISE",
+    "SELECT SINGLE Z-Tabelle",
+    "MESSAGE … RAISING",
+    "COND #"
+  ],
+  "scenario": "Hilfsbaustein eines Tanklagers, den Z-Erfassungsdialoge für Tankzugänge rufen, um gemessene Liter auf Normliter bei 15 °C umzurechnen – als Ersatz für die QCI-Umrechnung des Standards.",
+  "s4_issues": [
+    "Eigenbau neben der IS-Oil-Mengenumrechnung (QCI/OIB-Umrechnungsgruppen) – Kandidat für Rückbau auf Standard",
+    "Klassische Ausnahmen mit MESSAGE … RAISING statt Klassenausnahmen",
+    "Materialnummer 40 Zeichen in Z-Tabelle ZOIL_KOEFF prüfen"
+  ],
+  "wave": 2,
+  "module": "IS-Oil",
+  "edge_constructs": [
+    "RAISE als Pfadende",
+    "MESSAGE … RAISING als Pfadende",
+    "COND # in der Ergebnisberechnung"
+  ]
+}

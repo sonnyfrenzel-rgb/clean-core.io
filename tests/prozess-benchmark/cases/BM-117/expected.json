@@ -1,0 +1,2464 @@
+{
+  "id": "BM-117",
+  "title": "Rückrufaktion: ausgelieferte Serialnummern ermitteln, Rückruf anlegen, Servicemeldung je Kunde, Landeskanal dynamisch, Briefe, Equipmentstatus",
+  "classes": [
+    "K01",
+    "K04",
+    "K06",
+    "K12",
+    "K17",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZCS_RR_HDR",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_rueckruf.abap",
+        "line": 22,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_rueckruf.abap:22"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "OBJK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_rueckruf_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_rueckruf_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SER01",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_rueckruf_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_rueckruf_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LIPS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_rueckruf_f01.abap",
+        "line": 22,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_rueckruf_f01.abap:22"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LIKP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_rueckruf_f01.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_rueckruf_f01.abap:45"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_rueckruf_f01.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_rueckruf_f01.abap:45"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZCS_RR",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcs_rueckruf_f01.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_rueckruf_f01.abap:79"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCS_RR_HDR",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcs_rueckruf_f01.abap",
+        "line": 97,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_rueckruf_f01.abap:97"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCS_RR_POS",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcs_rueckruf_f01.abap",
+        "line": 98,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_rueckruf_f01.abap:98"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_CS_RR_NOTIF",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcs_rueckruf_f01.abap",
+        "line": 123,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_rueckruf_f01.abap:123"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCS_RR_POS",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcs_rueckruf_f01.abap",
+        "line": 133,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_rueckruf_f01.abap:133"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCS_RR_KANAL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcs_rueckruf_f01.abap",
+        "line": 154,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_rueckruf_f01.abap:154"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCS_RUECKRUF_BRIEF",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcs_rueckruf_f01.abap",
+        "line": 181,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_rueckruf_f01.abap:181"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LIST_FROM_MEMORY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcs_rueckruf_f01.abap",
+        "line": 186,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_rueckruf_f01.abap:186"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "WRITE_LIST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcs_rueckruf_f01.abap",
+        "line": 193,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_rueckruf_f01.abap:193"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "STATUS_CHANGE_EXTERN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcs_rueckruf_f01.abap",
+        "line": 211,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcs_rueckruf_f01.abap:211"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCS_RR_POS",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_cs_rr_notif.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_cs_rr_notif.abap:41"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ALM_NOTIF_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_cs_rr_notif.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_cs_rr_notif.abap:65"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_cs_rr_notif.abap",
+        "line": 77,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_cs_rr_notif.abap:77"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ALM_NOTIF_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_cs_rr_notif.abap",
+        "line": 84,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_cs_rr_notif.abap:84"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-117-B01",
+      "text": "Im Echtlauf wird eine bereits vergebene Rückrufnummer schon auf dem Selektionsbild abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcs_rueckruf.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:22"
+        },
+        {
+          "file": "zcs_rueckruf.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:24"
+        },
+        {
+          "file": "zcs_rueckruf.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B02",
+      "text": "Es werden alle Serialnummern des Materials ermittelt, die im eingegebenen Zeitraum mit einer Lieferung ausgeliefert wurden.",
+      "anchors": [
+        {
+          "file": "zcs_rueckruf.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:30"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:11"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B03",
+      "text": "Sind Chargen angegeben, bleiben nur Serialnummern aus Lieferpositionen dieser Chargen; Positionen ohne Treffer fallen heraus.",
+      "anchors": [
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:21"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:22"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:29"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:32"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B04",
+      "text": "Ohne betroffene Serialnummern endet der Lauf mit einem Hinweis.",
+      "anchors": [
+        {
+          "file": "zcs_rueckruf.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:31"
+        },
+        {
+          "file": "zcs_rueckruf.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:32"
+        },
+        {
+          "file": "zcs_rueckruf.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B05",
+      "text": "Jeder Serialnummer werden Warenempfänger und dessen Land aus der Lieferung zugeordnet; die Liste wird nach Kunde sortiert.",
+      "anchors": [
+        {
+          "file": "zcs_rueckruf.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:36"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:45"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B06",
+      "text": "Im Testlauf werden die betroffenen Serialnummern mit Equipment, Lieferung und Datum unter einer Kundenzeile gelistet, und der Lauf endet ohne Änderungen.",
+      "anchors": [
+        {
+          "file": "zcs_rueckruf.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:38"
+        },
+        {
+          "file": "zcs_rueckruf.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:39"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:68"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:71"
+        },
+        {
+          "file": "zcs_rueckruf.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B07",
+      "text": "Im Echtlauf wird der Rückruf gesperrt; ist er gesperrt, bricht der Lauf mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zcs_rueckruf.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:43"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:79"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:86"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B08",
+      "text": "Der Rückruf wird mit Material, Grund, Anzahl und Status OFFEN angelegt, alle betroffenen Serialnummern mit Kunde, Equipment und Lieferung als Positionen, und sofort festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:97"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:98"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:104"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B09",
+      "text": "Die Kunden werden einzeln bearbeitet, jeweils mit allen ihren Serialnummern.",
+      "anchors": [
+        {
+          "file": "zcs_rueckruf.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:44"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:116"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B10",
+      "text": "Gibt es zum Rückruf und Kunden bereits eine Meldung, wird sie verwendet.",
+      "anchors": [
+        {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:41"
+        },
+        {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:46"
+        },
+        {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B11",
+      "text": "Serialnummern ohne ermittelten Kunden erhalten keine Meldung; der Fall wird gelistet.",
+      "anchors": [
+        {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:50"
+        },
+        {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:51"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:129"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B12",
+      "text": "Sonst wird je Kunde eine Servicemeldung S3 „Rückruf“ mit Priorität 1, dem Kunden als Auftraggeber und einer Position je Serialnummer angelegt und gesichert.",
+      "anchors": [
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:123"
+        },
+        {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:65"
+        },
+        {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:84"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B13",
+      "text": "Meldet das Anlegen einen Fehler, wird zurückgerollt, der Kunde als „Meldung nicht angelegt“ gelistet und übersprungen.",
+      "anchors": [
+        {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:76"
+        },
+        {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:77"
+        },
+        {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:78"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:129"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B14",
+      "text": "Die Meldungsnummer wird an allen Rückrufpositionen des Kunden vermerkt.",
+      "anchors": [
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:133"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B15",
+      "text": "Der Kunde wird über den für sein Land gepflegten Informationskanal benachrichtigt, ersatzweise über den Standardkanal; scheitert der Aufruf, wird das gelistet.",
+      "anchors": [
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:137"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:154"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:156"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:157"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:162"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:169"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B16",
+      "text": "Nach allen Kunden werden Meldungsnummern und Kanalergebnisse festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:139"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B17",
+      "text": "Die Rückrufbriefe werden über den Druckreport erzeugt und dessen Liste angezeigt.",
+      "anchors": [
+        {
+          "file": "zcs_rueckruf.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:45"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 181,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:181"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:186"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 193,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:193"
+        }
+      ]
+    },
+    {
+      "id": "BM-117-B18",
+      "text": "An jedem betroffenen Equipment wird der Anwenderstatus E0005 „Rückruf“ gesetzt; Fehler werden je Equipment gelistet, am Ende wird festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcs_rueckruf.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:46"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 209,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:209"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 211,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:211"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 217,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:217"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 218,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:218"
+        },
+        {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 221,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:221"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s_as",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:20"
+        },
+        "meaning": "Selektionsbild prüfen"
+      },
+      {
+        "id": "r_as",
+        "type": "read",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:22"
+        },
+        "meaning": "Rückrufnummer nachlesen"
+      },
+      {
+        "id": "g_as",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:24"
+        },
+        "meaning": "Nummer im Echtlauf schon vergeben?"
+      },
+      {
+        "id": "m_as",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:25"
+        },
+        "meaning": "Fehler: Rückruf existiert"
+      },
+      {
+        "id": "x_as",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:25"
+        },
+        "meaning": "Selektionsbild bleibt stehen"
+      },
+      {
+        "id": "e_as",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:26"
+        },
+        "meaning": "Eingabe in Ordnung"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:29"
+        },
+        "meaning": "Programmstart"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:30"
+        },
+        "meaning": "Betroffene Serialnummern ermitteln"
+      },
+      {
+        "id": "g_e",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:31"
+        },
+        "meaning": "Keine Serialnummern?"
+      },
+      {
+        "id": "m_e",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:32"
+        },
+        "meaning": "Hinweis: nichts betroffen"
+      },
+      {
+        "id": "x_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:33"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:36"
+        },
+        "meaning": "Kunden zuordnen"
+      },
+      {
+        "id": "g_t",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:38"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "c_p",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:39"
+        },
+        "meaning": "Betroffene je Kunde listen"
+      },
+      {
+        "id": "x_t",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:40"
+        },
+        "meaning": "Testlauf beenden"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:43"
+        },
+        "meaning": "Rückruf anlegen"
+      },
+      {
+        "id": "c4",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:44"
+        },
+        "meaning": "Kunden informieren"
+      },
+      {
+        "id": "c5",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:45"
+        },
+        "meaning": "Rückrufbriefe drucken"
+      },
+      {
+        "id": "c6",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_rueckruf.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf.abap:46"
+        },
+        "meaning": "Equipments kennzeichnen"
+      },
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:10"
+        },
+        "meaning": "Serialnummern"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:11"
+        },
+        "meaning": "Ausgelieferte Serialnummern des Materials lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:21"
+        },
+        "meaning": "Chargenfilter anzuwenden?"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:22"
+        },
+        "meaning": "Chargen der Lieferpositionen lesen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:28"
+        },
+        "meaning": "Serialnummern prüfen"
+      },
+      {
+        "id": "rt1",
+        "type": "read",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:29"
+        },
+        "meaning": "Charge der Position nachschlagen"
+      },
+      {
+        "id": "gd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:32"
+        },
+        "meaning": "Charge nicht betroffen?"
+      },
+      {
+        "id": "ad",
+        "type": "action",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:33"
+        },
+        "meaning": "Serialnummer aus dem Rückruf nehmen"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:37"
+        },
+        "meaning": "Serialnummern ermittelt"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:44"
+        },
+        "meaning": "Kundenzuordnung"
+      },
+      {
+        "id": "r3",
+        "type": "read",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:45"
+        },
+        "meaning": "Warenempfänger und Land der Lieferungen lesen"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:52"
+        },
+        "meaning": "Serialnummern durchgehen"
+      },
+      {
+        "id": "a2",
+        "type": "action",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:53"
+        },
+        "meaning": "Kunde und Land zuordnen"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:57"
+        },
+        "meaning": "Nach Kunde sortiert"
+      },
+      {
+        "id": "s3",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:64"
+        },
+        "meaning": "Testprotokoll"
+      },
+      {
+        "id": "l3",
+        "type": "loop",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:67"
+        },
+        "meaning": "Serialnummern durchgehen"
+      },
+      {
+        "id": "gn",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:68"
+        },
+        "meaning": "Gruppenwechsel?"
+      },
+      {
+        "id": "on",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:69"
+        },
+        "meaning": "Kundenzeile"
+      },
+      {
+        "id": "op",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:71"
+        },
+        "meaning": "Serialnummer mit Equipment und Lieferung"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:73"
+        },
+        "meaning": "Protokoll fertig"
+      },
+      {
+        "id": "s4",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:78"
+        },
+        "meaning": "Rückruf anlegen"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:79"
+        },
+        "meaning": "Rückruf sperren"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:86"
+        },
+        "meaning": "Gesperrt?"
+      },
+      {
+        "id": "m4",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:87"
+        },
+        "meaning": "Fehler: Rückruf gesperrt"
+      },
+      {
+        "id": "x4",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:87"
+        },
+        "meaning": "Lauf abgebrochen"
+      },
+      {
+        "id": "wh",
+        "type": "write",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:97"
+        },
+        "meaning": "Rückrufkopf anlegen"
+      },
+      {
+        "id": "wp",
+        "type": "write",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:98"
+        },
+        "meaning": "Rückrufpositionen je Serialnummer anlegen"
+      },
+      {
+        "id": "tc4",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:104"
+        },
+        "meaning": "Rückruf festschreiben"
+      },
+      {
+        "id": "e4",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:105"
+        },
+        "meaning": "Rückruf angelegt"
+      },
+      {
+        "id": "s5",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:112"
+        },
+        "meaning": "Kundeninformation"
+      },
+      {
+        "id": "l5",
+        "type": "loop",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:116"
+        },
+        "meaning": "Kunden (Gruppen) durchgehen"
+      },
+      {
+        "id": "c5m",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:123"
+        },
+        "meaning": "Servicemeldung für Kunden anlegen"
+      },
+      {
+        "id": "o5",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:129"
+        },
+        "meaning": "Kunde ohne Meldung listen"
+      },
+      {
+        "id": "wu",
+        "type": "write",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:133"
+        },
+        "meaning": "Meldungsnummer an Positionen vermerken"
+      },
+      {
+        "id": "ck",
+        "type": "call",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:137"
+        },
+        "meaning": "Kunden über Landeskanal informieren"
+      },
+      {
+        "id": "tc5",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:139"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "e5",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:140"
+        },
+        "meaning": "Kunden informiert"
+      },
+      {
+        "id": "s6",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:148"
+        },
+        "meaning": "Landeskanal"
+      },
+      {
+        "id": "r6a",
+        "type": "read",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:154"
+        },
+        "meaning": "Kanalklasse des Landes lesen"
+      },
+      {
+        "id": "g6",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:156"
+        },
+        "meaning": "Kein Kanal fürs Land?"
+      },
+      {
+        "id": "r6b",
+        "type": "read",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:157"
+        },
+        "meaning": "Standardkanal lesen"
+      },
+      {
+        "id": "cd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:162"
+        },
+        "meaning": "Kanal INFORMIEREN dynamisch aufrufen"
+      },
+      {
+        "id": "o6",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:169"
+        },
+        "meaning": "Kanalfehler listen"
+      },
+      {
+        "id": "e6",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:171"
+        },
+        "meaning": "Kanal erledigt"
+      },
+      {
+        "id": "s7",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:178"
+        },
+        "meaning": "Briefdruck"
+      },
+      {
+        "id": "sb",
+        "type": "external_program",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 181,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:181"
+        },
+        "meaning": "Druckreport Rückrufbriefe, Liste ins Memory"
+      },
+      {
+        "id": "cl",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:186"
+        },
+        "meaning": "Briefliste aus Memory holen"
+      },
+      {
+        "id": "cw",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 193,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:193"
+        },
+        "meaning": "Briefliste anzeigen"
+      },
+      {
+        "id": "e7",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:199"
+        },
+        "meaning": "Briefe gedruckt"
+      },
+      {
+        "id": "s8",
+        "type": "start",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 206,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:206"
+        },
+        "meaning": "Equipmentkennzeichen"
+      },
+      {
+        "id": "l8",
+        "type": "loop",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 209,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:209"
+        },
+        "meaning": "Serialnummern mit Equipment"
+      },
+      {
+        "id": "cs8",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 211,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:211"
+        },
+        "meaning": "Anwenderstatus Rückruf setzen"
+      },
+      {
+        "id": "g8",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 217,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:217"
+        },
+        "meaning": "Status nicht gesetzt?"
+      },
+      {
+        "id": "o8",
+        "type": "output",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 218,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:218"
+        },
+        "meaning": "Fehler je Equipment listen"
+      },
+      {
+        "id": "tc8",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 221,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:221"
+        },
+        "meaning": "Status festschreiben"
+      },
+      {
+        "id": "e8",
+        "type": "end",
+        "anchor": {
+          "file": "zcs_rueckruf_f01.abap",
+          "line": 222,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcs_rueckruf_f01.abap:222"
+        },
+        "meaning": "Lauf beendet"
+      },
+      {
+        "id": "sc",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:33"
+        },
+        "meaning": "Servicemeldung für Kunden"
+      },
+      {
+        "id": "rc",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:41"
+        },
+        "meaning": "Vorhandene Meldung zu Rückruf und Kunde suchen"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:46"
+        },
+        "meaning": "Meldung schon vorhanden?"
+      },
+      {
+        "id": "xc",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:47"
+        },
+        "meaning": "Vorhandene Meldung zurück"
+      },
+      {
+        "id": "gk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:50"
+        },
+        "meaning": "Kein Kunde?"
+      },
+      {
+        "id": "xk",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:51"
+        },
+        "meaning": "Ausnahme: kein Kunde"
+      },
+      {
+        "id": "cb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:65"
+        },
+        "meaning": "Meldung S3 mit Positionen und Auftraggeber anlegen"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:76"
+        },
+        "meaning": "Fehler beim Anlegen?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:77"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:78"
+        },
+        "meaning": "Ausnahme mit BAPI-Fehlertext"
+      },
+      {
+        "id": "csv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:84"
+        },
+        "meaning": "Meldung sichern"
+      },
+      {
+        "id": "ec",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_cs_rr_notif.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_cs_rr_notif.abap:92"
+        },
+        "meaning": "Meldungsnummer zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s_as",
+        "to": "r_as",
+        "condition": "always"
+      },
+      {
+        "from": "r_as",
+        "to": "g_as",
+        "condition": "always"
+      },
+      {
+        "from": "g_as",
+        "to": "m_as",
+        "condition": "sy-subrc = 0 AND p_test IS INITIAL"
+      },
+      {
+        "from": "m_as",
+        "to": "x_as",
+        "condition": "always"
+      },
+      {
+        "from": "g_as",
+        "to": "e_as",
+        "condition": "else"
+      },
+      {
+        "from": "s",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "s1",
+        "condition": "always"
+      },
+      {
+        "from": "g_e",
+        "to": "m_e",
+        "condition": "gt_ser IS INITIAL"
+      },
+      {
+        "from": "m_e",
+        "to": "x_e",
+        "condition": "always"
+      },
+      {
+        "from": "g_e",
+        "to": "c2",
+        "condition": "else"
+      },
+      {
+        "from": "c2",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "g_t",
+        "to": "c_p",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "c_p",
+        "to": "s3",
+        "condition": "always"
+      },
+      {
+        "from": "g_t",
+        "to": "c3",
+        "condition": "else"
+      },
+      {
+        "from": "c3",
+        "to": "s4",
+        "condition": "always"
+      },
+      {
+        "from": "c4",
+        "to": "s5",
+        "condition": "always"
+      },
+      {
+        "from": "c5",
+        "to": "s7",
+        "condition": "always"
+      },
+      {
+        "from": "c6",
+        "to": "s8",
+        "condition": "always"
+      },
+      {
+        "from": "s1",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "r2",
+        "condition": "s_charg[] IS NOT INITIAL AND gt_ser IS NOT INITIAL"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "r2",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "rt1",
+        "condition": "next row"
+      },
+      {
+        "from": "rt1",
+        "to": "gd",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "ad",
+        "condition": "sy-subrc <> 0 OR ls_lips-charg NOT IN s_charg"
+      },
+      {
+        "from": "ad",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gd",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "l1",
+        "to": "e1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s2",
+        "to": "r3",
+        "condition": "always"
+      },
+      {
+        "from": "r3",
+        "to": "l2",
+        "condition": "always"
+      },
+      {
+        "from": "l2",
+        "to": "a2",
+        "condition": "next row"
+      },
+      {
+        "from": "a2",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l2",
+        "to": "e2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s3",
+        "to": "l3",
+        "condition": "always"
+      },
+      {
+        "from": "l3",
+        "to": "gn",
+        "condition": "next row"
+      },
+      {
+        "from": "gn",
+        "to": "on",
+        "condition": "AT NEW kunnr"
+      },
+      {
+        "from": "on",
+        "to": "op",
+        "condition": "always"
+      },
+      {
+        "from": "gn",
+        "to": "op",
+        "condition": "else"
+      },
+      {
+        "from": "op",
+        "to": "l3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l3",
+        "to": "e3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s4",
+        "to": "lk",
+        "condition": "always"
+      },
+      {
+        "from": "lk",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "m4",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m4",
+        "to": "x4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "wh",
+        "condition": "else"
+      },
+      {
+        "from": "wh",
+        "to": "wp",
+        "condition": "always"
+      },
+      {
+        "from": "wp",
+        "to": "tc4",
+        "condition": "always"
+      },
+      {
+        "from": "tc4",
+        "to": "e4",
+        "condition": "always"
+      },
+      {
+        "from": "s5",
+        "to": "l5",
+        "condition": "always"
+      },
+      {
+        "from": "l5",
+        "to": "c5m",
+        "condition": "next row"
+      },
+      {
+        "from": "c5m",
+        "to": "sc",
+        "condition": "always"
+      },
+      {
+        "from": "o5",
+        "to": "l5",
+        "condition": "next iteration"
+      },
+      {
+        "from": "wu",
+        "to": "ck",
+        "condition": "always"
+      },
+      {
+        "from": "ck",
+        "to": "s6",
+        "condition": "always"
+      },
+      {
+        "from": "l5",
+        "to": "tc5",
+        "condition": "no more rows"
+      },
+      {
+        "from": "tc5",
+        "to": "e5",
+        "condition": "always"
+      },
+      {
+        "from": "s6",
+        "to": "r6a",
+        "condition": "always"
+      },
+      {
+        "from": "r6a",
+        "to": "g6",
+        "condition": "always"
+      },
+      {
+        "from": "g6",
+        "to": "r6b",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g6",
+        "to": "cd",
+        "condition": "else"
+      },
+      {
+        "from": "r6b",
+        "to": "cd",
+        "condition": "always"
+      },
+      {
+        "from": "cd",
+        "to": "o6",
+        "condition": "cx_sy_dyn_call_error"
+      },
+      {
+        "from": "cd",
+        "to": "e6",
+        "condition": "always"
+      },
+      {
+        "from": "o6",
+        "to": "e6",
+        "condition": "always"
+      },
+      {
+        "from": "s7",
+        "to": "sb",
+        "condition": "always"
+      },
+      {
+        "from": "sb",
+        "to": "cl",
+        "condition": "always"
+      },
+      {
+        "from": "cl",
+        "to": "cw",
+        "condition": "always"
+      },
+      {
+        "from": "cw",
+        "to": "e7",
+        "condition": "always"
+      },
+      {
+        "from": "s8",
+        "to": "l8",
+        "condition": "always"
+      },
+      {
+        "from": "l8",
+        "to": "cs8",
+        "condition": "next row"
+      },
+      {
+        "from": "cs8",
+        "to": "g8",
+        "condition": "always"
+      },
+      {
+        "from": "g8",
+        "to": "o8",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o8",
+        "to": "l8",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g8",
+        "to": "l8",
+        "condition": "else"
+      },
+      {
+        "from": "l8",
+        "to": "tc8",
+        "condition": "no more rows"
+      },
+      {
+        "from": "tc8",
+        "to": "e8",
+        "condition": "always"
+      },
+      {
+        "from": "sc",
+        "to": "rc",
+        "condition": "always"
+      },
+      {
+        "from": "rc",
+        "to": "gc",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "xc",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gc",
+        "to": "gk",
+        "condition": "else"
+      },
+      {
+        "from": "gk",
+        "to": "xk",
+        "condition": "iv_kunnr IS INITIAL"
+      },
+      {
+        "from": "gk",
+        "to": "cb",
+        "condition": "else"
+      },
+      {
+        "from": "cb",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "rb",
+        "condition": "line_exists( lt_ret[ type = 'E' ] )"
+      },
+      {
+        "from": "rb",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "csv",
+        "condition": "else"
+      },
+      {
+        "from": "csv",
+        "to": "ec",
+        "condition": "always"
+      },
+      {
+        "from": "e1",
+        "to": "g_e",
+        "condition": "always"
+      },
+      {
+        "from": "e2",
+        "to": "g_t",
+        "condition": "always"
+      },
+      {
+        "from": "e3",
+        "to": "x_t",
+        "condition": "always"
+      },
+      {
+        "from": "e4",
+        "to": "c4",
+        "condition": "always"
+      },
+      {
+        "from": "e5",
+        "to": "c5",
+        "condition": "always"
+      },
+      {
+        "from": "e7",
+        "to": "c6",
+        "condition": "always"
+      },
+      {
+        "from": "xk",
+        "to": "o5",
+        "condition": "zcx_cs_rr"
+      },
+      {
+        "from": "xe",
+        "to": "o5",
+        "condition": "zcx_cs_rr"
+      },
+      {
+        "from": "ec",
+        "to": "wu",
+        "condition": "always"
+      },
+      {
+        "from": "xc",
+        "to": "wu",
+        "condition": "always"
+      },
+      {
+        "from": "e6",
+        "to": "l5",
+        "condition": "next iteration"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcs_rueckruf_f01.abap:68 — kein Fachsatz „im Testprotokoll erscheint je Kunde genau eine Kopfzeile“: KUNNR steht in der Struktur hinter SERNR, AT NEW reagiert auf jede Änderung der Felder davor und schreibt die Kundenzeile vor jeder Serialnummer",
+    "zcl_cs_rr_notif.abap:77 — kein Fachsatz „ein Fehler betrifft nur die Meldung dieses Kunden“: der Rollback verwirft auch die noch nicht festgeschriebenen Meldungen und Positionsvermerke aller vorher bearbeiteten Kunden dieses Laufs, deren Kanalbenachrichtigung aber schon erfolgt ist",
+    "zcs_rueckruf_f01.abap:162 — kein Fachsatz „der Kunde erhält einen Brief/eine E-Mail“: was der Kanal tut, bestimmt eine Klasse aus ZCS_RR_KANAL, die nicht im Fall liegt",
+    "zcs_rueckruf_f01.abap:233 — kein Knoten und kein Fachsatz „der Vertrieb wird per Mail informiert“: MAIL_AN_VERTRIEB wird nie aufgerufen"
+  ],
+  "processDescription": "Der Sachbearbeiter startet den Rückruf mit Rückrufnummer, Grund, Material und optional Serialnummern, Chargen und Lieferzeitraum; im Echtlauf wird eine bereits vergebene Rückrufnummer schon am Selektionsbild abgewiesen. Das Programm ermittelt alle mit Lieferungen ausgelieferten Serialnummern des Materials im Zeitraum und behält bei Chargenangabe nur die aus Positionen dieser Chargen; ohne Treffer endet es mit einem Hinweis. Jeder Serialnummer ordnet es Warenempfänger und Land aus der Lieferung zu. Im Testlauf listet es die Betroffenen unter Kundenzeilen und endet. Im Echtlauf sperrt es den Rückruf (bei Sperre Abbruch), legt Rückrufkopf und je Serialnummer eine Position an und schreibt fest. Dann bearbeitet es jeden Kunden mit seinen Serialnummern: Eine Klasse verwendet eine vorhandene Rückrufmeldung oder legt eine Servicemeldung S3 mit einer Position je Serialnummer an; ohne Kunden oder bei Fehler wird der Kunde als „Meldung nicht angelegt“ gelistet, wobei ein Fehler auch die noch offenen Änderungen der vorherigen Kunden zurückrollt. Die Meldungsnummer wird an den Positionen vermerkt und der Kunde über den für sein Land gepflegten Kanal informiert, ersatzweise den Standardkanal; danach wird festgeschrieben. Anschließend erzeugt ein Druckreport die Rückrufbriefe, deren Liste angezeigt wird, und an allen betroffenen Equipments wird der Anwenderstatus „Rückruf“ gesetzt."
+}

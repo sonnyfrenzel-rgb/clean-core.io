@@ -1,0 +1,2775 @@
+{
+  "id": "BM-198",
+  "title": "Nächtliche Lastgangübermittlung an Messstellen-/Netzbetreiber: Jobkette, XML/JSON-Nachricht, HTTP-Versand mit Wiederholung",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zisu_edm_scheduler.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_scheduler.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_OPEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zisu_edm_scheduler.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_scheduler.abap:58"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZISU_EDM_EXPORT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zisu_edm_scheduler.abap",
+        "line": 72,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_scheduler.abap:72"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_CLOSE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zisu_edm_scheduler.abap",
+        "line": 80,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_scheduler.abap:80"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZISU_EDM_RECON",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zisu_edm_scheduler.abap",
+        "line": 113,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_scheduler.abap:113"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zisu_edm_export.abap",
+        "line": 60,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_export.abap:60"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zisu_edm_export.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_export.abap:83"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EUITRANS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zisu_edm_export.abap",
+        "line": 97,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_export.abap:97"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EUIHEAD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zisu_edm_export.abap",
+        "line": 97,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_export.abap:97"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZISU_EDM_MPO",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zisu_edm_export.abap",
+        "line": 97,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_export.abap:97"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZISU_EDM_STAT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zisu_edm_export_f01.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_export_f01.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZISU_EDM_PROF",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zisu_edm_export_f01.abap",
+        "line": 26,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_export_f01.abap:26"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_ISU_EDM_PAYLOAD",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zisu_edm_export.abap",
+        "line": 134,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_export.abap:134"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "/UI2/CL_JSON",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_isu_edm_payload.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_isu_edm_payload.abap:83"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_HTTP_CLIENT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zisu_edm_export_f01.abap",
+        "line": 53,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_export_f01.abap:53"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZISU_EDM_STAT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zisu_edm_export_f01.abap",
+        "line": 139,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_export_f01.abap:139"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zisu_edm_export.abap",
+        "line": 169,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_export.abap:169"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BP_EVENT_RAISE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zisu_edm_export.abap",
+        "line": 185,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_edm_export.abap:185"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-198-B01",
+      "text": "Vor der Einplanung wird geprüft, ob die Lastgangübermittlung über den Betriebsschalter ZISU_EDM_EXPORT_ACTIVE freigegeben ist; fehlt der Schalter oder ist er nicht gesetzt, wird ein Hinweis ausgegeben und nichts eingeplant.",
+      "anchors": [
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:48"
+        },
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:52"
+        },
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:53"
+        },
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B02",
+      "text": "Als Übertragungsformat sind nur XML (X) und JSON (J) zulässig; ein anderes Format wird auf dem Selektionsbild mit Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:42"
+        },
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B03",
+      "text": "Für den Export wird ein Hintergrundjob ZISU_EDM_EXPORT angelegt, dem der Exportreport mit Stichtag, Format, Zieldestination und Testkennzeichen als Schritt zugeordnet wird.",
+      "anchors": [
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:58"
+        },
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B04",
+      "text": "Der Exportjob wird zum sofortigen Start freigegeben.",
+      "anchors": [
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B05",
+      "text": "Scheitert das Anlegen oder die Freigabe des Exportjobs, bricht die Einplanung mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:68"
+        },
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:69"
+        },
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:94"
+        },
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:95"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B06",
+      "text": "Für den Abgleich wird ein zweiter Job ZISU_EDM_RECON mit dem Abgleichreport für denselben Stichtag angelegt; ob das Anlegen dieses Jobs gelingt, wird nicht geprüft.",
+      "anchors": [
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:99"
+        },
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:113"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B07",
+      "text": "Standardmäßig wird der Abgleichjob so freigegeben, dass er startet, sobald das Ereignis ZISU_EDM_EXPORT_DONE mit dem Stichtag als Parameter ausgelöst wird; ohne Ereignissteuerung wird er als Nachfolger des Exportjobs eingeplant, abhängig von dessen Endestatus.",
+      "anchors": [
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:118"
+        },
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:121"
+        },
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:131"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B08",
+      "text": "Scheitert die Freigabe des Abgleichjobs, bricht die Einplanung mit Fehlermeldung ab; sonst werden die Nummern beider Jobs gemeldet.",
+      "anchors": [
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:141"
+        },
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:142"
+        },
+        {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:145"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B09",
+      "text": "Läuft der Export unter dem Benutzer TSCHNEIDER, werden die Lastgänge nicht an das produktive, sondern an das Q-Gateway gesendet.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:73"
+        },
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B10",
+      "text": "Für den Lauf wird ein Anwendungsprotokoll zum Stichtag angelegt; gelingt das nicht, wird der Lauf abgebrochen, bevor etwas gesendet wird.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:83"
+        },
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:91"
+        },
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B11",
+      "text": "Selektiert werden die Zählpunkte (auch eingeschränkt auf eine Auswahl), deren externe Zählpunktbezeichnung und deren Empfängerzuordnung am Stichtag gültig sind.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B12",
+      "text": "Gibt es keinen solchen Zählpunkt, wird ein Hinweis ausgegeben und die Verarbeitung beendet; der Abschluss mit Protokollsicherung, Ereignis und Summenliste läuft trotzdem.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:107"
+        },
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:108"
+        },
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:109"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B13",
+      "text": "Zählpunkte, deren Lastgang für den Stichtag bereits erfolgreich gesendet wurde, werden aus der Versandmenge genommen.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:16"
+        },
+        {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:21"
+        },
+        {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B14",
+      "text": "Für die verbleibenden Zählpunkte werden die Viertelstundenwerte des Stichtags gelesen.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B15",
+      "text": "Sind alle selektierten Zählpunkte schon gesendet, bleibt die Treibermenge leer und es werden die Profilwerte aller Zählpunkte und aller Tage gelesen; die selektierten Zählpunkte werden dann erneut übermittelt, und zwar mit den Werten aller gespeicherten Tage.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:26"
+        },
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:118"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B16",
+      "text": "Die Profilwerte werden je Zählpunkt zu einem Lastgang zusammengefasst; Zählpunkte, die nicht zur Selektion gehören, werden übersprungen.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:115"
+        },
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:118"
+        },
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:119"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B17",
+      "text": "Ein Lastgang mit weniger als 96 Viertelstundenwerten gilt als lückenhaft: er wird nicht gesendet, im Protokoll gewarnt und mit Status L vermerkt.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:126"
+        },
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:128"
+        },
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:129"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B18",
+      "text": "Enthält der Lastgang einen gestörten Messwert (Kennzeichen X), wird keine Nachricht erzeugt; der Fehler wird protokolliert und der Zählpunkt mit Status E vermerkt.",
+      "anchors": [
+        {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:52"
+        },
+        {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:53"
+        },
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:141"
+        },
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:142"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B19",
+      "text": "Die Nachricht enthält den eigenen Netzbetreiber als Absender, den zugeordneten Marktpartner als Empfänger, den Zählpunkt, den Tag und je Viertelstunde Zeitstempel, Menge, Einheit und Qualität (gemessen, Ersatzwert, vorläufig, sonst unbekannt).",
+      "anchors": [
+        {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:59"
+        },
+        {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B20",
+      "text": "Als Kontrollsumme wird die Summe aller Viertelstundenmengen mitgegeben.",
+      "anchors": [
+        {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B21",
+      "text": "Im JSON-Format wird die Nachricht als JSON serialisiert und die Zählpunktangabe in die vom Gateway erwartete Schreibweise meLo gebracht.",
+      "anchors": [
+        {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:80"
+        },
+        {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:83"
+        },
+        {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B22",
+      "text": "Sonst wird die Nachricht über die Transformation ZISU_EDM_LASTGANG in XML überführt und als UTF-8 deklariert; scheitert die Transformation, gilt der Lastgang als fehlerhaft aufbereitet (Status E).",
+      "anchors": [
+        {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:93"
+        },
+        {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:97"
+        },
+        {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:104"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B23",
+      "text": "Im Testlauf wird statt des Versands je Zählpunkt die Nachrichtengröße aufgelistet, und es wird kein Versandstatus geschrieben.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:146"
+        },
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:148"
+        },
+        {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:124"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B24",
+      "text": "Der Lastgang wird per HTTP-POST mit dem Stichtag im Kopf an das Gateway der gewählten Destination gesendet.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:53"
+        },
+        {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:78"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B25",
+      "text": "Lässt sich keine Verbindung zur Destination aufbauen, wird kein Versuch unternommen und der Lastgang gilt als nicht gesendet.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:65"
+        },
+        {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B26",
+      "text": "Antwortet das Gateway weder mit Annahme (2xx) noch mit fachlicher Ablehnung (4xx), wird bis zur eingestellten Höchstzahl von Versuchen erneut gesendet, mit ab 5 Sekunden jeweils verdoppelter Wartezeit.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:76"
+        },
+        {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:98"
+        },
+        {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:101"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B27",
+      "text": "Nimmt das Gateway an, zählt der Lastgang als gesendet (Status S); andernfalls wird er protokolliert und mit Status F und dem letzten HTTP-Code vermerkt, damit er beim nächsten Lauf erneut versucht wird.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:154"
+        },
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:160"
+        },
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:162"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B28",
+      "text": "Der Versandstatus je Zählpunkt und Stichtag wird mit Empfänger, HTTP-Code, über alle Läufe aufsummierter Versuchszahl und Änderer fortgeschrieben.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:126"
+        },
+        {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:139"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B29",
+      "text": "Nach jedem Zählpunkt wird festgeschrieben, damit bereits Gesendetes bei einem Abbruch als gesendet erhalten bleibt.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:164"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B30",
+      "text": "Am Ende des Laufs wird das Anwendungsprotokoll gesichert.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:169"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B31",
+      "text": "Außer im Testlauf wird das Ereignis ZISU_EDM_EXPORT_DONE mit dem Stichtag ausgelöst, auf das der Abgleichjob wartet; ob das Auslösen gelingt, wird nicht geprüft.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:182"
+        },
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:185"
+        }
+      ]
+    },
+    {
+      "id": "BM-198-B32",
+      "text": "Abschließend werden die Zahl gesendeter, fehlerhafter und lückenhafter Lastgänge, die Zahl geschriebener Statussätze und die Protokollnummer ausgegeben.",
+      "anchors": [
+        {
+          "file": "zisu_edm_export.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:199"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "sc_init",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:37"
+        },
+        "meaning": "Selektionsbild vorbelegen"
+      },
+      {
+        "id": "sc_init_e",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:39"
+        },
+        "meaning": "Vortag als Stichtag vorschlagen"
+      },
+      {
+        "id": "sc_ass",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:41"
+        },
+        "meaning": "Prüfung des Übertragungsformats auf dem Selektionsbild"
+      },
+      {
+        "id": "sc_ass_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:42"
+        },
+        "meaning": "Format weder XML noch JSON?"
+      },
+      {
+        "id": "sc_ass_m",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:43"
+        },
+        "meaning": "Fehlermeldung: Format unzulässig"
+      },
+      {
+        "id": "sc_ass_e",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:43"
+        },
+        "meaning": "Format abweisen"
+      },
+      {
+        "id": "sc_ass_ok",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:44"
+        },
+        "meaning": "Format zulässig"
+      },
+      {
+        "id": "sc_sos",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:46"
+        },
+        "meaning": "Einplanung der nächtlichen Jobkette"
+      },
+      {
+        "id": "sc_tv",
+        "type": "read",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:48"
+        },
+        "meaning": "Betriebsschalter der Übermittlung lesen"
+      },
+      {
+        "id": "sc_g_on",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:52"
+        },
+        "meaning": "Übermittlung abgeschaltet?"
+      },
+      {
+        "id": "sc_off_m",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:53"
+        },
+        "meaning": "Hinweis: Übermittlung abgeschaltet"
+      },
+      {
+        "id": "sc_off_e",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:54"
+        },
+        "meaning": "Keine Einplanung"
+      },
+      {
+        "id": "sc_jo1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:58"
+        },
+        "meaning": "Exportjob anlegen"
+      },
+      {
+        "id": "sc_g_jo1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:68"
+        },
+        "meaning": "Exportjob angelegt?"
+      },
+      {
+        "id": "sc_m_jo1",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:69"
+        },
+        "meaning": "Fehlermeldung: Exportjob nicht anlegbar"
+      },
+      {
+        "id": "sc_e_jo1",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:69"
+        },
+        "meaning": "Abbruch: Exportjob nicht anlegbar"
+      },
+      {
+        "id": "sc_sub1",
+        "type": "external_program",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:72"
+        },
+        "meaning": "Exportreport als Jobschritt einplanen"
+      },
+      {
+        "id": "sc_jc1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:80"
+        },
+        "meaning": "Exportjob zum Sofortstart freigeben"
+      },
+      {
+        "id": "sc_g_jc1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:94"
+        },
+        "meaning": "Exportjob freigegeben?"
+      },
+      {
+        "id": "sc_m_jc1",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:95"
+        },
+        "meaning": "Fehlermeldung: Exportjob nicht freigegeben"
+      },
+      {
+        "id": "sc_e_jc1",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:95"
+        },
+        "meaning": "Abbruch: Exportjob nicht freigegeben"
+      },
+      {
+        "id": "sc_jo2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:99"
+        },
+        "meaning": "Abgleichjob anlegen (ohne Prüfung)"
+      },
+      {
+        "id": "sc_sub2",
+        "type": "external_program",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:113"
+        },
+        "meaning": "Abgleichreport als Jobschritt einplanen"
+      },
+      {
+        "id": "sc_g_ev",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:118"
+        },
+        "meaning": "Abgleich per Ereignis starten?"
+      },
+      {
+        "id": "sc_jc2e",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:121"
+        },
+        "meaning": "Abgleichjob auf Ereignis ZISU_EDM_EXPORT_DONE freigeben"
+      },
+      {
+        "id": "sc_jc2p",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:131"
+        },
+        "meaning": "Abgleichjob als Nachfolger des Exportjobs freigeben"
+      },
+      {
+        "id": "sc_g_jc2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:141"
+        },
+        "meaning": "Abgleichjob freigegeben?"
+      },
+      {
+        "id": "sc_m_jc2",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:142"
+        },
+        "meaning": "Fehlermeldung: Abgleichjob nicht freigegeben"
+      },
+      {
+        "id": "sc_done_m",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:145"
+        },
+        "meaning": "Jobnummern beider Jobs melden"
+      },
+      {
+        "id": "sc_e_jc2",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:142"
+        },
+        "meaning": "Abbruch: Abgleichjob nicht freigegeben"
+      },
+      {
+        "id": "sc_done",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_edm_scheduler.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_scheduler.abap:145"
+        },
+        "meaning": "Jobnummern melden, Einplanung beendet"
+      },
+      {
+        "id": "ex_sos",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:71"
+        },
+        "meaning": "Exportlauf für den Stichtag (Jobschritt)"
+      },
+      {
+        "id": "ex_g_dbg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:73"
+        },
+        "meaning": "Entwicklerbenutzer?"
+      },
+      {
+        "id": "ex_dbg",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:74"
+        },
+        "meaning": "Versand auf Q-Gateway umleiten"
+      },
+      {
+        "id": "ex_lc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:83"
+        },
+        "meaning": "Anwendungsprotokoll anlegen"
+      },
+      {
+        "id": "ex_g_lc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:91"
+        },
+        "meaning": "Protokoll angelegt?"
+      },
+      {
+        "id": "ex_m_lc",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:93"
+        },
+        "meaning": "Abbruchmeldung: kein Anwendungsprotokoll"
+      },
+      {
+        "id": "ex_e_lc",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:93"
+        },
+        "meaning": "Abbruch ohne Protokoll"
+      },
+      {
+        "id": "ex_pod",
+        "type": "read",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:97"
+        },
+        "meaning": "Zählpunkte mit gültiger Empfängerzuordnung lesen"
+      },
+      {
+        "id": "ex_g_nopod",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:107"
+        },
+        "meaning": "Keine Zählpunkte?"
+      },
+      {
+        "id": "ex_m_nopod",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:108"
+        },
+        "meaning": "Hinweis: keine Zählpunkte"
+      },
+      {
+        "id": "ex_stop",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:109"
+        },
+        "meaning": "Selektion beenden, weiter mit Abschluss"
+      },
+      {
+        "id": "ex_c_pr",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:112"
+        },
+        "meaning": "Offene Zählpunkte und Profilwerte ermitteln"
+      },
+      {
+        "id": "f_pr",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:12"
+        },
+        "meaning": "Profilwertselektion"
+      },
+      {
+        "id": "f_pr_r1",
+        "type": "read",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:16"
+        },
+        "meaning": "Bereits gesendete Zählpunkte des Stichtags lesen"
+      },
+      {
+        "id": "f_pr_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:21"
+        },
+        "meaning": "Je bereits gesendetem Zählpunkt"
+      },
+      {
+        "id": "f_pr_a",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:22"
+        },
+        "meaning": "Zählpunkt aus Versandmenge nehmen"
+      },
+      {
+        "id": "f_pr_r2",
+        "type": "read",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:26"
+        },
+        "meaning": "Viertelstundenwerte der offenen Zählpunkte lesen (FOR ALL ENTRIES)"
+      },
+      {
+        "id": "f_pr_e",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:35"
+        },
+        "meaning": "Werte nach Zählpunkt und Zeit ordnen, Rückkehr"
+      },
+      {
+        "id": "ex_loop",
+        "type": "loop",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:115"
+        },
+        "meaning": "Je Zählpunkt (Gruppe der Profilwerte)"
+      },
+      {
+        "id": "ex_rt",
+        "type": "read",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:118"
+        },
+        "meaning": "Zählpunkt in der Selektion nachschlagen"
+      },
+      {
+        "id": "ex_chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:119"
+        },
+        "meaning": "Zählpunkt selektiert?"
+      },
+      {
+        "id": "ex_g_cnt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:126"
+        },
+        "meaning": "Lastgang lückenhaft?"
+      },
+      {
+        "id": "ex_lm_gap",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:128"
+        },
+        "meaning": "Warnung Lücke ins Protokoll"
+      },
+      {
+        "id": "ex_ws_gap",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:129"
+        },
+        "meaning": "Status L (lückenhaft) vermerken"
+      },
+      {
+        "id": "ex_build",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:135"
+        },
+        "meaning": "Lastgangnachricht aufbauen"
+      },
+      {
+        "id": "k_b",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:48"
+        },
+        "meaning": "Nachrichtenaufbau"
+      },
+      {
+        "id": "k_b_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:52"
+        },
+        "meaning": "Gestörter Messwert enthalten?"
+      },
+      {
+        "id": "k_b_x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:53"
+        },
+        "meaning": "Abbruch: gestörte Messwerte"
+      },
+      {
+        "id": "k_b_case",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:80"
+        },
+        "meaning": "Format JSON oder XML?"
+      },
+      {
+        "id": "k_b_json",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:83"
+        },
+        "meaning": "Nachricht als JSON serialisieren"
+      },
+      {
+        "id": "k_b_tr",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:93"
+        },
+        "meaning": "Nachricht per Transformation in XML überführen"
+      },
+      {
+        "id": "k_b_x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:97"
+        },
+        "meaning": "Abbruch: Transformation fehlgeschlagen"
+      },
+      {
+        "id": "k_b_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_isu_edm_payload.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_isu_edm_payload.abap:110"
+        },
+        "meaning": "Nachrichtengröße festhalten, Nachricht zurückgeben"
+      },
+      {
+        "id": "ex_lm_err",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:141"
+        },
+        "meaning": "Aufbereitungsfehler ins Protokoll"
+      },
+      {
+        "id": "ex_ws_err",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:142"
+        },
+        "meaning": "Status E (Aufbereitung fehlerhaft) vermerken"
+      },
+      {
+        "id": "ex_g_test",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:146"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "ex_o_test",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:148"
+        },
+        "meaning": "Zählpunkt und Nachrichtengröße auflisten, nicht senden"
+      },
+      {
+        "id": "ex_c_send",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:152"
+        },
+        "meaning": "Lastgang an Gateway senden"
+      },
+      {
+        "id": "f_sd",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:43"
+        },
+        "meaning": "HTTP-Versand"
+      },
+      {
+        "id": "f_sd_oc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:53"
+        },
+        "meaning": "HTTP-Verbindung zur Destination anlegen"
+      },
+      {
+        "id": "f_sd_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:65"
+        },
+        "meaning": "Verbindung angelegt?"
+      },
+      {
+        "id": "f_sd_ret",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:67"
+        },
+        "meaning": "Rückkehr ohne Versand (HTTP-Code 0)"
+      },
+      {
+        "id": "f_sd_do",
+        "type": "loop",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:76"
+        },
+        "meaning": "Je Versandversuch"
+      },
+      {
+        "id": "f_sd_send",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:78"
+        },
+        "meaning": "Nachricht senden"
+      },
+      {
+        "id": "f_sd_recv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:85"
+        },
+        "meaning": "Antwort empfangen"
+      },
+      {
+        "id": "f_sd_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:91"
+        },
+        "meaning": "Antwort erhalten?"
+      },
+      {
+        "id": "f_sd_st",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:92"
+        },
+        "meaning": "HTTP-Status der Antwort lesen"
+      },
+      {
+        "id": "f_sd_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:98"
+        },
+        "meaning": "Angenommen oder fachlich abgelehnt?"
+      },
+      {
+        "id": "f_sd_wait",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:101"
+        },
+        "meaning": "Warten vor erneutem Versuch (Wartezeit verdoppeln)"
+      },
+      {
+        "id": "f_sd_close",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:111"
+        },
+        "meaning": "Rückkehr mit letztem HTTP-Code und Versuchszahl"
+      },
+      {
+        "id": "ex_g_http",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:154"
+        },
+        "meaning": "Vom Gateway angenommen?"
+      },
+      {
+        "id": "ex_lm_f",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:160"
+        },
+        "meaning": "Versandfehler ins Protokoll"
+      },
+      {
+        "id": "ex_ws",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:162"
+        },
+        "meaning": "Status S bzw. F vermerken"
+      },
+      {
+        "id": "f_ws",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:118"
+        },
+        "meaning": "Versandstatus fortschreiben"
+      },
+      {
+        "id": "f_ws_chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:124"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "f_ws_r",
+        "type": "read",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:126"
+        },
+        "meaning": "Bisherigen Statussatz lesen"
+      },
+      {
+        "id": "f_ws_w",
+        "type": "write",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:139"
+        },
+        "meaning": "Statussatz schreiben"
+      },
+      {
+        "id": "f_ws_e",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_edm_export_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export_f01.abap:141"
+        },
+        "meaning": "Statussätze zählen, Rückkehr"
+      },
+      {
+        "id": "ex_commit",
+        "type": "transaction",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:164"
+        },
+        "meaning": "Je Zählpunkt festschreiben"
+      },
+      {
+        "id": "ex_eos",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:167"
+        },
+        "meaning": "Abschluss des Exportlaufs"
+      },
+      {
+        "id": "ex_save",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:169"
+        },
+        "meaning": "Anwendungsprotokoll sichern"
+      },
+      {
+        "id": "ex_g_evt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:182"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "ex_evt",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:185"
+        },
+        "meaning": "Ereignis für den Abgleichjob auslösen"
+      },
+      {
+        "id": "ex_sum_o",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:199"
+        },
+        "meaning": "Summenliste ausgeben"
+      },
+      {
+        "id": "ex_sum",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_edm_export.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_edm_export.abap:199"
+        },
+        "meaning": "Summenliste ausgeben, Programmende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "sc_ass",
+        "to": "sc_ass_g",
+        "condition": "always"
+      },
+      {
+        "from": "sc_ass_g",
+        "to": "sc_ass_m",
+        "condition": "p_mode <> 'X' AND p_mode <> 'J'"
+      },
+      {
+        "from": "sc_sos",
+        "to": "sc_tv",
+        "condition": "always"
+      },
+      {
+        "from": "sc_tv",
+        "to": "sc_g_on",
+        "condition": "always"
+      },
+      {
+        "from": "sc_g_on",
+        "to": "sc_off_m",
+        "condition": "sy-subrc <> 0 OR gv_active <> 'X'"
+      },
+      {
+        "from": "sc_off_m",
+        "to": "sc_off_e",
+        "condition": "always"
+      },
+      {
+        "from": "sc_g_on",
+        "to": "sc_jo1",
+        "condition": "else"
+      },
+      {
+        "from": "sc_jo1",
+        "to": "sc_g_jo1",
+        "condition": "always"
+      },
+      {
+        "from": "sc_g_jo1",
+        "to": "sc_m_jo1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sc_g_jo1",
+        "to": "sc_sub1",
+        "condition": "else"
+      },
+      {
+        "from": "sc_sub1",
+        "to": "sc_jc1",
+        "condition": "always"
+      },
+      {
+        "from": "sc_jc1",
+        "to": "sc_g_jc1",
+        "condition": "always"
+      },
+      {
+        "from": "sc_g_jc1",
+        "to": "sc_m_jc1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sc_g_jc1",
+        "to": "sc_jo2",
+        "condition": "else"
+      },
+      {
+        "from": "sc_jo2",
+        "to": "sc_sub2",
+        "condition": "always"
+      },
+      {
+        "from": "sc_sub2",
+        "to": "sc_g_ev",
+        "condition": "always"
+      },
+      {
+        "from": "sc_g_ev",
+        "to": "sc_jc2e",
+        "condition": "p_event = 'X'"
+      },
+      {
+        "from": "sc_g_ev",
+        "to": "sc_jc2p",
+        "condition": "else"
+      },
+      {
+        "from": "sc_jc2e",
+        "to": "sc_g_jc2",
+        "condition": "always"
+      },
+      {
+        "from": "sc_jc2p",
+        "to": "sc_g_jc2",
+        "condition": "always"
+      },
+      {
+        "from": "sc_g_jc2",
+        "to": "sc_m_jc2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sc_g_jc2",
+        "to": "sc_done_m",
+        "condition": "else"
+      },
+      {
+        "from": "ex_sos",
+        "to": "ex_g_dbg",
+        "condition": "always"
+      },
+      {
+        "from": "ex_g_dbg",
+        "to": "ex_dbg",
+        "condition": "sy-uname = 'TSCHNEIDER'"
+      },
+      {
+        "from": "ex_g_dbg",
+        "to": "ex_lc",
+        "condition": "else"
+      },
+      {
+        "from": "ex_dbg",
+        "to": "ex_lc",
+        "condition": "always"
+      },
+      {
+        "from": "ex_lc",
+        "to": "ex_g_lc",
+        "condition": "always"
+      },
+      {
+        "from": "ex_g_lc",
+        "to": "ex_m_lc",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ex_g_lc",
+        "to": "ex_pod",
+        "condition": "else"
+      },
+      {
+        "from": "ex_pod",
+        "to": "ex_g_nopod",
+        "condition": "always"
+      },
+      {
+        "from": "ex_g_nopod",
+        "to": "ex_m_nopod",
+        "condition": "gt_pod IS INITIAL"
+      },
+      {
+        "from": "ex_m_nopod",
+        "to": "ex_stop",
+        "condition": "always"
+      },
+      {
+        "from": "ex_stop",
+        "to": "ex_eos",
+        "condition": "always"
+      },
+      {
+        "from": "ex_g_nopod",
+        "to": "ex_c_pr",
+        "condition": "else"
+      },
+      {
+        "from": "ex_c_pr",
+        "to": "f_pr",
+        "condition": "always"
+      },
+      {
+        "from": "f_pr",
+        "to": "f_pr_r1",
+        "condition": "always"
+      },
+      {
+        "from": "f_pr_r1",
+        "to": "f_pr_l",
+        "condition": "always"
+      },
+      {
+        "from": "f_pr_l",
+        "to": "f_pr_a",
+        "condition": "next row"
+      },
+      {
+        "from": "f_pr_a",
+        "to": "f_pr_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "f_pr_l",
+        "to": "f_pr_r2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "f_pr_r2",
+        "to": "f_pr_e",
+        "condition": "always"
+      },
+      {
+        "from": "ex_loop",
+        "to": "ex_rt",
+        "condition": "next row"
+      },
+      {
+        "from": "ex_rt",
+        "to": "ex_chk",
+        "condition": "always"
+      },
+      {
+        "from": "ex_chk",
+        "to": "ex_g_cnt",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "ex_chk",
+        "to": "ex_loop",
+        "condition": "else"
+      },
+      {
+        "from": "ex_g_cnt",
+        "to": "ex_lm_gap",
+        "condition": "gv_cnt < 96"
+      },
+      {
+        "from": "ex_lm_gap",
+        "to": "ex_ws_gap",
+        "condition": "always"
+      },
+      {
+        "from": "ex_ws_gap",
+        "to": "f_ws",
+        "condition": "always"
+      },
+      {
+        "from": "ex_g_cnt",
+        "to": "ex_build",
+        "condition": "else"
+      },
+      {
+        "from": "ex_build",
+        "to": "k_b",
+        "condition": "always"
+      },
+      {
+        "from": "k_b",
+        "to": "k_b_g",
+        "condition": "always"
+      },
+      {
+        "from": "k_b_g",
+        "to": "k_b_x1",
+        "condition": "line_exists( it_values[ status_flag = 'X' ] )"
+      },
+      {
+        "from": "k_b_g",
+        "to": "k_b_case",
+        "condition": "else"
+      },
+      {
+        "from": "k_b_case",
+        "to": "k_b_json",
+        "condition": "WHEN 'J'"
+      },
+      {
+        "from": "k_b_case",
+        "to": "k_b_tr",
+        "condition": "else"
+      },
+      {
+        "from": "k_b_json",
+        "to": "k_b_e",
+        "condition": "always"
+      },
+      {
+        "from": "k_b_tr",
+        "to": "k_b_x2",
+        "condition": "CATCH cx_transformation_error INTO DATA(lx_tr)"
+      },
+      {
+        "from": "k_b_tr",
+        "to": "k_b_e",
+        "condition": "always"
+      },
+      {
+        "from": "ex_lm_err",
+        "to": "ex_ws_err",
+        "condition": "always"
+      },
+      {
+        "from": "ex_ws_err",
+        "to": "f_ws",
+        "condition": "always"
+      },
+      {
+        "from": "ex_g_test",
+        "to": "ex_o_test",
+        "condition": "p_test = 'X'"
+      },
+      {
+        "from": "ex_o_test",
+        "to": "ex_loop",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ex_g_test",
+        "to": "ex_c_send",
+        "condition": "else"
+      },
+      {
+        "from": "ex_c_send",
+        "to": "f_sd",
+        "condition": "always"
+      },
+      {
+        "from": "f_sd",
+        "to": "f_sd_oc",
+        "condition": "always"
+      },
+      {
+        "from": "f_sd_oc",
+        "to": "f_sd_g",
+        "condition": "always"
+      },
+      {
+        "from": "f_sd_g",
+        "to": "f_sd_ret",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "f_sd_g",
+        "to": "f_sd_do",
+        "condition": "else"
+      },
+      {
+        "from": "f_sd_do",
+        "to": "f_sd_send",
+        "condition": "next row"
+      },
+      {
+        "from": "f_sd_send",
+        "to": "f_sd_recv",
+        "condition": "always"
+      },
+      {
+        "from": "f_sd_recv",
+        "to": "f_sd_g2",
+        "condition": "always"
+      },
+      {
+        "from": "f_sd_g2",
+        "to": "f_sd_st",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "f_sd_g2",
+        "to": "f_sd_g3",
+        "condition": "else"
+      },
+      {
+        "from": "f_sd_st",
+        "to": "f_sd_g3",
+        "condition": "always"
+      },
+      {
+        "from": "f_sd_g3",
+        "to": "f_sd_close",
+        "condition": "cv_http BETWEEN 200 AND 299 OR cv_http BETWEEN 400 AND 499"
+      },
+      {
+        "from": "f_sd_g3",
+        "to": "f_sd_wait",
+        "condition": "else"
+      },
+      {
+        "from": "f_sd_wait",
+        "to": "f_sd_do",
+        "condition": "next iteration"
+      },
+      {
+        "from": "f_sd_do",
+        "to": "f_sd_close",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ex_g_http",
+        "to": "ex_ws",
+        "condition": "gv_http BETWEEN 200 AND 299"
+      },
+      {
+        "from": "ex_g_http",
+        "to": "ex_lm_f",
+        "condition": "else"
+      },
+      {
+        "from": "ex_lm_f",
+        "to": "ex_ws",
+        "condition": "always"
+      },
+      {
+        "from": "ex_ws",
+        "to": "f_ws",
+        "condition": "always"
+      },
+      {
+        "from": "f_ws",
+        "to": "f_ws_chk",
+        "condition": "always"
+      },
+      {
+        "from": "f_ws_chk",
+        "to": "f_ws_r",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "f_ws_r",
+        "to": "f_ws_w",
+        "condition": "always"
+      },
+      {
+        "from": "f_ws_w",
+        "to": "f_ws_e",
+        "condition": "always"
+      },
+      {
+        "from": "ex_commit",
+        "to": "ex_loop",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ex_loop",
+        "to": "ex_eos",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ex_eos",
+        "to": "ex_save",
+        "condition": "always"
+      },
+      {
+        "from": "ex_save",
+        "to": "ex_g_evt",
+        "condition": "always"
+      },
+      {
+        "from": "ex_g_evt",
+        "to": "ex_evt",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "ex_g_evt",
+        "to": "ex_sum_o",
+        "condition": "else"
+      },
+      {
+        "from": "ex_evt",
+        "to": "ex_sum_o",
+        "condition": "always"
+      },
+      {
+        "from": "sc_init",
+        "to": "sc_init_e",
+        "condition": "always"
+      },
+      {
+        "from": "sc_ass_m",
+        "to": "sc_ass_e",
+        "condition": "always"
+      },
+      {
+        "from": "sc_ass_g",
+        "to": "sc_ass_ok",
+        "condition": "else"
+      },
+      {
+        "from": "sc_m_jo1",
+        "to": "sc_e_jo1",
+        "condition": "always"
+      },
+      {
+        "from": "sc_m_jc1",
+        "to": "sc_e_jc1",
+        "condition": "always"
+      },
+      {
+        "from": "sc_m_jc2",
+        "to": "sc_e_jc2",
+        "condition": "always"
+      },
+      {
+        "from": "sc_done_m",
+        "to": "sc_done",
+        "condition": "always"
+      },
+      {
+        "from": "ex_m_lc",
+        "to": "ex_e_lc",
+        "condition": "always"
+      },
+      {
+        "from": "ex_sum_o",
+        "to": "ex_sum",
+        "condition": "always"
+      },
+      {
+        "from": "f_pr_e",
+        "to": "ex_loop",
+        "condition": "always"
+      },
+      {
+        "from": "k_b_e",
+        "to": "ex_g_test",
+        "condition": "always"
+      },
+      {
+        "from": "k_b_x1",
+        "to": "ex_lm_err",
+        "condition": "CATCH zcx_isu_edm INTO DATA(lx_edm)"
+      },
+      {
+        "from": "k_b_x2",
+        "to": "ex_lm_err",
+        "condition": "CATCH zcx_isu_edm INTO DATA(lx_edm)"
+      },
+      {
+        "from": "f_sd_ret",
+        "to": "ex_g_http",
+        "condition": "always"
+      },
+      {
+        "from": "f_sd_close",
+        "to": "ex_g_http",
+        "condition": "always"
+      },
+      {
+        "from": "f_ws_chk",
+        "to": "f_ws_e",
+        "condition": "else"
+      },
+      {
+        "from": "f_ws_e",
+        "to": "ex_loop",
+        "condition": "next iteration"
+      },
+      {
+        "from": "f_ws_e",
+        "to": "ex_commit",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zisu_edm_export_f01.abap:26 — kein Fachsatz „es werden immer nur die Werte des Stichtags und nur noch nicht gesendete Zählpunkte übermittelt“: ist gt_open leer (alle selektierten Zählpunkte bereits mit Status S), entfällt bei FOR ALL ENTRIES die gesamte WHERE-Bedingung einschließlich des Stichtags; es werden alle Profilwerte gelesen und die selektierten Zählpunkte erneut mit allen gespeicherten Tagen gesendet",
+    "zisu_edm_export.abap:109 — kein Fachsatz „ohne Zählpunkte endet der Lauf, ohne den Abgleichjob anzustoßen“: STOP führt in END-OF-SELECTION, dort wird das Protokoll gesichert und außer im Testlauf das Ereignis ZISU_EDM_EXPORT_DONE ausgelöst",
+    "zisu_edm_scheduler.abap:151 — kein Fachsatz „die Übermittlung wird per RFC im Altsystem ISU_OLD_PRD eingeplant“: die FORM wird nirgends aufgerufen",
+    "zcl_isu_edm_payload.abap:113 — kein Fachsatz „der Lastgang wird als EDIFACT-MSCONS erzeugt“: die Methode wird nie aufgerufen, versendet wird nur XML oder JSON über das Gateway"
+  ],
+  "processDescription": "Der Steuerreport ZISU_EDM_SCHEDULER läuft nachts als Job und plant die Lastgangübermittlung für den Stichtag (Standard: Vortag). Ist der Betriebsschalter ZISU_EDM_EXPORT_ACTIVE in der TVARVC nicht gesetzt, meldet er das und plant nichts ein. Sonst legt er den Job ZISU_EDM_EXPORT an, ordnet ihm den Exportreport mit Stichtag, Format, Destination und Testkennzeichen zu und gibt ihn zum Sofortstart frei; Fehler dabei brechen mit Fehlermeldung ab. Danach legt er ohne Rückgabeprüfung den Abgleichjob ZISU_EDM_RECON an und gibt ihn entweder auf das Ereignis ZISU_EDM_EXPORT_DONE oder als Nachfolger des Exportjobs frei. Der Exportreport leitet für den Benutzer TSCHNEIDER auf das Q-Gateway um, legt ein Anwendungsprotokoll an (ohne Protokoll Abbruch) und liest die Zählpunkte mit am Stichtag gültiger Zählpunktbezeichnung und Empfängerzuordnung; ohne Treffer geht er per STOP direkt in den Abschluss. Bereits mit Status S gesendete Zählpunkte werden aussortiert, für die übrigen werden die Viertelstundenwerte gelesen; ist keiner mehr offen, liest FOR ALL ENTRIES mit leerer Treibertabelle alle Profilwerte aller Tage, und die selektierten Zählpunkte werden erneut gesendet. Je Zählpunkt entsteht ein Lastgang: unter 96 Werten gilt er als lückenhaft (Status L, Tage der Zeitumstellung mit 92 Werten werden damit nie gesendet), gestörte Werte oder eine gescheiterte XML-Transformation führen zu Status E. Die Nachricht enthält Absender, Empfänger, Zählpunkt, Tag, Viertelstundenwerte mit Qualität und eine Kontrollsumme und wird je nach Format als JSON oder XML aufgebaut. Im Testlauf wird nur die Größe aufgelistet und kein Status geschrieben. Sonst wird per HTTP-POST gesendet und bei anderen Antworten als 2xx oder 4xx bis zur Höchstzahl mit verdoppelter Wartezeit wiederholt; ohne Verbindung zur Destination wird nicht gesendet. Angenommene Lastgänge erhalten Status S, alle anderen Status F mit dem letzten HTTP-Code und einen Protokolleintrag; der Status wird mit aufsummierter Versuchszahl fortgeschrieben und je Zählpunkt festgeschrieben. Am Ende sichert der Report das Protokoll, löst außer im Testlauf das Ereignis für den Abgleichjob ohne Erfolgsprüfung aus und gibt eine Summenliste aus."
+}

@@ -1,0 +1,49 @@
+{
+  "id": "BM-198",
+  "title": "Nächtliche Lastgangübermittlung an Messstellen-/Netzbetreiber: Jobkette, XML/JSON-Nachricht, HTTP-Versand mit Wiederholung",
+  "domain": "Technische Randbereiche — Hintergrundjobs / HTTP-Schnittstelle (IS-U EDM, Marktkommunikation)",
+  "band": "sehr komplex",
+  "loc": 625,
+  "constructs": [
+    "Steuerreport mit JOB_OPEN / SUBMIT … VIA JOB … AND RETURN / JOB_CLOSE (sofort, Ereignis, Vorgängerjob)",
+    "BP_EVENT_RAISE in END-OF-SELECTION",
+    "SELECT mit JOIN EUITRANS/EUIHEAD/Z-Tabelle (neue Open-SQL-Syntax)",
+    "SELECT … FOR ALL ENTRIES (zweistufig)",
+    "LOOP AT … GROUP BY mit VALUE #( FOR … IN GROUP … )",
+    "Kundenklasse mit /UI2/CL_JSON=>serialize und CALL TRANSFORMATION",
+    "CL_HTTP_CLIENT=>create_by_destination, send/receive/get_status",
+    "DO-Wiederholungsschleife mit WAIT UP TO und exponentieller Wartezeit",
+    "Application Log BAL_LOG_CREATE / BAL_LOG_MSG_ADD (im Makro) / BAL_DB_SAVE",
+    "MODIFY auf Z-Statustabelle, COMMIT WORK je Zählpunkt"
+  ],
+  "scenario": "Netzbetreiber mit IS-U/EDM, der RLM-Lastgänge nachts an Messstellenbetreiber und Marktpartner übermittelt; der kundeneigene Versand über ein HTTP-Gateway ersetzt die frühere MSCONS-Datei und muss in der S/4-Transformation gegen Marktkommunikation (MaKo/AS4) und die freigegebenen Job- und HTTP-APIs abgegrenzt werden.",
+  "s4_issues": [
+    "JOB_OPEN/JOB_CLOSE/BP_EVENT_RAISE sind in der Cloud nicht freigegeben; Application Jobs (CL_APJ_*) wären der Ersatz",
+    "CL_HTTP_CLIENT=>create_by_destination über SM59 statt Kommunikationsszenario/Arrangement (CL_WEB_HTTP_CLIENT_MANAGER)",
+    "Direktzugriffe auf EUITRANS/EUIHEAD statt freigegebener Schnittstellen der Zählpunktverwaltung",
+    "Z-Profilwertetabelle neben EDM-Profilen; Marktkommunikation (MSCONS/AS4) sollte über die Standard-MaKo-Lösung laufen",
+    "SELECT … FOR ALL ENTRIES ohne Prüfung auf leere Treibertabelle"
+  ],
+  "wave": 2,
+  "module": "IS-U",
+  "edge_constructs": [
+    "SUBMIT … VIA JOB (JOB_OPEN/JOB_CLOSE)",
+    "SELECT … FOR ALL ENTRIES mit leerer Treibertabelle",
+    "LOOP AT … GROUP BY",
+    "CHECK mitten in Schleifen",
+    "STOP (führt in END-OF-SELECTION)",
+    "WAIT UP TO",
+    "CALL TRANSFORMATION",
+    "TRY … CATCH / RAISE EXCEPTION TYPE",
+    "EXIT in DO-Schleife",
+    "RETURN aus FORM",
+    "Schalter über TVARVC",
+    "Debug-Hintertür (IF sy-uname = …)",
+    "nie erreichte FORM und nie gerufene Methode",
+    "auskommentierte Zweige",
+    "Makros (DEFINE)",
+    "AT SELECTION-SCREEN ON",
+    "END-OF-SELECTION",
+    "COND # / SWITCH # / REDUCE / VALUE #( FOR … )"
+  ]
+}

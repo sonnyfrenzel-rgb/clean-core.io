@@ -1,0 +1,219 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_st (neu)",
+      "before": "kein end-Knoten auf lztv_idocf01.abap:21",
+      "after": "e_st end auf lztv_idocf01.abap:21; o_st -> e_st [always]; e_st -> l_c [next iteration]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten c_st1 … c_st4 -> l_c",
+      "before": "je Aufruf eine Direktkante c_stN -> l_c [next iteration] zusätzlich zur Kante in das FORM",
+      "after": "entfernt; Rückkehr über e_st -> l_c [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_ex (neu)",
+      "before": "kein end-Knoten auf zcl_tv_trip_poster.abap:32",
+      "after": "e_ex end auf zcl_tv_trip_poster.abap:32; r_ext -> e_ex [always]; e_ex -> g_dup [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten c_ex (neu); Kante g_dup -> s_ex",
+      "before": "g_dup -> s_ex [always] neben den Bedingungskanten des Gateways",
+      "after": "c_ex call auf :71 (funktionaler Methodenaufruf in der IF-Bedingung); g_head -> c_ex [else] -> s_ex; Rückkehr e_ex -> g_dup",
+      "why": "Ein Gateway hat keine always-Kante; der Aufruf von exists( ) ist ein eigener Schritt vor der Auswertung.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten c_val/c_map/c_post -> c_st4 [CATCH zcx_tv_trip]",
+      "before": "vom Aufruf in den Handler",
+      "after": "Ausnahmekanten von x_v1, x_v2, x_v3, x_cc, x_lk und über den CLEANUP-Aufruf c_ucl (e_ul) -> c_st4 [CATCH zcx_tv_trip]",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION im gerufenen Block ist ein end-Knoten, von dort führt die Kante in den CATCH-Zweig des Aufrufers (Bedingung: der Ausnahmename); keine Kante vom Aufruf selbst in den Handler.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_v (neu)",
+      "before": "kein end-Knoten auf zcl_tv_trip_mapper.abap:60",
+      "after": "e_v end auf zcl_tv_trip_mapper.abap:60; g_v3 -> e_v [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_val -> c_map",
+      "before": "c_val -> c_map [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_v -> c_map [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_tl (neu)",
+      "before": "kein end-Knoten auf zcl_tv_trip_mapper.abap:150",
+      "after": "e_tl end auf zcl_tv_trip_mapper.abap:150; g_cc -> e_tl [else]; e_tl -> l_rec [next iteration]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_tl -> l_rec",
+      "before": "c_tl -> l_rec [next iteration] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_tl -> l_rec [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten g_h2",
+      "before": "eigenes Gateway auf ELSEIF (mapper:126) mit g_h1 -> g_h2 [else]",
+      "after": "entfernt; g_h1 -> a_part [lv_hours >= 8], g_h1 -> e_pd [else]",
+      "why": "Vereinheitlichte Konvention: ELSEIF ist eine Bedingungskante des ursprünglichen Gateways, kein eigenes Gateway.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_pd (neu)",
+      "before": "kein end-Knoten auf zcl_tv_trip_mapper.abap:131",
+      "after": "e_pd end auf zcl_tv_trip_mapper.abap:131; a_full -> e_pd [always]; g_h1 -> e_pd [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten a_part",
+      "before": "action auf zcl_tv_trip_mapper.abap:127; g_h1 -> a_part [lv_hours >= 8]",
+      "after": "entfernt; g_h1 -> e_pd [lv_hours >= 8]",
+      "why": "rv_amount = ls_rate-part_day (mapper:127) ist eine reine Zuweisung; laut Autorenbrief kein Knoten. Die Bedingung bleibt auf der Kante, Inhalt in Fachsatz B08.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_m (neu)",
+      "before": "kein end-Knoten auf zcl_tv_trip_mapper.abap:101",
+      "after": "e_m end auf zcl_tv_trip_mapper.abap:101; erreicht über e_pd -> e_m; e_m -> c_post",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Rückkante e_pd -> e_m",
+      "before": "c_pd ohne Rückkehr; map ohne end-Knoten",
+      "after": "e_pd -> e_m [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_map -> c_post",
+      "before": "c_map -> c_post [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_m -> c_post [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_lock -> c_bapi",
+      "before": "c_lock -> c_bapi [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_lk -> c_bapi [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten a_cl",
+      "before": "action auf zcl_tv_trip_poster.abap:80; x_b1 -> a_cl [always]; x_b2 -> a_cl [always]; a_cl -> s_ul [always]",
+      "after": "entfernt; ersetzt durch c_ucl call auf zcl_tv_trip_poster.abap:81 (eigener Eintrag)",
+      "why": "Der action-Knoten auf CLEANUP (poster:80) stand für den Aufruf unlock( ) in poster:81; ersetzt durch den call-Knoten c_ucl auf der Aufrufzeile.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten e_ul (neu)",
+      "before": "kein end-Knoten auf zcl_tv_trip_poster.abap:111",
+      "after": "e_ul end auf zcl_tv_trip_poster.abap:111; lk_deq -> e_ul [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten c_ucl (neu)",
+      "before": "a_cl action auf CLEANUP (:80) -> s_ul",
+      "after": "c_ucl call auf :81; x_b1, x_b2 -> c_ucl [always] -> s_ul; e_ul -> c_st4 [CATCH zcx_tv_trip]",
+      "why": "RAISE EXCEPTION ohne eigenen CATCH in post: der CLEANUP-Block ruft unlock( ), danach erreicht die Ausnahme den CATCH des Bausteins.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_po (neu)",
+      "before": "kein end-Knoten auf zcl_tv_trip_poster.abap:85",
+      "after": "e_po end auf zcl_tv_trip_poster.abap:85; erreicht über e_ul -> e_po; e_po -> c_st3",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Rückkante e_ul -> e_po",
+      "before": "c_unl -> s_ul ohne Rückkehr",
+      "after": "e_ul -> e_po [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_post -> c_st3",
+      "before": "c_post -> c_st3 [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_po -> c_st3 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante u_ins -> s_u",
+      "before": "u_ins -> s_u [always]",
+      "after": "entfernt; s_u bleibt eigener Einstieg, u_ins -> c_cm bleibt",
+      "why": "Vereinheitlichte Konvention: beim Verbucher (IN UPDATE TASK) keine Kante ins Ziel, nur die Direktkante zum nächsten Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten o_u (neu) vor e_u",
+      "before": "e_u end auf z_tv_ext_trip_insert.abap:18 ohne output",
+      "after": "o_u output auf z_tv_ext_trip_insert.abap:18, Kante o_u -> e_u [always]; eingehende Kanten auf o_u umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_u2 (neu)",
+      "before": "kein end-Knoten auf z_tv_ext_trip_insert.abap:20",
+      "after": "e_u2 end auf z_tv_ext_trip_insert.abap:20; g_u -> e_u2 [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante l_s -> g_err [next row] (neu)",
+      "before": "l_s nur mit [no more rows]",
+      "after": "l_s -> g_err [next row]",
+      "why": "Der Körper der Suchschleife setzt lv_error und verlässt sie mit EXIT; der Pfad führt direkt zur Auswertung.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten a_wf1",
+      "before": "action auf z_idoc_input_ztrip.abap:97; g_err -> a_wf1 [lv_error = abap_true]; a_wf1 -> l_rv [always]",
+      "after": "entfernt; g_err -> l_rv [lv_error = abap_true]",
+      "why": "workflow_result = '99999' (:97) ist eine reine Zuweisung eines Exportparameters; laut Autorenbrief kein Knoten (so auch BM-083). Inhalt bleibt in Fachsatz B14.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten a_wf0",
+      "before": "action auf z_idoc_input_ztrip.abap:104; g_err -> a_wf0 [else]",
+      "after": "entfernt; g_err [else] -> e_fm (ENDFUNCTION :106, eigener Eintrag)",
+      "why": "workflow_result = '0' (:104) ist eine reine Zuweisung eines Exportparameters; laut Autorenbrief kein Knoten (so auch BM-083). Inhalt bleibt in Fachsatz B14.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_fm (neu)",
+      "before": "kein end-Knoten auf z_idoc_input_ztrip.abap:106",
+      "after": "e_fm end auf z_idoc_input_ztrip.abap:106; l_rv -> e_fm [no more rows]; g_err -> e_fm [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz B09",
+      "before": "Vor der Anlage wird der Mitarbeiter gesperrt; ist er gesperrt, wird bis zu dreimal im Abstand von zwei Sekunden erneut versucht, danach die Reise abgewiesen.",
+      "after": "Vor der Anlage wird der Mitarbeiter gesperrt; es gibt höchstens drei Sperrversuche, nach jedem gescheiterten wird zwei Sekunden gewartet, und nach dem dritten wird die Reise abgewiesen.",
+      "why": "DO 3 TIMES erlaubt drei Versuche insgesamt (nicht drei Wiederholungen nach dem ersten); gewartet wird auch nach dem dritten Fehlversuch, bevor die Ausnahme ausgelöst wird.",
+      "category": "Fachsatz"
+    }
+  ],
+  "doubts": [
+    "a_rv (APPEND return_variables, :101) bleibt als Körper der Schleife l_rv: es ist die Übergabe der fehlerhaften IDocs an den ALE-Fehlerworkflow. Streng nach Autorenbrief wäre ein APPEND kein Knoten."
+  ]
+}

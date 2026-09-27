@@ -1,0 +1,33 @@
+{
+  "id": "BM-190",
+  "title": "Containerterminal: Stellplatz reservieren mit Sperrversuchen und Wartepause",
+  "domain": "Technische Randbereiche — Sperrobjekte mit Wartelogik",
+  "band": "mittel",
+  "loc": 66,
+  "constructs": [
+    "Funktionsbaustein",
+    "DO 5 TIMES",
+    "ENQUEUE_EZYARD_PLATZ mit _WAIT = space",
+    "CASE sy-subrc",
+    "WAIT UP TO 2 SECONDS",
+    "MESSAGE … RAISING",
+    "SELECT SINGLE",
+    "DEQUEUE",
+    "GET TIME STAMP / CL_ABAP_TSTMP=>ADD",
+    "UPDATE Z-Tabelle"
+  ],
+  "scenario": "Kundeneigene Stellplatzverwaltung eines Containerterminals: Beim Gate-In wird für den angemeldeten Container ein freier Stellplatz reserviert; mehrere Gate-Rechner arbeiten parallel, deshalb der Sperrversuch mit Wartepause.",
+  "s4_issues": [
+    "Kundeneigene Yard-Logik neben SAP Yard Logistics / EWM-Yard-Management",
+    "WAIT UP TO in Dialogverarbeitung löst einen impliziten Datenbank-Commit aus",
+    "Sperre wird vor dem COMMIT des Aufrufers wieder freigegeben"
+  ],
+  "wave": 2,
+  "module": "LE-YM",
+  "edge_constructs": [
+    "WAIT UP TO",
+    "EXIT in DO-Schleife",
+    "MESSAGE … RAISING als Pfadende",
+    "sy-subrc-Auswertung nach der Schleife wertet den Rückgabewert von WAIT aus"
+  ]
+}

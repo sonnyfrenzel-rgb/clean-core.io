@@ -1,0 +1,2492 @@
+{
+  "id": "BM-136",
+  "title": "PS-Netzpläne je Projekt parallel neu terminieren, Verzug gegen Basistermine bewerten, Anwendungslog und ALV mit Absprung (aRFC, RECEIVE RESULTS, SET HANDLER)",
+  "classes": [
+    "K01",
+    "K03",
+    "K12",
+    "K15",
+    "K17",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PROJ",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zps_netz_resched_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zps_netz_resched_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JEST",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zps_netz_resched_f01.abap",
+        "line": 17,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zps_netz_resched_f01.abap:17"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_PS_RESCHED_PROJECT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zps_netz_resched_f01.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zps_netz_resched_f01.abap:42"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zps_netz_resched_f01.abap",
+        "line": 128,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zps_netz_resched_f01.abap:128"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zps_netz_resched_f01.abap",
+        "line": 165,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zps_netz_resched_f01.abap:165"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zps_netz_resched_f01.abap",
+        "line": 180,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zps_netz_resched_f01.abap:180"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zps_netz_resched_f01.abap",
+        "line": 189,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zps_netz_resched_f01.abap:189"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CN23",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zps_netz_resched_c01.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zps_netz_resched_c01.abap:16"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CJ20N",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zps_netz_resched_c01.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zps_netz_resched_c01.abap:23"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PROJ",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_ps_resched_project.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ps_resched_project.abap:21"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AUFK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_ps_resched_project.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ps_resched_project.abap:25"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_ps_resched_project.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ps_resched_project.abap:25"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "STATUS_CHECK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ps_resched_project.abap",
+        "line": 43,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ps_resched_project.abap:43"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PS_INITIALIZATION",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ps_resched_project.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ps_resched_project.abap:58"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_BUS2002_SCHEDULE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ps_resched_project.abap",
+        "line": 59,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ps_resched_project.abap:59"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ps_resched_project.abap",
+        "line": 66,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ps_resched_project.abap:66"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PS_PRECOMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ps_resched_project.abap",
+        "line": 72,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ps_resched_project.abap:72"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ps_resched_project.abap",
+        "line": 80,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ps_resched_project.abap:80"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_ps_resched_project.abap",
+        "line": 87,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ps_resched_project.abap:87"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPS_MLST_BASIS",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "z_ps_resched_project.abap",
+        "line": 89,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ps_resched_project.abap:89"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-136-B01",
+      "text": "Es werden die Projektdefinitionen der Selektion gelesen und nur die mit aktivem Systemstatus „freigegeben“ behalten.",
+      "anchors": [
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:11"
+        },
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:17"
+        },
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:24"
+        },
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B02",
+      "text": "Gibt es kein freigegebenes Projekt, erscheint ein Warnhinweis und das Programm endet ohne Auswertung.",
+      "anchors": [
+        {
+          "file": "zps_netz_resched.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched.abap:19"
+        },
+        {
+          "file": "zps_netz_resched.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched.abap:20"
+        },
+        {
+          "file": "zps_netz_resched.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B03",
+      "text": "Jedes Projekt wird als eigene parallele Aufgabe in der angegebenen Servergruppe neu terminiert, wobei nie mehr als die eingegebene Höchstzahl Aufgaben gleichzeitig läuft.",
+      "anchors": [
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:39"
+        },
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B04",
+      "text": "Stehen keine freien Prozesse zur Verfügung, wird das Projekt im eigenen Prozess verarbeitet; bei anderen Startfehlern wird es mit Fehlermeldung ins Ergebnis übernommen.",
+      "anchors": [
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:54"
+        },
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:60"
+        },
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:101"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B05",
+      "text": "Jede beendete Aufgabe liefert ihre Ergebniszeilen zurück; bei Kommunikations- oder Systemfehlern wird stattdessen eine Fehlerzeile mit dem Aufgabennamen übernommen.",
+      "anchors": [
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:80"
+        },
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B06",
+      "text": "Nach dem Start aller Projekte wird höchstens 30 Minuten auf alle Rückmeldungen gewartet; bei Zeitüberschreitung erscheint ein Hinweis mit gestarteten und empfangenen Aufgaben.",
+      "anchors": [
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:68"
+        },
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:69"
+        },
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B07",
+      "text": "Je Projekt werden die Netzpläne gelesen; hat es keine, wird das als Ergebnis gemeldet.",
+      "anchors": [
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:25"
+        },
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:31"
+        },
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B08",
+      "text": "Technisch abgeschlossene Netzpläne werden übersprungen und als übersprungen gemeldet – außer der Lauf erfolgt unter dem Benutzer PSC_BATCH, dann entfällt diese Prüfung.",
+      "anchors": [
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:42"
+        },
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:43"
+        },
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B09",
+      "text": "Jeder übrige Netzplan wird über die Projektsystem-Schnittstelle neu terminiert.",
+      "anchors": [
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:58"
+        },
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B10",
+      "text": "Meldet die Terminierung einen Fehler oder Abbruch, wird zurückgerollt und der Netzplan mit der ersten Meldung als fehlerhaft gemeldet.",
+      "anchors": [
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:65"
+        },
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B11",
+      "text": "Nach der Vorabprüfung wird die Terminierung im Testlauf verworfen und im Echtlauf gesichert.",
+      "anchors": [
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:72"
+        },
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:76"
+        },
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:77"
+        },
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B12",
+      "text": "Das Netzplanende wird gegen den eingefrorenen Basistermin verglichen; liegt es später, ist der Verzug die Differenz in Tagen, sonst oder ohne Basistermin null.",
+      "anchors": [
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:87"
+        },
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:89"
+        },
+        {
+          "file": "z_ps_resched_project.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:92"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B13",
+      "text": "Für neu terminierte Netzpläne wird eine Ampel gesetzt: mehr als 10 Tage Verzug rot, mehr als 0 Tage gelb, sonst grün.",
+      "anchors": [
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:116"
+        },
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:117"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B14",
+      "text": "Gibt es fehlerhafte oder übersprungene Netzpläne, wird ein Anwendungslog mit 90 Tagen Aufbewahrung angelegt.",
+      "anchors": [
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:154"
+        },
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:165"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B15",
+      "text": "Jeder Fehler wird als Fehlermeldung und jeder übersprungene Netzplan als Warnung mit Projekt, Netzplan und Text ins Log geschrieben.",
+      "anchors": [
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:173"
+        },
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:180"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B16",
+      "text": "Das Log wird gesichert und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:189"
+        },
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 194,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:194"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B17",
+      "text": "Die Ergebnisse werden als Liste mit Ampelspalte angezeigt; kann die Liste nicht erzeugt werden, erscheint ein Hinweis.",
+      "anchors": [
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:128"
+        },
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:131"
+        },
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:141"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B18",
+      "text": "Ein Doppelklick auf die Netzplannummer öffnet die Netzplananzeige direkt mit diesem Netzplan.",
+      "anchors": [
+        {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:139"
+        },
+        {
+          "file": "zps_netz_resched_c01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_c01.abap:15"
+        },
+        {
+          "file": "zps_netz_resched_c01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_c01.abap:16"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B19",
+      "text": "Ein Doppelklick auf die Meldung zeigt sie vollständig als Popup.",
+      "anchors": [
+        {
+          "file": "zps_netz_resched_c01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_c01.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-136-B20",
+      "text": "Ein Doppelklick auf eine andere Spalte öffnet das Projekt im Projektbuilder.",
+      "anchors": [
+        {
+          "file": "zps_netz_resched_c01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_c01.abap:22"
+        },
+        {
+          "file": "zps_netz_resched_c01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_c01.abap:23"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zps_netz_resched.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched.abap:17"
+        },
+        "meaning": "Monatlicher Terminierungslauf"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zps_netz_resched.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched.abap:18"
+        },
+        "meaning": "Freigegebene Projekte ermitteln"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zps_netz_resched.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched.abap:19"
+        },
+        "meaning": "Keine freigegebenen Projekte?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "zps_netz_resched.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched.abap:20"
+        },
+        "meaning": "Hinweis „keine Projekte“ als Warnung"
+      },
+      {
+        "id": "lp",
+        "type": "end",
+        "anchor": {
+          "file": "zps_netz_resched.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched.abap:21"
+        },
+        "meaning": "Programm beenden"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zps_netz_resched.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched.abap:23"
+        },
+        "meaning": "Projekte parallel neu terminieren"
+      },
+      {
+        "id": "e_s",
+        "type": "end",
+        "anchor": {
+          "file": "zps_netz_resched.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched.abap:23"
+        },
+        "meaning": "Parallelverarbeitung abgeschlossen, Selektionsblock endet"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "zps_netz_resched.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched.abap:25"
+        },
+        "meaning": "Auswertung"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "zps_netz_resched.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched.abap:26"
+        },
+        "meaning": "Verzug bewerten"
+      },
+      {
+        "id": "c4",
+        "type": "call",
+        "anchor": {
+          "file": "zps_netz_resched.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched.abap:27"
+        },
+        "meaning": "Anwendungslog schreiben"
+      },
+      {
+        "id": "c5",
+        "type": "call",
+        "anchor": {
+          "file": "zps_netz_resched.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched.abap:28"
+        },
+        "meaning": "Ergebnisliste anzeigen"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "zps_netz_resched.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched.abap:28"
+        },
+        "meaning": "Lauf fertig"
+      },
+      {
+        "id": "h",
+        "type": "start",
+        "anchor": {
+          "file": "zps_netz_resched_c01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_c01.abap:6"
+        },
+        "meaning": "Doppelklick auf eine Ergebniszeile"
+      },
+      {
+        "id": "hr",
+        "type": "read",
+        "anchor": {
+          "file": "zps_netz_resched_c01.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_c01.abap:7"
+        },
+        "meaning": "Angeklickte Ergebniszeile holen"
+      },
+      {
+        "id": "hg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zps_netz_resched_c01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_c01.abap:8"
+        },
+        "meaning": "Zeile nicht gefunden?"
+      },
+      {
+        "id": "hre",
+        "type": "end",
+        "anchor": {
+          "file": "zps_netz_resched_c01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_c01.abap:9"
+        },
+        "meaning": "Nichts tun"
+      },
+      {
+        "id": "hc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zps_netz_resched_c01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_c01.abap:12"
+        },
+        "meaning": "Welche Spalte wurde angeklickt?"
+      },
+      {
+        "id": "hp1",
+        "type": "action",
+        "anchor": {
+          "file": "zps_netz_resched_c01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_c01.abap:15"
+        },
+        "meaning": "Netzplannummer übergeben"
+      },
+      {
+        "id": "ht1",
+        "type": "external_program",
+        "anchor": {
+          "file": "zps_netz_resched_c01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_c01.abap:16"
+        },
+        "meaning": "Netzplan direkt anzeigen"
+      },
+      {
+        "id": "hm",
+        "type": "output",
+        "anchor": {
+          "file": "zps_netz_resched_c01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_c01.abap:19"
+        },
+        "meaning": "Volle Meldung als Popup"
+      },
+      {
+        "id": "hp2",
+        "type": "action",
+        "anchor": {
+          "file": "zps_netz_resched_c01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_c01.abap:22"
+        },
+        "meaning": "Projektdefinition übergeben"
+      },
+      {
+        "id": "ht2",
+        "type": "external_program",
+        "anchor": {
+          "file": "zps_netz_resched_c01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_c01.abap:23"
+        },
+        "meaning": "Projekt im Projektbuilder öffnen"
+      },
+      {
+        "id": "he",
+        "type": "end",
+        "anchor": {
+          "file": "zps_netz_resched_c01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_c01.abap:25"
+        },
+        "meaning": "Zurück zur Liste"
+      },
+      {
+        "id": "p",
+        "type": "start",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:8"
+        },
+        "meaning": "Projektauswahl"
+      },
+      {
+        "id": "pq",
+        "type": "read",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:11"
+        },
+        "meaning": "Projektdefinitionen der Selektion lesen"
+      },
+      {
+        "id": "pc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:14"
+        },
+        "meaning": "Projekte gefunden?"
+      },
+      {
+        "id": "pj",
+        "type": "read",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:17"
+        },
+        "meaning": "Aktiven Systemstatus FREI der Projekte lesen"
+      },
+      {
+        "id": "pl",
+        "type": "loop",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:23"
+        },
+        "meaning": "Projekte prüfen"
+      },
+      {
+        "id": "pr",
+        "type": "read",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:24"
+        },
+        "meaning": "Ist das Projekt freigegeben?"
+      },
+      {
+        "id": "pg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:27"
+        },
+        "meaning": "Nicht freigegeben?"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:31"
+        },
+        "meaning": "Auswahl fertig"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:36"
+        },
+        "meaning": "Parallelverarbeitung"
+      },
+      {
+        "id": "pl2",
+        "type": "loop",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:37"
+        },
+        "meaning": "Projekte verteilen"
+      },
+      {
+        "id": "pw",
+        "type": "action",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:39"
+        },
+        "meaning": "Warten, bis weniger als die Höchstzahl Aufgaben laufen"
+      },
+      {
+        "id": "pa",
+        "type": "async",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:42"
+        },
+        "meaning": "Projekt als parallele Aufgabe in der Servergruppe starten"
+      },
+      {
+        "id": "pcs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:54"
+        },
+        "meaning": "Start erfolgreich, keine Ressourcen oder Fehler?"
+      },
+      {
+        "id": "pcl",
+        "type": "call",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:60"
+        },
+        "meaning": "Projekt im eigenen Prozess verarbeiten"
+      },
+      {
+        "id": "pwt",
+        "type": "action",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:68"
+        },
+        "meaning": "Auf alle Rückmeldungen warten, höchstens 30 Minuten"
+      },
+      {
+        "id": "pgt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:69"
+        },
+        "meaning": "Zeitüberschreitung?"
+      },
+      {
+        "id": "pm",
+        "type": "output",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:70"
+        },
+        "meaning": "Hinweis mit gestarteten und empfangenen Aufgaben"
+      },
+      {
+        "id": "pse",
+        "type": "end",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:72"
+        },
+        "meaning": "Parallelverarbeitung beendet"
+      },
+      {
+        "id": "r",
+        "type": "start",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:77"
+        },
+        "meaning": "Rückmeldung einer Aufgabe (Callback)"
+      },
+      {
+        "id": "rr",
+        "type": "async",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:80"
+        },
+        "meaning": "Ergebnis der Aufgabe entgegennehmen, Zähler fortschreiben"
+      },
+      {
+        "id": "rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:88"
+        },
+        "meaning": "Kommunikations- oder Systemfehler?"
+      },
+      {
+        "id": "rre",
+        "type": "end",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:90"
+        },
+        "meaning": "Fehlerzeile mit Aufgabenname übernehmen"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:93"
+        },
+        "meaning": "Ergebniszeilen übernehmen"
+      },
+      {
+        "id": "l",
+        "type": "start",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:98"
+        },
+        "meaning": "Verarbeitung ohne Parallelisierung"
+      },
+      {
+        "id": "lc",
+        "type": "call",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:101"
+        },
+        "meaning": "Projekt synchron neu terminieren"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:108"
+        },
+        "meaning": "Ergebniszeilen übernehmen"
+      },
+      {
+        "id": "mb",
+        "type": "start",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:113"
+        },
+        "meaning": "Verzugsbewertung"
+      },
+      {
+        "id": "ml",
+        "type": "loop",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:116"
+        },
+        "meaning": "Neu terminierte Netzpläne durchgehen"
+      },
+      {
+        "id": "ma",
+        "type": "action",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:117"
+        },
+        "meaning": "Ampel: über 10 Tage rot, über 0 gelb, sonst grün"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:121"
+        },
+        "meaning": "Bewertung fertig"
+      },
+      {
+        "id": "a",
+        "type": "start",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:126"
+        },
+        "meaning": "Ergebnisanzeige"
+      },
+      {
+        "id": "af",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:128"
+        },
+        "meaning": "ALV für Ergebnisliste erzeugen"
+      },
+      {
+        "id": "am2",
+        "type": "output",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:131"
+        },
+        "meaning": "ALV-Fehler als Popup"
+      },
+      {
+        "id": "ar",
+        "type": "end",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:132"
+        },
+        "meaning": "Keine Anzeige"
+      },
+      {
+        "id": "ah",
+        "type": "action",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:139"
+        },
+        "meaning": "Doppelklick-Behandlung registrieren"
+      },
+      {
+        "id": "ad",
+        "type": "output",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:141"
+        },
+        "meaning": "Ergebnisliste mit Ampel anzeigen"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:142"
+        },
+        "meaning": "Anzeige beendet"
+      },
+      {
+        "id": "b",
+        "type": "start",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:148"
+        },
+        "meaning": "Anwendungslog"
+      },
+      {
+        "id": "bg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:154"
+        },
+        "meaning": "Weder Fehler noch Übersprungene?"
+      },
+      {
+        "id": "br",
+        "type": "end",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:156"
+        },
+        "meaning": "Kein Log nötig"
+      },
+      {
+        "id": "bc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:165"
+        },
+        "meaning": "Log ZPS/RESCHED mit 90 Tagen Verfall anlegen"
+      },
+      {
+        "id": "bl",
+        "type": "loop",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:173"
+        },
+        "meaning": "Fehler- und Übersprungen-Zeilen durchgehen"
+      },
+      {
+        "id": "ba",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:180"
+        },
+        "meaning": "Meldung (Fehler bzw. Warnung) mit Projekt, Netz und Text ins Log"
+      },
+      {
+        "id": "bs",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:189"
+        },
+        "meaning": "Log sichern"
+      },
+      {
+        "id": "bcw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 194,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:194"
+        },
+        "meaning": "Log festschreiben"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "anchor": {
+          "file": "zps_netz_resched_f01.abap",
+          "line": 195,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zps_netz_resched_f01.abap:195"
+        },
+        "meaning": "Log fertig"
+      },
+      {
+        "id": "f",
+        "type": "start",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:1"
+        },
+        "meaning": "Neuterminierung eines Projekts"
+      },
+      {
+        "id": "fq",
+        "type": "read",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:21"
+        },
+        "meaning": "Projektnummer lesen"
+      },
+      {
+        "id": "fn",
+        "type": "read",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:25"
+        },
+        "meaning": "Netzpläne des Projekts mit Ecktermin lesen"
+      },
+      {
+        "id": "fg",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:31"
+        },
+        "meaning": "Keine Netzpläne?"
+      },
+      {
+        "id": "fr",
+        "type": "end",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:34"
+        },
+        "meaning": "Ergebnis „keine Netzpläne“"
+      },
+      {
+        "id": "fl",
+        "type": "loop",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:37"
+        },
+        "meaning": "Netzpläne einzeln"
+      },
+      {
+        "id": "fu",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:42"
+        },
+        "meaning": "Nicht der Notfall-Benutzer?"
+      },
+      {
+        "id": "fs",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:43"
+        },
+        "meaning": "Ist der Netzplan technisch abgeschlossen (I0045)?"
+      },
+      {
+        "id": "fsg",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:51"
+        },
+        "meaning": "Technisch abgeschlossen?"
+      },
+      {
+        "id": "fi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:58"
+        },
+        "meaning": "PS-BAPI-Puffer initialisieren"
+      },
+      {
+        "id": "fb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:59"
+        },
+        "meaning": "Netzplan terminieren"
+      },
+      {
+        "id": "fbg",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:65"
+        },
+        "meaning": "Terminierung mit Fehler?"
+      },
+      {
+        "id": "frb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:66"
+        },
+        "meaning": "Zurückrollen, Fehlerzeile mit erster Meldung"
+      },
+      {
+        "id": "fpc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:72"
+        },
+        "meaning": "Vorabprüfung vor dem Sichern"
+      },
+      {
+        "id": "ftg",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:76"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "frb2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:77"
+        },
+        "meaning": "Terminierung verwerfen (Status T)"
+      },
+      {
+        "id": "fcm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:80"
+        },
+        "meaning": "Terminierung sichern (Status O)"
+      },
+      {
+        "id": "fna",
+        "type": "read",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:87"
+        },
+        "meaning": "Aktuelles Netzplanende lesen"
+      },
+      {
+        "id": "fba",
+        "type": "read",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:89"
+        },
+        "meaning": "Eingefrorenen Basistermin lesen"
+      },
+      {
+        "id": "fap",
+        "type": "action",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:92"
+        },
+        "meaning": "Verzugstage = neues Ende minus Basistermin, sonst 0"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "z_ps_resched_project.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ps_resched_project.abap:99"
+        },
+        "meaning": "Ergebnis des Projekts zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "p",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "gt_proj IS INITIAL"
+      },
+      {
+        "from": "m1",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "c2",
+        "condition": "else"
+      },
+      {
+        "from": "c2",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "c3",
+        "condition": "always"
+      },
+      {
+        "from": "c3",
+        "to": "mb",
+        "condition": "always"
+      },
+      {
+        "from": "c4",
+        "to": "b",
+        "condition": "always"
+      },
+      {
+        "from": "c5",
+        "to": "a",
+        "condition": "always"
+      },
+      {
+        "from": "h",
+        "to": "hr",
+        "condition": "always"
+      },
+      {
+        "from": "hr",
+        "to": "hg",
+        "condition": "always"
+      },
+      {
+        "from": "hg",
+        "to": "hre",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "hg",
+        "to": "hc",
+        "condition": "else"
+      },
+      {
+        "from": "hc",
+        "to": "hp1",
+        "condition": "WHEN 'AUFNR'"
+      },
+      {
+        "from": "hp1",
+        "to": "ht1",
+        "condition": "always"
+      },
+      {
+        "from": "ht1",
+        "to": "he",
+        "condition": "always"
+      },
+      {
+        "from": "hc",
+        "to": "hm",
+        "condition": "WHEN 'MELDUNG'"
+      },
+      {
+        "from": "hm",
+        "to": "he",
+        "condition": "always"
+      },
+      {
+        "from": "hc",
+        "to": "hp2",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "hp2",
+        "to": "ht2",
+        "condition": "always"
+      },
+      {
+        "from": "ht2",
+        "to": "he",
+        "condition": "always"
+      },
+      {
+        "from": "p",
+        "to": "pq",
+        "condition": "always"
+      },
+      {
+        "from": "pq",
+        "to": "pc",
+        "condition": "always"
+      },
+      {
+        "from": "pc",
+        "to": "pj",
+        "condition": "gt_proj IS NOT INITIAL"
+      },
+      {
+        "from": "pc",
+        "to": "pe",
+        "condition": "else"
+      },
+      {
+        "from": "pj",
+        "to": "pl",
+        "condition": "always"
+      },
+      {
+        "from": "pl",
+        "to": "pr",
+        "condition": "next row"
+      },
+      {
+        "from": "pr",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pl",
+        "condition": "else"
+      },
+      {
+        "from": "pl",
+        "to": "pe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ps",
+        "to": "pl2",
+        "condition": "always"
+      },
+      {
+        "from": "pl2",
+        "to": "pw",
+        "condition": "next row"
+      },
+      {
+        "from": "pw",
+        "to": "pa",
+        "condition": "always"
+      },
+      {
+        "from": "pa",
+        "to": "f",
+        "condition": "always"
+      },
+      {
+        "from": "pa",
+        "to": "pcs",
+        "condition": "always"
+      },
+      {
+        "from": "pcs",
+        "to": "pl2",
+        "condition": "WHEN 0"
+      },
+      {
+        "from": "pcs",
+        "to": "pcl",
+        "condition": "WHEN 3"
+      },
+      {
+        "from": "pcl",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "pcs",
+        "to": "pl2",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "pl2",
+        "to": "pwt",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pwt",
+        "to": "pgt",
+        "condition": "always"
+      },
+      {
+        "from": "pgt",
+        "to": "pm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pm",
+        "to": "pse",
+        "condition": "always"
+      },
+      {
+        "from": "pgt",
+        "to": "pse",
+        "condition": "else"
+      },
+      {
+        "from": "r",
+        "to": "rr",
+        "condition": "always"
+      },
+      {
+        "from": "rr",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "rre",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rg",
+        "to": "re",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "lc",
+        "condition": "always"
+      },
+      {
+        "from": "lc",
+        "to": "f",
+        "condition": "always"
+      },
+      {
+        "from": "mb",
+        "to": "ml",
+        "condition": "always"
+      },
+      {
+        "from": "ml",
+        "to": "ma",
+        "condition": "next row"
+      },
+      {
+        "from": "ma",
+        "to": "ml",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ml",
+        "to": "me",
+        "condition": "no more rows"
+      },
+      {
+        "from": "a",
+        "to": "af",
+        "condition": "always"
+      },
+      {
+        "from": "af",
+        "to": "am2",
+        "condition": "CATCH cx_salv_msg INTO DATA(lx_salv)"
+      },
+      {
+        "from": "am2",
+        "to": "ar",
+        "condition": "always"
+      },
+      {
+        "from": "af",
+        "to": "ah",
+        "condition": "always"
+      },
+      {
+        "from": "ah",
+        "to": "ad",
+        "condition": "always"
+      },
+      {
+        "from": "ad",
+        "to": "ae",
+        "condition": "always"
+      },
+      {
+        "from": "b",
+        "to": "bg",
+        "condition": "always"
+      },
+      {
+        "from": "bg",
+        "to": "br",
+        "condition": "NOT line_exists( gt_erg[ status = 'F' ] ) AND NOT line_exists( gt_erg[ status = 'S' ] )"
+      },
+      {
+        "from": "bg",
+        "to": "bc",
+        "condition": "else"
+      },
+      {
+        "from": "bc",
+        "to": "bl",
+        "condition": "always"
+      },
+      {
+        "from": "bl",
+        "to": "ba",
+        "condition": "next row"
+      },
+      {
+        "from": "ba",
+        "to": "bl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "bl",
+        "to": "bs",
+        "condition": "no more rows"
+      },
+      {
+        "from": "bs",
+        "to": "bcw",
+        "condition": "always"
+      },
+      {
+        "from": "bcw",
+        "to": "be",
+        "condition": "always"
+      },
+      {
+        "from": "f",
+        "to": "fq",
+        "condition": "always"
+      },
+      {
+        "from": "fq",
+        "to": "fn",
+        "condition": "always"
+      },
+      {
+        "from": "fn",
+        "to": "fg",
+        "condition": "always"
+      },
+      {
+        "from": "fg",
+        "to": "fr",
+        "condition": "lt_netz IS INITIAL"
+      },
+      {
+        "from": "fr",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "fg",
+        "to": "fl",
+        "condition": "else"
+      },
+      {
+        "from": "fl",
+        "to": "fu",
+        "condition": "next row"
+      },
+      {
+        "from": "fu",
+        "to": "fs",
+        "condition": "sy-uname <> 'PSC_BATCH'"
+      },
+      {
+        "from": "fu",
+        "to": "fi",
+        "condition": "else"
+      },
+      {
+        "from": "fs",
+        "to": "fsg",
+        "condition": "always"
+      },
+      {
+        "from": "fsg",
+        "to": "fl",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "fsg",
+        "to": "fi",
+        "condition": "else"
+      },
+      {
+        "from": "fi",
+        "to": "fb",
+        "condition": "always"
+      },
+      {
+        "from": "fb",
+        "to": "fbg",
+        "condition": "always"
+      },
+      {
+        "from": "fbg",
+        "to": "frb",
+        "condition": "line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] )"
+      },
+      {
+        "from": "frb",
+        "to": "fl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fbg",
+        "to": "fpc",
+        "condition": "else"
+      },
+      {
+        "from": "fpc",
+        "to": "ftg",
+        "condition": "always"
+      },
+      {
+        "from": "ftg",
+        "to": "frb2",
+        "condition": "iv_test = abap_true"
+      },
+      {
+        "from": "ftg",
+        "to": "fcm",
+        "condition": "else"
+      },
+      {
+        "from": "frb2",
+        "to": "fna",
+        "condition": "always"
+      },
+      {
+        "from": "fcm",
+        "to": "fna",
+        "condition": "always"
+      },
+      {
+        "from": "fna",
+        "to": "fba",
+        "condition": "always"
+      },
+      {
+        "from": "fba",
+        "to": "fap",
+        "condition": "always"
+      },
+      {
+        "from": "fap",
+        "to": "fl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fl",
+        "to": "fe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fe",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "pse",
+        "to": "e_s",
+        "condition": "always"
+      },
+      {
+        "from": "e_s",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "c4",
+        "condition": "always"
+      },
+      {
+        "from": "br",
+        "to": "c5",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "c5",
+        "condition": "always"
+      },
+      {
+        "from": "ar",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "pl2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fe",
+        "to": "le",
+        "condition": "always"
+      },
+      {
+        "from": "fr",
+        "to": "le",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pl",
+        "condition": "sy-subrc <> 0"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "z_ps_resched_project.abap:42 — kein Fachsatz „technisch abgeschlossene Netzpläne werden nie neu terminiert“: unter dem Benutzer PSC_BATCH entfällt die Statusprüfung",
+    "z_ps_resched_project.abap:87 — kein Fachsatz „der Testlauf zeigt den Verzug nach der Neuterminierung“: im Testlauf wird vorher zurückgerollt, gelesen wird das alte Netzplanende",
+    "z_ps_resched_project.abap:72 — kein Fachsatz „Fehler der Vorabprüfung verhindern das Sichern“: die Rückmeldungen der Vorabprüfung werden nicht ausgewertet",
+    "zps_netz_resched_f01.abap:39 — kein Fachsatz „die Zahl paralleler Aufgaben wird auf einen gültigen Bereich begrenzt“: die Eingabe wird nicht geprüft; bei 0 ist die Bedingung nie erfüllt, WAIT kehrt dann jeweils erst nach Ende aller offenen Aufgaben (sy-subrc 8) zurück, und die Projekte laufen nacheinander"
+  ],
+  "processDescription": "Der Projektcontroller plant den Report monatlich mit einer Projektauswahl, einer RFC-Servergruppe, der Höchstzahl paralleler Aufgaben und dem Testlaufschalter ein. Der Report liest die Projektdefinitionen und behält nur freigegebene Projekte; gibt es keine, erscheint ein Warnhinweis und das Programm endet. Jedes Projekt startet er als parallele Aufgabe in der Servergruppe, wobei er wartet, solange die Höchstzahl erreicht ist; fehlen freie Prozesse, verarbeitet er das Projekt selbst, andere Startfehler landen als Fehlerzeile im Ergebnis. Jede Aufgabe liest die Netzpläne des Projekts und meldet, wenn es keine gibt. Technisch abgeschlossene Netzpläne überspringt sie, außer unter dem Benutzer PSC_BATCH, für den die Prüfung entfällt. Die übrigen Netzpläne terminiert sie neu; bei Fehler rollt sie zurück und meldet die erste Meldung, sonst verwirft sie im Testlauf und sichert im Echtlauf. Danach vergleicht sie das Netzplanende mit dem eingefrorenen Basistermin und meldet die Verzugstage. Der Report sammelt die Rückmeldungen und wartet höchstens 30 Minuten auf alle; bei Zeitüberschreitung meldet er die Zahlen. Neu terminierte Netzpläne erhalten eine Ampel nach Verzug. Fehler und Übersprungene schreibt er in ein Anwendungslog mit 90 Tagen Aufbewahrung. Zum Schluss zeigt er die Ergebnisliste; ein Doppelklick öffnet je nach Spalte den Netzplan, die volle Meldung oder das Projekt."
+}

@@ -1,0 +1,2745 @@
+{
+  "id": "BM-200",
+  "title": "Indexmietanpassung nach Verbraucherpreisindex mit paralleler Konditionsänderung und Mieteranschreiben per Mail",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VICNCN",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_index_main.abap",
+        "line": 26,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_index_main.abap:26"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRE_IDXAGR",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_index_main.abap",
+        "line": 26,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_index_main.abap:26"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VICDCOND",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_index_main.abap",
+        "line": 26,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_index_main.abap:26"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_RE_VPI_CLIENT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_index_main.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_index_main.abap:64"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_HTTP_CLIENT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_re_vpi_client.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_re_vpi_client.abap:58"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "/UI2/CL_JSON",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_re_vpi_client.abap",
+        "line": 87,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_re_vpi_client.abap:87"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_RE_INDEX_TASK",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_index_f01.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_index_f01.abap:83"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZRE_IDXAGR",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_re_index_task.abap",
+        "line": 31,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_re_index_task.abap:31"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VICDCOND",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "z_re_index_task.abap",
+        "line": 55,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_re_index_task.abap:55"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CHANGEDOCUMENT_OPEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_re_index_task.abap",
+        "line": 72,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_re_index_task.abap:72"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CHANGEDOCUMENT_SINGLE_CASE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_re_index_task.abap",
+        "line": 81,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_re_index_task.abap:81"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CHANGEDOCUMENT_CLOSE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_re_index_task.abap",
+        "line": 91,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_re_index_task.abap:91"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRE_IDXAGR",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_re_index_task.abap",
+        "line": 106,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_re_index_task.abap:106"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZRE_IDXAGR",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_re_index_task.abap",
+        "line": 118,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_re_index_task.abap:118"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FP_JOB_OPEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_index_f02.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_index_f02.abap:23"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FP_FUNCTION_MODULE_NAME",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_index_f02.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_index_f02.abap:38"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VIBPOBJREL",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_index_f02.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_index_f02.abap:50"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FP_JOB_CLOSE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_index_f02.abap",
+        "line": 87,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_index_f02.abap:87"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BUT020",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_index_f02.abap",
+        "line": 105,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_index_f02.abap:105"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ADR6",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zre_index_f02.abap",
+        "line": 105,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_index_f02.abap:105"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_index_f02.abap",
+        "line": 119,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_index_f02.abap:119"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_DOCUMENT_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_index_f02.abap",
+        "line": 126,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_index_f02.abap:126"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_index_main.abap",
+        "line": 97,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_index_main.abap:97"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_index_main.abap",
+        "line": 110,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_index_main.abap:110"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zre_index_main.abap",
+        "line": 118,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zre_index_main.abap:118"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-200-B01",
+      "text": "Es werden die zum Stichtag laufenden Mietverträge der gewählten Buchungskreise und Vertragsarten ermittelt, die eine aktive Indexvereinbarung mit fälliger Prüfung haben, jeweils mit der zum Stichtag gültigen Grundmiete.",
+      "anchors": [
+        {
+          "file": "zre_index_main.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B02",
+      "text": "Ist kein Vertrag fällig, wird ein Hinweis ausgegeben und der Lauf ohne Anpassung und ohne Protokoll beendet.",
+      "anchors": [
+        {
+          "file": "zre_index_main.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:46"
+        },
+        {
+          "file": "zre_index_main.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:47"
+        },
+        {
+          "file": "zre_index_main.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B03",
+      "text": "Maßgeblich ist der Indexwert des Monats, der zwei Monate vor dem Stichtagsmonat liegt.",
+      "anchors": [
+        {
+          "file": "zre_index_main.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B04",
+      "text": "Der Verbraucherpreisindex der Reihe VPI2020 für diesen Monat wird beim externen Indexdienst abgefragt.",
+      "anchors": [
+        {
+          "file": "zre_index_main.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:64"
+        },
+        {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:73"
+        },
+        {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B05",
+      "text": "Scheitert die Abfrage oder antwortet der Dienst nicht mit Erfolg, bricht der Lauf mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:80"
+        },
+        {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:81"
+        },
+        {
+          "file": "zre_index_main.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B06",
+      "text": "Akzeptiert wird nur ein endgültig veröffentlichter Indexwert; fehlt er oder ist er vorläufig, bricht der Lauf ebenfalls ab.",
+      "anchors": [
+        {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:94"
+        },
+        {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:98"
+        },
+        {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:99"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B07",
+      "text": "Je Vertrag wird die prozentuale Veränderung des Index gegenüber dem Basiswert der letzten Anpassung berechnet.",
+      "anchors": [
+        {
+          "file": "zre_index_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B08",
+      "text": "Nicht angepasst und mit Grund protokolliert werden Verträge ohne Grundmiete, mit einer Anpassung innerhalb der letzten 365 Tage, ohne Basisindex oder deren Indexveränderung den Schwellwert in keiner Richtung erreicht.",
+      "anchors": [
+        {
+          "file": "zre_index_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:28"
+        },
+        {
+          "file": "zre_index_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B09",
+      "text": "Eine Erhöhung wird auf den vereinbarten Kappungssatz begrenzt; Verträge ohne Kappungssatz und Senkungen werden nicht gekappt.",
+      "anchors": [
+        {
+          "file": "zre_index_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B10",
+      "text": "Die neue Grundmiete ist die bisherige, um den Satz verändert und auf zwei Nachkommastellen gerundet.",
+      "anchors": [
+        {
+          "file": "zre_index_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B11",
+      "text": "Ist keine Anpassung fällig, wird das nur im Protokoll vermerkt.",
+      "anchors": [
+        {
+          "file": "zre_index_main.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B12",
+      "text": "Im Testlauf wird nur die Zahl der berechneten Anpassungen protokolliert; es wird nichts geändert und kein Schreiben erzeugt.",
+      "anchors": [
+        {
+          "file": "zre_index_main.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B13",
+      "text": "Im Echtlauf werden die Anpassungen in Pakete gleicher Größe geteilt und je Paket parallel in der Servergruppe verarbeitet.",
+      "anchors": [
+        {
+          "file": "zre_index_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:77"
+        },
+        {
+          "file": "zre_index_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B14",
+      "text": "Sind keine Verarbeitungsressourcen frei, wird kurz gewartet und das Paket erneut gestartet; bei anderen Startfehlern wird das Paket als Fehler protokolliert und nicht verarbeitet.",
+      "anchors": [
+        {
+          "file": "zre_index_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:95"
+        },
+        {
+          "file": "zre_index_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:101"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B15",
+      "text": "Das Programm wartet höchstens 30 Minuten auf die Rückmeldung aller Pakete; fehlen Rückmeldungen, wird ein Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zre_index_main.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:82"
+        },
+        {
+          "file": "zre_index_main.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B16",
+      "text": "Die Ergebnisse jedes Pakets werden eingesammelt, nicht angepasste Verträge als Warnung mit ihrem Status protokolliert.",
+      "anchors": [
+        {
+          "file": "zre_index_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:124"
+        },
+        {
+          "file": "zre_index_f01.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:135"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B17",
+      "text": "Je Vertrag wird die Indexvereinbarung gesperrt; ist sie bereits gesperrt, wird der Vertrag als gesperrt zurückgemeldet und übersprungen.",
+      "anchors": [
+        {
+          "file": "z_re_index_task.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:31"
+        },
+        {
+          "file": "z_re_index_task.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B18",
+      "text": "Die zum Stichtag gültige Grundmietkondition wird gelesen; fehlt sie, wird der Vertrag ohne Änderung als ohne Kondition zurückgemeldet.",
+      "anchors": [
+        {
+          "file": "z_re_index_task.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:45"
+        },
+        {
+          "file": "z_re_index_task.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B19",
+      "text": "Die bisherige Grundmiete wird zum Vortag des Stichtags beendet und eine neue Grundmiete mit dem angepassten Betrag ab dem Stichtag angelegt.",
+      "anchors": [
+        {
+          "file": "z_re_index_task.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:55"
+        },
+        {
+          "file": "z_re_index_task.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B20",
+      "text": "Gelingt die Anlage der neuen Grundmiete nicht, wird die Änderung zurückgenommen und der Vertrag als fehlerhaft zurückgemeldet.",
+      "anchors": [
+        {
+          "file": "z_re_index_task.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:65"
+        },
+        {
+          "file": "z_re_index_task.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B21",
+      "text": "Zur neuen Grundmiete wird ein Änderungsbeleg der Objektklasse ZRE_INDEX geschrieben.",
+      "anchors": [
+        {
+          "file": "z_re_index_task.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:72"
+        },
+        {
+          "file": "z_re_index_task.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:81"
+        },
+        {
+          "file": "z_re_index_task.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:91"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B22",
+      "text": "In der Indexvereinbarung werden der neue Basisindex und -monat, das Datum der Anpassung und die nächste Prüfung ein Jahr nach dem Stichtag festgehalten.",
+      "anchors": [
+        {
+          "file": "z_re_index_task.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:106"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B23",
+      "text": "Jeder angepasste Vertrag wird einzeln festgeschrieben und mit der Änderungsnummer als erfolgreich zurückgemeldet; die Sperre wird in jedem Fall wieder aufgehoben.",
+      "anchors": [
+        {
+          "file": "z_re_index_task.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:112"
+        },
+        {
+          "file": "z_re_index_task.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:118"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B24",
+      "text": "Für jeden erfolgreich angepassten Vertrag wird ein Mieteranschreiben mit dem Formular ZRE_INDEX_LETTER als PDF erzeugt; lässt sich die Formularausgabe nicht öffnen, wird ein Fehler protokolliert und kein Schreiben erzeugt.",
+      "anchors": [
+        {
+          "file": "zre_index_f02.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:23"
+        },
+        {
+          "file": "zre_index_f02.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:32"
+        },
+        {
+          "file": "zre_index_f02.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:38"
+        },
+        {
+          "file": "zre_index_f02.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B25",
+      "text": "Das Anschreiben richtet sich an den zum Stichtag gültigen Hauptmieter; ohne Hauptmieter oder bei fehlgeschlagener Formularausgabe wird ein Fehler protokolliert und der Vertrag übersprungen.",
+      "anchors": [
+        {
+          "file": "zre_index_f02.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:50"
+        },
+        {
+          "file": "zre_index_f02.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:56"
+        },
+        {
+          "file": "zre_index_f02.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B26",
+      "text": "Ist der Mailversand gewählt, wird das PDF mit Betreff und Begleittext als Anhang an die Standard-Mailadresse des Hauptmieters gesendet.",
+      "anchors": [
+        {
+          "file": "zre_index_f02.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:81"
+        },
+        {
+          "file": "zre_index_f02.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:126"
+        },
+        {
+          "file": "zre_index_f02.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:131"
+        },
+        {
+          "file": "zre_index_f02.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:137"
+        },
+        {
+          "file": "zre_index_f02.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:139"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B27",
+      "text": "Hat der Hauptmieter keine Mailadresse, wird als Warnung vermerkt, dass das Schreiben per Post zu versenden ist.",
+      "anchors": [
+        {
+          "file": "zre_index_f02.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:111"
+        },
+        {
+          "file": "zre_index_f02.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:113"
+        }
+      ]
+    },
+    {
+      "id": "BM-200-B28",
+      "text": "Alle Meldungen des Laufs werden als Anwendungsprotokoll ZRE/ZRE_INDEX gespeichert und die Zahl fälliger Verträge, berechneter Anpassungen, erzeugter Schreiben und versendeter Mails ausgegeben.",
+      "anchors": [
+        {
+          "file": "zre_index_main.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:97"
+        },
+        {
+          "file": "zre_index_main.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:110"
+        },
+        {
+          "file": "zre_index_main.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:118"
+        },
+        {
+          "file": "zre_index_main.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:130"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s_sos",
+        "type": "start",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:23"
+        },
+        "meaning": "Indexmietanpassung starten"
+      },
+      {
+        "id": "r_cn",
+        "type": "read",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:26"
+        },
+        "meaning": "Fällige Verträge mit Indexvereinbarung und Grundmiete lesen"
+      },
+      {
+        "id": "g_empty",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:46"
+        },
+        "meaning": "Verträge fällig?"
+      },
+      {
+        "id": "o_empty",
+        "type": "output",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:47"
+        },
+        "meaning": "Hinweis: nichts fällig"
+      },
+      {
+        "id": "e_empty",
+        "type": "end",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:48"
+        },
+        "meaning": "Ende ohne Anpassung"
+      },
+      {
+        "id": "a_per",
+        "type": "action",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:61"
+        },
+        "meaning": "Indexmonat bestimmen (Stichtag minus zwei Monate)"
+      },
+      {
+        "id": "c_vpi",
+        "type": "call",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:64"
+        },
+        "meaning": "Aktuellen VPI abfragen"
+      },
+      {
+        "id": "o_vpi",
+        "type": "output",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:68"
+        },
+        "meaning": "Fehlermeldung: kein gültiger Indexwert"
+      },
+      {
+        "id": "e_vpi",
+        "type": "end",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:68"
+        },
+        "meaning": "Abbruch: kein gültiger Indexwert"
+      },
+      {
+        "id": "c_calc",
+        "type": "call",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:71"
+        },
+        "meaning": "Neue Mieten berechnen"
+      },
+      {
+        "id": "g_adj",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:73"
+        },
+        "meaning": "Anpassungen vorhanden?"
+      },
+      {
+        "id": "c_disp",
+        "type": "call",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:80"
+        },
+        "meaning": "Pakete parallel verarbeiten"
+      },
+      {
+        "id": "a_wait",
+        "type": "action",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:82"
+        },
+        "meaning": "Auf Rückmeldung aller Pakete warten"
+      },
+      {
+        "id": "g_wait",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:83"
+        },
+        "meaning": "Rückmeldungen unvollständig?"
+      },
+      {
+        "id": "c_let",
+        "type": "call",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:87"
+        },
+        "meaning": "Mieteranschreiben erzeugen"
+      },
+      {
+        "id": "oc_blc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:97"
+        },
+        "meaning": "Anwendungsprotokoll anlegen"
+      },
+      {
+        "id": "l_msg",
+        "type": "loop",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:105"
+        },
+        "meaning": "Je gesammelte Meldung"
+      },
+      {
+        "id": "oc_add",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:110"
+        },
+        "meaning": "Meldung ins Protokoll"
+      },
+      {
+        "id": "oc_dbs",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:118"
+        },
+        "meaning": "Protokoll speichern"
+      },
+      {
+        "id": "o_sum",
+        "type": "output",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:130"
+        },
+        "meaning": "Summen ausgeben"
+      },
+      {
+        "id": "e_sum",
+        "type": "end",
+        "anchor": {
+          "file": "zre_index_main.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_main.abap:130"
+        },
+        "meaning": "Summen ausgeben, Ende"
+      },
+      {
+        "id": "s_gv",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:50"
+        },
+        "meaning": "Indexwert abfragen"
+      },
+      {
+        "id": "oc_http",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:58"
+        },
+        "meaning": "Verbindung zum Indexdienst anlegen"
+      },
+      {
+        "id": "oc_snd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:73"
+        },
+        "meaning": "Anfrage senden"
+      },
+      {
+        "id": "oc_rcv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:74"
+        },
+        "meaning": "Antwort empfangen"
+      },
+      {
+        "id": "g_http",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:80"
+        },
+        "meaning": "Antwort erfolgreich?"
+      },
+      {
+        "id": "e_http",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:81"
+        },
+        "meaning": "Ausnahme: Kommunikations-/HTTP-Fehler"
+      },
+      {
+        "id": "oc_json",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:87"
+        },
+        "meaning": "JSON-Antwort übernehmen"
+      },
+      {
+        "id": "r_pt",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:94"
+        },
+        "meaning": "Wert des Indexmonats suchen"
+      },
+      {
+        "id": "g_pt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:98"
+        },
+        "meaning": "Endgültiger Wert vorhanden?"
+      },
+      {
+        "id": "e_pt",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:99"
+        },
+        "meaning": "Ausnahme: kein endgültiger Wert"
+      },
+      {
+        "id": "e_gv",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_re_vpi_client.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_re_vpi_client.abap:107"
+        },
+        "meaning": "Indexwert zurückgeben"
+      },
+      {
+        "id": "s_calc",
+        "type": "start",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:12"
+        },
+        "meaning": "Mietberechnung"
+      },
+      {
+        "id": "l_calc",
+        "type": "loop",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:19"
+        },
+        "meaning": "Je fälliger Vertrag"
+      },
+      {
+        "id": "a_chg",
+        "type": "action",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:22"
+        },
+        "meaning": "Indexveränderung in Prozent berechnen"
+      },
+      {
+        "id": "a_reason",
+        "type": "action",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:28"
+        },
+        "meaning": "Ausschlussgrund bestimmen"
+      },
+      {
+        "id": "g_reason",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:33"
+        },
+        "meaning": "Vertrag ausgeschlossen?"
+      },
+      {
+        "id": "a_cap",
+        "type": "action",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:40"
+        },
+        "meaning": "Satz kappen, neue Miete festlegen"
+      },
+      {
+        "id": "e_calc",
+        "type": "end",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:60"
+        },
+        "meaning": "Berechnung abgeschlossen"
+      },
+      {
+        "id": "s_dp",
+        "type": "start",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:68"
+        },
+        "meaning": "Paketverteilung"
+      },
+      {
+        "id": "l_dp",
+        "type": "loop",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:74"
+        },
+        "meaning": "Je Anpassung"
+      },
+      {
+        "id": "g_full",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:77"
+        },
+        "meaning": "Paket voll oder letzte Anpassung?"
+      },
+      {
+        "id": "l_do",
+        "type": "loop",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:82"
+        },
+        "meaning": "Startversuche"
+      },
+      {
+        "id": "as_task",
+        "type": "async",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:83"
+        },
+        "meaning": "Paket als parallele Task starten"
+      },
+      {
+        "id": "g_rc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:95"
+        },
+        "meaning": "Start erfolgreich?"
+      },
+      {
+        "id": "a_retry",
+        "type": "action",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:101"
+        },
+        "meaning": "Warten auf freie Ressourcen"
+      },
+      {
+        "id": "e_dp",
+        "type": "end",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:113"
+        },
+        "meaning": "Alle Pakete gestartet"
+      },
+      {
+        "id": "s_rr",
+        "type": "start",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:120"
+        },
+        "meaning": "Rückmeldung eines Pakets"
+      },
+      {
+        "id": "as_rcv",
+        "type": "async",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:124"
+        },
+        "meaning": "Ergebnisse des Pakets übernehmen"
+      },
+      {
+        "id": "a_fail",
+        "type": "action",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:135"
+        },
+        "meaning": "Nicht angepasste Verträge als Warnung sammeln"
+      },
+      {
+        "id": "e_rr",
+        "type": "end",
+        "anchor": {
+          "file": "zre_index_f01.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f01.abap:142"
+        },
+        "meaning": "Paket als erledigt gezählt, Rückmeldung verarbeitet"
+      },
+      {
+        "id": "s_fm",
+        "type": "start",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:1"
+        },
+        "meaning": "Paket in eigener Task verarbeiten"
+      },
+      {
+        "id": "l_adj",
+        "type": "loop",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:21"
+        },
+        "meaning": "Je Vertrag im Paket"
+      },
+      {
+        "id": "lk_enq",
+        "type": "lock",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:31"
+        },
+        "meaning": "Indexvereinbarung sperren"
+      },
+      {
+        "id": "g_enq",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:38"
+        },
+        "meaning": "Gesperrt?"
+      },
+      {
+        "id": "r_old",
+        "type": "read",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:45"
+        },
+        "meaning": "Gültige Grundmiete lesen"
+      },
+      {
+        "id": "g_old",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:50"
+        },
+        "meaning": "Grundmiete vorhanden?"
+      },
+      {
+        "id": "w_upd",
+        "type": "write",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:55"
+        },
+        "meaning": "Alte Grundmiete zum Vortag beenden"
+      },
+      {
+        "id": "w_ins",
+        "type": "write",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:64"
+        },
+        "meaning": "Neue Grundmiete ab Stichtag anlegen"
+      },
+      {
+        "id": "g_ins",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:65"
+        },
+        "meaning": "Anlage gelungen?"
+      },
+      {
+        "id": "tx_rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:66"
+        },
+        "meaning": "Änderung zurücknehmen"
+      },
+      {
+        "id": "oc_cdo",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:72"
+        },
+        "meaning": "Änderungsbeleg eröffnen"
+      },
+      {
+        "id": "oc_cds",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:81"
+        },
+        "meaning": "Neue Kondition im Beleg erfassen"
+      },
+      {
+        "id": "oc_cdc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:91"
+        },
+        "meaning": "Änderungsbeleg abschließen"
+      },
+      {
+        "id": "w_agr",
+        "type": "write",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:106"
+        },
+        "meaning": "Neue Indexbasis und nächste Prüfung festhalten"
+      },
+      {
+        "id": "tx_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:112"
+        },
+        "meaning": "Vertragsänderung festschreiben"
+      },
+      {
+        "id": "lk_deq",
+        "type": "lock",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:118"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "fm_end",
+        "type": "end",
+        "anchor": {
+          "file": "z_re_index_task.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_re_index_task.abap:126"
+        },
+        "meaning": "Ergebnisse des Pakets an Aufrufer (Rückmeldung über RECEIVE)"
+      },
+      {
+        "id": "s_cl",
+        "type": "start",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:14"
+        },
+        "meaning": "Anschreiben erzeugen"
+      },
+      {
+        "id": "oc_fpo",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:23"
+        },
+        "meaning": "Formularausgabe als PDF öffnen"
+      },
+      {
+        "id": "g_fpo",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:32"
+        },
+        "meaning": "Formularausgabe geöffnet?"
+      },
+      {
+        "id": "e_fpo",
+        "type": "end",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:34"
+        },
+        "meaning": "Keine Schreiben, Fehler protokolliert"
+      },
+      {
+        "id": "oc_fmn",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:38"
+        },
+        "meaning": "Formularbaustein ermitteln"
+      },
+      {
+        "id": "l_let",
+        "type": "loop",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:47"
+        },
+        "meaning": "Je erfolgreich angepasster Vertrag"
+      },
+      {
+        "id": "r_bp",
+        "type": "read",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:50"
+        },
+        "meaning": "Hauptmieter zum Stichtag lesen"
+      },
+      {
+        "id": "g_bp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:56"
+        },
+        "meaning": "Hauptmieter vorhanden?"
+      },
+      {
+        "id": "oc_form",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:61"
+        },
+        "meaning": "Anschreiben als PDF erzeugen (dynamischer Baustein)"
+      },
+      {
+        "id": "g_form",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:74"
+        },
+        "meaning": "PDF erzeugt?"
+      },
+      {
+        "id": "g_mail",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:81"
+        },
+        "meaning": "Mailversand gewählt?"
+      },
+      {
+        "id": "c_mail",
+        "type": "call",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:82"
+        },
+        "meaning": "Anschreiben mailen"
+      },
+      {
+        "id": "oc_fpc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:87"
+        },
+        "meaning": "Formularausgabe schließen"
+      },
+      {
+        "id": "e_cl",
+        "type": "end",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:94"
+        },
+        "meaning": "Anschreiben erzeugt, Zähler protokolliert"
+      },
+      {
+        "id": "s_sm",
+        "type": "start",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:99"
+        },
+        "meaning": "Mailversand"
+      },
+      {
+        "id": "r_mail",
+        "type": "read",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:105"
+        },
+        "meaning": "Standard-Mailadresse des Mieters lesen"
+      },
+      {
+        "id": "g_mail2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:111"
+        },
+        "meaning": "Mailadresse vorhanden?"
+      },
+      {
+        "id": "e_sm1",
+        "type": "end",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:115"
+        },
+        "meaning": "Warnung: Postversand nötig"
+      },
+      {
+        "id": "oc_doc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:126"
+        },
+        "meaning": "Mail mit Betreff und Text anlegen"
+      },
+      {
+        "id": "oc_att",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:131"
+        },
+        "meaning": "PDF anhängen"
+      },
+      {
+        "id": "oc_rcp",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:137"
+        },
+        "meaning": "Mieter als Empfänger"
+      },
+      {
+        "id": "oc_msnd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:139"
+        },
+        "meaning": "Mail senden"
+      },
+      {
+        "id": "tx_cm2",
+        "type": "transaction",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:140"
+        },
+        "meaning": "Versand festschreiben"
+      },
+      {
+        "id": "e_sm2",
+        "type": "end",
+        "anchor": {
+          "file": "zre_index_f02.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zre_index_f02.abap:148"
+        },
+        "meaning": "Mailversand abgeschlossen"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s_sos",
+        "to": "r_cn",
+        "condition": "always"
+      },
+      {
+        "from": "r_cn",
+        "to": "g_empty",
+        "condition": "always"
+      },
+      {
+        "from": "g_empty",
+        "to": "o_empty",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o_empty",
+        "to": "e_empty",
+        "condition": "always"
+      },
+      {
+        "from": "g_empty",
+        "to": "a_per",
+        "condition": "else"
+      },
+      {
+        "from": "a_per",
+        "to": "c_vpi",
+        "condition": "always"
+      },
+      {
+        "from": "c_vpi",
+        "to": "s_gv",
+        "condition": "always"
+      },
+      {
+        "from": "c_calc",
+        "to": "s_calc",
+        "condition": "always"
+      },
+      {
+        "from": "g_adj",
+        "to": "oc_blc",
+        "condition": "gt_adjust IS INITIAL"
+      },
+      {
+        "from": "c_disp",
+        "to": "s_dp",
+        "condition": "always"
+      },
+      {
+        "from": "a_wait",
+        "to": "g_wait",
+        "condition": "always"
+      },
+      {
+        "from": "g_wait",
+        "to": "c_let",
+        "condition": "gv_done < gv_started"
+      },
+      {
+        "from": "g_wait",
+        "to": "c_let",
+        "condition": "else"
+      },
+      {
+        "from": "c_let",
+        "to": "s_cl",
+        "condition": "always"
+      },
+      {
+        "from": "oc_blc",
+        "to": "l_msg",
+        "condition": "always"
+      },
+      {
+        "from": "l_msg",
+        "to": "oc_add",
+        "condition": "next row"
+      },
+      {
+        "from": "oc_add",
+        "to": "l_msg",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_msg",
+        "to": "oc_dbs",
+        "condition": "no more rows"
+      },
+      {
+        "from": "oc_dbs",
+        "to": "o_sum",
+        "condition": "always"
+      },
+      {
+        "from": "s_gv",
+        "to": "oc_http",
+        "condition": "always"
+      },
+      {
+        "from": "oc_http",
+        "to": "oc_snd",
+        "condition": "always"
+      },
+      {
+        "from": "oc_snd",
+        "to": "oc_rcv",
+        "condition": "always"
+      },
+      {
+        "from": "oc_rcv",
+        "to": "g_http",
+        "condition": "always"
+      },
+      {
+        "from": "g_http",
+        "to": "e_http",
+        "condition": "lv_rc <> 0 OR lv_code <> 200"
+      },
+      {
+        "from": "g_http",
+        "to": "oc_json",
+        "condition": "else"
+      },
+      {
+        "from": "oc_json",
+        "to": "r_pt",
+        "condition": "always"
+      },
+      {
+        "from": "r_pt",
+        "to": "g_pt",
+        "condition": "always"
+      },
+      {
+        "from": "g_pt",
+        "to": "e_pt",
+        "condition": "sy-subrc <> 0 OR ls_point-status <> 'f'"
+      },
+      {
+        "from": "g_pt",
+        "to": "e_gv",
+        "condition": "else"
+      },
+      {
+        "from": "s_calc",
+        "to": "l_calc",
+        "condition": "always"
+      },
+      {
+        "from": "l_calc",
+        "to": "a_chg",
+        "condition": "next row"
+      },
+      {
+        "from": "a_chg",
+        "to": "a_reason",
+        "condition": "always"
+      },
+      {
+        "from": "a_reason",
+        "to": "g_reason",
+        "condition": "always"
+      },
+      {
+        "from": "g_reason",
+        "to": "l_calc",
+        "condition": "lv_msgno IS NOT INITIAL"
+      },
+      {
+        "from": "g_reason",
+        "to": "a_cap",
+        "condition": "else"
+      },
+      {
+        "from": "a_cap",
+        "to": "l_calc",
+        "condition": "next iteration"
+      },
+      {
+        "from": "s_dp",
+        "to": "l_dp",
+        "condition": "always"
+      },
+      {
+        "from": "l_dp",
+        "to": "g_full",
+        "condition": "next row"
+      },
+      {
+        "from": "g_full",
+        "to": "l_do",
+        "condition": "lines( lt_pkg ) >= p_pkg OR lv_idx = lines( gt_adjust )"
+      },
+      {
+        "from": "g_full",
+        "to": "l_dp",
+        "condition": "else"
+      },
+      {
+        "from": "l_do",
+        "to": "as_task",
+        "condition": "next row"
+      },
+      {
+        "from": "as_task",
+        "to": "g_rc",
+        "condition": "always"
+      },
+      {
+        "from": "as_task",
+        "to": "s_fm",
+        "condition": "always"
+      },
+      {
+        "from": "g_rc",
+        "to": "l_dp",
+        "condition": "WHEN 0"
+      },
+      {
+        "from": "g_rc",
+        "to": "a_retry",
+        "condition": "WHEN 3"
+      },
+      {
+        "from": "a_retry",
+        "to": "l_do",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g_rc",
+        "to": "l_dp",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "s_rr",
+        "to": "as_rcv",
+        "condition": "always"
+      },
+      {
+        "from": "as_rcv",
+        "to": "a_fail",
+        "condition": "always"
+      },
+      {
+        "from": "a_fail",
+        "to": "e_rr",
+        "condition": "always"
+      },
+      {
+        "from": "s_fm",
+        "to": "l_adj",
+        "condition": "always"
+      },
+      {
+        "from": "l_adj",
+        "to": "lk_enq",
+        "condition": "next row"
+      },
+      {
+        "from": "lk_enq",
+        "to": "g_enq",
+        "condition": "always"
+      },
+      {
+        "from": "g_enq",
+        "to": "l_adj",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_enq",
+        "to": "r_old",
+        "condition": "else"
+      },
+      {
+        "from": "r_old",
+        "to": "g_old",
+        "condition": "always"
+      },
+      {
+        "from": "g_old",
+        "to": "lk_deq",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_old",
+        "to": "w_upd",
+        "condition": "else"
+      },
+      {
+        "from": "w_upd",
+        "to": "w_ins",
+        "condition": "always"
+      },
+      {
+        "from": "w_ins",
+        "to": "g_ins",
+        "condition": "always"
+      },
+      {
+        "from": "g_ins",
+        "to": "tx_rb",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "tx_rb",
+        "to": "lk_deq",
+        "condition": "always"
+      },
+      {
+        "from": "g_ins",
+        "to": "oc_cdo",
+        "condition": "else"
+      },
+      {
+        "from": "oc_cdo",
+        "to": "oc_cds",
+        "condition": "always"
+      },
+      {
+        "from": "oc_cds",
+        "to": "oc_cdc",
+        "condition": "always"
+      },
+      {
+        "from": "oc_cdc",
+        "to": "w_agr",
+        "condition": "always"
+      },
+      {
+        "from": "w_agr",
+        "to": "tx_cm",
+        "condition": "always"
+      },
+      {
+        "from": "tx_cm",
+        "to": "lk_deq",
+        "condition": "always"
+      },
+      {
+        "from": "lk_deq",
+        "to": "l_adj",
+        "condition": "next iteration"
+      },
+      {
+        "from": "s_cl",
+        "to": "oc_fpo",
+        "condition": "always"
+      },
+      {
+        "from": "oc_fpo",
+        "to": "g_fpo",
+        "condition": "always"
+      },
+      {
+        "from": "g_fpo",
+        "to": "e_fpo",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_fpo",
+        "to": "oc_fmn",
+        "condition": "else"
+      },
+      {
+        "from": "oc_fmn",
+        "to": "l_let",
+        "condition": "always"
+      },
+      {
+        "from": "l_let",
+        "to": "r_bp",
+        "condition": "next row"
+      },
+      {
+        "from": "r_bp",
+        "to": "g_bp",
+        "condition": "always"
+      },
+      {
+        "from": "g_bp",
+        "to": "l_let",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_bp",
+        "to": "oc_form",
+        "condition": "else"
+      },
+      {
+        "from": "oc_form",
+        "to": "g_form",
+        "condition": "always"
+      },
+      {
+        "from": "g_form",
+        "to": "l_let",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_form",
+        "to": "g_mail",
+        "condition": "else"
+      },
+      {
+        "from": "g_mail",
+        "to": "c_mail",
+        "condition": "p_mail = abap_true"
+      },
+      {
+        "from": "g_mail",
+        "to": "l_let",
+        "condition": "else"
+      },
+      {
+        "from": "c_mail",
+        "to": "s_sm",
+        "condition": "always"
+      },
+      {
+        "from": "l_let",
+        "to": "oc_fpc",
+        "condition": "no more rows"
+      },
+      {
+        "from": "oc_fpc",
+        "to": "e_cl",
+        "condition": "always"
+      },
+      {
+        "from": "s_sm",
+        "to": "r_mail",
+        "condition": "always"
+      },
+      {
+        "from": "r_mail",
+        "to": "g_mail2",
+        "condition": "always"
+      },
+      {
+        "from": "g_mail2",
+        "to": "e_sm1",
+        "condition": "sy-subrc <> 0 OR lv_mail IS INITIAL"
+      },
+      {
+        "from": "g_mail2",
+        "to": "oc_doc",
+        "condition": "else"
+      },
+      {
+        "from": "oc_doc",
+        "to": "oc_att",
+        "condition": "always"
+      },
+      {
+        "from": "oc_att",
+        "to": "oc_rcp",
+        "condition": "always"
+      },
+      {
+        "from": "oc_rcp",
+        "to": "oc_msnd",
+        "condition": "always"
+      },
+      {
+        "from": "oc_msnd",
+        "to": "tx_cm2",
+        "condition": "always"
+      },
+      {
+        "from": "tx_cm2",
+        "to": "e_sm2",
+        "condition": "always"
+      },
+      {
+        "from": "g_adj",
+        "to": "oc_blc",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "g_adj",
+        "to": "c_disp",
+        "condition": "else"
+      },
+      {
+        "from": "e_gv",
+        "to": "c_calc",
+        "condition": "always"
+      },
+      {
+        "from": "e_http",
+        "to": "o_vpi",
+        "condition": "CATCH zcx_re_vpi INTO DATA(lx_vpi)"
+      },
+      {
+        "from": "e_pt",
+        "to": "o_vpi",
+        "condition": "CATCH zcx_re_vpi INTO DATA(lx_vpi)"
+      },
+      {
+        "from": "o_vpi",
+        "to": "e_vpi",
+        "condition": "always"
+      },
+      {
+        "from": "e_calc",
+        "to": "g_adj",
+        "condition": "always"
+      },
+      {
+        "from": "l_calc",
+        "to": "e_calc",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e_dp",
+        "to": "a_wait",
+        "condition": "always"
+      },
+      {
+        "from": "l_dp",
+        "to": "e_dp",
+        "condition": "no more rows"
+      },
+      {
+        "from": "l_adj",
+        "to": "fm_end",
+        "condition": "no more rows"
+      },
+      {
+        "from": "oc_doc",
+        "to": "e_sm2",
+        "condition": "CATCH cx_bcs INTO DATA(lx_bcs)"
+      },
+      {
+        "from": "oc_att",
+        "to": "e_sm2",
+        "condition": "CATCH cx_bcs INTO DATA(lx_bcs)"
+      },
+      {
+        "from": "oc_rcp",
+        "to": "e_sm2",
+        "condition": "CATCH cx_bcs INTO DATA(lx_bcs)"
+      },
+      {
+        "from": "oc_msnd",
+        "to": "e_sm2",
+        "condition": "CATCH cx_bcs INTO DATA(lx_bcs)"
+      },
+      {
+        "from": "e_sm1",
+        "to": "l_let",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_sm2",
+        "to": "l_let",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_fpo",
+        "to": "oc_blc",
+        "condition": "always"
+      },
+      {
+        "from": "e_cl",
+        "to": "oc_blc",
+        "condition": "always"
+      },
+      {
+        "from": "o_sum",
+        "to": "e_sum",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zre_index_f02.abap:81 — kein Fachsatz „ohne Mailversand werden die Anschreiben gedruckt oder archiviert“: die Formularausgabe liefert nur ein PDF ohne Spoolauftrag, ohne Mailkennzeichen wird es verworfen; der Kommentar zum DMS-Druck ist vom Code nicht gedeckt",
+    "z_re_index_task.abap:81 — kein Fachsatz „die Beendigung der alten Grundmiete wird im Änderungsbeleg protokolliert“: erfasst wird nur die neue Kondition als Neuanlage, die Abgrenzung der alten Kondition per UPDATE bleibt ohne Beleg",
+    "zre_index_f01.abap:149 — kein Fachsatz „der Index wird von Basis 2015 auf Basis 2020 umbasiert“: das FORM wird nirgends aufgerufen",
+    "zre_index_main.abap:68 — kein Fachsatz „ein Fehler bei der Indexabfrage wird im Anwendungsprotokoll festgehalten“: der Lauf bricht vor der Protokollanlage ab, das Protokoll wird erst am Ende angelegt",
+    "zcl_re_vpi_client.abap:58 — kein Fachsatz „ist die Verbindung zum Indexdienst nicht anlegbar, bricht der Lauf mit Fehlermeldung ab“: das Ergebnis von create_by_destination wird nicht geprüft; mit initialer Client-Referenz endet der Lauf beim nächsten Zugriff im Laufzeitfehler, nicht in der Ausnahme ZCX_RE_VPI"
+  ],
+  "processDescription": "Der monatliche Job ermittelt die zum Stichtag laufenden Mietverträge mit aktiver Indexvereinbarung und fälliger Prüfung samt gültiger Grundmiete; ist keiner fällig, endet er mit einem Hinweis. Er bestimmt den Indexmonat zwei Monate vor dem Stichtag und fragt den Verbraucherpreisindex beim externen Dienst ab; bei Kommunikationsfehlern, nicht erfolgreicher Antwort oder fehlendem bzw. nur vorläufigem Wert bricht er mit Fehlermeldung ab. Je Vertrag berechnet er die prozentuale Indexveränderung seit der letzten Anpassung und schließt Verträge ohne Grundmiete, mit Anpassung innerhalb der letzten 365 Tage, ohne Basisindex oder unterhalb des Schwellwerts mit Protokollgrund aus. Für die übrigen begrenzt er Erhöhungen auf den Kappungssatz und rechnet die neue Grundmiete. Im Testlauf protokolliert er nur die Zahl der Anpassungen. Im Echtlauf teilt er die Anpassungen in Pakete und startet je Paket eine parallele Task in der Servergruppe; fehlen Ressourcen, wartet er kurz und versucht es erneut, andere Startfehler protokolliert er. Die Task sperrt je Vertrag die Indexvereinbarung, beendet die bisherige Grundmiete zum Vortag, legt die neue ab Stichtag direkt in der Konditionstabelle an, schreibt einen Änderungsbeleg, setzt Basisindex und nächste Prüfung neu, schreibt fest und hebt die Sperre auf; gesperrte Verträge, Verträge ohne Grundmiete und fehlgeschlagene Anlagen (mit Rücknahme) meldet sie mit Status zurück. Das Hauptprogramm wartet höchstens 30 Minuten auf alle Rückmeldungen und protokolliert nicht angepasste Verträge. Danach erzeugt es für jeden erfolgreich angepassten Vertrag ein Anschreiben an den Hauptmieter als PDF und mailt es bei gewähltem Mailversand als Anhang; fehlt der Hauptmieter, scheitert die Formularausgabe oder fehlt die Mailadresse, wird das protokolliert. Zum Schluss werden alle Meldungen als Anwendungsprotokoll gespeichert und Summen ausgegeben."
+}

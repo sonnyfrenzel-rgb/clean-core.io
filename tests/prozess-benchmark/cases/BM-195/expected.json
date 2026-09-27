@@ -1,0 +1,1355 @@
+{
+  "id": "BM-195",
+  "title": "Embargoprüfung beim Sichern des Kundenauftrags: implizite Erweiterung ruft gefilterten Kernel-BAdI mit Russland- und Standardimplementierung",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zei_ft_export_check.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zei_ft_export_check.abap:20"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T005",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zei_ft_export_check.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zei_ft_export_check.abap:37"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZBADI_FT_EMBARGO",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zei_ft_export_check.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zei_ft_export_check.abap:47"
+      },
+      "identity": {
+        "objectType": "BADI"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "zei_ft_export_check.abap",
+        "line": 76,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zei_ft_export_check.abap:76"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFT_EMBARGO_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zei_ft_export_check.abap",
+        "line": 87,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zei_ft_export_check.abap:87"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFT_SANKTION",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ft_embargo_ru.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ft_embargo_ru.abap:36"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ft_embargo_ru.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ft_embargo_ru.abap:45"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFT_EMBARGO_LAND",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ft_embargo_default.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ft_embargo_default.abap:25"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ft_embargo_default.abap",
+        "line": 43,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ft_embargo_default.abap:43"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-195-B01",
+      "text": "Beim Sichern eines Kundenauftrags wird geprüft, ob die Embargoprüfung über den Schalter ZFT_EMBARGO_AKTIV eingeschaltet ist.",
+      "anchors": [
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B02",
+      "text": "Geprüft werden nur Terminaufträge und Kontrakte beim Anlegen oder Ändern.",
+      "anchors": [
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B03",
+      "text": "Das Empfangsland ist das Land des Warenempfängers auf Kopfebene, ohne Warenempfänger das Land des Auftraggebers.",
+      "anchors": [
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:30"
+        },
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B04",
+      "text": "Lieferungen nach Deutschland und in EU-Mitgliedstaaten werden nicht geprüft.",
+      "anchors": [
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:37"
+        },
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B05",
+      "text": "Für alle anderen Länder wird die zum Empfangsland passende Embargoprüfung ermittelt und mit Auftragskopf und Positionen aufgerufen.",
+      "anchors": [
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:47"
+        },
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B06",
+      "text": "Gibt es für das Land keine aktive Prüfung, wird der Auftrag ungeprüft und ohne Sperre gesichert.",
+      "anchors": [
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:61"
+        },
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B07",
+      "text": "Meldet die Prüfung ein Totalembargo, wird das Sichern mit Abbruchmeldung beendet und der Auftrag nicht gesichert.",
+      "anchors": [
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:68"
+        },
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:70"
+        },
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B08",
+      "text": "Verlangt die Prüfung eine Sperre, erhält der Auftrag die Liefersperre Z1 „Exportkontrolle“.",
+      "anchors": [
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:74"
+        },
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B09",
+      "text": "Die Sperre wird mit Auftrag, Land, Zeitpunkt, Benutzer und Anzahl der Prüfbefunde im Embargoprotokoll festgehalten, und der Benutzer erhält einen Hinweis.",
+      "anchors": [
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:87"
+        },
+        {
+          "file": "zei_ft_export_check.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:89"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B10",
+      "text": "Für Russland und Belarus werden die am Tag gültigen sanktionierten Warennummern-Muster des Landes gelesen; ohne Einträge gibt es keine Sperre.",
+      "anchors": [
+        {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:36"
+        },
+        {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:41"
+        },
+        {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B11",
+      "text": "Zu den Positionen werden die Warennummern aus den Werksdaten der Materialien gelesen.",
+      "anchors": [
+        {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B12",
+      "text": "Geprüft werden alle nicht gelöschten Positionen ohne Absagegrund.",
+      "anchors": [
+        {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:52"
+        },
+        {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B13",
+      "text": "Hat das Material im Lieferwerk keine Warennummer, wird der Auftrag vorsorglich gesperrt und die Position als Warnung gemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:59"
+        },
+        {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B14",
+      "text": "Passt die Warennummer einer Position auf ein Sanktionsmuster, wird der Auftrag gesperrt; bei Sanktionsart Totalembargo wird die Position als Abbruch gemeldet, sonst als Warnung, und das erste passende Muster genügt.",
+      "anchors": [
+        {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:68"
+        },
+        {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:69"
+        },
+        {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B15",
+      "text": "Für die übrigen Länder wird die am Tag gültige Embargoart des Landes aus der Embargo-Länderliste gelesen; ein Land ohne Eintrag bleibt ungesperrt.",
+      "anchors": [
+        {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:25"
+        },
+        {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:29"
+        },
+        {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B16",
+      "text": "Bei Totalembargo wird der Auftrag gesperrt und mit einer Abbruchmeldung für das Land versehen.",
+      "anchors": [
+        {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:34"
+        },
+        {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B17",
+      "text": "Bei Waffenembargo wird der Auftrag nur gesperrt, wenn eine nicht gelöschte Position ein als Rüstungsgut gekennzeichnetes Material enthält, und jede solche Position wird als Warnung gemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:40"
+        },
+        {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:43"
+        },
+        {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-195-B18",
+      "text": "Andere Embargoarten wie „Beobachtung“ haben keine Wirkung.",
+      "anchors": [
+        {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:53"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "e_s",
+        "type": "start",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:11"
+        },
+        "meaning": "Sichern des Kundenauftrags beginnt"
+      },
+      {
+        "id": "e_sw",
+        "type": "read",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:20"
+        },
+        "meaning": "Schalter Embargoprüfung lesen"
+      },
+      {
+        "id": "e_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:26"
+        },
+        "meaning": "Prüfung aktiv, Anlegen/Ändern, Auftrag oder Kontrakt?"
+      },
+      {
+        "id": "e_we",
+        "type": "read",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:30"
+        },
+        "meaning": "Warenempfänger auf Kopfebene suchen"
+      },
+      {
+        "id": "e_land",
+        "type": "action",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:33"
+        },
+        "meaning": "Empfangsland festlegen (WE, sonst Auftraggeber)"
+      },
+      {
+        "id": "e_eu",
+        "type": "read",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:37"
+        },
+        "meaning": "EU-Zugehörigkeit des Landes lesen"
+      },
+      {
+        "id": "e_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:44"
+        },
+        "meaning": "Drittland außerhalb der EU?"
+      },
+      {
+        "id": "e_gb",
+        "type": "action",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:47"
+        },
+        "meaning": "Embargoprüfung zum Empfangsland ermitteln"
+      },
+      {
+        "id": "e_cb",
+        "type": "call",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:51"
+        },
+        "meaning": "Embargoprüfung aufrufen"
+      },
+      {
+        "id": "e_rd",
+        "type": "read",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:68"
+        },
+        "meaning": "Befund Totalembargo suchen"
+      },
+      {
+        "id": "e_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:70"
+        },
+        "meaning": "Totalembargo?"
+      },
+      {
+        "id": "e_abo",
+        "type": "output",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:71"
+        },
+        "meaning": "Abbruchmeldung Totalembargo"
+      },
+      {
+        "id": "e_abort",
+        "type": "end",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:71"
+        },
+        "meaning": "Sichern abbrechen"
+      },
+      {
+        "id": "e_g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:74"
+        },
+        "meaning": "Sperre verlangt?"
+      },
+      {
+        "id": "e_lifsk",
+        "type": "action",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:76"
+        },
+        "meaning": "Liefersperre Z1 setzen"
+      },
+      {
+        "id": "e_ins",
+        "type": "write",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:87"
+        },
+        "meaning": "Embargoprotokoll schreiben"
+      },
+      {
+        "id": "e_msg",
+        "type": "output",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:89"
+        },
+        "meaning": "Hinweis an Benutzer: Auftrag wegen Exportkontrolle gesperrt"
+      },
+      {
+        "id": "e_end",
+        "type": "end",
+        "anchor": {
+          "file": "zei_ft_export_check.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zei_ft_export_check.abap:95"
+        },
+        "meaning": "Erweiterung verlassen, Sichern läuft weiter"
+      },
+      {
+        "id": "r_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:26"
+        },
+        "meaning": "Embargoprüfung Russland/Belarus"
+      },
+      {
+        "id": "r_sel",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:36"
+        },
+        "meaning": "gültige Sanktionsmuster lesen"
+      },
+      {
+        "id": "r_g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:41"
+        },
+        "meaning": "Sanktionsmuster vorhanden?"
+      },
+      {
+        "id": "r_r",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:42"
+        },
+        "meaning": "keine Sperre"
+      },
+      {
+        "id": "r_marc",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:45"
+        },
+        "meaning": "Warennummern der Positionen lesen"
+      },
+      {
+        "id": "r_lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:52"
+        },
+        "meaning": "je nicht gelöschte Position"
+      },
+      {
+        "id": "r_chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:54"
+        },
+        "meaning": "Position nicht abgesagt?"
+      },
+      {
+        "id": "r_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:59"
+        },
+        "meaning": "Warennummer fehlt?"
+      },
+      {
+        "id": "r_nost",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:61"
+        },
+        "meaning": "vorsorglich sperren, Warnung zur Position"
+      },
+      {
+        "id": "r_il",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:67"
+        },
+        "meaning": "je Sanktionsmuster"
+      },
+      {
+        "id": "r_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:68"
+        },
+        "meaning": "Warennummer sanktioniert?"
+      },
+      {
+        "id": "r_hit",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:69"
+        },
+        "meaning": "sperren, Befund Abbruch bzw. Warnung"
+      },
+      {
+        "id": "r_end",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ft_embargo_ru.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_ru.abap:81"
+        },
+        "meaning": "Prüfergebnis zurück"
+      },
+      {
+        "id": "d_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:21"
+        },
+        "meaning": "Standard-Embargoprüfung"
+      },
+      {
+        "id": "d_sel",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:25"
+        },
+        "meaning": "Embargoart des Landes lesen"
+      },
+      {
+        "id": "d_g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:29"
+        },
+        "meaning": "Land auf Embargoliste?"
+      },
+      {
+        "id": "d_r",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:30"
+        },
+        "meaning": "keine Sperre"
+      },
+      {
+        "id": "d_case",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:33"
+        },
+        "meaning": "Embargoart"
+      },
+      {
+        "id": "d_tot",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:36"
+        },
+        "meaning": "Totalembargo: sperren, Befund Abbruch"
+      },
+      {
+        "id": "d_lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:42"
+        },
+        "meaning": "je nicht gelöschte Position"
+      },
+      {
+        "id": "d_mara",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:43"
+        },
+        "meaning": "Rüstungsgut-Kennzeichen lesen"
+      },
+      {
+        "id": "d_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:46"
+        },
+        "meaning": "Rüstungsgut?"
+      },
+      {
+        "id": "d_w",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:47"
+        },
+        "meaning": "sperren, Warnung zur Position"
+      },
+      {
+        "id": "d_end",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ft_embargo_default.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ft_embargo_default.abap:64"
+        },
+        "meaning": "Prüfergebnis zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "e_s",
+        "to": "e_sw",
+        "condition": "always"
+      },
+      {
+        "from": "e_sw",
+        "to": "e_g1",
+        "condition": "always"
+      },
+      {
+        "from": "e_g1",
+        "to": "e_we",
+        "condition": "lv_ft_aktiv = 'X' AND t180-trtyp CA 'HV' AND vbak-vbtyp CA 'CG'"
+      },
+      {
+        "from": "e_we",
+        "to": "e_land",
+        "condition": "always"
+      },
+      {
+        "from": "e_land",
+        "to": "e_eu",
+        "condition": "always"
+      },
+      {
+        "from": "e_eu",
+        "to": "e_g2",
+        "condition": "always"
+      },
+      {
+        "from": "e_g2",
+        "to": "e_gb",
+        "condition": "lv_ft_land <> 'DE' AND lv_ft_eu IS INITIAL"
+      },
+      {
+        "from": "e_gb",
+        "to": "e_cb",
+        "condition": "always"
+      },
+      {
+        "from": "e_cb",
+        "to": "r_s",
+        "condition": "always"
+      },
+      {
+        "from": "e_cb",
+        "to": "d_s",
+        "condition": "always"
+      },
+      {
+        "from": "e_rd",
+        "to": "e_g3",
+        "condition": "always"
+      },
+      {
+        "from": "e_g3",
+        "to": "e_abo",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "e_g3",
+        "to": "e_g4",
+        "condition": "else"
+      },
+      {
+        "from": "e_g4",
+        "to": "e_lifsk",
+        "condition": "lv_ft_sperre = abap_true"
+      },
+      {
+        "from": "e_lifsk",
+        "to": "e_ins",
+        "condition": "always"
+      },
+      {
+        "from": "e_ins",
+        "to": "e_msg",
+        "condition": "always"
+      },
+      {
+        "from": "r_s",
+        "to": "r_sel",
+        "condition": "always"
+      },
+      {
+        "from": "r_sel",
+        "to": "r_g0",
+        "condition": "always"
+      },
+      {
+        "from": "r_g0",
+        "to": "r_r",
+        "condition": "lt_sanktion IS INITIAL"
+      },
+      {
+        "from": "r_g0",
+        "to": "r_marc",
+        "condition": "else"
+      },
+      {
+        "from": "r_marc",
+        "to": "r_lp",
+        "condition": "always"
+      },
+      {
+        "from": "r_lp",
+        "to": "r_chk",
+        "condition": "next row"
+      },
+      {
+        "from": "r_chk",
+        "to": "r_g1",
+        "condition": "ls_vbap-abgru IS INITIAL"
+      },
+      {
+        "from": "r_chk",
+        "to": "r_lp",
+        "condition": "else"
+      },
+      {
+        "from": "r_g1",
+        "to": "r_nost",
+        "condition": "sy-subrc <> 0 OR ls_marc-stawn IS INITIAL"
+      },
+      {
+        "from": "r_nost",
+        "to": "r_lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "r_g1",
+        "to": "r_il",
+        "condition": "else"
+      },
+      {
+        "from": "r_il",
+        "to": "r_g2",
+        "condition": "next row"
+      },
+      {
+        "from": "r_g2",
+        "to": "r_hit",
+        "condition": "ls_marc-stawn CP ls_sanktion-stawn_muster"
+      },
+      {
+        "from": "r_g2",
+        "to": "r_il",
+        "condition": "else"
+      },
+      {
+        "from": "r_hit",
+        "to": "r_lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "r_il",
+        "to": "r_lp",
+        "condition": "no more rows"
+      },
+      {
+        "from": "r_lp",
+        "to": "r_end",
+        "condition": "no more rows"
+      },
+      {
+        "from": "r_r",
+        "to": "e_rd",
+        "condition": "always"
+      },
+      {
+        "from": "d_s",
+        "to": "d_sel",
+        "condition": "always"
+      },
+      {
+        "from": "d_sel",
+        "to": "d_g0",
+        "condition": "always"
+      },
+      {
+        "from": "d_g0",
+        "to": "d_r",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "d_g0",
+        "to": "d_case",
+        "condition": "else"
+      },
+      {
+        "from": "d_case",
+        "to": "d_tot",
+        "condition": "WHEN 'T'"
+      },
+      {
+        "from": "d_case",
+        "to": "d_lp",
+        "condition": "WHEN 'W'"
+      },
+      {
+        "from": "d_case",
+        "to": "d_end",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "d_tot",
+        "to": "d_end",
+        "condition": "always"
+      },
+      {
+        "from": "d_lp",
+        "to": "d_mara",
+        "condition": "next row"
+      },
+      {
+        "from": "d_mara",
+        "to": "d_g1",
+        "condition": "always"
+      },
+      {
+        "from": "d_g1",
+        "to": "d_w",
+        "condition": "sy-subrc = 0 AND lv_ruestung = abap_true"
+      },
+      {
+        "from": "d_g1",
+        "to": "d_lp",
+        "condition": "else"
+      },
+      {
+        "from": "d_w",
+        "to": "d_lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "d_lp",
+        "to": "d_end",
+        "condition": "no more rows"
+      },
+      {
+        "from": "d_r",
+        "to": "e_rd",
+        "condition": "always"
+      },
+      {
+        "from": "e_gb",
+        "to": "e_rd",
+        "condition": "CATCH cx_badi_not_implemented"
+      },
+      {
+        "from": "e_abo",
+        "to": "e_abort",
+        "condition": "always"
+      },
+      {
+        "from": "e_msg",
+        "to": "e_end",
+        "condition": "always"
+      },
+      {
+        "from": "e_g4",
+        "to": "e_end",
+        "condition": "else"
+      },
+      {
+        "from": "e_g2",
+        "to": "e_end",
+        "condition": "else"
+      },
+      {
+        "from": "e_g1",
+        "to": "e_end",
+        "condition": "else"
+      },
+      {
+        "from": "r_end",
+        "to": "e_rd",
+        "condition": "always"
+      },
+      {
+        "from": "d_end",
+        "to": "e_rd",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zei_ft_export_check.abap:51 — kein Fachsatz „für Russland wird zusätzlich die allgemeine Länderliste geprüft“: der Aufruf erreicht genau eine Implementierung; welche, entscheiden die Filterwerte der Erweiterungsimplementierungen, die nicht im Quelltext stehen (laut Kopfkommentar RU/BY für die Russland-Klasse)",
+    "zei_ft_export_check.abap:74 — kein Fachsatz „ergibt eine spätere Prüfung keinen Befund mehr, wird die Liefersperre aufgehoben“: der Code setzt die Sperre Z1 nur, er entfernt sie nie",
+    "zei_ft_export_check.abap:89 — kein Fachsatz „die einzelnen Prüfbefunde werden dem Benutzer angezeigt oder gespeichert“: gezeigt wird nur ein Hinweis mit dem Land, im Protokoll steht nur die Anzahl der Befunde",
+    "zcl_ft_embargo_ru.abap:45 — kein Fachsatz „ein Auftrag ohne Positionen wird gesperrt“: bei leerer Positionstabelle liest FOR ALL ENTRIES ohne Einschränkung alle Werksdaten, die folgende Positionsschleife läuft aber leer, es entsteht weder Befund noch Sperre",
+    "gesamte Scheibe — kein Fachsatz „die Exportkontrolle erfolgt über SAP GTS“: der GTS-Aufruf ist auskommentiert, ebenso die frühere feste Länderprüfung Iran/Syrien"
+  ],
+  "processDescription": "Beim Sichern eines Kundenauftrags läuft zu Beginn der Standardroutine BELEG_SICHERN eine implizite Erweiterung. Sie prüft zuerst den Schalter ZFT_EMBARGO_AKTIV und arbeitet nur bei eingeschalteter Prüfung, beim Anlegen oder Ändern und nur für Terminaufträge und Kontrakte. Das Empfangsland ist das Land des Warenempfängers auf Kopfebene, ersatzweise das des Auftraggebers; Deutschland und EU-Mitgliedstaaten werden nicht geprüft. Für alle anderen Länder holt die Erweiterung über den BAdI ZBADI_FT_EMBARGO mit dem Land als Filter die passende Prüfung und ruft sie mit Auftragskopf und Positionen auf; welche der beiden Implementierungen greift, legen die Filterwerte der Erweiterungsimplementierungen fest, die nicht im Quelltext stehen. Gibt es keine aktive Implementierung, wird ohne Sperre weitergesichert. Die Russland-Implementierung liest die gültigen Sanktionsmuster des Landes und die Warennummern der Positionsmaterialien; nicht gelöschte, nicht abgesagte Positionen ohne Warennummer führen vorsorglich zur Sperre mit Warnung, Positionen mit sanktionierter Warennummer zur Sperre mit Abbruch- oder Warnbefund je nach Sanktionsart. Die Standardimplementierung liest die Embargoart des Landes: Totalembargo sperrt mit Abbruchbefund, Waffenembargo sperrt nur bei Positionen mit Rüstungsgut, andere Arten bleiben ohne Wirkung. Zurück in der Erweiterung wird bei einem Abbruchbefund das Sichern mit einer Abbruchmeldung beendet, sodass der Auftrag nicht gesichert wird. Verlangt die Prüfung sonst eine Sperre, erhält der Auftrag die Liefersperre Z1, die Sperre wird mit Anzahl der Befunde im Embargoprotokoll festgehalten, der Benutzer erhält einen Hinweis und das Sichern läuft weiter. Eine einmal gesetzte Sperre wird von dieser Logik nie wieder aufgehoben."
+}

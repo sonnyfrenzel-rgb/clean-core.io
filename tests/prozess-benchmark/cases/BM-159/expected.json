@@ -1,0 +1,2323 @@
+{
+  "id": "BM-159",
+  "title": "IDoc-Eingang Reisebuchungsportal: Reisen mit Belegen und Verpflegungspauschale anlegen",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZCL_TV_TRIP_MAPPER",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_idoc_input_ztrip.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_idoc_input_ztrip.abap:45"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_TV_TRIP_POSTER",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_idoc_input_ztrip.abap",
+        "line": 46,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_idoc_input_ztrip.abap:46"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0000",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_tv_trip_mapper.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_tv_trip_mapper.abap:52"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZTV_PERDIEM",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_tv_trip_mapper.abap",
+        "line": 111,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_tv_trip_mapper.abap:111"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZTV_PERDIEM",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_tv_trip_mapper.abap",
+        "line": 118,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_tv_trip_mapper.abap:118"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CONVERT_TO_LOCAL_CURRENCY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_tv_trip_mapper.abap",
+        "line": 135,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_tv_trip_mapper.abap:135"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZTV_EXT_TRIP",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_tv_trip_poster.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_tv_trip_poster.abap:29"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRIP_CREATE_FROM_DATA",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_tv_trip_poster.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_tv_trip_poster.abap:48"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_tv_trip_poster.abap",
+        "line": 59,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_tv_trip_poster.abap:59"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_TV_EXT_TRIP_INSERT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_tv_trip_poster.abap",
+        "line": 71,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_tv_trip_poster.abap:71"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_tv_trip_poster.abap",
+        "line": 77,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_tv_trip_poster.abap:77"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_EMPLOYEE_ENQUEUE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_tv_trip_poster.abap",
+        "line": 91,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_tv_trip_poster.abap:91"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_EMPLOYEE_DEQUEUE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_tv_trip_poster.abap",
+        "line": 108,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_tv_trip_poster.abap:108"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZTV_EXT_TRIP",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_tv_ext_trip_insert.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_tv_ext_trip_insert.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-159-B01",
+      "text": "Ein IDoc-Paket eines anderen Nachrichtentyps als ZTRIP wird als falsch zugeordnet abgewiesen.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:39"
+        },
+        {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-159-B02",
+      "text": "Je IDoc werden aus den Segmenten der Reisekopf und die Belege übernommen; andere Segmente werden ignoriert.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:48"
+        },
+        {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:51"
+        },
+        {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-159-B03",
+      "text": "Fehlt der Reisekopf, erhält das IDoc den Fehlerstatus.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:64"
+        },
+        {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-159-B04",
+      "text": "Wurde die externe Reise bereits übernommen, erhält das IDoc den Erfolgsstatus „bereits übernommen“ und es wird keine zweite Reise angelegt.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:71"
+        },
+        {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:29"
+        },
+        {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-159-B05",
+      "text": "Eine Reise mit Ende vor Beginn, eine mehr als zwei Jahre zurückliegende Reise oder eine Reise eines bei Reisebeginn nicht aktiven Mitarbeiters wird abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:41"
+        },
+        {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:47"
+        },
+        {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:52"
+        },
+        {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-159-B06",
+      "text": "Kopfdaten werden auf die Reise übertragen, der Reisezweck auf eine Reiseaktivität abgebildet (Kunde, Messe, Schulung, sonst allgemein).",
+      "anchors": [
+        {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-159-B07",
+      "text": "Belege außerhalb des Reisezeitraums werden stillschweigend verworfen; Belege in Fremdwährung werden zum Belegdatum in Euro umgerechnet, ohne Kurs wird die Reise abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:83"
+        },
+        {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:89"
+        },
+        {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:135"
+        },
+        {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:146"
+        },
+        {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:147"
+        }
+      ]
+    },
+    {
+      "id": "BM-159-B08",
+      "text": "Die Verpflegungspauschale richtet sich nach der Abwesenheitsdauer und dem Satz des Reiselands, ersatzweise dem Inlandssatz: ab 24 Stunden volle Tagessätze je Kalendertag Differenz zwischen Beginn und Ende, ab 8 Stunden ein Teilsatz, darunter nichts.",
+      "anchors": [
+        {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:108"
+        },
+        {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:111"
+        },
+        {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:118"
+        },
+        {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:124"
+        },
+        {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:126"
+        }
+      ]
+    },
+    {
+      "id": "BM-159-B09",
+      "text": "Vor der Anlage wird der Mitarbeiter gesperrt; es gibt höchstens drei Sperrversuche, nach jedem gescheiterten wird zwei Sekunden gewartet, und nach dem dritten wird die Reise abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:45"
+        },
+        {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:90"
+        },
+        {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:91"
+        },
+        {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:100"
+        },
+        {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:102"
+        }
+      ]
+    },
+    {
+      "id": "BM-159-B10",
+      "text": "Die Reise wird mit Belegen und Pauschale angelegt; meldet die Anlage einen Fehler oder liefert sie keine Reisenummer, wird sie verworfen, die Sperre gelöst und die Reise abgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:48"
+        },
+        {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:58"
+        },
+        {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:65"
+        },
+        {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-159-B11",
+      "text": "Bei Erfolg wird die Zuordnung der externen Reise-ID zur Reisenummer zur Verbuchung vorgemerkt, beides gemeinsam festgeschrieben und die Sperre gelöst.",
+      "anchors": [
+        {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:71"
+        },
+        {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:77"
+        },
+        {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:84"
+        },
+        {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:108"
+        }
+      ]
+    },
+    {
+      "id": "BM-159-B12",
+      "text": "In der Verbuchung wird die Zuordnung gespeichert; existiert sie bereits, bricht die Verbuchung ab.",
+      "anchors": [
+        {
+          "file": "z_tv_ext_trip_insert.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_tv_ext_trip_insert.abap:16"
+        },
+        {
+          "file": "z_tv_ext_trip_insert.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_tv_ext_trip_insert.abap:17"
+        },
+        {
+          "file": "z_tv_ext_trip_insert.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_tv_ext_trip_insert.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-159-B13",
+      "text": "Eine angelegte Reise ergibt den Erfolgsstatus mit Reisenummer, jede Abweisung den Fehlerstatus mit Fehlertext.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:83"
+        },
+        {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:86"
+        },
+        {
+          "file": "lztv_idocf01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lztv_idocf01.abap:15"
+        },
+        {
+          "file": "lztv_idocf01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lztv_idocf01.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-159-B14",
+      "text": "Hat mindestens ein IDoc den Fehlerstatus, wird der Fehlerworkflow mit allen fehlerhaften IDocs angestoßen, sonst Erfolg gemeldet.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:92"
+        },
+        {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:96"
+        },
+        {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:97"
+        },
+        {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:98"
+        },
+        {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:104"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:1"
+        },
+        "meaning": "IDoc-Paket trifft ein"
+      },
+      {
+        "id": "g_mt",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:39"
+        },
+        "meaning": "Falscher Nachrichtentyp?"
+      },
+      {
+        "id": "e_mt",
+        "type": "end",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:40"
+        },
+        "meaning": "Abweisen: falscher Baustein"
+      },
+      {
+        "id": "l_c",
+        "type": "loop",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:48"
+        },
+        "meaning": "Je IDoc"
+      },
+      {
+        "id": "l_d",
+        "type": "loop",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:51"
+        },
+        "meaning": "Je Segment des IDocs"
+      },
+      {
+        "id": "g_seg",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:52"
+        },
+        "meaning": "Kopf, Beleg oder anderes Segment?"
+      },
+      {
+        "id": "g_head",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:64"
+        },
+        "meaning": "Kopfsegment fehlt?"
+      },
+      {
+        "id": "c_ex",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:71"
+        },
+        "meaning": "Prüfen lassen, ob die externe Reise schon übernommen ist"
+      },
+      {
+        "id": "c_st1",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:65"
+        },
+        "meaning": "Status 51: Kopf fehlt"
+      },
+      {
+        "id": "g_dup",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:71"
+        },
+        "meaning": "Reise schon übernommen?"
+      },
+      {
+        "id": "c_st2",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:72"
+        },
+        "meaning": "Status 53: bereits übernommen"
+      },
+      {
+        "id": "c_val",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:78"
+        },
+        "meaning": "Reise prüfen"
+      },
+      {
+        "id": "c_map",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:79"
+        },
+        "meaning": "Reise abbilden"
+      },
+      {
+        "id": "c_post",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:81"
+        },
+        "meaning": "Reise anlegen"
+      },
+      {
+        "id": "c_st3",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:83"
+        },
+        "meaning": "Status 53: Reise angelegt"
+      },
+      {
+        "id": "c_st4",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:86"
+        },
+        "meaning": "Status 51 mit Fehlertext"
+      },
+      {
+        "id": "l_s",
+        "type": "loop",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:92"
+        },
+        "meaning": "Fehlerstatus suchen"
+      },
+      {
+        "id": "g_err",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:96"
+        },
+        "meaning": "Mindestens ein Fehler?"
+      },
+      {
+        "id": "l_rv",
+        "type": "loop",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:98"
+        },
+        "meaning": "Je fehlerhaftem IDoc"
+      },
+      {
+        "id": "e_fm",
+        "type": "end",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:106"
+        },
+        "meaning": "Paket verarbeitet, Ergebnis an ALE"
+      },
+      {
+        "id": "a_rv",
+        "type": "action",
+        "anchor": {
+          "file": "z_idoc_input_ztrip.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_ztrip.abap:101"
+        },
+        "meaning": "Fehlerhaftes IDoc an den Workflow übergeben"
+      },
+      {
+        "id": "s_st",
+        "type": "start",
+        "anchor": {
+          "file": "lztv_idocf01.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lztv_idocf01.abap:5"
+        },
+        "meaning": "Statussatz bilden"
+      },
+      {
+        "id": "a_ty",
+        "type": "action",
+        "anchor": {
+          "file": "lztv_idocf01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lztv_idocf01.abap:15"
+        },
+        "meaning": "Meldungstyp aus Status ableiten"
+      },
+      {
+        "id": "o_st",
+        "type": "output",
+        "anchor": {
+          "file": "lztv_idocf01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lztv_idocf01.abap:20"
+        },
+        "meaning": "Statussatz für das IDoc schreiben"
+      },
+      {
+        "id": "e_st",
+        "type": "end",
+        "anchor": {
+          "file": "lztv_idocf01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lztv_idocf01.abap:21"
+        },
+        "meaning": "Statussatz aufgenommen"
+      },
+      {
+        "id": "s_v",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:40"
+        },
+        "meaning": "Plausibilität"
+      },
+      {
+        "id": "g_v1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:41"
+        },
+        "meaning": "Ende vor Beginn?"
+      },
+      {
+        "id": "x_v1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:42"
+        },
+        "meaning": "Fehler: Datumsfolge"
+      },
+      {
+        "id": "g_v2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:47"
+        },
+        "meaning": "Älter als zwei Jahre?"
+      },
+      {
+        "id": "x_v2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:48"
+        },
+        "meaning": "Fehler: zu alt"
+      },
+      {
+        "id": "r_pa0",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:52"
+        },
+        "meaning": "Beschäftigungsstatus bei Reisebeginn lesen"
+      },
+      {
+        "id": "g_v3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:56"
+        },
+        "meaning": "Nicht aktiv?"
+      },
+      {
+        "id": "x_v3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:57"
+        },
+        "meaning": "Fehler: Mitarbeiter inaktiv"
+      },
+      {
+        "id": "e_v",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:60"
+        },
+        "meaning": "Reise plausibel"
+      },
+      {
+        "id": "s_m",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:63"
+        },
+        "meaning": "Abbildung"
+      },
+      {
+        "id": "a_act",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:75"
+        },
+        "meaning": "Reisezweck auf Reiseaktivität abbilden"
+      },
+      {
+        "id": "l_rec",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:81"
+        },
+        "meaning": "Je Beleg"
+      },
+      {
+        "id": "g_rd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:83"
+        },
+        "meaning": "Beleg außerhalb des Reisezeitraums?"
+      },
+      {
+        "id": "g_cur",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:89"
+        },
+        "meaning": "Beleg in Euro?"
+      },
+      {
+        "id": "c_tl",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:92"
+        },
+        "meaning": "Fremdwährung umrechnen"
+      },
+      {
+        "id": "c_pd",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:100"
+        },
+        "meaning": "Verpflegungspauschale ermitteln"
+      },
+      {
+        "id": "e_m",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:101"
+        },
+        "meaning": "Reise abgebildet"
+      },
+      {
+        "id": "s_pd",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:104"
+        },
+        "meaning": "Pauschale"
+      },
+      {
+        "id": "a_h",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:108"
+        },
+        "meaning": "Abwesenheitsstunden berechnen"
+      },
+      {
+        "id": "r_r1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:111"
+        },
+        "meaning": "Pauschalsatz des Reiselands lesen"
+      },
+      {
+        "id": "g_r1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:116"
+        },
+        "meaning": "Kein Satz für das Land?"
+      },
+      {
+        "id": "r_r2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:118"
+        },
+        "meaning": "Inlandssatz lesen"
+      },
+      {
+        "id": "g_h1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:124"
+        },
+        "meaning": "Mindestens 24 Stunden?"
+      },
+      {
+        "id": "a_full",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:125"
+        },
+        "meaning": "Volle Tagessätze je Kalendertagsdifferenz"
+      },
+      {
+        "id": "e_pd",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:131"
+        },
+        "meaning": "Pauschale zurückgeben"
+      },
+      {
+        "id": "s_tl",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:134"
+        },
+        "meaning": "Währungsumrechnung"
+      },
+      {
+        "id": "c_cc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:135"
+        },
+        "meaning": "Betrag zum Belegdatum in EUR umrechnen"
+      },
+      {
+        "id": "g_cc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:146"
+        },
+        "meaning": "Kein Kurs?"
+      },
+      {
+        "id": "x_cc",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:147"
+        },
+        "meaning": "Fehler: kein Umrechnungskurs"
+      },
+      {
+        "id": "e_tl",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_tv_trip_mapper.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_mapper.abap:150"
+        },
+        "meaning": "Betrag umgerechnet"
+      },
+      {
+        "id": "s_ex",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:28"
+        },
+        "meaning": "Dublettenprüfung"
+      },
+      {
+        "id": "r_ext",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:29"
+        },
+        "meaning": "Externe Reise-ID in der Zuordnung suchen"
+      },
+      {
+        "id": "e_ex",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:32"
+        },
+        "meaning": "Ergebnis der Dublettenprüfung zurückgeben"
+      },
+      {
+        "id": "s_po",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:35"
+        },
+        "meaning": "Anlage"
+      },
+      {
+        "id": "c_lock",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:45"
+        },
+        "meaning": "Mitarbeiter sperren"
+      },
+      {
+        "id": "c_bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:48"
+        },
+        "meaning": "Reise mit Belegen und Pauschale anlegen"
+      },
+      {
+        "id": "l_ret",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:58"
+        },
+        "meaning": "Je Fehlermeldung"
+      },
+      {
+        "id": "c_rb1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:59"
+        },
+        "meaning": "Anlage verwerfen"
+      },
+      {
+        "id": "x_b1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:60"
+        },
+        "meaning": "Fehler mit BAPI-Meldung"
+      },
+      {
+        "id": "g_nr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:65"
+        },
+        "meaning": "Keine Reisenummer?"
+      },
+      {
+        "id": "c_rb2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:66"
+        },
+        "meaning": "Anlage verwerfen"
+      },
+      {
+        "id": "x_b2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:67"
+        },
+        "meaning": "Fehler: keine Reisenummer"
+      },
+      {
+        "id": "u_ins",
+        "type": "update_task",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:71"
+        },
+        "meaning": "Zuordnung externe ID zu Reisenummer vormerken"
+      },
+      {
+        "id": "c_cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:77"
+        },
+        "meaning": "Reise und Zuordnung festschreiben"
+      },
+      {
+        "id": "c_ucl",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:81"
+        },
+        "meaning": "Bei Abbruch Sperre lösen (CLEANUP)"
+      },
+      {
+        "id": "c_unl",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:84"
+        },
+        "meaning": "Sperre lösen"
+      },
+      {
+        "id": "e_po",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:85"
+        },
+        "meaning": "Reise angelegt, Reisenummer zurückgeben"
+      },
+      {
+        "id": "s_lk",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:88"
+        },
+        "meaning": "Sperren mit Wiederholung"
+      },
+      {
+        "id": "l_do",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:90"
+        },
+        "meaning": "Bis zu drei Versuche"
+      },
+      {
+        "id": "lk_enq",
+        "type": "lock",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:91"
+        },
+        "meaning": "Mitarbeiter sperren"
+      },
+      {
+        "id": "g_lk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:96"
+        },
+        "meaning": "Sperre erhalten?"
+      },
+      {
+        "id": "e_lk",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:97"
+        },
+        "meaning": "Gesperrt, weiter"
+      },
+      {
+        "id": "a_wait",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:100"
+        },
+        "meaning": "Zwei Sekunden warten"
+      },
+      {
+        "id": "x_lk",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:102"
+        },
+        "meaning": "Fehler: Mitarbeiter gesperrt"
+      },
+      {
+        "id": "s_ul",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:107"
+        },
+        "meaning": "Entsperren"
+      },
+      {
+        "id": "lk_deq",
+        "type": "lock",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:108"
+        },
+        "meaning": "Sperre lösen"
+      },
+      {
+        "id": "e_ul",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_tv_trip_poster.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_tv_trip_poster.abap:111"
+        },
+        "meaning": "Sperre gelöst"
+      },
+      {
+        "id": "s_u",
+        "type": "start",
+        "anchor": {
+          "file": "z_tv_ext_trip_insert.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_tv_ext_trip_insert.abap:1"
+        },
+        "meaning": "Verbuchung der Zuordnung"
+      },
+      {
+        "id": "w_ins",
+        "type": "write",
+        "anchor": {
+          "file": "z_tv_ext_trip_insert.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_tv_ext_trip_insert.abap:16"
+        },
+        "meaning": "Zuordnung externe ID – Reisenummer speichern"
+      },
+      {
+        "id": "g_u",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_tv_ext_trip_insert.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_tv_ext_trip_insert.abap:17"
+        },
+        "meaning": "Schon vorhanden?"
+      },
+      {
+        "id": "o_u",
+        "type": "output",
+        "anchor": {
+          "file": "z_tv_ext_trip_insert.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_tv_ext_trip_insert.abap:18"
+        },
+        "meaning": "Abbruchmeldung: Zuordnung existiert bereits"
+      },
+      {
+        "id": "e_u2",
+        "type": "end",
+        "anchor": {
+          "file": "z_tv_ext_trip_insert.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_tv_ext_trip_insert.abap:20"
+        },
+        "meaning": "Zuordnung gespeichert"
+      },
+      {
+        "id": "e_u",
+        "type": "end",
+        "anchor": {
+          "file": "z_tv_ext_trip_insert.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_tv_ext_trip_insert.abap:18"
+        },
+        "meaning": "Verbuchungsabbruch"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "g_mt",
+        "condition": "always"
+      },
+      {
+        "from": "g_mt",
+        "to": "e_mt",
+        "condition": "idoc_contrl-mestyp <> 'ZTRIP'"
+      },
+      {
+        "from": "g_mt",
+        "to": "l_c",
+        "condition": "else"
+      },
+      {
+        "from": "l_c",
+        "to": "l_d",
+        "condition": "next row"
+      },
+      {
+        "from": "l_d",
+        "to": "g_seg",
+        "condition": "next row"
+      },
+      {
+        "from": "g_seg",
+        "to": "l_d",
+        "condition": "WHEN 'Z1TRIPH'"
+      },
+      {
+        "from": "g_seg",
+        "to": "l_d",
+        "condition": "WHEN 'Z1TRIPR'"
+      },
+      {
+        "from": "g_seg",
+        "to": "l_d",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "l_d",
+        "to": "g_head",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_head",
+        "to": "c_st1",
+        "condition": "ls_head IS INITIAL"
+      },
+      {
+        "from": "c_st1",
+        "to": "s_st",
+        "condition": "always"
+      },
+      {
+        "from": "g_head",
+        "to": "c_ex",
+        "condition": "else"
+      },
+      {
+        "from": "g_dup",
+        "to": "c_st2",
+        "condition": "lo_poster->exists( ls_head-ext_id ) = abap_true"
+      },
+      {
+        "from": "c_st2",
+        "to": "s_st",
+        "condition": "always"
+      },
+      {
+        "from": "g_dup",
+        "to": "c_val",
+        "condition": "else"
+      },
+      {
+        "from": "c_val",
+        "to": "s_v",
+        "condition": "always"
+      },
+      {
+        "from": "c_map",
+        "to": "s_m",
+        "condition": "always"
+      },
+      {
+        "from": "c_post",
+        "to": "s_po",
+        "condition": "always"
+      },
+      {
+        "from": "c_st3",
+        "to": "s_st",
+        "condition": "always"
+      },
+      {
+        "from": "c_st4",
+        "to": "s_st",
+        "condition": "always"
+      },
+      {
+        "from": "l_c",
+        "to": "l_s",
+        "condition": "no more rows"
+      },
+      {
+        "from": "l_s",
+        "to": "g_err",
+        "condition": "no more rows"
+      },
+      {
+        "from": "l_rv",
+        "to": "a_rv",
+        "condition": "next row"
+      },
+      {
+        "from": "a_rv",
+        "to": "l_rv",
+        "condition": "next iteration"
+      },
+      {
+        "from": "s_st",
+        "to": "a_ty",
+        "condition": "always"
+      },
+      {
+        "from": "a_ty",
+        "to": "o_st",
+        "condition": "always"
+      },
+      {
+        "from": "s_v",
+        "to": "g_v1",
+        "condition": "always"
+      },
+      {
+        "from": "g_v1",
+        "to": "x_v1",
+        "condition": "is_head-datb1 < is_head-datv1"
+      },
+      {
+        "from": "g_v1",
+        "to": "g_v2",
+        "condition": "else"
+      },
+      {
+        "from": "g_v2",
+        "to": "x_v2",
+        "condition": "is_head-datb1 < sy-datum - 730"
+      },
+      {
+        "from": "g_v2",
+        "to": "r_pa0",
+        "condition": "else"
+      },
+      {
+        "from": "r_pa0",
+        "to": "g_v3",
+        "condition": "always"
+      },
+      {
+        "from": "g_v3",
+        "to": "x_v3",
+        "condition": "sy-subrc <> 0 OR lv_stat2 <> '3'"
+      },
+      {
+        "from": "s_m",
+        "to": "a_act",
+        "condition": "always"
+      },
+      {
+        "from": "a_act",
+        "to": "l_rec",
+        "condition": "always"
+      },
+      {
+        "from": "l_rec",
+        "to": "g_rd",
+        "condition": "next row"
+      },
+      {
+        "from": "g_rd",
+        "to": "l_rec",
+        "condition": "ls_rec-datum < is_head-datv1 OR ls_rec-datum > is_head-datb1"
+      },
+      {
+        "from": "g_rd",
+        "to": "g_cur",
+        "condition": "else"
+      },
+      {
+        "from": "g_cur",
+        "to": "l_rec",
+        "condition": "ls_rec-waers = 'EUR'"
+      },
+      {
+        "from": "g_cur",
+        "to": "c_tl",
+        "condition": "else"
+      },
+      {
+        "from": "c_tl",
+        "to": "s_tl",
+        "condition": "always"
+      },
+      {
+        "from": "l_rec",
+        "to": "c_pd",
+        "condition": "no more rows"
+      },
+      {
+        "from": "c_pd",
+        "to": "s_pd",
+        "condition": "always"
+      },
+      {
+        "from": "s_pd",
+        "to": "a_h",
+        "condition": "always"
+      },
+      {
+        "from": "a_h",
+        "to": "r_r1",
+        "condition": "always"
+      },
+      {
+        "from": "r_r1",
+        "to": "g_r1",
+        "condition": "always"
+      },
+      {
+        "from": "g_r1",
+        "to": "r_r2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_r1",
+        "to": "g_h1",
+        "condition": "else"
+      },
+      {
+        "from": "r_r2",
+        "to": "g_h1",
+        "condition": "always"
+      },
+      {
+        "from": "g_h1",
+        "to": "a_full",
+        "condition": "lv_hours >= 24"
+      },
+      {
+        "from": "s_tl",
+        "to": "c_cc",
+        "condition": "always"
+      },
+      {
+        "from": "c_cc",
+        "to": "g_cc",
+        "condition": "always"
+      },
+      {
+        "from": "g_cc",
+        "to": "x_cc",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "s_ex",
+        "to": "r_ext",
+        "condition": "always"
+      },
+      {
+        "from": "s_po",
+        "to": "c_lock",
+        "condition": "always"
+      },
+      {
+        "from": "c_lock",
+        "to": "s_lk",
+        "condition": "always"
+      },
+      {
+        "from": "c_bapi",
+        "to": "l_ret",
+        "condition": "always"
+      },
+      {
+        "from": "l_ret",
+        "to": "c_rb1",
+        "condition": "next row"
+      },
+      {
+        "from": "c_rb1",
+        "to": "x_b1",
+        "condition": "always"
+      },
+      {
+        "from": "l_ret",
+        "to": "g_nr",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_nr",
+        "to": "c_rb2",
+        "condition": "rv_reinr IS INITIAL"
+      },
+      {
+        "from": "c_rb2",
+        "to": "x_b2",
+        "condition": "always"
+      },
+      {
+        "from": "g_nr",
+        "to": "u_ins",
+        "condition": "else"
+      },
+      {
+        "from": "u_ins",
+        "to": "c_cm",
+        "condition": "always"
+      },
+      {
+        "from": "c_cm",
+        "to": "c_unl",
+        "condition": "always"
+      },
+      {
+        "from": "c_unl",
+        "to": "s_ul",
+        "condition": "always"
+      },
+      {
+        "from": "s_lk",
+        "to": "l_do",
+        "condition": "always"
+      },
+      {
+        "from": "l_do",
+        "to": "lk_enq",
+        "condition": "next row"
+      },
+      {
+        "from": "lk_enq",
+        "to": "g_lk",
+        "condition": "always"
+      },
+      {
+        "from": "g_lk",
+        "to": "e_lk",
+        "condition": "ls_return-type <> 'E'"
+      },
+      {
+        "from": "g_lk",
+        "to": "a_wait",
+        "condition": "else"
+      },
+      {
+        "from": "a_wait",
+        "to": "l_do",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_do",
+        "to": "x_lk",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_ul",
+        "to": "lk_deq",
+        "condition": "always"
+      },
+      {
+        "from": "s_u",
+        "to": "w_ins",
+        "condition": "always"
+      },
+      {
+        "from": "w_ins",
+        "to": "g_u",
+        "condition": "always"
+      },
+      {
+        "from": "g_u",
+        "to": "o_u",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o_st",
+        "to": "e_st",
+        "condition": "always"
+      },
+      {
+        "from": "e_st",
+        "to": "l_c",
+        "condition": "next iteration"
+      },
+      {
+        "from": "c_ex",
+        "to": "s_ex",
+        "condition": "always"
+      },
+      {
+        "from": "r_ext",
+        "to": "e_ex",
+        "condition": "always"
+      },
+      {
+        "from": "e_ex",
+        "to": "g_dup",
+        "condition": "always"
+      },
+      {
+        "from": "x_v1",
+        "to": "c_st4",
+        "condition": "CATCH zcx_tv_trip"
+      },
+      {
+        "from": "x_v2",
+        "to": "c_st4",
+        "condition": "CATCH zcx_tv_trip"
+      },
+      {
+        "from": "x_v3",
+        "to": "c_st4",
+        "condition": "CATCH zcx_tv_trip"
+      },
+      {
+        "from": "x_cc",
+        "to": "c_st4",
+        "condition": "CATCH zcx_tv_trip"
+      },
+      {
+        "from": "x_lk",
+        "to": "c_st4",
+        "condition": "CATCH zcx_tv_trip"
+      },
+      {
+        "from": "g_v3",
+        "to": "e_v",
+        "condition": "else"
+      },
+      {
+        "from": "e_v",
+        "to": "c_map",
+        "condition": "always"
+      },
+      {
+        "from": "g_cc",
+        "to": "e_tl",
+        "condition": "else"
+      },
+      {
+        "from": "e_tl",
+        "to": "l_rec",
+        "condition": "next iteration"
+      },
+      {
+        "from": "a_full",
+        "to": "e_pd",
+        "condition": "always"
+      },
+      {
+        "from": "g_h1",
+        "to": "e_pd",
+        "condition": "else"
+      },
+      {
+        "from": "g_h1",
+        "to": "e_pd",
+        "condition": "lv_hours >= 8"
+      },
+      {
+        "from": "e_pd",
+        "to": "e_m",
+        "condition": "always"
+      },
+      {
+        "from": "e_m",
+        "to": "c_post",
+        "condition": "always"
+      },
+      {
+        "from": "e_lk",
+        "to": "c_bapi",
+        "condition": "always"
+      },
+      {
+        "from": "x_b1",
+        "to": "c_ucl",
+        "condition": "always"
+      },
+      {
+        "from": "x_b2",
+        "to": "c_ucl",
+        "condition": "always"
+      },
+      {
+        "from": "c_ucl",
+        "to": "s_ul",
+        "condition": "always"
+      },
+      {
+        "from": "lk_deq",
+        "to": "e_ul",
+        "condition": "always"
+      },
+      {
+        "from": "e_ul",
+        "to": "c_st4",
+        "condition": "CATCH zcx_tv_trip"
+      },
+      {
+        "from": "e_ul",
+        "to": "e_po",
+        "condition": "always"
+      },
+      {
+        "from": "e_po",
+        "to": "c_st3",
+        "condition": "always"
+      },
+      {
+        "from": "o_u",
+        "to": "e_u",
+        "condition": "always"
+      },
+      {
+        "from": "g_u",
+        "to": "e_u2",
+        "condition": "else"
+      },
+      {
+        "from": "l_s",
+        "to": "g_err",
+        "condition": "next row"
+      },
+      {
+        "from": "g_err",
+        "to": "l_rv",
+        "condition": "lv_error = abap_true"
+      },
+      {
+        "from": "l_rv",
+        "to": "e_fm",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_err",
+        "to": "e_fm",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "z_idoc_input_ztrip.abap:72 — kein Fachsatz „Dubletten werden als Fehler gemeldet“ (Status 53, Erfolg)",
+    "zcl_tv_trip_mapper.abap:125 — kein Fachsatz „An- und Abreisetag werden mit Teilsatz vergütet“ (nur volle Sätze je Kalendertagsdifferenz)",
+    "zcl_tv_trip_mapper.abap:83 — kein Fachsatz „Belege außerhalb des Zeitraums führen zum Fehlerstatus“ (sie werden stillschweigend verworfen)",
+    "z_idoc_input_ztrip.abap:60 — kein Fachsatz „ein unbekanntes Segment bricht die Verarbeitung des IDocs ab“ (CONTINUE setzt nur die Segmentschleife fort)"
+  ],
+  "processDescription": "Ein externes Reisebuchungsportal sendet abgeschlossene Reisen als IDocs vom Typ ZTRIP; andere Nachrichtentypen werden abgewiesen. Je IDoc werden Reisekopf und Belege übernommen; fehlt der Kopf, erhält das IDoc den Fehlerstatus. Ist die externe Reise-ID schon zugeordnet, wird das IDoc ohne Neuanlage als erfolgreich gemeldet. Sonst wird geprüft, ob die Datumsfolge stimmt, die Reise höchstens zwei Jahre zurückliegt und der Mitarbeiter bei Reisebeginn aktiv ist. Die Kopfdaten werden übertragen, Belege außerhalb des Reisezeitraums verworfen, Fremdwährungsbelege in Euro umgerechnet (ohne Kurs Abweisung) und die Verpflegungspauschale aus Dauer und Ländersatz berechnet. Nach Sperren des Mitarbeiters (bis zu drei Versuche) wird die Reise per BAPI angelegt; bei Fehler oder fehlender Reisenummer wird verworfen und entsperrt. Bei Erfolg wird die Zuordnung externe ID–Reisenummer in der Verbuchung gespeichert, alles festgeschrieben und das IDoc mit Reisenummer als erfolgreich gemeldet. Gibt es fehlerhafte IDocs, wird der Fehlerworkflow angestoßen."
+}

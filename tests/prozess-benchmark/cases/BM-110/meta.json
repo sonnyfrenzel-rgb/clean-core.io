@@ -1,0 +1,33 @@
+{
+  "id": "BM-110",
+  "title": "Kalibrierung Prüfmittel im Dynpro: Abweichung bewerten, Ergebnis sichern, n.i.O. sperren und melden",
+  "domain": "PM — Kalibrierung / Prüfmittelüberwachung",
+  "band": "mittel",
+  "loc": 67,
+  "constructs": [
+    "MODULE … INPUT",
+    "CASE ok_code",
+    "MESSAGE TYPE 'E' im PAI",
+    "COND #",
+    "abs( )",
+    "INSERT Z-Tabelle",
+    "STATUS_CHANGE_EXTERN",
+    "BAPI_ALM_NOTIF_CREATE/SAVE",
+    "COMMIT WORK",
+    "LEAVE TO SCREEN"
+  ],
+  "scenario": "Messmittelüberwachung nach ISO 9001: Der Prüfer erfasst an einem Z-Dynpro Soll- und Istwert eines Prüfmittels; bei Überschreitung der Toleranz wird das Equipment per Anwenderstatus gesperrt und eine Instandhaltungsmeldung erzeugt.",
+  "s4_issues": [
+    "Kalibrierung außerhalb des QM-Prüflos-Prozesses in einer Z-Tabelle",
+    "SAP-GUI-Dynpro, nicht Fiori-fähig",
+    "STATUS_CHANGE_EXTERN und BAPI_ALM_NOTIF_* ohne Rückgabeauswertung, nicht freigegeben",
+    "COMMIT WORK im PAI-Modul"
+  ],
+  "wave": 2,
+  "module": "PM",
+  "edge_constructs": [
+    "MESSAGE … TYPE 'E' als Pfadende",
+    "LEAVE TO SCREEN",
+    "COND #"
+  ]
+}

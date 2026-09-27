@@ -1,0 +1,140 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten sc_init, sc_init_e (neu)",
+      "before": "INITIALIZATION des Steuerreports nicht modelliert",
+      "after": "sc_init start auf zisu_edm_scheduler.abap:37, sc_init_e end auf :39 (einzige Anweisung), Kante [always]",
+      "why": "Die Vorbelegung des Stichtags mit dem Vortag trägt den Ablauf (Prosa „Standard: Vortag“); so auch das INITIALIZATION-Ereignis in BM-188.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten sc_ass_m (neu) vor sc_ass_e",
+      "before": "sc_ass_e end auf zisu_edm_scheduler.abap:43 ohne output",
+      "after": "sc_ass_m output auf zisu_edm_scheduler.abap:43, Kante sc_ass_m -> sc_ass_e [always]; eingehende Kanten auf sc_ass_m umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten sc_ass_ok (neu)",
+      "before": "sc_ass_g ohne else-Kante",
+      "after": "sc_ass_ok end auf zisu_edm_scheduler.abap:44 (ENDIF., letzte Anweisung des Ereignisblocks); sc_ass_g -> sc_ass_ok [else]",
+      "why": "Der Gutfall der Formatprüfung lief ins Leere; implizites Ende des Ereignisblocks auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten sc_m_jo1 (neu) vor sc_e_jo1",
+      "before": "sc_e_jo1 end auf zisu_edm_scheduler.abap:69 ohne output",
+      "after": "sc_m_jo1 output auf zisu_edm_scheduler.abap:69, Kante sc_m_jo1 -> sc_e_jo1 [always]; eingehende Kanten auf sc_m_jo1 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten sc_m_jc1 (neu) vor sc_e_jc1",
+      "before": "sc_e_jc1 end auf zisu_edm_scheduler.abap:95 ohne output",
+      "after": "sc_m_jc1 output auf zisu_edm_scheduler.abap:95, Kante sc_m_jc1 -> sc_e_jc1 [always]; eingehende Kanten auf sc_m_jc1 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten sc_m_jc2 (neu) vor sc_e_jc2",
+      "before": "sc_e_jc2 end auf zisu_edm_scheduler.abap:142 ohne output",
+      "after": "sc_m_jc2 output auf zisu_edm_scheduler.abap:142, Kante sc_m_jc2 -> sc_e_jc2 [always]; eingehende Kanten auf sc_m_jc2 umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten sc_done_m (neu)",
+      "before": "keine Knoten auf zisu_edm_scheduler.abap:145",
+      "after": "sc_done_m output auf zisu_edm_scheduler.abap:145; sc_g_jc2 -> sc_done_m [else]; sc_done_m -> sc_done [always]",
+      "why": "Die Erfolgsmeldung (Typ S) ist eine Ausgabe, kein Pfadende; das implizite Ende von START-OF-SELECTION liegt auf derselben letzten Anweisung (wie BM-188).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten ex_m_lc (neu) vor ex_e_lc",
+      "before": "ex_e_lc end auf zisu_edm_export.abap:93 ohne output",
+      "after": "ex_m_lc output auf zisu_edm_export.abap:93, Kante ex_m_lc -> ex_e_lc [always]; eingehende Kanten auf ex_m_lc umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten ex_sum_o (neu)",
+      "before": "keine Knoten auf zisu_edm_export.abap:199",
+      "after": "ex_sum_o output auf zisu_edm_export.abap:199; ex_g_evt -> ex_sum_o [else]; ex_evt -> ex_sum_o [always]; ex_sum_o -> ex_sum [always]",
+      "why": "Die Summenliste ist eine Ausgabe; das implizite Ende von END-OF-SELECTION liegt auf derselben letzten Anweisung (wie BM-188).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten f_pr_e (end)",
+      "before": "zisu_edm_export_f01.abap:34",
+      "after": "zisu_edm_export_f01.abap:35 (ENDFORM. select_profiles)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf ex_c_pr",
+      "before": "ex_c_pr -> ex_loop [always]",
+      "after": "f_pr_e -> ex_loop [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten k_b_e (end)",
+      "before": "zcl_isu_edm_payload.abap:109",
+      "after": "zcl_isu_edm_payload.abap:110 (ENDMETHOD. build)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf ex_build",
+      "before": "ex_build -> ex_g_test [always]",
+      "after": "k_b_e -> ex_g_test [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Ausnahmekanten build",
+      "before": "ex_build -> ex_lm_err [CATCH zcx_isu_edm …]",
+      "after": "k_b_x1 -> ex_lm_err, k_b_x2 -> ex_lm_err [CATCH zcx_isu_edm INTO DATA(lx_edm)]",
+      "why": "Vereinheitlichte Konvention (Nachtrag): RAISE EXCEPTION im gerufenen Block ist ein end-Knoten, von dort führt die Kante in den CATCH-Zweig des Aufrufers.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten f_sd_close (end)",
+      "before": "zisu_edm_export_f01.abap:105",
+      "after": "zisu_edm_export_f01.abap:111 (ENDFORM. send_payload)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf ex_c_send",
+      "before": "ex_c_send -> ex_g_http [always]",
+      "after": "f_sd_ret -> ex_g_http [always]; f_sd_close -> ex_g_http [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten f_ws_e (end)",
+      "before": "zisu_edm_export_f01.abap:140",
+      "after": "zisu_edm_export_f01.abap:141 (ENDFORM. write_status)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kante f_ws_chk -> f_ws_e",
+      "before": "CHECK p_test IS INITIAL ohne else-Kante",
+      "after": "f_ws_chk -> f_ws_e [else]",
+      "why": "CHECK außerhalb einer Schleife verlässt das FORM; im Testlauf wird kein Status geschrieben (B23). Der Pfad fehlte.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf write_status",
+      "before": "ex_ws_gap -> ex_loop [next iteration], ex_ws_err -> ex_loop [next iteration], ex_ws -> ex_commit [always]",
+      "after": "f_ws_e -> ex_loop [next iteration] (Rückkehr zu CONTINUE der Aufrufer ex_ws_gap und ex_ws_err, eine Kante), f_ws_e -> ex_commit [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt. Rückkante in die Schleife heißt next iteration.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

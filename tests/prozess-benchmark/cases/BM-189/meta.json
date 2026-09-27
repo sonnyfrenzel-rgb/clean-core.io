@@ -1,0 +1,32 @@
+{
+  "id": "BM-189",
+  "title": "BW-Extraktor Projektmeilensteine: generische DataSource mit Pseudo-Delta, Paketweise, Terminverzug",
+  "domain": "Technische Randbereiche — BW-Extraktoren",
+  "band": "mittel",
+  "loc": 77,
+  "constructs": [
+    "Extraktor-Funktionsbaustein (RSAX_BIW_GET_DATA_SIMPLE-Muster)",
+    "STATICS",
+    "I_INITFLAG",
+    "OPEN CURSOR WITH HOLD",
+    "FETCH NEXT CURSOR … PACKAGE SIZE",
+    "RAISE NO_MORE_DATA",
+    "COND #",
+    "Kundeneigener DB-View"
+  ],
+  "scenario": "Generische DataSource für das Projektcontrolling im BW: Projektmeilensteine werden mit Plan- und Ist-Termin sowie berechnetem Terminverzug extrahiert; Delta über das Änderungsdatum als Selektion.",
+  "s4_issues": [
+    "Generische Extraktoren mit Funktionsbaustein sind in S/4 weiter möglich, strategisch aber CDS-basierte Extraktion (@Analytics.dataExtraction)",
+    "Pseudo-Delta über Änderungsdatum statt echtem Delta-Verfahren",
+    "Kundeneigener DB-View über PS-Tabellen"
+  ],
+  "wave": 2,
+  "module": "PS",
+  "edge_constructs": [
+    "IF 1 = 2 (toter Verwendungsnachweis-Code)",
+    "RAISE (klassische Ausnahme) als Pfadende",
+    "dynamische WHERE-Klausel (leer = keine Einschränkung)",
+    "COND #",
+    "Inline-Deklarationen"
+  ]
+}

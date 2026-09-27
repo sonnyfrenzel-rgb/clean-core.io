@@ -1,0 +1,53 @@
+{
+  "id": "BM-118",
+  "title": "Zählerabrechnung Serviceverträge: Verbrauch je Equipment aus Messbelegen, Freimenge, Preis ZCPK, Lastschriftanforderung aus der Liste",
+  "domain": "CS — Serviceverträge, verbrauchsabhängige Fakturierung",
+  "band": "sehr komplex",
+  "loc": 402,
+  "constructs": [
+    "REPORT mit TOP/F01",
+    "TOP-OF-PAGE",
+    "AT USER-COMMAND",
+    "SET PF-STATUS",
+    "RETURN in START-OF-SELECTION",
+    "SELECT mit Join VBAK/VBAP/VEDA",
+    "FOR ALL ENTRIES",
+    "SELECT SINGLE mit Join IMPTT/EQUI",
+    "CONTINUE",
+    "TRY … CATCH",
+    "statische Klassenmethode",
+    "SELECT KONV",
+    "REDUCE",
+    "COND #",
+    "READ TABLE WITH TABLE KEY",
+    "CATCH SYSTEM-EXCEPTIONS",
+    "CHECK in Schleife",
+    "Tabellenausdruck gt_ctr[ ]",
+    "String-Template mit DATE = USER",
+    "BAPI_SALESORDER_CREATEFROMDAT2",
+    "INSERT FROM @( VALUE #( ) )",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "ORDER BY … UP TO 1 ROWS"
+  ],
+  "scenario": "Anbieter von Druck- und Kompressorenservice rechnet Wartungsverträge nach Zählerstand ab: Verbrauch über einer Freimenge wird monatlich per Lastschriftanforderung zum Vertrag berechnet; der Sachbearbeiter prüft die Liste und löst die Anforderungen per Drucktaste aus.",
+  "s4_issues": [
+    "KONV entfällt: Konditionen in S/4 in PRCD_ELEMENTS",
+    "Direkte Lesezugriffe auf VBAK/VBAP/VEDA, SER02/OBJK, IMPTT/EQUI, IMRG",
+    "Kundenfelder VBAP-ZZABRART/ZZFREI",
+    "Klassische Liste mit PF-STATUS und AT USER-COMMAND, nicht Fiori-fähig",
+    "BAPI_SALESORDER_CREATEFROMDAT2 mit Kontraktbezug; in S/4 Service: Serviceverträge mit nutzungsbasierter Abrechnung"
+  ],
+  "wave": 2,
+  "module": "CS",
+  "edge_constructs": [
+    "TOP-OF-PAGE",
+    "AT USER-COMMAND",
+    "CATCH SYSTEM-EXCEPTIONS",
+    "REDUCE",
+    "COND #",
+    "CHECK mitten in Schleife",
+    "RAISE EXCEPTION TYPE",
+    "TRY … CATCH",
+    "CONTINUE in Schleife"
+  ]
+}

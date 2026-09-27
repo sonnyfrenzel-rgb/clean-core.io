@@ -1,0 +1,1607 @@
+{
+  "id": "BM-193",
+  "title": "Arbeitsunfallmeldung als Web-Dynpro-Anwendung: Pflichtfelder, Nummernvergabe, Änderungsbeleg und Mail an die Sicherheitsfachkraft",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZEHS_UNFALL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zwd_ehs_unfall_compctrl.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwd_ehs_unfall_compctrl.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEHS_UNFALL",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zwd_ehs_unfall_compctrl.abap",
+        "line": 84,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwd_ehs_unfall_compctrl.abap:84"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "NUMBER_GET_NEXT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zwd_ehs_unfall_compctrl.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwd_ehs_unfall_compctrl.abap:58"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEHS_UNF_WRITE_DOCUMENT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zwd_ehs_unfall_compctrl.abap",
+        "line": 97,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwd_ehs_unfall_compctrl.abap:97"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zwd_ehs_unfall_compctrl.abap",
+        "line": 135,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwd_ehs_unfall_compctrl.abap:135"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEHS_SIFA",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zwd_ehs_unfall_compctrl.abap",
+        "line": 144,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwd_ehs_unfall_compctrl.abap:144"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zwd_ehs_unfall_compctrl.abap",
+        "line": 156,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwd_ehs_unfall_compctrl.abap:156"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_DOCUMENT_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zwd_ehs_unfall_compctrl.abap",
+        "line": 157,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwd_ehs_unfall_compctrl.abap:157"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_CAM_ADDRESS_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zwd_ehs_unfall_compctrl.abap",
+        "line": 162,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwd_ehs_unfall_compctrl.abap:162"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-193-B01",
+      "text": "Beim Öffnen der Unfallmeldung wird die Meldungsnummer aus dem Aufruf übernommen und die Meldung geladen.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:13"
+        },
+        {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B02",
+      "text": "Ohne Meldungsnummer wird eine neue Meldung angelegt und mit dem erfassenden Benutzer, dem Tagesdatum und dem Status „in Erfassung“ vorbelegt.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:18"
+        },
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B03",
+      "text": "Mit Meldungsnummer wird die vorhandene Unfallmeldung gelesen und als Vergleichsstand für den Änderungsbeleg gemerkt.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:28"
+        },
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B04",
+      "text": "Gibt es die Meldung nicht, erhält der Benutzer die Fehlermeldung, dass sie nicht gefunden wurde, und die Maske bleibt leer.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:30"
+        },
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B05",
+      "text": "Beim Sichern wird zuerst geprüft, ob Personalnummer, Werk, Unfalldatum, Unfallzeit, Unfallort, Hergang und Verletzung gefüllt sind.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:26"
+        },
+        {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B06",
+      "text": "Jedes leere Pflichtfeld wird am Feld als Fehler markiert; ein Feld, das es in der Maske nicht gibt, wird ohne Meldung übergangen.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:60"
+        },
+        {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:61"
+        },
+        {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B07",
+      "text": "Fehlt mindestens ein Pflichtfeld, wird nicht gesichert.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:27"
+        },
+        {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B08",
+      "text": "Eine neue Unfallmeldung erhält ihre Nummer aus dem Nummernkreis ZEHS_UNF.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:57"
+        },
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B09",
+      "text": "Kann keine Nummer vergeben werden, wird der Benutzer auf den Nummernkreis hingewiesen und nicht gesichert.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:66"
+        },
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:67"
+        },
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B10",
+      "text": "Ein Unfall mit mehr als drei Ausfalltagen wird als meldepflichtig gekennzeichnet, sonst als nicht meldepflichtig.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:78"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B11",
+      "text": "Eine Meldung im Status 01 („in Erfassung“) wird beim Sichern auf Status 02 gesetzt, und der ändernde Benutzer mit Datum wird festgehalten.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B12",
+      "text": "Die Unfallmeldung wird in der Unfalltabelle angelegt oder überschrieben.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:84"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B13",
+      "text": "Schlägt das Schreiben fehl, wird alles zurückgenommen und der Benutzer erhält eine Fehlermeldung.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:85"
+        },
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:86"
+        },
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B14",
+      "text": "Für die Meldung wird ein Änderungsbeleg mit altem und neuem Stand fortgeschrieben, als Neuanlage oder als Änderung.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B15",
+      "text": "Meldung und Änderungsbeleg werden gemeinsam festgeschrieben, und die vergebene Nummer wird in der Maske angezeigt.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:108"
+        },
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:111"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B16",
+      "text": "Nur wenn ein Unfall mit diesem Sichern erstmals meldepflichtig wird, wird die Sicherheitsfachkraft benachrichtigt.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:114"
+        },
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:115"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B17",
+      "text": "Die Benachrichtigung wird nur verschickt, wenn der Mailversand über den Schalter ZEHS_UNFALL_MAIL eingeschaltet ist.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:135"
+        },
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:139"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B18",
+      "text": "Empfänger ist die Sicherheitsfachkraft des Werks, ohne Eintrag das Sammelpostfach der Arbeitssicherheit.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:144"
+        },
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:147"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B19",
+      "text": "Die Mail nennt Meldungsnummer, Werk, Unfalldatum und Ausfalltage und erinnert an die Unfallanzeige an die Berufsgenossenschaft binnen drei Tagen.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:150"
+        },
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:165"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B20",
+      "text": "Scheitert der Mailversand, erhält der Benutzer nur eine Warnung; die gesicherte Meldung bleibt bestehen.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:167"
+        },
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:168"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B21",
+      "text": "Nach erfolgreichem Sichern wird die Meldung bestätigt, die Maske schreibgeschützt und zur Bestätigungsseite gewechselt.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:118"
+        },
+        {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:37"
+        },
+        {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-193-B22",
+      "text": "Ist das Sichern gescheitert, bleibt der Benutzer mit den Meldungen in der Erfassungsmaske.",
+      "anchors": [
+        {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:32"
+        },
+        {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:34"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "v_init",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:6"
+        },
+        "meaning": "Unfallmeldung öffnen"
+      },
+      {
+        "id": "v_load",
+        "type": "call",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:17"
+        },
+        "meaning": "Meldung zur übergebenen Nummer laden"
+      },
+      {
+        "id": "v_end",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:19"
+        },
+        "meaning": "Maske geöffnet"
+      },
+      {
+        "id": "c_load",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:11"
+        },
+        "meaning": "Meldung laden"
+      },
+      {
+        "id": "c_g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:18"
+        },
+        "meaning": "Neuanlage ohne Nummer?"
+      },
+      {
+        "id": "c_r1",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:25"
+        },
+        "meaning": "leere Neuanlage mit Erfasser, Datum, Status 01 bereit"
+      },
+      {
+        "id": "c_sel",
+        "type": "read",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:28"
+        },
+        "meaning": "Unfallmeldung lesen"
+      },
+      {
+        "id": "c_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:30"
+        },
+        "meaning": "Meldung vorhanden?"
+      },
+      {
+        "id": "c_err",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:31"
+        },
+        "meaning": "Fehlermeldung: Meldung nicht gefunden"
+      },
+      {
+        "id": "c_r2",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:33"
+        },
+        "meaning": "Laden abgebrochen, Fehler: Meldung nicht gefunden"
+      },
+      {
+        "id": "c_show",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:40"
+        },
+        "meaning": "Meldung im Kontext angezeigt, alter Stand gemerkt"
+      },
+      {
+        "id": "s_start",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:22"
+        },
+        "meaning": "Benutzer sichert die Meldung"
+      },
+      {
+        "id": "s_chk",
+        "type": "call",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:26"
+        },
+        "meaning": "Pflichtfelder prüfen"
+      },
+      {
+        "id": "s_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:27"
+        },
+        "meaning": "Pflichtfeld fehlt?"
+      },
+      {
+        "id": "s_r1",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:28"
+        },
+        "meaning": "Sichern abgelehnt"
+      },
+      {
+        "id": "s_save",
+        "type": "call",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:31"
+        },
+        "meaning": "Meldung sichern"
+      },
+      {
+        "id": "s_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:32"
+        },
+        "meaning": "Sichern gescheitert?"
+      },
+      {
+        "id": "s_r2",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:34"
+        },
+        "meaning": "in der Maske bleiben"
+      },
+      {
+        "id": "s_plg",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:38"
+        },
+        "meaning": "Zur Bestätigungsseite navigieren"
+      },
+      {
+        "id": "s_nav",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:40"
+        },
+        "meaning": "Sichern abgeschlossen"
+      },
+      {
+        "id": "m_start",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:43"
+        },
+        "meaning": "Pflichtfeldprüfung"
+      },
+      {
+        "id": "m_loop",
+        "type": "loop",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:59"
+        },
+        "meaning": "je Pflichtfeld"
+      },
+      {
+        "id": "m_chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:61"
+        },
+        "meaning": "Feld in der Maske vorhanden?"
+      },
+      {
+        "id": "m_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:62"
+        },
+        "meaning": "Pflichtfeld leer?"
+      },
+      {
+        "id": "m_err",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:63"
+        },
+        "meaning": "Feld als Fehler markieren"
+      },
+      {
+        "id": "m_end",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_ehs_unfall_v_main.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_v_main.abap:73"
+        },
+        "meaning": "Prüfergebnis an Sichern zurück"
+      },
+      {
+        "id": "sv_start",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:43"
+        },
+        "meaning": "Meldung sichern"
+      },
+      {
+        "id": "sv_g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:57"
+        },
+        "meaning": "neue Meldung ohne Nummer?"
+      },
+      {
+        "id": "sv_nr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:58"
+        },
+        "meaning": "Unfallnummer aus Nummernkreis ZEHS_UNF ziehen"
+      },
+      {
+        "id": "sv_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:66"
+        },
+        "meaning": "Nummer vergeben?"
+      },
+      {
+        "id": "sv_err1",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:67"
+        },
+        "meaning": "Fehlermeldung: keine Unfallnummer"
+      },
+      {
+        "id": "sv_r1",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:70"
+        },
+        "meaning": "Abbruch: keine Nummer (mit Fehlermeldung)"
+      },
+      {
+        "id": "sv_mp",
+        "type": "action",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:78"
+        },
+        "meaning": "Meldepflicht festlegen: mehr als 3 Ausfalltage"
+      },
+      {
+        "id": "sv_mod",
+        "type": "write",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:84"
+        },
+        "meaning": "Unfallmeldung schreiben"
+      },
+      {
+        "id": "sv_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:85"
+        },
+        "meaning": "Schreiben erfolgreich?"
+      },
+      {
+        "id": "sv_rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:86"
+        },
+        "meaning": "Zurücknehmen"
+      },
+      {
+        "id": "sv_err2",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:87"
+        },
+        "meaning": "Fehlermeldung: Sichern fehlgeschlagen"
+      },
+      {
+        "id": "sv_r2",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:89"
+        },
+        "meaning": "Abbruch mit Fehlermeldung"
+      },
+      {
+        "id": "sv_cd",
+        "type": "update_task",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:97"
+        },
+        "meaning": "Änderungsbeleg vormerken"
+      },
+      {
+        "id": "sv_cmt",
+        "type": "transaction",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:108"
+        },
+        "meaning": "Meldung und Änderungsbeleg festschreiben"
+      },
+      {
+        "id": "sv_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:114"
+        },
+        "meaning": "erstmals meldepflichtig?"
+      },
+      {
+        "id": "sv_mail",
+        "type": "call",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:115"
+        },
+        "meaning": "Sicherheitsfachkraft benachrichtigen"
+      },
+      {
+        "id": "sv_ok",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:118"
+        },
+        "meaning": "Erfolgsmeldung mit Unfallnummer"
+      },
+      {
+        "id": "sv_end",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:121"
+        },
+        "meaning": "Sichern erfolgreich"
+      },
+      {
+        "id": "ml_start",
+        "type": "start",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:124"
+        },
+        "meaning": "Benachrichtigung Sicherheitsfachkraft"
+      },
+      {
+        "id": "ml_sw",
+        "type": "read",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:135"
+        },
+        "meaning": "Schalter Mailversand lesen"
+      },
+      {
+        "id": "ml_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:139"
+        },
+        "meaning": "Mailversand eingeschaltet?"
+      },
+      {
+        "id": "ml_r",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:140"
+        },
+        "meaning": "keine Mail"
+      },
+      {
+        "id": "ml_sifa",
+        "type": "read",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:144"
+        },
+        "meaning": "Mailadresse der Sicherheitsfachkraft des Werks lesen"
+      },
+      {
+        "id": "ml_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:146"
+        },
+        "meaning": "Sicherheitsfachkraft zum Werk hinterlegt?"
+      },
+      {
+        "id": "ml_send",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:165"
+        },
+        "meaning": "Mail an Sicherheitsfachkraft senden"
+      },
+      {
+        "id": "ml_cmt",
+        "type": "transaction",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:166"
+        },
+        "meaning": "Sendeauftrag festschreiben"
+      },
+      {
+        "id": "ml_warn",
+        "type": "output",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:168"
+        },
+        "meaning": "Warnung: Mail fehlgeschlagen"
+      },
+      {
+        "id": "ml_end",
+        "type": "end",
+        "anchor": {
+          "file": "zwd_ehs_unfall_compctrl.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwd_ehs_unfall_compctrl.abap:174"
+        },
+        "meaning": "Benachrichtigung abgeschlossen"
+      }
+    ],
+    "edges": [
+      {
+        "from": "v_init",
+        "to": "v_load",
+        "condition": "always"
+      },
+      {
+        "from": "v_load",
+        "to": "c_load",
+        "condition": "always"
+      },
+      {
+        "from": "c_load",
+        "to": "c_g0",
+        "condition": "always"
+      },
+      {
+        "from": "c_g0",
+        "to": "c_r1",
+        "condition": "iv_unfall_nr IS INITIAL"
+      },
+      {
+        "from": "c_g0",
+        "to": "c_sel",
+        "condition": "else"
+      },
+      {
+        "from": "c_sel",
+        "to": "c_g1",
+        "condition": "always"
+      },
+      {
+        "from": "c_g1",
+        "to": "c_err",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "c_g1",
+        "to": "c_show",
+        "condition": "else"
+      },
+      {
+        "from": "s_start",
+        "to": "s_chk",
+        "condition": "always"
+      },
+      {
+        "from": "s_chk",
+        "to": "m_start",
+        "condition": "always"
+      },
+      {
+        "from": "m_start",
+        "to": "m_loop",
+        "condition": "always"
+      },
+      {
+        "from": "m_loop",
+        "to": "m_chk",
+        "condition": "next row"
+      },
+      {
+        "from": "m_chk",
+        "to": "m_g1",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "m_chk",
+        "to": "m_loop",
+        "condition": "else"
+      },
+      {
+        "from": "m_g1",
+        "to": "m_err",
+        "condition": "<lv_wert> IS INITIAL"
+      },
+      {
+        "from": "m_err",
+        "to": "m_loop",
+        "condition": "next iteration"
+      },
+      {
+        "from": "m_g1",
+        "to": "m_loop",
+        "condition": "else"
+      },
+      {
+        "from": "m_loop",
+        "to": "m_end",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_g1",
+        "to": "s_r1",
+        "condition": "lv_fehler = abap_true"
+      },
+      {
+        "from": "s_g1",
+        "to": "s_save",
+        "condition": "else"
+      },
+      {
+        "from": "s_save",
+        "to": "sv_start",
+        "condition": "always"
+      },
+      {
+        "from": "sv_start",
+        "to": "sv_g0",
+        "condition": "always"
+      },
+      {
+        "from": "sv_g0",
+        "to": "sv_nr",
+        "condition": "ls_unfall-unfall_nr IS INITIAL"
+      },
+      {
+        "from": "sv_nr",
+        "to": "sv_g1",
+        "condition": "always"
+      },
+      {
+        "from": "sv_g1",
+        "to": "sv_err1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sv_g1",
+        "to": "sv_mp",
+        "condition": "else"
+      },
+      {
+        "from": "sv_g0",
+        "to": "sv_mp",
+        "condition": "else"
+      },
+      {
+        "from": "sv_mp",
+        "to": "sv_mod",
+        "condition": "always"
+      },
+      {
+        "from": "sv_mod",
+        "to": "sv_g2",
+        "condition": "always"
+      },
+      {
+        "from": "sv_g2",
+        "to": "sv_rb",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sv_rb",
+        "to": "sv_err2",
+        "condition": "always"
+      },
+      {
+        "from": "sv_g2",
+        "to": "sv_cd",
+        "condition": "else"
+      },
+      {
+        "from": "sv_cd",
+        "to": "sv_cmt",
+        "condition": "always"
+      },
+      {
+        "from": "sv_cmt",
+        "to": "sv_g3",
+        "condition": "always"
+      },
+      {
+        "from": "sv_g3",
+        "to": "sv_mail",
+        "condition": "ls_unfall-meldepflichtig = abap_true AND ls_alt-meldepflichtig = abap_false"
+      },
+      {
+        "from": "sv_g3",
+        "to": "sv_ok",
+        "condition": "else"
+      },
+      {
+        "from": "sv_mail",
+        "to": "ml_start",
+        "condition": "always"
+      },
+      {
+        "from": "ml_start",
+        "to": "ml_sw",
+        "condition": "always"
+      },
+      {
+        "from": "ml_sw",
+        "to": "ml_g1",
+        "condition": "always"
+      },
+      {
+        "from": "ml_g1",
+        "to": "ml_r",
+        "condition": "lv_aktiv <> 'X'"
+      },
+      {
+        "from": "ml_g1",
+        "to": "ml_sifa",
+        "condition": "else"
+      },
+      {
+        "from": "ml_sifa",
+        "to": "ml_g2",
+        "condition": "always"
+      },
+      {
+        "from": "ml_send",
+        "to": "ml_cmt",
+        "condition": "always"
+      },
+      {
+        "from": "ml_send",
+        "to": "ml_warn",
+        "condition": "CATCH cx_bcs INTO lx_bcs"
+      },
+      {
+        "from": "ml_r",
+        "to": "sv_ok",
+        "condition": "always"
+      },
+      {
+        "from": "ml_cmt",
+        "to": "ml_end",
+        "condition": "always"
+      },
+      {
+        "from": "ml_warn",
+        "to": "ml_end",
+        "condition": "always"
+      },
+      {
+        "from": "sv_r1",
+        "to": "s_g2",
+        "condition": "always"
+      },
+      {
+        "from": "sv_r2",
+        "to": "s_g2",
+        "condition": "always"
+      },
+      {
+        "from": "sv_ok",
+        "to": "sv_end",
+        "condition": "always"
+      },
+      {
+        "from": "s_g2",
+        "to": "s_r2",
+        "condition": "lv_ok = abap_false"
+      },
+      {
+        "from": "s_g2",
+        "to": "s_plg",
+        "condition": "else"
+      },
+      {
+        "from": "c_r1",
+        "to": "v_end",
+        "condition": "always"
+      },
+      {
+        "from": "c_r2",
+        "to": "v_end",
+        "condition": "always"
+      },
+      {
+        "from": "c_show",
+        "to": "v_end",
+        "condition": "always"
+      },
+      {
+        "from": "c_err",
+        "to": "c_r2",
+        "condition": "always"
+      },
+      {
+        "from": "m_end",
+        "to": "s_g1",
+        "condition": "always"
+      },
+      {
+        "from": "s_plg",
+        "to": "s_nav",
+        "condition": "always"
+      },
+      {
+        "from": "sv_err1",
+        "to": "sv_r1",
+        "condition": "always"
+      },
+      {
+        "from": "sv_err2",
+        "to": "sv_r2",
+        "condition": "always"
+      },
+      {
+        "from": "sv_end",
+        "to": "s_g2",
+        "condition": "always"
+      },
+      {
+        "from": "ml_g2",
+        "to": "ml_send",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ml_g2",
+        "to": "ml_send",
+        "condition": "else"
+      },
+      {
+        "from": "ml_end",
+        "to": "sv_ok",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zwd_ehs_unfall_compctrl.abap:177 — kein Fachsatz „die Unfallanzeige an die Berufsgenossenschaft wird als Formular gedruckt“: die Methode wird von keiner Stelle im Fall aufgerufen, der Button wurde laut Kommentar entfernt",
+    "zwd_ehs_unfall_compctrl.abap:84 — kein Fachsatz „die Zeugen des Unfalls werden gespeichert“: das Schreiben von ZEHS_UNF_ZEUGE ist auskommentiert, gesichert wird nur der Unfallkopf",
+    "zwd_ehs_unfall_compctrl.abap:165 — kein Fachsatz „die Unfallanzeige wird an die Berufsgenossenschaft übermittelt“: die Mail geht nur intern an die Sicherheitsfachkraft bzw. das Sammelpostfach und erinnert an die Anzeige",
+    "zwd_ehs_unfall_compctrl.abap:167 — kein Fachsatz „scheitert die Benachrichtigung, wird das Sichern der Meldung zurückgenommen“: die Meldung ist zu diesem Zeitpunkt bereits festgeschrieben, der Fehler erzeugt nur eine Warnung; der CLEANUP-Block räumt nur bei nicht gefangenen Ausnahmen den Sendeauftrag weg",
+    "gesamte Scheibe — kein Fachsatz „die Berechtigung zum Erfassen oder Ändern von Unfallmeldungen wird geprüft“: die Anwendung prüft keine Berechtigung, der Kommentar verweist nur auf das Portal-Rollenmenü"
+  ],
+  "processDescription": "Eine Unfallmeldung wird im Portal geöffnet, entweder leer zum Anlegen oder mit der Meldungsnummer als URL-Parameter zum Ändern. Ohne Nummer legt die Anwendung eine neue Meldung mit Erfasser, Tagesdatum und Status „in Erfassung“ an; mit Nummer liest sie die Meldung aus der Unfalltabelle und merkt sich den Stand als Vergleichsbasis, bei unbekannter Nummer gibt sie eine Fehlermeldung aus. Beim Sichern prüft die View zuerst die Pflichtfelder Personalnummer, Werk, Unfalldatum, Unfallzeit, Unfallort, Hergang und Verletzung dynamisch über ihre Feldnamen; leere Felder werden am Feld markiert, ein Feldname, den es in der Maske nicht gibt, wird stillschweigend übergangen, und bei einem Fehler wird nicht gesichert. Eine neue Meldung erhält dann ihre Nummer aus dem Nummernkreis ZEHS_UNF; gelingt das nicht, bricht das Sichern mit Hinweis ab. Die Anwendung kennzeichnet Unfälle mit mehr als drei Ausfalltagen als meldepflichtig, setzt den Status von 01 („in Erfassung“) auf 02 und schreibt die Meldung. Scheitert das Schreiben, wird zurückgerollt und eine Fehlermeldung ausgegeben. Andernfalls wird ein Änderungsbeleg mit altem und neuem Stand über die Verbuchung vorgemerkt und mit der Meldung festgeschrieben. Wird der Unfall mit diesem Sichern erstmals meldepflichtig und ist der Mailversand im Schalter ZEHS_UNFALL_MAIL eingeschaltet, erhält die Sicherheitsfachkraft des Werks, ersatzweise das Sammelpostfach, eine Mail mit den Eckdaten und dem Hinweis auf die Unfallanzeige an die Berufsgenossenschaft; ein Fehler beim Versand führt nur zu einer Warnung. Nach erfolgreichem Sichern wird die Maske schreibgeschützt und die Bestätigungsseite angezeigt, sonst bleibt der Benutzer mit den Meldungen in der Maske. Zeugen werden nicht mehr gespeichert, und ein Formulardruck der Unfallanzeige ist zwar implementiert, wird aber nirgends aufgerufen."
+}

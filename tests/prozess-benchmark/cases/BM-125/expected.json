@@ -1,0 +1,267 @@
+{
+  "id": "BM-125",
+  "title": "Treasury: am Stichtag fällige Festgelder listen (VTBFHA, STOP, toter Zweig IF 1 = 2)",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VTBFHA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFDES_TRM",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:27"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-125-B01",
+      "text": "Es werden die Festgeldgeschäfte (Produktart 51A) des Buchungskreises gelesen, deren Laufzeit am Stichtag endet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        }
+      ]
+    },
+    {
+      "id": "BM-125-B02",
+      "text": "Gibt es keine, wird ein Hinweis mit dem Stichtag ausgegeben und der Lauf beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-125-B03",
+      "text": "Jedes fällige Festgeld wird mit Geschäftsnummer, Geschäftspartner und Währung gelistet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        "meaning": "Festgelder des Buchungskreises mit Laufzeitende am Stichtag lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Keine fälligen Festgelder?"
+      },
+      {
+        "id": "o0",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Hinweis „keine fälligen Festgelder“ ausgeben"
+      },
+      {
+        "id": "x",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Fällige Festgelder durchgehen"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Geschäft mit Partner und Währung listen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "o0",
+        "condition": "gt_fha IS INITIAL"
+      },
+      {
+        "from": "o0",
+        "to": "x",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "o",
+        "condition": "next row"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:20 — kein Fachsatz „die fälligen Festgelder werden an das Cash Management übergeben“: der Aufruf steht in IF 1 = 2 und wird nie ausgeführt",
+    "source.abap:27 — kein Fachsatz „die Dispositionstabelle wird neu aufgebaut“: das FORM wird nie erreicht",
+    "gesamte Scheibe — kein Fachsatz „fällige Festgelder werden prolongiert oder zurückgezahlt“: der Report listet nur"
+  ],
+  "processDescription": "Der Händler startet den Report morgens mit Buchungskreis und Stichtag (Vorschlag heute). Der Report liest alle Festgeldgeschäfte (Produktart 51A) des Buchungskreises, deren Laufzeit am Stichtag endet. Gibt es keine, schreibt er einen Hinweis mit dem Stichtag und beendet den Lauf. Sonst listet er jedes fällige Geschäft mit Geschäftsnummer, Geschäftspartner und Währung. Eine frühere Übergabe an eine Cash-Management-Tabelle steht noch im Code, ist aber durch die Bedingung 1 = 2 stillgelegt; die zugehörige Routine, die diese Tabelle löschen und neu füllen würde, wird nie ausgeführt. Es wird nichts geändert."
+}

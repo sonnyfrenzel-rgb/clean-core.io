@@ -1,0 +1,42 @@
+{
+  "id": "BM-180",
+  "title": "Außenhandel Präferenz: Warenursprung von Fertigerzeugnissen aus Stückliste und Lieferantenerklärungen kalkulieren",
+  "domain": "Außenhandel / GTS – Präferenzabwicklung",
+  "band": "sehr komplex",
+  "loc": 406,
+  "constructs": [
+    "INITIALIZATION",
+    "LEAVE PROGRAM aus FORM",
+    "Schalter über TVARVC mit Benutzer-Ausnahme",
+    "lokale Klasse mit rekursiver Methode",
+    "eigene Ausnahme (cx_no_check) mit RAISE EXCEPTION",
+    "TRY … CATCH im Hauptprogramm",
+    "HASHED TABLE als Cache",
+    "line_exists / VALUE # OPTIONAL / COND # / xsdbool / REDUCE / VALUE # FOR",
+    "CS_BOM_EXPL_MAT_V2",
+    "CHECK vor FOR ALL ENTRIES",
+    "MODIFY … FROM TABLE",
+    "SWE_EVENT_CREATE + COMMIT WORK",
+    "AT NEW",
+    "nie gerufenes FORM mit IF 1 = 2"
+  ],
+  "scenario": "Exportorientierter Maschinenbauer: die Zollabteilung ermittelt jährlich bzw. nach Stücklistenänderungen, welche Fertigerzeugnisse präferenzbegünstigten EU-Ursprung haben, um Langzeit-Lieferantenerklärungen und Ursprungsnachweise ausstellen zu können.",
+  "s4_issues": [
+    "Präferenzkalkulation im Eigenbau statt SAP GTS Präferenzabwicklung (Lieferantenerklärungen/Präferenzermittlung)",
+    "Direktlesen MARC/MARA/MBEW; Warennummer MARC-STAWN in S/4 im Klassifizierungsmodell",
+    "CS_BOM_EXPL_MAT_V2 je Baugruppe (Performance)",
+    "Workflow-Ereignis über SWE_EVENT_CREATE statt Business Events"
+  ],
+  "wave": 2,
+  "module": "SD-FT / GTS",
+  "edge_constructs": [
+    "Rekursion über Methode (bewerten ruft bewerten)",
+    "RAISE EXCEPTION TYPE aus der Rekursion ohne Aufräumen",
+    "Schalter über TVARVC plus Hintertür IF … sy-uname <> …",
+    "LEAVE PROGRAM",
+    "RETURN aus START-OF-SELECTION, END-OF-SELECTION läuft trotzdem",
+    "AT NEW",
+    "toter Code IF 1 = 2 / nie erreichtes FORM",
+    "COND / xsdbool / REDUCE / VALUE # FOR"
+  ]
+}

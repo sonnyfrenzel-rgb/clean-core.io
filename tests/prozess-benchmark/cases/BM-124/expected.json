@@ -1,0 +1,259 @@
+{
+  "id": "BM-124",
+  "title": "FSCM-Kreditmanagement: Auftragswert gegen Kreditlimit des Segments prüfen (UKMBP_CMS_SGM, xsdbool)",
+  "classes": [
+    "K01",
+    "K02"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "UKMBP_CMS_SGM",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-124-B01",
+      "text": "Für den Geschäftspartner werden im angegebenen Kreditsegment Kreditlimit, Sperrkennzeichen und Limitgültigkeit gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        }
+      ]
+    },
+    {
+      "id": "BM-124-B02",
+      "text": "Hat der Partner im Segment keine Kreditdaten, wird die Prüfung mit einer Ausnahme „kein Segment“ abgebrochen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-124-B03",
+      "text": "Ist der Partner im Kreditmanagement gesperrt, wird der Auftrag ohne weitere Prüfung abgelehnt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-124-B04",
+      "text": "Sonst wird der Auftrag freigegeben, wenn das Limit unbefristet oder noch gültig ist und das übergebene Obligo zusammen mit dem Auftragswert das Kreditlimit nicht übersteigt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Limitprüfung für einen Auftragswert"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Kreditlimit, Sperre und Limitgültigkeit des Partners im Segment lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Kreditsegmentdaten vorhanden?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Abbruch: Partner hat keine Daten im Kreditsegment"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Partner im Kreditmanagement gesperrt?"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Ablehnung ohne weitere Prüfung"
+      },
+      {
+        "id": "a",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Freigabe festlegen: Limit gültig und Obligo plus Auftragswert im Limit"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Ergebnis zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "r",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "x1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "e2",
+        "condition": "ls_sgm-xblocked = abap_true"
+      },
+      {
+        "from": "g2",
+        "to": "a",
+        "condition": "else"
+      },
+      {
+        "from": "a",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:16 — kein Fachsatz „das aktuelle Obligo wird aus dem Kreditmanagement ermittelt“: das Obligo kommt vom Aufrufer, es wird nur das Limit gelesen",
+    "source.abap:26 — kein Fachsatz „der gesperrte Partner löst eine Ausnahme aus“: die Methode kehrt ohne Ausnahme mit „nicht freigegeben“ zurück",
+    "gesamte Scheibe — kein Fachsatz „der Auftrag wird gesperrt oder ein Kreditfall angelegt“: die Methode liefert nur Ja/Nein"
+  ],
+  "processDescription": "Das Web-Shop-Backend ruft die Methode mit Geschäftspartner, Kreditsegment, bisherigem Obligo und dem Wert des neuen Auftrags auf. Die Methode liest das Kreditlimit des Partners im Segment samt Sperrkennzeichen und Limitgültigkeit. Fehlen diese Daten, bricht sie mit einer Ausnahme „kein Segment“ ab. Ist der Partner gesperrt, kehrt sie sofort mit „nicht freigegeben“ zurück. Andernfalls gibt sie den Auftrag frei, wenn das Limit unbefristet oder noch gültig ist und Obligo plus Auftragswert das Limit nicht übersteigen; sonst meldet sie „nicht freigegeben“. Das Obligo wird nicht selbst ermittelt, und es wird nichts geschrieben."
+}

@@ -1,0 +1,93 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufruf csl",
+      "before": "csl -> gk [always]",
+      "after": "es -> gk [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cae",
+      "before": "cae -> cvd [always]",
+      "after": "ea -> cvd [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cvd",
+      "before": "cvd -> gf [always]",
+      "after": "ev -> gf [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten st1",
+      "before": "action auf z_idoc_input_zposums.abap:28; gk -> st1 [gs_kopf-filiale IS INITIAL]; st1 -> l [next iteration]",
+      "after": "entfernt; gk -> l [gs_kopf-filiale IS INITIAL]",
+      "why": "Makroaufruf status_setzen = Zuweisungen in den Statussatz + APPEND idoc_status; laut Autorenbrief und vereinheitlichter Konvention (Makroaufrufe, reine APPENDs ohne Knoten; wie BM-096/BM-167) kein Knoten. Inhalt bleibt in den Fachsätzen.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten st2",
+      "before": "action auf z_idoc_input_zposums.abap:42; ge -> st2 [sy-subrc <> 0]; st2 -> l [next iteration]",
+      "after": "entfernt; ge -> l [sy-subrc <> 0]",
+      "why": "Makroaufruf status_setzen = Zuweisungen in den Statussatz + APPEND idoc_status; laut Autorenbrief und vereinheitlichter Konvention (Makroaufrufe, reine APPENDs ohne Knoten; wie BM-096/BM-167) kein Knoten. Inhalt bleibt in den Fachsätzen.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten st3",
+      "before": "action auf z_idoc_input_zposums.abap:54; gs -> st3 [gt_sum IS INITIAL]; st3 -> deq [always]",
+      "after": "entfernt; gs -> deq [gt_sum IS INITIAL]",
+      "why": "Makroaufruf status_setzen = Zuweisungen in den Statussatz + APPEND idoc_status; laut Autorenbrief und vereinheitlichter Konvention (Makroaufrufe, reine APPENDs ohne Knoten; wie BM-096/BM-167) kein Knoten. Inhalt bleibt in den Fachsätzen.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten st4",
+      "before": "action auf z_idoc_input_zposums.abap:62; gf2 -> st4 [gt_fehl IS INITIAL]; st4 -> deq [always]",
+      "after": "entfernt; gf2 -> deq [gt_fehl IS INITIAL]",
+      "why": "Makroaufruf status_setzen = Zuweisungen in den Statussatz + APPEND idoc_status; laut Autorenbrief und vereinheitlichter Konvention (Makroaufrufe, reine APPENDs ohne Knoten; wie BM-096/BM-167) kein Knoten. Inhalt bleibt in den Fachsätzen.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten st5",
+      "before": "action auf z_idoc_input_zposums.abap:65; gf2 -> st5 [else]; st5 -> deq [always]",
+      "after": "entfernt; gf2 -> deq [else]",
+      "why": "Makroaufruf status_setzen = Zuweisungen in den Statussatz + APPEND idoc_status; laut Autorenbrief und vereinheitlichter Konvention (Makroaufrufe, reine APPENDs ohne Knoten; wie BM-096/BM-167) kein Knoten. Inhalt bleibt in den Fachsätzen.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten pp",
+      "before": "action auf lzposf01.abap:21 (APPEND VALUE #( … ) TO gt_pos); gm -> pp [else]; pp -> ls [next iteration]",
+      "after": "entfernt; gm -> ls [else]",
+      "why": "Reines APPEND in eine interne Tabelle; laut Autorenbrief kein Knoten. Inhalt (Umsatz abzüglich Rabatt) bleibt in Fachsatz B01 (Anker lzposf01:21).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten am",
+      "before": "action auf lzposf01.abap:47 (<ls_pos>-matnr = ls_mean-matnr); gm2 -> am [sy-subrc = 0]; am -> la [next iteration]",
+      "after": "entfernt; gm2 -> la [sy-subrc = 0]",
+      "why": "Reine Zuweisung; laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B05.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten ap",
+      "before": "action auf lzposf01.abap:77 (APPEND ls_sum TO gt_sum); ae -> ap [AT END OF matnr]; ap -> lv [next iteration]",
+      "after": "entfernt; ae -> lv [AT END OF matnr]",
+      "why": "Reines APPEND (mit Zuweisung und CLEAR) in der Kontrollstufe; laut vereinheitlichter Konvention kein Knoten. Inhalt bleibt in Fachsatz B06 (Anker :75).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten iu",
+      "before": "action auf z_idoc_input_zposums.abap:75 (in_update_task = 'X'); l -> iu [no more rows]; iu -> e [always]",
+      "after": "entfernt; l -> e [no more rows]",
+      "why": "Reine Zuweisung eines Exportparameters; laut Autorenbrief kein Knoten (wie BM-083). Inhalt bleibt in Fachsatz B11 (Anker :75).",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": [
+    "ak (lzposf01:73, Kumulieren von Menge und Umsatz) als action belassen: Berechnung, die das Verdichtungsergebnis festlegt."
+  ]
+}

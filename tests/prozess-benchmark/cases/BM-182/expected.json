@@ -1,0 +1,315 @@
+{
+  "id": "BM-182",
+  "title": "Garantieantrag anlegen: Garantieprüfung, Antragsnummer aus Nummernkreis, Prüfstatus ab 5.000",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "BGMKOBJ",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 17,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:17"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "NUMBER_GET_NEXT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 24,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:24"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZWTY_ANTRAG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:38"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-182-B01",
+      "text": "Zum Gerät wird das Ende der Kundengarantie (Garantieart 1) gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-182-B02",
+      "text": "Hat das Gerät keine Kundengarantie oder ist sie abgelaufen, wird der Antrag mit der Ausnahme GARANTIE_ABGELAUFEN abgelehnt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-182-B03",
+      "text": "Die Antragsnummer wird aus dem Nummernkreis ZWTY_ANTR, Intervall 01, gezogen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-182-B04",
+      "text": "Anträge über 5.000 erhalten den Status P (zu prüfen), alle anderen den Status F.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-182-B05",
+      "text": "Der Garantieantrag wird mit Gerät, Schadenscode, Betrag, Status, Anlagedatum und Anleger gespeichert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Händlerportal legt Garantieantrag an"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Garantieende des Geräts lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Garantie vorhanden und gültig?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Fehlermeldung Garantie abgelaufen"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Antrag abgelehnt: Garantie abgelaufen"
+      },
+      {
+        "id": "nr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Antragsnummer aus Nummernkreis ziehen"
+      },
+      {
+        "id": "st",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Prüfstatus nach Betragsgrenze 5.000 festlegen"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Garantieantrag speichern"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Antragsnummer an Portal zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "o1",
+        "condition": "sy-subrc <> 0 OR lv_gwlen < sy-datum"
+      },
+      {
+        "from": "g",
+        "to": "nr",
+        "condition": "else"
+      },
+      {
+        "from": "nr",
+        "to": "st",
+        "condition": "always"
+      },
+      {
+        "from": "st",
+        "to": "w",
+        "condition": "always"
+      },
+      {
+        "from": "w",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "o1",
+        "to": "e1",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:24 — kein Fachsatz „ist keine Nummer verfügbar, wird der Antrag mit einer Ausnahme abgelehnt“: der Aufruf hat keinen EXCEPTIONS-Zusatz, eine Ausnahme des Nummernkreises führt zum Laufzeitfehler",
+    "source.abap:38 — kein Fachsatz „der Antrag wird festgeschrieben/verbucht“: der Baustein setzt kein COMMIT WORK ab und prüft das Ergebnis des INSERT nicht; festgeschrieben wird erst durch den Aufrufer",
+    "gesamte Scheibe — kein Fachsatz „der Garantieantrag wird genehmigt oder erstattet“: Status P/F ist nur eine Einstufung, eine Genehmigung oder Gutschrift findet nicht statt"
+  ],
+  "processDescription": "Ein Händlerportal ruft den Baustein mit Equipmentnummer, Schadenscode und beantragtem Betrag auf. Der Baustein liest zum Gerät das Ende der Kundengarantie (Garantieart 1). Gibt es keine solche Garantie oder liegt ihr Ende vor dem heutigen Tag, bricht er mit der Ausnahme GARANTIE_ABGELAUFEN und einer Fehlermeldung ab. Sonst zieht er eine neue Antragsnummer aus dem Nummernkreisobjekt ZWTY_ANTR, Intervall 01; ein Fehler dabei ist nicht abgefangen und führt zum Laufzeitfehler. Der Antrag erhält den Status P (zu prüfen), wenn der Betrag 5.000 übersteigt, sonst F. Er wird mit Gerät, Schadenscode, Betrag, Status, Datum und Benutzer in die kundeneigene Antragstabelle geschrieben, und die Antragsnummer geht an den Aufrufer zurück. Festgeschrieben wird erst durch das COMMIT des Aufrufers."
+}

@@ -1,0 +1,45 @@
+{
+  "id": "BM-158",
+  "title": "Reorganisation per Upload: Organisationseinheiten anlegen, Planstellen umhängen, Personalmaßnahme per Batch-Input",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "sehr komplex",
+  "loc": 442,
+  "constructs": [
+    "REPORT mit vier Includes",
+    "AUTHORITY-CHECK PLOG",
+    "CL_GUI_FRONTEND_SERVICES=>GUI_UPLOAD",
+    "SPLIT",
+    "CASE mit CONTINUE",
+    "SELECT COUNT(*) mit dynamischer WHERE-Klausel",
+    "REDUCE",
+    "PERFORM (lv_form) IN PROGRAM … IF FOUND",
+    "COMMIT WORK AND WAIT / ROLLBACK WORK je Zeile",
+    "RH_OBJECT_CREATE",
+    "RH_RELATION_MAINTAIN",
+    "RH_CUT_INFTY",
+    "RH_UPDATE_INFTY",
+    "CALL TRANSACTION 'PA40' USING bdcdata",
+    "IF sy-uname",
+    "CL_SALV_TABLE mit WRITE-Ersatz"
+  ],
+  "scenario": "Bei einer Vertriebsreorganisation liefert der Fachbereich die neue Struktur als Excel/CSV; ein Upload legt Organisationseinheiten an, hängt Planstellen um, benennt um oder grenzt ab und stößt für betroffene Inhaber eine organisatorische Maßnahme im Personalstamm an.",
+  "s4_issues": [
+    "Batch-Input auf PA40 mit festen Dynpronummern",
+    "RH_*-Bausteine zur direkten OM-Pflege",
+    "GUI_UPLOAD nur im Dialog",
+    "Dynamischer PERFORM",
+    "Benutzername fest im Code"
+  ],
+  "wave": 2,
+  "module": "OM",
+  "edge_constructs": [
+    "dynamische WHERE-Klausel",
+    "PERFORM (lv_form) IN PROGRAM … IF FOUND (Ziele nur dynamisch erreichbar)",
+    "Debug-Hintertür IF sy-uname = …",
+    "MESSAGE … TYPE 'E' als Pfadende",
+    "CONTINUE aus WHEN OTHERS",
+    "RETURN aus tiefem FORM",
+    "TRY … CATCH mit Ersatzausgabe",
+    "Testlauf mit CALL TRANSACTION, das eigenständig verbucht"
+  ]
+}

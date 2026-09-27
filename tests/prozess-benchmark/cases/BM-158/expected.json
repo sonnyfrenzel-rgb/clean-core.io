@@ -1,0 +1,2613 @@
+{
+  "id": "BM-158",
+  "title": "Reorganisation per Upload: Organisationseinheiten anlegen, Planstellen umhängen, Personalmaßnahme per Batch-Input",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "CL_GUI_FRONTEND_SERVICES",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zom_reorg_upload_f01.abap",
+        "line": 10,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zom_reorg_upload_f01.abap:10"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HRP1000",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zom_reorg_upload_f01.abap",
+        "line": 68,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zom_reorg_upload_f01.abap:68"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RH_OBJECT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zom_reorg_upload_f02.abap",
+        "line": 9,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zom_reorg_upload_f02.abap:9"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RH_RELATION_MAINTAIN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zom_reorg_upload_f02.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zom_reorg_upload_f02.abap:30"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HRP1001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zom_reorg_upload_f02.abap",
+        "line": 59,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zom_reorg_upload_f02.abap:59"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RH_CUT_INFTY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zom_reorg_upload_f02.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zom_reorg_upload_f02.abap:65"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RH_RELATION_MAINTAIN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zom_reorg_upload_f02.abap",
+        "line": 80,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zom_reorg_upload_f02.abap:80"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HRP1001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zom_reorg_upload_f02.abap",
+        "line": 103,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zom_reorg_upload_f02.abap:103"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HRP1000",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zom_reorg_upload_f02.abap",
+        "line": 125,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zom_reorg_upload_f02.abap:125"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RH_UPDATE_INFTY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zom_reorg_upload_f02.abap",
+        "line": 135,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zom_reorg_upload_f02.abap:135"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HRP1001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zom_reorg_upload_f02.abap",
+        "line": 154,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zom_reorg_upload_f02.abap:154"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HRP1000",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zom_reorg_upload_f02.abap",
+        "line": 163,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zom_reorg_upload_f02.abap:163"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RH_CUT_INFTY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zom_reorg_upload_f02.abap",
+        "line": 167,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zom_reorg_upload_f02.abap:167"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA40",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zom_reorg_upload_f03.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zom_reorg_upload_f03.abap:38"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zom_reorg_upload_f01.abap",
+        "line": 113,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zom_reorg_upload_f01.abap:113"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-158-B01",
+      "text": "Ohne Berechtigung zur Pflege von Organisationsbeziehungen bricht der Lauf ab.",
+      "anchors": [
+        {
+          "file": "zom_reorg_upload.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:21"
+        },
+        {
+          "file": "zom_reorg_upload.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:28"
+        },
+        {
+          "file": "zom_reorg_upload.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-158-B02",
+      "text": "Die Reorganisationsdatei wird vom Arbeitsplatz geladen; im Hintergrund ist das nicht möglich, und eine unlesbare oder leere Datei bricht den Lauf ab.",
+      "anchors": [
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:6"
+        },
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:10"
+        },
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-158-B03",
+      "text": "Jede Zeile außer einer Excel-Kopfzeile wird in Aktion, Objekt-ID, übergeordnete Einheit, Kurz- und Langtext zerlegt.",
+      "anchors": [
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:29"
+        },
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:31"
+        },
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-158-B04",
+      "text": "Zeilen mit unbekannter Aktion werden als fehlerhaft protokolliert.",
+      "anchors": [
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:52"
+        },
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:63"
+        },
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-158-B05",
+      "text": "Für Anlage und Umhängen muss die übergeordnete Einheit aktiv und zum Stichtag gültig sein, für Umbenennen und Abgrenzen die Einheit selbst zum Stichtag existieren; sonst wird die Zeile als fehlerhaft protokolliert.",
+      "anchors": [
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:68"
+        },
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:69"
+        },
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-158-B06",
+      "text": "Die fehlerhaften Zeilen werden gezählt; im strengen Modus wird bei auch nur einem Fehler nichts geändert.",
+      "anchors": [
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:75"
+        },
+        {
+          "file": "zom_reorg_upload.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:36"
+        },
+        {
+          "file": "zom_reorg_upload.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-158-B07",
+      "text": "Sonst wird jede fehlerfreie Zeile über die zur Aktion gehörende Routine ausgeführt, deren Name aus der Aktion gebildet wird.",
+      "anchors": [
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:84"
+        },
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:85"
+        },
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-158-B08",
+      "text": "Eine erfolgreiche Zeile wird im Echtlauf sofort festgeschrieben; im Testlauf oder bei Misserfolg werden ihre OM-Änderungen verworfen und das protokolliert.",
+      "anchors": [
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:89"
+        },
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:90"
+        },
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-158-B09",
+      "text": "Bei NEWO wird eine neue Organisationseinheit ab Stichtag unbefristet angelegt und der übergeordneten Einheit unterstellt.",
+      "anchors": [
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:9"
+        },
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:24"
+        },
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-158-B10",
+      "text": "Bei MOVS wird die bisherige Zuordnung der Planstelle zum Vortag abgegrenzt und die Planstelle ab Stichtag der neuen Einheit zugeordnet; scheitert ein Schritt, ist die Zeile nicht erfolgreich.",
+      "anchors": [
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:59"
+        },
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:65"
+        },
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:80"
+        },
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:100"
+        }
+      ]
+    },
+    {
+      "id": "BM-158-B11",
+      "text": "Für jeden Inhaber der umgehängten Planstelle wird im Personalstamm eine Maßnahme „Organisatorische Änderung“ mit der Planstelle ausgeführt; scheitert sie, wird nur eine Warnung protokolliert und die OM-Änderung bleibt gültig.",
+      "anchors": [
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:103"
+        },
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:109"
+        },
+        {
+          "file": "zom_reorg_upload_f03.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f03.abap:38"
+        },
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:111"
+        }
+      ]
+    },
+    {
+      "id": "BM-158-B12",
+      "text": "Die Personalmaßnahme gilt als gescheitert, wenn die Transaktion eine Fehler- oder Abbruchmeldung liefert; für den Benutzer OMADMIN1 läuft sie sichtbar ab.",
+      "anchors": [
+        {
+          "file": "zom_reorg_upload_f03.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f03.abap:34"
+        },
+        {
+          "file": "zom_reorg_upload_f03.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f03.abap:43"
+        },
+        {
+          "file": "zom_reorg_upload_f03.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f03.abap:47"
+        },
+        {
+          "file": "zom_reorg_upload_f03.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f03.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-158-B13",
+      "text": "Bei RENA werden Kurz- und Langtext der Einheit in der Anmeldesprache ersetzt; ist der Satz nicht vorhanden, ist die Zeile nicht erfolgreich.",
+      "anchors": [
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:125"
+        },
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:129"
+        },
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:135"
+        }
+      ]
+    },
+    {
+      "id": "BM-158-B14",
+      "text": "Bei DELO wird eine Einheit nur abgegrenzt, wenn ihr keine Einheiten oder Planstellen mehr unterstellt sind; dann endet sie zum Vortag des Stichtags.",
+      "anchors": [
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:154"
+        },
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:158"
+        },
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:163"
+        },
+        {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:167"
+        }
+      ]
+    },
+    {
+      "id": "BM-158-B15",
+      "text": "Zum Schluss wird das Protokoll mit der Zahl fehlerhafter Zeilen angezeigt, ersatzweise als einfache Liste.",
+      "anchors": [
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:113"
+        },
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:117"
+        },
+        {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:120"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zom_reorg_upload.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:20"
+        },
+        "meaning": "Reorganisationslauf startet"
+      },
+      {
+        "id": "au",
+        "type": "action",
+        "anchor": {
+          "file": "zom_reorg_upload.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:21"
+        },
+        "meaning": "OM-Pflegeberechtigung prüfen"
+      },
+      {
+        "id": "g_au",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:28"
+        },
+        "meaning": "Berechtigt?"
+      },
+      {
+        "id": "m_au",
+        "type": "output",
+        "anchor": {
+          "file": "zom_reorg_upload.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:29"
+        },
+        "meaning": "Fehlermeldung: keine OM-Pflegeberechtigung"
+      },
+      {
+        "id": "o_au",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:29"
+        },
+        "meaning": "Abbruch: keine Berechtigung"
+      },
+      {
+        "id": "c_up",
+        "type": "call",
+        "anchor": {
+          "file": "zom_reorg_upload.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:32"
+        },
+        "meaning": "Datei hochladen"
+      },
+      {
+        "id": "s_up",
+        "type": "start",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:5"
+        },
+        "meaning": "Upload"
+      },
+      {
+        "id": "g_batch",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:6"
+        },
+        "meaning": "Im Hintergrund?"
+      },
+      {
+        "id": "m_batch",
+        "type": "output",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:7"
+        },
+        "meaning": "Fehlermeldung: Upload nur im Dialog"
+      },
+      {
+        "id": "o_batch",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:7"
+        },
+        "meaning": "Abbruch: nur im Dialog"
+      },
+      {
+        "id": "c_gui",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:10"
+        },
+        "meaning": "Datei vom Arbeitsplatz laden"
+      },
+      {
+        "id": "g_up",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:18"
+        },
+        "meaning": "Nicht lesbar oder leer?"
+      },
+      {
+        "id": "m_up",
+        "type": "output",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:19"
+        },
+        "meaning": "Fehlermeldung: Datei nicht lesbar oder leer"
+      },
+      {
+        "id": "o_up",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:19"
+        },
+        "meaning": "Abbruch: Datei unbrauchbar"
+      },
+      {
+        "id": "e_up",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:21"
+        },
+        "meaning": "Datei geladen"
+      },
+      {
+        "id": "c_parse",
+        "type": "call",
+        "anchor": {
+          "file": "zom_reorg_upload.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:33"
+        },
+        "meaning": "Zeilen zerlegen"
+      },
+      {
+        "id": "s_pa",
+        "type": "start",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:24"
+        },
+        "meaning": "Zerlegen"
+      },
+      {
+        "id": "l_raw",
+        "type": "loop",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:29"
+        },
+        "meaning": "Je Dateizeile"
+      },
+      {
+        "id": "g_hdr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:31"
+        },
+        "meaning": "Kopfzeile?"
+      },
+      {
+        "id": "e_pa",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:43"
+        },
+        "meaning": "Zeilen zerlegt"
+      },
+      {
+        "id": "c_val",
+        "type": "call",
+        "anchor": {
+          "file": "zom_reorg_upload.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:34"
+        },
+        "meaning": "Zeilen prüfen"
+      },
+      {
+        "id": "s_va",
+        "type": "start",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:46"
+        },
+        "meaning": "Prüfen"
+      },
+      {
+        "id": "l_va",
+        "type": "loop",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:50"
+        },
+        "meaning": "Je Zeile"
+      },
+      {
+        "id": "g_act",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:52"
+        },
+        "meaning": "Welche Aktion?"
+      },
+      {
+        "id": "r_cnt",
+        "type": "read",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:68"
+        },
+        "meaning": "Bezugsobjekt mit dynamischer Bedingung suchen"
+      },
+      {
+        "id": "g_cnt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:69"
+        },
+        "meaning": "Bezugsobjekt fehlt?"
+      },
+      {
+        "id": "a_red",
+        "type": "action",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:75"
+        },
+        "meaning": "Fehlerhafte Zeilen zählen"
+      },
+      {
+        "id": "e_va",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:77"
+        },
+        "meaning": "Zeilen geprüft, Fehler gezählt"
+      },
+      {
+        "id": "g_strict",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:36"
+        },
+        "meaning": "Fehler im strengen Modus?"
+      },
+      {
+        "id": "c_strict",
+        "type": "call",
+        "anchor": {
+          "file": "zom_reorg_upload.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:37"
+        },
+        "meaning": "Protokoll: keine Änderung"
+      },
+      {
+        "id": "c_exec",
+        "type": "call",
+        "anchor": {
+          "file": "zom_reorg_upload.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:39"
+        },
+        "meaning": "Zeilen ausführen"
+      },
+      {
+        "id": "e_sos",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:40"
+        },
+        "meaning": "Verarbeitung abgeschlossen"
+      },
+      {
+        "id": "s_ex",
+        "type": "start",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:80"
+        },
+        "meaning": "Ausführen"
+      },
+      {
+        "id": "l_ex",
+        "type": "loop",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:84"
+        },
+        "meaning": "Je fehlerfreier Zeile"
+      },
+      {
+        "id": "c_dyn",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:87"
+        },
+        "meaning": "Aktionsroutine dynamisch ausführen, falls vorhanden"
+      },
+      {
+        "id": "g_ok",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:89"
+        },
+        "meaning": "Erfolgreich im Echtlauf?"
+      },
+      {
+        "id": "t_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:90"
+        },
+        "meaning": "Zeile festschreiben"
+      },
+      {
+        "id": "t_rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:93"
+        },
+        "meaning": "Zeile verwerfen"
+      },
+      {
+        "id": "e_ex",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:100"
+        },
+        "meaning": "Alle Zeilen ausgeführt"
+      },
+      {
+        "id": "s_eos",
+        "type": "start",
+        "anchor": {
+          "file": "zom_reorg_upload.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:42"
+        },
+        "meaning": "Abschluss"
+      },
+      {
+        "id": "c_show",
+        "type": "call",
+        "anchor": {
+          "file": "zom_reorg_upload.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:43"
+        },
+        "meaning": "Protokoll anzeigen"
+      },
+      {
+        "id": "s_sp",
+        "type": "start",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:111"
+        },
+        "meaning": "Protokollausgabe"
+      },
+      {
+        "id": "c_salv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:113"
+        },
+        "meaning": "Protokollliste erzeugen"
+      },
+      {
+        "id": "o_disp",
+        "type": "output",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:117"
+        },
+        "meaning": "Protokoll mit Fehlerzahl im Kopf anzeigen"
+      },
+      {
+        "id": "l_prot",
+        "type": "loop",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:119"
+        },
+        "meaning": "Je Protokollzeile"
+      },
+      {
+        "id": "o_wr",
+        "type": "output",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:120"
+        },
+        "meaning": "Ersatzweise als Liste ausgeben"
+      },
+      {
+        "id": "e_sp",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:123"
+        },
+        "meaning": "Protokoll ausgegeben"
+      },
+      {
+        "id": "e_eos",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload.abap:43"
+        },
+        "meaning": "Lauf beendet"
+      },
+      {
+        "id": "s_n",
+        "type": "start",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:5"
+        },
+        "meaning": "Aktion NEWO"
+      },
+      {
+        "id": "c_oc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:9"
+        },
+        "meaning": "Organisationseinheit anlegen (Verbuchung)"
+      },
+      {
+        "id": "g_oc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:24"
+        },
+        "meaning": "Anlage gescheitert?"
+      },
+      {
+        "id": "e_oc",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:26"
+        },
+        "meaning": "Fehler protokollieren, nicht erfolgreich"
+      },
+      {
+        "id": "c_rm1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:30"
+        },
+        "meaning": "Berichtsbeziehung zur übergeordneten Einheit anlegen"
+      },
+      {
+        "id": "a_ok1",
+        "type": "action",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:46"
+        },
+        "meaning": "Erfolg festlegen"
+      },
+      {
+        "id": "e_n",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:47"
+        },
+        "meaning": "Anlage abgeschlossen, Erfolg zurückgeben"
+      },
+      {
+        "id": "s_m",
+        "type": "start",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:50"
+        },
+        "meaning": "Aktion MOVS"
+      },
+      {
+        "id": "r_old",
+        "type": "read",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:59"
+        },
+        "meaning": "Bisherige Org.-Zuordnung der Planstelle lesen"
+      },
+      {
+        "id": "g_old",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:63"
+        },
+        "meaning": "Zuordnung vorhanden?"
+      },
+      {
+        "id": "c_cut1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:65"
+        },
+        "meaning": "Alte Zuordnung zum Vortag abgrenzen"
+      },
+      {
+        "id": "g_cut1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:74"
+        },
+        "meaning": "Abgrenzen gescheitert?"
+      },
+      {
+        "id": "e_cut1",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:76"
+        },
+        "meaning": "Fehler, nicht erfolgreich"
+      },
+      {
+        "id": "c_rm2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:80"
+        },
+        "meaning": "Planstelle der neuen Einheit zuordnen"
+      },
+      {
+        "id": "g_rm2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:96"
+        },
+        "meaning": "Zuordnung gescheitert?"
+      },
+      {
+        "id": "e_rm2",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:98"
+        },
+        "meaning": "Fehler, nicht erfolgreich"
+      },
+      {
+        "id": "r_hold",
+        "type": "read",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:103"
+        },
+        "meaning": "Inhaber der Planstelle lesen"
+      },
+      {
+        "id": "l_hold",
+        "type": "loop",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:107"
+        },
+        "meaning": "Je Inhaber"
+      },
+      {
+        "id": "c_pa",
+        "type": "call",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:109"
+        },
+        "meaning": "Organisatorische Maßnahme im Personalstamm"
+      },
+      {
+        "id": "g_pa",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:111"
+        },
+        "meaning": "Maßnahme gescheitert?"
+      },
+      {
+        "id": "e_m",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:117"
+        },
+        "meaning": "Umhängen abgeschlossen"
+      },
+      {
+        "id": "s_r",
+        "type": "start",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:120"
+        },
+        "meaning": "Aktion RENA"
+      },
+      {
+        "id": "r_1000",
+        "type": "read",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:125"
+        },
+        "meaning": "Objektsatz in Anmeldesprache lesen"
+      },
+      {
+        "id": "g_r",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:129"
+        },
+        "meaning": "Nicht gefunden?"
+      },
+      {
+        "id": "e_r",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:130"
+        },
+        "meaning": "Nicht erfolgreich"
+      },
+      {
+        "id": "c_upd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:135"
+        },
+        "meaning": "Kurz- und Langtext ändern (Verbuchung)"
+      },
+      {
+        "id": "a_ok3",
+        "type": "action",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:143"
+        },
+        "meaning": "Erfolg festlegen"
+      },
+      {
+        "id": "e_r2",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:144"
+        },
+        "meaning": "Umbenennung abgeschlossen, Erfolg zurückgeben"
+      },
+      {
+        "id": "s_d",
+        "type": "start",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:147"
+        },
+        "meaning": "Aktion DELO"
+      },
+      {
+        "id": "r_sub",
+        "type": "read",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:154"
+        },
+        "meaning": "Untergeordnete Einheiten und Planstellen zählen"
+      },
+      {
+        "id": "g_sub",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:158"
+        },
+        "meaning": "Einheit nicht leer?"
+      },
+      {
+        "id": "e_sub",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:160"
+        },
+        "meaning": "Fehler, nicht erfolgreich"
+      },
+      {
+        "id": "r_d1000",
+        "type": "read",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:163"
+        },
+        "meaning": "Objektsatz lesen"
+      },
+      {
+        "id": "c_cut2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:167"
+        },
+        "meaning": "Organisationseinheit zum Vortag abgrenzen"
+      },
+      {
+        "id": "a_ok4",
+        "type": "action",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 176,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:176"
+        },
+        "meaning": "Erfolg festlegen"
+      },
+      {
+        "id": "e_d",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:177"
+        },
+        "meaning": "Abgrenzung abgeschlossen, Erfolg zurückgeben"
+      },
+      {
+        "id": "s_pa2",
+        "type": "start",
+        "anchor": {
+          "file": "zom_reorg_upload_f03.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f03.abap:5"
+        },
+        "meaning": "Personalmaßnahme"
+      },
+      {
+        "id": "g_dbg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload_f03.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f03.abap:34"
+        },
+        "meaning": "Sonderbenutzer?"
+      },
+      {
+        "id": "x_pa40",
+        "type": "transaction",
+        "anchor": {
+          "file": "zom_reorg_upload_f03.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f03.abap:38"
+        },
+        "meaning": "Maßnahme ZO in PA40 mit neuer Planstelle ausführen"
+      },
+      {
+        "id": "r_mE",
+        "type": "read",
+        "anchor": {
+          "file": "zom_reorg_upload_f03.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f03.abap:43"
+        },
+        "meaning": "Fehlermeldung suchen"
+      },
+      {
+        "id": "g_mE",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload_f03.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f03.abap:44"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "e_mE",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f03.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f03.abap:45"
+        },
+        "meaning": "Nicht erfolgreich"
+      },
+      {
+        "id": "r_mA",
+        "type": "read",
+        "anchor": {
+          "file": "zom_reorg_upload_f03.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f03.abap:47"
+        },
+        "meaning": "Abbruchmeldung suchen"
+      },
+      {
+        "id": "g_mA",
+        "type": "gateway",
+        "anchor": {
+          "file": "zom_reorg_upload_f03.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f03.abap:48"
+        },
+        "meaning": "Abbruch?"
+      },
+      {
+        "id": "e_pa2",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f03.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f03.abap:52"
+        },
+        "meaning": "Maßnahme erfolgreich"
+      },
+      {
+        "id": "e_mA",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f03.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f03.abap:49"
+        },
+        "meaning": "Nicht erfolgreich"
+      },
+      {
+        "id": "s_prot",
+        "type": "start",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:103"
+        },
+        "meaning": "Protokollzeile aufnehmen"
+      },
+      {
+        "id": "e_prot",
+        "type": "end",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:108"
+        },
+        "meaning": "Protokollzeile aufgenommen"
+      },
+      {
+        "id": "c_p64",
+        "type": "call",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:64"
+        },
+        "meaning": "Protokoll: unbekannte Aktion"
+      },
+      {
+        "id": "c_p71",
+        "type": "call",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:71"
+        },
+        "meaning": "Protokoll: Bezugsobjekt fehlt"
+      },
+      {
+        "id": "c_p91",
+        "type": "call",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:91"
+        },
+        "meaning": "Protokoll: ausgeführt"
+      },
+      {
+        "id": "c_p94",
+        "type": "call",
+        "anchor": {
+          "file": "zom_reorg_upload_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f01.abap:94"
+        },
+        "meaning": "Protokoll: Test bzw. nicht ausgeführt"
+      },
+      {
+        "id": "c_p25",
+        "type": "call",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:25"
+        },
+        "meaning": "Protokoll: Org.-Einheit nicht angelegt"
+      },
+      {
+        "id": "c_p75",
+        "type": "call",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:75"
+        },
+        "meaning": "Protokoll: alte Zuordnung nicht abgegrenzt"
+      },
+      {
+        "id": "c_p97",
+        "type": "call",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:97"
+        },
+        "meaning": "Protokoll: neue Zuordnung fehlgeschlagen"
+      },
+      {
+        "id": "c_p113",
+        "type": "call",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:113"
+        },
+        "meaning": "Protokoll: Warnung Maßnahme PA40 fehlgeschlagen"
+      },
+      {
+        "id": "c_p159",
+        "type": "call",
+        "anchor": {
+          "file": "zom_reorg_upload_f02.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zom_reorg_upload_f02.abap:159"
+        },
+        "meaning": "Protokoll: Einheit nicht leer"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "au",
+        "condition": "always"
+      },
+      {
+        "from": "au",
+        "to": "g_au",
+        "condition": "always"
+      },
+      {
+        "from": "g_au",
+        "to": "m_au",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_au",
+        "to": "c_up",
+        "condition": "else"
+      },
+      {
+        "from": "c_up",
+        "to": "s_up",
+        "condition": "always"
+      },
+      {
+        "from": "s_up",
+        "to": "g_batch",
+        "condition": "always"
+      },
+      {
+        "from": "g_batch",
+        "to": "m_batch",
+        "condition": "sy-batch = abap_true"
+      },
+      {
+        "from": "g_batch",
+        "to": "c_gui",
+        "condition": "else"
+      },
+      {
+        "from": "c_gui",
+        "to": "g_up",
+        "condition": "always"
+      },
+      {
+        "from": "g_up",
+        "to": "m_up",
+        "condition": "sy-subrc <> 0 OR gt_raw IS INITIAL"
+      },
+      {
+        "from": "c_parse",
+        "to": "s_pa",
+        "condition": "always"
+      },
+      {
+        "from": "s_pa",
+        "to": "l_raw",
+        "condition": "always"
+      },
+      {
+        "from": "l_raw",
+        "to": "g_hdr",
+        "condition": "next row"
+      },
+      {
+        "from": "g_hdr",
+        "to": "l_raw",
+        "condition": "sy-tabix = 1 AND lv_raw CS 'Aktion'"
+      },
+      {
+        "from": "c_val",
+        "to": "s_va",
+        "condition": "always"
+      },
+      {
+        "from": "s_va",
+        "to": "l_va",
+        "condition": "always"
+      },
+      {
+        "from": "l_va",
+        "to": "g_act",
+        "condition": "next row"
+      },
+      {
+        "from": "g_act",
+        "to": "r_cnt",
+        "condition": "WHEN 'NEWO' OR 'MOVS'"
+      },
+      {
+        "from": "g_act",
+        "to": "r_cnt",
+        "condition": "WHEN 'RENA' OR 'DELO'"
+      },
+      {
+        "from": "r_cnt",
+        "to": "g_cnt",
+        "condition": "always"
+      },
+      {
+        "from": "g_cnt",
+        "to": "l_va",
+        "condition": "else"
+      },
+      {
+        "from": "l_va",
+        "to": "a_red",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_strict",
+        "to": "c_strict",
+        "condition": "gv_errors > 0 AND p_strict = abap_true"
+      },
+      {
+        "from": "g_strict",
+        "to": "c_exec",
+        "condition": "else"
+      },
+      {
+        "from": "c_exec",
+        "to": "s_ex",
+        "condition": "always"
+      },
+      {
+        "from": "s_ex",
+        "to": "l_ex",
+        "condition": "always"
+      },
+      {
+        "from": "c_dyn",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "g_ok",
+        "to": "t_cm",
+        "condition": "lv_ok = abap_true AND p_test = abap_false"
+      },
+      {
+        "from": "g_ok",
+        "to": "t_rb",
+        "condition": "else"
+      },
+      {
+        "from": "s_eos",
+        "to": "c_show",
+        "condition": "always"
+      },
+      {
+        "from": "c_show",
+        "to": "s_sp",
+        "condition": "always"
+      },
+      {
+        "from": "s_sp",
+        "to": "c_salv",
+        "condition": "always"
+      },
+      {
+        "from": "c_salv",
+        "to": "o_disp",
+        "condition": "always"
+      },
+      {
+        "from": "c_salv",
+        "to": "l_prot",
+        "condition": "CATCH cx_salv_msg"
+      },
+      {
+        "from": "s_n",
+        "to": "c_oc",
+        "condition": "always"
+      },
+      {
+        "from": "c_oc",
+        "to": "g_oc",
+        "condition": "always"
+      },
+      {
+        "from": "g_oc",
+        "to": "c_p25",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_oc",
+        "to": "c_rm1",
+        "condition": "else"
+      },
+      {
+        "from": "c_rm1",
+        "to": "a_ok1",
+        "condition": "always"
+      },
+      {
+        "from": "s_m",
+        "to": "r_old",
+        "condition": "always"
+      },
+      {
+        "from": "r_old",
+        "to": "g_old",
+        "condition": "always"
+      },
+      {
+        "from": "g_old",
+        "to": "c_cut1",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_old",
+        "to": "c_rm2",
+        "condition": "else"
+      },
+      {
+        "from": "c_cut1",
+        "to": "g_cut1",
+        "condition": "always"
+      },
+      {
+        "from": "g_cut1",
+        "to": "c_p75",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_cut1",
+        "to": "c_rm2",
+        "condition": "else"
+      },
+      {
+        "from": "c_rm2",
+        "to": "g_rm2",
+        "condition": "always"
+      },
+      {
+        "from": "g_rm2",
+        "to": "c_p97",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "r_hold",
+        "to": "l_hold",
+        "condition": "always"
+      },
+      {
+        "from": "l_hold",
+        "to": "c_pa",
+        "condition": "next row"
+      },
+      {
+        "from": "c_pa",
+        "to": "s_pa2",
+        "condition": "always"
+      },
+      {
+        "from": "g_pa",
+        "to": "c_p113",
+        "condition": "lv_pa_ok = abap_false"
+      },
+      {
+        "from": "s_r",
+        "to": "r_1000",
+        "condition": "always"
+      },
+      {
+        "from": "r_1000",
+        "to": "g_r",
+        "condition": "always"
+      },
+      {
+        "from": "g_r",
+        "to": "e_r",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_r",
+        "to": "c_upd",
+        "condition": "else"
+      },
+      {
+        "from": "c_upd",
+        "to": "a_ok3",
+        "condition": "always"
+      },
+      {
+        "from": "s_d",
+        "to": "r_sub",
+        "condition": "always"
+      },
+      {
+        "from": "r_sub",
+        "to": "g_sub",
+        "condition": "always"
+      },
+      {
+        "from": "g_sub",
+        "to": "c_p159",
+        "condition": "lv_sub > 0"
+      },
+      {
+        "from": "g_sub",
+        "to": "r_d1000",
+        "condition": "else"
+      },
+      {
+        "from": "r_d1000",
+        "to": "c_cut2",
+        "condition": "always"
+      },
+      {
+        "from": "c_cut2",
+        "to": "a_ok4",
+        "condition": "always"
+      },
+      {
+        "from": "s_pa2",
+        "to": "g_dbg",
+        "condition": "always"
+      },
+      {
+        "from": "g_dbg",
+        "to": "x_pa40",
+        "condition": "else"
+      },
+      {
+        "from": "x_pa40",
+        "to": "r_mE",
+        "condition": "always"
+      },
+      {
+        "from": "r_mE",
+        "to": "g_mE",
+        "condition": "always"
+      },
+      {
+        "from": "g_mE",
+        "to": "e_mE",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_mE",
+        "to": "r_mA",
+        "condition": "else"
+      },
+      {
+        "from": "r_mA",
+        "to": "g_mA",
+        "condition": "always"
+      },
+      {
+        "from": "g_mA",
+        "to": "e_mA",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "m_au",
+        "to": "o_au",
+        "condition": "always"
+      },
+      {
+        "from": "m_batch",
+        "to": "o_batch",
+        "condition": "always"
+      },
+      {
+        "from": "m_up",
+        "to": "o_up",
+        "condition": "always"
+      },
+      {
+        "from": "s_prot",
+        "to": "e_prot",
+        "condition": "always"
+      },
+      {
+        "from": "c_p64",
+        "to": "s_prot",
+        "condition": "always"
+      },
+      {
+        "from": "c_p71",
+        "to": "s_prot",
+        "condition": "always"
+      },
+      {
+        "from": "c_p91",
+        "to": "s_prot",
+        "condition": "always"
+      },
+      {
+        "from": "c_p94",
+        "to": "s_prot",
+        "condition": "always"
+      },
+      {
+        "from": "c_p25",
+        "to": "s_prot",
+        "condition": "always"
+      },
+      {
+        "from": "c_p75",
+        "to": "s_prot",
+        "condition": "always"
+      },
+      {
+        "from": "c_p97",
+        "to": "s_prot",
+        "condition": "always"
+      },
+      {
+        "from": "c_p113",
+        "to": "s_prot",
+        "condition": "always"
+      },
+      {
+        "from": "c_p159",
+        "to": "s_prot",
+        "condition": "always"
+      },
+      {
+        "from": "c_strict",
+        "to": "s_prot",
+        "condition": "always"
+      },
+      {
+        "from": "g_up",
+        "to": "e_up",
+        "condition": "else"
+      },
+      {
+        "from": "e_up",
+        "to": "c_parse",
+        "condition": "always"
+      },
+      {
+        "from": "g_hdr",
+        "to": "l_raw",
+        "condition": "else"
+      },
+      {
+        "from": "l_raw",
+        "to": "e_pa",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e_pa",
+        "to": "c_val",
+        "condition": "always"
+      },
+      {
+        "from": "g_act",
+        "to": "c_p64",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "g_cnt",
+        "to": "c_p71",
+        "condition": "lv_count = 0"
+      },
+      {
+        "from": "e_prot",
+        "to": "l_va",
+        "condition": "next iteration"
+      },
+      {
+        "from": "a_red",
+        "to": "e_va",
+        "condition": "always"
+      },
+      {
+        "from": "e_va",
+        "to": "g_strict",
+        "condition": "always"
+      },
+      {
+        "from": "e_prot",
+        "to": "e_sos",
+        "condition": "always"
+      },
+      {
+        "from": "e_sos",
+        "to": "s_eos",
+        "condition": "always"
+      },
+      {
+        "from": "l_ex",
+        "to": "c_dyn",
+        "condition": "next row"
+      },
+      {
+        "from": "t_cm",
+        "to": "c_p91",
+        "condition": "always"
+      },
+      {
+        "from": "t_rb",
+        "to": "c_p94",
+        "condition": "always"
+      },
+      {
+        "from": "e_prot",
+        "to": "l_ex",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_ex",
+        "to": "e_ex",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e_ex",
+        "to": "e_sos",
+        "condition": "always"
+      },
+      {
+        "from": "l_prot",
+        "to": "o_wr",
+        "condition": "next row"
+      },
+      {
+        "from": "o_wr",
+        "to": "l_prot",
+        "condition": "next iteration"
+      },
+      {
+        "from": "o_disp",
+        "to": "e_sp",
+        "condition": "always"
+      },
+      {
+        "from": "l_prot",
+        "to": "e_sp",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e_sp",
+        "to": "e_eos",
+        "condition": "always"
+      },
+      {
+        "from": "e_prot",
+        "to": "e_oc",
+        "condition": "always"
+      },
+      {
+        "from": "a_ok1",
+        "to": "e_n",
+        "condition": "always"
+      },
+      {
+        "from": "e_prot",
+        "to": "e_cut1",
+        "condition": "always"
+      },
+      {
+        "from": "e_prot",
+        "to": "e_rm2",
+        "condition": "always"
+      },
+      {
+        "from": "g_rm2",
+        "to": "r_hold",
+        "condition": "else"
+      },
+      {
+        "from": "e_prot",
+        "to": "l_hold",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g_pa",
+        "to": "l_hold",
+        "condition": "else"
+      },
+      {
+        "from": "l_hold",
+        "to": "e_m",
+        "condition": "no more rows"
+      },
+      {
+        "from": "a_ok3",
+        "to": "e_r2",
+        "condition": "always"
+      },
+      {
+        "from": "e_prot",
+        "to": "e_sub",
+        "condition": "always"
+      },
+      {
+        "from": "a_ok4",
+        "to": "e_d",
+        "condition": "always"
+      },
+      {
+        "from": "g_dbg",
+        "to": "x_pa40",
+        "condition": "sy-uname = 'OMADMIN1'"
+      },
+      {
+        "from": "g_mA",
+        "to": "e_pa2",
+        "condition": "else"
+      },
+      {
+        "from": "e_pa2",
+        "to": "g_pa",
+        "condition": "always"
+      },
+      {
+        "from": "e_mE",
+        "to": "g_pa",
+        "condition": "always"
+      },
+      {
+        "from": "e_mA",
+        "to": "g_pa",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zom_reorg_upload_f01.abap:93 — kein Fachsatz „im Testlauf wird nichts verändert“ (die Personalmaßnahmen über CALL TRANSACTION PA40 verbuchen eigenständig und werden vom ROLLBACK nicht erfasst)",
+    "zom_reorg_upload_f02.abap:147 — kein Schluss „ACT_DELO wird nie aufgerufen“ (erreichbar über den dynamischen PERFORM mit Aktion DELO)",
+    "zom_reorg_upload_f01.abap:68 — kein Fachsatz „bei MOVS wird geprüft, ob die Planstelle existiert“ (geprüft wird nur die übergeordnete Einheit)",
+    "zom_reorg_upload_f02.abap:111 — kein Fachsatz „scheitert die Personalmaßnahme, wird das Umhängen zurückgenommen“ (nur Warnung)"
+  ],
+  "processDescription": "Bei einer Reorganisation lädt ein OM-Verantwortlicher im Dialog eine CSV-Datei mit Aktionen hoch; ohne OM-Pflegeberechtigung, im Hintergrund oder bei leerer Datei bricht der Lauf ab. Jede Zeile außer einer Kopfzeile wird zerlegt und geprüft: unbekannte Aktionen und fehlende Bezugsobjekte werden als Fehler markiert. Im strengen Modus wird bei einem Fehler nichts geändert, sonst wird jede fehlerfreie Zeile über eine dynamisch bestimmte Aktionsroutine ausgeführt und einzeln festgeschrieben oder – im Testlauf oder bei Misserfolg – verworfen. NEWO legt eine Organisationseinheit an und unterstellt sie, MOVS grenzt die bisherige Zuordnung einer Planstelle ab, ordnet sie neu zu und löst für jeden Inhaber per Batch-Input eine organisatorische Maßnahme im Personalstamm aus, RENA ändert die Texte, DELO grenzt eine leere Einheit ab. Gescheiterte Personalmaßnahmen erzeugen nur eine Warnung. Da die Maßnahmen eigenständig verbuchen, wirken sie auch im Testlauf. Am Ende wird das Protokoll angezeigt."
+}

@@ -1,0 +1,297 @@
+{
+  "id": "BM-145",
+  "title": "Personalentwicklung: Liste ablaufender Qualifikationen mit Schalter und Benutzer-Hintertür",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HRP1001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-145-B01",
+      "text": "Ob die Auswertung laufen darf, entscheidet ein Schalter in der Variablentabelle.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        }
+      ]
+    },
+    {
+      "id": "BM-145-B02",
+      "text": "Ist der Schalter nicht gesetzt, endet das Programm mit einem Hinweis — außer für den fest eingetragenen Benutzer HRADMIN01, für den die Auswertung immer läuft.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-145-B03",
+      "text": "Es werden die Qualifikationszuordnungen von Personen gelesen, deren Gültigkeit zwischen heute und dem Ende des eingegebenen Zeitfensters endet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-145-B04",
+      "text": "Jede ablaufende Qualifikation wird mit Personalnummer, Qualifikations-ID und Ablaufdatum ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        "meaning": "Aktivierungsschalter lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        "meaning": "Schalter aus und nicht Sonderbenutzer?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        "meaning": "Hinweis: Auswertung nicht aktiv"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Programm verlassen"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Qualifikationszuordnungen mit Ablauf im Zeitfenster lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Je ablaufender Qualifikation"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Person, Qualifikation und Ablaufdatum ausgeben"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Ende der Liste"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "o1",
+        "condition": "lv_active <> 'X' AND sy-uname <> 'HRADMIN01'"
+      },
+      {
+        "from": "o1",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "r2",
+        "condition": "else"
+      },
+      {
+        "from": "r2",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "o2",
+        "condition": "next row"
+      },
+      {
+        "from": "o2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e2",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:22 — kein Fachsatz „Mitarbeiter oder Vorgesetzte werden benachrichtigt“ oder „Schulungen werden gebucht“ (nur Liste)",
+    "source.abap:13 — kein Fachsatz „die Auswertung ist durch eine Berechtigungsprüfung geschützt“ (Benutzername fest im Code, kein AUTHORITY-CHECK)",
+    "source.abap:18 — kein Fachsatz „bereits abgelaufene Qualifikationen werden gelistet“ (Ablaufdatum ab heute)"
+  ],
+  "processDescription": "Ein Report der Personalentwicklung listet Qualifikationen von Mitarbeitern, deren Gültigkeit bald endet. Zuerst liest er einen Aktivierungsschalter aus der Variablentabelle; ist dieser nicht gesetzt, endet er mit einem Hinweis. Für den fest im Code genannten Benutzer HRADMIN01 läuft die Auswertung unabhängig vom Schalter. Dann liest er die Zuordnungen Person–Qualifikation in Planvariante 01, deren Ende zwischen heute und heute plus eingegebener Tageszahl liegt. Jede Zuordnung wird mit Personalnummer, Qualifikations-ID und Ablaufdatum ausgegeben. Es wird nichts geändert und niemand benachrichtigt."
+}

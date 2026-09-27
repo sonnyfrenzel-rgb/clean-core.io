@@ -1,0 +1,2468 @@
+{
+  "id": "BM-138",
+  "title": "PSM-FM: Antrag auf Mittelvormerkung im Dynpro erfassen, prüfen, einreichen und im Vier-Augen-Prinzip genehmigen (Modulpool, Verbuchung, Workflow-Ereignisse)",
+  "classes": [
+    "K01",
+    "K03",
+    "K07",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZFM_MVB_KOPF",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "mzfm_mvb_o01.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfm_mvb_o01.abap:41"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FMFCTR",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzfm_mvb_i01.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfm_mvb_i01.abap:20"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFM_V_VERFUEGBAR",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "mzfm_mvb_f01.abap",
+        "line": 13,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfm_mvb_f01.abap:13"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "NUMBER_GET_NEXT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzfm_mvb_f01.abap",
+        "line": 33,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfm_mvb_f01.abap:33"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_FM_MVB_VERBUCHEN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "mzfm_mvb_f01.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfm_mvb_f01.abap:50"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZFM_MVB",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "mzfm_mvb_f01.abap",
+        "line": 88,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfm_mvb_f01.abap:88"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FMFR_CREATE_FROM_DATA",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzfm_mvb_f01.abap",
+        "line": 106,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfm_mvb_f01.abap:106"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzfm_mvb_f01.abap",
+        "line": 117,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfm_mvb_f01.abap:117"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzfm_mvb_f01.abap",
+        "line": 124,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfm_mvb_f01.abap:124"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SWE_EVENT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzfm_mvb_f01.abap",
+        "line": 163,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfm_mvb_f01.abap:163"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFM_MVB_KOPF",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_fm_mvb_verbuchen.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_fm_mvb_verbuchen.abap:19"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFM_MVB_KOPF",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_fm_mvb_verbuchen.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_fm_mvb_verbuchen.abap:21"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFM_MVB_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_fm_mvb_verbuchen.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_fm_mvb_verbuchen.abap:27"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-138-B01",
+      "text": "Nach erfolgreicher Verfügbarkeitsprüfung sind Kontierung und Betrag auf dem Erfassungsbild nicht mehr eingabebereit.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:20"
+        },
+        {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:21"
+        },
+        {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:22"
+        },
+        {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B02",
+      "text": "Abbrechen oder Beenden verwirft alle Eingaben ohne Rückfrage und verlässt die Transaktion.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:11"
+        },
+        {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B03",
+      "text": "Wird die Finanzstelle geändert, wird geprüft, ob sie im Finanzkreis zum Tagesdatum gültig ist; sonst muss sie neu eingegeben werden.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:20"
+        },
+        {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:24"
+        },
+        {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B04",
+      "text": "Nach einer Änderung der Finanzstelle gilt die bisherige Verfügbarkeitsprüfung als ungültig.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B05",
+      "text": "Bei „Prüfen“ werden die verfügbaren Mittel für Finanzstelle, Finanzposition und Jahr gelesen.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:43"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B06",
+      "text": "Reichen sie für den beantragten Betrag nicht, erscheint ein Hinweis mit dem verfügbaren Betrag und der Antrag gilt als ungeprüft.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:19"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B07",
+      "text": "Reichen sie, wird der Antrag als geprüft gekennzeichnet und der verfügbare Betrag gemeldet.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:25"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B08",
+      "text": "Ein Antrag kann nur eingereicht werden, wenn er erfolgreich geprüft ist.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:45"
+        },
+        {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B09",
+      "text": "Beim Einreichen wird eine Antragsnummer aus dem Nummernkreis gezogen; gelingt das nicht, wird nicht gesichert.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:33"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:41"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B10",
+      "text": "Der Antrag wird als offen mit Antragsteller und Datum gespeichert, das Workflow-Ereignis CREATED ausgelöst und beides gemeinsam festgeschrieben.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:50"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:55"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:56"
+        },
+        {
+          "file": "z_fm_mvb_verbuchen.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fm_mvb_verbuchen.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B11",
+      "text": "Nach dem Einreichen wird die Antragsnummer gemeldet und die Transaktion verlassen.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:57"
+        },
+        {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B12",
+      "text": "Beim Aufruf zur Genehmigung wird die Antragsnummer aus dem Workflow übernommen und der Antrag gelesen; fehlt er, bricht die Transaktion ab.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:40"
+        },
+        {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:41"
+        },
+        {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:43"
+        },
+        {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B13",
+      "text": "Entschieden werden kann nur über offene Anträge, und nie vom Antragsteller selbst.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:80"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:81"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:84"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B14",
+      "text": "Der Antrag wird für die Entscheidung gesperrt; ist er bereits gesperrt, wird der sperrende Benutzer gemeldet.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:88"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:95"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:96"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B15",
+      "text": "Bei Genehmigung wird zuerst eine Mittelvormerkung der Belegart ZV über Betrag, Finanzstelle und Finanzposition des Antrags angelegt.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:99"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:106"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B16",
+      "text": "Scheitert die Anlage, wird zurückgerollt, ein Fehler gemeldet und der Antrag bleibt offen.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:116"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:117"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:118"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B17",
+      "text": "Eine Ablehnung muss in einer Rückfrage bestätigt werden; ohne Bestätigung wird nichts entschieden.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:124"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:135"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:136"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B18",
+      "text": "Status, Entscheider, Entscheidungsdatum und bei Genehmigung die Belegnummer der Mittelvormerkung werden gespeichert, das Ereignis APPROVED bzw. REJECTED ausgelöst und alles festgeschrieben.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:145"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:150"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:151"
+        },
+        {
+          "file": "z_fm_mvb_verbuchen.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fm_mvb_verbuchen.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B19",
+      "text": "Jeder Statuswechsel wird in der Verbuchung protokolliert; scheitert das Schreiben des Antrags, wird die Verbuchung abgebrochen.",
+      "anchors": [
+        {
+          "file": "z_fm_mvb_verbuchen.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fm_mvb_verbuchen.abap:23"
+        },
+        {
+          "file": "z_fm_mvb_verbuchen.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fm_mvb_verbuchen.abap:24"
+        },
+        {
+          "file": "z_fm_mvb_verbuchen.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fm_mvb_verbuchen.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B20",
+      "text": "Kann ein Workflow-Ereignis nicht ausgelöst werden, erscheint nur ein Hinweis; der Antrag wird trotzdem gespeichert.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:163"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:171"
+        },
+        {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:172"
+        }
+      ]
+    },
+    {
+      "id": "BM-138-B21",
+      "text": "Nach Genehmigen oder Ablehnen wird die Transaktion verlassen, auch wenn die Ablehnung in der Rückfrage abgebrochen wurde.",
+      "anchors": [
+        {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:66"
+        },
+        {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:69"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "o1",
+        "type": "start",
+        "anchor": {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:12"
+        },
+        "meaning": "Erfassungsbild aufbereiten"
+      },
+      {
+        "id": "o1c",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:20"
+        },
+        "meaning": "Antrag bereits erfolgreich geprüft?"
+      },
+      {
+        "id": "o1l",
+        "type": "loop",
+        "anchor": {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:21"
+        },
+        "meaning": "Bildfelder durchgehen"
+      },
+      {
+        "id": "o1lg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:22"
+        },
+        "meaning": "Kontierungs- oder Betragsfeld?"
+      },
+      {
+        "id": "o1m",
+        "type": "action",
+        "anchor": {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:24"
+        },
+        "meaning": "Feld nicht mehr eingabebereit"
+      },
+      {
+        "id": "o1e",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:28"
+        },
+        "meaning": "Bild anzeigen"
+      },
+      {
+        "id": "o2",
+        "type": "start",
+        "anchor": {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:35"
+        },
+        "meaning": "Genehmigungsbild aufbereiten"
+      },
+      {
+        "id": "o2g",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:39"
+        },
+        "meaning": "Antrag noch nicht gelesen?"
+      },
+      {
+        "id": "o2p",
+        "type": "action",
+        "anchor": {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:40"
+        },
+        "meaning": "Antragsnummer aus dem Workflow-Aufruf übernehmen"
+      },
+      {
+        "id": "o2r",
+        "type": "read",
+        "anchor": {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:41"
+        },
+        "meaning": "Antrag lesen"
+      },
+      {
+        "id": "o2rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:43"
+        },
+        "meaning": "Antrag nicht gefunden?"
+      },
+      {
+        "id": "o2m",
+        "type": "output",
+        "anchor": {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:44"
+        },
+        "meaning": "Abbruch „Antrag nicht gefunden“"
+      },
+      {
+        "id": "o2me",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:44"
+        },
+        "meaning": "Transaktion abgebrochen (Abbruchmeldung)"
+      },
+      {
+        "id": "o2e",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_o01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_o01.abap:47"
+        },
+        "meaning": "Bild anzeigen"
+      },
+      {
+        "id": "x",
+        "type": "start",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:11"
+        },
+        "meaning": "Abbrechen oder Beenden"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:13"
+        },
+        "meaning": "Eingaben verwerfen und Transaktion verlassen"
+      },
+      {
+        "id": "c",
+        "type": "start",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:19"
+        },
+        "meaning": "Prüfung der geänderten Finanzstelle"
+      },
+      {
+        "id": "cr",
+        "type": "read",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:20"
+        },
+        "meaning": "Finanzstelle im Finanzkreis zum Tagesdatum lesen"
+      },
+      {
+        "id": "cg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:24"
+        },
+        "meaning": "Finanzstelle ungültig?"
+      },
+      {
+        "id": "cm",
+        "type": "output",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:25"
+        },
+        "meaning": "Fehler „Finanzstelle ungültig“, Feld erneut eingeben"
+      },
+      {
+        "id": "cme",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:25"
+        },
+        "meaning": "Feld Finanzstelle erneut eingeben (Fehlerdialog)"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:30"
+        },
+        "meaning": "Feldprüfung fertig"
+      },
+      {
+        "id": "u1",
+        "type": "start",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:35"
+        },
+        "meaning": "Funktion auf dem Erfassungsbild"
+      },
+      {
+        "id": "u1c",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:41"
+        },
+        "meaning": "Welche Funktion?"
+      },
+      {
+        "id": "u1p",
+        "type": "call",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:43"
+        },
+        "meaning": "Verfügbarkeit prüfen"
+      },
+      {
+        "id": "u1g",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:45"
+        },
+        "meaning": "Noch nicht erfolgreich geprüft?"
+      },
+      {
+        "id": "u1m",
+        "type": "output",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:46"
+        },
+        "meaning": "Fehler „erst Verfügbarkeit prüfen“"
+      },
+      {
+        "id": "u1me",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:46"
+        },
+        "meaning": "Einreichen verweigert, Bild erneut eingabebereit"
+      },
+      {
+        "id": "u1s",
+        "type": "call",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:48"
+        },
+        "meaning": "Antrag einreichen"
+      },
+      {
+        "id": "u1l",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:49"
+        },
+        "meaning": "Transaktion verlassen"
+      },
+      {
+        "id": "u1b",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:51"
+        },
+        "meaning": "Zurück ohne Sichern"
+      },
+      {
+        "id": "u1e",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:53"
+        },
+        "meaning": "Bild erneut anzeigen"
+      },
+      {
+        "id": "u2",
+        "type": "start",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:58"
+        },
+        "meaning": "Funktion auf dem Genehmigungsbild"
+      },
+      {
+        "id": "u2c",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:63"
+        },
+        "meaning": "Genehmigen, ablehnen oder zurück?"
+      },
+      {
+        "id": "u2g",
+        "type": "call",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:65"
+        },
+        "meaning": "Antrag genehmigen"
+      },
+      {
+        "id": "u2gl",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:66"
+        },
+        "meaning": "Transaktion verlassen"
+      },
+      {
+        "id": "u2r",
+        "type": "call",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:68"
+        },
+        "meaning": "Antrag ablehnen"
+      },
+      {
+        "id": "u2rl",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:69"
+        },
+        "meaning": "Transaktion verlassen"
+      },
+      {
+        "id": "u2b",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:71"
+        },
+        "meaning": "Zurück ohne Entscheidung"
+      },
+      {
+        "id": "u2e",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_i01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_i01.abap:73"
+        },
+        "meaning": "Bild erneut anzeigen"
+      },
+      {
+        "id": "v",
+        "type": "start",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:12"
+        },
+        "meaning": "Verfügbarkeitsprüfung"
+      },
+      {
+        "id": "vr",
+        "type": "read",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:13"
+        },
+        "meaning": "Verfügbare Mittel für Finanzstelle, Finanzposition und Jahr lesen"
+      },
+      {
+        "id": "vg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:19"
+        },
+        "meaning": "Mittel reichen nicht?"
+      },
+      {
+        "id": "vm",
+        "type": "output",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:21"
+        },
+        "meaning": "Hinweis „nicht ausreichend“ mit verfügbarem Betrag, Antrag gilt als ungeprüft"
+      },
+      {
+        "id": "vre",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:22"
+        },
+        "meaning": "Prüfung nicht bestanden"
+      },
+      {
+        "id": "vo",
+        "type": "output",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:26"
+        },
+        "meaning": "Hinweis „ausreichend“ mit verfügbarem Betrag"
+      },
+      {
+        "id": "ve",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:27"
+        },
+        "meaning": "Prüfung bestanden"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:32"
+        },
+        "meaning": "Einreichen"
+      },
+      {
+        "id": "sn",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:33"
+        },
+        "meaning": "Antragsnummer ziehen"
+      },
+      {
+        "id": "sg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:41"
+        },
+        "meaning": "Keine Nummer?"
+      },
+      {
+        "id": "sm",
+        "type": "output",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:42"
+        },
+        "meaning": "Fehler „Nummernkreis“"
+      },
+      {
+        "id": "sme",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:42"
+        },
+        "meaning": "Einreichen abgebrochen (Fehlerdialog)"
+      },
+      {
+        "id": "su",
+        "type": "update_task",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:50"
+        },
+        "meaning": "Antrag als offen mit Antragsteller und Datum zur Verbuchung vormerken"
+      },
+      {
+        "id": "sw",
+        "type": "call",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:55"
+        },
+        "meaning": "Ereignis CREATED auslösen"
+      },
+      {
+        "id": "sc",
+        "type": "transaction",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:56"
+        },
+        "meaning": "Verbuchung und Ereignis festschreiben"
+      },
+      {
+        "id": "so",
+        "type": "output",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:57"
+        },
+        "meaning": "Antragsnummer melden"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:59"
+        },
+        "meaning": "Antrag eingereicht"
+      },
+      {
+        "id": "d",
+        "type": "start",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:73"
+        },
+        "meaning": "Entscheidung"
+      },
+      {
+        "id": "dg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:80"
+        },
+        "meaning": "Antrag nicht mehr offen?"
+      },
+      {
+        "id": "dm1",
+        "type": "output",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:81"
+        },
+        "meaning": "Fehler „bereits entschieden“"
+      },
+      {
+        "id": "dm1e",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:81"
+        },
+        "meaning": "Entscheidung verweigert: Antrag nicht offen"
+      },
+      {
+        "id": "dg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:84"
+        },
+        "meaning": "Entscheider ist Antragsteller?"
+      },
+      {
+        "id": "dm2",
+        "type": "output",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:85"
+        },
+        "meaning": "Fehler Vier-Augen-Prinzip"
+      },
+      {
+        "id": "dm2e",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:85"
+        },
+        "meaning": "Entscheidung verweigert: Vier-Augen-Prinzip"
+      },
+      {
+        "id": "dl",
+        "type": "lock",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:88"
+        },
+        "meaning": "Antrag sperren"
+      },
+      {
+        "id": "dlg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:95"
+        },
+        "meaning": "Antrag gesperrt?"
+      },
+      {
+        "id": "dlm",
+        "type": "output",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:96"
+        },
+        "meaning": "Fehler „gesperrt durch …“"
+      },
+      {
+        "id": "dlme",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:96"
+        },
+        "meaning": "Entscheidung verweigert: Antrag gesperrt"
+      },
+      {
+        "id": "dd",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:99"
+        },
+        "meaning": "Genehmigung?"
+      },
+      {
+        "id": "dfr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:106"
+        },
+        "meaning": "Mittelvormerkung Belegart ZV über Betrag, Finanzstelle und Finanzposition anlegen"
+      },
+      {
+        "id": "dfg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:116"
+        },
+        "meaning": "Anlage fehlgeschlagen?"
+      },
+      {
+        "id": "drb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:117"
+        },
+        "meaning": "Anlage zurückrollen"
+      },
+      {
+        "id": "dfm",
+        "type": "output",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:118"
+        },
+        "meaning": "Fehler „Mittelvormerkung fehlgeschlagen“, Antrag bleibt offen"
+      },
+      {
+        "id": "dfme",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:118"
+        },
+        "meaning": "Genehmigung abgebrochen, Antrag bleibt offen"
+      },
+      {
+        "id": "dp",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:124"
+        },
+        "meaning": "Ablehnung bestätigen lassen"
+      },
+      {
+        "id": "dpg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:135"
+        },
+        "meaning": "Nicht bestätigt?"
+      },
+      {
+        "id": "dpr",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:136"
+        },
+        "meaning": "Keine Entscheidung"
+      },
+      {
+        "id": "du",
+        "type": "update_task",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:145"
+        },
+        "meaning": "Status, Entscheider, Datum und ggf. Belegnummer zur Verbuchung vormerken"
+      },
+      {
+        "id": "dw",
+        "type": "call",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:150"
+        },
+        "meaning": "Ereignis APPROVED bzw. REJECTED auslösen"
+      },
+      {
+        "id": "dc",
+        "type": "transaction",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:151"
+        },
+        "meaning": "Entscheidung festschreiben"
+      },
+      {
+        "id": "do",
+        "type": "output",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:152"
+        },
+        "meaning": "Entscheidung melden"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:153"
+        },
+        "meaning": "Entscheidung fertig"
+      },
+      {
+        "id": "w",
+        "type": "start",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:158"
+        },
+        "meaning": "Workflow-Ereignis"
+      },
+      {
+        "id": "wc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:163"
+        },
+        "meaning": "Ereignis am Objekttyp ZFMMVB für den Antrag auslösen"
+      },
+      {
+        "id": "wg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:171"
+        },
+        "meaning": "Ereignis nicht ausgelöst?"
+      },
+      {
+        "id": "wm",
+        "type": "output",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:172"
+        },
+        "meaning": "Hinweis „Ereignis nicht ausgelöst“"
+      },
+      {
+        "id": "we",
+        "type": "end",
+        "anchor": {
+          "file": "mzfm_mvb_f01.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfm_mvb_f01.abap:174"
+        },
+        "meaning": "Ereignis fertig"
+      },
+      {
+        "id": "z",
+        "type": "start",
+        "anchor": {
+          "file": "z_fm_mvb_verbuchen.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fm_mvb_verbuchen.abap:1"
+        },
+        "meaning": "Verbuchung des Antrags"
+      },
+      {
+        "id": "zc",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_fm_mvb_verbuchen.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fm_mvb_verbuchen.abap:17"
+        },
+        "meaning": "Neuanlage oder Entscheidung?"
+      },
+      {
+        "id": "zi",
+        "type": "write",
+        "anchor": {
+          "file": "z_fm_mvb_verbuchen.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fm_mvb_verbuchen.abap:19"
+        },
+        "meaning": "Antrag anlegen"
+      },
+      {
+        "id": "zu",
+        "type": "write",
+        "anchor": {
+          "file": "z_fm_mvb_verbuchen.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fm_mvb_verbuchen.abap:21"
+        },
+        "meaning": "Antrag mit Entscheidung ändern"
+      },
+      {
+        "id": "zg",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_fm_mvb_verbuchen.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fm_mvb_verbuchen.abap:23"
+        },
+        "meaning": "Schreiben fehlgeschlagen?"
+      },
+      {
+        "id": "zm",
+        "type": "output",
+        "anchor": {
+          "file": "z_fm_mvb_verbuchen.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fm_mvb_verbuchen.abap:24"
+        },
+        "meaning": "Verbuchungsabbruch"
+      },
+      {
+        "id": "zme",
+        "type": "end",
+        "anchor": {
+          "file": "z_fm_mvb_verbuchen.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fm_mvb_verbuchen.abap:24"
+        },
+        "meaning": "Verbuchungsabbruch"
+      },
+      {
+        "id": "zl",
+        "type": "write",
+        "anchor": {
+          "file": "z_fm_mvb_verbuchen.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fm_mvb_verbuchen.abap:27"
+        },
+        "meaning": "Statuswechsel protokollieren"
+      },
+      {
+        "id": "ze",
+        "type": "end",
+        "anchor": {
+          "file": "z_fm_mvb_verbuchen.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fm_mvb_verbuchen.abap:32"
+        },
+        "meaning": "Verbuchung fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "o1",
+        "to": "o1c",
+        "condition": "always"
+      },
+      {
+        "from": "o1c",
+        "to": "o1l",
+        "condition": "gv_geprueft = abap_true"
+      },
+      {
+        "from": "o1c",
+        "to": "o1e",
+        "condition": "else"
+      },
+      {
+        "from": "o1l",
+        "to": "o1lg",
+        "condition": "next row"
+      },
+      {
+        "from": "o1lg",
+        "to": "o1m",
+        "condition": "screen-group1 = 'EIN'"
+      },
+      {
+        "from": "o1m",
+        "to": "o1l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "o1lg",
+        "to": "o1l",
+        "condition": "else"
+      },
+      {
+        "from": "o1l",
+        "to": "o1e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "o2",
+        "to": "o2g",
+        "condition": "always"
+      },
+      {
+        "from": "o2g",
+        "to": "o2p",
+        "condition": "gs_kopf IS INITIAL"
+      },
+      {
+        "from": "o2g",
+        "to": "o2e",
+        "condition": "else"
+      },
+      {
+        "from": "o2p",
+        "to": "o2r",
+        "condition": "always"
+      },
+      {
+        "from": "o2r",
+        "to": "o2rg",
+        "condition": "always"
+      },
+      {
+        "from": "o2rg",
+        "to": "o2m",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o2rg",
+        "to": "o2e",
+        "condition": "else"
+      },
+      {
+        "from": "x",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "c",
+        "to": "cr",
+        "condition": "always"
+      },
+      {
+        "from": "cr",
+        "to": "cg",
+        "condition": "always"
+      },
+      {
+        "from": "cg",
+        "to": "cm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "u1",
+        "to": "u1c",
+        "condition": "always"
+      },
+      {
+        "from": "u1c",
+        "to": "u1p",
+        "condition": "WHEN 'PRUEF'"
+      },
+      {
+        "from": "u1p",
+        "to": "v",
+        "condition": "always"
+      },
+      {
+        "from": "u1c",
+        "to": "u1g",
+        "condition": "WHEN 'SAVE'"
+      },
+      {
+        "from": "u1g",
+        "to": "u1m",
+        "condition": "gv_geprueft = abap_false"
+      },
+      {
+        "from": "u1g",
+        "to": "u1s",
+        "condition": "else"
+      },
+      {
+        "from": "u1s",
+        "to": "s",
+        "condition": "always"
+      },
+      {
+        "from": "u1c",
+        "to": "u1b",
+        "condition": "WHEN 'BACK'"
+      },
+      {
+        "from": "u1c",
+        "to": "u1e",
+        "condition": "else"
+      },
+      {
+        "from": "u2",
+        "to": "u2c",
+        "condition": "always"
+      },
+      {
+        "from": "u2c",
+        "to": "u2g",
+        "condition": "WHEN 'GENEHM'"
+      },
+      {
+        "from": "u2g",
+        "to": "d",
+        "condition": "always"
+      },
+      {
+        "from": "u2c",
+        "to": "u2r",
+        "condition": "WHEN 'ABLEHN'"
+      },
+      {
+        "from": "u2r",
+        "to": "d",
+        "condition": "always"
+      },
+      {
+        "from": "u2c",
+        "to": "u2b",
+        "condition": "WHEN 'BACK'"
+      },
+      {
+        "from": "u2c",
+        "to": "u2e",
+        "condition": "else"
+      },
+      {
+        "from": "v",
+        "to": "vr",
+        "condition": "always"
+      },
+      {
+        "from": "vr",
+        "to": "vg",
+        "condition": "always"
+      },
+      {
+        "from": "vg",
+        "to": "vm",
+        "condition": "gv_verfuegbar < gs_kopf-betrag"
+      },
+      {
+        "from": "vm",
+        "to": "vre",
+        "condition": "always"
+      },
+      {
+        "from": "vo",
+        "to": "ve",
+        "condition": "always"
+      },
+      {
+        "from": "s",
+        "to": "sn",
+        "condition": "always"
+      },
+      {
+        "from": "sn",
+        "to": "sg",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "sm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sg",
+        "to": "su",
+        "condition": "else"
+      },
+      {
+        "from": "su",
+        "to": "sw",
+        "condition": "always"
+      },
+      {
+        "from": "sw",
+        "to": "w",
+        "condition": "always"
+      },
+      {
+        "from": "sc",
+        "to": "so",
+        "condition": "always"
+      },
+      {
+        "from": "so",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "d",
+        "to": "dg1",
+        "condition": "always"
+      },
+      {
+        "from": "dg1",
+        "to": "dm1",
+        "condition": "gs_kopf-status <> 'O'"
+      },
+      {
+        "from": "dg1",
+        "to": "dg2",
+        "condition": "else"
+      },
+      {
+        "from": "dg2",
+        "to": "dm2",
+        "condition": "gs_kopf-ernam = sy-uname"
+      },
+      {
+        "from": "dg2",
+        "to": "dl",
+        "condition": "else"
+      },
+      {
+        "from": "dl",
+        "to": "dlg",
+        "condition": "always"
+      },
+      {
+        "from": "dlg",
+        "to": "dlm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "dlg",
+        "to": "dd",
+        "condition": "else"
+      },
+      {
+        "from": "dd",
+        "to": "dfr",
+        "condition": "iv_entscheid = 'G'"
+      },
+      {
+        "from": "dd",
+        "to": "dp",
+        "condition": "else"
+      },
+      {
+        "from": "dfr",
+        "to": "dfg",
+        "condition": "always"
+      },
+      {
+        "from": "dfg",
+        "to": "drb",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "drb",
+        "to": "dfm",
+        "condition": "always"
+      },
+      {
+        "from": "dfg",
+        "to": "du",
+        "condition": "else"
+      },
+      {
+        "from": "dp",
+        "to": "dpg",
+        "condition": "always"
+      },
+      {
+        "from": "dpg",
+        "to": "dpr",
+        "condition": "lv_answer <> '1'"
+      },
+      {
+        "from": "dpg",
+        "to": "du",
+        "condition": "else"
+      },
+      {
+        "from": "du",
+        "to": "dw",
+        "condition": "always"
+      },
+      {
+        "from": "dw",
+        "to": "w",
+        "condition": "always"
+      },
+      {
+        "from": "dc",
+        "to": "do",
+        "condition": "always"
+      },
+      {
+        "from": "do",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "w",
+        "to": "wc",
+        "condition": "always"
+      },
+      {
+        "from": "wc",
+        "to": "wg",
+        "condition": "always"
+      },
+      {
+        "from": "wg",
+        "to": "wm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "wm",
+        "to": "we",
+        "condition": "always"
+      },
+      {
+        "from": "wg",
+        "to": "we",
+        "condition": "else"
+      },
+      {
+        "from": "z",
+        "to": "zc",
+        "condition": "always"
+      },
+      {
+        "from": "zc",
+        "to": "zi",
+        "condition": "WHEN 'I'"
+      },
+      {
+        "from": "zc",
+        "to": "zu",
+        "condition": "WHEN 'U'"
+      },
+      {
+        "from": "zc",
+        "to": "zg",
+        "condition": "else"
+      },
+      {
+        "from": "zi",
+        "to": "zg",
+        "condition": "always"
+      },
+      {
+        "from": "zu",
+        "to": "zg",
+        "condition": "always"
+      },
+      {
+        "from": "zg",
+        "to": "zm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "zg",
+        "to": "zl",
+        "condition": "else"
+      },
+      {
+        "from": "zl",
+        "to": "ze",
+        "condition": "always"
+      },
+      {
+        "from": "o2m",
+        "to": "o2me",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "cme",
+        "condition": "always"
+      },
+      {
+        "from": "u1m",
+        "to": "u1me",
+        "condition": "always"
+      },
+      {
+        "from": "sm",
+        "to": "sme",
+        "condition": "always"
+      },
+      {
+        "from": "dm1",
+        "to": "dm1e",
+        "condition": "always"
+      },
+      {
+        "from": "dm2",
+        "to": "dm2e",
+        "condition": "always"
+      },
+      {
+        "from": "dlm",
+        "to": "dlme",
+        "condition": "always"
+      },
+      {
+        "from": "dfm",
+        "to": "dfme",
+        "condition": "always"
+      },
+      {
+        "from": "zm",
+        "to": "zme",
+        "condition": "always"
+      },
+      {
+        "from": "ve",
+        "to": "u1e",
+        "condition": "always"
+      },
+      {
+        "from": "vre",
+        "to": "u1e",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "u1l",
+        "condition": "always"
+      },
+      {
+        "from": "de",
+        "to": "u2gl",
+        "condition": "always"
+      },
+      {
+        "from": "dpr",
+        "to": "u2gl",
+        "condition": "always"
+      },
+      {
+        "from": "de",
+        "to": "u2rl",
+        "condition": "always"
+      },
+      {
+        "from": "dpr",
+        "to": "u2rl",
+        "condition": "always"
+      },
+      {
+        "from": "we",
+        "to": "sc",
+        "condition": "always"
+      },
+      {
+        "from": "we",
+        "to": "dc",
+        "condition": "always"
+      },
+      {
+        "from": "vg",
+        "to": "vo",
+        "condition": "else"
+      },
+      {
+        "from": "cg",
+        "to": "ce",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "mzfm_mvb_f01.abap:13 — kein Fachsatz „ohne Verfügbarkeitssatz gilt der Betrag als nicht gedeckt“: ohne Treffer bleibt der verfügbare Betrag der vorherigen Prüfung stehen",
+    "mzfm_mvb_f01.abap:73 — kein Fachsatz „nur berechtigte Budgetverantwortliche dürfen genehmigen“: geprüft wird nur, dass der Entscheider nicht der Antragsteller ist",
+    "mzfm_mvb_f01.abap:106 — kein Fachsatz „vor der Genehmigung wird die Verfügbarkeit erneut geprüft“: es wird ohne neue Prüfung angelegt",
+    "mzfm_mvb_f01.abap:136 — kein Fachsatz „nach abgebrochener Ablehnung bleibt der Antrag zur Entscheidung auf dem Bild“: das Modul verlässt die Transaktion danach trotzdem"
+  ],
+  "processDescription": "Ein Fachamt erfasst in der Transaktion ZFM_MVB einen Antrag auf Mittelvormerkung mit Finanzkreis, Jahr, Finanzstelle, Finanzposition, Betrag und Zweck. Ändert es die Finanzstelle, wird geprüft, ob sie zum Tagesdatum gültig ist, und eine frühere Verfügbarkeitsprüfung verfällt. Mit „Prüfen“ liest das Programm die verfügbaren Mittel; reichen sie nicht, erscheint ein Hinweis, reichen sie, gilt der Antrag als geprüft und Kontierung und Betrag werden gesperrt. Eingereicht werden kann nur ein geprüfter Antrag: Das Programm zieht eine Antragsnummer, speichert den Antrag als offen über die Verbuchung, löst das Workflow-Ereignis CREATED aus, schreibt fest, meldet die Nummer und verlässt die Transaktion. Der Budgetverantwortliche öffnet den Antrag aus dem Workflow in ZFM_MVB_OK; fehlt er, bricht die Transaktion ab. Entschieden werden kann nur über offene Anträge und nicht vom Antragsteller selbst; der Antrag wird gesperrt. Bei Genehmigung legt das Programm zuerst die Mittelvormerkung der Belegart ZV an; scheitert das, rollt es zurück und der Antrag bleibt offen. Eine Ablehnung muss bestätigt werden. Danach speichert es Status, Entscheider, Datum und ggf. Belegnummer, protokolliert den Statuswechsel, löst APPROVED oder REJECTED aus und schreibt fest. Abbrechen verwirft jederzeit alle Eingaben."
+}

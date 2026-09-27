@@ -1,0 +1,28 @@
+{
+  "id": "BM-121",
+  "title": "PSP-Elemente ohne Verantwortlichen je Projekt (PROJ/PRPS, Gruppenwechsel und CHECK in der Schleife)",
+  "domain": "PS / Projektsystem",
+  "band": "einfach",
+  "loc": 30,
+  "constructs": [
+    "REPORT",
+    "SELECT-OPTIONS",
+    "SELECT mit INNER JOIN",
+    "SORT",
+    "LOOP AT",
+    "AT NEW",
+    "CHECK",
+    "WRITE-Liste"
+  ],
+  "scenario": "Controlling-Report aus der PS-Einführung, der vor Projektabschlüssen PSP-Elemente ohne verantwortliche Person auflistet, damit Kostenstellenverantwortliche nachgepflegt werden.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf PRPS/PROJ statt freigegebener CDS-Views (I_WBSElement, I_Project)",
+    "WRITE-Liste ohne Fiori-Pendant"
+  ],
+  "wave": 2,
+  "module": "PS",
+  "edge_constructs": [
+    "AT NEW (Gruppenstufe)",
+    "CHECK mitten in Schleife"
+  ]
+}

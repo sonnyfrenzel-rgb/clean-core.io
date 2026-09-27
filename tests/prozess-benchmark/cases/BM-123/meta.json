@@ -1,0 +1,25 @@
+{
+  "id": "BM-123",
+  "title": "PSM/FM: Finanzposition vor Haushaltsübernahme prüfen (FMCI, MESSAGE … RAISING)",
+  "domain": "PSM / Haushaltsmanagement öffentlicher Sektor",
+  "band": "einfach",
+  "loc": 32,
+  "constructs": [
+    "FUNCTION",
+    "SELECT SINGLE",
+    "sy-subrc-Auswertung",
+    "MESSAGE … RAISING",
+    "RAISE"
+  ],
+  "scenario": "Kommunale Haushaltsplanung: Vor dem Upload der Haushaltsansätze aus der Kämmerei-Tabelle wird jede Finanzposition einzeln geprüft.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf FMCI statt freigegebener Stammdaten-API",
+    "klassische Ausnahmen statt klassenbasierter Ausnahmen"
+  ],
+  "wave": 2,
+  "module": "PSM-FM",
+  "edge_constructs": [
+    "MESSAGE … RAISING als Pfadende",
+    "RAISE (klassische Ausnahme)"
+  ]
+}

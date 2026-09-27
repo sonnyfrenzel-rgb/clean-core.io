@@ -1,0 +1,2000 @@
+{
+  "id": "BM-152",
+  "title": "Zeiterfassungsterminal: Buchungsdatei einlesen und als Zeitereignisse hochladen",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ENQUEUE_EZPT_TERMFILE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_term_upload_f01.abap",
+        "line": 6,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_term_upload_f01.abap:6"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_term_upload_f01.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_term_upload_f01.abap:25"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD_FREE_TEXT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_term_upload_f01.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_term_upload_f01.abap:37"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0050",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpt_term_upload_f01.abap",
+        "line": 103,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_term_upload_f01.abap:103"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "TEVEN",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpt_term_upload_f01.abap",
+        "line": 110,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_term_upload_f01.abap:110"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_CC1_UPLOAD_TIMEEVENT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_term_upload_f01.abap",
+        "line": 165,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_term_upload_f01.abap:165"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_term_upload_f01.abap",
+        "line": 174,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_term_upload_f01.abap:174"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_term_upload_f01.abap",
+        "line": 177,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_term_upload_f01.abap:177"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_term_upload_f01.abap",
+        "line": 205,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_term_upload_f01.abap:205"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DSP_LOG_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_term_upload_f01.abap",
+        "line": 211,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_term_upload_f01.abap:211"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZPT_TERMFILE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zpt_term_upload.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpt_term_upload.abap:50"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-152-B01",
+      "text": "Der Job sperrt die Buchungsdatei exklusiv; läuft bereits ein anderer Upload auf derselben Datei, bricht er hart ab.",
+      "anchors": [
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:6"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:13"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-152-B02",
+      "text": "Für den Lauf wird ein Anwendungsprotokoll zur Datei eröffnet.",
+      "anchors": [
+        {
+          "file": "zpt_term_upload.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:38"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-152-B03",
+      "text": "Die Buchungsdatei wird geöffnet; ist sie nicht lesbar, wird das protokolliert und es gibt keine Buchungen.",
+      "anchors": [
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:56"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:57"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:58"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-152-B04",
+      "text": "Jede Zeile wird gelesen, aufbewahrt und in Terminal, Ausweis, Datum, Uhrzeit und Buchungsart zerlegt.",
+      "anchors": [
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:62"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:63"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-152-B05",
+      "text": "Zeilen mit leerem Datum werden als Fehler protokolliert und übergangen; ein ungültiges Datum oder eine ungültige Uhrzeit wird bei der Zuweisung nicht geprüft und läuft weiter.",
+      "anchors": [
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:71"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:75"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-152-B06",
+      "text": "Enthält die Datei keine verwertbare Buchung, wird das im Protokoll vermerkt und nichts gebucht.",
+      "anchors": [
+        {
+          "file": "zpt_term_upload.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:40"
+        },
+        {
+          "file": "zpt_term_upload.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-152-B07",
+      "text": "Zu den Ausweisnummern werden die heute gültigen Personalnummern gelesen und dazu die Zeitereignisse dieser Mitarbeiter der letzten sieben Tage.",
+      "anchors": [
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:103"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:110"
+        }
+      ]
+    },
+    {
+      "id": "BM-152-B08",
+      "text": "Buchungen mit unbekanntem Ausweis werden als Fehler protokolliert und nicht übernommen.",
+      "anchors": [
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:117"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:118"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:119"
+        }
+      ]
+    },
+    {
+      "id": "BM-152-B09",
+      "text": "Die Buchungsart wird abgebildet: Kommen auf P10, Gehen auf P20, Pausenbeginn auf P15, Pausenende auf P25; andere Buchungsarten werden mit Warnung ignoriert.",
+      "anchors": [
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:124"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:134"
+        }
+      ]
+    },
+    {
+      "id": "BM-152-B10",
+      "text": "Gibt es für den Mitarbeiter bereits ein Zeitereignis mit gleichem Datum und gleicher Uhrzeit, wird die Buchung als Dublette stillschweigend übergangen.",
+      "anchors": [
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:140"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:141"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:146"
+        }
+      ]
+    },
+    {
+      "id": "BM-152-B11",
+      "text": "Alle übrigen Buchungen werden mit Personalnummer, Datum, Uhrzeit, Ereignisart und Terminal zum Hochladen vorgemerkt.",
+      "anchors": [
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:150"
+        }
+      ]
+    },
+    {
+      "id": "BM-152-B12",
+      "text": "Im Testlauf oder ohne vorgemerkte Ereignisse wird nur deren Anzahl protokolliert.",
+      "anchors": [
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:160"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:162"
+        }
+      ]
+    },
+    {
+      "id": "BM-152-B13",
+      "text": "Sonst werden alle Ereignisse in einem Aufruf hochgeladen; meldet der Upload auch nur einen Fehler, wird alles verworfen und protokolliert, andernfalls festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:165"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:173"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:174"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:177"
+        }
+      ]
+    },
+    {
+      "id": "BM-152-B14",
+      "text": "Nach erfolgreichem Upload wird der Dateiinhalt in eine Archivdatei mit Zeitstempel geschrieben und die Originaldatei gelöscht; lässt sich die Archivdatei nicht anlegen, bleibt das Original liegen.",
+      "anchors": [
+        {
+          "file": "zpt_term_upload.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:46"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:189"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 190,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:190"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 195,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:195"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 198,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:198"
+        }
+      ]
+    },
+    {
+      "id": "BM-152-B15",
+      "text": "Das Protokoll wird gesichert und bei Dialogstart angezeigt; zum Schluss wird die Dateisperre freigegeben.",
+      "anchors": [
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 205,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:205"
+        },
+        {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 211,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:211"
+        },
+        {
+          "file": "zpt_term_upload.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:50"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_term_upload.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:36"
+        },
+        "meaning": "Upload-Job startet"
+      },
+      {
+        "id": "c_lock",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_term_upload.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:37"
+        },
+        "meaning": "Datei sperren"
+      },
+      {
+        "id": "s_lock",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:5"
+        },
+        "meaning": "Sperre setzen"
+      },
+      {
+        "id": "lk_enq",
+        "type": "lock",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:6"
+        },
+        "meaning": "Buchungsdatei exklusiv sperren"
+      },
+      {
+        "id": "g_lock",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:13"
+        },
+        "meaning": "Sperre bekommen?"
+      },
+      {
+        "id": "o_abm",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:15"
+        },
+        "meaning": "Abbruchmeldung: Datei von parallelem Lauf gesperrt"
+      },
+      {
+        "id": "o_abort",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:15"
+        },
+        "meaning": "Job abbrechen: paralleler Lauf"
+      },
+      {
+        "id": "e_lock",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:17"
+        },
+        "meaning": "Sperre gesetzt"
+      },
+      {
+        "id": "c_log",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_term_upload.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:38"
+        },
+        "meaning": "Anwendungsprotokoll eröffnen"
+      },
+      {
+        "id": "s_lc",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:20"
+        },
+        "meaning": "Protokoll anlegen"
+      },
+      {
+        "id": "c_balc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:25"
+        },
+        "meaning": "Anwendungsprotokoll ZPT/TERMINAL zur Datei anlegen"
+      },
+      {
+        "id": "e_lc",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:32"
+        },
+        "meaning": "Protokoll angelegt"
+      },
+      {
+        "id": "s_la",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:35"
+        },
+        "meaning": "Protokollmeldung hinzufügen"
+      },
+      {
+        "id": "c_lmsg",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:37"
+        },
+        "meaning": "Freitextmeldung ins Anwendungsprotokoll schreiben"
+      },
+      {
+        "id": "e_la",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:47"
+        },
+        "meaning": "Meldung protokolliert"
+      },
+      {
+        "id": "c_read",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_term_upload.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:39"
+        },
+        "meaning": "Datei einlesen"
+      },
+      {
+        "id": "s_rf",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:50"
+        },
+        "meaning": "Datei lesen und zerlegen"
+      },
+      {
+        "id": "o_open",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:56"
+        },
+        "meaning": "Buchungsdatei öffnen"
+      },
+      {
+        "id": "g_open",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:57"
+        },
+        "meaning": "Datei lesbar?"
+      },
+      {
+        "id": "e_rf",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:59"
+        },
+        "meaning": "Fehler protokollieren, ohne Buchungen weiter"
+      },
+      {
+        "id": "l_do",
+        "type": "loop",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:62"
+        },
+        "meaning": "Je Dateizeile"
+      },
+      {
+        "id": "r_ds",
+        "type": "read",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:63"
+        },
+        "meaning": "Nächste Zeile lesen"
+      },
+      {
+        "id": "g_eof",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:64"
+        },
+        "meaning": "Dateiende?"
+      },
+      {
+        "id": "g_conv",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:75"
+        },
+        "meaning": "Datum leer? (ein Umwandlungsfehler tritt bei der Zuweisung nicht auf)"
+      },
+      {
+        "id": "e_rf2",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:82"
+        },
+        "meaning": "Datei gelesen und geschlossen"
+      },
+      {
+        "id": "g_raw",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_term_upload.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:40"
+        },
+        "meaning": "Keine verwertbaren Buchungen?"
+      },
+      {
+        "id": "c_map",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_term_upload.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:43"
+        },
+        "meaning": "Buchungen zuordnen"
+      },
+      {
+        "id": "s_me",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:85"
+        },
+        "meaning": "Ausweise und Buchungsarten zuordnen"
+      },
+      {
+        "id": "r_badge",
+        "type": "read",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:103"
+        },
+        "meaning": "Heute gültige Ausweiszuordnungen lesen"
+      },
+      {
+        "id": "g_bdg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:109"
+        },
+        "meaning": "Ausweise gefunden?"
+      },
+      {
+        "id": "r_teven",
+        "type": "read",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:110"
+        },
+        "meaning": "Zeitereignisse der letzten 7 Tage lesen"
+      },
+      {
+        "id": "l_raw",
+        "type": "loop",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:116"
+        },
+        "meaning": "Je Buchung"
+      },
+      {
+        "id": "r_b",
+        "type": "read",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:117"
+        },
+        "meaning": "Personalnummer zum Ausweis nachschlagen"
+      },
+      {
+        "id": "g_b",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:118"
+        },
+        "meaning": "Ausweis unbekannt?"
+      },
+      {
+        "id": "g_kind",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:124"
+        },
+        "meaning": "Buchungsart auf Zeitereignisart abbilden"
+      },
+      {
+        "id": "l_dup",
+        "type": "loop",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:140"
+        },
+        "meaning": "Vorhandene Ereignisse des Mitarbeiters durchsuchen"
+      },
+      {
+        "id": "g_same",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:141"
+        },
+        "meaning": "Gleicher Zeitpunkt wie vorhandenes Ereignis?"
+      },
+      {
+        "id": "g_isdup",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:146"
+        },
+        "meaning": "Dublette?"
+      },
+      {
+        "id": "e_me",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:156"
+        },
+        "meaning": "Ereignisse vorgemerkt"
+      },
+      {
+        "id": "c_post",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_term_upload.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:44"
+        },
+        "meaning": "Ereignisse buchen"
+      },
+      {
+        "id": "s_pe",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:159"
+        },
+        "meaning": "Hochladen"
+      },
+      {
+        "id": "g_pe",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:160"
+        },
+        "meaning": "Nichts zu buchen oder Testlauf?"
+      },
+      {
+        "id": "e_pe",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:162"
+        },
+        "meaning": "Nur protokollieren"
+      },
+      {
+        "id": "c_bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:165"
+        },
+        "meaning": "Zeitereignisse hochladen"
+      },
+      {
+        "id": "g_err",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:173"
+        },
+        "meaning": "Fehlermeldung zurückgegeben?"
+      },
+      {
+        "id": "c_rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:174"
+        },
+        "meaning": "Upload komplett verwerfen"
+      },
+      {
+        "id": "c_cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:177"
+        },
+        "meaning": "Upload festschreiben"
+      },
+      {
+        "id": "e_pe2",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:182"
+        },
+        "meaning": "Upload abgeschlossen"
+      },
+      {
+        "id": "g_posted",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_term_upload.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:46"
+        },
+        "meaning": "Gebucht?"
+      },
+      {
+        "id": "c_arch",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_term_upload.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:47"
+        },
+        "meaning": "Datei archivieren"
+      },
+      {
+        "id": "s_af",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:185"
+        },
+        "meaning": "Archivieren"
+      },
+      {
+        "id": "o_aopen",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:189"
+        },
+        "meaning": "Archivdatei mit Zeitstempel anlegen"
+      },
+      {
+        "id": "g_aopen",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 190,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:190"
+        },
+        "meaning": "Archivdatei anlegbar?"
+      },
+      {
+        "id": "l_lines",
+        "type": "loop",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 194,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:194"
+        },
+        "meaning": "Je aufbewahrter Dateizeile"
+      },
+      {
+        "id": "e_af",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 192,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:192"
+        },
+        "meaning": "Originaldatei bleibt liegen"
+      },
+      {
+        "id": "o_tr",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 195,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:195"
+        },
+        "meaning": "Zeilen in die Archivdatei schreiben"
+      },
+      {
+        "id": "w_del",
+        "type": "action",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 198,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:198"
+        },
+        "meaning": "Originaldatei löschen"
+      },
+      {
+        "id": "e_af2",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:199"
+        },
+        "meaning": "Datei archiviert"
+      },
+      {
+        "id": "c_save",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_term_upload.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:49"
+        },
+        "meaning": "Protokoll sichern und im Dialog anzeigen"
+      },
+      {
+        "id": "s_ls",
+        "type": "start",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 202,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:202"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "c_bsave",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 205,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:205"
+        },
+        "meaning": "Anwendungsprotokoll in der Datenbank sichern"
+      },
+      {
+        "id": "g_batch",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 210,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:210"
+        },
+        "meaning": "Dialogstart?"
+      },
+      {
+        "id": "o_disp",
+        "type": "output",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 211,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:211"
+        },
+        "meaning": "Protokoll anzeigen"
+      },
+      {
+        "id": "e_ls",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 217,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:217"
+        },
+        "meaning": "Protokoll gesichert"
+      },
+      {
+        "id": "lk_deq",
+        "type": "lock",
+        "anchor": {
+          "file": "zpt_term_upload.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:50"
+        },
+        "meaning": "Dateisperre freigeben"
+      },
+      {
+        "id": "e_sos",
+        "type": "end",
+        "anchor": {
+          "file": "zpt_term_upload.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:50"
+        },
+        "meaning": "Job beendet, Sperre freigegeben"
+      },
+      {
+        "id": "c_la1",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_term_upload.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload.abap:41"
+        },
+        "meaning": "Protokoll: keine Buchungen in der Datei"
+      },
+      {
+        "id": "c_la2",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:58"
+        },
+        "meaning": "Protokoll: Datei nicht lesbar"
+      },
+      {
+        "id": "c_la3",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:76"
+        },
+        "meaning": "Protokoll: fehlerhafte Zeile"
+      },
+      {
+        "id": "c_la4",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:119"
+        },
+        "meaning": "Protokoll: Ausweis unbekannt"
+      },
+      {
+        "id": "c_la5",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:134"
+        },
+        "meaning": "Protokoll: Buchungsart ignoriert"
+      },
+      {
+        "id": "c_la6",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:161"
+        },
+        "meaning": "Protokoll: Anzahl Ereignisse (Test/leer)"
+      },
+      {
+        "id": "c_la7",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:175"
+        },
+        "meaning": "Protokoll: Upload abgelehnt"
+      },
+      {
+        "id": "c_la8",
+        "type": "call",
+        "anchor": {
+          "file": "zpt_term_upload_f01.abap",
+          "line": 191,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpt_term_upload_f01.abap:191"
+        },
+        "meaning": "Protokoll: Archivdatei nicht anlegbar"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c_lock",
+        "condition": "always"
+      },
+      {
+        "from": "c_lock",
+        "to": "s_lock",
+        "condition": "always"
+      },
+      {
+        "from": "s_lock",
+        "to": "lk_enq",
+        "condition": "always"
+      },
+      {
+        "from": "lk_enq",
+        "to": "g_lock",
+        "condition": "always"
+      },
+      {
+        "from": "g_lock",
+        "to": "o_abm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "c_read",
+        "to": "s_rf",
+        "condition": "always"
+      },
+      {
+        "from": "s_rf",
+        "to": "o_open",
+        "condition": "always"
+      },
+      {
+        "from": "o_open",
+        "to": "g_open",
+        "condition": "always"
+      },
+      {
+        "from": "g_open",
+        "to": "c_la2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_open",
+        "to": "l_do",
+        "condition": "else"
+      },
+      {
+        "from": "l_do",
+        "to": "r_ds",
+        "condition": "next row"
+      },
+      {
+        "from": "r_ds",
+        "to": "g_eof",
+        "condition": "always"
+      },
+      {
+        "from": "g_eof",
+        "to": "g_conv",
+        "condition": "else"
+      },
+      {
+        "from": "g_conv",
+        "to": "c_la3",
+        "condition": "sy-subrc = 1 OR ls_raw-ldate IS INITIAL"
+      },
+      {
+        "from": "g_raw",
+        "to": "c_la1",
+        "condition": "gt_raw IS INITIAL"
+      },
+      {
+        "from": "g_raw",
+        "to": "c_map",
+        "condition": "else"
+      },
+      {
+        "from": "c_map",
+        "to": "s_me",
+        "condition": "always"
+      },
+      {
+        "from": "s_me",
+        "to": "r_badge",
+        "condition": "always"
+      },
+      {
+        "from": "r_teven",
+        "to": "l_raw",
+        "condition": "always"
+      },
+      {
+        "from": "l_raw",
+        "to": "r_b",
+        "condition": "next row"
+      },
+      {
+        "from": "r_b",
+        "to": "g_b",
+        "condition": "always"
+      },
+      {
+        "from": "g_b",
+        "to": "c_la4",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_b",
+        "to": "g_kind",
+        "condition": "else"
+      },
+      {
+        "from": "g_kind",
+        "to": "l_dup",
+        "condition": "WHEN 'K'"
+      },
+      {
+        "from": "g_kind",
+        "to": "l_dup",
+        "condition": "WHEN 'G'"
+      },
+      {
+        "from": "g_kind",
+        "to": "l_dup",
+        "condition": "WHEN 'PB'"
+      },
+      {
+        "from": "g_kind",
+        "to": "l_dup",
+        "condition": "WHEN 'PE'"
+      },
+      {
+        "from": "g_kind",
+        "to": "c_la5",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "l_dup",
+        "to": "g_isdup",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_isdup",
+        "to": "l_raw",
+        "condition": "lv_dup = abap_true"
+      },
+      {
+        "from": "c_post",
+        "to": "s_pe",
+        "condition": "always"
+      },
+      {
+        "from": "s_pe",
+        "to": "g_pe",
+        "condition": "always"
+      },
+      {
+        "from": "g_pe",
+        "to": "c_la6",
+        "condition": "gt_events IS INITIAL OR p_test = abap_true"
+      },
+      {
+        "from": "g_pe",
+        "to": "c_bapi",
+        "condition": "else"
+      },
+      {
+        "from": "c_bapi",
+        "to": "g_err",
+        "condition": "always"
+      },
+      {
+        "from": "g_err",
+        "to": "c_rb",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_err",
+        "to": "c_cm",
+        "condition": "else"
+      },
+      {
+        "from": "g_posted",
+        "to": "c_arch",
+        "condition": "gv_posted = abap_true"
+      },
+      {
+        "from": "g_posted",
+        "to": "c_save",
+        "condition": "else"
+      },
+      {
+        "from": "c_arch",
+        "to": "s_af",
+        "condition": "always"
+      },
+      {
+        "from": "s_af",
+        "to": "o_aopen",
+        "condition": "always"
+      },
+      {
+        "from": "o_aopen",
+        "to": "g_aopen",
+        "condition": "always"
+      },
+      {
+        "from": "g_aopen",
+        "to": "c_la8",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_aopen",
+        "to": "l_lines",
+        "condition": "else"
+      },
+      {
+        "from": "o_abm",
+        "to": "o_abort",
+        "condition": "always"
+      },
+      {
+        "from": "g_lock",
+        "to": "e_lock",
+        "condition": "else"
+      },
+      {
+        "from": "e_lock",
+        "to": "c_log",
+        "condition": "always"
+      },
+      {
+        "from": "c_log",
+        "to": "s_lc",
+        "condition": "always"
+      },
+      {
+        "from": "s_lc",
+        "to": "c_balc",
+        "condition": "always"
+      },
+      {
+        "from": "c_balc",
+        "to": "e_lc",
+        "condition": "always"
+      },
+      {
+        "from": "e_lc",
+        "to": "c_read",
+        "condition": "always"
+      },
+      {
+        "from": "s_la",
+        "to": "c_lmsg",
+        "condition": "always"
+      },
+      {
+        "from": "c_lmsg",
+        "to": "e_la",
+        "condition": "always"
+      },
+      {
+        "from": "c_la1",
+        "to": "s_la",
+        "condition": "always"
+      },
+      {
+        "from": "c_la2",
+        "to": "s_la",
+        "condition": "always"
+      },
+      {
+        "from": "c_la3",
+        "to": "s_la",
+        "condition": "always"
+      },
+      {
+        "from": "c_la4",
+        "to": "s_la",
+        "condition": "always"
+      },
+      {
+        "from": "c_la5",
+        "to": "s_la",
+        "condition": "always"
+      },
+      {
+        "from": "c_la6",
+        "to": "s_la",
+        "condition": "always"
+      },
+      {
+        "from": "c_la7",
+        "to": "s_la",
+        "condition": "always"
+      },
+      {
+        "from": "c_la8",
+        "to": "s_la",
+        "condition": "always"
+      },
+      {
+        "from": "e_la",
+        "to": "g_posted",
+        "condition": "always"
+      },
+      {
+        "from": "e_la",
+        "to": "e_rf",
+        "condition": "always"
+      },
+      {
+        "from": "e_la",
+        "to": "l_do",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g_conv",
+        "to": "l_do",
+        "condition": "else"
+      },
+      {
+        "from": "g_eof",
+        "to": "e_rf2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "e_rf",
+        "to": "g_raw",
+        "condition": "always"
+      },
+      {
+        "from": "e_rf2",
+        "to": "g_raw",
+        "condition": "always"
+      },
+      {
+        "from": "r_badge",
+        "to": "g_bdg",
+        "condition": "always"
+      },
+      {
+        "from": "g_bdg",
+        "to": "r_teven",
+        "condition": "lt_badge IS NOT INITIAL"
+      },
+      {
+        "from": "g_bdg",
+        "to": "l_raw",
+        "condition": "else"
+      },
+      {
+        "from": "e_la",
+        "to": "l_raw",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_dup",
+        "to": "g_same",
+        "condition": "next row"
+      },
+      {
+        "from": "g_same",
+        "to": "g_isdup",
+        "condition": "ls_teven-ldate = ls_raw-ldate AND ls_teven-ltime = ls_raw-ltime"
+      },
+      {
+        "from": "g_same",
+        "to": "l_dup",
+        "condition": "else"
+      },
+      {
+        "from": "g_isdup",
+        "to": "l_raw",
+        "condition": "else"
+      },
+      {
+        "from": "l_raw",
+        "to": "e_me",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e_me",
+        "to": "c_post",
+        "condition": "always"
+      },
+      {
+        "from": "e_la",
+        "to": "e_pe",
+        "condition": "always"
+      },
+      {
+        "from": "c_cm",
+        "to": "e_pe2",
+        "condition": "always"
+      },
+      {
+        "from": "c_rb",
+        "to": "c_la7",
+        "condition": "always"
+      },
+      {
+        "from": "e_la",
+        "to": "e_pe2",
+        "condition": "always"
+      },
+      {
+        "from": "e_pe",
+        "to": "g_posted",
+        "condition": "always"
+      },
+      {
+        "from": "e_pe2",
+        "to": "g_posted",
+        "condition": "always"
+      },
+      {
+        "from": "e_la",
+        "to": "e_af",
+        "condition": "always"
+      },
+      {
+        "from": "l_lines",
+        "to": "o_tr",
+        "condition": "next row"
+      },
+      {
+        "from": "o_tr",
+        "to": "l_lines",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_lines",
+        "to": "w_del",
+        "condition": "no more rows"
+      },
+      {
+        "from": "w_del",
+        "to": "e_af2",
+        "condition": "always"
+      },
+      {
+        "from": "e_af",
+        "to": "c_save",
+        "condition": "always"
+      },
+      {
+        "from": "e_af2",
+        "to": "c_save",
+        "condition": "always"
+      },
+      {
+        "from": "c_save",
+        "to": "s_ls",
+        "condition": "always"
+      },
+      {
+        "from": "s_ls",
+        "to": "c_bsave",
+        "condition": "always"
+      },
+      {
+        "from": "c_bsave",
+        "to": "g_batch",
+        "condition": "always"
+      },
+      {
+        "from": "g_batch",
+        "to": "o_disp",
+        "condition": "sy-batch IS INITIAL"
+      },
+      {
+        "from": "g_batch",
+        "to": "e_ls",
+        "condition": "else"
+      },
+      {
+        "from": "o_disp",
+        "to": "e_ls",
+        "condition": "always"
+      },
+      {
+        "from": "e_ls",
+        "to": "lk_deq",
+        "condition": "always"
+      },
+      {
+        "from": "lk_deq",
+        "to": "e_sos",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zpt_term_upload_f01.abap:103 — kein Fachsatz „der Ausweis wird zum Buchungsdatum geprüft“ (Gültigkeit zu heute, sy-datum)",
+    "zpt_term_upload_f01.abap:140 — kein Fachsatz „doppelte Zeilen innerhalb der Datei werden erkannt“ (verglichen wird nur gegen bereits gebuchte Zeitereignisse)",
+    "zpt_term_upload.abap:46 — kein Fachsatz „die Datei wird nach jedem Lauf archiviert“ — im Testlauf, bei abgelehntem Upload und wenn alle Buchungen verworfen wurden, bleibt sie liegen und wird im nächsten Lauf erneut gelesen",
+    "zpt_term_upload_f01.abap:174 — kein Fachsatz „fehlerfreie Ereignisse werden trotzdem gebucht“ (alles oder nichts)",
+    "zpt_term_upload_f01.abap:71 — kein Fachsatz „Zeilen mit ungültigem Datum oder ungültiger Uhrzeit werden erkannt und verworfen“ (die Zuweisung an Typ d/t prüft nicht; conversion_errors wird nie ausgelöst, nur ein leeres Datum wird abgewiesen)"
+  ],
+  "processDescription": "Ein Hintergrundjob übernimmt alle 15 Minuten die Buchungsdatei des Terminalservers eines Werks. Er sperrt die Datei exklusiv und bricht hart ab, wenn ein anderer Lauf sie gerade verarbeitet; dann eröffnet er ein Anwendungsprotokoll. Die Datei wird zeilenweise gelesen und zerlegt; Zeilen mit leerem Datum werden als Fehler protokolliert; ungültige Datums- oder Uhrzeitangaben werden nicht erkannt, weil die Zuweisung sie nicht prüft. Zu den Ausweisen werden die heute gültigen Personalnummern und die Zeitereignisse der letzten sieben Tage gelesen. Buchungen mit unbekanntem Ausweis werden protokolliert und verworfen, Buchungsarten auf Kommen, Gehen, Pausenbeginn und Pausenende abgebildet, andere mit Warnung ignoriert. Bereits vorhandene Ereignisse mit gleichem Zeitpunkt gelten als Dublette und werden übergangen. Im Echtlauf werden die übrigen Ereignisse in einem Aufruf hochgeladen; bei einer Fehlermeldung wird alles verworfen, sonst festgeschrieben. Nur nach erfolgreichem Upload wird die Datei archiviert und gelöscht; andernfalls bleibt sie für den nächsten Lauf liegen. Zum Schluss wird das Protokoll gesichert, im Dialog angezeigt und die Sperre freigegeben."
+}

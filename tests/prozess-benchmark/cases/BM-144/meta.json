@@ -1,0 +1,29 @@
+{
+  "id": "BM-144",
+  "title": "Reisekosten: Altersliste genehmigter, noch nicht abgerechneter Reisen",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "einfach",
+  "loc": 27,
+  "constructs": [
+    "REPORT",
+    "AT SELECTION-SCREEN ON",
+    "MESSAGE Typ E",
+    "SELECT mit JOIN PTRV_HEAD/PTRV_PERIO (neue Syntax)",
+    "Inline-Deklarationen",
+    "COND #",
+    "WRITE"
+  ],
+  "scenario": "Die Reisestelle bekommt monatlich eine Liste der Reisen, die zwar genehmigt, aber seit mehr als N Tagen nicht abgerechnet sind, um Nachzügler anzumahnen.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf PTRV_HEAD/PTRV_PERIO",
+    "Statuswerte als Literale",
+    "Listausgabe per WRITE"
+  ],
+  "wave": 2,
+  "module": "FI-TV",
+  "edge_constructs": [
+    "AT SELECTION-SCREEN ON mit MESSAGE Typ E",
+    "COND #",
+    "Inline-Deklarationen"
+  ]
+}

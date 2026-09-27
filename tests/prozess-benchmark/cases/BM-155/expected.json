@@ -1,0 +1,1382 @@
+{
+  "id": "BM-155",
+  "title": "Veranstaltungsmanagement: Pflichtschulung abteilungsweise buchen mit Kapazität, Voraussetzung und Warteliste",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PA0001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpe_book_participants.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpe_book_participants.abap:50"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_PE_BOOKING",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zpe_book_participants.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpe_book_participants.abap:41"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HRP1000",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pe_booking.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pe_booking.abap:47"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HRP1024",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pe_booking.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pe_booking.abap:56"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HRP1001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pe_booking.abap",
+        "line": 59,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pe_booking.abap:59"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPE_EVT_PREREQ",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pe_booking.abap",
+        "line": 69,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pe_booking.abap:69"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RH_RELATION_MAINTAIN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_pe_booking.abap",
+        "line": 114,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pe_booking.abap:114"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-155-B01",
+      "text": "Zur gewählten Veranstaltung wird geprüft, ob sie künftig stattfindet und nicht nur geplant ist; sonst bricht der Lauf mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zpe_book_participants.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:41"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:47"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:50"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:52"
+        },
+        {
+          "file": "zpe_book_participants.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-155-B02",
+      "text": "Für die Veranstaltung werden die Maximalkapazität und die Zahl fester Buchungen ermittelt; ohne Kapazitätsangabe gilt keine Grenze.",
+      "anchors": [
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:56"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:59"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:101"
+        }
+      ]
+    },
+    {
+      "id": "BM-155-B03",
+      "text": "Über den Veranstaltungstyp wird die als Voraussetzung hinterlegte Qualifikation bestimmt.",
+      "anchors": [
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:65"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:68"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-155-B04",
+      "text": "Teilnehmer sind alle Mitarbeiter, die heute einer der gewählten Organisationseinheiten zugeordnet sind.",
+      "anchors": [
+        {
+          "file": "zpe_book_participants.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-155-B05",
+      "text": "Wer bereits gebucht ist oder auf der Warteliste steht, wird abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:77"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:82"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-155-B06",
+      "text": "Verlangt der Veranstaltungstyp eine Qualifikation und besitzt der Mitarbeiter sie nicht gültig, wird er abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:88"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:89"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:95"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:96"
+        }
+      ]
+    },
+    {
+      "id": "BM-155-B07",
+      "text": "Ist die Kapazität ausgeschöpft, wird der Mitarbeiter mit Wartelistenpriorität eingetragen und als Warteliste protokolliert.",
+      "anchors": [
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:102"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:103"
+        },
+        {
+          "file": "zpe_book_participants.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-155-B08",
+      "text": "Sonst wird die feste Teilnahme ab heute unbefristet angelegt, die Buchungszahl erhöht und die Buchung protokolliert.",
+      "anchors": [
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:107"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:108"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:109"
+        },
+        {
+          "file": "zpe_book_participants.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-155-B09",
+      "text": "Die Teilnahmebeziehung wird im Testlauf nur im Puffer, im Echtlauf über die Verbuchung angelegt; scheitert die Anlage, wird der Mitarbeiter abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:114"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:134"
+        },
+        {
+          "file": "zcl_pe_booking.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:135"
+        }
+      ]
+    },
+    {
+      "id": "BM-155-B10",
+      "text": "Jede Ablehnung wird mit Personalnummer und Grund ausgegeben.",
+      "anchors": [
+        {
+          "file": "zpe_book_participants.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:60"
+        },
+        {
+          "file": "zpe_book_participants.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-155-B11",
+      "text": "Im Echtlauf werden alle Buchungen am Ende festgeschrieben, im Testlauf verworfen; danach werden die Zahlen gebuchter und wartender Teilnehmer ausgegeben.",
+      "anchors": [
+        {
+          "file": "zpe_book_participants.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:65"
+        },
+        {
+          "file": "zpe_book_participants.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:66"
+        },
+        {
+          "file": "zpe_book_participants.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:68"
+        },
+        {
+          "file": "zpe_book_participants.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:71"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:35"
+        },
+        "meaning": "Buchungslauf startet"
+      },
+      {
+        "id": "a_new",
+        "type": "call",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:41"
+        },
+        "meaning": "Buchungsobjekt für die Veranstaltung anlegen"
+      },
+      {
+        "id": "o_errm",
+        "type": "output",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:44"
+        },
+        "meaning": "Fehlermeldung: Veranstaltung nicht buchbar"
+      },
+      {
+        "id": "o_err",
+        "type": "end",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:44"
+        },
+        "meaning": "Abbruch: Veranstaltung nicht buchbar"
+      },
+      {
+        "id": "a_hdl",
+        "type": "action",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:48"
+        },
+        "meaning": "Protokoll für Buchung und Warteliste anmelden"
+      },
+      {
+        "id": "r_p",
+        "type": "read",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:50"
+        },
+        "meaning": "Mitarbeiter der gewählten Einheiten lesen"
+      },
+      {
+        "id": "l_p",
+        "type": "loop",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:56"
+        },
+        "meaning": "Je Mitarbeiter"
+      },
+      {
+        "id": "c_book",
+        "type": "call",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:58"
+        },
+        "meaning": "Mitarbeiter buchen"
+      },
+      {
+        "id": "a_cast",
+        "type": "action",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:60"
+        },
+        "meaning": "Ausnahme als Buchungsfehler auffassen"
+      },
+      {
+        "id": "o_fail",
+        "type": "output",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:61"
+        },
+        "meaning": "Ablehnungsgrund ausgeben"
+      },
+      {
+        "id": "g_test",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:65"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "t_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:66"
+        },
+        "meaning": "Buchungen festschreiben"
+      },
+      {
+        "id": "t_rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:68"
+        },
+        "meaning": "Testlauf verwerfen"
+      },
+      {
+        "id": "o_sum",
+        "type": "output",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:71"
+        },
+        "meaning": "Anzahl Buchungen und Wartelistenplätze ausgeben"
+      },
+      {
+        "id": "e_sos",
+        "type": "end",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:71"
+        },
+        "meaning": "Buchungslauf beendet"
+      },
+      {
+        "id": "s_hb",
+        "type": "start",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:25"
+        },
+        "meaning": "Reaktion auf Buchung"
+      },
+      {
+        "id": "o_hb",
+        "type": "output",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:27"
+        },
+        "meaning": "Gebucht protokollieren"
+      },
+      {
+        "id": "e_hb",
+        "type": "end",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:28"
+        },
+        "meaning": "Buchung protokolliert"
+      },
+      {
+        "id": "s_hw",
+        "type": "start",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:29"
+        },
+        "meaning": "Reaktion auf Warteliste"
+      },
+      {
+        "id": "o_hw",
+        "type": "output",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:31"
+        },
+        "meaning": "Warteliste protokollieren"
+      },
+      {
+        "id": "e_hw",
+        "type": "end",
+        "anchor": {
+          "file": "zpe_book_participants.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpe_book_participants.abap:32"
+        },
+        "meaning": "Warteliste protokolliert"
+      },
+      {
+        "id": "s_ctor",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:40"
+        },
+        "meaning": "Veranstaltung laden"
+      },
+      {
+        "id": "r_1000",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:47"
+        },
+        "meaning": "Status der künftigen Veranstaltung lesen"
+      },
+      {
+        "id": "g_st",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:50"
+        },
+        "meaning": "Nicht buchbar?"
+      },
+      {
+        "id": "x_st",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:52"
+        },
+        "meaning": "Ausnahme: nicht buchbar"
+      },
+      {
+        "id": "r_1024",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:56"
+        },
+        "meaning": "Maximalkapazität lesen"
+      },
+      {
+        "id": "r_cnt",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:59"
+        },
+        "meaning": "Feste Buchungen zählen"
+      },
+      {
+        "id": "r_typ",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:65"
+        },
+        "meaning": "Veranstaltungstyp lesen"
+      },
+      {
+        "id": "g_typ",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:68"
+        },
+        "meaning": "Typ gefunden?"
+      },
+      {
+        "id": "r_pre",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:69"
+        },
+        "meaning": "Voraussetzungsqualifikation des Typs lesen"
+      },
+      {
+        "id": "e_ctor",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:72"
+        },
+        "meaning": "Veranstaltung geladen"
+      },
+      {
+        "id": "s_book",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:75"
+        },
+        "meaning": "Einen Teilnehmer buchen"
+      },
+      {
+        "id": "r_ex",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:77"
+        },
+        "meaning": "Vorhandene Buchung oder Warteliste suchen"
+      },
+      {
+        "id": "g_ex",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:82"
+        },
+        "meaning": "Schon gebucht?"
+      },
+      {
+        "id": "x_ex",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:83"
+        },
+        "meaning": "Ausnahme: bereits gebucht"
+      },
+      {
+        "id": "g_pre",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:88"
+        },
+        "meaning": "Voraussetzung gefordert?"
+      },
+      {
+        "id": "r_q",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:89"
+        },
+        "meaning": "Gültige Qualifikation des Mitarbeiters suchen"
+      },
+      {
+        "id": "g_q",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:95"
+        },
+        "meaning": "Qualifikation fehlt?"
+      },
+      {
+        "id": "x_q",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:96"
+        },
+        "meaning": "Ausnahme: Voraussetzung fehlt"
+      },
+      {
+        "id": "g_cap",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:101"
+        },
+        "meaning": "Kapazität erschöpft?"
+      },
+      {
+        "id": "c_cr1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:102"
+        },
+        "meaning": "Wartelistenbeziehung anlegen"
+      },
+      {
+        "id": "ev_w",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:103"
+        },
+        "meaning": "Warteliste melden"
+      },
+      {
+        "id": "e_w",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:104"
+        },
+        "meaning": "Buchung als Warteliste beendet"
+      },
+      {
+        "id": "c_cr2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:107"
+        },
+        "meaning": "Feste Teilnahme anlegen"
+      },
+      {
+        "id": "ev_b",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:109"
+        },
+        "meaning": "Buchung melden"
+      },
+      {
+        "id": "e_book",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:110"
+        },
+        "meaning": "Teilnehmer fest gebucht"
+      },
+      {
+        "id": "s_cr",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:113"
+        },
+        "meaning": "Teilnahmebeziehung schreiben"
+      },
+      {
+        "id": "c_rm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:114"
+        },
+        "meaning": "Beziehung P nimmt teil an E mit Priorität anlegen"
+      },
+      {
+        "id": "g_rm",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:134"
+        },
+        "meaning": "Anlage gescheitert?"
+      },
+      {
+        "id": "x_rm",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:135"
+        },
+        "meaning": "Ausnahme: Beziehung nicht angelegt"
+      },
+      {
+        "id": "e_cr",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pe_booking.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pe_booking.abap:138"
+        },
+        "meaning": "Beziehung angelegt"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "a_new",
+        "condition": "always"
+      },
+      {
+        "from": "a_new",
+        "to": "s_ctor",
+        "condition": "always"
+      },
+      {
+        "from": "a_hdl",
+        "to": "r_p",
+        "condition": "always"
+      },
+      {
+        "from": "r_p",
+        "to": "l_p",
+        "condition": "always"
+      },
+      {
+        "from": "l_p",
+        "to": "c_book",
+        "condition": "next row"
+      },
+      {
+        "from": "c_book",
+        "to": "s_book",
+        "condition": "always"
+      },
+      {
+        "from": "a_cast",
+        "to": "o_fail",
+        "condition": "always"
+      },
+      {
+        "from": "o_fail",
+        "to": "l_p",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_p",
+        "to": "g_test",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_test",
+        "to": "t_cm",
+        "condition": "p_test = abap_false"
+      },
+      {
+        "from": "g_test",
+        "to": "t_rb",
+        "condition": "else"
+      },
+      {
+        "from": "t_cm",
+        "to": "o_sum",
+        "condition": "always"
+      },
+      {
+        "from": "t_rb",
+        "to": "o_sum",
+        "condition": "always"
+      },
+      {
+        "from": "s_hb",
+        "to": "o_hb",
+        "condition": "always"
+      },
+      {
+        "from": "s_hw",
+        "to": "o_hw",
+        "condition": "always"
+      },
+      {
+        "from": "s_ctor",
+        "to": "r_1000",
+        "condition": "always"
+      },
+      {
+        "from": "r_1000",
+        "to": "g_st",
+        "condition": "always"
+      },
+      {
+        "from": "g_st",
+        "to": "x_st",
+        "condition": "sy-subrc <> 0 OR lv_istat = '2'"
+      },
+      {
+        "from": "g_st",
+        "to": "r_1024",
+        "condition": "else"
+      },
+      {
+        "from": "r_1024",
+        "to": "r_cnt",
+        "condition": "always"
+      },
+      {
+        "from": "r_cnt",
+        "to": "r_typ",
+        "condition": "always"
+      },
+      {
+        "from": "r_typ",
+        "to": "g_typ",
+        "condition": "always"
+      },
+      {
+        "from": "g_typ",
+        "to": "r_pre",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "s_book",
+        "to": "r_ex",
+        "condition": "always"
+      },
+      {
+        "from": "r_ex",
+        "to": "g_ex",
+        "condition": "always"
+      },
+      {
+        "from": "g_ex",
+        "to": "x_ex",
+        "condition": "lv_exists = abap_true"
+      },
+      {
+        "from": "g_ex",
+        "to": "g_pre",
+        "condition": "else"
+      },
+      {
+        "from": "g_pre",
+        "to": "r_q",
+        "condition": "mv_prereq IS NOT INITIAL"
+      },
+      {
+        "from": "g_pre",
+        "to": "g_cap",
+        "condition": "else"
+      },
+      {
+        "from": "r_q",
+        "to": "g_q",
+        "condition": "always"
+      },
+      {
+        "from": "g_q",
+        "to": "x_q",
+        "condition": "lv_qualified = abap_false"
+      },
+      {
+        "from": "g_q",
+        "to": "g_cap",
+        "condition": "else"
+      },
+      {
+        "from": "g_cap",
+        "to": "c_cr1",
+        "condition": "mv_capmax > 0 AND mv_booked >= mv_capmax"
+      },
+      {
+        "from": "c_cr1",
+        "to": "s_cr",
+        "condition": "always"
+      },
+      {
+        "from": "ev_w",
+        "to": "s_hw",
+        "condition": "always"
+      },
+      {
+        "from": "g_cap",
+        "to": "c_cr2",
+        "condition": "else"
+      },
+      {
+        "from": "c_cr2",
+        "to": "s_cr",
+        "condition": "always"
+      },
+      {
+        "from": "ev_b",
+        "to": "s_hb",
+        "condition": "always"
+      },
+      {
+        "from": "s_cr",
+        "to": "c_rm",
+        "condition": "always"
+      },
+      {
+        "from": "c_rm",
+        "to": "g_rm",
+        "condition": "always"
+      },
+      {
+        "from": "g_rm",
+        "to": "x_rm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o_errm",
+        "to": "o_err",
+        "condition": "always"
+      },
+      {
+        "from": "x_st",
+        "to": "o_errm",
+        "condition": "CATCH zcx_pe_booking"
+      },
+      {
+        "from": "g_typ",
+        "to": "e_ctor",
+        "condition": "else"
+      },
+      {
+        "from": "r_pre",
+        "to": "e_ctor",
+        "condition": "always"
+      },
+      {
+        "from": "e_ctor",
+        "to": "a_hdl",
+        "condition": "always"
+      },
+      {
+        "from": "x_ex",
+        "to": "a_cast",
+        "condition": "CATCH cx_static_check"
+      },
+      {
+        "from": "x_q",
+        "to": "a_cast",
+        "condition": "CATCH cx_static_check"
+      },
+      {
+        "from": "x_rm",
+        "to": "a_cast",
+        "condition": "CATCH cx_static_check"
+      },
+      {
+        "from": "g_rm",
+        "to": "e_cr",
+        "condition": "else"
+      },
+      {
+        "from": "e_cr",
+        "to": "ev_w",
+        "condition": "always"
+      },
+      {
+        "from": "e_cr",
+        "to": "ev_b",
+        "condition": "always"
+      },
+      {
+        "from": "o_hw",
+        "to": "e_hw",
+        "condition": "always"
+      },
+      {
+        "from": "o_hb",
+        "to": "e_hb",
+        "condition": "always"
+      },
+      {
+        "from": "e_hw",
+        "to": "e_w",
+        "condition": "always"
+      },
+      {
+        "from": "e_hb",
+        "to": "e_book",
+        "condition": "always"
+      },
+      {
+        "from": "e_w",
+        "to": "l_p",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_book",
+        "to": "l_p",
+        "condition": "next iteration"
+      },
+      {
+        "from": "o_sum",
+        "to": "e_sos",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zpe_book_participants.abap:50 — kein Fachsatz „nur aktive Mitarbeiter werden gebucht“ (kein Beschäftigungsstatus geprüft, trotz Kommentar)",
+    "zpe_book_participants.abap:60 — kein Fachsatz „jede andere Ausnahme wird ebenfalls protokolliert“ (eine fremde Ausnahmeklasse führt beim CAST zu einem Laufzeitfehler)",
+    "zcl_pe_booking.abap:103 — kein Fachsatz „Wartelistenplätze zählen zur Belegung“ (nur feste Buchungen werden gezählt)",
+    "gesamte Scheibe — kein Fachsatz „Teilnehmer werden per Mail eingeladen“ (keine Korrespondenz)"
+  ],
+  "processDescription": "Die Personalentwicklung bucht eine Pflichtschulung für ganze Organisationseinheiten, standardmäßig als Testlauf. Zuerst wird geprüft, ob die Veranstaltung künftig stattfindet und nicht nur geplant ist; sonst bricht der Lauf ab. Dabei werden Maximalkapazität, Zahl fester Buchungen und die über den Veranstaltungstyp hinterlegte Voraussetzungsqualifikation ermittelt. Teilnehmer sind alle Mitarbeiter, die heute einer gewählten Einheit zugeordnet sind, ohne Statusprüfung. Je Mitarbeiter wird abgelehnt, wer schon gebucht oder auf der Warteliste ist oder die geforderte Qualifikation nicht gültig besitzt. Bei erschöpfter Kapazität wird er auf die Warteliste gesetzt, sonst fest gebucht; beides wird über Ereignisse protokolliert. Ablehnungen werden mit Grund ausgegeben. Im Echtlauf werden die Buchungen am Ende festgeschrieben, im Testlauf verworfen, und die Zahlen gebuchter und wartender Teilnehmer ausgegeben."
+}

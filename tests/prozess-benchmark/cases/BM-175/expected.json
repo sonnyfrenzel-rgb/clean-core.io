@@ -1,0 +1,1298 @@
+{
+  "id": "BM-175",
+  "title": "Bonusabsprachen: Endabrechnung freigegebener Absprachen je Absprachenart als Hintergrundjob einplanen",
+  "classes": [
+    "K01",
+    "K06",
+    "K13",
+    "K17"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "KONA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_bonus_endabr_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_bonus_endabr_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_BONUS_FRG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_bonus_endabr_f01.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_bonus_endabr_f01.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_BONUS_EXIT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_bonus_endabr_f01.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_bonus_endabr_f01.abap:39"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_OPEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_bonus_endabr_f01.abap",
+        "line": 61,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_bonus_endabr_f01.abap:61"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RV15C001",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_bonus_endabr_f01.abap",
+        "line": 72,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_bonus_endabr_f01.abap:72"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_CLOSE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_bonus_endabr_f01.abap",
+        "line": 77,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_bonus_endabr_f01.abap:77"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_BONUS_LAUF",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zsd_bonus_endabr_f01.abap",
+        "line": 95,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_bonus_endabr_f01.abap:95"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-175-B01",
+      "text": "Es werden Bonusabsprachen der gewählten Verkaufsorganisationen und Absprachenarten gelesen, die vor dem Stichtag abgelaufen sind und den Status offen oder A haben.",
+      "anchors": [
+        {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:33"
+        },
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:11"
+        }
+      ]
+    },
+    {
+      "id": "BM-175-B02",
+      "text": "Gibt es keine, endet der Lauf mit einem Hinweis.",
+      "anchors": [
+        {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:34"
+        },
+        {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:35"
+        },
+        {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-175-B03",
+      "text": "Die Absprachen werden je Absprachenart gesammelt; mit jeder neuen Art beginnt eine neue Sammlung.",
+      "anchors": [
+        {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:40"
+        },
+        {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-175-B04",
+      "text": "Eine Absprache ohne Freigabe des Vertriebscontrollings wird mit Hinweis gelistet und nicht abgerechnet.",
+      "anchors": [
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:30"
+        },
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:32"
+        },
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-175-B05",
+      "text": "Ist für die Absprachenart eine Zusatzprüfung hinterlegt, wird die dort genannte Routine eines anderen Programms gerufen, sofern sie existiert; lehnt sie ab, wird die Absprache mit Hinweis übergangen.",
+      "anchors": [
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:39"
+        },
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:43"
+        },
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:46"
+        },
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-175-B06",
+      "text": "Geprüfte Absprachen werden in die Sammlung der Absprachenart aufgenommen.",
+      "anchors": [
+        {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-175-B07",
+      "text": "Am Ende jeder Absprachenart listet der Testlauf die gesammelten Absprachen; im Echtlauf wird für eine nicht leere Sammlung die Sammelabrechnung als Job eingeplant.",
+      "anchors": [
+        {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:49"
+        },
+        {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:50"
+        },
+        {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:51"
+        },
+        {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-175-B08",
+      "text": "Lässt sich der Job nicht öffnen, bricht der Lauf mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:61"
+        },
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:68"
+        },
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-175-B09",
+      "text": "Die Standard-Sammelabrechnung wird mit den gesammelten Absprachenummern im Job eingeplant und der Job sofort freigegeben.",
+      "anchors": [
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:72"
+        },
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-175-B10",
+      "text": "Scheitert die Freigabe, wird der Job als nicht freigegeben gelistet und nicht protokolliert.",
+      "anchors": [
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:84"
+        },
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-175-B11",
+      "text": "Jeder freigegebene Job wird mit Jobname, Absprachenart, Datum, Anzahl und Benutzer protokolliert, gezählt und gelistet.",
+      "anchors": [
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:95"
+        },
+        {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-175-B12",
+      "text": "Im Echtlauf wird am Ende die Zahl der eingeplanten Jobs ausgegeben.",
+      "anchors": [
+        {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:58"
+        },
+        {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:60"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:32"
+        },
+        "meaning": "Lauf starten"
+      },
+      {
+        "id": "cal",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:33"
+        },
+        "meaning": "Absprachen lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:34"
+        },
+        "meaning": "Keine Absprachen?"
+      },
+      {
+        "id": "o0",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:35"
+        },
+        "meaning": "Hinweis: keine abgelaufenen Absprachen"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:36"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:40"
+        },
+        "meaning": "Absprachen je Art durchgehen"
+      },
+      {
+        "id": "cvp",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:45"
+        },
+        "meaning": "Absprache vorprüfen"
+      },
+      {
+        "id": "ch",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:46"
+        },
+        "meaning": "Vorprüfung bestanden?"
+      },
+      {
+        "id": "ae",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:49"
+        },
+        "meaning": "Letzte Absprache der Art?"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:50"
+        },
+        "meaning": "Testlauf / Sammlung vorhanden?"
+      },
+      {
+        "id": "ctl",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:51"
+        },
+        "meaning": "Testliste der Art"
+      },
+      {
+        "id": "cj",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:53"
+        },
+        "meaning": "Abrechnungsjob einplanen"
+      },
+      {
+        "id": "gw",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:58"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "os",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:60"
+        },
+        "meaning": "Anzahl Jobs ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_bonus_endabr.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr.abap:61"
+        },
+        "meaning": "Lauf beendet"
+      },
+      {
+        "id": "fal",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:10"
+        },
+        "meaning": "Absprachen lesen"
+      },
+      {
+        "id": "qk",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:11"
+        },
+        "meaning": "Abgelaufene offene Absprachen lesen"
+      },
+      {
+        "id": "eal",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:17"
+        },
+        "meaning": "gelesen"
+      },
+      {
+        "id": "fvp",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:24"
+        },
+        "meaning": "Vorprüfung"
+      },
+      {
+        "id": "qf",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:30"
+        },
+        "meaning": "Controlling-Freigabe lesen"
+      },
+      {
+        "id": "gf",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:32"
+        },
+        "meaning": "Nicht freigegeben?"
+      },
+      {
+        "id": "of",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:33"
+        },
+        "meaning": "Hinweis nicht freigegeben"
+      },
+      {
+        "id": "rf",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:34"
+        },
+        "meaning": "abgelehnt"
+      },
+      {
+        "id": "qx",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:39"
+        },
+        "meaning": "Zusatzprüfung der Art lesen"
+      },
+      {
+        "id": "gx",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:42"
+        },
+        "meaning": "Zusatzprüfung hinterlegt?"
+      },
+      {
+        "id": "dp",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:43"
+        },
+        "meaning": "Zusatzprüfung dynamisch rufen"
+      },
+      {
+        "id": "gn",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:46"
+        },
+        "meaning": "Zusatzprüfung negativ?"
+      },
+      {
+        "id": "on",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:47"
+        },
+        "meaning": "Hinweis Zusatzprüfung negativ"
+      },
+      {
+        "id": "evp",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:50"
+        },
+        "meaning": "Vorprüfung fertig"
+      },
+      {
+        "id": "fj",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:57"
+        },
+        "meaning": "Job einplanen"
+      },
+      {
+        "id": "jo",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:61"
+        },
+        "meaning": "Job öffnen"
+      },
+      {
+        "id": "gj",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:68"
+        },
+        "meaning": "Job nicht geöffnet?"
+      },
+      {
+        "id": "mo",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:69"
+        },
+        "meaning": "Fehlermeldung: Job nicht zu öffnen"
+      },
+      {
+        "id": "mj",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:69"
+        },
+        "meaning": "Abbruch mit Fehlermeldung"
+      },
+      {
+        "id": "sb",
+        "type": "external_program",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:72"
+        },
+        "meaning": "Sammelabrechnung im Job einplanen"
+      },
+      {
+        "id": "jc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:77"
+        },
+        "meaning": "Job sofort freigeben"
+      },
+      {
+        "id": "gjc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:84"
+        },
+        "meaning": "Freigabe gescheitert?"
+      },
+      {
+        "id": "oj",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:85"
+        },
+        "meaning": "Hinweis Job nicht freigegeben"
+      },
+      {
+        "id": "rj",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:86"
+        },
+        "meaning": "ohne Protokoll zurück"
+      },
+      {
+        "id": "wi",
+        "type": "write",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:95"
+        },
+        "meaning": "Joblauf protokollieren"
+      },
+      {
+        "id": "ow",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:97"
+        },
+        "meaning": "Eingeplanten Job listen"
+      },
+      {
+        "id": "ej",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:98"
+        },
+        "meaning": "Job eingeplant"
+      },
+      {
+        "id": "ftl",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:103"
+        },
+        "meaning": "Testliste"
+      },
+      {
+        "id": "ot",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:104"
+        },
+        "meaning": "Kopf der Testliste"
+      },
+      {
+        "id": "lt",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:105"
+        },
+        "meaning": "Gesammelte Absprachen"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:106"
+        },
+        "meaning": "Absprachenummer listen"
+      },
+      {
+        "id": "etl",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_bonus_endabr_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_bonus_endabr_f01.abap:108"
+        },
+        "meaning": "Testliste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "cal",
+        "condition": "always"
+      },
+      {
+        "from": "cal",
+        "to": "fal",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "o0",
+        "condition": "gt_abs IS INITIAL"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "cvp",
+        "condition": "next row"
+      },
+      {
+        "from": "cvp",
+        "to": "fvp",
+        "condition": "always"
+      },
+      {
+        "from": "ch",
+        "to": "ae",
+        "condition": "gv_ok = abap_true"
+      },
+      {
+        "from": "ch",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "ae",
+        "to": "gt",
+        "condition": "AT END OF boart"
+      },
+      {
+        "from": "ae",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "gt",
+        "to": "ctl",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "gt",
+        "to": "cj",
+        "condition": "gr_knuma IS NOT INITIAL"
+      },
+      {
+        "from": "gt",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "ctl",
+        "to": "ftl",
+        "condition": "always"
+      },
+      {
+        "from": "cj",
+        "to": "fj",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "gw",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gw",
+        "to": "os",
+        "condition": "p_test = abap_false"
+      },
+      {
+        "from": "gw",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "os",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "fal",
+        "to": "qk",
+        "condition": "always"
+      },
+      {
+        "from": "qk",
+        "to": "eal",
+        "condition": "always"
+      },
+      {
+        "from": "fvp",
+        "to": "qf",
+        "condition": "always"
+      },
+      {
+        "from": "qf",
+        "to": "gf",
+        "condition": "always"
+      },
+      {
+        "from": "gf",
+        "to": "of",
+        "condition": "sy-subrc <> 0 OR lv_frg <> 'X'"
+      },
+      {
+        "from": "gf",
+        "to": "qx",
+        "condition": "else"
+      },
+      {
+        "from": "of",
+        "to": "rf",
+        "condition": "always"
+      },
+      {
+        "from": "qx",
+        "to": "gx",
+        "condition": "always"
+      },
+      {
+        "from": "gx",
+        "to": "dp",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gx",
+        "to": "evp",
+        "condition": "else"
+      },
+      {
+        "from": "dp",
+        "to": "gn",
+        "condition": "always"
+      },
+      {
+        "from": "gn",
+        "to": "on",
+        "condition": "cv_ok = abap_false"
+      },
+      {
+        "from": "gn",
+        "to": "evp",
+        "condition": "else"
+      },
+      {
+        "from": "on",
+        "to": "evp",
+        "condition": "always"
+      },
+      {
+        "from": "fj",
+        "to": "jo",
+        "condition": "always"
+      },
+      {
+        "from": "jo",
+        "to": "gj",
+        "condition": "always"
+      },
+      {
+        "from": "gj",
+        "to": "mo",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gj",
+        "to": "sb",
+        "condition": "else"
+      },
+      {
+        "from": "sb",
+        "to": "jc",
+        "condition": "always"
+      },
+      {
+        "from": "jc",
+        "to": "gjc",
+        "condition": "always"
+      },
+      {
+        "from": "gjc",
+        "to": "oj",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gjc",
+        "to": "wi",
+        "condition": "else"
+      },
+      {
+        "from": "oj",
+        "to": "rj",
+        "condition": "always"
+      },
+      {
+        "from": "wi",
+        "to": "ow",
+        "condition": "always"
+      },
+      {
+        "from": "ow",
+        "to": "ej",
+        "condition": "always"
+      },
+      {
+        "from": "ftl",
+        "to": "ot",
+        "condition": "always"
+      },
+      {
+        "from": "ot",
+        "to": "lt",
+        "condition": "always"
+      },
+      {
+        "from": "lt",
+        "to": "o2",
+        "condition": "next row"
+      },
+      {
+        "from": "o2",
+        "to": "lt",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lt",
+        "to": "etl",
+        "condition": "no more rows"
+      },
+      {
+        "from": "eal",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "rf",
+        "to": "ch",
+        "condition": "always"
+      },
+      {
+        "from": "evp",
+        "to": "ch",
+        "condition": "always"
+      },
+      {
+        "from": "etl",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rj",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ej",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "mo",
+        "to": "mj",
+        "condition": "always"
+      },
+      {
+        "from": "o0",
+        "to": "x0",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zsd_bonus_endabr.abap:46 — kein Fachsatz „für jede Absprachenart mit freigegebenen Absprachen wird ein Job eingeplant“: scheitert die letzte Absprache einer Art an der Vorprüfung, überspringt CHECK den AT-END-Block und die ganze Art bleibt ohne Job",
+    "zsd_bonus_endabr_f01.abap:43 — kein Fachsatz „fehlt die hinterlegte Prüfroutine, wird die Absprache gesperrt“: ohne gefundene Routine bleibt die Absprache freigegeben",
+    "zsd_bonus_endabr_f01.abap:72 — kein Fachsatz „die Absprachen werden in diesem Lauf abgerechnet“: der Report plant nur Jobs ein, die Abrechnung läuft später im Hintergrund",
+    "gesamte Scheibe — kein Fachsatz „Bonusgutschriften werden gebucht oder Absprachen auf endabgerechnet gesetzt“: das tut erst das eingeplante Standardprogramm"
+  ],
+  "processDescription": "Der Report wird mit Verkaufsorganisationen, Absprachenarten, Stichtag und Testkennzeichen gestartet und liest die vor dem Stichtag abgelaufenen Bonusabsprachen mit Status offen oder A; gibt es keine, endet er mit Hinweis. Die Absprachen werden nach Art sortiert und je Art gesammelt. Jede Absprache braucht die Freigabe des Vertriebscontrollings, sonst wird sie mit Hinweis übergangen. Ist für die Art eine Zusatzprüfung in einer Customizingtabelle hinterlegt, wird die genannte Routine eines anderen Programms dynamisch gerufen, sofern sie existiert, und kann die Absprache ablehnen. Am Ende jeder Art listet der Testlauf die gesammelten Absprachen; im Echtlauf öffnet der Report einen Hintergrundjob, plant darin die Standard-Sammelabrechnung mit den gesammelten Absprachenummern ein und gibt den Job sofort frei. Scheitert das Öffnen, bricht der Lauf mit Fehlermeldung ab; scheitert die Freigabe, wird das gelistet. Freigegebene Jobs werden protokolliert, gezählt und gelistet. Scheitert die letzte Absprache einer Art an der Vorprüfung, entfällt der Job für die ganze Art."
+}

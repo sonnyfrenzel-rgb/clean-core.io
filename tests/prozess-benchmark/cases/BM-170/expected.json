@@ -1,0 +1,677 @@
+{
+  "id": "BM-170",
+  "title": "Transport: beladene Transporte per BAPI abfertigen, mit Wiederholung bei Sperre",
+  "classes": [
+    "K01",
+    "K03",
+    "K12",
+    "K13"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VTTK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:27"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_SHIPMENT_CHANGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:41"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:50"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 63,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:63"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-170-B01",
+      "text": "Es werden Transporte der gewählten Transportdispostellen und Transportarten gelesen, deren Beladung beendet, die aber noch nicht abgefertigt sind; mit dem Kennzeichen „heute“ nur solche mit Ladeende heute.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-170-B02",
+      "text": "Gibt es keine, wird dies ausgegeben und die Verarbeitung der Transporte übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-170-B03",
+      "text": "Für jeden Transport wird der Status „Abfertigung“ per Änderungs-BAPI gesetzt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-170-B04",
+      "text": "Schlägt die Änderung fehl, wird sie zurückgerollt; ist der Transport gesperrt, wird zwei Sekunden gewartet und höchstens dreimal insgesamt versucht, bei anderen Fehlern sofort aufgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-170-B05",
+      "text": "Bleibt ein Fehler, wird der Transport mit Fehlertext gelistet und gezählt; sonst wird die Abfertigung festgeschrieben und gezählt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-170-B06",
+      "text": "Am Ende werden die Anzahl abgefertigter und fehlerhafter Transporte ausgegeben; gab es Fehler, bricht der Job mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        },
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "gh",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Nur heute beladene Transporte?"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Beladene, nicht abgefertigte Transporte lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Keine Transporte?"
+      },
+      {
+        "id": "o0",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Hinweis „Keine Transporte zum Abfertigen“ listen"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "START-OF-SELECTION verlassen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Transporte durchgehen"
+      },
+      {
+        "id": "d",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Bis zu drei Versuche"
+      },
+      {
+        "id": "b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Status Abfertigung setzen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Änderung fehlerfrei?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        "meaning": "Änderung zurückrollen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        "meaning": "Transport gesperrt?"
+      },
+      {
+        "id": "wt",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        "meaning": "Zwei Sekunden warten"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Endgültig Fehler?"
+      },
+      {
+        "id": "oe",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Transport mit Fehlertext listen"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        },
+        "meaning": "Abfertigung festschreiben"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        "meaning": "Transporte abgearbeitet"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:69"
+        },
+        "meaning": "Abschluss"
+      },
+      {
+        "id": "os",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        "meaning": "Zähler ausgeben"
+      },
+      {
+        "id": "gz",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        },
+        "meaning": "Fehler aufgetreten?"
+      },
+      {
+        "id": "oz",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "Fehlermeldung mit Fehleranzahl (Jobabbruch)"
+      },
+      {
+        "id": "xz",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "Job mit Fehler abbrechen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        "meaning": "Job endet regulär"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "gh",
+        "condition": "always"
+      },
+      {
+        "from": "gh",
+        "to": "q",
+        "condition": "p_heute = 'X'"
+      },
+      {
+        "from": "gh",
+        "to": "q",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "o0",
+        "condition": "lt_tknum IS INITIAL"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "x0",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "d",
+        "condition": "next row"
+      },
+      {
+        "from": "d",
+        "to": "b",
+        "condition": "next row"
+      },
+      {
+        "from": "b",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "ge",
+        "condition": "NOT line_exists( lt_ret[ type = 'E' ] ) AND NOT line_exists( lt_ret[ type = 'A' ] )"
+      },
+      {
+        "from": "g1",
+        "to": "rb",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "wt",
+        "condition": "line_exists( lt_ret[ id = 'VW' number = '022' ] )"
+      },
+      {
+        "from": "g2",
+        "to": "ge",
+        "condition": "else"
+      },
+      {
+        "from": "wt",
+        "to": "d",
+        "condition": "next iteration"
+      },
+      {
+        "from": "d",
+        "to": "ge",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ge",
+        "to": "oe",
+        "condition": "line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] )"
+      },
+      {
+        "from": "ge",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "oe",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cm",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s2",
+        "to": "os",
+        "condition": "always"
+      },
+      {
+        "from": "os",
+        "to": "gz",
+        "condition": "always"
+      },
+      {
+        "from": "gz",
+        "to": "oz",
+        "condition": "lv_err > 0"
+      },
+      {
+        "from": "gz",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "o0",
+        "to": "x0",
+        "condition": "always"
+      },
+      {
+        "from": "e1",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "oz",
+        "to": "xz",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:31 — kein Fachsatz „ohne Transporte endet der Job ohne weitere Ausgabe“: RETURN verlässt nur START-OF-SELECTION, die Zählerzeile aus END-OF-SELECTION wird trotzdem gedruckt",
+    "source.abap:60 — kein Fachsatz „jeder fehlerhafte Transport wird mit Fehlertext gelistet“: kommen nur Abbruchmeldungen (Typ A) zurück, scheitert der Zugriff auf die E-Meldung mit Laufzeitfehler",
+    "gesamte Scheibe — kein Fachsatz „Frachtkosten oder Warenausgang werden gebucht“: gesetzt wird nur der Transportstatus Abfertigung"
+  ],
+  "processDescription": "Ein Job startet den Report alle 30 Minuten mit Transportdispostellen, optional Transportarten und dem Kennzeichen „nur heute“. Aus diesen Eingaben wird eine dynamische Selektion gebaut, die Transporte mit beendeter Beladung und ohne Abfertigung liest, bei gesetztem Kennzeichen nur solche mit Ladeende heute. Findet er keine, gibt er einen Hinweis aus und überspringt die Verarbeitung, die Zählerzeile am Ende wird trotzdem gedruckt. Für jeden Transport setzt er den Status Abfertigung über das Änderungs-BAPI. Meldet das BAPI einen Fehler, wird zurückgerollt; ist der Transport gesperrt, wartet der Job zwei Sekunden und versucht es erneut, höchstens dreimal, bei anderen Fehlern gibt er sofort auf. Bleibt der Fehler, wird der Transport mit Fehlertext gelistet und gezählt, sonst wird die Abfertigung festgeschrieben. Zum Schluss werden die Zähler ausgegeben, und gab es Fehler, bricht der Job mit einer Fehlermeldung ab, damit das Monitoring anschlägt."
+}

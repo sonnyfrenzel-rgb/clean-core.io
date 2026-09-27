@@ -1,0 +1,603 @@
+{
+  "id": "BM-110",
+  "title": "Kalibrierung Prüfmittel im Dynpro: Abweichung bewerten, Ergebnis sichern, n.i.O. sperren und melden",
+  "classes": [
+    "K07",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZPM_KALIB_ERG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "mzpm_kalib_i01.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_kalib_i01.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "STATUS_CHANGE_EXTERN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpm_kalib_i01.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_kalib_i01.abap:36"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ALM_NOTIF_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpm_kalib_i01.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_kalib_i01.abap:44"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ALM_NOTIF_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpm_kalib_i01.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_kalib_i01.abap:52"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-110-B01",
+      "text": "Mit der Funktion „Prüfen“ wird die Kalibrierung bewertet; ohne Sollwert wird mit Fehlermeldung abgebrochen und das Bild bleibt eingabebereit.",
+      "anchors": [
+        {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:17"
+        },
+        {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:18"
+        },
+        {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-110-B02",
+      "text": "Die prozentuale Abweichung des Istwerts vom Sollwert wird berechnet.",
+      "anchors": [
+        {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-110-B03",
+      "text": "Liegt die Abweichung innerhalb der Toleranz, ist das Ergebnis „in Ordnung“, sonst „nicht in Ordnung“.",
+      "anchors": [
+        {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-110-B04",
+      "text": "Beim Sichern ohne vorherige Bewertung wird mit Fehlermeldung abgebrochen.",
+      "anchors": [
+        {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:26"
+        },
+        {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:27"
+        },
+        {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-110-B05",
+      "text": "Das Kalibrierergebnis wird mit Datum und Prüfer in der Ergebnistabelle gespeichert.",
+      "anchors": [
+        {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-110-B06",
+      "text": "Ist das Ergebnis „nicht in Ordnung“, wird am Prüfmittel-Equipment der Anwenderstatus E0003 gesetzt.",
+      "anchors": [
+        {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:34"
+        },
+        {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-110-B07",
+      "text": "Zusätzlich wird zum Equipment eine Instandhaltungsmeldung der Art M2 „Kalibrierung nicht in Ordnung“ angelegt und gesichert.",
+      "anchors": [
+        {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:44"
+        },
+        {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-110-B08",
+      "text": "Alle Änderungen werden festgeschrieben, der Prüfer erhält eine Erfolgsmeldung und das Bild wird für das nächste Prüfmittel geleert.",
+      "anchors": [
+        {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:58"
+        },
+        {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:59"
+        },
+        {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:61"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:9"
+        },
+        "meaning": "Benutzeraktion am Kalibrierbild"
+      },
+      {
+        "id": "c",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:16"
+        },
+        "meaning": "Welche Funktion?"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:18"
+        },
+        "meaning": "Sollwert fehlt?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:19"
+        },
+        "meaning": "Fehler: Sollwert fehlt"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:19"
+        },
+        "meaning": "Bild bleibt zur Korrektur stehen"
+      },
+      {
+        "id": "a1",
+        "type": "action",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:21"
+        },
+        "meaning": "Prozentuale Abweichung berechnen"
+      },
+      {
+        "id": "a2",
+        "type": "action",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:23"
+        },
+        "meaning": "Ergebnis i.O./n.i.O. festlegen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:27"
+        },
+        "meaning": "Noch nicht bewertet?"
+      },
+      {
+        "id": "m2",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:28"
+        },
+        "meaning": "Fehler: erst prüfen"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:28"
+        },
+        "meaning": "Bild bleibt zur Korrektur stehen"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:32"
+        },
+        "meaning": "Kalibrierergebnis speichern"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:34"
+        },
+        "meaning": "Nicht in Ordnung?"
+      },
+      {
+        "id": "sc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:36"
+        },
+        "meaning": "Equipment per Anwenderstatus sperren"
+      },
+      {
+        "id": "nc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:44"
+        },
+        "meaning": "M2-Meldung anlegen"
+      },
+      {
+        "id": "ns",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:52"
+        },
+        "meaning": "Meldung sichern"
+      },
+      {
+        "id": "tc",
+        "type": "transaction",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:58"
+        },
+        "meaning": "Änderungen festschreiben"
+      },
+      {
+        "id": "m3",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:59"
+        },
+        "meaning": "Erfolgsmeldung mit Ergebnis"
+      },
+      {
+        "id": "x3",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:61"
+        },
+        "meaning": "Leeres Bild für nächstes Prüfmittel"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_kalib_i01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_kalib_i01.abap:67"
+        },
+        "meaning": "Bild erneut anzeigen"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c",
+        "condition": "always"
+      },
+      {
+        "from": "c",
+        "to": "g1",
+        "condition": "WHEN 'PRUEF'"
+      },
+      {
+        "from": "c",
+        "to": "g2",
+        "condition": "WHEN 'SAVE'"
+      },
+      {
+        "from": "c",
+        "to": "e",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "gs_kal-sollwert = 0"
+      },
+      {
+        "from": "m1",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "a1",
+        "condition": "else"
+      },
+      {
+        "from": "a1",
+        "to": "a2",
+        "condition": "always"
+      },
+      {
+        "from": "a2",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "m2",
+        "condition": "gs_kal-ergebnis IS INITIAL"
+      },
+      {
+        "from": "m2",
+        "to": "x2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "w",
+        "condition": "else"
+      },
+      {
+        "from": "w",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "sc",
+        "condition": "gs_kal-ergebnis = 'NIO'"
+      },
+      {
+        "from": "g3",
+        "to": "tc",
+        "condition": "else"
+      },
+      {
+        "from": "sc",
+        "to": "nc",
+        "condition": "always"
+      },
+      {
+        "from": "nc",
+        "to": "ns",
+        "condition": "always"
+      },
+      {
+        "from": "ns",
+        "to": "tc",
+        "condition": "always"
+      },
+      {
+        "from": "tc",
+        "to": "m3",
+        "condition": "always"
+      },
+      {
+        "from": "m3",
+        "to": "x3",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "mzpm_kalib_i01.abap:32 — kein Fachsatz „ein bereits erfasstes Ergebnis wird abgewiesen“: sy-subrc des INSERT wird nicht ausgewertet, ein Schlüsselkonflikt bleibt unbemerkt und der Ablauf geht weiter",
+    "mzpm_kalib_i01.abap:44 — kein Fachsatz „schlägt das Anlegen der Meldung fehl, wird das Sichern abgebrochen“: die BAPI-Rückgabe wird nicht ausgewertet, danach folgt trotzdem COMMIT WORK",
+    "gesamte Scheibe — kein Fachsatz „das Prüfmittel wird bei i.O. wieder entsperrt“: bei i.O. wird kein Status geändert",
+    "mzpm_kalib_i01.abap:23 — kein Fachsatz „ein Ergebnis wird beim Prüfen gespeichert“: Prüfen bewertet nur, gespeichert wird erst mit SAVE"
+  ],
+  "processDescription": "Der Prüfer erfasst am Dynpro Equipment, Sollwert, Istwert und zulässige Toleranz eines Prüfmittels. Mit „Prüfen“ wird ohne Sollwert mit Fehlermeldung abgebrochen; sonst berechnet das Programm die prozentuale Abweichung vom Sollwert und setzt das Ergebnis auf in Ordnung, wenn sie innerhalb der Toleranz liegt, sonst auf nicht in Ordnung. Mit „Sichern“ wird ohne vorherige Bewertung mit Fehlermeldung abgebrochen. Sonst wird das Ergebnis mit Datum und Prüfer in einer Kundentabelle gespeichert. Bei nicht in Ordnung setzt das Programm am Equipment den Anwenderstatus E0003 und legt eine Instandhaltungsmeldung der Art M2 an und sichert sie. Danach werden alle Änderungen festgeschrieben, eine Erfolgsmeldung erscheint und das Bild wird für das nächste Prüfmittel geleert. Fehler beim Speichern, beim Statuswechsel oder beim Anlegen der Meldung werden nicht ausgewertet."
+}

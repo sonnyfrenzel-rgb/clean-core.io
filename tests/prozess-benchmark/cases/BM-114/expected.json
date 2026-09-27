@@ -1,0 +1,1297 @@
+{
+  "id": "BM-114",
+  "title": "Unfallmeldung aus dem Portal: Prüfung, Nummernvergabe, Meldepflicht § 193 SGB VII, BG-Anzeige, Ereignis an Workflow und SiFa",
+  "classes": [
+    "K02",
+    "K12",
+    "K15",
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "Z_EHS_UNF",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ehs_unfall_anlegen.abap",
+        "line": 17,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ehs_unfall_anlegen.abap:17"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_EHS_UNFALL",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ehs_unfall_anlegen.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ehs_unfall_anlegen.abap:28"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0000",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ehs_unfall.abap",
+        "line": 53,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ehs_unfall.abap:53"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "NUMBER_GET_NEXT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ehs_unfall.abap",
+        "line": 71,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ehs_unfall.abap:71"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEHS_UNFALL",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_ehs_unfall.abap",
+        "line": 93,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ehs_unfall.abap:93"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEHS_BG_WERK",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ehs_unfall.abap",
+        "line": 122,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ehs_unfall.abap:122"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZEHS_BG_ANZ",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_ehs_unfall.abap",
+        "line": 135,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ehs_unfall.abap:135"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SAP_WAPI_CREATE_EVENT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ehs_unfall_handler.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ehs_unfall_handler.abap:27"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ehs_unfall_handler.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ehs_unfall_handler.abap:37"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-114-B01",
+      "text": "Ohne Berechtigung zum Anlegen von Unfällen im Werk wird die Meldung mit Fehler zurückgewiesen.",
+      "anchors": [
+        {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:17"
+        },
+        {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:20"
+        },
+        {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-114-B02",
+      "text": "Fehlen Personalnummer oder Unfalldatum, wird die Meldung abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:46"
+        },
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-114-B03",
+      "text": "Der verunfallte Mitarbeiter muss am Unfalltag aktiv beschäftigt sein, sonst wird die Meldung abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:53"
+        },
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:59"
+        },
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-114-B04",
+      "text": "Nach der Prüfung wird ein Empfänger für die Meldung des erfassten Unfalls angemeldet.",
+      "anchors": [
+        {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-114-B05",
+      "text": "Der Unfall erhält eine Nummer aus dem Nummernkreis ZEHS_UNF; ist keine Nummer erhältlich, wird die Meldung abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:71"
+        },
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:79"
+        },
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-114-B06",
+      "text": "Der Unfall wird mit Status T bei tödlichem Ausgang, M bei mehr als drei Ausfalltagen und sonst E gespeichert; scheitert das Speichern, wird die Meldung abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:88"
+        },
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:93"
+        },
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:94"
+        },
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:95"
+        }
+      ]
+    },
+    {
+      "id": "BM-114-B07",
+      "text": "Meldepflichtig ist ein Unfall mit tödlichem Ausgang oder mehr als drei Tagen Arbeitsunfähigkeit.",
+      "anchors": [
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:100"
+        },
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:114"
+        }
+      ]
+    },
+    {
+      "id": "BM-114-B08",
+      "text": "Für meldepflichtige Unfälle wird die Mitgliedsnummer der Berufsgenossenschaft des Werks gelesen; fehlt sie, wird die ganze Meldung abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:101"
+        },
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:122"
+        },
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:125"
+        },
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:126"
+        }
+      ]
+    },
+    {
+      "id": "BM-114-B09",
+      "text": "Sonst wird die Unfallanzeige an die Berufsgenossenschaft als offen mit Frist drei Tage nach dem Unfalldatum vorgemerkt.",
+      "anchors": [
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:135"
+        }
+      ]
+    },
+    {
+      "id": "BM-114-B10",
+      "text": "Der erfasste Unfall wird mit Nummer und Meldepflicht bekannt gemacht.",
+      "anchors": [
+        {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:105"
+        }
+      ]
+    },
+    {
+      "id": "BM-114-B11",
+      "text": "Darauf wird für das Unfallobjekt ein Workflow-Ereignis ausgelöst, MELDEPFLICHTIG oder ERFASST.",
+      "anchors": [
+        {
+          "file": "zcl_ehs_unfall_handler.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall_handler.abap:24"
+        },
+        {
+          "file": "zcl_ehs_unfall_handler.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall_handler.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-114-B12",
+      "text": "Bei meldepflichtigen Unfällen erhält der Verteiler der Sicherheitsfachkräfte eine Mail mit Hinweis auf die Dreitagesfrist; ein Versandfehler bleibt folgenlos.",
+      "anchors": [
+        {
+          "file": "zcl_ehs_unfall_handler.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall_handler.abap:34"
+        },
+        {
+          "file": "zcl_ehs_unfall_handler.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall_handler.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-114-B13",
+      "text": "Gelingt die Erfassung, wird alles festgeschrieben und die Unfallnummer mit Erfolgsmeldung zurückgegeben.",
+      "anchors": [
+        {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-114-B14",
+      "text": "Bei jeder Ablehnung werden alle Änderungen zurückgenommen und der Fehlertext zurückgegeben.",
+      "anchors": [
+        {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:34"
+        },
+        {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:35"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:1"
+        },
+        "meaning": "Unfallmeldung aus dem Portal"
+      },
+      {
+        "id": "ac",
+        "type": "action",
+        "anchor": {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:17"
+        },
+        "meaning": "Berechtigung für Werk prüfen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:20"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:23"
+        },
+        "meaning": "Fehler zurückgeben"
+      },
+      {
+        "id": "cn",
+        "type": "call",
+        "anchor": {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:28"
+        },
+        "meaning": "Unfall anlegen und prüfen"
+      },
+      {
+        "id": "sh",
+        "type": "action",
+        "anchor": {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:29"
+        },
+        "meaning": "Empfänger für Unfallereignis anmelden"
+      },
+      {
+        "id": "ce",
+        "type": "call",
+        "anchor": {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:30"
+        },
+        "meaning": "Unfall erfassen"
+      },
+      {
+        "id": "tc",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:31"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:35"
+        },
+        "meaning": "Alles zurücknehmen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "z_ehs_unfall_anlegen.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ehs_unfall_anlegen.abap:40"
+        },
+        "meaning": "Ergebnis an Portal"
+      },
+      {
+        "id": "sc",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:44"
+        },
+        "meaning": "Unfalldaten übernehmen und prüfen"
+      },
+      {
+        "id": "gc1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:46"
+        },
+        "meaning": "Pflichtangaben fehlen?"
+      },
+      {
+        "id": "xc1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:47"
+        },
+        "meaning": "Ablehnung: Pflichtfeld"
+      },
+      {
+        "id": "rc",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:53"
+        },
+        "meaning": "Beschäftigung am Unfalltag lesen"
+      },
+      {
+        "id": "gc2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:59"
+        },
+        "meaning": "Nicht beschäftigt?"
+      },
+      {
+        "id": "xc2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:60"
+        },
+        "meaning": "Ablehnung: nicht beschäftigt"
+      },
+      {
+        "id": "ec",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:65"
+        },
+        "meaning": "Unfallobjekt angelegt"
+      },
+      {
+        "id": "se",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:68"
+        },
+        "meaning": "Unfall erfassen"
+      },
+      {
+        "id": "cnr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:71"
+        },
+        "meaning": "Unfallnummer ziehen"
+      },
+      {
+        "id": "ge1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:79"
+        },
+        "meaning": "Keine Nummer?"
+      },
+      {
+        "id": "xe1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:80"
+        },
+        "meaning": "Ablehnung: Nummernkreis"
+      },
+      {
+        "id": "ast",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:88"
+        },
+        "meaning": "Status T/M/E festlegen"
+      },
+      {
+        "id": "we",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:93"
+        },
+        "meaning": "Unfall speichern"
+      },
+      {
+        "id": "ge2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:94"
+        },
+        "meaning": "Speichern fehlgeschlagen?"
+      },
+      {
+        "id": "xe2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:95"
+        },
+        "meaning": "Ablehnung: DB-Fehler"
+      },
+      {
+        "id": "cmp",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:100"
+        },
+        "meaning": "Meldepflicht bestimmen"
+      },
+      {
+        "id": "ge3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:101"
+        },
+        "meaning": "Meldepflichtig?"
+      },
+      {
+        "id": "cbg",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:102"
+        },
+        "meaning": "BG-Anzeige vormerken"
+      },
+      {
+        "id": "ev",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:105"
+        },
+        "meaning": "Unfall als erfasst melden"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:109"
+        },
+        "meaning": "Unfallnummer zurück"
+      },
+      {
+        "id": "sm",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:112"
+        },
+        "meaning": "Meldepflicht"
+      },
+      {
+        "id": "am",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:114"
+        },
+        "meaning": "Tod oder mehr als 3 Ausfalltage"
+      },
+      {
+        "id": "em",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:116"
+        },
+        "meaning": "Meldepflicht bestimmt"
+      },
+      {
+        "id": "sb",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:119"
+        },
+        "meaning": "BG-Anzeige vormerken"
+      },
+      {
+        "id": "rb2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:122"
+        },
+        "meaning": "BG-Mitgliedsnummer des Werks lesen"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:125"
+        },
+        "meaning": "Keine BG zugeordnet?"
+      },
+      {
+        "id": "xb",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:126"
+        },
+        "meaning": "Ablehnung: BG fehlt"
+      },
+      {
+        "id": "wb",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:135"
+        },
+        "meaning": "Offene BG-Anzeige mit Frist speichern"
+      },
+      {
+        "id": "eb",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ehs_unfall.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall.abap:136"
+        },
+        "meaning": "Anzeige vorgemerkt"
+      },
+      {
+        "id": "sh2",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ehs_unfall_handler.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall_handler.abap:19"
+        },
+        "meaning": "Unfallereignis empfangen"
+      },
+      {
+        "id": "aev",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ehs_unfall_handler.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall_handler.abap:24"
+        },
+        "meaning": "Workflow-Ereignis MELDEPFLICHTIG/ERFASST wählen"
+      },
+      {
+        "id": "cwf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ehs_unfall_handler.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall_handler.abap:27"
+        },
+        "meaning": "Workflow-Ereignis auslösen"
+      },
+      {
+        "id": "gh",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ehs_unfall_handler.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall_handler.abap:34"
+        },
+        "meaning": "Meldepflichtig?"
+      },
+      {
+        "id": "cs",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ehs_unfall_handler.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall_handler.abap:45"
+        },
+        "meaning": "Mail an Verteiler ZEHS_SIFA senden"
+      },
+      {
+        "id": "eh",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ehs_unfall_handler.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ehs_unfall_handler.abap:50"
+        },
+        "meaning": "Reaktion fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "ac",
+        "condition": "always"
+      },
+      {
+        "from": "ac",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "x1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "cn",
+        "condition": "else"
+      },
+      {
+        "from": "cn",
+        "to": "sc",
+        "condition": "always"
+      },
+      {
+        "from": "sh",
+        "to": "ce",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "tc",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "rb",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "sc",
+        "to": "gc1",
+        "condition": "always"
+      },
+      {
+        "from": "gc1",
+        "to": "xc1",
+        "condition": "ms_unfall-pernr IS INITIAL OR ms_unfall-datum IS INITIAL"
+      },
+      {
+        "from": "gc1",
+        "to": "rc",
+        "condition": "else"
+      },
+      {
+        "from": "rc",
+        "to": "gc2",
+        "condition": "always"
+      },
+      {
+        "from": "gc2",
+        "to": "xc2",
+        "condition": "lv_aktiv = abap_false"
+      },
+      {
+        "from": "gc2",
+        "to": "ec",
+        "condition": "else"
+      },
+      {
+        "from": "se",
+        "to": "cnr",
+        "condition": "always"
+      },
+      {
+        "from": "cnr",
+        "to": "ge1",
+        "condition": "always"
+      },
+      {
+        "from": "ge1",
+        "to": "xe1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ge1",
+        "to": "ast",
+        "condition": "else"
+      },
+      {
+        "from": "ast",
+        "to": "we",
+        "condition": "always"
+      },
+      {
+        "from": "we",
+        "to": "ge2",
+        "condition": "always"
+      },
+      {
+        "from": "ge2",
+        "to": "xe2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ge2",
+        "to": "cmp",
+        "condition": "else"
+      },
+      {
+        "from": "cmp",
+        "to": "sm",
+        "condition": "always"
+      },
+      {
+        "from": "ge3",
+        "to": "cbg",
+        "condition": "lv_pflicht = abap_true"
+      },
+      {
+        "from": "ge3",
+        "to": "ev",
+        "condition": "else"
+      },
+      {
+        "from": "cbg",
+        "to": "sb",
+        "condition": "always"
+      },
+      {
+        "from": "ev",
+        "to": "sh2",
+        "condition": "always"
+      },
+      {
+        "from": "sm",
+        "to": "am",
+        "condition": "always"
+      },
+      {
+        "from": "am",
+        "to": "em",
+        "condition": "always"
+      },
+      {
+        "from": "sb",
+        "to": "rb2",
+        "condition": "always"
+      },
+      {
+        "from": "rb2",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "xb",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gb",
+        "to": "wb",
+        "condition": "else"
+      },
+      {
+        "from": "wb",
+        "to": "eb",
+        "condition": "always"
+      },
+      {
+        "from": "sh2",
+        "to": "aev",
+        "condition": "always"
+      },
+      {
+        "from": "aev",
+        "to": "cwf",
+        "condition": "always"
+      },
+      {
+        "from": "cwf",
+        "to": "gh",
+        "condition": "always"
+      },
+      {
+        "from": "gh",
+        "to": "cs",
+        "condition": "ev_meldepflichtig = abap_true"
+      },
+      {
+        "from": "gh",
+        "to": "eh",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "eh",
+        "condition": "always"
+      },
+      {
+        "from": "xc1",
+        "to": "rb",
+        "condition": "zcx_ehs_unfall"
+      },
+      {
+        "from": "xc2",
+        "to": "rb",
+        "condition": "zcx_ehs_unfall"
+      },
+      {
+        "from": "xe1",
+        "to": "rb",
+        "condition": "zcx_ehs_unfall"
+      },
+      {
+        "from": "xe2",
+        "to": "rb",
+        "condition": "zcx_ehs_unfall"
+      },
+      {
+        "from": "xb",
+        "to": "rb",
+        "condition": "zcx_ehs_unfall"
+      },
+      {
+        "from": "ec",
+        "to": "sh",
+        "condition": "always"
+      },
+      {
+        "from": "ee",
+        "to": "tc",
+        "condition": "always"
+      },
+      {
+        "from": "em",
+        "to": "ge3",
+        "condition": "always"
+      },
+      {
+        "from": "eb",
+        "to": "ev",
+        "condition": "always"
+      },
+      {
+        "from": "eh",
+        "to": "ee",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_ehs_unfall.abap:126 — kein Fachsatz „ein meldepflichtiger Unfall wird auch ohne BG-Zuordnung gespeichert“: die Ausnahme führt im Baustein zu ROLLBACK WORK, der ganze Unfall geht verloren",
+    "gesamte Scheibe — kein Fachsatz „die Unfallanzeige wird an die Berufsgenossenschaft übermittelt“: sie wird nur als offen mit Frist vorgemerkt",
+    "zcl_ehs_unfall.abap:133 — kein Fachsatz „die Frist beginnt mit Kenntnis des Unternehmers“: sie wird starr ab Unfalldatum berechnet",
+    "zcl_ehs_unfall_handler.abap:45 — kein Fachsatz „schlägt die Mail fehl, wird der Unfall abgelehnt“: cx_bcs wird ohne Wirkung gefangen"
+  ],
+  "processDescription": "Das Mitarbeiterportal ruft den RFC-Baustein mit den Unfalldaten auf. Ohne Berechtigung zum Anlegen im Werk gibt der Baustein sofort einen Fehler zurück. Sonst legt er das Unfallobjekt an, das Personalnummer und Unfalldatum als Pflichtangaben prüft und verlangt, dass der Mitarbeiter am Unfalltag aktiv beschäftigt war. Danach meldet er einen Empfänger für das Ereignis „Unfall gemeldet“ an und lässt den Unfall erfassen: Er zieht eine Unfallnummer, setzt den Status auf T bei tödlichem Ausgang, M bei mehr als drei Ausfalltagen und sonst E und speichert den Unfall. Ist der Unfall nach § 193 SGB VII meldepflichtig, liest er die BG-Mitgliedsnummer des Werks und merkt die Unfallanzeige als offen mit einer Frist von drei Tagen nach dem Unfalldatum vor; fehlt die Zuordnung, wird die gesamte Meldung abgelehnt. Schließlich löst er das Ereignis aus, worauf der Empfänger ein Workflow-Ereignis MELDEPFLICHTIG oder ERFASST erzeugt und bei Meldepflicht die Sicherheitsfachkräfte per Mail informiert; ein Mailfehler bleibt folgenlos. Gelingt alles, wird festgeschrieben und die Unfallnummer zurückgegeben, bei jeder Ablehnung wird alles zurückgerollt und der Fehlertext zurückgegeben."
+}

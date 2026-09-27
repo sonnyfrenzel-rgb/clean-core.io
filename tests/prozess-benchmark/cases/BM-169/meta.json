@@ -1,0 +1,36 @@
+{
+  "id": "BM-169",
+  "title": "Bonusabsprachen: auslaufende Absprachen mit Umsatz aus fremder Liste und Absprung in VBO3",
+  "domain": "SD-Bonusabwicklung / Rebates",
+  "band": "mittel",
+  "loc": 76,
+  "constructs": [
+    "SELECT-OPTIONS",
+    "SELECT INTO CORRESPONDING FIELDS",
+    "MESSAGE … DISPLAY LIKE",
+    "LEAVE LIST-PROCESSING",
+    "SUBMIT … EXPORTING LIST TO MEMORY AND RETURN in Schleife",
+    "LIST_FROM_MEMORY / LIST_TO_ASCI / LIST_FREE_MEMORY",
+    "Offsetzugriff auf Listzeile",
+    "TRY … CATCH cx_sy_conversion_no_number",
+    "HIDE / HOTSPOT",
+    "AT LINE-SELECTION",
+    "SET PARAMETER ID",
+    "CALL TRANSACTION … AND SKIP FIRST SCREEN"
+  ],
+  "scenario": "Vertriebscontrolling prüft monatlich, welche Kundenbonusabsprachen in den nächsten Wochen auslaufen und wie viel Bonusumsatz bisher aufgelaufen ist, bevor die Endabrechnung angestoßen wird.",
+  "s4_issues": [
+    "Bonusabsprachen (SD-Rebate, KONA) in S/4HANA durch Konditionskontrakte / Settlement Management abgelöst",
+    "Auslesen einer fremden Listausgabe per LIST_TO_ASCI mit festen Spaltenpositionen",
+    "SUBMIT je Absprache in der Schleife",
+    "Transaktion VBO3 in S/4 nicht mehr verfügbar"
+  ],
+  "wave": 2,
+  "module": "SD-REB",
+  "edge_constructs": [
+    "SUBMIT … AND RETURN mit EXPORTING LIST TO MEMORY",
+    "AT LINE-SELECTION mit SET PARAMETER ID und CALL TRANSACTION … AND SKIP FIRST SCREEN",
+    "LEAVE LIST-PROCESSING als Pfadende",
+    "TRY … CATCH bei der Betragsumwandlung"
+  ]
+}

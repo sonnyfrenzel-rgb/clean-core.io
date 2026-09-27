@@ -1,0 +1,77 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten o_ne (neu) vor e_ne",
+      "before": "e_ne end auf z_mss_team_absences.abap:39 ohne output",
+      "after": "o_ne output auf z_mss_team_absences.abap:39, Kante o_ne -> e_ne [always]; eingehende Kanten auf o_ne umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o_nm (neu) vor e_nm",
+      "before": "e_nm end auf z_mss_team_absences.abap:48 ohne output",
+      "after": "o_nm output auf z_mss_team_absences.abap:48, Kante o_nm -> e_nm [always]; eingehende Kanten auf o_nm umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten cl",
+      "before": "action auf zcl_mss_team_reader.abap:76; x1 -> cl [always]; x2 -> cl [always]",
+      "after": "entfernt; x1 -> o_nm [CATCH zcx_mss_no_org]; x2 -> o_nm [CATCH zcx_mss_no_org]",
+      "why": "CLEANUP-Block enthält nur CLEAR mt_member (Z. 77) — eine reine Zuweisung, laut Autorenbrief kein Knoten; x1/x2 hatten dadurch keinen Weg zum Handler. Nach Konvention führt die Kante vom RAISE-end direkt in den CATCH-Zweig des Aufrufers (Bedingung: Ausnahmename). Inhalt bleibt in Fachsatz B04 (Anker :76).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante c_rt -> e_nm [CATCH zcx_mss_no_org]",
+      "before": "vom Aufruf in den CATCH-Zweig",
+      "after": "entfernt; Ausnahmekanten x1 -> o_nm, x2 -> o_nm [CATCH zcx_mss_no_org]",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION im gerufenen Block ist ein end-Knoten, von dort führt die Kante in den CATCH-Zweig des Aufrufers.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_rt (neu)",
+      "before": "kein end-Knoten auf zcl_mss_team_reader.abap:79",
+      "after": "e_rt end auf zcl_mss_team_reader.abap:79; g_mem -> e_rt [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_rt -> c_bo",
+      "before": "c_rt -> c_bo [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_rt -> c_bo [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_bo -> e_ok",
+      "before": "c_bo -> e_ok [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_bo -> e_ok [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_ia (neu)",
+      "before": "kein end-Knoten auf zcl_mss_team_reader.abap:152",
+      "after": "e_ia end auf zcl_mss_team_reader.abap:152; a_ok -> e_ia [always]; e_ia -> g_auth [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten c_ia (neu); Kante g_auth -> s_ia",
+      "before": "g_auth -> s_ia [always] neben den Bedingungskanten des Gateways",
+      "after": "c_ia call auf :105 (funktionaler Methodenaufruf in der IF-Bedingung); g_r1 -> c_ia [else] -> s_ia; Rückkehr e_ia -> g_auth",
+      "why": "Ein Gateway hat keine always-Kante; der Aufruf von is_authorized ist ein eigener Schritt vor der Auswertung, die Rückkehr führt in die Verzweigung.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten a_hid",
+      "before": "action auf zcl_mss_team_reader.abap:106; g_auth -> a_hid [is_authorized( ls_p0001 ) = abap_false]; a_hid -> l_m [next iteration]",
+      "after": "entfernt; g_auth -> l_m [is_authorized( ls_p0001 ) = abap_false]",
+      "why": "mv_hidden = mv_hidden + 1 (Z. 106) ist eine reine Zuweisung (Zähler); laut Autorenbrief kein Knoten. Das Ausblenden bewirkt das CONTINUE, die Rückkante trägt die Bedingung; Inhalt bleibt in Fachsatz B06.",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": []
+}

@@ -1,0 +1,41 @@
+{
+  "id": "BM-193",
+  "title": "Arbeitsunfallmeldung als Web-Dynpro-Anwendung: Pflichtfelder, Nummernvergabe, Änderungsbeleg und Mail an die Sicherheitsfachkraft",
+  "domain": "Technische Randbereiche — Web Dynpro ABAP / Arbeitsschutz",
+  "band": "komplex",
+  "loc": 272,
+  "constructs": [
+    "Web-Dynpro-View-Methoden WDDOINIT / ONACTIONSAVE",
+    "Component-Controller-Methoden",
+    "Context-Knoten bind_structure / get_static_attributes",
+    "IF_WD_MESSAGE_MANAGER",
+    "URL-Parameter über WDR_TASK=>CLIENT_WINDOW",
+    "NUMBER_GET_NEXT",
+    "MODIFY Z-Tabelle",
+    "Änderungsbeleg-Baustein IN UPDATE TASK",
+    "COMMIT WORK / ROLLBACK WORK",
+    "CL_BCS / CL_DOCUMENT_BCS / CL_CAM_ADDRESS_BCS",
+    "SELECT SINGLE TVARVC",
+    "Outbound-Plug"
+  ],
+  "scenario": "Kundeneigene Web-Dynpro-Anwendung im Portal, mit der Meister und Sicherheitsfachkräfte Arbeitsunfälle erfassen; bei der S/4-Umstellung wird entschieden, ob sie durch die Incident-Management-Apps von EHS ersetzt oder als Fiori-Eigenentwicklung neu gebaut wird.",
+  "s4_issues": [
+    "Web Dynpro ABAP ist in S/4HANA lauffähig, für neue Oberflächen aber durch SAP Fiori / RAP abgelöst; im Clean-Core-Sinn nicht zukunftsfähig",
+    "Eigene Unfalltabellen ZEHS_UNFALL doppeln das Incident Management von EHS (EHHSS_INC_*), das in S/4 der Standard ist",
+    "Direkter Zugriff auf TVARVC als Schalter und klassischer Änderungsbeleg-Verbuchungsbaustein statt RAP-Business-Objekt mit Änderungshistorie",
+    "Mailversand über CL_BCS ist weiter möglich, im Cloud-Szenario aber nur über freigegebene APIs"
+  ],
+  "wave": 2,
+  "module": "EHS",
+  "edge_constructs": [
+    "TRY … CATCH … CLEANUP",
+    "CHECK mitten in Schleifen",
+    "ASSIGN COMPONENT",
+    "COND #",
+    "CAST",
+    "verkettete Methodenaufrufe",
+    "Schalter über TVARVC/Customizingtabelle",
+    "nie erreichte Methode (PRINT_UNFALLANZEIGE)",
+    "auskommentierte Zweige"
+  ]
+}

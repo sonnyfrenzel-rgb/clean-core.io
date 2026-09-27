@@ -1,0 +1,37 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten g5b",
+      "before": "gateway auf source.abap:60 (ELSEIF) mit g5 -> g5b [else], g5b -> a2 [gs_rgdir-fpper < gv_fpper], g5b -> l [else]",
+      "after": "entfernt; g5 -> a2 [gs_rgdir-fpper < gv_fpper], g5 -> l [else]",
+      "why": "Vereinheitlichte Konvention: ELSEIF ist eine Bedingungskante des ursprünglichen Gateways, kein eigenes Gateway.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e4 (neu)",
+      "before": "kein end-Knoten auf source.abap:80",
+      "after": "e4 end auf source.abap:80; o2 -> e4 [always]; g8 -> e4 [else]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante e1 -> s2 (neu)",
+      "before": "keine Verbindung der Ereignisblöcke",
+      "after": "e1 -> s2 [always]",
+      "why": "Ereignisreihenfolge: nach dem Ende eines Ereignisblocks setzt die Laufzeit mit dem nächsten Ereignis fort (wie in BM-011/032/037 START-OF-SELECTION -> END-OF-SELECTION); bei der logischen Datenbank folgt END-OF-SELECTION, nachdem GET für alle selektierten Personen gelaufen ist.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante e3 -> s2 (neu)",
+      "before": "keine Verbindung der Ereignisblöcke",
+      "after": "e3 -> s2 [always]",
+      "why": "Ereignisreihenfolge: nach dem Ende eines Ereignisblocks setzt die Laufzeit mit dem nächsten Ereignis fort (wie in BM-011/032/037 START-OF-SELECTION -> END-OF-SELECTION); bei der logischen Datenbank folgt END-OF-SELECTION, nachdem GET für alle selektierten Personen gelaufen ist.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "Die logische Datenbank ruft GET peras je selektierter Person erneut auf; dafür gibt es keine Schleifenanweisung und darum keinen loop-Knoten. Die Wiederholung ist im Skelett nur implizit (GET-Start je Person), das Ende des GET-Blocks führt zu END-OF-SELECTION."
+  ]
+}

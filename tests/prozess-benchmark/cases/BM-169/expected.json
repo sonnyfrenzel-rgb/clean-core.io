@@ -1,0 +1,608 @@
+{
+  "id": "BM-169",
+  "title": "Bonusabsprachen: auslaufende Absprachen mit Umsatz aus fremder Liste und Absprung in VBO3",
+  "classes": [
+    "K01",
+    "K17",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "KONA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:27"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_BONUS_UMSATZ",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:39"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LIST_FROM_MEMORY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:42"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LIST_TO_ASCI",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:49"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBO3",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:75"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-169-B01",
+      "text": "Es werden offene Bonusabsprachen der gewählten Verkaufsorganisationen und Absprachearten gelesen, deren Gültigkeit innerhalb der vorgegebenen Tage ausläuft.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-169-B02",
+      "text": "Gibt es keine, wird ein Hinweis gezeigt und die Listverarbeitung verlassen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-169-B03",
+      "text": "Für jede Absprache wird der Umsatzreport ZSD_BONUS_UMSATZ gestartet und seine Liste im Speicher abgelegt statt angezeigt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-169-B04",
+      "text": "Aus der zurückgegebenen Liste wird der Betrag der vierten Listzeile ab Spalte 60 als bisheriger Bonusumsatz übernommen; ist er nicht als Zahl lesbar, bleibt der Umsatz null.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        },
+        {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-169-B05",
+      "text": "Jede Absprache wird mit Absprachenummer, Art, Bonusempfänger, Gültigkeitsende und Umsatz als anklickbare Zeile ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-169-B06",
+      "text": "Ein Klick auf eine Zeile öffnet die Absprache direkt in der Anzeige der Bonusabsprache.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        },
+        {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Auslaufende offene Absprachen lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Keine Absprachen?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Hinweis ausgeben"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Listverarbeitung verlassen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Absprachen durchgehen"
+      },
+      {
+        "id": "sb",
+        "type": "external_program",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Umsatzreport je Absprache ausführen, Liste in Speicher"
+      },
+      {
+        "id": "lm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Liste aus Speicher holen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Liste vorhanden?"
+      },
+      {
+        "id": "la",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        },
+        "meaning": "Liste in Text umwandeln"
+      },
+      {
+        "id": "rz",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        "meaning": "Summenzeile nachschlagen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Summenzeile vorhanden?"
+      },
+      {
+        "id": "cv",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Bonusumsatz aus Spalte 60 übernehmen"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        "meaning": "Absprache mit Umsatz listen"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        "meaning": "Grundliste fertig"
+      },
+      {
+        "id": "s3",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "Klick auf Listzeile"
+      },
+      {
+        "id": "c3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        "meaning": "Absprachenummer vorhanden?"
+      },
+      {
+        "id": "sp",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        },
+        "meaning": "Absprachenummer vorbelegen"
+      },
+      {
+        "id": "ct",
+        "type": "external_program",
+        "anchor": {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        "meaning": "Bonusabsprache anzeigen"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        "meaning": "Zurück zur Liste"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s1",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "m0",
+        "to": "x0",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "sb",
+        "condition": "next row"
+      },
+      {
+        "from": "sb",
+        "to": "lm",
+        "condition": "always"
+      },
+      {
+        "from": "lm",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "la",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g1",
+        "to": "o",
+        "condition": "else"
+      },
+      {
+        "from": "la",
+        "to": "rz",
+        "condition": "always"
+      },
+      {
+        "from": "rz",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "cv",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g2",
+        "to": "o",
+        "condition": "else"
+      },
+      {
+        "from": "cv",
+        "to": "o",
+        "condition": "always"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s3",
+        "to": "c3",
+        "condition": "always"
+      },
+      {
+        "from": "c3",
+        "to": "sp",
+        "condition": "gs_abs-knuma IS NOT INITIAL"
+      },
+      {
+        "from": "c3",
+        "to": "e3",
+        "condition": "else"
+      },
+      {
+        "from": "sp",
+        "to": "ct",
+        "condition": "always"
+      },
+      {
+        "from": "ct",
+        "to": "e3",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:60 — kein Fachsatz „der Bonusumsatz wird aus den Fakturen bzw. Bonusdaten berechnet“: er wird aus der Textliste eines anderen Reports an fester Position abgelesen; Beträge mit Tausenderpunkt scheitern und erscheinen als 0",
+    "source.abap:73 — kein Fachsatz „Klicks außerhalb einer Absprachezeile bleiben ohne Wirkung“: ohne HIDE-Information steht beim ersten Klick noch die letzte Absprache der Liste im Feld, sie wird geöffnet (erst nach einem Absprung ist das Feld geleert)",
+    "gesamte Scheibe — kein Fachsatz „Bonusabsprachen werden abgerechnet oder verlängert“: der Report liest und zeigt nur an"
+  ],
+  "processDescription": "Der Report wird mit Verkaufsorganisationen, optional Absprachearten und einer Vorlaufzeit in Tagen gestartet. Er liest alle offenen Bonusabsprachen, deren Gültigkeit von heute bis zum Ende der Vorlaufzeit ausläuft; findet er keine, zeigt er einen Hinweis und verlässt die Listverarbeitung. Für jede Absprache startet er den eigenen Umsatzreport und lässt dessen Liste in den Speicher schreiben. Diese Liste wird in Text umgewandelt, und aus der vierten Zeile ab Spalte 60 wird der bisherige Bonusumsatz gelesen; fehlt die Liste oder die Zeile oder ist der Betrag nicht als Zahl lesbar, bleibt der Umsatz null. Jede Absprache erscheint mit Nummer, Art, Bonusempfänger, Ablaufdatum und Umsatz als anklickbare Zeile. Ein Klick belegt die Absprachenummer vor und springt direkt in die Anzeige der Bonusabsprache. Es wird nichts abgerechnet oder geändert."
+}

@@ -1,0 +1,2550 @@
+{
+  "id": "BM-176",
+  "title": "IS-U Abrechnungsvorbereitung: fehlende Turnusablesungen einer Portion schätzen oder Abrechnung sperren",
+  "classes": [
+    "K01",
+    "K04",
+    "K09",
+    "K12",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "TE420",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zisu_abrvorb.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_abrvorb.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZISU_ANLAGE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zisu_abrvorb_cls.abap",
+        "line": 91,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_abrvorb_cls.abap:91"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EANLH",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zisu_abrvorb_cls.abap",
+        "line": 134,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_abrvorb_cls.abap:134"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "TE422",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zisu_abrvorb_cls.abap",
+        "line": 134,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_abrvorb_cls.abap:134"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EANL",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zisu_abrvorb_cls.abap",
+        "line": 134,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_abrvorb_cls.abap:134"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EVER",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zisu_abrvorb_cls.abap",
+        "line": 134,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_abrvorb_cls.abap:134"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EABLG",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zisu_abrvorb_cls.abap",
+        "line": 185,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_abrvorb_cls.abap:185"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EABL",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zisu_abrvorb_cls.abap",
+        "line": 185,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_abrvorb_cls.abap:185"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_ISU_ABLESUNG_SCHAETZEN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zisu_abrvorb_cls.abap",
+        "line": 206,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_abrvorb_cls.abap:206"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EVER",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "zisu_abrvorb_cls.abap",
+        "line": 238,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_abrvorb_cls.abap:238"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zisu_abrvorb_f01.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zisu_abrvorb_f01.abap:27"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-176-B01",
+      "text": "Die Portion wird aus dem Benutzerparameter vorbelegt, das Soll-Ablesedatum mit dem Tagesdatum.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B02",
+      "text": "Eine nicht vorhandene Portion wird im Selektionsbild mit Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:28"
+        },
+        {
+          "file": "zisu_abrvorb.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:30"
+        },
+        {
+          "file": "zisu_abrvorb.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B03",
+      "text": "Ein Echtlauf im Dialog mit einer Paketgröße über 2000 wird abgewiesen; solche Läufe sind nur im Hintergrund erlaubt.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:35"
+        },
+        {
+          "file": "zisu_abrvorb.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B04",
+      "text": "Die Portion wird als Benutzerparameter gemerkt, und alle Meldungen des Laufs werden in einem Protokoll gesammelt.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:40"
+        },
+        {
+          "file": "zisu_abrvorb.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B05",
+      "text": "Es werden alle Anlagen der Portion gelesen, deren Ableseeinheit zur Portion gehört und die zum Soll-Ablesedatum einen aktiven Vertrag haben.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:134"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B06",
+      "text": "Gibt es keine solche Anlage, bricht der Lauf mit einer als Fehler angezeigten Meldung ab.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:145"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:146"
+        },
+        {
+          "file": "zisu_abrvorb.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B07",
+      "text": "Jede Anlage wird für die Bearbeitung gesperrt; ist sie bereits gesperrt, wird sie mit Warnung übergangen.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:91"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:98"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:99"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B08",
+      "text": "Hat der Vertrag bereits eine Abrechnungssperre, wird die Anlage nur protokolliert.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:156"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:157"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B09",
+      "text": "Liegt für das Soll-Ablesedatum bereits eine Turnusablesung (Ablesegrund 01) mit einem Status ungleich 0 vor, ist nichts zu tun.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:164"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:185"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B10",
+      "text": "Bei leistungsgemessenen Kunden (Abrechnungsklasse RLM) oder ausgeschalteter Schätzung wird nicht geschätzt: ist das Sperren erlaubt, wird die Abrechnung mit Grund 05 gesperrt, sonst nur gewarnt.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:169"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:170"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:171"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:173"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B11",
+      "text": "Alle anderen Anlagen ohne Turnusablesung werden geschätzt; im Testlauf wird das nur protokolliert.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 181,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:181"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 198,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:198"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:199"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B12",
+      "text": "Die Schätzung übernimmt ein eigener Baustein; gelingt sie, wird das protokolliert.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 206,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:206"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 214,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:214"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 216,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:216"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B13",
+      "text": "Fehlt eine Vorperiode zum Schätzen, wird die Abrechnung mit Grund 06 gesperrt.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 220,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:220"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 222,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:222"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B14",
+      "text": "Jeder andere Schätzfehler bricht die Bearbeitung der Anlage ab und wird als Fehler protokolliert; der Lauf geht mit der nächsten Anlage weiter.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 224,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:224"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:108"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:109"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B15",
+      "text": "Die Abrechnungssperre wird direkt am Vertrag gesetzt und protokolliert; im Testlauf wird sie nur protokolliert.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 230,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:230"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 231,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:231"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 238,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:238"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 240,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:240"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 241,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:241"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B16",
+      "text": "Nach jeder Anlage wird die Sperre der Anlage freigegeben.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:119"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B17",
+      "text": "Nach jeweils so vielen Anlagen wie die Paketgröße und am Ende wird festgeschrieben und protokolliert; im Testlauf wird stattdessen zurückgerollt.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:124"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 249,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:249"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 250,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:250"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 253,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:253"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 254,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:254"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B18",
+      "text": "Jede Meldung des Laufs wird ins Protokoll übernommen; Fehler erscheinen im Hintergrund zusätzlich im Jobprotokoll.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 264,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:264"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 269,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:269"
+        },
+        {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 270,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:270"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B19",
+      "text": "Ohne Meldungen wird „Kein Protokoll vorhanden“ ausgegeben.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_f01.abap:14"
+        },
+        {
+          "file": "zisu_abrvorb_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_f01.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-176-B20",
+      "text": "Im Hintergrund werden nur Fehler und Warnungen als Liste ausgegeben, im Dialog das gesamte Protokoll als ALV.",
+      "anchors": [
+        {
+          "file": "zisu_abrvorb_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_f01.abap:19"
+        },
+        {
+          "file": "zisu_abrvorb_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_f01.abap:20"
+        },
+        {
+          "file": "zisu_abrvorb_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_f01.abap:21"
+        },
+        {
+          "file": "zisu_abrvorb_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_f01.abap:30"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "i",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:23"
+        },
+        "meaning": "Vorbelegung Selektionsbild"
+      },
+      {
+        "id": "ig",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:24"
+        },
+        "meaning": "Portion aus Benutzerparameter"
+      },
+      {
+        "id": "e_ini",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:25"
+        },
+        "meaning": "Selektionsbild vorbelegt"
+      },
+      {
+        "id": "a1",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:27"
+        },
+        "meaning": "Prüfung Portion"
+      },
+      {
+        "id": "a1q",
+        "type": "read",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:28"
+        },
+        "meaning": "Portion nachlesen"
+      },
+      {
+        "id": "a1g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:30"
+        },
+        "meaning": "Portion unbekannt?"
+      },
+      {
+        "id": "a1o",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:31"
+        },
+        "meaning": "Fehlermeldung: Portion nicht vorhanden"
+      },
+      {
+        "id": "a1m",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:31"
+        },
+        "meaning": "Eingabe abweisen"
+      },
+      {
+        "id": "e_a1",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:32"
+        },
+        "meaning": "Portion geprüft"
+      },
+      {
+        "id": "a2",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:34"
+        },
+        "meaning": "Prüfung Laufart"
+      },
+      {
+        "id": "a2g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:35"
+        },
+        "meaning": "Großer Echtlauf im Dialog?"
+      },
+      {
+        "id": "a2o",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:36"
+        },
+        "meaning": "Fehlermeldung: große Echtläufe nur im Hintergrund"
+      },
+      {
+        "id": "a2m",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:36"
+        },
+        "meaning": "Eingabe abweisen"
+      },
+      {
+        "id": "e_a2",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:37"
+        },
+        "meaning": "Eingaben geprüft"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:39"
+        },
+        "meaning": "Lauf starten"
+      },
+      {
+        "id": "sp",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:40"
+        },
+        "meaning": "Portion als Benutzerparameter merken"
+      },
+      {
+        "id": "sh",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:46"
+        },
+        "meaning": "Protokollsammler registrieren"
+      },
+      {
+        "id": "ca",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:49"
+        },
+        "meaning": "Abrechnungsvorbereitung ausführen"
+      },
+      {
+        "id": "mx",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:51"
+        },
+        "meaning": "Laufabbruch melden"
+      },
+      {
+        "id": "e_sos",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:53"
+        },
+        "meaning": "Protokoll übernommen, Selektion beendet"
+      },
+      {
+        "id": "eos",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:55"
+        },
+        "meaning": "Ausgabe"
+      },
+      {
+        "id": "cpa",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:56"
+        },
+        "meaning": "Protokoll anzeigen"
+      },
+      {
+        "id": "e_eos",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb.abap:56"
+        },
+        "meaning": "Ausgabe beendet"
+      },
+      {
+        "id": "m_aus",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:87"
+        },
+        "meaning": "Ablauf"
+      },
+      {
+        "id": "csel",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:88"
+        },
+        "meaning": "Anlagen selektieren"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:90"
+        },
+        "meaning": "Anlagen durchgehen"
+      },
+      {
+        "id": "enq",
+        "type": "lock",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:91"
+        },
+        "meaning": "Anlage sperren"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:98"
+        },
+        "meaning": "Anlage gesperrt?"
+      },
+      {
+        "id": "ev1",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:99"
+        },
+        "meaning": "Warnung: Anlage gesperrt"
+      },
+      {
+        "id": "cap",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:107"
+        },
+        "meaning": "Anlage prüfen"
+      },
+      {
+        "id": "ev2",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:109"
+        },
+        "meaning": "Fehler der Anlage protokollieren"
+      },
+      {
+        "id": "deq",
+        "type": "lock",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:119"
+        },
+        "meaning": "Anlagensperre freigeben"
+      },
+      {
+        "id": "gp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:124"
+        },
+        "meaning": "Paket voll?"
+      },
+      {
+        "id": "cps1",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:125"
+        },
+        "meaning": "Paket sichern"
+      },
+      {
+        "id": "cps2",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:129"
+        },
+        "meaning": "Restpaket sichern"
+      },
+      {
+        "id": "e_aus",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:130"
+        },
+        "meaning": "Lauf beendet"
+      },
+      {
+        "id": "m_sel",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:132"
+        },
+        "meaning": "Selektion"
+      },
+      {
+        "id": "qs",
+        "type": "read",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:134"
+        },
+        "meaning": "Anlagen der Portion mit aktivem Vertrag lesen"
+      },
+      {
+        "id": "gs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:145"
+        },
+        "meaning": "Keine Anlagen?"
+      },
+      {
+        "id": "xs",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:146"
+        },
+        "meaning": "Lauf abbrechen"
+      },
+      {
+        "id": "evs",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:149"
+        },
+        "meaning": "Anzahl selektierter Anlagen protokollieren"
+      },
+      {
+        "id": "e_sel",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:153"
+        },
+        "meaning": "selektiert"
+      },
+      {
+        "id": "m_ap",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:155"
+        },
+        "meaning": "Anlagenprüfung"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:156"
+        },
+        "meaning": "Abrechnungssperre schon gesetzt?"
+      },
+      {
+        "id": "ev4",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:157"
+        },
+        "meaning": "Info: Sperre vorhanden"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:161"
+        },
+        "meaning": "nichts zu tun"
+      },
+      {
+        "id": "cav",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:164"
+        },
+        "meaning": "Prüfen, ob Turnusablesung vorliegt"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:164"
+        },
+        "meaning": "Turnusablesung vorhanden?"
+      },
+      {
+        "id": "r2",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:165"
+        },
+        "meaning": "nichts zu tun"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:169"
+        },
+        "meaning": "RLM-Kunde oder Schätzung aus?"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:170"
+        },
+        "meaning": "Sperren erlaubt?"
+      },
+      {
+        "id": "csp1",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:171"
+        },
+        "meaning": "Abrechnung sperren (Grund 05)"
+      },
+      {
+        "id": "ev5",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:173"
+        },
+        "meaning": "Warnung: weder geschätzt noch gesperrt"
+      },
+      {
+        "id": "r3",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:178"
+        },
+        "meaning": "Anlage erledigt"
+      },
+      {
+        "id": "csc",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 181,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:181"
+        },
+        "meaning": "Turnusablesung schätzen"
+      },
+      {
+        "id": "e_ap",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:182"
+        },
+        "meaning": "geprüft"
+      },
+      {
+        "id": "m_av",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 184,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:184"
+        },
+        "meaning": "Ablesung vorhanden?"
+      },
+      {
+        "id": "qa",
+        "type": "read",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:185"
+        },
+        "meaning": "Turnusablesungen zum Solldatum zählen"
+      },
+      {
+        "id": "e_av",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 192,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:192"
+        },
+        "meaning": "Ergebnis zurück"
+      },
+      {
+        "id": "m_sc",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 194,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:194"
+        },
+        "meaning": "Schätzung"
+      },
+      {
+        "id": "gt1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 198,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:198"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "ev6",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:199"
+        },
+        "meaning": "Info: würde geschätzt"
+      },
+      {
+        "id": "r4",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 203,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:203"
+        },
+        "meaning": "Test beendet"
+      },
+      {
+        "id": "zf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 206,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:206"
+        },
+        "meaning": "Turnusablesung schätzen lassen"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 214,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:214"
+        },
+        "meaning": "Schätzergebnis?"
+      },
+      {
+        "id": "ev7",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 216,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:216"
+        },
+        "meaning": "Erfolg protokollieren"
+      },
+      {
+        "id": "csp2",
+        "type": "call",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 222,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:222"
+        },
+        "meaning": "Abrechnung sperren (Grund 06)"
+      },
+      {
+        "id": "xs2",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 224,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:224"
+        },
+        "meaning": "Anlage mit Fehler abbrechen"
+      },
+      {
+        "id": "e_sc",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 227,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:227"
+        },
+        "meaning": "geschätzt"
+      },
+      {
+        "id": "m_sp",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 229,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:229"
+        },
+        "meaning": "Abrechnungssperre"
+      },
+      {
+        "id": "gt2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 230,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:230"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "ev8",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 231,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:231"
+        },
+        "meaning": "Info: würde gesperrt"
+      },
+      {
+        "id": "r5",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 235,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:235"
+        },
+        "meaning": "Test beendet"
+      },
+      {
+        "id": "up",
+        "type": "write",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 238,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:238"
+        },
+        "meaning": "Sperrgrund am Vertrag setzen"
+      },
+      {
+        "id": "gu",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 240,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:240"
+        },
+        "meaning": "Vertrag geändert?"
+      },
+      {
+        "id": "ev9",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 241,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:241"
+        },
+        "meaning": "Sperre protokollieren"
+      },
+      {
+        "id": "e_sp",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 246,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:246"
+        },
+        "meaning": "gesperrt"
+      },
+      {
+        "id": "m_ps",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 248,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:248"
+        },
+        "meaning": "Paket sichern"
+      },
+      {
+        "id": "gt3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 249,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:249"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 250,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:250"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "r6",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 251,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:251"
+        },
+        "meaning": "Test beendet"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 253,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:253"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "ev10",
+        "type": "action",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 254,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:254"
+        },
+        "meaning": "Paketstand protokollieren"
+      },
+      {
+        "id": "e_ps",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 258,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:258"
+        },
+        "meaning": "gesichert"
+      },
+      {
+        "id": "m_om",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 264,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:264"
+        },
+        "meaning": "Meldung ins Protokoll"
+      },
+      {
+        "id": "om_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 269,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:269"
+        },
+        "meaning": "Fehler im Hintergrund?"
+      },
+      {
+        "id": "om_m",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 270,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:270"
+        },
+        "meaning": "Fehler ins Jobprotokoll"
+      },
+      {
+        "id": "om_e",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_cls.abap",
+          "line": 272,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_cls.abap:272"
+        },
+        "meaning": "übernommen"
+      },
+      {
+        "id": "fpa",
+        "type": "start",
+        "anchor": {
+          "file": "zisu_abrvorb_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_f01.abap:11"
+        },
+        "meaning": "Protokollausgabe"
+      },
+      {
+        "id": "fg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_f01.abap:14"
+        },
+        "meaning": "Protokoll leer?"
+      },
+      {
+        "id": "fo1",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_abrvorb_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_f01.abap:15"
+        },
+        "meaning": "Hinweis „Kein Protokoll vorhanden“ ausgeben"
+      },
+      {
+        "id": "fr1",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_f01.abap:16"
+        },
+        "meaning": "Ausgabe beenden"
+      },
+      {
+        "id": "fg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zisu_abrvorb_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_f01.abap:19"
+        },
+        "meaning": "Hintergrund?"
+      },
+      {
+        "id": "fl",
+        "type": "loop",
+        "anchor": {
+          "file": "zisu_abrvorb_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_f01.abap:20"
+        },
+        "meaning": "Fehler und Warnungen durchgehen"
+      },
+      {
+        "id": "fo2",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_abrvorb_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_f01.abap:21"
+        },
+        "meaning": "Meldung in Spoolliste"
+      },
+      {
+        "id": "fr2",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_f01.abap:23"
+        },
+        "meaning": "Liste fertig"
+      },
+      {
+        "id": "fo3",
+        "type": "output",
+        "anchor": {
+          "file": "zisu_abrvorb_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_f01.abap:30"
+        },
+        "meaning": "Protokoll als ALV"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "zisu_abrvorb_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zisu_abrvorb_f01.abap:34"
+        },
+        "meaning": "Ausgabe fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "i",
+        "to": "ig",
+        "condition": "always"
+      },
+      {
+        "from": "ig",
+        "to": "e_ini",
+        "condition": "always"
+      },
+      {
+        "from": "a1",
+        "to": "a1q",
+        "condition": "always"
+      },
+      {
+        "from": "a1q",
+        "to": "a1g",
+        "condition": "always"
+      },
+      {
+        "from": "a1g",
+        "to": "a1o",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "a1g",
+        "to": "e_a1",
+        "condition": "else"
+      },
+      {
+        "from": "a2",
+        "to": "a2g",
+        "condition": "always"
+      },
+      {
+        "from": "a2g",
+        "to": "a2o",
+        "condition": "p_test = abap_false AND sy-batch = abap_false AND p_paket > 2000"
+      },
+      {
+        "from": "a2g",
+        "to": "e_a2",
+        "condition": "else"
+      },
+      {
+        "from": "s",
+        "to": "sp",
+        "condition": "always"
+      },
+      {
+        "from": "sp",
+        "to": "sh",
+        "condition": "always"
+      },
+      {
+        "from": "sh",
+        "to": "ca",
+        "condition": "always"
+      },
+      {
+        "from": "ca",
+        "to": "m_aus",
+        "condition": "always"
+      },
+      {
+        "from": "eos",
+        "to": "cpa",
+        "condition": "always"
+      },
+      {
+        "from": "cpa",
+        "to": "fpa",
+        "condition": "always"
+      },
+      {
+        "from": "m_aus",
+        "to": "csel",
+        "condition": "always"
+      },
+      {
+        "from": "csel",
+        "to": "m_sel",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "enq",
+        "condition": "next row"
+      },
+      {
+        "from": "enq",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "ev1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ge",
+        "to": "cap",
+        "condition": "else"
+      },
+      {
+        "from": "cap",
+        "to": "m_ap",
+        "condition": "always"
+      },
+      {
+        "from": "deq",
+        "to": "gp",
+        "condition": "always"
+      },
+      {
+        "from": "gp",
+        "to": "cps1",
+        "condition": "mv_zaehler MOD p_paket = 0"
+      },
+      {
+        "from": "gp",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "cps1",
+        "to": "m_ps",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "cps2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cps2",
+        "to": "m_ps",
+        "condition": "always"
+      },
+      {
+        "from": "m_sel",
+        "to": "qs",
+        "condition": "always"
+      },
+      {
+        "from": "qs",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "xs",
+        "condition": "mt_anl IS INITIAL"
+      },
+      {
+        "from": "gs",
+        "to": "evs",
+        "condition": "else"
+      },
+      {
+        "from": "m_ap",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "ev4",
+        "condition": "is_anl-abrsperr IS NOT INITIAL"
+      },
+      {
+        "from": "g1",
+        "to": "cav",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "r2",
+        "condition": "ablesung_vorhanden( is_anl-anlage ) = abap_true"
+      },
+      {
+        "from": "g2",
+        "to": "g3",
+        "condition": "else"
+      },
+      {
+        "from": "g3",
+        "to": "g4",
+        "condition": "is_anl-aklasse = 'RLM' OR p_schae = abap_false"
+      },
+      {
+        "from": "g3",
+        "to": "csc",
+        "condition": "else"
+      },
+      {
+        "from": "g4",
+        "to": "csp1",
+        "condition": "p_sperr = abap_true"
+      },
+      {
+        "from": "g4",
+        "to": "ev5",
+        "condition": "else"
+      },
+      {
+        "from": "csp1",
+        "to": "m_sp",
+        "condition": "always"
+      },
+      {
+        "from": "csc",
+        "to": "m_sc",
+        "condition": "always"
+      },
+      {
+        "from": "m_av",
+        "to": "qa",
+        "condition": "always"
+      },
+      {
+        "from": "qa",
+        "to": "e_av",
+        "condition": "always"
+      },
+      {
+        "from": "m_sc",
+        "to": "gt1",
+        "condition": "always"
+      },
+      {
+        "from": "gt1",
+        "to": "ev6",
+        "condition": "mv_test = abap_true"
+      },
+      {
+        "from": "gt1",
+        "to": "zf",
+        "condition": "else"
+      },
+      {
+        "from": "zf",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "ev7",
+        "condition": "WHEN 0"
+      },
+      {
+        "from": "cs",
+        "to": "csp2",
+        "condition": "WHEN 4"
+      },
+      {
+        "from": "cs",
+        "to": "xs2",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "csp2",
+        "to": "m_sp",
+        "condition": "always"
+      },
+      {
+        "from": "m_sp",
+        "to": "gt2",
+        "condition": "always"
+      },
+      {
+        "from": "gt2",
+        "to": "ev8",
+        "condition": "mv_test = abap_true"
+      },
+      {
+        "from": "gt2",
+        "to": "up",
+        "condition": "else"
+      },
+      {
+        "from": "up",
+        "to": "gu",
+        "condition": "always"
+      },
+      {
+        "from": "gu",
+        "to": "ev9",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gu",
+        "to": "e_sp",
+        "condition": "else"
+      },
+      {
+        "from": "m_ps",
+        "to": "gt3",
+        "condition": "always"
+      },
+      {
+        "from": "gt3",
+        "to": "rb",
+        "condition": "mv_test = abap_true"
+      },
+      {
+        "from": "gt3",
+        "to": "cw",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "r6",
+        "condition": "always"
+      },
+      {
+        "from": "cw",
+        "to": "ev10",
+        "condition": "always"
+      },
+      {
+        "from": "m_om",
+        "to": "om_g",
+        "condition": "always"
+      },
+      {
+        "from": "om_g",
+        "to": "om_m",
+        "condition": "ev_typ = 'E' AND sy-batch = abap_true"
+      },
+      {
+        "from": "om_g",
+        "to": "om_e",
+        "condition": "else"
+      },
+      {
+        "from": "om_m",
+        "to": "om_e",
+        "condition": "always"
+      },
+      {
+        "from": "fpa",
+        "to": "fg1",
+        "condition": "always"
+      },
+      {
+        "from": "fg1",
+        "to": "fo1",
+        "condition": "gt_prot IS INITIAL"
+      },
+      {
+        "from": "fg1",
+        "to": "fg2",
+        "condition": "else"
+      },
+      {
+        "from": "fg2",
+        "to": "fl",
+        "condition": "sy-batch = abap_true"
+      },
+      {
+        "from": "fg2",
+        "to": "fo3",
+        "condition": "else"
+      },
+      {
+        "from": "fl",
+        "to": "fo2",
+        "condition": "next row"
+      },
+      {
+        "from": "fo2",
+        "to": "fl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fl",
+        "to": "fr2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fo3",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "e_ini",
+        "to": "a1",
+        "condition": "always"
+      },
+      {
+        "from": "a1o",
+        "to": "a1m",
+        "condition": "always"
+      },
+      {
+        "from": "e_a1",
+        "to": "a2",
+        "condition": "always"
+      },
+      {
+        "from": "a2o",
+        "to": "a2m",
+        "condition": "always"
+      },
+      {
+        "from": "e_a2",
+        "to": "s",
+        "condition": "always"
+      },
+      {
+        "from": "mx",
+        "to": "e_sos",
+        "condition": "always"
+      },
+      {
+        "from": "e_sos",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "e_aus",
+        "to": "e_sos",
+        "condition": "always"
+      },
+      {
+        "from": "xs",
+        "to": "mx",
+        "condition": "lcx_abbruch"
+      },
+      {
+        "from": "xs2",
+        "to": "ev2",
+        "condition": "lcx_abbruch"
+      },
+      {
+        "from": "fr1",
+        "to": "e_eos",
+        "condition": "always"
+      },
+      {
+        "from": "fr2",
+        "to": "e_eos",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "e_eos",
+        "condition": "always"
+      },
+      {
+        "from": "e_sel",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "r2",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "r3",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "e_ap",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "e_sp",
+        "to": "r3",
+        "condition": "always"
+      },
+      {
+        "from": "r5",
+        "to": "r3",
+        "condition": "always"
+      },
+      {
+        "from": "e_sc",
+        "to": "e_ap",
+        "condition": "always"
+      },
+      {
+        "from": "r4",
+        "to": "e_ap",
+        "condition": "always"
+      },
+      {
+        "from": "e_sp",
+        "to": "e_sc",
+        "condition": "always"
+      },
+      {
+        "from": "r5",
+        "to": "e_sc",
+        "condition": "always"
+      },
+      {
+        "from": "r6",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_ps",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "r6",
+        "to": "e_aus",
+        "condition": "always"
+      },
+      {
+        "from": "e_ps",
+        "to": "e_aus",
+        "condition": "always"
+      },
+      {
+        "from": "cav",
+        "to": "m_av",
+        "condition": "always"
+      },
+      {
+        "from": "e_av",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "ev1",
+        "to": "m_om",
+        "condition": "always"
+      },
+      {
+        "from": "om_e",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ev2",
+        "to": "m_om",
+        "condition": "always"
+      },
+      {
+        "from": "om_e",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "evs",
+        "to": "m_om",
+        "condition": "always"
+      },
+      {
+        "from": "om_e",
+        "to": "e_sel",
+        "condition": "always"
+      },
+      {
+        "from": "ev4",
+        "to": "m_om",
+        "condition": "always"
+      },
+      {
+        "from": "om_e",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "ev5",
+        "to": "m_om",
+        "condition": "always"
+      },
+      {
+        "from": "om_e",
+        "to": "r3",
+        "condition": "always"
+      },
+      {
+        "from": "ev6",
+        "to": "m_om",
+        "condition": "always"
+      },
+      {
+        "from": "om_e",
+        "to": "r4",
+        "condition": "always"
+      },
+      {
+        "from": "ev7",
+        "to": "m_om",
+        "condition": "always"
+      },
+      {
+        "from": "om_e",
+        "to": "e_sc",
+        "condition": "always"
+      },
+      {
+        "from": "ev8",
+        "to": "m_om",
+        "condition": "always"
+      },
+      {
+        "from": "om_e",
+        "to": "r5",
+        "condition": "always"
+      },
+      {
+        "from": "ev9",
+        "to": "m_om",
+        "condition": "always"
+      },
+      {
+        "from": "om_e",
+        "to": "e_sp",
+        "condition": "always"
+      },
+      {
+        "from": "ev10",
+        "to": "m_om",
+        "condition": "always"
+      },
+      {
+        "from": "om_e",
+        "to": "e_ps",
+        "condition": "always"
+      },
+      {
+        "from": "fo1",
+        "to": "fr1",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zisu_abrvorb_cls.abap:114 — kein Fachsatz „bei einem Schätzfehler gibt der CLEANUP-Block die Anlagensperre frei“: die Ausnahme wird im selben TRY abgefangen, CLEANUP läuft nur bei Ausnahmen, die den Block verlassen; freigegeben wird nach ENDTRY",
+    "zisu_abrvorb_f01.abap:42 — kein Fachsatz „das Abrechnungsteam wird per Mail über Sperren informiert“: das FORM wird nirgends gerufen",
+    "zisu_abrvorb_cls.abap:171 — kein Fachsatz „Sperrgrund 05 wird nur bei RLM-Kunden gesetzt“: er wird auch gesetzt, wenn die Schätzung abgeschaltet ist",
+    "gesamte Scheibe — kein Fachsatz „die Abrechnung wird ausgeführt oder Abrechnungsbelege werden erzeugt“: der Lauf bereitet nur vor (schätzen/sperren)"
+  ],
+  "processDescription": "Der Job wird mit Portion, Soll-Ablesedatum, Paketgröße und Kennzeichen für Schätzen, Sperren und Testlauf gestartet; die Portion ist aus dem Benutzerparameter vorbelegt, unbekannte Portionen und große Echtläufe im Dialog werden abgewiesen. Der Lauf liest alle Anlagen, deren Ableseeinheit zur Portion gehört und die zum Solldatum einen aktiven Vertrag haben; gibt es keine, bricht er mit Meldung ab. Jede Anlage wird gesperrt, bereits gesperrte werden mit Warnung übergangen. Hat der Vertrag schon eine Abrechnungssperre oder liegt die Turnusablesung zum Solldatum vor, ist nichts zu tun. Bei RLM-Kunden oder abgeschalteter Schätzung wird, wenn erlaubt, die Abrechnung mit Grund 05 direkt am Vertrag gesperrt, sonst nur gewarnt. Alle anderen fehlenden Ablesungen werden über einen eigenen Baustein geschätzt; fehlt eine Vorperiode, wird mit Grund 06 gesperrt, andere Schätzfehler werden als Fehler der Anlage protokolliert. Nach jeder Anlage wird deren Sperre freigegeben, nach jedem vollen Paket und am Ende festgeschrieben, im Testlauf stattdessen zurückgerollt. Alle Meldungen landen über ein Ereignis im Protokoll, Fehler im Hintergrund zusätzlich im Jobprotokoll. Am Ende zeigt der Dialog das Protokoll als ALV, der Hintergrundlauf listet nur Fehler und Warnungen."
+}

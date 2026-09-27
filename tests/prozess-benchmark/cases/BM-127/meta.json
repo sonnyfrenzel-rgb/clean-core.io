@@ -1,0 +1,37 @@
+{
+  "id": "BM-127",
+  "title": "RE-FX Umsatzmiete: Jahresabrechnung aus Mieter-Umsatzmeldungen mit Staffel und Mindestmiete (GROUP BY, REDUCE, TRY/CATCH)",
+  "domain": "RE-FX / Immobilienverwaltung – Umsatzmiete",
+  "band": "mittel",
+  "loc": 77,
+  "constructs": [
+    "REPORT",
+    "SELECT mit INNER JOIN und Inline-Tabelle",
+    "MESSAGE DISPLAY LIKE",
+    "RETURN",
+    "LOOP AT … GROUP BY",
+    "REDUCE",
+    "SELECT SINGLE",
+    "SELECT MAX",
+    "nmax",
+    "TRY … CATCH",
+    "VALUE #",
+    "MODIFY Z-Tabelle",
+    "COMMIT WORK",
+    "CL_SALV_TABLE"
+  ],
+  "scenario": "Einkaufszentrum-Betreiber mit umsatzabhängigen Mietverträgen: Nach Jahresende wird aus den gemeldeten Monatsumsätzen die geschuldete Umsatzmiete ermittelt und die Nachforderung gegenüber der gezahlten Mindestmiete festgehalten.",
+  "s4_issues": [
+    "RE-FX bietet Umsatzmiete im Standard (Umsatzabrechnung), Z-Eigenbau parallel dazu",
+    "Direkter Lesezugriff auf VICNCN/VICDCOND statt freigegebener APIs"
+  ],
+  "wave": 2,
+  "module": "RE-FX",
+  "edge_constructs": [
+    "LOOP AT … GROUP BY",
+    "REDUCE",
+    "TRY … CATCH",
+    "VALUE #",
+    "Inline-Deklarationen"
+  ]
+}

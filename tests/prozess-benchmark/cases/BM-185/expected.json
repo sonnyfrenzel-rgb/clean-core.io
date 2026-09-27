@@ -1,0 +1,244 @@
+{
+  "id": "BM-185",
+  "title": "Änderungshistorie Mietkonditionen aus Änderungsbelegen, Gruppenwechsel je Änderungsnummer",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": null,
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "CHANGEDOCUMENT_READ",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 9,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:9"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-185-B01",
+      "text": "Zum eingegebenen Mietvertrag werden die Änderungsbelege der Mietkonditionen ab dem eingegebenen Datum gelesen; ohne Datum alle.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:9"
+        }
+      ]
+    },
+    {
+      "id": "BM-185-B02",
+      "text": "Die Änderungen werden nach Änderungsnummer und Feld sortiert einzeln durchgegangen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-185-B03",
+      "text": "Zu Beginn jeder Änderungsnummer wird eine Kopfzeile mit der Änderungsnummer ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-185-B04",
+      "text": "Für jedes geänderte Feld werden Feldbezeichnung, alter und neuer Wert ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:8"
+        },
+        "meaning": "Reportstart mit Mietvertrag und Ab-Datum"
+      },
+      {
+        "id": "cd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:9"
+        },
+        "meaning": "Änderungsbelege der Mietkonditionen lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Geänderte Felder durchgehen"
+      },
+      {
+        "id": "gn",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Neue Änderungsnummer?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Kopfzeile je Änderungsnummer ausgeben"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Feld mit altem und neuem Wert ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "cd",
+        "condition": "always"
+      },
+      {
+        "from": "cd",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "gn",
+        "condition": "next row"
+      },
+      {
+        "from": "gn",
+        "to": "o1",
+        "condition": "AT NEW changenr"
+      },
+      {
+        "from": "gn",
+        "to": "o2",
+        "condition": "else"
+      },
+      {
+        "from": "o1",
+        "to": "o2",
+        "condition": "always"
+      },
+      {
+        "from": "o2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:28 — kein Fachsatz „je Änderung werden Datum und Benutzer ausgegeben“: innerhalb von AT NEW changenr sind alle Felder rechts von CHANGENR (UDATE, USERNAME) initial, die Kopfzeile zeigt nur die Änderungsnummer",
+    "source.abap:9 — kein Fachsatz „ohne Änderungen wird ein Hinweis ausgegeben“: die Auswertung von sy-subrc ist auskommentiert, es erscheint dann eine leere Liste",
+    "gesamte Scheibe — kein Fachsatz „Konditionsänderungen werden zurückgesetzt oder protokolliert“: der Report liest vorhandene Änderungsbelege nur und listet sie"
+  ],
+  "processDescription": "Die Sachbearbeitung startet den Report mit einer Mietvertragsnummer und optional einem Ab-Datum. Der Report liest die Änderungsbelege des Objekts ZMIETVERTR zu diesem Vertrag für die kundeneigene Konditionstabelle ab dem Datum, ohne Datum alle. Ob Belege gefunden wurden, wird nicht geprüft, weil die Prüfung auskommentiert ist; ohne Treffer bleibt die Liste leer. Die Änderungen werden nach Änderungsnummer und Feld sortiert. Bei jeder neuen Änderungsnummer erscheint eine Kopfzeile; Datum und Benutzer sind darin leer, weil sie im Gruppenwechsel rechts vom Gruppenfeld stehen. Für jedes geänderte Feld werden Bezeichnung, alter und neuer Wert eingerückt ausgegeben. Es wird nichts geändert."
+}

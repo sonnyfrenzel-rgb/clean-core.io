@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "Verbotener Schluss zu Zeile 28 stützt sich auf die Initialisierung der Komponenten rechts von CHANGENR im AT NEW (USERNAME, UDATE folgen in CDRED auf CHANGENR). Aussage ‚Datum und Benutzer werden nicht ausgegeben‘ ist korrekt; ob ältere Releases dort statt Initialwerten ‚*‘ zeigen, ändert den Schluss nicht."
+  ]
+}

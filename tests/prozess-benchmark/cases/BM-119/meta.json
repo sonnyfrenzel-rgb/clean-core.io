@@ -1,0 +1,53 @@
+{
+  "id": "BM-119",
+  "title": "Lieferanten-SDB (XML) ins Gefahrstoffkataster: Transformation, CAS-Zuordnung, Verbuchung, Archivierung, Zusammenlagerungsprüfung TRGS 510",
+  "domain": "EHS — Gefahrstoffe / Sicherheitsdatenblätter / Gefahrstoffkataster",
+  "band": "sehr komplex",
+  "loc": 400,
+  "constructs": [
+    "REPORT mit TOP/F01",
+    "AT SELECTION-SCREEN ON",
+    "EPS2_GET_DIRECTORY_LISTING",
+    "RETURN mit END-OF-SELECTION",
+    "CHECK in Schleife (Mustervergleich CP)",
+    "OPEN/READ/CLOSE/TRANSFER/DELETE DATASET",
+    "CALL TRANSFORMATION",
+    "TRY … CATCH",
+    "SELECT mit Join ESTRI/ESTRH",
+    "CALL FUNCTION … IN UPDATE TASK",
+    "COMMIT WORK",
+    "LOOP AT … GROUP BY",
+    "VALUE #( FOR … IN GROUP )",
+    "NEW #",
+    "ASSIGN COMPONENT",
+    "READ TABLE … ASSIGNING",
+    "LOOP … FROM",
+    "CASE auf Feldsymbol",
+    "RAISE EXCEPTION TYPE",
+    "INSERT FROM @( VALUE #( ) )",
+    "CL_SALV_TABLE",
+    "Verbuchungsbaustein mit MESSAGE A",
+    "VALUE #( BASE CORRESPONDING #( ) )"
+  ],
+  "scenario": "Chemiestandort pflegt ein Gefahrstoffkataster je Werk und Lagerort; Lieferanten-Sicherheitsdatenblätter kommen als SDScom-XML in ein Eingangsverzeichnis, ein Nachtjob übernimmt Lagerklasse und WGK und prüft danach die Zusammenlagerung nach TRGS 510.",
+  "s4_issues": [
+    "EHS-Spezifikationstabellen ESTRI/ESTRH in S/4HANA Product Compliance abgelöst",
+    "Dateizugriff auf den Applikationsserver (EPS2, OPEN DATASET) nicht Cloud-fähig",
+    "Kundeneigenes Gefahrstoffkataster statt Chemical Management / Safety Data Sheet Management",
+    "Verbuchungsbaustein mit MESSAGE A: ein Fehler verwirft die gesamte Verbuchung des Laufs"
+  ],
+  "wave": 2,
+  "module": "EHS",
+  "edge_constructs": [
+    "CALL TRANSFORMATION",
+    "ASSIGN COMPONENT",
+    "IN UPDATE TASK mit späterem COMMIT",
+    "CHECK mitten in Schleife",
+    "LOOP AT … GROUP BY",
+    "MESSAGE … TYPE 'A' im Verbuchungsbaustein",
+    "RAISE EXCEPTION TYPE",
+    "TRY … CATCH",
+    "CONTINUE in verschachtelter Schleife",
+    "RETURN aus tiefem FORM"
+  ]
+}

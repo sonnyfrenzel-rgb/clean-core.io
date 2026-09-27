@@ -1,0 +1,35 @@
+{
+  "id": "BM-135",
+  "title": "Treasury Geldhandel: fällige Festgelder automatisch prolongieren und den Buchungslauf als Job einplanen (dynamischer Tabellenname, SUBMIT VIA JOB)",
+  "domain": "FSCM/TRM / Treasury Geldhandel",
+  "band": "komplex",
+  "loc": 187,
+  "constructs": [
+    "REPORT mit INCLUDE",
+    "PERFORM",
+    "RETURN aus Ereignisblock und FORM",
+    "SELECT SINGLE TVARVC",
+    "SELECT mit INNER JOIN",
+    "SELECT SINGLE FROM (dynamischer Tabellenname)",
+    "BAPI_FTR_TIMEDEPOSIT_CREATE",
+    "line_exists",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "JOB_OPEN / SUBMIT … VIA JOB … AND RETURN / JOB_CLOSE",
+    "MESSAGE TYPE I"
+  ],
+  "scenario": "Konzern-Treasury mit vielen Tagesgeld-/Festgeldanlagen bei Hausbanken: Fällige Anlagen mit Rollover-Vereinbarung werden morgens automatisch zum aktuellen Fixing neu angelegt, danach läuft der Buchungslauf im Hintergrund.",
+  "s4_issues": [
+    "Dynamischer Tabellenname aus TVARVC (nicht prüfbar, Cloud-unzulässig)",
+    "Direkter Lesezugriff auf VTBFHA/VTBFHAPO",
+    "SUBMIT des Standard-Buchungsprogramms RFTBBB00 mit geratenen Selektionsnamen"
+  ],
+  "wave": 2,
+  "module": "TRM",
+  "edge_constructs": [
+    "dynamischer Tabellenname (gv_tab)",
+    "Schalter über TVARVC",
+    "SUBMIT … VIA JOB (JOB_OPEN/JOB_CLOSE)",
+    "RETURN aus FORM",
+    "VALUE #"
+  ]
+}

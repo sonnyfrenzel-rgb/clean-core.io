@@ -1,0 +1,305 @@
+{
+  "id": "BM-142",
+  "title": "Zeiterfassungsterminal: Ausweisnummer prüfen und Personalnummer zurückgeben",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PA0050",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:15"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0000",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-142-B01",
+      "text": "Zur am Terminal gelesenen Ausweisnummer wird die Personalnummer ermittelt, deren Ausweissatz am Buchungstag gültig ist.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-142-B02",
+      "text": "Ist der Ausweis am Buchungstag keinem Mitarbeiter zugeordnet, wird die Anfrage mit „Ausweis unbekannt“ abgewiesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-142-B03",
+      "text": "Für den gefundenen Mitarbeiter wird der Beschäftigungsstatus am Buchungstag gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-142-B04",
+      "text": "Ist der Mitarbeiter nicht aktiv beschäftigt, wird die Personalnummer gelöscht und die Anfrage mit „Mitarbeiter nicht aktiv“ abgewiesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-142-B05",
+      "text": "Andernfalls erhält das Terminal die Personalnummer zurück.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Terminal fragt Ausweis an"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Personalnummer zum Ausweis am Stichtag lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Ausweis bekannt?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Fehlermeldung: Ausweis unbekannt"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Abbruch: Ausweis unbekannt"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Beschäftigungsstatus am Stichtag lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Mitarbeiter aktiv?"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Abbruch: Mitarbeiter nicht aktiv"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Personalnummer zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "o1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "r2",
+        "condition": "else"
+      },
+      {
+        "from": "r2",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "e2",
+        "condition": "lv_stat2 <> '3'"
+      },
+      {
+        "from": "g2",
+        "to": "e3",
+        "condition": "else"
+      },
+      {
+        "from": "o1",
+        "to": "e1",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "gesamte Scheibe — kein Fachsatz „die Zeitbuchung wird gespeichert“ (der Baustein prüft nur, TEVEN wird nicht geschrieben)",
+    "source.abap:23 — kein Fachsatz „ohne Status-Satz wird der Mitarbeiter als aktiv behandelt“ — fehlt der Satz, ist der Status leer und die Anfrage wird als inaktiv abgewiesen",
+    "gesamte Scheibe — kein Fachsatz über eine Berechtigungsprüfung (es gibt keine)"
+  ],
+  "processDescription": "Ein Zeiterfassungsterminal ruft beim Stempeln per RFC diesen Baustein mit der gelesenen Ausweisnummer und dem Buchungstag auf. Zuerst wird die Personalnummer gesucht, deren Ausweissatz (Infotyp 0050) am Buchungstag gilt. Wird keine gefunden, endet der Aufruf mit der Ausnahme „Ausweis unbekannt“. Danach wird der Beschäftigungsstatus am Buchungstag gelesen; ist er nicht „aktiv“ (auch wenn gar kein Satz existiert), wird die Personalnummer geleert und der Aufruf endet mit „Mitarbeiter nicht aktiv“. Sonst erhält das Terminal die Personalnummer. Der Baustein speichert selbst keine Zeitbuchung."
+}

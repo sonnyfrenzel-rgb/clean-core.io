@@ -1,0 +1,212 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten a_init",
+      "before": "action auf zpt_ot_approval.abap:22; s_init -> a_init [always]",
+      "after": "entfernt; s_init -> e_init (end auf Z. 24, eigener Eintrag)",
+      "why": "gv_date = gv_date - 1 (Z. 22) und die folgenden Zuweisungen an p_pabrj/p_pabrp sind reine Zuweisungen des Vorschlagswerts; laut Autorenbrief kein Knoten (so auch BM-097). Inhalt bleibt in Fachsatz B01.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_init (neu)",
+      "before": "kein end-Knoten auf zpt_ot_approval.abap:24",
+      "after": "e_init end auf zpt_ot_approval.abap:24; s_init -> e_init [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_ssm (neu)",
+      "before": "o_ss output ohne end",
+      "after": "e_ssm end auf zpt_ot_approval.abap:28; o_ss -> e_ssm [always]",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_ss (neu)",
+      "before": "kein end-Knoten auf zpt_ot_approval.abap:29",
+      "after": "e_ss end auf zpt_ot_approval.abap:29; g_ss -> e_ss [else]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante e_init -> s_ss (neu)",
+      "before": "keine Verbindung der Ereignisblöcke",
+      "after": "e_init -> s_ss [always]",
+      "why": "Ereignisreihenfolge: nach dem Ende eines Ereignisblocks setzt die Laufzeit mit dem nächsten Ereignis fort (wie in BM-011/032/037 START-OF-SELECTION -> END-OF-SELECTION); bei der logischen Datenbank folgt END-OF-SELECTION, nachdem GET für alle selektierten Personen gelaufen ist.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante e_ss -> s (neu)",
+      "before": "keine Verbindung der Ereignisblöcke",
+      "after": "e_ss -> s [always]",
+      "why": "Ereignisreihenfolge: nach dem Ende eines Ereignisblocks setzt die Laufzeit mit dem nächsten Ereignis fort (wie in BM-011/032/037 START-OF-SELECTION -> END-OF-SELECTION); bei der logischen Datenbank folgt END-OF-SELECTION, nachdem GET für alle selektierten Personen gelaufen ist.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_se (neu)",
+      "before": "kein end-Knoten auf zpt_ot_approval_f01.abap:27",
+      "after": "e_se end auf zpt_ot_approval_f01.abap:27; r_lim -> e_se [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_sel -> c_rtr",
+      "before": "c_sel -> c_rtr [always] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_se -> c_rtr [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_rt (neu)",
+      "before": "kein end-Knoten auf zpt_ot_approval_f01.abap:92",
+      "after": "e_rt end auf zpt_ot_approval_f01.abap:92; l_emp -> e_rt [no more rows]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_sos (neu)",
+      "before": "kein end-Knoten auf zpt_ot_approval.abap:33",
+      "after": "e_sos end auf zpt_ot_approval.abap:33; e_rt -> e_sos -> s_eos",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_rtr -> s_eos",
+      "before": "c_rtr -> s_eos [always] (Direktkante vom Aufruf in das nächste Ereignis)",
+      "after": "e_rt -> e_sos [always]; e_sos -> s_eos [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt. START-OF-SELECTION endet implizit mit Z. 33, danach folgt END-OF-SELECTION.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_da (neu)",
+      "before": "kein end-Knoten auf zpt_ot_approval_f01.abap:122",
+      "after": "e_da end auf zpt_ot_approval_f01.abap:122; o_alv -> e_da [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_eos2 (neu)",
+      "before": "kein end-Knoten auf zpt_ot_approval.abap:40",
+      "after": "e_eos2 end auf zpt_ot_approval.abap:40; e_da -> e_eos2 [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten a_ref",
+      "before": "action auf zpt_ot_approval_f02.abap:25; x_pa20 -> a_ref [always]; c_ap -> a_ref [always]; c_rj -> a_ref [always]; c_te -> a_ref [always]",
+      "after": "entfernt; die Pfade laufen zu e_ucx (ENDFORM f02:26, eigener Eintrag)",
+      "why": "rs_selfield-refresh = abap_true (f02:25) ist eine reine Zuweisung; laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B19; die Pfade laufen zum ENDFORM.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_ucx (neu)",
+      "before": "kein end-Knoten auf zpt_ot_approval_f02.abap:26",
+      "after": "e_ucx end auf zpt_ot_approval_f02.abap:26; g_row -> e_ucx [else]; x_pa20 -> e_ucx [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante g_row -> e_ucx (neu)",
+      "before": "g_row hatte nur den Erfolgszweig",
+      "after": "g_row -> e_ucx [else]",
+      "why": "CHECK außerhalb einer Schleife verlässt das FORM; der Pfad fehlte.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten m_au (neu) vor o_au",
+      "before": "o_au end auf zpt_ot_approval_f02.abap:37 ohne output",
+      "after": "m_au output auf zpt_ot_approval_f02.abap:37, Kante m_au -> o_au [always]; eingehende Kanten auf m_au umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o_enq (neu)",
+      "before": "g_enq -> l_ap [ls_return-type = 'E']",
+      "after": "o_enq output f02:52; g_enq -> o_enq [ls_return-type = 'E']; o_enq -> l_ap [next iteration]",
+      "why": "Die Meldung ist die fachliche Rückmeldung dieses Pfades (im Fachsatz genannt); jede Ausgabe, die den Prozess trägt, gehört ins Skelett. (B13: „wird das gemeldet“)",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o_ito (neu)",
+      "before": "g_ito -> l_ap [ls_return-type CA 'EA']",
+      "after": "o_ito output f02:84; g_ito -> o_ito [ls_return-type CA 'EA']; o_ito -> l_ap [next iteration]",
+      "why": "Die Meldung ist die fachliche Rückmeldung dieses Pfades (im Fachsatz genannt); jede Ausgabe, die den Prozess trägt, gehört ins Skelett. (B14: „wird das gemeldet“)",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_nt (neu)",
+      "before": "kein end-Knoten auf zpt_ot_approval_f02.abap:150",
+      "after": "e_nt end auf zpt_ot_approval_f02.abap:150; o_swe -> e_nt [always]; g_swe -> e_nt [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_ntf -> l_ap",
+      "before": "c_ntf -> l_ap [next iteration] (Direktkante zusätzlich zur Kante in den Block)",
+      "after": "entfernt; Rückkehr über e_nt -> l_ap [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_ap (neu)",
+      "before": "kein end-Knoten auf zpt_ot_approval_f02.abap:105",
+      "after": "e_ap end auf zpt_ot_approval_f02.abap:105; o_ok -> e_ap [always]; g_ok -> e_ap [else]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o_rj (neu)",
+      "before": "g_rj -> e_rj [lv_cnt = 0]",
+      "after": "o_rj output f02:124; g_rj -> o_rj [lv_cnt = 0]; o_rj -> e_rj [always]",
+      "why": "Die Meldung ist die fachliche Rückmeldung dieses Pfades (im Fachsatz genannt); jede Ausgabe, die den Prozess trägt, gehört ins Skelett. (B17: „nur einen Hinweis“)",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_rj2 (neu)",
+      "before": "kein end-Knoten auf zpt_ot_approval_f02.abap:128",
+      "after": "e_rj2 end auf zpt_ot_approval_f02.abap:128; t_rj -> e_rj2 [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o_rng, o_jo (neu)",
+      "before": "g_rng -> e_rng, g_jo -> e_jo ohne Meldung",
+      "after": "o_rng output f02:161 vor e_rng; o_jo output f02:176 vor e_jo",
+      "why": "Die Meldung ist die fachliche Rückmeldung dieses Pfades (im Fachsatz genannt); jede Ausgabe, die den Prozess trägt, gehört ins Skelett. (B18: „gibt es nur einen Hinweis“)",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_te (neu)",
+      "before": "kein end-Knoten auf zpt_ot_approval_f02.abap:195",
+      "after": "e_te end auf zpt_ot_approval_f02.abap:195; o_te -> e_te [always]",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende Block hat einen eigenen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION; die Rückkante zum Aufrufer geht von diesem end aus.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Rückkanten c_ap",
+      "before": "c_ap -> a_ref [always] (Direktkante zusätzlich zur Kante in das FORM; a_ref entfernt)",
+      "after": "e_ap -> e_ucx [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Rückkanten c_rj",
+      "before": "c_rj -> a_ref [always] (Direktkante zusätzlich zur Kante in das FORM; a_ref entfernt)",
+      "after": "e_rj -> e_ucx [always], e_rj2 -> e_ucx [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Rückkanten c_te",
+      "before": "c_te -> a_ref [always] (Direktkante zusätzlich zur Kante in das FORM; a_ref entfernt)",
+      "after": "e_rng -> e_ucx [always], e_jo -> e_ucx [always], e_te -> e_ucx [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "Die Kante o_alv -> s_uc (ALV ruft den Rückruf USER_COMMAND je Benutzeraktion) ist vom Autor übernommen; der Rückruf ist wie ein Ereignisblock ohne Rückkante modelliert, die Anzeige läuft über o_alv -> e_da weiter."
+  ]
+}

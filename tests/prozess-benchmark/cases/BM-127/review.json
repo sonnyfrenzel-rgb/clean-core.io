@@ -1,0 +1,14 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten ac",
+      "before": "action source.abap:57 „Quote bei Umsatz null auf 999 setzen“; aq -> ac [CATCH cx_sy_zerodivide]; ac -> l [next iteration]",
+      "after": "entfernt; aq -> l [CATCH cx_sy_zerodivide]",
+      "why": "lv_quote = 999 (Z. 57) ist eine reine Zuweisung einer Konstante im CATCH-Block; laut Autorenbrief kein Knoten (so auch BM-093, BM-153). Der Ausnahmepfad bleibt als Kante vom Berechnungsknoten sichtbar, der Inhalt in Fachsatz B07 (Anker :57).",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": []
+}

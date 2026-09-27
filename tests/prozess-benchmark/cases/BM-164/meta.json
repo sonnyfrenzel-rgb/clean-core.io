@@ -1,0 +1,28 @@
+{
+  "id": "BM-164",
+  "title": "Leergutkonto: offener Mehrweg-Saldo je Kunde und Leergutmaterial",
+  "domain": "Logistik-Randbereich Leergut / Mehrwegverpackung",
+  "band": "einfach",
+  "loc": 28,
+  "constructs": [
+    "SELECT neue Syntax mit Inline-Deklaration",
+    "LOOP AT … GROUP BY",
+    "REDUCE mit FOR IN GROUP",
+    "COND #",
+    "Debug-Hintertür über sy-uname",
+    "WRITE-Liste"
+  ],
+  "scenario": "Getränkegroßhandel: der Außendienst fragt vor dem Kundenbesuch ab, wie viele Mehrwegkisten und Paletten ein Kunde noch schuldet.",
+  "s4_issues": [
+    "Eigenes Leergutkonto in Z-Tabelle statt Standard-Leergutabwicklung (Leergutstückliste/Retourenverpackung)",
+    "Benutzerabhängige Datenmanipulation im Produktivcode"
+  ],
+  "wave": 2,
+  "module": "SD-Leergut",
+  "edge_constructs": [
+    "Debug-Hintertür IF sy-uname = …",
+    "LOOP AT … GROUP BY",
+    "REDUCE / COND im Ausdruck",
+    "Inline-Deklarationen"
+  ]
+}

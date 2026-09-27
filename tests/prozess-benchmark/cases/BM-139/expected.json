@@ -1,0 +1,2329 @@
+{
+  "id": "BM-139",
+  "title": "FSCM-Kreditprüfung beim Sichern des Kundenauftrags: RFC ins zentrale Kreditmanagement, dynamische Ersatzregel, Liefersperre, Protokoll und stündliche Nachprüfung",
+  "classes": [
+    "K01",
+    "K03",
+    "K06",
+    "K12",
+    "K16"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZSD_CR_AUART",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "mv45afzz_zcredit.abap",
+        "line": 26,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mv45afzz_zcredit.abap:26"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_SD_FSCM_CREDIT_CHECK",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "mv45afzz_zcredit.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mv45afzz_zcredit.abap:39"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_SD_CREDIT_LOG_WRITE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "mv45afzz_zcredit.abap",
+        "line": 80,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mv45afzz_zcredit.abap:80"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_CR_SEGM",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "mv45afzz_zcredit.abap",
+        "line": 94,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mv45afzz_zcredit.abap:94"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_sd_fscm_credit_check.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_fscm_credit_check.abap:40"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_CR_SEGM",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "z_sd_fscm_credit_check.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_fscm_credit_check.abap:50"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_UKM_ORDER_CHECK_RFC",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_sd_fscm_credit_check.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_fscm_credit_check.abap:58"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "UKMBP_CMS_SGM",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_credit_rules.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_credit_rules.abap:42"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZUKM_EXPO_REPL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_credit_rules.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_credit_rules.abap:50"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_LC",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_credit_rules.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_credit_rules.abap:79"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_CREDIT_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_sd_credit_log_write.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_credit_log_write.abap:19"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_credit_monitor.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_credit_monitor.abap:29"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_SALESORDER_CHANGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_credit_monitor.abap",
+        "line": 67,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_credit_monitor.abap:67"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_credit_monitor.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_credit_monitor.abap:75"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_credit_monitor.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_credit_monitor.abap:79"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-139-B01",
+      "text": "Beim Sichern eines Auftrags (nicht im Anzeigemodus) wird nur geprüft, wenn die Auftragsart in der Verkaufsorganisation als kreditrelevant hinterlegt ist.",
+      "anchors": [
+        {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:22"
+        },
+        {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:23"
+        },
+        {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:26"
+        },
+        {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B02",
+      "text": "Der zu prüfende Auftragswert ist die Summe der Nettowerte aller nicht abgelehnten und nicht gelöschten Positionen.",
+      "anchors": [
+        {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B03",
+      "text": "Ist die FSCM-Prüfung zentral abgeschaltet, gilt der Auftrag als in Ordnung.",
+      "anchors": [
+        {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:40"
+        },
+        {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B04",
+      "text": "Zur Verkaufsorganisation werden Kreditsegment, RFC-Ziel des FSCM-Systems und Ersatzregel gelesen; fehlen sie, endet die Prüfung mit der Fehlermeldung „kein Kreditsegment“.",
+      "anchors": [
+        {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:50"
+        },
+        {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:52"
+        },
+        {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B05",
+      "text": "Zuerst entscheidet das zentrale FSCM-Kreditmanagement über Kunde, Segment und Auftragswert und liefert das freie Limit.",
+      "anchors": [
+        {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:58"
+        },
+        {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B06",
+      "text": "Ist das FSCM-System nicht erreichbar, entscheidet die für die Verkaufsorganisation gepflegte Ersatzregel, ohne Pflege die Standardregel.",
+      "anchors": [
+        {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:81"
+        },
+        {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:82"
+        },
+        {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B07",
+      "text": "Lässt sich die Ersatzregel nicht aufrufen, wird der Auftrag vorsichtshalber gesperrt.",
+      "anchors": [
+        {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B08",
+      "text": "Die Ersatzregeln rechnen mit einem freien Limit aus Kreditlimit minus repliziertem Obligo; ohne Limit ist es null, und ist das Replikat älter als einen Tag, zählt nur die Hälfte.",
+      "anchors": [
+        {
+          "file": "zcl_credit_rules.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:42"
+        },
+        {
+          "file": "zcl_credit_rules.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:50"
+        },
+        {
+          "file": "zcl_credit_rules.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:54"
+        },
+        {
+          "file": "zcl_credit_rules.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:56"
+        },
+        {
+          "file": "zcl_credit_rules.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B09",
+      "text": "Die Standardregel gibt bis zum freien Limit frei, sperrt bis 110 % davon und lehnt darüber ab.",
+      "anchors": [
+        {
+          "file": "zcl_credit_rules.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B10",
+      "text": "Die strenge Regel gibt bis zum freien Limit frei und sperrt sonst.",
+      "anchors": [
+        {
+          "file": "zcl_credit_rules.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B11",
+      "text": "Die Exportregel gibt Kunden mit gültigem Akkreditiv frei und entscheidet sonst nach der strengen Regel.",
+      "anchors": [
+        {
+          "file": "zcl_credit_rules.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:79"
+        },
+        {
+          "file": "zcl_credit_rules.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:83"
+        },
+        {
+          "file": "zcl_credit_rules.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:86"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B12",
+      "text": "Bei „OK“ wird eine früher gesetzte Kredit-Liefersperre Z1 am Auftrag gelöst.",
+      "anchors": [
+        {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:49"
+        },
+        {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:52"
+        },
+        {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B13",
+      "text": "Bei „Sperre“ erhält der Auftrag die Liefersperre Z1 und der Anwender einen Hinweis mit dem freien Limit.",
+      "anchors": [
+        {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:56"
+        },
+        {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B14",
+      "text": "Bei „Ablehnen“ wird das Sichern mit einer Fehlermeldung verhindert.",
+      "anchors": [
+        {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B15",
+      "text": "Die Entscheidung wird beim Sichern mit der endgültigen Belegnummer und dem Benutzer über die Verbuchung protokolliert.",
+      "anchors": [
+        {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:63"
+        },
+        {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:72"
+        },
+        {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:80"
+        },
+        {
+          "file": "z_sd_credit_log_write.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_credit_log_write.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B16",
+      "text": "Ist am Auftragskopf noch kein Kreditsegment eingetragen, wird das der Verkaufsorganisation übernommen.",
+      "anchors": [
+        {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:93"
+        },
+        {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:94"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B17",
+      "text": "Ein stündlicher Job liest die Aufträge der gewählten Verkaufsorganisationen mit Liefersperre Z1 aus den letzten Tagen; gibt es keine, meldet er das.",
+      "anchors": [
+        {
+          "file": "zsd_credit_monitor.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:29"
+        },
+        {
+          "file": "zsd_credit_monitor.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:35"
+        },
+        {
+          "file": "zsd_credit_monitor.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B18",
+      "text": "Für jeden gesperrten Auftrag wird die Kreditentscheidung für seinen Nettowert erneut geholt; ist sie nicht „OK“ oder schlägt sie fehl, bleibt er gesperrt.",
+      "anchors": [
+        {
+          "file": "zsd_credit_monitor.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:41"
+        },
+        {
+          "file": "zsd_credit_monitor.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:53"
+        },
+        {
+          "file": "zsd_credit_monitor.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B19",
+      "text": "Im Testlauf wird ein freigabefähiger Auftrag nur gelistet.",
+      "anchors": [
+        {
+          "file": "zsd_credit_monitor.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:58"
+        },
+        {
+          "file": "zsd_credit_monitor.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B20",
+      "text": "Sonst wird die Liefersperre am Auftragskopf entfernt; bei Fehler wird zurückgerollt, sonst festgeschrieben, und das Ergebnis gelistet.",
+      "anchors": [
+        {
+          "file": "zsd_credit_monitor.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:67"
+        },
+        {
+          "file": "zsd_credit_monitor.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:74"
+        },
+        {
+          "file": "zsd_credit_monitor.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:75"
+        },
+        {
+          "file": "zsd_credit_monitor.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:79"
+        }
+      ]
+    },
+    {
+      "id": "BM-139-B21",
+      "text": "Am Ende stehen die Anzahlen freigegebener, weiter gesperrter und fehlgeschlagener Aufträge im Jobprotokoll.",
+      "anchors": [
+        {
+          "file": "zsd_credit_monitor.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:90"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "p",
+        "type": "start",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:17"
+        },
+        "meaning": "Kreditprüfung vor dem Sichern des Auftrags"
+      },
+      {
+        "id": "pc1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:22"
+        },
+        "meaning": "Nicht im Anzeigemodus?"
+      },
+      {
+        "id": "pc2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:23"
+        },
+        "meaning": "Beleg ist ein Auftrag?"
+      },
+      {
+        "id": "pr",
+        "type": "read",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:26"
+        },
+        "meaning": "Ist die Auftragsart in der Verkaufsorganisation kreditrelevant?"
+      },
+      {
+        "id": "pg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:29"
+        },
+        "meaning": "Nicht relevant?"
+      },
+      {
+        "id": "pre",
+        "type": "end",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:30"
+        },
+        "meaning": "Keine Prüfung"
+      },
+      {
+        "id": "pa",
+        "type": "action",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:34"
+        },
+        "meaning": "Auftragswert aus nicht abgelehnten, nicht gelöschten Positionen summieren"
+      },
+      {
+        "id": "pf",
+        "type": "call",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:39"
+        },
+        "meaning": "Kreditentscheidung für Kunde und Auftragswert holen"
+      },
+      {
+        "id": "pcs",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:49"
+        },
+        "meaning": "Entscheidung OK, Sperre oder Ablehnung?"
+      },
+      {
+        "id": "pz",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:52"
+        },
+        "meaning": "Trägt der Auftrag noch die Kreditsperre?"
+      },
+      {
+        "id": "psm",
+        "type": "output",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:57"
+        },
+        "meaning": "Hinweis mit freiem Limit"
+      },
+      {
+        "id": "pam",
+        "type": "output",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:59"
+        },
+        "meaning": "Fehler: Sichern wird verhindert"
+      },
+      {
+        "id": "pame",
+        "type": "end",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:59"
+        },
+        "meaning": "Sichern verhindert (Fehlerdialog)"
+      },
+      {
+        "id": "pex",
+        "type": "action",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:63"
+        },
+        "meaning": "Entscheidung für das Protokoll im Speicher ablegen"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:64"
+        },
+        "meaning": "Weiter mit dem Sichern"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:69"
+        },
+        "meaning": "Beim Sichern des Auftrags"
+      },
+      {
+        "id": "si",
+        "type": "action",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:72"
+        },
+        "meaning": "Entscheidung aus dem Speicher holen"
+      },
+      {
+        "id": "sg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:73"
+        },
+        "meaning": "Keine Entscheidung vorhanden?"
+      },
+      {
+        "id": "sre",
+        "type": "end",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:74"
+        },
+        "meaning": "Kein Protokoll"
+      },
+      {
+        "id": "su",
+        "type": "update_task",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:80"
+        },
+        "meaning": "Entscheidung mit Belegnummer und Benutzer zur Verbuchung vormerken"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:84"
+        },
+        "meaning": "Exit fertig"
+      },
+      {
+        "id": "m",
+        "type": "start",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:92"
+        },
+        "meaning": "Kopffelder übernehmen"
+      },
+      {
+        "id": "mg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:93"
+        },
+        "meaning": "Kreditsegment am Auftrag noch leer?"
+      },
+      {
+        "id": "mr",
+        "type": "read",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:94"
+        },
+        "meaning": "Kreditsegment der Verkaufsorganisation in den Auftragskopf übernehmen"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "anchor": {
+          "file": "mv45afzz_zcredit.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_zcredit.abap:97"
+        },
+        "meaning": "Übernahme fertig"
+      },
+      {
+        "id": "f",
+        "type": "start",
+        "anchor": {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:1"
+        },
+        "meaning": "Kreditentscheidung"
+      },
+      {
+        "id": "ft",
+        "type": "read",
+        "anchor": {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:40"
+        },
+        "meaning": "Zentralen Schalter der FSCM-Prüfung lesen"
+      },
+      {
+        "id": "fg",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:43"
+        },
+        "meaning": "Prüfung abgeschaltet?"
+      },
+      {
+        "id": "fre",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:46"
+        },
+        "meaning": "Entscheidung OK, Quelle AUS"
+      },
+      {
+        "id": "fs",
+        "type": "read",
+        "anchor": {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:50"
+        },
+        "meaning": "Kreditsegment, RFC-Ziel und Ersatzregel der Verkaufsorganisation lesen"
+      },
+      {
+        "id": "fsg",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:52"
+        },
+        "meaning": "Keine Zuordnung?"
+      },
+      {
+        "id": "fsm",
+        "type": "output",
+        "anchor": {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:53"
+        },
+        "meaning": "Fehler „kein Kreditsegment“ mit Ausnahme NO_SEGMENT"
+      },
+      {
+        "id": "fsme",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:53"
+        },
+        "meaning": "Prüfung mit Ausnahme NO_SEGMENT beendet"
+      },
+      {
+        "id": "frfc",
+        "type": "rfc",
+        "anchor": {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:58"
+        },
+        "meaning": "Entscheidung und freies Limit im FSCM-System erfragen"
+      },
+      {
+        "id": "frg",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:72"
+        },
+        "meaning": "FSCM-System hat geantwortet?"
+      },
+      {
+        "id": "frr",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:74"
+        },
+        "meaning": "Entscheidung des FSCM-Systems übernehmen"
+      },
+      {
+        "id": "fcg",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:81"
+        },
+        "meaning": "Keine Ersatzregel gepflegt?"
+      },
+      {
+        "id": "fdy",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:87"
+        },
+        "meaning": "Gepflegte Ersatzregel dynamisch aufrufen"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_fscm_credit_check.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_fscm_credit_check.abap:101"
+        },
+        "meaning": "Entscheidung zurückgeben"
+      },
+      {
+        "id": "g",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:41"
+        },
+        "meaning": "Freies Limit ermitteln"
+      },
+      {
+        "id": "gr",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:42"
+        },
+        "meaning": "Kreditlimit des Partners im Segment lesen"
+      },
+      {
+        "id": "gg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:45"
+        },
+        "meaning": "Kein Limit?"
+      },
+      {
+        "id": "gre",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:47"
+        },
+        "meaning": "Freies Limit null"
+      },
+      {
+        "id": "gx",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:50"
+        },
+        "meaning": "Repliziertes Obligo mit Stand lesen"
+      },
+      {
+        "id": "gc",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:54"
+        },
+        "meaning": "Freies Limit = Limit minus Obligo"
+      },
+      {
+        "id": "go",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:56"
+        },
+        "meaning": "Replikat älter als ein Tag?"
+      },
+      {
+        "id": "gh",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:57"
+        },
+        "meaning": "Nur halbes freies Limit ansetzen"
+      },
+      {
+        "id": "ge",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:59"
+        },
+        "meaning": "Freies Limit zurückgeben"
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:61"
+        },
+        "meaning": "Standardregel"
+      },
+      {
+        "id": "rsc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:62"
+        },
+        "meaning": "Freies Limit ermitteln"
+      },
+      {
+        "id": "rsa",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:65"
+        },
+        "meaning": "Bis freies Limit OK, bis 110 % Sperre, darüber Ablehnung"
+      },
+      {
+        "id": "rse",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:68"
+        },
+        "meaning": "Entscheidung zurückgeben"
+      },
+      {
+        "id": "rt",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:70"
+        },
+        "meaning": "Strenge Regel"
+      },
+      {
+        "id": "rtc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:71"
+        },
+        "meaning": "Freies Limit ermitteln"
+      },
+      {
+        "id": "rta",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:73"
+        },
+        "meaning": "Bis freies Limit OK, sonst Sperre"
+      },
+      {
+        "id": "rte",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:75"
+        },
+        "meaning": "Entscheidung zurückgeben"
+      },
+      {
+        "id": "rx",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:77"
+        },
+        "meaning": "Exportregel"
+      },
+      {
+        "id": "rxr",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:79"
+        },
+        "meaning": "Gültiges Akkreditiv des Kunden suchen"
+      },
+      {
+        "id": "rxg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:82"
+        },
+        "meaning": "Akkreditiv vorhanden?"
+      },
+      {
+        "id": "rxre",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:84"
+        },
+        "meaning": "Entscheidung OK"
+      },
+      {
+        "id": "rxc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:86"
+        },
+        "meaning": "Sonst nach strenger Regel entscheiden"
+      },
+      {
+        "id": "rxe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_credit_rules.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_credit_rules.abap:89"
+        },
+        "meaning": "Entscheidung zurückgeben"
+      },
+      {
+        "id": "l",
+        "type": "start",
+        "anchor": {
+          "file": "z_sd_credit_log_write.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_credit_log_write.abap:1"
+        },
+        "meaning": "Verbuchung des Protokolls"
+      },
+      {
+        "id": "li",
+        "type": "write",
+        "anchor": {
+          "file": "z_sd_credit_log_write.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_credit_log_write.abap:19"
+        },
+        "meaning": "Entscheidung mit Datum, Zeit und Benutzer protokollieren"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_credit_log_write.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_credit_log_write.abap:20"
+        },
+        "meaning": "Protokoll geschrieben"
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:27"
+        },
+        "meaning": "Stündliche Nachprüfung"
+      },
+      {
+        "id": "mq",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:29"
+        },
+        "meaning": "Aufträge mit Liefersperre Z1 der letzten Tage lesen"
+      },
+      {
+        "id": "mqg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:35"
+        },
+        "meaning": "Keine gesperrten Aufträge?"
+      },
+      {
+        "id": "mqm",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:36"
+        },
+        "meaning": "Hinweis „keine gesperrten Aufträge“"
+      },
+      {
+        "id": "mqr",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:37"
+        },
+        "meaning": "Nachprüfung beenden"
+      },
+      {
+        "id": "ml",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:40"
+        },
+        "meaning": "Gesperrte Aufträge einzeln"
+      },
+      {
+        "id": "mf",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:41"
+        },
+        "meaning": "Kreditentscheidung für den Nettowert des Auftrags holen"
+      },
+      {
+        "id": "mgc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:53"
+        },
+        "meaning": "Weiterhin nicht freigegeben?"
+      },
+      {
+        "id": "mo1",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:54"
+        },
+        "meaning": "Auftrag als weiter gesperrt listen"
+      },
+      {
+        "id": "mt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:58"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "mo2",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:59"
+        },
+        "meaning": "Auftrag als „würde freigegeben“ listen"
+      },
+      {
+        "id": "mb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:67"
+        },
+        "meaning": "Liefersperre im Auftragskopf entfernen"
+      },
+      {
+        "id": "mbg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:74"
+        },
+        "meaning": "Änderung mit Fehler?"
+      },
+      {
+        "id": "mrb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:75"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "mo3",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:76"
+        },
+        "meaning": "Fehlgeschlagene Freigabe listen"
+      },
+      {
+        "id": "mcm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:79"
+        },
+        "meaning": "Freigabe festschreiben"
+      },
+      {
+        "id": "mo4",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:82"
+        },
+        "meaning": "Freigegebenen Auftrag mit Entscheidungsquelle listen"
+      },
+      {
+        "id": "me2",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:85"
+        },
+        "meaning": "Alle Aufträge geprüft"
+      },
+      {
+        "id": "mes",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:87"
+        },
+        "meaning": "Zusammenfassung"
+      },
+      {
+        "id": "meo",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:90"
+        },
+        "meaning": "Anzahl freigegeben, weiter gesperrt und Fehler ausgeben"
+      },
+      {
+        "id": "mee",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_credit_monitor.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_credit_monitor.abap:90"
+        },
+        "meaning": "Job fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "p",
+        "to": "pc1",
+        "condition": "always"
+      },
+      {
+        "from": "pc1",
+        "to": "pc2",
+        "condition": "t180-trtyp <> 'A'"
+      },
+      {
+        "from": "pc1",
+        "to": "pe",
+        "condition": "else"
+      },
+      {
+        "from": "pc2",
+        "to": "pr",
+        "condition": "vbak-vbtyp = 'C'"
+      },
+      {
+        "from": "pc2",
+        "to": "pe",
+        "condition": "else"
+      },
+      {
+        "from": "pr",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pre",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pg",
+        "to": "pa",
+        "condition": "else"
+      },
+      {
+        "from": "pa",
+        "to": "pf",
+        "condition": "always"
+      },
+      {
+        "from": "pf",
+        "to": "f",
+        "condition": "always"
+      },
+      {
+        "from": "pcs",
+        "to": "pz",
+        "condition": "WHEN 'OK'"
+      },
+      {
+        "from": "pz",
+        "to": "pex",
+        "condition": "else"
+      },
+      {
+        "from": "psm",
+        "to": "pex",
+        "condition": "always"
+      },
+      {
+        "from": "pcs",
+        "to": "pam",
+        "condition": "WHEN 'ABLEHNEN'"
+      },
+      {
+        "from": "pcs",
+        "to": "pex",
+        "condition": "else"
+      },
+      {
+        "from": "pex",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "s",
+        "to": "si",
+        "condition": "always"
+      },
+      {
+        "from": "si",
+        "to": "sg",
+        "condition": "always"
+      },
+      {
+        "from": "sg",
+        "to": "sre",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sg",
+        "to": "su",
+        "condition": "else"
+      },
+      {
+        "from": "su",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "m",
+        "to": "mg",
+        "condition": "always"
+      },
+      {
+        "from": "mg",
+        "to": "mr",
+        "condition": "vbak-zzcr_segm IS INITIAL"
+      },
+      {
+        "from": "mg",
+        "to": "me",
+        "condition": "else"
+      },
+      {
+        "from": "mr",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "f",
+        "to": "ft",
+        "condition": "always"
+      },
+      {
+        "from": "ft",
+        "to": "fg",
+        "condition": "always"
+      },
+      {
+        "from": "fg",
+        "to": "fre",
+        "condition": "lv_aktiv <> 'X'"
+      },
+      {
+        "from": "fg",
+        "to": "fs",
+        "condition": "else"
+      },
+      {
+        "from": "fs",
+        "to": "fsg",
+        "condition": "always"
+      },
+      {
+        "from": "fsg",
+        "to": "fsm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "fsg",
+        "to": "frfc",
+        "condition": "else"
+      },
+      {
+        "from": "frfc",
+        "to": "frg",
+        "condition": "always"
+      },
+      {
+        "from": "frg",
+        "to": "frr",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "frg",
+        "to": "fcg",
+        "condition": "else"
+      },
+      {
+        "from": "fcg",
+        "to": "fdy",
+        "condition": "else"
+      },
+      {
+        "from": "fdy",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "gg",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "gre",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gg",
+        "to": "gx",
+        "condition": "else"
+      },
+      {
+        "from": "gx",
+        "to": "gc",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "go",
+        "condition": "always"
+      },
+      {
+        "from": "go",
+        "to": "gh",
+        "condition": "ls_exp-stand < sy-datum - 1"
+      },
+      {
+        "from": "go",
+        "to": "ge",
+        "condition": "else"
+      },
+      {
+        "from": "gh",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "rsc",
+        "condition": "always"
+      },
+      {
+        "from": "rsc",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "rsa",
+        "to": "rse",
+        "condition": "always"
+      },
+      {
+        "from": "rt",
+        "to": "rtc",
+        "condition": "always"
+      },
+      {
+        "from": "rtc",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "rta",
+        "to": "rte",
+        "condition": "always"
+      },
+      {
+        "from": "rx",
+        "to": "rxr",
+        "condition": "always"
+      },
+      {
+        "from": "rxr",
+        "to": "rxg",
+        "condition": "always"
+      },
+      {
+        "from": "rxg",
+        "to": "rxc",
+        "condition": "else"
+      },
+      {
+        "from": "rxc",
+        "to": "rt",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "li",
+        "condition": "always"
+      },
+      {
+        "from": "li",
+        "to": "le",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "mq",
+        "condition": "always"
+      },
+      {
+        "from": "mq",
+        "to": "mqg",
+        "condition": "always"
+      },
+      {
+        "from": "mqg",
+        "to": "mqm",
+        "condition": "lt_auf IS INITIAL"
+      },
+      {
+        "from": "mqm",
+        "to": "mqr",
+        "condition": "always"
+      },
+      {
+        "from": "mqr",
+        "to": "mes",
+        "condition": "always"
+      },
+      {
+        "from": "mqg",
+        "to": "ml",
+        "condition": "else"
+      },
+      {
+        "from": "ml",
+        "to": "mf",
+        "condition": "next row"
+      },
+      {
+        "from": "mf",
+        "to": "f",
+        "condition": "always"
+      },
+      {
+        "from": "mgc",
+        "to": "mo1",
+        "condition": "sy-subrc <> 0 OR gs_res-entscheid <> 'OK'"
+      },
+      {
+        "from": "mo1",
+        "to": "ml",
+        "condition": "next iteration"
+      },
+      {
+        "from": "mgc",
+        "to": "mt",
+        "condition": "else"
+      },
+      {
+        "from": "mt",
+        "to": "mo2",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "mo2",
+        "to": "ml",
+        "condition": "next iteration"
+      },
+      {
+        "from": "mt",
+        "to": "mb",
+        "condition": "else"
+      },
+      {
+        "from": "mb",
+        "to": "mbg",
+        "condition": "always"
+      },
+      {
+        "from": "mbg",
+        "to": "mrb",
+        "condition": "line_exists( gt_ret[ type = 'E' ] )"
+      },
+      {
+        "from": "mrb",
+        "to": "mo3",
+        "condition": "always"
+      },
+      {
+        "from": "mo3",
+        "to": "ml",
+        "condition": "next iteration"
+      },
+      {
+        "from": "mbg",
+        "to": "mcm",
+        "condition": "else"
+      },
+      {
+        "from": "mcm",
+        "to": "mo4",
+        "condition": "always"
+      },
+      {
+        "from": "mo4",
+        "to": "ml",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ml",
+        "to": "me2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "me2",
+        "to": "mes",
+        "condition": "always"
+      },
+      {
+        "from": "mes",
+        "to": "meo",
+        "condition": "always"
+      },
+      {
+        "from": "meo",
+        "to": "mee",
+        "condition": "always"
+      },
+      {
+        "from": "pam",
+        "to": "pame",
+        "condition": "always"
+      },
+      {
+        "from": "fsm",
+        "to": "fsme",
+        "condition": "always"
+      },
+      {
+        "from": "fre",
+        "to": "pcs",
+        "condition": "always"
+      },
+      {
+        "from": "frr",
+        "to": "pcs",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "pcs",
+        "condition": "always"
+      },
+      {
+        "from": "fre",
+        "to": "mgc",
+        "condition": "always"
+      },
+      {
+        "from": "frr",
+        "to": "mgc",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "mgc",
+        "condition": "always"
+      },
+      {
+        "from": "fsme",
+        "to": "mgc",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "rsa",
+        "condition": "always"
+      },
+      {
+        "from": "gre",
+        "to": "rsa",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "rta",
+        "condition": "always"
+      },
+      {
+        "from": "gre",
+        "to": "rta",
+        "condition": "always"
+      },
+      {
+        "from": "rte",
+        "to": "rxe",
+        "condition": "always"
+      },
+      {
+        "from": "pz",
+        "to": "pex",
+        "condition": "vbak-lifsk = 'Z1'"
+      },
+      {
+        "from": "pcs",
+        "to": "psm",
+        "condition": "WHEN 'SPERRE'"
+      },
+      {
+        "from": "fcg",
+        "to": "fdy",
+        "condition": "lv_class IS INITIAL OR lv_meth IS INITIAL"
+      },
+      {
+        "from": "fdy",
+        "to": "fe",
+        "condition": "CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn)"
+      },
+      {
+        "from": "rxg",
+        "to": "rxre",
+        "condition": "sy-subrc = 0"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "z_sd_fscm_credit_check.abap:87 — kein Fachsatz „bei RFC-Ausfall gilt immer die Standardregel“: welche Regel läuft, steht im Customizing der Verkaufsorganisation und ist dynamisch",
+    "zcl_credit_rules.abap:50 — kein Fachsatz „ohne repliziertes Obligo wird das volle Limit angesetzt“: ohne Replikat ist der Stand leer und gilt als veraltet, es zählt nur das halbe Limit",
+    "zsd_credit_monitor.abap:29 — kein Fachsatz „der Job prüft denselben Wert wie beim Sichern“: geprüft wird der Nettowert des Auftragskopfs, nicht die Summe der nicht abgelehnten Positionen",
+    "mv45afzz_zcredit.abap:59 — kein Fachsatz „ein abgelehnter Auftrag wird mit Sperre gesichert“: die Fehlermeldung verhindert das Sichern"
+  ],
+  "processDescription": "Beim Sichern eines Kundenauftrags prüft der Exit, ob der Beleg ein Auftrag ist, nicht angezeigt wird und seine Auftragsart in der Verkaufsorganisation kreditrelevant ist. Dann summiert er den Nettowert der nicht abgelehnten, nicht gelöschten Positionen und holt eine Kreditentscheidung. Ist die Prüfung zentral abgeschaltet, lautet sie „OK“. Sonst liest der Prüfbaustein Kreditsegment, RFC-Ziel und Ersatzregel der Verkaufsorganisation (fehlen sie, endet die Prüfung mit Fehlermeldung) und fragt das zentrale FSCM-Kreditmanagement. Ist es nicht erreichbar, entscheidet eine im Customizing gepflegte, dynamisch aufgerufene Ersatzregel auf replizierten Daten; lässt sie sich nicht aufrufen, wird gesperrt. Die Regeln rechnen mit Limit minus repliziertem Obligo, bei veraltetem Replikat nur mit der Hälfte: Standard gibt bis zum freien Limit frei, sperrt bis 110 % und lehnt darüber ab; die strenge Regel sperrt über dem Limit; die Exportregel gibt bei gültigem Akkreditiv frei. Bei „OK“ löst der Exit eine vorhandene Liefersperre Z1, bei „Sperre“ setzt er sie und zeigt das freie Limit, bei „Ablehnen“ verhindert er das Sichern. Die Entscheidung wird beim Sichern mit Belegnummer protokolliert. Ein stündlicher Job prüft gesperrte Aufträge der letzten Tage mit ihrem Kopf-Nettowert erneut und entfernt bei „OK“ die Liefersperre, im Testlauf listet er nur; am Ende meldet er die Anzahlen."
+}

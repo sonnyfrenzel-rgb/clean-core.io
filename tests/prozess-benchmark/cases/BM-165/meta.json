@@ -1,0 +1,28 @@
+{
+  "id": "BM-165",
+  "title": "Außenhandel: Sanktionslistenprüfung des Warenempfängers beim Sichern des Kundenauftrags",
+  "domain": "Außenhandel / GTS – Compliance",
+  "band": "einfach",
+  "loc": 25,
+  "constructs": [
+    "User-Exit FORM USEREXIT_SAVE_DOCUMENT_PREPARE",
+    "SELECT SINGLE TVARVC",
+    "CHECK",
+    "READ TABLE mit Kopfzeile (XVBPA)",
+    "SELECT COUNT(*)",
+    "MESSAGE TYPE E"
+  ],
+  "scenario": "Exportkontroll-Projekt eines Maschinenbauers vor Einführung von SAP GTS: der Auftragsexit blockiert das Sichern, wenn Land oder Name des Warenempfängers auf der eigenen Sanktionsliste stehen.",
+  "s4_issues": [
+    "Modifikation im User-Exit MV45AFZZ statt Compliance-Prüfung in SAP GTS / Global Trade Services",
+    "Tabellen mit Kopfzeile (XVBPA) im Exit",
+    "Eigene Sanktionsliste statt Sanctioned Party List Screening"
+  ],
+  "wave": 2,
+  "module": "SD-FT / GTS",
+  "edge_constructs": [
+    "Schalter über TVARVC",
+    "MESSAGE … TYPE E als Pfadende (Sichern wird verhindert)",
+    "auskommentierte Prüfung nach READ TABLE"
+  ]
+}

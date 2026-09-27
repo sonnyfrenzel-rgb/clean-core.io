@@ -1,0 +1,158 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_ini (neu)",
+      "before": "kein end-Knoten auf zisu_abrvorb.abap:25",
+      "after": "e_ini end auf zisu_abrvorb.abap:25; ig -> e_ini [always] statt -> a1; e_ini -> a1 [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten a1o (neu) vor a1m",
+      "before": "a1m end auf zisu_abrvorb.abap:31 ohne output",
+      "after": "a1o output auf zisu_abrvorb.abap:31, Kante a1o -> a1m [always]; eingehende Kanten auf a1o umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_a1 (neu)",
+      "before": "kein end-Knoten auf zisu_abrvorb.abap:32",
+      "after": "e_a1 end auf zisu_abrvorb.abap:32; a1g -> e_a1 [else] statt -> a2; e_a1 -> a2 [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten a2o (neu) vor a2m",
+      "before": "a2m end auf zisu_abrvorb.abap:36 ohne output",
+      "after": "a2o output auf zisu_abrvorb.abap:36, Kante a2o -> a2m [always]; eingehende Kanten auf a2o umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_a2 (neu)",
+      "before": "kein end-Knoten auf zisu_abrvorb.abap:37",
+      "after": "e_a2 end auf zisu_abrvorb.abap:37; a2g -> e_a2 [else] statt -> s; e_a2 -> s [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_sos (neu)",
+      "before": "kein end-Knoten auf zisu_abrvorb.abap:53; ca -> eos [always], mx -> eos [always]",
+      "after": "e_sos end auf zisu_abrvorb.abap:53 (gt_prot = lo_prot->mt_prot, letzte Anweisung); mx -> e_sos, e_sos -> eos [always]; Direktkante ca -> eos entfällt",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Rückkante e_aus -> e_sos (neu)",
+      "before": "(keine; ca -> eos direkt)",
+      "after": "e_aus -> e_sos [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante ca -> mx",
+      "before": "ca -> mx [CATCH lcx_abbruch INTO DATA(lx_abbruch)]",
+      "after": "xs -> mx [lcx_abbruch] (RAISE in selektieren, über ausfuehren ohne eigenes TRY hinweg)",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION im gerufenen Block ist ein end-Knoten; von dort führt die Kante in den CATCH-Zweig des Aufrufers (Bedingung: der Ausnahmename); keine Kante vom Aufruf selbst in den Handler.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante cap -> ev2",
+      "before": "cap -> ev2 [CATCH lcx_abbruch INTO DATA(lx_anl)]",
+      "after": "xs2 -> ev2 [lcx_abbruch] (RAISE in schaetzen, über anlage_pruefen ohne eigenes TRY hinweg)",
+      "why": "Vereinheitlichte Konvention: RAISE EXCEPTION im gerufenen Block ist ein end-Knoten; von dort führt die Kante in den CATCH-Zweig des Aufrufers (Bedingung: der Ausnahmename); keine Kante vom Aufruf selbst in den Handler.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_eos (neu)",
+      "before": "kein end-Knoten für END-OF-SELECTION",
+      "after": "e_eos end auf zisu_abrvorb.abap:56 (PERFORM protokoll_anzeigen, letzte Anweisung)",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Rückkanten protokoll_anzeigen",
+      "before": "(keine; fr1, fr2, fe ohne Rückkehr)",
+      "after": "fr1 -> e_eos, fr2 -> e_eos, fe -> e_eos [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf csel",
+      "before": "csel -> l [always]",
+      "after": "e_sel -> l [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cap",
+      "before": "cap -> deq [always]",
+      "after": "r1 -> deq [always]; r2 -> deq [always]; r3 -> deq [always]; e_ap -> deq [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf csp1",
+      "before": "csp1 -> r3 [always]",
+      "after": "e_sp -> r3 [always]; r5 -> r3 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf csc",
+      "before": "csc -> e_ap [always]",
+      "after": "e_sc -> e_ap [always]; r4 -> e_ap [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf csp2",
+      "before": "csp2 -> e_sc [always]",
+      "after": "e_sp -> e_sc [always]; r5 -> e_sc [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cps1",
+      "before": "cps1 -> l [next iteration]",
+      "after": "r6 -> l [next iteration]; e_ps -> l [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf cps2",
+      "before": "cps2 -> e_aus [always]",
+      "after": "r6 -> e_aus [always]; e_ps -> e_aus [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten cav (neu)",
+      "before": "g2 gateway auf zisu_abrvorb_cls.abap:164 mit Kante g2 -> m_av [always] (Aufruf aus der Bedingung, ohne Rückkehr)",
+      "after": "cav call auf :164; g1 -> cav [else], cav -> m_av [always], e_av -> g2 [always]; Kante g2 -> m_av entfällt",
+      "why": "Der Aufruf ablesung_vorhanden( ) in der IF-Bedingung läuft vor der Auswertung; Aufruf → Start, Rückkante vom end zum Gateway (vereinheitlichte Konvention). Die bisherige Kante vom Gateway in den Block hatte keinen Rückweg.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten RAISE EVENT meldung (ev1, ev2, evs, ev4–ev10)",
+      "before": "Direktkanten vom RAISE EVENT zum nächsten Schritt; Handler on_meldung (m_om) ohne eingehende Kante",
+      "after": "ev1 -> l [next iteration] ⇒ ev1 -> m_om, om_e -> l [next iteration]; ev2 -> deq [always] ⇒ ev2 -> m_om, om_e -> deq [always]; evs -> e_sel [always] ⇒ evs -> m_om, om_e -> e_sel [always]; ev4 -> r1 [always] ⇒ ev4 -> m_om, om_e -> r1 [always]; ev5 -> r3 [always] ⇒ ev5 -> m_om, om_e -> r3 [always]; ev6 -> r4 [always] ⇒ ev6 -> m_om, om_e -> r4 [always]; ev7 -> e_sc [always] ⇒ ev7 -> m_om, om_e -> e_sc [always]; ev8 -> r5 [always] ⇒ ev8 -> m_om, om_e -> r5 [always]; ev9 -> e_sp [always] ⇒ ev9 -> m_om, om_e -> e_sp [always]; ev10 -> e_ps [always] ⇒ ev10 -> m_om, om_e -> e_ps [always]",
+      "why": "RAISE EVENT ruft den per SET HANDLER registrierten Handler synchron wie einen Aufruf (so BM-155): Kante zum Start des Handlers, Rückkante von dessen end zum nächsten Schritt, keine Direktkante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fo1 (neu)",
+      "before": "keine Knoten auf zisu_abrvorb_f01.abap:15",
+      "after": "fo1 output auf zisu_abrvorb_f01.abap:15; fg1 -> fo1 [gt_prot IS INITIAL]; fo1 -> fr1 [always]",
+      "why": "Die Ausgabe (WRITE, f01:15) trägt diesen Pfad und steht in Fachsatz B19; sie fehlte als output-Knoten.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": [
+    "CLEANUP-Block (cls:113–116) geprüft und ohne Knoten belassen: lcx_abbruch wird im selben TRY gefangen, CLEANUP liefe nur bei einer Ausnahme, die den Block verlässt – hier nur bei einem nicht deklarierten Laufzeitfehler, der den Lauf ohnehin beendet (Sperren fallen dann mit dem Programmende). Fachlich keine Wirkung; der verbotene Schluss zu :114 deckt den Punkt ab.",
+    "CATCH cx_salv_msg in protokoll_anzeigen (f01:31/32, Meldung bei fehlgeschlagenem ALV-Aufbau) nicht im Skelett; technischer Anzeigefehler, belassen.",
+    "mv_zaehler MOD p_paket (cls:124): p_paket = 0 führt zu Division durch null; nicht Thema des Falls, nicht ergänzt."
+  ]
+}

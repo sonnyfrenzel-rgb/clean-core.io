@@ -1,0 +1,2329 @@
+{
+  "id": "BM-120",
+  "title": "Freischaltung (WCM) im Modulpool: Auftrag sperren, Schritte setzen und im Vier-Augen-Prinzip prüfen, zurücknehmen, verbuchen, Status „freigeschaltet“",
+  "classes": [
+    "K07",
+    "K12",
+    "K11",
+    "K01",
+    "K15"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "DEQUEUE_EZPM_FREISCH",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpm_freischalt_i01.abap",
+        "line": 14,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_freischalt_i01.abap:14"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpm_freischalt_i01.abap",
+        "line": 73,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_freischalt_i01.abap:73"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AUFK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpm_freischalt_f01.abap",
+        "line": 13,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_freischalt_f01.abap:13"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFIH",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpm_freischalt_f01.abap",
+        "line": 13,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_freischalt_f01.abap:13"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ILOA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpm_freischalt_f01.abap",
+        "line": 13,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_freischalt_f01.abap:13"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "STATUS_CHECK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpm_freischalt_f01.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_freischalt_f01.abap:25"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZPM_FREISCH",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpm_freischalt_f01.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_freischalt_f01.abap:45"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPM_FREISCH",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpm_freischalt_f01.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_freischalt_f01.abap:64"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpm_freischalt_f01.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_freischalt_f01.abap:64"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpm_freischalt_f01.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_freischalt_f01.abap:64"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_PM_FREISCH_VERBUCHEN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpm_freischalt_f01.abap",
+        "line": 158,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_freischalt_f01.abap:158"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "STATUS_CHANGE_EXTERN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpm_freischalt_f01.abap",
+        "line": 167,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpm_freischalt_f01.abap:167"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPM_FREISCH",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_pm_freisch_verbuchen.abap",
+        "line": 17,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_pm_freisch_verbuchen.abap:17"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPM_FREISCH_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_pm_freisch_verbuchen.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_pm_freisch_verbuchen.abap:19"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-120-B01",
+      "text": "Abbrechen oder Beenden hebt die Sperre auf den Auftrag auf und verlässt die Transaktion ohne Rückfrage; ungesicherte Änderungen verfallen.",
+      "anchors": [
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:12"
+        },
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:14"
+        },
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-120-B02",
+      "text": "Mit „Weiter“ wird der eingegebene Auftrag geprüft; ist er kein Instandhaltungsauftrag, wird er mit Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:28"
+        },
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:31"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:13"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:21"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-120-B03",
+      "text": "Ist der Auftrag nicht freigegeben, wird er mit Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:25"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:32"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-120-B04",
+      "text": "Es wird vermerkt, ob der Auftrag technisch abgeschlossen ist.",
+      "anchors": [
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:36"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-120-B05",
+      "text": "Der Auftrag wird für die Freischaltung gesperrt; bearbeitet ihn schon jemand, wird mit Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:45"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:52"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-120-B06",
+      "text": "Die Freischaltschritte aller Vorgänge des Auftrags werden in Vorgangs- und Schrittfolge gelesen; gibt es keine, wird die Sperre aufgehoben und mit Fehlermeldung abgewiesen.",
+      "anchors": [
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:32"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:64"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:73"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:74"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-120-B07",
+      "text": "Danach wird die Auftragsnummer im Benutzerkontext vorgemerkt und die Schrittliste angezeigt.",
+      "anchors": [
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:33"
+        },
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-120-B08",
+      "text": "„Setzen“ vermerkt markierte offene oder zurückgenommene Schritte als gesetzt mit Benutzer und Zeitpunkt; andere markierte Schritte bleiben mit Hinweis unverändert.",
+      "anchors": [
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:60"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:88"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:89"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:90"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-120-B09",
+      "text": "„Prüfen“ macht markierte gesetzte Schritte wirksam (AKT) mit Prüfer und Zeitpunkt; nicht gesetzte markierte Schritte werden übergangen.",
+      "anchors": [
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:63"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:108"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:109"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:113"
+        }
+      ]
+    },
+    {
+      "id": "BM-120-B10",
+      "text": "Hat der Prüfer den Schritt selbst gesetzt, wird die Prüfung mit Fehlermeldung abgebrochen, außer der Benutzer ist WCM_ADMIN.",
+      "anchors": [
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:110"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:111"
+        }
+      ]
+    },
+    {
+      "id": "BM-120-B11",
+      "text": "„Zurücknehmen“ ist nur bei technisch abgeschlossenem Auftrag erlaubt und setzt markierte wirksame Schritte mit Benutzer auf zurückgenommen.",
+      "anchors": [
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:66"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:129"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:130"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:132"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:134"
+        }
+      ]
+    },
+    {
+      "id": "BM-120-B12",
+      "text": "„Sichern“ ohne Änderungen meldet nur, dass nichts zu sichern ist.",
+      "anchors": [
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:69"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:152"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:153"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:154"
+        }
+      ]
+    },
+    {
+      "id": "BM-120-B13",
+      "text": "Sonst werden alle Schritte des Auftrags zur Verbuchung vorgemerkt.",
+      "anchors": [
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:158"
+        }
+      ]
+    },
+    {
+      "id": "BM-120-B14",
+      "text": "Ist kein Schritt mehr offen oder nur gesetzt, erhält der Auftrag den Anwenderstatus E0010 „freigeschaltet“.",
+      "anchors": [
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:165"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:167"
+        }
+      ]
+    },
+    {
+      "id": "BM-120-B15",
+      "text": "Alles wird synchron festgeschrieben und die Sicherung bestätigt.",
+      "anchors": [
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:175"
+        },
+        {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:177"
+        }
+      ]
+    },
+    {
+      "id": "BM-120-B16",
+      "text": "Die Verbuchung schreibt die Schritte und protokolliert je Schritt den Status mit Benutzer, Datum und Uhrzeit.",
+      "anchors": [
+        {
+          "file": "z_pm_freisch_verbuchen.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_freisch_verbuchen.abap:17"
+        },
+        {
+          "file": "z_pm_freisch_verbuchen.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_freisch_verbuchen.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-120-B17",
+      "text": "„Zurück“ fragt bei ungesicherten Änderungen, ob gesichert werden soll: Ja sichert, Abbrechen bleibt auf der Liste, Nein verwirft; danach wird die Sperre aufgehoben und zum Einstieg zurückgekehrt.",
+      "anchors": [
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:72"
+        },
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:73"
+        },
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:81"
+        },
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:82"
+        },
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:83"
+        },
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:84"
+        },
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:87"
+        },
+        {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:91"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s_ex",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:11"
+        },
+        "meaning": "Abbrechen/Beenden"
+      },
+      {
+        "id": "cs_ex",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:12"
+        },
+        "meaning": "Abbruchfunktion?"
+      },
+      {
+        "id": "dq_ex",
+        "type": "lock",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:14"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "x_ex",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:17"
+        },
+        "meaning": "Transaktion verlassen"
+      },
+      {
+        "id": "e_ex",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:19"
+        },
+        "meaning": "Weiter mit normaler Verarbeitung"
+      },
+      {
+        "id": "s_1",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:27"
+        },
+        "meaning": "Aktion am Einstiegsbild"
+      },
+      {
+        "id": "cs_1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:28"
+        },
+        "meaning": "Welche Funktion?"
+      },
+      {
+        "id": "c_al",
+        "type": "call",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:31"
+        },
+        "meaning": "Auftrag prüfen und sperren"
+      },
+      {
+        "id": "c_sl",
+        "type": "call",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:32"
+        },
+        "meaning": "Freischaltschritte lesen"
+      },
+      {
+        "id": "a_set",
+        "type": "action",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:33"
+        },
+        "meaning": "Auftrag im Benutzerkontext merken"
+      },
+      {
+        "id": "x_2",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:34"
+        },
+        "meaning": "Schrittliste anzeigen"
+      },
+      {
+        "id": "x_bk",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:36"
+        },
+        "meaning": "Transaktion verlassen"
+      },
+      {
+        "id": "e_1",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:38"
+        },
+        "meaning": "Einstiegsbild erneut"
+      },
+      {
+        "id": "s_tc",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:43"
+        },
+        "meaning": "Markierung je Zeile übernehmen"
+      },
+      {
+        "id": "e_tc",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:46"
+        },
+        "meaning": "Markierung übernommen"
+      },
+      {
+        "id": "s_2",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:55"
+        },
+        "meaning": "Aktion in der Schrittliste"
+      },
+      {
+        "id": "cs_2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:58"
+        },
+        "meaning": "Welche Funktion?"
+      },
+      {
+        "id": "c_set",
+        "type": "call",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:60"
+        },
+        "meaning": "Schritte setzen"
+      },
+      {
+        "id": "c_pr",
+        "type": "call",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:63"
+        },
+        "meaning": "Schritte prüfen"
+      },
+      {
+        "id": "c_zu",
+        "type": "call",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:66"
+        },
+        "meaning": "Schritte zurücknehmen"
+      },
+      {
+        "id": "c_sv",
+        "type": "call",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:69"
+        },
+        "meaning": "Sichern"
+      },
+      {
+        "id": "g_ch",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:72"
+        },
+        "meaning": "Ungesicherte Änderungen?"
+      },
+      {
+        "id": "c_pop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:73"
+        },
+        "meaning": "Rückfrage: sichern?"
+      },
+      {
+        "id": "g_ans",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:81"
+        },
+        "meaning": "Ja?"
+      },
+      {
+        "id": "c_sv2",
+        "type": "call",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:82"
+        },
+        "meaning": "Vor dem Verlassen sichern"
+      },
+      {
+        "id": "x_ret",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:84"
+        },
+        "meaning": "In der Schrittliste bleiben"
+      },
+      {
+        "id": "dq_2",
+        "type": "lock",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:87"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "x_01",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:91"
+        },
+        "meaning": "Zurück zum Einstieg"
+      },
+      {
+        "id": "e_2",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_i01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_i01.abap:94"
+        },
+        "meaning": "Schrittliste erneut"
+      },
+      {
+        "id": "s_al",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:11"
+        },
+        "meaning": "Auftrag prüfen und sperren"
+      },
+      {
+        "id": "r_a",
+        "type": "read",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:13"
+        },
+        "meaning": "IH-Auftrag mit Kopfdaten lesen"
+      },
+      {
+        "id": "g_a1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:21"
+        },
+        "meaning": "Kein IH-Auftrag?"
+      },
+      {
+        "id": "m_a1",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:22"
+        },
+        "meaning": "Fehler: kein IH-Auftrag"
+      },
+      {
+        "id": "x_a1",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:22"
+        },
+        "meaning": "Einstiegsbild bleibt stehen"
+      },
+      {
+        "id": "c_st1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:25"
+        },
+        "meaning": "Status freigegeben prüfen"
+      },
+      {
+        "id": "g_a2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:32"
+        },
+        "meaning": "Nicht freigegeben?"
+      },
+      {
+        "id": "m_a2",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:33"
+        },
+        "meaning": "Fehler: nicht freigegeben"
+      },
+      {
+        "id": "x_a2",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:33"
+        },
+        "meaning": "Einstiegsbild bleibt stehen"
+      },
+      {
+        "id": "c_st2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:36"
+        },
+        "meaning": "Status technisch abgeschlossen prüfen"
+      },
+      {
+        "id": "a_teco",
+        "type": "action",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:43"
+        },
+        "meaning": "Technischen Abschluss vermerken"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:45"
+        },
+        "meaning": "Auftrag für Freischaltung sperren"
+      },
+      {
+        "id": "g_a3",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:52"
+        },
+        "meaning": "Gesperrt?"
+      },
+      {
+        "id": "m_a3",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:53"
+        },
+        "meaning": "Fehler: wird bearbeitet von"
+      },
+      {
+        "id": "x_a3",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:53"
+        },
+        "meaning": "Einstiegsbild bleibt stehen"
+      },
+      {
+        "id": "e_al",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:55"
+        },
+        "meaning": "Auftrag bereit"
+      },
+      {
+        "id": "s_sl",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:63"
+        },
+        "meaning": "Schritte lesen"
+      },
+      {
+        "id": "r_s",
+        "type": "read",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:64"
+        },
+        "meaning": "Freischaltschritte der Vorgänge lesen"
+      },
+      {
+        "id": "g_s",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:73"
+        },
+        "meaning": "Keine Schritte?"
+      },
+      {
+        "id": "dq_s",
+        "type": "lock",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:74"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "m_s",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:77"
+        },
+        "meaning": "Fehler: keine Schritte"
+      },
+      {
+        "id": "x_s",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:77"
+        },
+        "meaning": "Einstiegsbild bleibt stehen"
+      },
+      {
+        "id": "e_sl",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:79"
+        },
+        "meaning": "Schritte gelesen"
+      },
+      {
+        "id": "s_st",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:87"
+        },
+        "meaning": "Setzen"
+      },
+      {
+        "id": "l_st",
+        "type": "loop",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:88"
+        },
+        "meaning": "Markierte Schritte"
+      },
+      {
+        "id": "g_st",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:89"
+        },
+        "meaning": "Weder offen noch zurückgenommen?"
+      },
+      {
+        "id": "m_st",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:90"
+        },
+        "meaning": "Hinweis: bereits gesetzt"
+      },
+      {
+        "id": "a_st",
+        "type": "action",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:93"
+        },
+        "meaning": "Als gesetzt mit Benutzer und Zeit vermerken"
+      },
+      {
+        "id": "e_st",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:99"
+        },
+        "meaning": "Gesetzt"
+      },
+      {
+        "id": "s_pr",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:107"
+        },
+        "meaning": "Prüfen"
+      },
+      {
+        "id": "l_pr",
+        "type": "loop",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:108"
+        },
+        "meaning": "Markierte Schritte"
+      },
+      {
+        "id": "g_pc",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:109"
+        },
+        "meaning": "Schritt gesetzt?"
+      },
+      {
+        "id": "g_4a",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:110"
+        },
+        "meaning": "Prüfer hat selbst gesetzt (außer WCM_ADMIN)?"
+      },
+      {
+        "id": "m_4a",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:111"
+        },
+        "meaning": "Fehler: Vier-Augen-Prinzip"
+      },
+      {
+        "id": "x_4a",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:111"
+        },
+        "meaning": "Prüfung abgebrochen, Liste bleibt stehen"
+      },
+      {
+        "id": "a_pr",
+        "type": "action",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:113"
+        },
+        "meaning": "Schritt wirksam mit Prüfer und Zeit"
+      },
+      {
+        "id": "e_pr",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:119"
+        },
+        "meaning": "Geprüft"
+      },
+      {
+        "id": "s_zu",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:128"
+        },
+        "meaning": "Zurücknehmen"
+      },
+      {
+        "id": "g_zu",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:129"
+        },
+        "meaning": "Auftrag nicht technisch abgeschlossen?"
+      },
+      {
+        "id": "m_zu",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:130"
+        },
+        "meaning": "Fehler: erst nach techn. Abschluss"
+      },
+      {
+        "id": "x_zu",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:130"
+        },
+        "meaning": "Liste bleibt stehen"
+      },
+      {
+        "id": "l_zu",
+        "type": "loop",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:132"
+        },
+        "meaning": "Markierte wirksame Schritte"
+      },
+      {
+        "id": "a_zu",
+        "type": "action",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:134"
+        },
+        "meaning": "Als zurückgenommen vermerken"
+      },
+      {
+        "id": "e_zu",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:139"
+        },
+        "meaning": "Zurückgenommen"
+      },
+      {
+        "id": "s_sv",
+        "type": "start",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:149"
+        },
+        "meaning": "Sichern"
+      },
+      {
+        "id": "g_sv",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:152"
+        },
+        "meaning": "Keine Änderungen?"
+      },
+      {
+        "id": "m_sv",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:153"
+        },
+        "meaning": "Hinweis: nichts zu sichern"
+      },
+      {
+        "id": "x_sv",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:154"
+        },
+        "meaning": "Ohne Sichern zurück"
+      },
+      {
+        "id": "u_sv",
+        "type": "update_task",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:158"
+        },
+        "meaning": "Schritte zur Verbuchung vormerken"
+      },
+      {
+        "id": "g_all",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:165"
+        },
+        "meaning": "Kein Schritt offen oder nur gesetzt?"
+      },
+      {
+        "id": "c_stat",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:167"
+        },
+        "meaning": "Anwenderstatus E0010 freigeschaltet setzen"
+      },
+      {
+        "id": "tc",
+        "type": "transaction",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:175"
+        },
+        "meaning": "Synchron festschreiben"
+      },
+      {
+        "id": "m_ok",
+        "type": "output",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:177"
+        },
+        "meaning": "Bestätigung"
+      },
+      {
+        "id": "e_sv",
+        "type": "end",
+        "anchor": {
+          "file": "mzpm_freischalt_f01.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpm_freischalt_f01.abap:178"
+        },
+        "meaning": "Gesichert"
+      },
+      {
+        "id": "s_u",
+        "type": "start",
+        "anchor": {
+          "file": "z_pm_freisch_verbuchen.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_freisch_verbuchen.abap:1"
+        },
+        "meaning": "Verbuchung Freischaltung"
+      },
+      {
+        "id": "w1",
+        "type": "write",
+        "anchor": {
+          "file": "z_pm_freisch_verbuchen.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_freisch_verbuchen.abap:17"
+        },
+        "meaning": "Schritte schreiben"
+      },
+      {
+        "id": "w2",
+        "type": "write",
+        "anchor": {
+          "file": "z_pm_freisch_verbuchen.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_freisch_verbuchen.abap:19"
+        },
+        "meaning": "Statusprotokoll je Schritt schreiben"
+      },
+      {
+        "id": "e_u",
+        "type": "end",
+        "anchor": {
+          "file": "z_pm_freisch_verbuchen.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_freisch_verbuchen.abap:29"
+        },
+        "meaning": "Verbucht"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s_ex",
+        "to": "cs_ex",
+        "condition": "always"
+      },
+      {
+        "from": "cs_ex",
+        "to": "dq_ex",
+        "condition": "WHEN 'CANC' OR 'EXIT'"
+      },
+      {
+        "from": "dq_ex",
+        "to": "x_ex",
+        "condition": "always"
+      },
+      {
+        "from": "cs_ex",
+        "to": "e_ex",
+        "condition": "else"
+      },
+      {
+        "from": "s_1",
+        "to": "cs_1",
+        "condition": "always"
+      },
+      {
+        "from": "cs_1",
+        "to": "c_al",
+        "condition": "WHEN 'WEIT'"
+      },
+      {
+        "from": "c_al",
+        "to": "s_al",
+        "condition": "always"
+      },
+      {
+        "from": "c_sl",
+        "to": "s_sl",
+        "condition": "always"
+      },
+      {
+        "from": "a_set",
+        "to": "x_2",
+        "condition": "always"
+      },
+      {
+        "from": "cs_1",
+        "to": "x_bk",
+        "condition": "WHEN 'BACK'"
+      },
+      {
+        "from": "cs_1",
+        "to": "e_1",
+        "condition": "else"
+      },
+      {
+        "from": "s_tc",
+        "to": "e_tc",
+        "condition": "always"
+      },
+      {
+        "from": "s_2",
+        "to": "cs_2",
+        "condition": "always"
+      },
+      {
+        "from": "cs_2",
+        "to": "c_set",
+        "condition": "WHEN 'SETZ'"
+      },
+      {
+        "from": "c_set",
+        "to": "s_st",
+        "condition": "always"
+      },
+      {
+        "from": "cs_2",
+        "to": "c_pr",
+        "condition": "WHEN 'PRUEF'"
+      },
+      {
+        "from": "c_pr",
+        "to": "s_pr",
+        "condition": "always"
+      },
+      {
+        "from": "cs_2",
+        "to": "c_zu",
+        "condition": "WHEN 'ZURUE'"
+      },
+      {
+        "from": "c_zu",
+        "to": "s_zu",
+        "condition": "always"
+      },
+      {
+        "from": "cs_2",
+        "to": "c_sv",
+        "condition": "WHEN 'SAVE'"
+      },
+      {
+        "from": "c_sv",
+        "to": "s_sv",
+        "condition": "always"
+      },
+      {
+        "from": "cs_2",
+        "to": "g_ch",
+        "condition": "WHEN 'BACK'"
+      },
+      {
+        "from": "cs_2",
+        "to": "e_2",
+        "condition": "else"
+      },
+      {
+        "from": "g_ch",
+        "to": "c_pop",
+        "condition": "gv_changed = abap_true"
+      },
+      {
+        "from": "g_ch",
+        "to": "dq_2",
+        "condition": "else"
+      },
+      {
+        "from": "c_pop",
+        "to": "g_ans",
+        "condition": "always"
+      },
+      {
+        "from": "g_ans",
+        "to": "c_sv2",
+        "condition": "lv_answer = '1'"
+      },
+      {
+        "from": "c_sv2",
+        "to": "s_sv",
+        "condition": "always"
+      },
+      {
+        "from": "dq_2",
+        "to": "x_01",
+        "condition": "always"
+      },
+      {
+        "from": "s_al",
+        "to": "r_a",
+        "condition": "always"
+      },
+      {
+        "from": "r_a",
+        "to": "g_a1",
+        "condition": "always"
+      },
+      {
+        "from": "g_a1",
+        "to": "m_a1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m_a1",
+        "to": "x_a1",
+        "condition": "always"
+      },
+      {
+        "from": "g_a1",
+        "to": "c_st1",
+        "condition": "else"
+      },
+      {
+        "from": "c_st1",
+        "to": "g_a2",
+        "condition": "always"
+      },
+      {
+        "from": "g_a2",
+        "to": "m_a2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m_a2",
+        "to": "x_a2",
+        "condition": "always"
+      },
+      {
+        "from": "g_a2",
+        "to": "c_st2",
+        "condition": "else"
+      },
+      {
+        "from": "c_st2",
+        "to": "a_teco",
+        "condition": "always"
+      },
+      {
+        "from": "a_teco",
+        "to": "lk",
+        "condition": "always"
+      },
+      {
+        "from": "lk",
+        "to": "g_a3",
+        "condition": "always"
+      },
+      {
+        "from": "g_a3",
+        "to": "m_a3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m_a3",
+        "to": "x_a3",
+        "condition": "always"
+      },
+      {
+        "from": "g_a3",
+        "to": "e_al",
+        "condition": "else"
+      },
+      {
+        "from": "s_sl",
+        "to": "r_s",
+        "condition": "always"
+      },
+      {
+        "from": "r_s",
+        "to": "g_s",
+        "condition": "always"
+      },
+      {
+        "from": "g_s",
+        "to": "dq_s",
+        "condition": "gt_steps IS INITIAL"
+      },
+      {
+        "from": "dq_s",
+        "to": "m_s",
+        "condition": "always"
+      },
+      {
+        "from": "m_s",
+        "to": "x_s",
+        "condition": "always"
+      },
+      {
+        "from": "g_s",
+        "to": "e_sl",
+        "condition": "else"
+      },
+      {
+        "from": "s_st",
+        "to": "l_st",
+        "condition": "always"
+      },
+      {
+        "from": "l_st",
+        "to": "g_st",
+        "condition": "next row"
+      },
+      {
+        "from": "g_st",
+        "to": "m_st",
+        "condition": "<ls_st>-status <> 'OFFEN' AND <ls_st>-status <> 'ZURUECK'"
+      },
+      {
+        "from": "m_st",
+        "to": "l_st",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g_st",
+        "to": "a_st",
+        "condition": "else"
+      },
+      {
+        "from": "a_st",
+        "to": "l_st",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_st",
+        "to": "e_st",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_pr",
+        "to": "l_pr",
+        "condition": "always"
+      },
+      {
+        "from": "l_pr",
+        "to": "g_pc",
+        "condition": "next row"
+      },
+      {
+        "from": "g_pc",
+        "to": "g_4a",
+        "condition": "<ls_st>-status = 'GESETZT'"
+      },
+      {
+        "from": "g_pc",
+        "to": "l_pr",
+        "condition": "else"
+      },
+      {
+        "from": "g_4a",
+        "to": "m_4a",
+        "condition": "<ls_st>-gesetzt_von = sy-uname AND sy-uname <> 'WCM_ADMIN'"
+      },
+      {
+        "from": "m_4a",
+        "to": "x_4a",
+        "condition": "always"
+      },
+      {
+        "from": "g_4a",
+        "to": "a_pr",
+        "condition": "else"
+      },
+      {
+        "from": "a_pr",
+        "to": "l_pr",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_pr",
+        "to": "e_pr",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_zu",
+        "to": "g_zu",
+        "condition": "always"
+      },
+      {
+        "from": "g_zu",
+        "to": "m_zu",
+        "condition": "gv_teco = abap_false"
+      },
+      {
+        "from": "m_zu",
+        "to": "x_zu",
+        "condition": "always"
+      },
+      {
+        "from": "g_zu",
+        "to": "l_zu",
+        "condition": "else"
+      },
+      {
+        "from": "l_zu",
+        "to": "a_zu",
+        "condition": "next row"
+      },
+      {
+        "from": "a_zu",
+        "to": "l_zu",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_zu",
+        "to": "e_zu",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_sv",
+        "to": "g_sv",
+        "condition": "always"
+      },
+      {
+        "from": "g_sv",
+        "to": "m_sv",
+        "condition": "gv_changed = abap_false"
+      },
+      {
+        "from": "m_sv",
+        "to": "x_sv",
+        "condition": "always"
+      },
+      {
+        "from": "g_sv",
+        "to": "u_sv",
+        "condition": "else"
+      },
+      {
+        "from": "u_sv",
+        "to": "g_all",
+        "condition": "always"
+      },
+      {
+        "from": "g_all",
+        "to": "c_stat",
+        "condition": "NOT line_exists( gt_steps[ status = 'OFFEN' ] ) AND NOT line_exists( gt_steps[ status = 'GESETZT' ] )"
+      },
+      {
+        "from": "g_all",
+        "to": "tc",
+        "condition": "else"
+      },
+      {
+        "from": "c_stat",
+        "to": "tc",
+        "condition": "always"
+      },
+      {
+        "from": "tc",
+        "to": "s_u",
+        "condition": "always"
+      },
+      {
+        "from": "tc",
+        "to": "m_ok",
+        "condition": "always"
+      },
+      {
+        "from": "m_ok",
+        "to": "e_sv",
+        "condition": "always"
+      },
+      {
+        "from": "s_u",
+        "to": "w1",
+        "condition": "always"
+      },
+      {
+        "from": "w1",
+        "to": "w2",
+        "condition": "always"
+      },
+      {
+        "from": "w2",
+        "to": "e_u",
+        "condition": "always"
+      },
+      {
+        "from": "e_al",
+        "to": "c_sl",
+        "condition": "always"
+      },
+      {
+        "from": "e_sl",
+        "to": "a_set",
+        "condition": "always"
+      },
+      {
+        "from": "e_st",
+        "to": "e_2",
+        "condition": "always"
+      },
+      {
+        "from": "e_pr",
+        "to": "e_2",
+        "condition": "always"
+      },
+      {
+        "from": "e_zu",
+        "to": "e_2",
+        "condition": "always"
+      },
+      {
+        "from": "e_sv",
+        "to": "e_2",
+        "condition": "always"
+      },
+      {
+        "from": "x_sv",
+        "to": "e_2",
+        "condition": "always"
+      },
+      {
+        "from": "e_sv",
+        "to": "dq_2",
+        "condition": "always"
+      },
+      {
+        "from": "x_sv",
+        "to": "dq_2",
+        "condition": "always"
+      },
+      {
+        "from": "g_ans",
+        "to": "x_ret",
+        "condition": "lv_answer = 'A'"
+      },
+      {
+        "from": "g_ans",
+        "to": "dq_2",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "mzpm_freischalt_f01.abap:165 — kein Fachsatz „der Auftrag gilt nur als freigeschaltet, wenn alle Schritte wirksam sind“: geprüft wird nur, dass kein Schritt OFFEN oder GESETZT ist; sind alle Schritte zurückgenommen, wird E0010 ebenfalls gesetzt",
+    "mzpm_freischalt_f01.abap:110 — kein Fachsatz „das Vier-Augen-Prinzip gilt ausnahmslos“: der Benutzer WCM_ADMIN darf eigene Schritte prüfen",
+    "mzpm_freischalt_f01.abap:111 — kein Fachsatz „bei einem Vier-Augen-Verstoß bleiben alle markierten Schritte unverändert“: die vorher in derselben Schleife geprüften Schritte stehen bereits auf AKT und werden beim nächsten Sichern geschrieben",
+    "gesamte Scheibe — kein Fachsatz „die Berechtigung des Benutzers für Werk oder Auftrag wird geprüft“: das Programm enthält keine Berechtigungsprüfung; die PBO-Module (Include MZPM_FREISCHALT_O01) liegen nicht im Fall"
+  ],
+  "processDescription": "Der Monteur ruft die Freischalttransaktion auf und gibt einen Instandhaltungsauftrag ein. Mit „Weiter“ prüft das Programm, dass es ein Instandhaltungsauftrag und freigegeben ist, merkt sich, ob er technisch abgeschlossen ist, und sperrt ihn; jeder Fehler wird am Einstiegsbild gemeldet. Dann liest es die Freischaltschritte aller Vorgänge in Vorgangs- und Schrittfolge; ohne Schritte hebt es die Sperre auf und meldet einen Fehler. Sonst merkt es den Auftrag im Benutzerkontext und zeigt die Schrittliste. Dort vermerkt „Setzen“ markierte offene oder zurückgenommene Schritte als gesetzt mit Benutzer und Zeitpunkt. „Prüfen“ macht markierte gesetzte Schritte wirksam; hat der Prüfer den Schritt selbst gesetzt, bricht es mit Fehler ab, außer für den Benutzer WCM_ADMIN, und bereits in dieser Aktion geprüfte Schritte bleiben geprüft. „Zurücknehmen“ ist nur bei technisch abgeschlossenem Auftrag erlaubt und setzt markierte wirksame Schritte zurück. „Sichern“ meldet ohne Änderungen nur einen Hinweis; sonst werden alle Schritte zur Verbuchung vorgemerkt, bei keinem offenen oder nur gesetzten Schritt erhält der Auftrag den Anwenderstatus „freigeschaltet“, und alles wird synchron festgeschrieben, wobei die Verbuchung Schritte und Statusprotokoll schreibt. „Zurück“ fragt bei ungesicherten Änderungen nach: Ja sichert, Abbrechen bleibt in der Liste, Nein verwirft; danach wird die Sperre aufgehoben und zum Einstieg zurückgekehrt. Abbrechen oder Beenden hebt die Sperre ohne Rückfrage auf und verlässt die Transaktion."
+}

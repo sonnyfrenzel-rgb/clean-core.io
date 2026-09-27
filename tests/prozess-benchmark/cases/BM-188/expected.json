@@ -1,0 +1,575 @@
+{
+  "id": "BM-188",
+  "title": "Jobkette POS-Abverkaufsverbuchung: ein Job je Filiale mit Kassendaten, nacheinander über Vorgängerjob",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "T001W",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 24,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:24"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRET_POS_EIN",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_OPEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:41"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZRET_POS_VERBUCHEN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:56"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_CLOSE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:64"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-188-B01",
+      "text": "Als Buchungstag wird der Vortag vorgeschlagen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-188-B02",
+      "text": "Es werden die Filialen (Werkstyp A) der Selektion gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-188-B03",
+      "text": "Ohne Filialen wird ein Hinweis ausgegeben und die Verarbeitung beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-188-B04",
+      "text": "Je Filiale wird geprüft, ob unverbuchte Kassendaten des Buchungstags vorliegen; Filialen ohne solche Daten werden übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-188-B05",
+      "text": "Für die Filiale wird ein Hintergrundjob mit Filiale und Datum im Namen angelegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-188-B06",
+      "text": "Kann der Job nicht angelegt werden, wird die Filiale im Protokoll gemeldet und übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-188-B07",
+      "text": "In den Job wird die POS-Verbuchung für Filiale, Buchungstag und Testkennzeichen eingestellt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-188-B08",
+      "text": "Der erste Job startet sofort, jeder weitere erst nach erfolgreichem Ende des vorher eingeplanten Jobs.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        },
+        {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-188-B09",
+      "text": "Am Ende wird die Anzahl der eingeplanten Filialjobs ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "si",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Selektionsbild vorbelegen"
+      },
+      {
+        "id": "ei",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Vortag als Buchungstag vorschlagen"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Jobkette aufbauen"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Filialen der Selektion lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Filialen gefunden?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Hinweis: keine Filialen"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Filialen einzeln einplanen"
+      },
+      {
+        "id": "qc",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Unverbuchte Kassendaten zählen"
+      },
+      {
+        "id": "chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Kassendaten vorhanden?"
+      },
+      {
+        "id": "jo",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Job für Filiale anlegen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        "meaning": "Job angelegt?"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        "meaning": "Filiale als nicht eingeplant melden"
+      },
+      {
+        "id": "sub",
+        "type": "external_program",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "POS-Verbuchung in den Job einstellen"
+      },
+      {
+        "id": "jc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        "meaning": "Job freigeben: sofort oder nach Vorgängerjob"
+      },
+      {
+        "id": "o3",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        "meaning": "Anzahl eingeplanter Jobs ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        "meaning": "Ende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "si",
+        "to": "ei",
+        "condition": "always"
+      },
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "o1",
+        "condition": "lt_filialen IS INITIAL"
+      },
+      {
+        "from": "o1",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "qc",
+        "condition": "next row"
+      },
+      {
+        "from": "qc",
+        "to": "chk",
+        "condition": "always"
+      },
+      {
+        "from": "chk",
+        "to": "jo",
+        "condition": "sy-dbcnt > 0"
+      },
+      {
+        "from": "chk",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "jo",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "o2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g2",
+        "to": "sub",
+        "condition": "else"
+      },
+      {
+        "from": "sub",
+        "to": "jc",
+        "condition": "always"
+      },
+      {
+        "from": "jc",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "o3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "o3",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:64 — kein Fachsatz „scheitert die Freigabe, wird die Filiale gemeldet und die Kette ohne sie fortgesetzt“: das Ergebnis von JOB_CLOSE wird nicht geprüft (auskommentiert); der nicht freigegebene Job wird trotzdem Vorgänger des nächsten, sodass alle folgenden Filialjobs nicht starten",
+    "source.abap:56 — kein Fachsatz „die Kassendaten werden verbucht bzw. der Bestand fortgeschrieben“: der Steuerreport plant die Verbuchung nur ein, die Verbuchungslogik liegt in ZRET_POS_VERBUCHEN außerhalb des Falls",
+    "source.abap:81 — kein Fachsatz „die Anzahl erfolgreich verarbeiteter Filialen wird ausgegeben“: gezählt werden eingeplante Jobs, auch solche, deren Freigabe gescheitert ist"
+  ],
+  "processDescription": "Der Report wird nachts mit Filialbereich, Buchungstag und Testkennzeichen gestartet; als Buchungstag ist der Vortag vorgeschlagen. Er liest die Filialen (Werkstyp A) der Selektion; gibt es keine, meldet er das und beendet die Verarbeitung. Für jede Filiale zählt er die noch unverbuchten Kassendaten des Buchungstags und überspringt Filialen ohne solche Daten. Für die übrigen legt er einen Hintergrundjob mit Filiale und Datum im Namen an; scheitert das, meldet er die Filiale im Protokoll und geht zur nächsten. In den Job stellt er den Verbuchungsreport für Filiale, Buchungstag und Testkennzeichen ein. Der erste Job wird zum Sofortstart freigegeben, jeder weitere so, dass er erst nach erfolgreichem Ende des vorher eingeplanten Jobs startet. Ob die Freigabe gelungen ist, wird nicht geprüft; ein nicht freigegebener Job hält daher die restliche Kette an. Am Ende gibt der Report die Zahl der eingeplanten Filialjobs aus. Die Verbuchung selbst geschieht in den Jobs."
+}

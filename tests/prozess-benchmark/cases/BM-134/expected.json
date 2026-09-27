@@ -1,0 +1,1097 @@
+{
+  "id": "BM-134",
+  "title": "FSCM Dispute Management: Klärungsfälle aus EDI-Zahlungsavis mit Kürzungen anlegen (IDoc-Eingang, CATCH SYSTEM-EXCEPTIONS, EXIT in verschachtelten Schleifen)",
+  "classes": [
+    "K01",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZDSP_GRUND",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "z_idoc_input_zdispute.abap",
+        "line": 31,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_idoc_input_zdispute.abap:31"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzdsp_f01.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzdsp_f01.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BSID",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzdsp_f01.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzdsp_f01.abap:36"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZDSP_ITEMS",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "lzdsp_f01.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzdsp_f01.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_FSCM_DISPUTE_CREATE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "lzdsp_f01.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzdsp_f01.abap:83"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZDSP_ITEMS",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "lzdsp_f01.abap",
+        "line": 62,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzdsp_f01.abap:62"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-134-B01",
+      "text": "Die Zuordnung der Kürzungsgründe des Kunden zu Klärungsgründen wird einmal je Paket gelesen.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-134-B02",
+      "text": "Je IDoc werden Kopfsegment (Buchungskreis, Kunde, Avisnummer, Währung) und Kürzungssegmente (Rechnungsreferenz, Betrag, Kundengrund) übernommen.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:37"
+        },
+        {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-134-B03",
+      "text": "Ist der Kunde des Avis unbekannt, gilt das Avis als fehlerhaft.",
+      "anchors": [
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:16"
+        },
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:18"
+        },
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-134-B04",
+      "text": "Jeder Kürzungsbetrag wird aus dem Text umgewandelt; ist er ungültig, wird die Verarbeitung des Avis mit Fehler abgebrochen.",
+      "anchors": [
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:26"
+        },
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-134-B05",
+      "text": "Kürzungen von null oder weniger werden übergangen.",
+      "anchors": [
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-134-B06",
+      "text": "Zur Rechnungsreferenz werden die offenen Posten des Kunden im Buchungskreis gelesen; ist die Rechnung nicht offen, wird die Verarbeitung des Avis mit Fehler abgebrochen.",
+      "anchors": [
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:36"
+        },
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-134-B07",
+      "text": "Hat ein offener Posten schon einen Klärungsfall, wird der nächste Posten der Rechnung betrachtet.",
+      "anchors": [
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:48"
+        },
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-134-B08",
+      "text": "Der Klärungsgrund wird aus dem Kundengrund abgeleitet; ist keiner zugeordnet, gilt Grund 99.",
+      "anchors": [
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-134-B09",
+      "text": "Für den ersten Posten ohne Klärungsfall wird ein Klärungsfall mit dem gekürzten Betrag, der Avis-Währung und dem Grund angelegt und die Zuordnung Posten–Fall mit Avisnummer gespeichert.",
+      "anchors": [
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:57"
+        },
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:83"
+        },
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-134-B10",
+      "text": "Scheitert die Anlage, wird die Fehlermeldung vermerkt und mit der nächsten Kürzung des Avis weitergemacht.",
+      "anchors": [
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:96"
+        },
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:98"
+        },
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-134-B11",
+      "text": "Ist das Avis fehlerfrei, erhält das IDoc den Status 53; sonst werden alle noch nicht festgeschriebenen Änderungen zurückgerollt und das IDoc erhält den Status 51 mit dem Fehlertext.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:49"
+        },
+        {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:53"
+        },
+        {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:50"
+        },
+        {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:54"
+        },
+        {
+          "file": "lzdsp_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:110"
+        }
+      ]
+    },
+    {
+      "id": "BM-134-B12",
+      "text": "Hat mindestens ein IDoc des Pakets Status 51, meldet der Baustein dem Workflow einen Fehler.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:59"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:1"
+        },
+        "meaning": "Eingang eines IDoc-Pakets mit Zahlungsavisen"
+      },
+      {
+        "id": "rg",
+        "type": "read",
+        "anchor": {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:31"
+        },
+        "meaning": "Zuordnung Kundengrund → Klärungsgrund lesen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:33"
+        },
+        "meaning": "IDocs (Avise) einzeln verarbeiten"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:37"
+        },
+        "meaning": "Segmente des IDocs durchgehen"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:38"
+        },
+        "meaning": "Kopf- oder Kürzungssegment?"
+      },
+      {
+        "id": "cv",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:47"
+        },
+        "meaning": "Avis verarbeiten"
+      },
+      {
+        "id": "gk",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:49"
+        },
+        "meaning": "Avis fehlerfrei verarbeitet?"
+      },
+      {
+        "id": "c53",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:50"
+        },
+        "meaning": "Status 53 „Klärungsfälle angelegt“"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:53"
+        },
+        "meaning": "Nicht festgeschriebene Änderungen zurückrollen"
+      },
+      {
+        "id": "c51",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:54"
+        },
+        "meaning": "Status 51 mit Fehlertext"
+      },
+      {
+        "id": "aw",
+        "type": "action",
+        "anchor": {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:59"
+        },
+        "meaning": "Workflow-Ergebnis Fehler, sobald ein IDoc Status 51 hat"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "z_idoc_input_zdispute.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zdispute.abap:63"
+        },
+        "meaning": "Rückgabe an die ALE-Schicht"
+      },
+      {
+        "id": "v",
+        "type": "start",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:8"
+        },
+        "meaning": "Verarbeitung eines Avis"
+      },
+      {
+        "id": "vk",
+        "type": "read",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:16"
+        },
+        "meaning": "Kunde des Avis prüfen"
+      },
+      {
+        "id": "vg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:18"
+        },
+        "meaning": "Kunde unbekannt?"
+      },
+      {
+        "id": "vr",
+        "type": "end",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:21"
+        },
+        "meaning": "Avis fehlerhaft: Kunde unbekannt"
+      },
+      {
+        "id": "vl",
+        "type": "loop",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:24"
+        },
+        "meaning": "Kürzungen durchgehen"
+      },
+      {
+        "id": "vce",
+        "type": "action",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:26"
+        },
+        "meaning": "Kürzungsbetrag aus Text umwandeln, Konvertierungsfehler abfangen"
+      },
+      {
+        "id": "vcg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:29"
+        },
+        "meaning": "Betrag ungültig?"
+      },
+      {
+        "id": "vch",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:34"
+        },
+        "meaning": "Kürzung größer null?"
+      },
+      {
+        "id": "vo",
+        "type": "read",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:36"
+        },
+        "meaning": "Offene Posten des Kunden zur Rechnungsreferenz lesen"
+      },
+      {
+        "id": "vog",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:41"
+        },
+        "meaning": "Rechnung nicht offen?"
+      },
+      {
+        "id": "vl2",
+        "type": "loop",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:47"
+        },
+        "meaning": "Offene Posten der Rechnung durchgehen"
+      },
+      {
+        "id": "vx",
+        "type": "read",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:48"
+        },
+        "meaning": "Hat der Posten schon einen Klärungsfall?"
+      },
+      {
+        "id": "vxg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:53"
+        },
+        "meaning": "Klärungsfall vorhanden?"
+      },
+      {
+        "id": "vgr",
+        "type": "action",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:56"
+        },
+        "meaning": "Klärungsgrund aus Kundengrund ableiten, sonst 99"
+      },
+      {
+        "id": "vd",
+        "type": "call",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:57"
+        },
+        "meaning": "Klärungsfall anlegen"
+      },
+      {
+        "id": "vdg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:59"
+        },
+        "meaning": "Anlage fehlgeschlagen?"
+      },
+      {
+        "id": "vi",
+        "type": "write",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:62"
+        },
+        "meaning": "Zuordnung Posten → Klärungsfall mit Avisnummer speichern"
+      },
+      {
+        "id": "ve",
+        "type": "end",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:71"
+        },
+        "meaning": "Avis verarbeitet"
+      },
+      {
+        "id": "d",
+        "type": "start",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:76"
+        },
+        "meaning": "Anlage Klärungsfall"
+      },
+      {
+        "id": "dc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:83"
+        },
+        "meaning": "Klärungsfall mit strittigem Betrag und Grund über Z-Wrapper anlegen"
+      },
+      {
+        "id": "dg",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:96"
+        },
+        "meaning": "Anlage fehlgeschlagen?"
+      },
+      {
+        "id": "dm",
+        "type": "action",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:98"
+        },
+        "meaning": "Fehler vermerken und Meldungstext übernehmen"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:101"
+        },
+        "meaning": "Anlage beendet"
+      },
+      {
+        "id": "st",
+        "type": "start",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:106"
+        },
+        "meaning": "Statussatz bilden"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "lzdsp_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzdsp_f01.abap:116"
+        },
+        "meaning": "Statussatz angehängt"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "rg",
+        "condition": "always"
+      },
+      {
+        "from": "rg",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "l2",
+        "condition": "next row"
+      },
+      {
+        "from": "l2",
+        "to": "cs",
+        "condition": "next row"
+      },
+      {
+        "from": "cs",
+        "to": "l2",
+        "condition": "WHEN 'Z1DSPHD'"
+      },
+      {
+        "from": "cs",
+        "to": "l2",
+        "condition": "WHEN 'Z1DSPIT'"
+      },
+      {
+        "from": "cs",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "l2",
+        "to": "cv",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cv",
+        "to": "v",
+        "condition": "always"
+      },
+      {
+        "from": "gk",
+        "to": "c53",
+        "condition": "lv_ok = abap_true"
+      },
+      {
+        "from": "c53",
+        "to": "st",
+        "condition": "always"
+      },
+      {
+        "from": "gk",
+        "to": "rb",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "c51",
+        "condition": "always"
+      },
+      {
+        "from": "c51",
+        "to": "st",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "aw",
+        "condition": "no more rows"
+      },
+      {
+        "from": "aw",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "v",
+        "to": "vk",
+        "condition": "always"
+      },
+      {
+        "from": "vk",
+        "to": "vg",
+        "condition": "always"
+      },
+      {
+        "from": "vg",
+        "to": "vr",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "vg",
+        "to": "vl",
+        "condition": "else"
+      },
+      {
+        "from": "vl",
+        "to": "vce",
+        "condition": "next row"
+      },
+      {
+        "from": "vce",
+        "to": "vcg",
+        "condition": "always"
+      },
+      {
+        "from": "vcg",
+        "to": "ve",
+        "condition": "sy-subrc = 1"
+      },
+      {
+        "from": "vcg",
+        "to": "vch",
+        "condition": "else"
+      },
+      {
+        "from": "vch",
+        "to": "vo",
+        "condition": "lv_betrag > 0"
+      },
+      {
+        "from": "vch",
+        "to": "vl",
+        "condition": "else"
+      },
+      {
+        "from": "vo",
+        "to": "vog",
+        "condition": "always"
+      },
+      {
+        "from": "vog",
+        "to": "ve",
+        "condition": "lt_op IS INITIAL"
+      },
+      {
+        "from": "vog",
+        "to": "vl2",
+        "condition": "else"
+      },
+      {
+        "from": "vl2",
+        "to": "vx",
+        "condition": "next row"
+      },
+      {
+        "from": "vx",
+        "to": "vxg",
+        "condition": "always"
+      },
+      {
+        "from": "vxg",
+        "to": "vl2",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "vxg",
+        "to": "vgr",
+        "condition": "else"
+      },
+      {
+        "from": "vgr",
+        "to": "vd",
+        "condition": "always"
+      },
+      {
+        "from": "vd",
+        "to": "d",
+        "condition": "always"
+      },
+      {
+        "from": "vdg",
+        "to": "vl",
+        "condition": "cv_ok = abap_false"
+      },
+      {
+        "from": "vdg",
+        "to": "vi",
+        "condition": "else"
+      },
+      {
+        "from": "vi",
+        "to": "vl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "vl2",
+        "to": "vl",
+        "condition": "no more rows"
+      },
+      {
+        "from": "vl",
+        "to": "ve",
+        "condition": "no more rows"
+      },
+      {
+        "from": "d",
+        "to": "dc",
+        "condition": "always"
+      },
+      {
+        "from": "dc",
+        "to": "dg",
+        "condition": "always"
+      },
+      {
+        "from": "dg",
+        "to": "dm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "dm",
+        "to": "de",
+        "condition": "always"
+      },
+      {
+        "from": "dg",
+        "to": "de",
+        "condition": "else"
+      },
+      {
+        "from": "ve",
+        "to": "gk",
+        "condition": "always"
+      },
+      {
+        "from": "vr",
+        "to": "gk",
+        "condition": "always"
+      },
+      {
+        "from": "de",
+        "to": "vdg",
+        "condition": "always"
+      },
+      {
+        "from": "st",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "se",
+        "to": "l1",
+        "condition": "next iteration"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "lzdsp_f01.abap:59 — kein Fachsatz „nach einer gescheiterten Anlage werden die übrigen Kürzungen nicht mehr bearbeitet“: EXIT verlässt nur die Postenschleife, die nächste Kürzung wird weiter verarbeitet und erst am Ende zurückgerollt",
+    "z_idoc_input_zdispute.abap:53 — kein Fachsatz „nur die Änderungen des fehlerhaften IDocs werden zurückgenommen“: der Baustein schreibt nichts fest, der Rollback trifft alle offenen Änderungen des Pakets, auch die vorher mit 53 gemeldeter IDocs",
+    "lzdsp_f01.abap:62 — kein Fachsatz „die Kürzung wird auf alle offenen Posten der Rechnung verteilt“: nach dem ersten angelegten Fall wird die Postenschleife verlassen",
+    "gesamte Scheibe — kein Fachsatz „die Kürzung wird ausgebucht oder der Posten ausgeglichen“: es werden nur Klärungsfälle angelegt"
+  ],
+  "processDescription": "Der Eingangsbaustein erhält ein Paket von EDI-Zahlungsavisen, in denen Handelskunden Rechnungskürzungen melden. Er liest einmal die Zuordnung der Kundengründe zu Klärungsgründen. Je IDoc übernimmt er Kopf- und Kürzungssegmente. Ist der Kunde unbekannt, ist das Avis fehlerhaft. Sonst wandelt er je Kürzung den Betrag aus dem Text um; ist er ungültig, bricht er das Avis mit Fehler ab, Kürzungen bis null übergeht er. Zur Rechnungsreferenz liest er die offenen Posten des Kunden; ist die Rechnung nicht offen, bricht er das Avis mit Fehler ab. Den ersten Posten ohne bestehenden Klärungsfall versieht er mit einem neuen Klärungsfall über den gekürzten Betrag und den abgeleiteten Grund (sonst 99) und speichert die Zuordnung mit Avisnummer. Scheitert die Anlage, vermerkt er die Meldung und macht mit der nächsten Kürzung weiter. Ist das Avis fehlerfrei, setzt er Status 53; andernfalls rollt er alle noch nicht festgeschriebenen Änderungen zurück und setzt Status 51 mit dem Fehlertext. Hat ein IDoc Status 51, meldet er dem Workflow einen Fehler. Da der Baustein selbst nicht festschreibt, kann ein Rollback auch Änderungen früherer IDocs desselben Pakets zurücknehmen."
+}

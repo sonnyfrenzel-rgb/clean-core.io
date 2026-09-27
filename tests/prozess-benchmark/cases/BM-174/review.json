@@ -1,0 +1,44 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kanten Aufruf cf",
+      "before": "cf -> cs [always]",
+      "after": "ef -> cs [always]; r1 -> cs [always]; r2 -> cs [always]; r3 -> cs [always]; r4 -> cs [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf ps",
+      "before": "ps -> gd [always]",
+      "after": "esl -> gd [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf pp",
+      "before": "pp -> gi [always]",
+      "after": "epa -> gi [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf pl",
+      "before": "pl -> ef [always]",
+      "after": "epr -> ef [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten mo (neu) vor me",
+      "before": "me end auf mv50afz1.abap:31 ohne output",
+      "after": "mo output auf mv50afz1.abap:31, Kante mo -> me [always]; eingehende Kanten auf mo umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": [
+    "ls, lf, cl (Setzen/Entfernen von likp-lifsk) und af (ev_ergebnis = 'F') sind action-Knoten auf Zuweisungen; belassen, weil sie die fachliche Wirkung des Exits (Liefersperre am zu sichernden Beleg) bzw. das Prüfergebnis festlegen."
+  ]
+}

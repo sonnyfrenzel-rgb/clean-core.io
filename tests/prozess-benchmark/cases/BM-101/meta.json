@@ -1,0 +1,30 @@
+{
+  "id": "BM-101",
+  "title": "Messbelege je Equipment: Messpunkte aus IMPTT, Ablesungen aus IMRG listen",
+  "domain": "PM — Messpunkte und Messbelege",
+  "band": "einfach",
+  "loc": 30,
+  "constructs": [
+    "REPORT",
+    "PARAMETERS",
+    "SELECT SINGLE",
+    "SELECT INTO TABLE",
+    "FOR ALL ENTRIES",
+    "SORT",
+    "LOOP AT",
+    "CHECK",
+    "WRITE-Liste"
+  ],
+  "scenario": "Instandhaltungsplaner prüft vor einer Inspektion die Ablesehistorie aller Messpunkte eines Equipments; typischer Z-Report aus der Zeit vor der Fiori-App „Messbelege“.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf EQUI, IMPTT, IMRG statt freigegebener CDS-Views (I_MeasuringPoint, I_MeasurementDocument)",
+    "FOR ALL ENTRIES ohne Leermengenschutz liest bei leerer Treibertabelle alle Messbelege",
+    "IMRG-READG ist Gleitpunktwert in SI-Einheit; Anzeige ohne Umrechnung in Messpunkteinheit"
+  ],
+  "wave": 2,
+  "module": "PM",
+  "edge_constructs": [
+    "SELECT … FOR ALL ENTRIES mit leerer Treibertabelle",
+    "CHECK mitten in Schleife"
+  ]
+}

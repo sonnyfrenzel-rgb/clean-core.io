@@ -1,0 +1,1500 @@
+{
+  "id": "BM-151",
+  "title": "Rückrechnungsdifferenzen je Lohnart: neues gegen vorheriges Abrechnungsergebnis",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "CU_READ_RGDIR",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpy_retro_diff_f01.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpy_retro_diff_f01.abap:21"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PYXX_READ_PAYROLL_RESULT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpy_retro_diff_f01.abap",
+        "line": 93,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpy_retro_diff_f01.abap:93"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REUSE_ALV_FIELDCATALOG_MERGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpy_retro_diff_f01.abap",
+        "line": 146,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpy_retro_diff_f01.abap:146"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REUSE_ALV_GRID_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpy_retro_diff_f01.abap",
+        "line": 155,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpy_retro_diff_f01.abap:155"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-151-B01",
+      "text": "Sind beim Aufruf keine Lohnarten gewählt, werden Grundentgelt, Tarifzulage, Gesamtbrutto und Auszahlung als Auswahl vorgeschlagen.",
+      "anchors": [
+        {
+          "file": "zpy_retro_diff.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:15"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:7"
+        }
+      ]
+    },
+    {
+      "id": "BM-151-B02",
+      "text": "Ohne Leseberechtigung für den deutschen Abrechnungscluster bricht die Auswertung mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zpy_retro_diff.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:18"
+        },
+        {
+          "file": "zpy_retro_diff.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:21"
+        },
+        {
+          "file": "zpy_retro_diff.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-151-B03",
+      "text": "Für jeden selektierten Mitarbeiter wird das Abrechnungsverzeichnis gelesen; Mitarbeiter ohne Verzeichnis oder ohne deutsche Abrechnung werden übergangen.",
+      "anchors": [
+        {
+          "file": "zpy_retro_diff.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:26"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:21"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:31"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:35"
+        },
+        {
+          "file": "zpy_retro_diff.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-151-B04",
+      "text": "Betrachtet werden die aktuellen Ergebnisse, die in der gewählten In-Periode für eine frühere Für-Periode rückgerechnet wurden.",
+      "anchors": [
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:52"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-151-B05",
+      "text": "Zu jeder solchen Periode wird das vorherige Ergebnis gesucht; wurde die Periode erstmals abgerechnet, entfällt der Vergleich.",
+      "anchors": [
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:56"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:58"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-151-B06",
+      "text": "Neues und vorheriges Ergebnis werden aus dem Cluster gelesen; ist eines nicht lesbar, wird die Periode übersprungen und der Lesefehler gezählt.",
+      "anchors": [
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:63"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:66"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:93"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:109"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:110"
+        }
+      ]
+    },
+    {
+      "id": "BM-151-B07",
+      "text": "Für jede gewählte Lohnart des neuen Ergebnisses wird der Betrag der gleichen Lohnart im vorherigen Ergebnis gesucht, fehlt sie dort, gilt null.",
+      "anchors": [
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:70"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:71"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-151-B08",
+      "text": "Differenzen unter der Mindestgrenze werden ignoriert, alle anderen mit Mitarbeiter, Periode, Lohnart, altem und neuem Betrag festgehalten.",
+      "anchors": [
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:74"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-151-B09",
+      "text": "Gibt es keine Differenz, meldet die Auswertung das und endet ohne Liste.",
+      "anchors": [
+        {
+          "file": "zpy_retro_diff.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:32"
+        },
+        {
+          "file": "zpy_retro_diff.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:33"
+        },
+        {
+          "file": "zpy_retro_diff.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-151-B10",
+      "text": "Die Differenzen werden je Mitarbeiter zu Summe und Anzahl verdichtet und die Gesamtdifferenz gebildet.",
+      "anchors": [
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:124"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:130"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:133"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:134"
+        }
+      ]
+    },
+    {
+      "id": "BM-151-B11",
+      "text": "Die Summen je Mitarbeiter werden als ALV-Liste angezeigt, im Titel mit In-Periode, Gesamtdifferenz und Anzahl nicht lesbarer Ergebnisse.",
+      "anchors": [
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:146"
+        },
+        {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:155"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:14"
+        },
+        "meaning": "Vor dem Selektionsbild: Vorschlagswerte setzen"
+      },
+      {
+        "id": "c_ini",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:15"
+        },
+        "meaning": "Lohnartenvorschlag setzen"
+      },
+      {
+        "id": "s_ini",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:5"
+        },
+        "meaning": "Vorschlag Lohnarten"
+      },
+      {
+        "id": "g_ini",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:7"
+        },
+        "meaning": "Keine Lohnarten gewählt?"
+      },
+      {
+        "id": "e_ini2",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:14"
+        },
+        "meaning": "Vorschlag gesetzt"
+      },
+      {
+        "id": "e_ini",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:15"
+        },
+        "meaning": "Ende INITIALIZATION"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:17"
+        },
+        "meaning": "Auswertung startet"
+      },
+      {
+        "id": "au",
+        "type": "action",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:18"
+        },
+        "meaning": "Leseberechtigung für den Abrechnungscluster prüfen"
+      },
+      {
+        "id": "g_au",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:21"
+        },
+        "meaning": "Berechtigt?"
+      },
+      {
+        "id": "o_au",
+        "type": "output",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:22"
+        },
+        "meaning": "Abbruch mangels Berechtigung"
+      },
+      {
+        "id": "e_au",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:22"
+        },
+        "meaning": "Abbruch ohne Berechtigung"
+      },
+      {
+        "id": "e_sos",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:24"
+        },
+        "meaning": "Ende START-OF-SELECTION, In-Periode festgelegt"
+      },
+      {
+        "id": "s3",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:26"
+        },
+        "meaning": "Verarbeitung je Mitarbeiter"
+      },
+      {
+        "id": "c_rg",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:27"
+        },
+        "meaning": "Abrechnungsverzeichnis lesen"
+      },
+      {
+        "id": "g_ok",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:28"
+        },
+        "meaning": "Verzeichnis verwendbar?"
+      },
+      {
+        "id": "c_cmp",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:29"
+        },
+        "meaning": "Ergebnisse vergleichen"
+      },
+      {
+        "id": "e_get",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:29"
+        },
+        "meaning": "Ende der Verarbeitung dieses Mitarbeiters"
+      },
+      {
+        "id": "s_rg",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:17"
+        },
+        "meaning": "Verzeichnis lesen und prüfen"
+      },
+      {
+        "id": "c_cu",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:21"
+        },
+        "meaning": "Abrechnungsverzeichnis und Länderkennung lesen"
+      },
+      {
+        "id": "g_rg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:31"
+        },
+        "meaning": "Verzeichnis vorhanden?"
+      },
+      {
+        "id": "e_rg1",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:32"
+        },
+        "meaning": "Mitarbeiter nicht verwendbar"
+      },
+      {
+        "id": "g_rg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:35"
+        },
+        "meaning": "Nicht deutsche Abrechnung?"
+      },
+      {
+        "id": "e_rg2",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:36"
+        },
+        "meaning": "Mitarbeiter nicht verwendbar"
+      },
+      {
+        "id": "e_rg3",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:39"
+        },
+        "meaning": "Verzeichnis verwendbar"
+      },
+      {
+        "id": "s_cmp",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:42"
+        },
+        "meaning": "Rückrechnungen vergleichen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:52"
+        },
+        "meaning": "Je aktuellem Ergebnis der In-Periode"
+      },
+      {
+        "id": "g_c1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:55"
+        },
+        "meaning": "Nur rückgerechnete Für-Perioden"
+      },
+      {
+        "id": "r_old",
+        "type": "read",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:56"
+        },
+        "meaning": "Vorgängerergebnis derselben Für-Periode suchen"
+      },
+      {
+        "id": "g_c2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:58"
+        },
+        "meaning": "Vorgänger vorhanden?"
+      },
+      {
+        "id": "c_rr1",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:63"
+        },
+        "meaning": "Neues Ergebnis lesen"
+      },
+      {
+        "id": "g_c3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:65"
+        },
+        "meaning": "Neues Ergebnis lesbar?"
+      },
+      {
+        "id": "c_rr2",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:66"
+        },
+        "meaning": "Vorgängerergebnis lesen"
+      },
+      {
+        "id": "g_c4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:68"
+        },
+        "meaning": "Vorgänger lesbar?"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:70"
+        },
+        "meaning": "Je gewählter Lohnart im neuen Ergebnis"
+      },
+      {
+        "id": "r_rt",
+        "type": "read",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:71"
+        },
+        "meaning": "Gleiche Lohnart im Vorgänger suchen"
+      },
+      {
+        "id": "g_c5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:74"
+        },
+        "meaning": "Differenz unter Mindestgrenze?"
+      },
+      {
+        "id": "a_diff",
+        "type": "action",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:77"
+        },
+        "meaning": "Differenz je Periode und Lohnart festhalten"
+      },
+      {
+        "id": "e_cmp",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:85"
+        },
+        "meaning": "Vergleich des Mitarbeiters fertig"
+      },
+      {
+        "id": "s_rr",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:88"
+        },
+        "meaning": "Ein Ergebnis aus dem Cluster lesen"
+      },
+      {
+        "id": "c_py",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:93"
+        },
+        "meaning": "Abrechnungsergebnis aus Cluster RD lesen"
+      },
+      {
+        "id": "e_rr",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:115"
+        },
+        "meaning": "Ergebnis gelesen oder als nicht lesbar gekennzeichnet"
+      },
+      {
+        "id": "g_rr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:109"
+        },
+        "meaning": "Lesefehler?"
+      },
+      {
+        "id": "s4",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:31"
+        },
+        "meaning": "Abschluss nach allen Mitarbeitern"
+      },
+      {
+        "id": "g_e",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:32"
+        },
+        "meaning": "Keine Differenzen?"
+      },
+      {
+        "id": "o_e",
+        "type": "output",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:33"
+        },
+        "meaning": "Meldung: keine Differenzen"
+      },
+      {
+        "id": "e_e",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:34"
+        },
+        "meaning": "Ohne Liste beenden"
+      },
+      {
+        "id": "c_sum",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:36"
+        },
+        "meaning": "Summen bilden"
+      },
+      {
+        "id": "c_alv",
+        "type": "call",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:37"
+        },
+        "meaning": "Liste anzeigen"
+      },
+      {
+        "id": "e_eos",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_retro_diff.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff.abap:37"
+        },
+        "meaning": "Auswertung beendet"
+      },
+      {
+        "id": "s_sum",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:118"
+        },
+        "meaning": "Summen je Mitarbeiter"
+      },
+      {
+        "id": "l3",
+        "type": "loop",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:123"
+        },
+        "meaning": "Je Differenzzeile, nach Mitarbeiter sortiert"
+      },
+      {
+        "id": "g_new",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:124"
+        },
+        "meaning": "Neuer Mitarbeiter: Summe beginnen"
+      },
+      {
+        "id": "g_end",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:130"
+        },
+        "meaning": "Mitarbeiter abgeschlossen: Summe übernehmen"
+      },
+      {
+        "id": "g_last",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:133"
+        },
+        "meaning": "Letzte Zeile?"
+      },
+      {
+        "id": "a_tot",
+        "type": "action",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:134"
+        },
+        "meaning": "Gesamtdifferenz bilden"
+      },
+      {
+        "id": "e_sum",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:138"
+        },
+        "meaning": "Summen gebildet"
+      },
+      {
+        "id": "s_alv",
+        "type": "start",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:141"
+        },
+        "meaning": "Ausgabe"
+      },
+      {
+        "id": "o_alv",
+        "type": "output",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:155"
+        },
+        "meaning": "Summen je Mitarbeiter als ALV mit Gesamtsumme und Fehlerzahl im Titel"
+      },
+      {
+        "id": "e_alv",
+        "type": "end",
+        "anchor": {
+          "file": "zpy_retro_diff_f01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpy_retro_diff_f01.abap:165"
+        },
+        "meaning": "Liste angezeigt"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s2",
+        "to": "au",
+        "condition": "always"
+      },
+      {
+        "from": "au",
+        "to": "g_au",
+        "condition": "always"
+      },
+      {
+        "from": "g_au",
+        "to": "o_au",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "s3",
+        "to": "c_rg",
+        "condition": "always"
+      },
+      {
+        "from": "c_rg",
+        "to": "s_rg",
+        "condition": "always"
+      },
+      {
+        "from": "g_ok",
+        "to": "c_cmp",
+        "condition": "gv_ok = abap_true"
+      },
+      {
+        "from": "c_cmp",
+        "to": "s_cmp",
+        "condition": "always"
+      },
+      {
+        "from": "s_rg",
+        "to": "c_cu",
+        "condition": "always"
+      },
+      {
+        "from": "c_cu",
+        "to": "g_rg1",
+        "condition": "always"
+      },
+      {
+        "from": "g_rg1",
+        "to": "e_rg1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_rg1",
+        "to": "g_rg2",
+        "condition": "else"
+      },
+      {
+        "from": "g_rg2",
+        "to": "e_rg2",
+        "condition": "gv_molga <> '01'"
+      },
+      {
+        "from": "s_cmp",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "g_c1",
+        "condition": "next row"
+      },
+      {
+        "from": "g_c1",
+        "to": "r_old",
+        "condition": "ls_new-fpper <> ls_new-inper"
+      },
+      {
+        "from": "g_c1",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "r_old",
+        "to": "g_c2",
+        "condition": "always"
+      },
+      {
+        "from": "g_c2",
+        "to": "l1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_c2",
+        "to": "c_rr1",
+        "condition": "else"
+      },
+      {
+        "from": "c_rr1",
+        "to": "s_rr",
+        "condition": "always"
+      },
+      {
+        "from": "g_c3",
+        "to": "c_rr2",
+        "condition": "lv_ok = abap_true"
+      },
+      {
+        "from": "g_c3",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "c_rr2",
+        "to": "s_rr",
+        "condition": "always"
+      },
+      {
+        "from": "g_c4",
+        "to": "l2",
+        "condition": "lv_ok = abap_true"
+      },
+      {
+        "from": "g_c4",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "l2",
+        "to": "r_rt",
+        "condition": "next row"
+      },
+      {
+        "from": "r_rt",
+        "to": "g_c5",
+        "condition": "always"
+      },
+      {
+        "from": "g_c5",
+        "to": "l2",
+        "condition": "abs( ls_rt-betrg - lv_old ) < p_min"
+      },
+      {
+        "from": "l2",
+        "to": "l1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_rr",
+        "to": "c_py",
+        "condition": "always"
+      },
+      {
+        "from": "c_py",
+        "to": "g_rr",
+        "condition": "always"
+      },
+      {
+        "from": "s4",
+        "to": "g_e",
+        "condition": "always"
+      },
+      {
+        "from": "g_e",
+        "to": "o_e",
+        "condition": "gt_diff IS INITIAL"
+      },
+      {
+        "from": "o_e",
+        "to": "e_e",
+        "condition": "always"
+      },
+      {
+        "from": "g_e",
+        "to": "c_sum",
+        "condition": "else"
+      },
+      {
+        "from": "c_sum",
+        "to": "s_sum",
+        "condition": "always"
+      },
+      {
+        "from": "c_alv",
+        "to": "s_alv",
+        "condition": "always"
+      },
+      {
+        "from": "s_sum",
+        "to": "l3",
+        "condition": "always"
+      },
+      {
+        "from": "l3",
+        "to": "g_new",
+        "condition": "next row"
+      },
+      {
+        "from": "g_last",
+        "to": "a_tot",
+        "condition": "AT LAST"
+      },
+      {
+        "from": "g_last",
+        "to": "l3",
+        "condition": "else"
+      },
+      {
+        "from": "a_tot",
+        "to": "l3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "s_alv",
+        "to": "o_alv",
+        "condition": "always"
+      },
+      {
+        "from": "s1",
+        "to": "c_ini",
+        "condition": "always"
+      },
+      {
+        "from": "c_ini",
+        "to": "s_ini",
+        "condition": "always"
+      },
+      {
+        "from": "s_ini",
+        "to": "g_ini",
+        "condition": "always"
+      },
+      {
+        "from": "g_ini",
+        "to": "e_ini2",
+        "condition": "s_lgart[] IS INITIAL"
+      },
+      {
+        "from": "g_ini",
+        "to": "e_ini2",
+        "condition": "else"
+      },
+      {
+        "from": "e_ini2",
+        "to": "e_ini",
+        "condition": "always"
+      },
+      {
+        "from": "e_ini",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "o_au",
+        "to": "e_au",
+        "condition": "always"
+      },
+      {
+        "from": "g_au",
+        "to": "e_sos",
+        "condition": "else"
+      },
+      {
+        "from": "e_sos",
+        "to": "s3",
+        "condition": "always"
+      },
+      {
+        "from": "g_rg2",
+        "to": "e_rg3",
+        "condition": "else"
+      },
+      {
+        "from": "e_rg1",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "e_rg2",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "e_rg3",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "g_ok",
+        "to": "e_get",
+        "condition": "else"
+      },
+      {
+        "from": "l1",
+        "to": "e_cmp",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e_cmp",
+        "to": "e_get",
+        "condition": "always"
+      },
+      {
+        "from": "e_get",
+        "to": "s4",
+        "condition": "always"
+      },
+      {
+        "from": "g_rr",
+        "to": "e_rr",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_rr",
+        "to": "e_rr",
+        "condition": "else"
+      },
+      {
+        "from": "e_rr",
+        "to": "g_c3",
+        "condition": "always"
+      },
+      {
+        "from": "e_rr",
+        "to": "g_c4",
+        "condition": "always"
+      },
+      {
+        "from": "g_new",
+        "to": "g_end",
+        "condition": "AT NEW pernr"
+      },
+      {
+        "from": "g_new",
+        "to": "g_end",
+        "condition": "else"
+      },
+      {
+        "from": "g_end",
+        "to": "g_last",
+        "condition": "AT END OF pernr"
+      },
+      {
+        "from": "g_end",
+        "to": "g_last",
+        "condition": "else"
+      },
+      {
+        "from": "l3",
+        "to": "e_sum",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e_sum",
+        "to": "c_alv",
+        "condition": "always"
+      },
+      {
+        "from": "o_alv",
+        "to": "e_alv",
+        "condition": "always"
+      },
+      {
+        "from": "e_alv",
+        "to": "e_eos",
+        "condition": "always"
+      },
+      {
+        "from": "g_c5",
+        "to": "a_diff",
+        "condition": "else"
+      },
+      {
+        "from": "a_diff",
+        "to": "l2",
+        "condition": "next iteration"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zpy_retro_diff_f01.abap:70 — kein Fachsatz „weggefallene Lohnarten werden als negative Differenz ausgewiesen“ (verglichen wird nur, was im neuen Ergebnis steht)",
+    "zpy_retro_diff_f01.abap:71 — kein Fachsatz „mehrere RT-Zeilen einer Lohnart werden summiert“ (es wird nur die erste gelesen)",
+    "zpy_retro_diff_f01.abap:169 — kein Fachsatz „die Differenzen werden als Einzelliste gedruckt“ (FORM write_list wird nie aufgerufen)",
+    "gesamte Scheibe — kein Fachsatz „Nachzahlungen werden angewiesen oder Rückrechnungen ausgelöst“ (reine Auswertung, kein Schreibzugriff)"
+  ],
+  "processDescription": "Nach einer rückwirkenden Änderung wertet die Entgeltabrechnung aus, welche Lohnarten sich durch die Rückrechnung in einer In-Periode geändert haben. Sind keine Lohnarten gewählt, schlägt der Report Grundentgelt, Tarifzulage, Gesamtbrutto und Auszahlung vor. Ohne Leseberechtigung für den Abrechnungscluster RD bricht er ab. Für jeden selektierten Mitarbeiter liest er das Abrechnungsverzeichnis und übergeht Mitarbeiter ohne Verzeichnis oder ohne deutsche Abrechnung. Er betrachtet die aktuellen Ergebnisse, die in der gewählten In-Periode für frühere Perioden entstanden sind, und sucht jeweils das vorherige Ergebnis; erstmals abgerechnete Perioden entfallen. Beide Ergebnisse werden aus dem Cluster gelesen, nicht lesbare werden gezählt und übersprungen. Für jede gewählte Lohnart des neuen Ergebnisses wird der Betrag im alten Ergebnis gesucht (fehlend = null); Differenzen ab der Mindestgrenze werden festgehalten. Gibt es keine, endet der Report mit einer Meldung. Sonst werden die Differenzen je Mitarbeiter summiert und als ALV-Liste mit Gesamtsumme und Fehlerzahl im Titel angezeigt. Lohnarten, die nur im alten Ergebnis stehen, werden nicht erkannt; die alte Einzelliste wird nie aufgerufen."
+}

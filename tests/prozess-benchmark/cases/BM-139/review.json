@@ -1,0 +1,154 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten pame (neu)",
+      "before": "pam output auf mv45afzz_zcredit.abap:59 ohne end (Pfadende ohne end-Knoten)",
+      "after": "pame end auf mv45afzz_zcredit.abap:59; pam -> pame [always]",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E'/'A'/'X', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten fsme (neu)",
+      "before": "fsm output auf z_sd_fscm_credit_check.abap:53 ohne end (Pfadende ohne end-Knoten)",
+      "after": "fsme end auf z_sd_fscm_credit_check.abap:53; fsm -> fsme [always]",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E'/'A'/'X', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert. Wie in Welle 2 üblich auch für MESSAGE … RAISING.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten fe (end)",
+      "before": "z_sd_fscm_credit_check.abap:100",
+      "after": "z_sd_fscm_credit_check.abap:101 (ENDFUNCTION)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf pf",
+      "before": "pf -> pcs [always]",
+      "after": "fre -> pcs [always]; frr -> pcs [always]; fe -> pcs [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf mf",
+      "before": "mf -> mgc [always]",
+      "after": "fre -> mgc [always]; frr -> mgc [always]; fe -> mgc [always]; fsme -> mgc [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt. Der Report fängt NO_SEGMENT über EXCEPTIONS ab (sy-subrc = 1, weiter bei der Auswertung Z. 53). Der Exit ruft den Baustein ohne EXCEPTIONS-Zusatz; dort wirkt MESSAGE … RAISING wie eine gewöhnliche Fehlermeldung und beendet das Sichern, eine Rückkehr in die Fallunterscheidung gibt es nicht.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante su -> l",
+      "before": "su -> l [always]",
+      "after": "entfernt; su -> se bleibt",
+      "why": "Vereinheitlichte Konvention: CALL FUNCTION … IN UPDATE TASK behält die Direktkante zum nächsten Schritt, aber keine Kante in den Verbuchungsbaustein.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten se (end)",
+      "before": "mv45afzz_zcredit.abap:80",
+      "after": "mv45afzz_zcredit.abap:84 (ENDFORM)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Kanten Aufruf rsc",
+      "before": "rsc -> rsa [always]",
+      "after": "ge -> rsa [always]; gre -> rsa [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf rtc",
+      "before": "rtc -> rta [always]",
+      "after": "ge -> rta [always]; gre -> rta [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten Aufruf rxc",
+      "before": "rxc -> rxe [always]",
+      "after": "rte -> rxe [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks, Rückkante vom end des Blocks → nächster Schritt nach dem Aufruf (je Aufrufer); keine Direktkante Aufruf → nächster Schritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten rse (end)",
+      "before": "zcl_credit_rules.abap:65",
+      "after": "zcl_credit_rules.abap:68 (ENDMETHOD)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten rte (end)",
+      "before": "zcl_credit_rules.abap:73",
+      "after": "zcl_credit_rules.abap:75 (ENDMETHOD)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten rxe (end)",
+      "before": "zcl_credit_rules.abap:86",
+      "after": "zcl_credit_rules.abap:89 (ENDMETHOD)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten le (end)",
+      "before": "z_sd_credit_log_write.abap:19 (INSERT)",
+      "after": "z_sd_credit_log_write.abap:20 (ENDFUNCTION)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten pzf",
+      "before": "action mv45afzz_zcredit.abap:53 „Liefersperre lösen“; pz -> pzf [vbak-lifsk = 'Z1']; pzf -> pex [always]",
+      "after": "entfernt; überbrückt: pz -> pex [vbak-lifsk = 'Z1']",
+      "why": "Reine Zuweisung (vbak-lifsk = space, Z. 53); laut Autorenbrief kein Knoten, steuert keinen weiteren Fluss (so auch BM-093, BM-099, BM-100). Inhalt bleibt im Fachsatz (B12).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten psp",
+      "before": "action mv45afzz_zcredit.abap:56 „Liefersperre Z1 setzen“; pcs -> psp [WHEN 'SPERRE']; psp -> psm [always]",
+      "after": "entfernt; überbrückt: pcs -> psm [WHEN 'SPERRE']",
+      "why": "Reine Zuweisung (vbak-lifsk = 'Z1', Z. 56); laut Autorenbrief kein Knoten, steuert keinen weiteren Fluss (so auch BM-093, BM-099, BM-100). Inhalt bleibt im Fachsatz (B13).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten fca",
+      "before": "action z_sd_fscm_credit_check.abap:82 „Standard-Ersatzregel verwenden“; fcg -> fca [lv_class IS INITIAL OR lv_meth IS INITIAL]; fca -> fdy [always]",
+      "after": "entfernt; überbrückt: fcg -> fdy [lv_class IS INITIAL OR lv_meth IS INITIAL]",
+      "why": "Reine Zuweisung (lv_class/lv_meth = Standardregel, FM Z. 82); laut Autorenbrief kein Knoten, steuert keinen weiteren Fluss (so auch BM-093, BM-099, BM-100). Inhalt bleibt im Fachsatz (B06).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten fx",
+      "before": "action z_sd_fscm_credit_check.abap:97 „Regel nicht aufrufbar: sperren“; fdy -> fx [CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn)]; fx -> fe [always]",
+      "after": "entfernt; überbrückt: fdy -> fe [CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn)]",
+      "why": "Reine Zuweisung (Entscheidung SPERRE/Quelle FEHLER, FM Z. 97); laut Autorenbrief kein Knoten, steuert keinen weiteren Fluss (so auch BM-093, BM-099, BM-100). Inhalt bleibt im Fachsatz (B07).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten rxo",
+      "before": "action zcl_credit_rules.abap:83 „Als gedeckt freigeben“; rxg -> rxo [sy-subrc = 0]; rxo -> rxre [always]",
+      "after": "entfernt; überbrückt: rxg -> rxre [sy-subrc = 0]",
+      "why": "Reine Zuweisung (rv_result = 'OK', Klasse Z. 83); laut Autorenbrief kein Knoten, steuert keinen weiteren Fluss (so auch BM-093, BM-099, BM-100). Inhalt bleibt im Fachsatz (B11).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten mrb",
+      "before": "transaction auf zsd_credit_monitor.abap:75",
+      "after": "opaque_call auf zsd_credit_monitor.abap:75",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call (Standardbaustein außerhalb des Falls); transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten mcm",
+      "before": "transaction auf zsd_credit_monitor.abap:79",
+      "after": "opaque_call auf zsd_credit_monitor.abap:79",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call (Standardbaustein außerhalb des Falls); transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    }
+  ],
+  "doubts": []
+}

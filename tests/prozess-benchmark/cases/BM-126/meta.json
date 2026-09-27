@@ -1,0 +1,32 @@
+{
+  "id": "BM-126",
+  "title": "PS-Meilensteinfakturierung: Fakturasperre im Fakturierungsplan nach erreichtem Meilenstein lösen (MLST/FPLT, FAE ohne Leermengenschutz)",
+  "domain": "PS / Projektsystem – Fakturierung",
+  "band": "mittel",
+  "loc": 68,
+  "constructs": [
+    "REPORT",
+    "SELECT SINGLE TVARVC",
+    "SELECT mit INNER JOIN",
+    "FOR ALL ENTRIES",
+    "READ TABLE BINARY SEARCH",
+    "UPDATE FPLT",
+    "COMMIT WORK",
+    "COND #",
+    "Testlaufschalter"
+  ],
+  "scenario": "Anlagenbauer mit Meilensteinfakturierung: Meilensteine werden per Upload gemeldet, daher löst ein Z-Report die Fakturasperre der zugeordneten Fakturierungsplantermine, bevor die Faktura-Vorschlagsliste läuft.",
+  "s4_issues": [
+    "Direktes UPDATE auf FPLT an der Fakturierungslogik vorbei (keine Statusfortschreibung, keine Sperre)",
+    "FOR ALL ENTRIES ohne Leermengenschutz liest alle gesperrten Planpositionen",
+    "Direkter Lesezugriff auf MLST/PRPS/FPLT"
+  ],
+  "wave": 2,
+  "module": "PS",
+  "edge_constructs": [
+    "SELECT … FOR ALL ENTRIES mit leerer Treibertabelle",
+    "Schalter über TVARVC",
+    "COND #",
+    "Inline-Deklarationen"
+  ]
+}

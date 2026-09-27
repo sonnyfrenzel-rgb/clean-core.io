@@ -1,0 +1,1205 @@
+{
+  "id": "BM-135",
+  "title": "Treasury Geldhandel: fällige Festgelder automatisch prolongieren und den Buchungslauf als Job einplanen (dynamischer Tabellenname, SUBMIT VIA JOB)",
+  "classes": [
+    "K01",
+    "K03",
+    "K12",
+    "K13",
+    "K17"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "ztrm_festgeld_rollover_f01.abap",
+        "line": 9,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_festgeld_rollover_f01.abap:9"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VTBFHA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "ztrm_festgeld_rollover_f01.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_festgeld_rollover_f01.abap:21"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZTRM_ROLL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "ztrm_festgeld_rollover_f01.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_festgeld_rollover_f01.abap:21"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VTBFHAPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "ztrm_festgeld_rollover_f01.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_festgeld_rollover_f01.abap:52"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_FTR_TIMEDEPOSIT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "ztrm_festgeld_rollover_f01.abap",
+        "line": 62,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_festgeld_rollover_f01.abap:62"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "ztrm_festgeld_rollover_f01.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_festgeld_rollover_f01.abap:79"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "ztrm_festgeld_rollover_f01.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_festgeld_rollover_f01.abap:83"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_OPEN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "ztrm_festgeld_rollover_f01.abap",
+        "line": 103,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_festgeld_rollover_f01.abap:103"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RFTBBB00",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "ztrm_festgeld_rollover_f01.abap",
+        "line": 115,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_festgeld_rollover_f01.abap:115"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JOB_CLOSE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "ztrm_festgeld_rollover_f01.abap",
+        "line": 119,
+        "token": null,
+        "expressionPath": null,
+        "raw": "ztrm_festgeld_rollover_f01.abap:119"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-135-B01",
+      "text": "Die Tabelle, aus der die Zinssätze kommen, wird aus der Variablentabelle gelesen; ist keine gepflegt, gilt das Tagesfixing.",
+      "anchors": [
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:9"
+        },
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:12"
+        },
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-135-B02",
+      "text": "Es werden die am Stichtag fälligen Festgelder des Buchungskreises gelesen, für die eine aktive Rollover-Regel mit neuer Laufzeit besteht.",
+      "anchors": [
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-135-B03",
+      "text": "Gibt es keine, wird ein Hinweis ausgegeben und der Lauf beendet.",
+      "anchors": [
+        {
+          "file": "ztrm_festgeld_rollover.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover.abap:37"
+        },
+        {
+          "file": "ztrm_festgeld_rollover.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover.abap:38"
+        },
+        {
+          "file": "ztrm_festgeld_rollover.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-135-B04",
+      "text": "Je Festgeld wird der Zinssatz für Währung und neue Laufzeit am Stichtag aus der Zinsquelle gelesen; fehlt er, wird das Geschäft zur manuellen Bearbeitung protokolliert.",
+      "anchors": [
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:42"
+        },
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-135-B05",
+      "text": "Der Nominalbetrag des fälligen Geschäfts wird aus seinem Kapitalzugang gelesen.",
+      "anchors": [
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-135-B06",
+      "text": "Im Testlauf wird nur der ermittelte Zinssatz protokolliert.",
+      "anchors": [
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-135-B07",
+      "text": "Im Echtlauf wird beim selben Partner ein neues Festgeld über den Nominalbetrag vom Stichtag bis Stichtag plus Laufzeit zum ermittelten Zinssatz angelegt.",
+      "anchors": [
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-135-B08",
+      "text": "Meldet die Anlage einen Fehler, wird zurückgerollt und die Fehlermeldung protokolliert; sonst wird festgeschrieben und das neue Geschäft protokolliert.",
+      "anchors": [
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:78"
+        },
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:79"
+        },
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-135-B09",
+      "text": "Wurden im Echtlauf neue Geschäfte angelegt und ist die Buchung gewünscht, wird der Treasury-Buchungslauf für Buchungskreis und Stichtag als sofort startender Hintergrundjob eingeplant.",
+      "anchors": [
+        {
+          "file": "ztrm_festgeld_rollover.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover.abap:46"
+        },
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:103"
+        },
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:115"
+        },
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:119"
+        }
+      ]
+    },
+    {
+      "id": "BM-135-B10",
+      "text": "Kann der Job nicht angelegt werden, erscheint ein Hinweis und es wird nichts eingeplant; ob die Freigabe des Jobs gelingt, wird nicht geprüft.",
+      "anchors": [
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:110"
+        },
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:111"
+        }
+      ]
+    },
+    {
+      "id": "BM-135-B11",
+      "text": "Zum Schluss werden je Festgeld altes und neues Geschäft, Zinssatz und Ergebnistext gelistet.",
+      "anchors": [
+        {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:134"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover.abap:34"
+        },
+        "meaning": "Morgendlicher Rollover-Lauf"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover.abap:35"
+        },
+        "meaning": "Zinsquelle bestimmen"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover.abap:36"
+        },
+        "meaning": "Fällige Festgelder mit Rollover-Regel lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover.abap:37"
+        },
+        "meaning": "Keine fälligen Festgelder?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover.abap:38"
+        },
+        "meaning": "Hinweis „keine fälligen Festgelder“"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover.abap:39"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover.abap:42"
+        },
+        "meaning": "Fällige Festgelder einzeln"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover.abap:43"
+        },
+        "meaning": "Festgeld prolongieren"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover.abap:46"
+        },
+        "meaning": "Echtlauf, Buchung gewünscht und neue Geschäfte?"
+      },
+      {
+        "id": "c4",
+        "type": "call",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover.abap:47"
+        },
+        "meaning": "Buchungslauf einplanen"
+      },
+      {
+        "id": "c5",
+        "type": "call",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover.abap:49"
+        },
+        "meaning": "Protokoll ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover.abap:49"
+        },
+        "meaning": "Lauf fertig"
+      },
+      {
+        "id": "z",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:8"
+        },
+        "meaning": "Zinsquelle"
+      },
+      {
+        "id": "zr",
+        "type": "read",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:9"
+        },
+        "meaning": "Name der Zinstabelle aus der Variablentabelle lesen"
+      },
+      {
+        "id": "zg",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:12"
+        },
+        "meaning": "Keine Zinsquelle gepflegt?"
+      },
+      {
+        "id": "ze",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:15"
+        },
+        "meaning": "Zinsquelle bestimmt"
+      },
+      {
+        "id": "f",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:20"
+        },
+        "meaning": "Selektion"
+      },
+      {
+        "id": "fr",
+        "type": "read",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:21"
+        },
+        "meaning": "Heute fällige Festgelder (51A) des Buchungskreises mit aktiver Rollover-Regel und Laufzeit lesen"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:30"
+        },
+        "meaning": "Selektion fertig"
+      },
+      {
+        "id": "p",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:35"
+        },
+        "meaning": "Prolongation eines Festgelds"
+      },
+      {
+        "id": "pr",
+        "type": "read",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:42"
+        },
+        "meaning": "Zinssatz für Währung und Laufzeit am Stichtag aus der Zinsquelle lesen"
+      },
+      {
+        "id": "pg",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:46"
+        },
+        "meaning": "Kein Zinssatz?"
+      },
+      {
+        "id": "pe1",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:48"
+        },
+        "meaning": "Protokoll „kein Zinssatz – manuell“"
+      },
+      {
+        "id": "pn",
+        "type": "read",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:52"
+        },
+        "meaning": "Nominalbetrag des fälligen Geschäfts lesen"
+      },
+      {
+        "id": "pt",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:57"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "pe2",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:59"
+        },
+        "meaning": "Protokoll „Testlauf“"
+      },
+      {
+        "id": "pc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:62"
+        },
+        "meaning": "Neues Festgeld mit Nominal, Laufzeit und Zinssatz anlegen"
+      },
+      {
+        "id": "pg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:78"
+        },
+        "meaning": "Anlage mit Fehler?"
+      },
+      {
+        "id": "prb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:79"
+        },
+        "meaning": "Zurückrollen, Fehler protokollieren"
+      },
+      {
+        "id": "pcm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:83"
+        },
+        "meaning": "Neues Geschäft festschreiben, zählen und protokollieren"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:90"
+        },
+        "meaning": "Prolongation beendet"
+      },
+      {
+        "id": "j",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:95"
+        },
+        "meaning": "Jobeinplanung"
+      },
+      {
+        "id": "jo",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:103"
+        },
+        "meaning": "Hintergrundjob anlegen"
+      },
+      {
+        "id": "jg",
+        "type": "gateway",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:110"
+        },
+        "meaning": "Job nicht angelegt?"
+      },
+      {
+        "id": "jm",
+        "type": "output",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:111"
+        },
+        "meaning": "Hinweis „Job nicht angelegt“"
+      },
+      {
+        "id": "jr",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:112"
+        },
+        "meaning": "Einplanung abbrechen"
+      },
+      {
+        "id": "js",
+        "type": "external_program",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:115"
+        },
+        "meaning": "Buchungsprogramm mit Buchungskreis und Stichtag als Jobschritt einplanen"
+      },
+      {
+        "id": "jc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:119"
+        },
+        "meaning": "Job zum Sofortstart freigeben"
+      },
+      {
+        "id": "je",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:126"
+        },
+        "meaning": "Einplanung beendet"
+      },
+      {
+        "id": "w",
+        "type": "start",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:131"
+        },
+        "meaning": "Protokoll"
+      },
+      {
+        "id": "wl",
+        "type": "loop",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:133"
+        },
+        "meaning": "Protokollzeilen durchgehen"
+      },
+      {
+        "id": "wo",
+        "type": "output",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:134"
+        },
+        "meaning": "Altes und neues Geschäft, Zinssatz und Text listen"
+      },
+      {
+        "id": "we",
+        "type": "end",
+        "anchor": {
+          "file": "ztrm_festgeld_rollover_f01.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "ztrm_festgeld_rollover_f01.abap:136"
+        },
+        "meaning": "Protokoll fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "z",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "f",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "o1",
+        "condition": "gt_fha IS INITIAL"
+      },
+      {
+        "from": "o1",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "c3",
+        "condition": "next row"
+      },
+      {
+        "from": "c3",
+        "to": "p",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "g2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g2",
+        "to": "c4",
+        "condition": "p_test IS INITIAL AND p_post = 'X' AND gv_neu > 0"
+      },
+      {
+        "from": "g2",
+        "to": "c5",
+        "condition": "else"
+      },
+      {
+        "from": "c4",
+        "to": "j",
+        "condition": "always"
+      },
+      {
+        "from": "c5",
+        "to": "w",
+        "condition": "always"
+      },
+      {
+        "from": "z",
+        "to": "zr",
+        "condition": "always"
+      },
+      {
+        "from": "zr",
+        "to": "zg",
+        "condition": "always"
+      },
+      {
+        "from": "zg",
+        "to": "ze",
+        "condition": "else"
+      },
+      {
+        "from": "f",
+        "to": "fr",
+        "condition": "always"
+      },
+      {
+        "from": "fr",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "p",
+        "to": "pr",
+        "condition": "always"
+      },
+      {
+        "from": "pr",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "pg",
+        "to": "pe1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pg",
+        "to": "pn",
+        "condition": "else"
+      },
+      {
+        "from": "pn",
+        "to": "pt",
+        "condition": "always"
+      },
+      {
+        "from": "pt",
+        "to": "pe2",
+        "condition": "p_test = 'X'"
+      },
+      {
+        "from": "pt",
+        "to": "pc",
+        "condition": "else"
+      },
+      {
+        "from": "pc",
+        "to": "pg2",
+        "condition": "always"
+      },
+      {
+        "from": "pg2",
+        "to": "prb",
+        "condition": "line_exists( lt_return[ type = 'E' ] )"
+      },
+      {
+        "from": "pg2",
+        "to": "pcm",
+        "condition": "else"
+      },
+      {
+        "from": "prb",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "pcm",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "j",
+        "to": "jo",
+        "condition": "always"
+      },
+      {
+        "from": "jo",
+        "to": "jg",
+        "condition": "always"
+      },
+      {
+        "from": "jg",
+        "to": "jm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "jm",
+        "to": "jr",
+        "condition": "always"
+      },
+      {
+        "from": "jg",
+        "to": "js",
+        "condition": "else"
+      },
+      {
+        "from": "js",
+        "to": "jc",
+        "condition": "always"
+      },
+      {
+        "from": "jc",
+        "to": "je",
+        "condition": "always"
+      },
+      {
+        "from": "w",
+        "to": "wl",
+        "condition": "always"
+      },
+      {
+        "from": "wl",
+        "to": "wo",
+        "condition": "next row"
+      },
+      {
+        "from": "wo",
+        "to": "wl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "wl",
+        "to": "we",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ze",
+        "to": "c2",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pe1",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pe2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "je",
+        "to": "c5",
+        "condition": "always"
+      },
+      {
+        "from": "jr",
+        "to": "c5",
+        "condition": "always"
+      },
+      {
+        "from": "we",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "zg",
+        "to": "ze",
+        "condition": "sy-subrc <> 0 OR gv_tab IS INITIAL"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "ztrm_festgeld_rollover_f01.abap:62 — kein Fachsatz „das fällige Festgeld wird abgerechnet oder als prolongiert gekennzeichnet“: am alten Geschäft ändert der Report nichts",
+    "ztrm_festgeld_rollover_f01.abap:115 — kein Fachsatz „die neuen Geschäfte werden gebucht“: der Report plant den Buchungslauf nur ein, ob und was gebucht wird, entscheidet das Standardprogramm",
+    "ztrm_festgeld_rollover_f01.abap:42 — kein Fachsatz „der Zinssatz kommt immer aus dem Tagesfixing“: die Quelltabelle wird zur Laufzeit aus der Variablentabelle bestimmt",
+    "ztrm_festgeld_rollover.abap:39 — kein Fachsatz „ohne fällige Festgelder wird ein leeres Protokoll ausgegeben“: der Lauf endet vor der Protokollausgabe"
+  ],
+  "processDescription": "Der Report läuft morgens mit Buchungskreis, Stichtag, Testlaufschalter und Buchungsschalter (beide vorbelegt). Zuerst bestimmt er über die Variablentabelle, aus welcher Tabelle die Zinssätze kommen; ohne Eintrag gilt das Tagesfixing. Dann liest er die am Stichtag fälligen Festgelder des Buchungskreises mit aktiver Rollover-Regel; gibt es keine, schreibt er einen Hinweis und endet. Je Festgeld liest er den Zinssatz für Währung und neue Laufzeit aus der bestimmten Tabelle; fehlt er, protokolliert er das Geschäft zur manuellen Bearbeitung. Sonst liest er den Nominalbetrag aus dem Kapitalzugang des alten Geschäfts. Im Testlauf protokolliert er nur den Zinssatz. Im Echtlauf legt er beim selben Partner ein neues Festgeld über den Nominalbetrag mit der neuen Laufzeit und dem Zinssatz an; bei Fehler rollt er zurück und protokolliert die Meldung, sonst schreibt er fest, zählt und protokolliert das neue Geschäft. Wurden im Echtlauf Geschäfte angelegt und ist Buchen gewünscht, plant er den Treasury-Buchungslauf für Buchungskreis und Stichtag als sofort startenden Hintergrundjob ein; scheitert die Anlage des Jobs, erscheint ein Hinweis, eine fehlgeschlagene Freigabe bleibt unbemerkt. Zum Schluss listet er das Protokoll. Das alte Geschäft bleibt unverändert."
+}

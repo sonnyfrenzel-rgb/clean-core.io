@@ -1,0 +1,49 @@
+{
+  "id": "BM-179",
+  "title": "Transport und Handling Units: Frachtkosten aus HU-Gewicht und Spediteurtarif berechnen, Frachtkostenbelege per Batch-Input",
+  "domain": "Logistik-Randbereich Transport LE-TRA / Frachtkosten / Handling Units",
+  "band": "sehr komplex",
+  "loc": 402,
+  "constructs": [
+    "INITIALIZATION mit Selektionsvorbelegung",
+    "AT SELECTION-SCREEN ON mit LOOP über Selektionstabelle",
+    "STOP",
+    "END-OF-SELECTION / TOP-OF-PAGE / AT LINE-SELECTION",
+    "Makros DEFINE für BDC",
+    "SELECT … FOR ALL ENTRIES (VFKP, VTTP, VEKP)",
+    "CHECK / RETURN als Leermengenschutz",
+    "dreifach verschachtelte LOOPs mit EXIT",
+    "SWITCH #",
+    "SELECT … ORDER BY … UP TO 1 ROWS",
+    "CATCH SYSTEM-EXCEPTIONS arithmetic_errors",
+    "nmax / CONV decfloat16",
+    "EXPORT … TO MEMORY / FREE MEMORY",
+    "CALL TRANSACTION … USING … OPTIONS FROM … MESSAGES INTO",
+    "AT NEW / AT END OF / SUM",
+    "HIDE",
+    "SET PARAMETER ID + CALL TRANSACTION … AND SKIP FIRST SCREEN",
+    "nie gerufenes FORM",
+    "auskommentierter Batch-Input VI02"
+  ],
+  "scenario": "Handelsunternehmen mit Fremdspeditionen: ein Nachtjob berechnet für abgefertigte Transporte die Fracht aus den Handling-Unit-Gewichten und dem eigenen Spediteurtarif und legt die Frachtkostenbelege per Batch-Input an.",
+  "s4_issues": [
+    "Batch-Input auf VI01/VI03 (in S/4 Frachtkosten über TM bzw. Freight Settlement)",
+    "Übergabe des Betrags per ABAP-Memory an einen Kalkulationsexit (unsichtbare Kopplung)",
+    "Direktlesen VTTK/VTTP/VEKP/VFKP",
+    "Eigenes Tarifmodell neben der Frachtkostenkalkulation",
+    "HU-Gewichte ohne Beachtung geschachtelter HUs"
+  ],
+  "wave": 2,
+  "module": "LE-TRA / LE-SHP-FK",
+  "edge_constructs": [
+    "STOP (END-OF-SELECTION läuft trotzdem)",
+    "EXIT in verschachtelter Schleife",
+    "EXPORT … TO MEMORY für einen fremden Exit",
+    "CALL TRANSACTION … USING … MESSAGES INTO",
+    "AT NEW / AT END OF / SUM",
+    "AT LINE-SELECTION mit SET PARAMETER ID und CALL TRANSACTION … AND SKIP FIRST SCREEN",
+    "Makros (DEFINE)",
+    "CATCH SYSTEM-EXCEPTIONS",
+    "nie erreichtes FORM und auskommentierter Zweig"
+  ]
+}

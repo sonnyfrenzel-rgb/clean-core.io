@@ -1,0 +1,35 @@
+{
+  "id": "BM-109",
+  "title": "Sicherheitsdatenblatt-Erstversand: fällige Kunden/Stoffe ermitteln, Versandjob einplanen",
+  "domain": "EHS — Gefahrstoffe / Sicherheitsdatenblätter",
+  "band": "mittel",
+  "loc": 106,
+  "constructs": [
+    "REPORT",
+    "SELECT mit Join LIKP/LIPS/VBUK",
+    "DELETE ADJACENT DUPLICATES",
+    "FOR ALL ENTRIES mit Join",
+    "FOR ALL ENTRIES mit Leermengenschutz",
+    "READ TABLE Lookup",
+    "CONTINUE",
+    "JOB_OPEN/JOB_CLOSE",
+    "EXPORT TO DATABASE",
+    "SUBMIT VIA JOB",
+    "nie aufgerufenes FORM"
+  ],
+  "scenario": "Nach REACH/CLP muss ein Kunde beim ersten Bezug eines Gefahrstoffs das Sicherheitsdatenblatt erhalten; ein Z-Report ermittelt aus den Warenausgängen die fälligen Kombinationen und plant den Versandjob ein.",
+  "s4_issues": [
+    "VBUK entfällt: Warenausgangsstatus WBSTK steht in S/4 in LIKP",
+    "ESTMJ/ESTRH (EHS-Spezifikationen) in S/4HANA Product Compliance abgelöst",
+    "EXPORT TO DATABASE INDX als Übergabe an den Job",
+    "JOB_OPEN ohne Fehlerauswertung"
+  ],
+  "wave": 2,
+  "module": "EHS",
+  "edge_constructs": [
+    "SUBMIT … VIA JOB (JOB_OPEN/JOB_CLOSE)",
+    "EXPORT … TO DATABASE",
+    "nie erreichtes FORM",
+    "SELECT … FOR ALL ENTRIES mit Leermengenschutz"
+  ]
+}

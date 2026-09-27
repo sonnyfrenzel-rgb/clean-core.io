@@ -1,0 +1,52 @@
+{
+  "id": "BM-137",
+  "title": "RE-FX Indexmiete: Mietanpassung nach Verbraucherpreisindex mit Schwelle und Jahresfrist, Vertragsänderung, Mieterbrief per Smart Form und Fehlermail",
+  "domain": "RE-FX / Immobilienverwaltung – Mietanpassung",
+  "band": "sehr komplex",
+  "loc": 401,
+  "constructs": [
+    "REPORT mit fünf Includes",
+    "AT SELECTION-SCREEN",
+    "MESSAGE TYPE E auf dem Selektionsbild",
+    "STOP mit END-OF-SELECTION",
+    "CHECK in END-OF-SELECTION",
+    "SELECT mit INNER JOIN und OR-Klammer",
+    "READ TABLE sortierte Tabelle",
+    "CHECK in Schleife",
+    "round",
+    "ENQUEUE/DEQUEUE eigenes Sperrobjekt",
+    "BAPI_RE_CN_CHANGE",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "UPDATE Z-Tabelle",
+    "Schalter über TVARVC",
+    "SSF_FUNCTION_MODULE_NAME",
+    "dynamischer CALL FUNCTION lv_fm",
+    "Debug-Hintertür IF sy-uname = 'AKR_TEST'",
+    "nie erreichtes FORM (SAPscript)",
+    "VALUE # FOR … WHERE",
+    "CL_BCS mit verketteten Aufrufen",
+    "REUSE_ALV_GRID_DISPLAY"
+  ],
+  "scenario": "Wohnungs- und Gewerbevermieter mit Indexmietverträgen: Nach Veröffentlichung des Verbraucherpreisindex werden die Grundmieten angepasst, die Vertragskonditionen geändert und Anpassungsschreiben an die Mieter gedruckt.",
+  "s4_issues": [
+    "RE-FX bietet die Mietanpassung nach Index im Standard (RERAIV), Eigenbau daneben",
+    "Direkter Lesezugriff auf VICNCN/VICDCOND",
+    "dynamischer Funktionsbausteinaufruf des Smart-Form-Bausteins",
+    "Hintertür über Benutzername",
+    "toter SAPscript-Code"
+  ],
+  "wave": 2,
+  "module": "RE-FX",
+  "edge_constructs": [
+    "AT SELECTION-SCREEN",
+    "STOP",
+    "CHECK mitten in Schleife",
+    "dynamischer CALL FUNCTION lv_fm",
+    "Schalter über TVARVC",
+    "Debug-Hintertür (IF sy-uname = '…')",
+    "nie erreichtes FORM",
+    "VALUE #( FOR … )",
+    "verkettete Methodenaufrufe",
+    "MESSAGE … TYPE 'E' als Pfadende"
+  ]
+}

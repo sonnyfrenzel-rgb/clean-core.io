@@ -1,0 +1,34 @@
+{
+  "id": "BM-150",
+  "title": "ESS-Urlaubsantrag: Zusatzprüfung auf Sperrzeit, Überschneidung und Restanspruch",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "mittel",
+  "loc": 77,
+  "constructs": [
+    "CLASS … DEFINITION/IMPLEMENTATION",
+    "CLASS-METHODS mit RETURNING",
+    "SELECT SINGLE PA0001",
+    "SELECT COUNT(*) Kundentabelle",
+    "SELECT SINGLE @abap_true PA2001",
+    "SELECT PA2006",
+    "CASE",
+    "REDUCE",
+    "xsdbool",
+    "RAISE EXCEPTION TYPE"
+  ],
+  "scenario": "Im ESS-Urlaubsantrag ruft die BAdI-Implementierung vor dem Absenden eine Kundenklasse, die Urlaubssperren, Überschneidungen und den Resturlaub prüft und bei langen Abwesenheiten einen Hinweis für den Genehmiger setzt.",
+  "s4_issues": [
+    "Direkte Lesezugriffe auf PA0001/PA2001/PA2006 statt über HR-Lesebausteine",
+    "Abwesenheitsarten und Kontingentarten als Literale",
+    "Kalendertage statt Sollarbeitszeit"
+  ],
+  "wave": 2,
+  "module": "ESS",
+  "edge_constructs": [
+    "RAISE EXCEPTION TYPE als Pfadende (vierfach)",
+    "xsdbool",
+    "REDUCE",
+    "Inline-Deklarationen",
+    "WHEN OTHERS ohne Anweisung"
+  ]
+}

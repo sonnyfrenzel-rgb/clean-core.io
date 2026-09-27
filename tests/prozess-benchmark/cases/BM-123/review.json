@@ -1,0 +1,14 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e (end)",
+      "before": "source.abap:31 (Zuweisung ev_fivor = ls_fmci-fivor)",
+      "after": "source.abap:32 (ENDFUNCTION)",
+      "why": "Vereinheitlichte Konvention: jeder auslaufende FORM/METHOD/FUNCTION-Block hat seinen end-Knoten auf ENDFORM/ENDMETHOD/ENDFUNCTION. Die Zuweisung des Exportparameters ist kein Knoten; B04 bleibt auf Z. 31.",
+      "category": "Anker"
+    }
+  ],
+  "doubts": []
+}

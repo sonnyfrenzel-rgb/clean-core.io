@@ -1,0 +1,1267 @@
+{
+  "id": "BM-133",
+  "title": "PSM Grants Management: kostenbasierte Sponsorenabrechnung als Lastschriftanforderung mit RETRY bei Sperre",
+  "classes": [
+    "K01",
+    "K02",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "GMGR",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_gm_sponsor_billing.abap",
+        "line": 54,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_gm_sponsor_billing.abap:54"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZGM_UNALLOW",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_gm_sponsor_billing.abap",
+        "line": 76,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_gm_sponsor_billing.abap:76"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "GMIA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_gm_sponsor_billing.abap",
+        "line": 80,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_gm_sponsor_billing.abap:80"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZGM_BILLED",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_gm_sponsor_billing.abap",
+        "line": 94,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_gm_sponsor_billing.abap:94"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "GMSPONSOR",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_gm_sponsor_billing.abap",
+        "line": 108,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_gm_sponsor_billing.abap:108"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZGM_BILLED",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_gm_sponsor_billing.abap",
+        "line": 117,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_gm_sponsor_billing.abap:117"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_gm_sponsor_billing.abap",
+        "line": 121,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_gm_sponsor_billing.abap:121"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_gm_sponsor_billing.abap",
+        "line": 132,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_gm_sponsor_billing.abap:132"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_SALESORDER_CREATEFROMDAT2",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_gm_sponsor_billing.abap",
+        "line": 154,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_gm_sponsor_billing.abap:154"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-133-B01",
+      "text": "Es werden die gültigen Förderungen des Buchungskreises mit kostenbasierter Abrechnungsregel gelesen; gibt es keine, bricht der Job mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:54"
+        },
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:60"
+        },
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:61"
+        },
+        {
+          "file": "z_gm_billing_job.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gm_billing_job.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-133-B02",
+      "text": "Für jede Förderung werden die nicht förderfähigen Sponsored Classes ihres Fördertyps gelesen.",
+      "anchors": [
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-133-B03",
+      "text": "Die Ist-Ausgaben der Förderung bis zum Stichtag werden je Sponsored Class summiert, und nur die förderfähigen Klassen werden addiert.",
+      "anchors": [
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:80"
+        },
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:88"
+        },
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:91"
+        }
+      ]
+    },
+    {
+      "id": "BM-133-B04",
+      "text": "Der abzurechnende Betrag ist die Summe der förderfähigen Ausgaben abzüglich aller bereits abgerechneten Beträge.",
+      "anchors": [
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:94"
+        },
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:98"
+        }
+      ]
+    },
+    {
+      "id": "BM-133-B05",
+      "text": "Ist nichts abzurechnen, wird das für die Förderung vermerkt und keine Anforderung angelegt.",
+      "anchors": [
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:99"
+        },
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:101"
+        }
+      ]
+    },
+    {
+      "id": "BM-133-B06",
+      "text": "Im Testlauf wird der Betrag nur ausgewiesen.",
+      "anchors": [
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:103"
+        },
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:105"
+        }
+      ]
+    },
+    {
+      "id": "BM-133-B07",
+      "text": "Im Echtlauf wird der Debitor des Sponsors ermittelt.",
+      "anchors": [
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:108"
+        }
+      ]
+    },
+    {
+      "id": "BM-133-B08",
+      "text": "Für den Sponsor wird eine Lastschriftanforderung der Art ZGMA mit dem Betrag als Kondition ZGM0 und der Fördernummer als Bestellnummer angelegt.",
+      "anchors": [
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:114"
+        },
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:154"
+        }
+      ]
+    },
+    {
+      "id": "BM-133-B09",
+      "text": "Meldet die Anlage, dass Sponsor oder Beleg gerade bearbeitet werden, wird nach zwei Sekunden Wartezeit bis zu dreimal insgesamt versucht; danach wird die Förderung auf den nächsten Lauf verschoben.",
+      "anchors": [
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:166"
+        },
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:167"
+        },
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:126"
+        },
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:127"
+        },
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:128"
+        }
+      ]
+    },
+    {
+      "id": "BM-133-B10",
+      "text": "Liefert die Anlage keine Belegnummer, wird zurückgerollt und der Fehlertext übernommen.",
+      "anchors": [
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:169"
+        },
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:132"
+        }
+      ]
+    },
+    {
+      "id": "BM-133-B11",
+      "text": "Nach erfolgreicher Anlage wird die Abrechnung mit Stichtag, Anforderungsnummer und Betrag vermerkt und alles festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:117"
+        },
+        {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:121"
+        }
+      ]
+    },
+    {
+      "id": "BM-133-B12",
+      "text": "Je Förderung werden Betrag, Anforderungsnummer und Ergebnistext gelistet.",
+      "anchors": [
+        {
+          "file": "z_gm_billing_job.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gm_billing_job.abap:25"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "z_gm_billing_job.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gm_billing_job.abap:14"
+        },
+        "meaning": "Monatsjob startet"
+      },
+      {
+        "id": "rn",
+        "type": "call",
+        "anchor": {
+          "file": "z_gm_billing_job.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gm_billing_job.abap:15"
+        },
+        "meaning": "Abrechnungsobjekt mit Buchungskreis, Stichtag und Testlauf anlegen"
+      },
+      {
+        "id": "rc",
+        "type": "call",
+        "anchor": {
+          "file": "z_gm_billing_job.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gm_billing_job.abap:19"
+        },
+        "meaning": "Abrechnung für die Förderungen ausführen"
+      },
+      {
+        "id": "rm",
+        "type": "output",
+        "anchor": {
+          "file": "z_gm_billing_job.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gm_billing_job.abap:21"
+        },
+        "meaning": "Fehler der Abrechnung als Abbruchmeldung"
+      },
+      {
+        "id": "rme",
+        "type": "end",
+        "anchor": {
+          "file": "z_gm_billing_job.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gm_billing_job.abap:21"
+        },
+        "meaning": "Programmabbruch"
+      },
+      {
+        "id": "rl",
+        "type": "loop",
+        "anchor": {
+          "file": "z_gm_billing_job.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gm_billing_job.abap:24"
+        },
+        "meaning": "Ergebnisse je Förderung durchgehen"
+      },
+      {
+        "id": "ro",
+        "type": "output",
+        "anchor": {
+          "file": "z_gm_billing_job.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gm_billing_job.abap:25"
+        },
+        "meaning": "Förderung mit Betrag, Anforderungsnummer und Text listen"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "anchor": {
+          "file": "z_gm_billing_job.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_gm_billing_job.abap:26"
+        },
+        "meaning": "Job fertig"
+      },
+      {
+        "id": "k",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:46"
+        },
+        "meaning": "Parameter übernehmen"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:50"
+        },
+        "meaning": "Objekt bereit"
+      },
+      {
+        "id": "u",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:52"
+        },
+        "meaning": "Abrechnung aller Förderungen"
+      },
+      {
+        "id": "uq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:54"
+        },
+        "meaning": "Gültige kostenbasiert abzurechnende Förderungen des Buchungskreises lesen"
+      },
+      {
+        "id": "ug",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:60"
+        },
+        "meaning": "Keine Förderungen?"
+      },
+      {
+        "id": "ux",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:61"
+        },
+        "meaning": "Abbruch: keine Förderungen"
+      },
+      {
+        "id": "ul",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:65"
+        },
+        "meaning": "Förderungen einzeln abrechnen"
+      },
+      {
+        "id": "uc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:66"
+        },
+        "meaning": "Förderung abrechnen und Ergebnis sammeln"
+      },
+      {
+        "id": "ue",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:68"
+        },
+        "meaning": "Alle Förderungen abgerechnet"
+      },
+      {
+        "id": "b",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:70"
+        },
+        "meaning": "Abrechnung einer Förderung"
+      },
+      {
+        "id": "bu",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:76"
+        },
+        "meaning": "Nicht förderfähige Sponsored Classes des Fördertyps lesen"
+      },
+      {
+        "id": "bk",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:80"
+        },
+        "meaning": "Ist-Ausgaben der Förderung bis Stichtag je Sponsored Class summieren"
+      },
+      {
+        "id": "bl",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:87"
+        },
+        "meaning": "Ausgaben je Sponsored Class durchgehen"
+      },
+      {
+        "id": "bg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:88"
+        },
+        "meaning": "Nicht förderfähig?"
+      },
+      {
+        "id": "ba",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:91"
+        },
+        "meaning": "Förderfähige Ausgaben addieren"
+      },
+      {
+        "id": "bb",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:94"
+        },
+        "meaning": "Bereits abgerechnete Beträge summieren"
+      },
+      {
+        "id": "bd",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:98"
+        },
+        "meaning": "Abzurechnender Betrag = förderfähig minus abgerechnet"
+      },
+      {
+        "id": "bz",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:99"
+        },
+        "meaning": "Nichts abzurechnen?"
+      },
+      {
+        "id": "bze",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:101"
+        },
+        "meaning": "Ergebnis „nichts abzurechnen“"
+      },
+      {
+        "id": "bt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:103"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "bte",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:105"
+        },
+        "meaning": "Ergebnis „Testlauf“"
+      },
+      {
+        "id": "bs",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:108"
+        },
+        "meaning": "Debitor des Sponsors lesen"
+      },
+      {
+        "id": "bc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:114"
+        },
+        "meaning": "Lastschriftanforderung anlegen"
+      },
+      {
+        "id": "bi",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:117"
+        },
+        "meaning": "Abrechnung mit Stichtag, Anforderung und Betrag vermerken"
+      },
+      {
+        "id": "bcm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:121"
+        },
+        "meaning": "Anforderung und Vermerk festschreiben"
+      },
+      {
+        "id": "ctry",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:126"
+        },
+        "meaning": "Noch Versuche übrig?"
+      },
+      {
+        "id": "cw",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:127"
+        },
+        "meaning": "Zwei Sekunden warten"
+      },
+      {
+        "id": "cr",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:128"
+        },
+        "meaning": "Anlage erneut versuchen"
+      },
+      {
+        "id": "cb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:132"
+        },
+        "meaning": "Zurückrollen, Fehlertext übernehmen"
+      },
+      {
+        "id": "bend",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:135"
+        },
+        "meaning": "Ergebnis der Förderung zurückgeben"
+      },
+      {
+        "id": "c",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:137"
+        },
+        "meaning": "Anlage der Lastschriftanforderung"
+      },
+      {
+        "id": "cp",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:154"
+        },
+        "meaning": "Lastschriftanforderung ZGMA mit Betrag als Kondition ZGM0 anlegen"
+      },
+      {
+        "id": "cg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:166"
+        },
+        "meaning": "Sperrfehler V1 042?"
+      },
+      {
+        "id": "cx1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:167"
+        },
+        "meaning": "Ausnahme „gesperrt“"
+      },
+      {
+        "id": "cg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:169"
+        },
+        "meaning": "Keine Belegnummer?"
+      },
+      {
+        "id": "cx2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:170"
+        },
+        "meaning": "Ausnahme „Anlage fehlgeschlagen“"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_gm_sponsor_billing.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_gm_sponsor_billing.abap:173"
+        },
+        "meaning": "Belegnummer zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "rs",
+        "to": "rn",
+        "condition": "always"
+      },
+      {
+        "from": "rn",
+        "to": "k",
+        "condition": "always"
+      },
+      {
+        "from": "rc",
+        "to": "u",
+        "condition": "always"
+      },
+      {
+        "from": "rm",
+        "to": "rme",
+        "condition": "always"
+      },
+      {
+        "from": "rl",
+        "to": "ro",
+        "condition": "next row"
+      },
+      {
+        "from": "ro",
+        "to": "rl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rl",
+        "to": "re",
+        "condition": "no more rows"
+      },
+      {
+        "from": "k",
+        "to": "ke",
+        "condition": "always"
+      },
+      {
+        "from": "u",
+        "to": "uq",
+        "condition": "always"
+      },
+      {
+        "from": "uq",
+        "to": "ug",
+        "condition": "always"
+      },
+      {
+        "from": "ug",
+        "to": "ux",
+        "condition": "lt_grant IS INITIAL"
+      },
+      {
+        "from": "ug",
+        "to": "ul",
+        "condition": "else"
+      },
+      {
+        "from": "ul",
+        "to": "uc",
+        "condition": "next row"
+      },
+      {
+        "from": "uc",
+        "to": "b",
+        "condition": "always"
+      },
+      {
+        "from": "ul",
+        "to": "ue",
+        "condition": "no more rows"
+      },
+      {
+        "from": "b",
+        "to": "bu",
+        "condition": "always"
+      },
+      {
+        "from": "bu",
+        "to": "bk",
+        "condition": "always"
+      },
+      {
+        "from": "bk",
+        "to": "bl",
+        "condition": "always"
+      },
+      {
+        "from": "bl",
+        "to": "bg",
+        "condition": "next row"
+      },
+      {
+        "from": "bg",
+        "to": "bl",
+        "condition": "line_exists( lt_unallow[ table_line = ls_k-rsponsored_class ] )"
+      },
+      {
+        "from": "bg",
+        "to": "ba",
+        "condition": "else"
+      },
+      {
+        "from": "ba",
+        "to": "bl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "bl",
+        "to": "bb",
+        "condition": "no more rows"
+      },
+      {
+        "from": "bb",
+        "to": "bd",
+        "condition": "always"
+      },
+      {
+        "from": "bd",
+        "to": "bz",
+        "condition": "always"
+      },
+      {
+        "from": "bz",
+        "to": "bze",
+        "condition": "rs_result-betrag <= 0"
+      },
+      {
+        "from": "bz",
+        "to": "bt",
+        "condition": "else"
+      },
+      {
+        "from": "bt",
+        "to": "bte",
+        "condition": "mv_test = abap_true"
+      },
+      {
+        "from": "bt",
+        "to": "bs",
+        "condition": "else"
+      },
+      {
+        "from": "bs",
+        "to": "bc",
+        "condition": "always"
+      },
+      {
+        "from": "bc",
+        "to": "c",
+        "condition": "always"
+      },
+      {
+        "from": "bi",
+        "to": "bcm",
+        "condition": "always"
+      },
+      {
+        "from": "bcm",
+        "to": "bend",
+        "condition": "always"
+      },
+      {
+        "from": "ctry",
+        "to": "cw",
+        "condition": "lv_try < 3"
+      },
+      {
+        "from": "cw",
+        "to": "cr",
+        "condition": "always"
+      },
+      {
+        "from": "cr",
+        "to": "bc",
+        "condition": "always"
+      },
+      {
+        "from": "ctry",
+        "to": "bend",
+        "condition": "else"
+      },
+      {
+        "from": "cb",
+        "to": "bend",
+        "condition": "always"
+      },
+      {
+        "from": "c",
+        "to": "cp",
+        "condition": "always"
+      },
+      {
+        "from": "cp",
+        "to": "cg1",
+        "condition": "always"
+      },
+      {
+        "from": "cg1",
+        "to": "cx1",
+        "condition": "line_exists( lt_ret[ type = 'E' id = 'V1' number = '042' ] )"
+      },
+      {
+        "from": "cg1",
+        "to": "cg2",
+        "condition": "else"
+      },
+      {
+        "from": "cg2",
+        "to": "cx2",
+        "condition": "rv_vbeln IS INITIAL"
+      },
+      {
+        "from": "cg2",
+        "to": "ce",
+        "condition": "else"
+      },
+      {
+        "from": "ke",
+        "to": "rc",
+        "condition": "always"
+      },
+      {
+        "from": "ue",
+        "to": "rl",
+        "condition": "always"
+      },
+      {
+        "from": "ux",
+        "to": "rm",
+        "condition": "CATCH zcx_gm_billing INTO DATA(lx_err)"
+      },
+      {
+        "from": "bend",
+        "to": "ul",
+        "condition": "next iteration"
+      },
+      {
+        "from": "bze",
+        "to": "ul",
+        "condition": "next iteration"
+      },
+      {
+        "from": "bte",
+        "to": "ul",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ce",
+        "to": "bi",
+        "condition": "always"
+      },
+      {
+        "from": "cx1",
+        "to": "ctry",
+        "condition": "CATCH zcx_gm_locked"
+      },
+      {
+        "from": "cx2",
+        "to": "cb",
+        "condition": "CATCH zcx_gm_billing INTO DATA(lx_bill)"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_gm_sponsor_billing.abap:154 — kein Fachsatz „die Anforderung wird in der Förderwährung angelegt“: die Kondition wird immer in EUR übergeben",
+    "zcl_gm_sponsor_billing.abap:126 — kein Fachsatz „nach drei vergeblichen Versuchen wird zurückgerollt“: nach dem letzten Versuch wird nur ein Text gesetzt, ohne Rollback",
+    "zcl_gm_sponsor_billing.abap:117 — kein Fachsatz „die Ausgaben werden als abgerechnet gekennzeichnet“: vermerkt wird nur ein Summenbetrag je Stichtag, die Einzelposten bleiben unverändert",
+    "gesamte Scheibe — kein Fachsatz „die Faktura an den Sponsor wird erstellt“: angelegt wird nur die Lastschriftanforderung, fakturiert wird später"
+  ],
+  "processDescription": "Der Monatsjob wird mit Förderungen, Buchungskreis, Stichtag und Testlaufschalter gestartet und legt dafür ein Abrechnungsobjekt an. Das Objekt liest alle bis zum Stichtag gültigen Förderungen des Buchungskreises mit kostenbasierter Abrechnungsregel; gibt es keine, bricht der Job mit einer Fehlermeldung ab. Je Förderung liest es die für den Fördertyp nicht förderfähigen Sponsored Classes, summiert die Ist-Ausgaben bis zum Stichtag je Klasse und addiert nur die förderfähigen. Davon zieht es alle bereits abgerechneten Beträge ab. Ist nichts abzurechnen, oder handelt es sich um einen Testlauf, vermerkt es das und legt nichts an. Sonst ermittelt es den Debitor des Sponsors und legt eine Lastschriftanforderung ZGMA mit dem Betrag als Kondition in EUR an. Ist der Beleg gesperrt, wartet es zwei Sekunden und versucht es erneut, insgesamt höchstens dreimal; danach wird die Förderung auf den nächsten Lauf verschoben. Scheitert die Anlage anders, rollt es zurück und übernimmt den Fehlertext. Gelingt sie, vermerkt es Stichtag, Anforderungsnummer und Betrag in der eigenen Abrechnungstabelle und schreibt fest. Zum Schluss listet der Job je Förderung Betrag, Anforderungsnummer und Ergebnistext."
+}

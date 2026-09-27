@@ -1,0 +1,36 @@
+{
+  "id": "BM-149",
+  "title": "Reisekosten-Monatslauf: genehmigte Reisen freigeben und Reiseabrechnung als Job einplanen",
+  "domain": "HCM — Personalabrechnung, Zeitwirtschaft, Organisationsmanagement, Reisekosten, Personalentwicklung, ESS/MSS",
+  "band": "mittel",
+  "loc": 84,
+  "constructs": [
+    "REPORT",
+    "SELECT mit JOIN PTRV_PERIO/PA0001",
+    "LEAVE LIST-PROCESSING",
+    "SELECT … FOR ALL ENTRIES PTRV_SREC",
+    "READ TABLE BINARY SEARCH",
+    "CONTINUE",
+    "UPDATE PTRV_PERIO",
+    "COMMIT WORK",
+    "JOB_OPEN/JOB_CLOSE",
+    "SUBMIT … VIA JOB",
+    "VALUE #"
+  ],
+  "scenario": "Die Reisestelle hat die manuelle Freigabe zur Reiseabrechnung durch einen Monatslauf ersetzt, der genehmigte Reisen mit Belegen direkt auf „abzurechnen“ setzt und die Standard-Reiseabrechnung im Hintergrund startet.",
+  "s4_issues": [
+    "Direktes UPDATE auf PTRV_PERIO am Reisekosten-Status vorbei",
+    "Direkter Lesezugriff auf PTRV_SREC/PA0001",
+    "Statuswerte als Literale",
+    "SUBMIT eines Standardprogramms mit Selektionsvariante"
+  ],
+  "wave": 2,
+  "module": "FI-TV",
+  "edge_constructs": [
+    "SUBMIT … VIA JOB mit JOB_OPEN/JOB_CLOSE",
+    "LEAVE LIST-PROCESSING als Pfadende",
+    "MESSAGE Typ E nach COMMIT als Pfadende",
+    "CONTINUE in der Schleife",
+    "Testlauf-Schalter"
+  ]
+}

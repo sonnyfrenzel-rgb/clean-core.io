@@ -1,0 +1,38 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten mo (neu) vor mv",
+      "before": "mv end auf source.abap:30 ohne output",
+      "after": "mo output auf source.abap:30, Kante mo -> mv [always]; eingehende Kanten auf mo umgehängt",
+      "why": "Vereinheitlichte Konvention: MESSAGE … TYPE 'E', das den Pfad beendet, wird als output + end auf derselben Zeile modelliert; in Welle 2 auch für MESSAGE … RAISING so gehandhabt (BM-102, BM-115, BM-123).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten es (neu)",
+      "before": "kein end-Knoten auf source.abap:31",
+      "after": "es end auf source.abap:31; gv -> es [else] statt -> s2; es -> s2 [always]",
+      "why": "Vereinheitlichte Konvention: am impliziten Ende eines Ereignisblocks (START-OF-SELECTION, END-OF-SELECTION, INITIALIZATION, AT SELECTION-SCREEN, GET) steht ein end-Knoten auf der letzten Anweisung; von dort setzt die Laufzeit mit dem nächsten Ereignis fort (wie BM-141/146).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten o0 (neu)",
+      "before": "keine Knoten auf source.abap:41",
+      "after": "o0 output auf source.abap:41; g0 -> o0 [lt_filq IS INITIAL]; o0 -> r0 [always]",
+      "why": "MESSAGE s021 … DISPLAY LIKE 'E' (Z. 41) ist die Ausgabe dieses Pfadendes (Fachsatz B03 verankert sie nicht, beschreibt sie aber); die Meldung fehlte als output-Knoten, r0 trug sie nur in der Bedeutung.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz B03 Anker",
+      "before": "[{'file': 'source.abap', 'line': 40, 'token': None, 'expressionPath': None, 'raw': 'source.abap:40'}, {'file': 'source.abap', 'line': 42, 'token': None, 'expressionPath': None, 'raw': 'source.abap:42'}] (:40, :42)",
+      "after": ":40, :41, :42",
+      "why": "Die Meldung, von der der Satz spricht, steht auf Zeile 41.",
+      "category": "Anker"
+    }
+  ],
+  "doubts": [
+    "CATCH cx_salv_msg (Z. 80/81, Info-Meldung bei fehlgeschlagenem ALV-Aufbau) ist nicht im Skelett; technischer Anzeigefehler ohne Wirkung auf die bereits gespeicherte Aufteilung, belassen.",
+    "REDUCE … ( INIT s = 0 …): s erhält den Typ des Literals 0 (i); die Summe wird daher je Schritt auf ganze Zahlen gerundet. Bei ganzzahligen Mengen/Quoten ohne Wirkung; nicht als Fachsatz oder verbotener Schluss ergänzt, da der Datentyp der Kundentabelle nicht im Fall steht."
+  ]
+}

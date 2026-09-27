@@ -1,0 +1,31 @@
+{
+  "id": "BM-104",
+  "title": "Gefahrstoffe ohne freigegebenes Sicherheitsdatenblatt je Sprache (STVARV-Schalter)",
+  "domain": "EHS — Gefahrstoffe / Sicherheitsdatenblätter",
+  "band": "einfach",
+  "loc": 37,
+  "constructs": [
+    "REPORT",
+    "SELECT SINGLE TVARVC",
+    "STOP",
+    "SELECT mit NOT EXISTS-Unterabfrage",
+    "LOOP AT",
+    "WRITE-Liste",
+    "IF 1 = 2",
+    "FORM"
+  ],
+  "scenario": "Produktsicherheit prüft vor einer Werkseinführung, für welche realen Stoffe in einer Sprache noch kein freigegebenes Sicherheitsdatenblatt existiert; der Report wird über einen STVARV-Schalter aktiviert.",
+  "s4_issues": [
+    "EHS-Spezifikations- und Berichtstabellen (ESTRH, CVDDH) sind in S/4HANA Product Compliance abgelöst",
+    "Direkter Lesezugriff auf TVARVC als Steuerschalter",
+    "Toter Code mit SUBMIT eines Z-Generators"
+  ],
+  "wave": 2,
+  "module": "EHS",
+  "edge_constructs": [
+    "Schalter über TVARVC",
+    "STOP",
+    "IF 1 = 2 (toter Zweig)",
+    "nie erreichtes FORM"
+  ]
+}

@@ -1,0 +1,274 @@
+{
+  "id": "BM-105",
+  "title": "Eingebaute Equipments am Technischen Platz: EQUZ/ILOA-Join mit Zeilenbegrenzung",
+  "classes": [
+    "K01",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EQUZ",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ILOA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-105-B01",
+      "text": "Beim Aufruf wird der Technische Platz aus dem zuletzt im Benutzerkontext verwendeten Platz vorbelegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-105-B02",
+      "text": "Es werden die im aktuell gültigen Zeitsegment am eingegebenen Technischen Platz eingebauten Equipments mit ihrem übergeordneten Equipment gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        }
+      ]
+    },
+    {
+      "id": "BM-105-B03",
+      "text": "Nach der eingegebenen Höchstzahl an Equipments bricht die Liste ohne Hinweis ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-105-B04",
+      "text": "Jedes Equipment wird mit seinem übergeordneten Equipment ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s0",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Programmaufruf vor dem Selektionsbild"
+      },
+      {
+        "id": "a0",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        "meaning": "Technischen Platz aus Benutzerkontext vorbelegen"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        "meaning": "Selektionsbild wird angezeigt"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Eingebaute Equipments des Platzes lesen und einzeln verarbeiten"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Höchstzahl überschritten?"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Equipment mit übergeordnetem Equipment listen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s0",
+        "to": "a0",
+        "condition": "always"
+      },
+      {
+        "from": "a0",
+        "to": "x0",
+        "condition": "always"
+      },
+      {
+        "from": "s",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "g",
+        "condition": "next row"
+      },
+      {
+        "from": "g",
+        "to": "e",
+        "condition": "gv_count > p_max"
+      },
+      {
+        "from": "g",
+        "to": "o",
+        "condition": "else"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:21 — kein Fachsatz „die Liste weist auf weitere, nicht angezeigte Equipments hin“: EXIT beendet die Lesung ohne Meldung",
+    "gesamte Scheibe — kein Fachsatz „der Technische Platz wird geprüft“: ein unbekannter Platz ergibt nur eine leere Liste",
+    "gesamte Scheibe — kein Fachsatz „Equipments untergeordneter Plätze werden mitgelistet“: die Lesung filtert genau auf den eingegebenen Platz"
+  ],
+  "processDescription": "Beim Aufruf belegt der Report den Technischen Platz mit dem zuletzt im Benutzerkontext verwendeten Wert vor. Nach dem Start mit Platz und Höchstzahl liest er die im aktuell gültigen Zeitsegment an genau diesem Platz eingebauten Equipments samt übergeordnetem Equipment. Jedes Equipment wird gezählt und ausgegeben. Übersteigt die Zahl die eingegebene Höchstzahl, bricht die Lesung ohne Hinweis ab, sodass die Liste stillschweigend unvollständig ist. Ein unbekannter Platz wird nicht gemeldet, er ergibt eine leere Liste. Es wird nichts geschrieben."
+}

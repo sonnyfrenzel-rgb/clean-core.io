@@ -1,0 +1,2494 @@
+{
+  "id": "BM-199",
+  "title": "Pharma-Serialisierung: Seriennummern für Arzneimittelpackungen kommissionieren (Shared-Objects-GTIN-Cache, Zielmarkt-BAdI EU-FMD/US-DSCSA, EPCIS)",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZCL_SER_GTIN_CACHE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ser_commission.abap",
+        "line": 69,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ser_commission.abap:69"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSER_MARKET_RULES",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ser_commission.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ser_commission.abap:79"
+      },
+      "identity": {
+        "objectType": "BADI"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_SER_MARKET_EU",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ser_commission.abap",
+        "line": 87,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ser_commission.abap:87"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_SER_MARKET_US",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ser_commission.abap",
+        "line": 87,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ser_commission.abap:87"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZSER_BATCH",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ser_commission.abap",
+        "line": 99,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ser_commission.abap:99"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "NUMBER_GET_NEXT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ser_commission.abap",
+        "line": 127,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ser_commission.abap:127"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZSER_BATCH",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ser_commission.abap",
+        "line": 146,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ser_commission.abap:146"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSER_SERIAL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "z_ser_commission.abap",
+        "line": 169,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ser_commission.abap:169"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSER_SERIAL",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_ser_commission.abap",
+        "line": 216,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ser_commission.abap:216"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SYSTEM_UUID",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ser_commission.abap",
+        "line": 222,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ser_commission.abap:222"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSER_EPCIS_OUT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_ser_commission.abap",
+        "line": 227,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ser_commission.abap:227"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSER_SERIAL_WRITE_DOCUMENT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_ser_commission.abap",
+        "line": 231,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_ser_commission.abap:231"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_SER_GTIN_AREA",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ser_gtin_cache.abap",
+        "line": 31,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ser_gtin_cache.abap:31"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_SER_GTIN_CACHE_ROOT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_ser_gtin_cache.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ser_gtin_cache.abap:75"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSER_GTIN",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_ser_gtin_cache_root.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_ser_gtin_cache_root.abap:25"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-199-B01",
+      "text": "Je Aufruf werden nur 1 bis 5000 Packungen kommissioniert; eine andere Menge wird mit der Ausnahme INVALID_QUANTITY abgewiesen.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:63"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B02",
+      "text": "Die GTIN-Stammdaten des Materials werden aus einem systemweiten Speicher-Cache gelesen; ist der Cache nicht nutzbar, endet der Aufruf mit CACHE_ERROR.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:69"
+        },
+        {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:31"
+        },
+        {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:44"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B03",
+      "text": "Ist der Cache nach Systemstart oder Invalidierung leer, wird er einmal aus allen nicht zur Löschung vorgemerkten GTIN-Stammsätzen aufgebaut und danach erneut gelesen; ist er dann immer noch leer, wird ein Cache-Fehler gemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:35"
+        },
+        {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:41"
+        },
+        {
+          "file": "zcl_ser_gtin_cache_root.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache_root.abap:25"
+        },
+        {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B04",
+      "text": "Baut gerade ein anderer Prozess den Cache auf, wird eine Sekunde gewartet und dann erneut gelesen.",
+      "anchors": [
+        {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:67"
+        },
+        {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B05",
+      "text": "Der neu aufgebaute Cache wird mit Ladezeitpunkt als aktive Version für alle Prozesse freigegeben.",
+      "anchors": [
+        {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:75"
+        },
+        {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:77"
+        },
+        {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:78"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B06",
+      "text": "Hat das Material keine GTIN im Cache, endet der Aufruf mit GTIN_NOT_FOUND; in der Datenbank wird nicht nachgelesen.",
+      "anchors": [
+        {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:49"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:73"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B07",
+      "text": "Zum Zielmarkt wird die zuständige Regelimplementierung ermittelt; gibt es für den Markt keine, endet der Aufruf mit MARKET_NOT_SUPPORTED.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:79"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B08",
+      "text": "Für den EU-Markt muss das Produkt als FMD-pflichtig gekennzeichnet sein; die Seriennummern kommen aus Intervall 01, sind 12-stellig und werden an den EMVS-Hub gemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_ser_market_eu.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_eu.abap:25"
+        },
+        {
+          "file": "zcl_ser_market_eu.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_eu.abap:32"
+        },
+        {
+          "file": "zcl_ser_market_eu.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_eu.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B09",
+      "text": "Für den US-Markt müssen NDC und Verfallsdatum vorhanden sein; die Seriennummern kommen aus Intervall 02, sind 12-stellig und werden an den Handelspartner gemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_ser_market_us.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_us.abap:21"
+        },
+        {
+          "file": "zcl_ser_market_us.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_us.abap:28"
+        },
+        {
+          "file": "zcl_ser_market_us.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_us.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B10",
+      "text": "Verletzt das Produkt die Regeln des Zielmarkts, endet der Aufruf mit MARKET_RULE_VIOLATED.",
+      "anchors": [
+        {
+          "file": "zcl_ser_market_eu.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_eu.abap:26"
+        },
+        {
+          "file": "zcl_ser_market_us.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_us.abap:22"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:94"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B11",
+      "text": "Material und Charge werden exklusiv gesperrt; hält eine andere Linie die Sperre, wird bis zu fünfmal mit je zwei Sekunden Wartezeit erneut versucht.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:98"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:99"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:109"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:114"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B12",
+      "text": "Bei einem Systemfehler der Sperrverwaltung sofort, oder wenn die Charge nach fünf Versuchen noch gesperrt ist, endet der Aufruf mit LOCK_FAILED; im zweiten Fall nennt die Meldung den sperrenden Benutzer.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:116"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:119"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:120"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B13",
+      "text": "Die Nummern werden blockweise aus dem Nummernkreisobjekt ZSER_SNR im Intervall des Zielmarkts gezogen, bis die angeforderte Zahl neuer Seriennummern erreicht ist.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:125"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:127"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B14",
+      "text": "Scheitert die Nummernvergabe, wird die Chargensperre aufgehoben und der Aufruf endet mit NUMBER_RANGE_ERROR.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:145"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:146"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:152"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B15",
+      "text": "Jede gezogene Nummer wird nach der Regel des Zielmarkts in eine Seriennummer umgesetzt.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:159"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B16",
+      "text": "Für die EU wird die Laufnummer mit einer Primzahl multipliziert, modulo 34 hoch 12 genommen und 12-stellig zur Basis 34 ohne die Buchstaben I und O dargestellt; die Seriennummer ist damit eindeutig, aber aus der Laufnummer berechnet.",
+      "anchors": [
+        {
+          "file": "zcl_ser_market_eu.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_eu.abap:45"
+        },
+        {
+          "file": "zcl_ser_market_eu.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_eu.abap:46"
+        },
+        {
+          "file": "zcl_ser_market_eu.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_eu.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B17",
+      "text": "Für die USA ist die Seriennummer die 12-stellige Laufnummer mit führenden Nullen.",
+      "anchors": [
+        {
+          "file": "zcl_ser_market_us.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_us.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B18",
+      "text": "Ist die Seriennummer zur GTIN bereits vergeben, etwa aus einem Lohnhersteller-Import, wird sie übersprungen und dafür eine weitere Nummer gezogen.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:169"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:172"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B19",
+      "text": "Jede neue Seriennummer wird mit GTIN, Material, Charge, Verfallsdatum, Zielmarkt, Linie und dem Status kommissioniert vorgemerkt.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:182"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B20",
+      "text": "Über alle neuen Seriennummern wird eine EPCIS-Meldung zum Geschäftsschritt Kommissionierung (Disposition aktiv) mit Linie, Charge, Verfallsdatum und den SGTIN-Kennungen erzeugt.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:199"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 202,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:202"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B21",
+      "text": "Scheitert die EPCIS-Erzeugung, wird die Chargensperre aufgehoben und der Aufruf endet mit EPCIS_ERROR, bevor etwas gespeichert ist.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 206,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:206"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 212,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:212"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B22",
+      "text": "Die Seriennummern werden gespeichert; ist eine davon bereits vorhanden, wird die Arbeit zurückgerollt und der Aufruf endet mit DB_ERROR.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 216,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:216"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 217,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:217"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 218,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:218"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 219,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:219"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B23",
+      "text": "Die EPCIS-Meldung wird als neue Ausgangsmeldung für den Meldeempfänger des Zielmarkts abgelegt; versendet wird sie hier nicht.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 226,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:226"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 227,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:227"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B24",
+      "text": "Für jede Seriennummer wird ein Änderungsbeleg zur Neuanlage mit dem Status kommissioniert verbucht.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 230,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:230"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 231,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:231"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B25",
+      "text": "Ist es verlangt (Standard), wird sofort synchron festgeschrieben; sonst bleibt das Festschreiben dem Aufrufer überlassen.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 250,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:250"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 251,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:251"
+        }
+      ]
+    },
+    {
+      "id": "BM-199-B26",
+      "text": "Zum Schluss wird die Chargensperre aufgehoben, und die neuen Seriennummern und die EPCIS-Meldung gehen an den Aufrufer zurück.",
+      "anchors": [
+        {
+          "file": "z_ser_commission.abap",
+          "line": 254,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:254"
+        },
+        {
+          "file": "z_ser_commission.abap",
+          "line": 261,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:261"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "fm_s",
+        "type": "start",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:1"
+        },
+        "meaning": "Linie fordert Seriennummern für eine Charge an"
+      },
+      {
+        "id": "fm_g_qty",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:63"
+        },
+        "meaning": "Menge außerhalb 1–5000?"
+      },
+      {
+        "id": "fm_m_qty",
+        "type": "output",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:64"
+        },
+        "meaning": "Fehlermeldung Menge ungültig"
+      },
+      {
+        "id": "fm_e_qty",
+        "type": "end",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:64"
+        },
+        "meaning": "Abbruch INVALID_QUANTITY"
+      },
+      {
+        "id": "fm_c_gtin",
+        "type": "call",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:69"
+        },
+        "meaning": "GTIN-Stammdaten aus Cache holen"
+      },
+      {
+        "id": "fm_m_cache",
+        "type": "output",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:71"
+        },
+        "meaning": "Fehlermeldung Cache-Fehler"
+      },
+      {
+        "id": "fm_e_cache",
+        "type": "end",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:71"
+        },
+        "meaning": "Abbruch CACHE_ERROR"
+      },
+      {
+        "id": "fm_g_gtin",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:73"
+        },
+        "meaning": "Keine GTIN zum Material?"
+      },
+      {
+        "id": "fm_m_gtin",
+        "type": "output",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:74"
+        },
+        "meaning": "Fehlermeldung GTIN fehlt"
+      },
+      {
+        "id": "fm_e_gtin",
+        "type": "end",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:74"
+        },
+        "meaning": "Abbruch GTIN_NOT_FOUND"
+      },
+      {
+        "id": "fm_badi",
+        "type": "action",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:79"
+        },
+        "meaning": "Regelimplementierung für den Zielmarkt ermitteln (Filter)"
+      },
+      {
+        "id": "fm_m_badi",
+        "type": "output",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:83"
+        },
+        "meaning": "Fehlermeldung Zielmarkt nicht unterstützt"
+      },
+      {
+        "id": "fm_e_badi",
+        "type": "end",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:83"
+        },
+        "meaning": "Abbruch MARKET_NOT_SUPPORTED"
+      },
+      {
+        "id": "fm_rules",
+        "type": "call",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:87"
+        },
+        "meaning": "Zielmarkt-Regeln holen"
+      },
+      {
+        "id": "fm_m_rule",
+        "type": "output",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:94"
+        },
+        "meaning": "Fehlermeldung Marktregel verletzt"
+      },
+      {
+        "id": "fm_e_rule",
+        "type": "end",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:94"
+        },
+        "meaning": "Abbruch MARKET_RULE_VIOLATED"
+      },
+      {
+        "id": "fm_lk_l",
+        "type": "loop",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:98"
+        },
+        "meaning": "Je Sperrversuch (max. 5)"
+      },
+      {
+        "id": "fm_lk",
+        "type": "lock",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:99"
+        },
+        "meaning": "Material/Charge exklusiv sperren"
+      },
+      {
+        "id": "fm_lk_c",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:109"
+        },
+        "meaning": "Sperrergebnis"
+      },
+      {
+        "id": "fm_lk_w",
+        "type": "action",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:114"
+        },
+        "meaning": "Bei Fremdsperre 2 Sekunden warten"
+      },
+      {
+        "id": "fm_m_lke",
+        "type": "output",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:116"
+        },
+        "meaning": "Fehlermeldung Sperrfehler"
+      },
+      {
+        "id": "fm_lk_e",
+        "type": "end",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:116"
+        },
+        "meaning": "Abbruch LOCK_FAILED (Systemfehler)"
+      },
+      {
+        "id": "fm_g_lk",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:119"
+        },
+        "meaning": "Sperre nicht erhalten?"
+      },
+      {
+        "id": "fm_m_lk",
+        "type": "output",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:120"
+        },
+        "meaning": "Fehlermeldung Charge gesperrt"
+      },
+      {
+        "id": "fm_e_lk",
+        "type": "end",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:120"
+        },
+        "meaning": "Abbruch LOCK_FAILED (Charge gesperrt)"
+      },
+      {
+        "id": "fm_nr_l",
+        "type": "loop",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:125"
+        },
+        "meaning": "Solange Seriennummern fehlen"
+      },
+      {
+        "id": "fm_nr",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:127"
+        },
+        "meaning": "Nummernblock aus ZSER_SNR ziehen"
+      },
+      {
+        "id": "fm_g_nr",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:145"
+        },
+        "meaning": "Nummernvergabe gescheitert?"
+      },
+      {
+        "id": "fm_dq1",
+        "type": "lock",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:146"
+        },
+        "meaning": "Chargensperre aufheben"
+      },
+      {
+        "id": "fm_m_nr",
+        "type": "output",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:152"
+        },
+        "meaning": "Fehlermeldung Nummernvergabe"
+      },
+      {
+        "id": "fm_e_nr",
+        "type": "end",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:152"
+        },
+        "meaning": "Abbruch NUMBER_RANGE_ERROR"
+      },
+      {
+        "id": "fm_blk",
+        "type": "loop",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:157"
+        },
+        "meaning": "Je Nummer des Blocks"
+      },
+      {
+        "id": "fm_fmt",
+        "type": "call",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:159"
+        },
+        "meaning": "Seriennummer nach Marktregel bilden"
+      },
+      {
+        "id": "fm_dup",
+        "type": "read",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:169"
+        },
+        "meaning": "Seriennummer zur GTIN schon vorhanden?"
+      },
+      {
+        "id": "fm_g_dup",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:172"
+        },
+        "meaning": "Duplikat?"
+      },
+      {
+        "id": "fm_add",
+        "type": "action",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:182"
+        },
+        "meaning": "Seriennummer als kommissioniert vormerken"
+      },
+      {
+        "id": "fm_tr",
+        "type": "action",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 202,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:202"
+        },
+        "meaning": "EPCIS-Meldung Kommissionierung erzeugen"
+      },
+      {
+        "id": "fm_dq2",
+        "type": "lock",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 206,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:206"
+        },
+        "meaning": "Chargensperre aufheben"
+      },
+      {
+        "id": "fm_m_tr",
+        "type": "output",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 212,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:212"
+        },
+        "meaning": "Fehlermeldung EPCIS"
+      },
+      {
+        "id": "fm_e_tr",
+        "type": "end",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 212,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:212"
+        },
+        "meaning": "Abbruch EPCIS_ERROR"
+      },
+      {
+        "id": "fm_ins",
+        "type": "write",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 216,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:216"
+        },
+        "meaning": "Seriennummern speichern"
+      },
+      {
+        "id": "fm_g_ins",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 217,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:217"
+        },
+        "meaning": "Seriennummer schon vorhanden?"
+      },
+      {
+        "id": "fm_rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 218,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:218"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "fm_m_ins",
+        "type": "output",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 219,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:219"
+        },
+        "meaning": "Fehlermeldung Speichern"
+      },
+      {
+        "id": "fm_e_ins",
+        "type": "end",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 219,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:219"
+        },
+        "meaning": "Abbruch DB_ERROR"
+      },
+      {
+        "id": "fm_out",
+        "type": "write",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 227,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:227"
+        },
+        "meaning": "EPCIS-Ausgangsmeldung ablegen"
+      },
+      {
+        "id": "fm_cd_l",
+        "type": "loop",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 230,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:230"
+        },
+        "meaning": "Je neue Seriennummer"
+      },
+      {
+        "id": "fm_cd",
+        "type": "update_task",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 231,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:231"
+        },
+        "meaning": "Änderungsbeleg Serienstatus verbuchen"
+      },
+      {
+        "id": "fm_g_cm",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 250,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:250"
+        },
+        "meaning": "Selbst festschreiben?"
+      },
+      {
+        "id": "fm_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 251,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:251"
+        },
+        "meaning": "Synchron festschreiben"
+      },
+      {
+        "id": "fm_dq3",
+        "type": "lock",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 254,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:254"
+        },
+        "meaning": "Chargensperre aufheben"
+      },
+      {
+        "id": "fm_e",
+        "type": "end",
+        "anchor": {
+          "file": "z_ser_commission.abap",
+          "line": 262,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_ser_commission.abap:262"
+        },
+        "meaning": "Seriennummern und EPCIS-Meldung an Aufrufer zurück"
+      },
+      {
+        "id": "c_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:26"
+        },
+        "meaning": "GTIN zum Material aus Cache lesen"
+      },
+      {
+        "id": "c_att",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:31"
+        },
+        "meaning": "Cache zum Lesen anbinden"
+      },
+      {
+        "id": "c_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:35"
+        },
+        "meaning": "Aufbau schon versucht?"
+      },
+      {
+        "id": "c_x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:36"
+        },
+        "meaning": "Cache-Fehler: keine aktive Version"
+      },
+      {
+        "id": "c_b",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:41"
+        },
+        "meaning": "Cache aufbauen, dann erneut lesen (RETRY)"
+      },
+      {
+        "id": "c_x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:44"
+        },
+        "meaning": "Cache-Fehler: inkonsistent/gesperrt"
+      },
+      {
+        "id": "c_rd",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:49"
+        },
+        "meaning": "GTIN-Satz zum Material nachschlagen"
+      },
+      {
+        "id": "c_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:55"
+        },
+        "meaning": "GTIN-Satz zurückgeben"
+      },
+      {
+        "id": "b_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:58"
+        },
+        "meaning": "Cache-Aufbau"
+      },
+      {
+        "id": "b_att",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:63"
+        },
+        "meaning": "Cache zum Schreiben anbinden"
+      },
+      {
+        "id": "b_w",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:67"
+        },
+        "meaning": "Anderer Prozess baut auf: 1 Sekunde warten"
+      },
+      {
+        "id": "b_ret",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:68"
+        },
+        "meaning": "Rückkehr ohne Aufbau"
+      },
+      {
+        "id": "b_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:70"
+        },
+        "meaning": "Cache-Fehler beim Anbinden"
+      },
+      {
+        "id": "b_new",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:75"
+        },
+        "meaning": "Wurzelobjekt im Cache anlegen"
+      },
+      {
+        "id": "b_ld",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:76"
+        },
+        "meaning": "GTIN-Stammdaten laden"
+      },
+      {
+        "id": "b_set",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:77"
+        },
+        "meaning": "Wurzel setzen"
+      },
+      {
+        "id": "b_cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:78"
+        },
+        "meaning": "Neue Cache-Version für alle Prozesse freigeben"
+      },
+      {
+        "id": "b_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache.abap:79"
+        },
+        "meaning": "Cache aufgebaut, zurück zum erneuten Lesen"
+      },
+      {
+        "id": "r_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache_root.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache_root.abap:22"
+        },
+        "meaning": "Laden der GTIN-Stammdaten"
+      },
+      {
+        "id": "r_rd",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache_root.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache_root.abap:25"
+        },
+        "meaning": "Nicht gelöschte GTIN-Stammsätze lesen"
+      },
+      {
+        "id": "r_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ser_gtin_cache_root.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_gtin_cache_root.abap:31"
+        },
+        "meaning": "Stammdaten mit Ladezeitpunkt geladen"
+      },
+      {
+        "id": "eu_r",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ser_market_eu.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_eu.abap:21"
+        },
+        "meaning": "EU-FMD-Regeln"
+      },
+      {
+        "id": "eu_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ser_market_eu.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_eu.abap:25"
+        },
+        "meaning": "Produkt nicht FMD-pflichtig?"
+      },
+      {
+        "id": "eu_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ser_market_eu.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_eu.abap:26"
+        },
+        "meaning": "Regelverstoß EU"
+      },
+      {
+        "id": "eu_re",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ser_market_eu.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_eu.abap:35"
+        },
+        "meaning": "Regeln EU zurück: Intervall 01, 12 Stellen, Meldung an EMVS"
+      },
+      {
+        "id": "eu_f",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ser_market_eu.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_eu.abap:38"
+        },
+        "meaning": "EU-Seriennummer bilden"
+      },
+      {
+        "id": "eu_calc",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ser_market_eu.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_eu.abap:45"
+        },
+        "meaning": "Laufnummer verwürfeln (Primzahl modulo 34^12)"
+      },
+      {
+        "id": "eu_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_ser_market_eu.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_eu.abap:46"
+        },
+        "meaning": "Je Stelle"
+      },
+      {
+        "id": "eu_d",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ser_market_eu.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_eu.abap:48"
+        },
+        "meaning": "Ziffer zur Basis 34 voranstellen"
+      },
+      {
+        "id": "eu_fe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ser_market_eu.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_eu.abap:53"
+        },
+        "meaning": "EU-Seriennummer zurück"
+      },
+      {
+        "id": "us_r",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ser_market_us.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_us.abap:17"
+        },
+        "meaning": "US-DSCSA-Regeln"
+      },
+      {
+        "id": "us_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_ser_market_us.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_us.abap:21"
+        },
+        "meaning": "NDC oder Verfall fehlt?"
+      },
+      {
+        "id": "us_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ser_market_us.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_us.abap:22"
+        },
+        "meaning": "Regelverstoß US"
+      },
+      {
+        "id": "us_re",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ser_market_us.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_us.abap:32"
+        },
+        "meaning": "Regeln US zurück: Intervall 02, 12 Stellen, Meldung an Handelspartner"
+      },
+      {
+        "id": "us_f",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_ser_market_us.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_us.abap:35"
+        },
+        "meaning": "US-Seriennummer bilden"
+      },
+      {
+        "id": "us_fmt",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_ser_market_us.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_us.abap:37"
+        },
+        "meaning": "Laufnummer als Seriennummer übernehmen"
+      },
+      {
+        "id": "us_fe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_ser_market_us.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_ser_market_us.abap:38"
+        },
+        "meaning": "US-Seriennummer zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "fm_s",
+        "to": "fm_g_qty",
+        "condition": "always"
+      },
+      {
+        "from": "fm_g_qty",
+        "to": "fm_m_qty",
+        "condition": "iv_quantity <= 0 OR iv_quantity > lc_max_qty"
+      },
+      {
+        "from": "fm_g_qty",
+        "to": "fm_c_gtin",
+        "condition": "else"
+      },
+      {
+        "from": "fm_c_gtin",
+        "to": "c_s",
+        "condition": "always"
+      },
+      {
+        "from": "fm_g_gtin",
+        "to": "fm_m_gtin",
+        "condition": "ls_gtin-gtin IS INITIAL"
+      },
+      {
+        "from": "fm_g_gtin",
+        "to": "fm_badi",
+        "condition": "else"
+      },
+      {
+        "from": "fm_badi",
+        "to": "fm_m_badi",
+        "condition": "CATCH cx_badi_not_implemented"
+      },
+      {
+        "from": "fm_badi",
+        "to": "fm_rules",
+        "condition": "always"
+      },
+      {
+        "from": "fm_rules",
+        "to": "eu_r",
+        "condition": "always"
+      },
+      {
+        "from": "fm_rules",
+        "to": "us_r",
+        "condition": "always"
+      },
+      {
+        "from": "fm_lk_l",
+        "to": "fm_lk",
+        "condition": "next row"
+      },
+      {
+        "from": "fm_lk",
+        "to": "fm_lk_c",
+        "condition": "always"
+      },
+      {
+        "from": "fm_lk_c",
+        "to": "fm_g_lk",
+        "condition": "WHEN 0"
+      },
+      {
+        "from": "fm_lk_c",
+        "to": "fm_lk_w",
+        "condition": "WHEN 1"
+      },
+      {
+        "from": "fm_lk_c",
+        "to": "fm_m_lke",
+        "condition": "else"
+      },
+      {
+        "from": "fm_lk_w",
+        "to": "fm_lk_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fm_lk_l",
+        "to": "fm_g_lk",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fm_g_lk",
+        "to": "fm_m_lk",
+        "condition": "lv_locked = abap_false"
+      },
+      {
+        "from": "fm_g_lk",
+        "to": "fm_nr_l",
+        "condition": "else"
+      },
+      {
+        "from": "fm_nr_l",
+        "to": "fm_nr",
+        "condition": "next row"
+      },
+      {
+        "from": "fm_nr",
+        "to": "fm_g_nr",
+        "condition": "always"
+      },
+      {
+        "from": "fm_g_nr",
+        "to": "fm_dq1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "fm_dq1",
+        "to": "fm_m_nr",
+        "condition": "always"
+      },
+      {
+        "from": "fm_g_nr",
+        "to": "fm_blk",
+        "condition": "else"
+      },
+      {
+        "from": "fm_blk",
+        "to": "fm_fmt",
+        "condition": "next row"
+      },
+      {
+        "from": "fm_fmt",
+        "to": "eu_f",
+        "condition": "always"
+      },
+      {
+        "from": "fm_fmt",
+        "to": "us_f",
+        "condition": "always"
+      },
+      {
+        "from": "fm_dup",
+        "to": "fm_g_dup",
+        "condition": "always"
+      },
+      {
+        "from": "fm_g_dup",
+        "to": "fm_blk",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "fm_g_dup",
+        "to": "fm_add",
+        "condition": "else"
+      },
+      {
+        "from": "fm_add",
+        "to": "fm_blk",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fm_blk",
+        "to": "fm_nr_l",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fm_nr_l",
+        "to": "fm_tr",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fm_tr",
+        "to": "fm_dq2",
+        "condition": "CATCH cx_transformation_error INTO DATA(lx_tr)"
+      },
+      {
+        "from": "fm_dq2",
+        "to": "fm_m_tr",
+        "condition": "always"
+      },
+      {
+        "from": "fm_tr",
+        "to": "fm_ins",
+        "condition": "always"
+      },
+      {
+        "from": "fm_ins",
+        "to": "fm_g_ins",
+        "condition": "always"
+      },
+      {
+        "from": "fm_g_ins",
+        "to": "fm_rb",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "fm_rb",
+        "to": "fm_m_ins",
+        "condition": "always"
+      },
+      {
+        "from": "fm_g_ins",
+        "to": "fm_out",
+        "condition": "else"
+      },
+      {
+        "from": "fm_out",
+        "to": "fm_cd_l",
+        "condition": "always"
+      },
+      {
+        "from": "fm_cd_l",
+        "to": "fm_cd",
+        "condition": "next row"
+      },
+      {
+        "from": "fm_cd",
+        "to": "fm_cd_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fm_cd_l",
+        "to": "fm_g_cm",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fm_g_cm",
+        "to": "fm_cm",
+        "condition": "iv_commit = abap_true"
+      },
+      {
+        "from": "fm_g_cm",
+        "to": "fm_dq3",
+        "condition": "else"
+      },
+      {
+        "from": "fm_cm",
+        "to": "fm_dq3",
+        "condition": "always"
+      },
+      {
+        "from": "fm_dq3",
+        "to": "fm_e",
+        "condition": "always"
+      },
+      {
+        "from": "c_s",
+        "to": "c_att",
+        "condition": "always"
+      },
+      {
+        "from": "c_att",
+        "to": "c_g",
+        "condition": "CATCH cx_shm_no_active_version"
+      },
+      {
+        "from": "c_g",
+        "to": "c_x1",
+        "condition": "lv_tries >= 1"
+      },
+      {
+        "from": "c_g",
+        "to": "c_b",
+        "condition": "else"
+      },
+      {
+        "from": "c_b",
+        "to": "b_s",
+        "condition": "always"
+      },
+      {
+        "from": "c_att",
+        "to": "c_x2",
+        "condition": "CATCH cx_shm_inconsistent cx_shm_read_lock_active INTO DATA(lx_shm)"
+      },
+      {
+        "from": "c_att",
+        "to": "c_rd",
+        "condition": "always"
+      },
+      {
+        "from": "c_rd",
+        "to": "c_e",
+        "condition": "always"
+      },
+      {
+        "from": "b_s",
+        "to": "b_att",
+        "condition": "always"
+      },
+      {
+        "from": "b_att",
+        "to": "b_w",
+        "condition": "CATCH cx_shm_exclusive_lock_active"
+      },
+      {
+        "from": "b_w",
+        "to": "b_ret",
+        "condition": "always"
+      },
+      {
+        "from": "b_att",
+        "to": "b_x",
+        "condition": "CATCH cx_shm_error INTO DATA(lx_shm)"
+      },
+      {
+        "from": "b_att",
+        "to": "b_new",
+        "condition": "always"
+      },
+      {
+        "from": "b_new",
+        "to": "b_ld",
+        "condition": "always"
+      },
+      {
+        "from": "b_ld",
+        "to": "r_s",
+        "condition": "always"
+      },
+      {
+        "from": "b_set",
+        "to": "b_cm",
+        "condition": "always"
+      },
+      {
+        "from": "r_s",
+        "to": "r_rd",
+        "condition": "always"
+      },
+      {
+        "from": "r_rd",
+        "to": "r_e",
+        "condition": "always"
+      },
+      {
+        "from": "eu_r",
+        "to": "eu_g",
+        "condition": "always"
+      },
+      {
+        "from": "eu_g",
+        "to": "eu_x",
+        "condition": "is_gtin-fmd_relevant <> abap_true"
+      },
+      {
+        "from": "eu_g",
+        "to": "eu_re",
+        "condition": "else"
+      },
+      {
+        "from": "eu_f",
+        "to": "eu_calc",
+        "condition": "always"
+      },
+      {
+        "from": "eu_calc",
+        "to": "eu_l",
+        "condition": "always"
+      },
+      {
+        "from": "eu_l",
+        "to": "eu_d",
+        "condition": "next row"
+      },
+      {
+        "from": "eu_d",
+        "to": "eu_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "eu_l",
+        "to": "eu_fe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "us_r",
+        "to": "us_g",
+        "condition": "always"
+      },
+      {
+        "from": "us_g",
+        "to": "us_x",
+        "condition": "is_gtin-ndc IS INITIAL OR iv_expiry IS INITIAL"
+      },
+      {
+        "from": "us_g",
+        "to": "us_re",
+        "condition": "else"
+      },
+      {
+        "from": "us_f",
+        "to": "us_fmt",
+        "condition": "always"
+      },
+      {
+        "from": "c_e",
+        "to": "fm_g_gtin",
+        "condition": "always"
+      },
+      {
+        "from": "c_x1",
+        "to": "fm_m_cache",
+        "condition": "CATCH zcx_ser_cache INTO DATA(lx_cache)"
+      },
+      {
+        "from": "c_x2",
+        "to": "fm_m_cache",
+        "condition": "CATCH zcx_ser_cache INTO DATA(lx_cache)"
+      },
+      {
+        "from": "b_x",
+        "to": "fm_m_cache",
+        "condition": "CATCH zcx_ser_cache INTO DATA(lx_cache)"
+      },
+      {
+        "from": "b_ret",
+        "to": "c_att",
+        "condition": "always"
+      },
+      {
+        "from": "b_e",
+        "to": "c_att",
+        "condition": "always"
+      },
+      {
+        "from": "b_cm",
+        "to": "b_e",
+        "condition": "always"
+      },
+      {
+        "from": "r_e",
+        "to": "b_set",
+        "condition": "always"
+      },
+      {
+        "from": "eu_re",
+        "to": "fm_lk_l",
+        "condition": "always"
+      },
+      {
+        "from": "us_re",
+        "to": "fm_lk_l",
+        "condition": "always"
+      },
+      {
+        "from": "eu_x",
+        "to": "fm_m_rule",
+        "condition": "CATCH zcx_ser_rule INTO DATA(lx_rule)"
+      },
+      {
+        "from": "us_x",
+        "to": "fm_m_rule",
+        "condition": "CATCH zcx_ser_rule INTO DATA(lx_rule)"
+      },
+      {
+        "from": "us_fmt",
+        "to": "us_fe",
+        "condition": "always"
+      },
+      {
+        "from": "eu_fe",
+        "to": "fm_dup",
+        "condition": "always"
+      },
+      {
+        "from": "us_fe",
+        "to": "fm_dup",
+        "condition": "always"
+      },
+      {
+        "from": "fm_m_qty",
+        "to": "fm_e_qty",
+        "condition": "always"
+      },
+      {
+        "from": "fm_m_cache",
+        "to": "fm_e_cache",
+        "condition": "always"
+      },
+      {
+        "from": "fm_m_gtin",
+        "to": "fm_e_gtin",
+        "condition": "always"
+      },
+      {
+        "from": "fm_m_badi",
+        "to": "fm_e_badi",
+        "condition": "always"
+      },
+      {
+        "from": "fm_m_rule",
+        "to": "fm_e_rule",
+        "condition": "always"
+      },
+      {
+        "from": "fm_m_lke",
+        "to": "fm_lk_e",
+        "condition": "always"
+      },
+      {
+        "from": "fm_m_lk",
+        "to": "fm_e_lk",
+        "condition": "always"
+      },
+      {
+        "from": "fm_m_nr",
+        "to": "fm_e_nr",
+        "condition": "always"
+      },
+      {
+        "from": "fm_m_tr",
+        "to": "fm_e_tr",
+        "condition": "always"
+      },
+      {
+        "from": "fm_m_ins",
+        "to": "fm_e_ins",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "z_ser_commission.abap:243 — kein Fachsatz „die Packungen werden zu Bündeln und Kartons aggregiert“: der Zweig ist mit IF 1 = 2 nie erreichbar",
+    "zcl_ser_market_eu.abap:45 — kein Fachsatz „EU-Seriennummern werden zufällig erzeugt“: sie werden deterministisch aus der fortlaufenden Nummer berechnet; die Zufallsvariante ist auskommentiert",
+    "z_ser_commission.abap:79 — kein Fachsatz „für andere Zielmärkte gelten Standardregeln“: gibt es zum Filterwert keine Implementierung, endet der Aufruf mit MARKET_NOT_SUPPORTED; im Fall existieren nur Regeln für EU und US",
+    "z_ser_commission.abap:227 — kein Fachsatz „die EPCIS-Meldung wird an EMVS-Hub bzw. Handelspartner gesendet“: sie wird nur mit Status N in ZSER_EPCIS_OUT abgelegt, der Versand liegt außerhalb des Falls"
+  ],
+  "processDescription": "Die Verpackungslinie ruft den Funktionsbaustein Z_SER_COMMISSION mit Material, Charge, Verfallsdatum, Zielmarkt, Linie und Packungszahl auf. Mengen außerhalb von 1 bis 5000 werden abgewiesen. Die GTIN-Stammdaten kommen aus einem Shared-Objects-Cache; ist dort keine aktive Version, baut der erste Leser den Cache einmal aus ZSER_GTIN auf (bzw. wartet eine Sekunde, wenn ein anderer Prozess gerade aufbaut) und liest per RETRY erneut, sonst endet der Aufruf mit CACHE_ERROR; ohne GTIN endet er mit GTIN_NOT_FOUND. Über den BAdI ZSER_MARKET_RULES mit dem Zielmarkt als Filter werden die Marktregeln ermittelt: für die EU muss das Produkt FMD-pflichtig sein (Intervall 01, Meldung an EMVS), für die USA müssen NDC und Verfallsdatum vorhanden sein (Intervall 02, Meldung an Handelspartner); fehlt eine Implementierung oder ist eine Regel verletzt, endet der Aufruf mit MARKET_NOT_SUPPORTED bzw. MARKET_RULE_VIOLATED. Dann wird die Charge exklusiv gesperrt, bei Fremdsperre bis zu fünfmal mit zwei Sekunden Pause; gelingt es nicht, endet der Aufruf mit LOCK_FAILED. Solange Seriennummern fehlen, zieht der Baustein Nummernblöcke aus dem Nummernkreisobjekt ZSER_SNR und lässt jede Nummer von der Marktimplementierung formatieren: in der EU als aus der Laufnummer berechnete 12-stellige Zeichenfolge zur Basis 34, in den USA als 12-stellige Laufnummer. Bereits vorhandene Seriennummern werden übersprungen und durch weitere Nummern ersetzt; scheitert die Nummernvergabe, wird entsperrt und mit NUMBER_RANGE_ERROR abgebrochen. Anschließend entsteht eine EPCIS-Kommissionierungsmeldung mit allen SGTIN-Kennungen; scheitert die Transformation, wird entsperrt und mit EPCIS_ERROR abgebrochen, bevor etwas gespeichert ist. Die Seriennummern werden mit Status kommissioniert gespeichert, bei einem Schlüsselkonflikt wird zurückgerollt und DB_ERROR gemeldet; die EPCIS-Meldung wird als neue Ausgangsmeldung abgelegt, nicht versendet. Je Seriennummer wird ein Änderungsbeleg in der Verbuchung angestoßen; der Baustein schreibt standardmäßig synchron fest, hebt die Sperre auf und gibt Seriennummern und EPCIS-Meldung zurück. Die Aggregation auf Bündel und Karton ist ein toter Zweig."
+}
