@@ -224,3 +224,44 @@ test('the module is pure: no network, no model, no clock', () => {
   expect(imports).toEqual(['./abap/statement-reader']);
   expect(src).not.toMatch(/\bfetch\(|Date\.now|new Date\(|gemini/i);
 });
+
+test.describe('QA review of 8f9ea35a000e', () => {
+  test('a4cdb3b68967: a named MESSAGE … INTO whose text the branch writes out is not marked', () => {
+    const src = [
+      'FORM melden.',                                  // 1
+      '  IF gv_menge < 0.',                            // 2
+      '    MESSAGE e417(zpp) INTO gv_text.',           // 3
+      '    WRITE: / gv_text.',                         // 4
+      '  ENDIF.',                                      // 5
+      'ENDFORM.',                                      // 6
+    ].join('\n');
+    expect(check(src, 'Ist die Menge negativ, wird die Fehlermeldung E417 ausgegeben.', [2])).toBeNull();
+    // Without the WRITE the same sentence is still a contradiction.
+    const quiet = src.replace('    WRITE: / gv_text.\n', '');
+    expect(check(quiet, 'Ist die Menge negativ, wird die Fehlermeldung E417 ausgegeben.', [2])).toMatchObject({ rule: 'message-into' });
+  });
+
+  test('61f4478991ab: a read-only SELECT does not silence the persistence rule', () => {
+    const src = [
+      'FORM status_lesen.',                                              // 1
+      '  SELECT SINGLE status FROM zauftrag INTO gv_status WHERE id = p_id.', // 2
+      "  IF gv_status = 'F'.",                                           // 3
+      "    gv_neu = 'A'.",                                               // 4
+      '  ENDIF.',                                                        // 5
+      'ENDFORM.',                                                        // 6
+    ].join('\n');
+    expect(check(src, 'Ist der Auftrag fertig, wird der Status A in der Datenbank gespeichert.', [2, 3]))
+      .toMatchObject({ verdict: 'unsupported', rule: 'persistence' });
+  });
+
+  test('6fa011d784f8: a customer transaction ending in 03 is never assumed to display', () => {
+    const src = [
+      'FORM anlegen.',                       // 1
+      "  CALL TRANSACTION 'ZVA03'.",         // 2
+      "  CALL TRANSACTION 'ZZ3'.",           // 3
+      'ENDFORM.',                            // 4
+    ].join('\n');
+    expect(check(src, 'Der Auftrag wird angelegt.', [2])).toBeNull();
+    expect(check(src, 'Der Auftrag wird angelegt.', [3])).toBeNull();
+  });
+});

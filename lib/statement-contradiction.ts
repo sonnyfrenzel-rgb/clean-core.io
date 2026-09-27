@@ -53,7 +53,7 @@ export type ContradictionRule =
   | 'persistence'
   /** An exception or event the source does not name at all. */
   | 'not-raised'
-  /** "created" at a transaction that, by SAP's naming, displays. */
+  /** "created" at a transaction that, in the SAP standard, displays — a fixed list. */
   | 'display-transaction';
 
 export interface StatementContradiction {
@@ -160,11 +160,13 @@ function mayDisplay(s: AbapStatement): boolean {
  * Could this statement change stored data, or hand the change to something that
  * does? Deliberately wide — a call, a routine, an itab write all count — so the
  * persistence rule only fires where the anchors plainly read and decide.
+ * `SELECT` is not on the list: it reads, and a read beside a decision is
+ * exactly the case the rule is for (QA review of 8f9ea35a000e, 61f4478991ab).
  */
 function mayWrite(s: AbapStatement): boolean {
   return [
     'INSERT', 'UPDATE', 'MODIFY', 'DELETE', 'COMMIT', 'ROLLBACK', 'CALL', 'PERFORM', 'SUBMIT', 'APPEND',
-    'COLLECT', 'EXPORT', 'SET', 'RAISE', 'OPEN', 'TRANSFER', 'EXEC', 'SELECT',
+    'COLLECT', 'EXPORT', 'SET', 'RAISE', 'OPEN', 'TRANSFER', 'EXEC',
   ].includes(s.keyword) || /->|=>/.test(s.text);
 }
 
@@ -198,6 +200,19 @@ const STORED = /\b(gebucht|verbucht|persistiert|festgeschrieben|(in|auf|zur)\s+(
 
 const CREATED = /\b(angelegt|anlegen|anlage|neu\s+erfasst|erstellt)\b/i;
 
+/**
+ * SAP standard transactions that display a business object — a fixed list,
+ * never a pattern. A customer code that happens to end in 03 (`ZVA03`) may do
+ * whatever its author wrote, so an unknown code is never judged (QA review of
+ * 8f9ea35a000e, 6fa011d784f8).
+ */
+export const STANDARD_DISPLAY_TRANSACTIONS: ReadonlySet<string> = new Set([
+  'VA03', 'VA13', 'VA23', 'VA33', 'VA43', 'VL03N', 'VL33N', 'VF03', 'VK13', 'VBO3', 'VD03', 'XD03', 'FD03',
+  'ME23N', 'ME33K', 'ME33L', 'ME53N', 'ME13', 'MM03', 'MB03', 'MIR4', 'XK03', 'MK03', 'FK03',
+  'FB03', 'FS03', 'FSS3', 'KS03', 'KA03', 'CO03', 'CJ03', 'CN23', 'IW23', 'IW33', 'IW43', 'IE03', 'IL03',
+  'IP03', 'QA03', 'QM03', 'CS03', 'CA03', 'CR03', 'CL03', 'PA20', 'AS03', 'CV03N',
+]);
+
 /* ------------------------------------------------------------------ *
  * The rules. Each returns a mark or nothing.
  * ------------------------------------------------------------------ */
@@ -210,12 +225,13 @@ function messageRules(text: string, region: AbapStatement[]): StatementContradic
   // at the anchors must be a quiet one, and nothing else there may display.
   const numbers = messageNumbers(text);
   const named = numbers.length ? messages.filter((s) => numbers.includes(messageNumberOf(s) ?? '')) : [];
-  let targets = named;
-  if (targets.length === 0) {
-    if (numbers.length && messages.some((s) => messageNumberOf(s) !== null)) return null; // names another message
-    if (region.some((s) => s.keyword !== 'MESSAGE' && mayDisplay(s))) return null;
-    targets = messages;
-  }
+  if (named.length === 0 && numbers.length && messages.some((s) => messageNumberOf(s) !== null)) return null; // names another message
+  // Named or not: when anything else at the anchors could put the message — or
+  // the field `INTO` filled — in front of the user, "displayed" may be true
+  // (QA review of 8f9ea35a000e, a4cdb3b68967: `MESSAGE … INTO gv_text`, then
+  // `WRITE gv_text`).
+  if (region.some((s) => s.keyword !== 'MESSAGE' && mayDisplay(s))) return null;
+  const targets = named.length ? named : messages;
   if (targets.every(isMessageInto)) {
     return {
       verdict: 'contradicts',
@@ -327,12 +343,12 @@ function displayTransactionRule(text: string, region: AbapStatement[]): Statemen
   const calls = region.filter((s) => /^CALL\s+TRANSACTION\s+'([A-Z0-9_]+)'/i.test(s.text));
   if (calls.length === 0) return null;
   const codes = calls.map((s) => /^CALL\s+TRANSACTION\s+'([A-Z0-9_]+)'/i.exec(s.text)![1].toUpperCase());
-  if (!codes.every((code) => /^[A-Z]{2,4}0?3N?$/.test(code))) return null;
+  if (!codes.every((code) => STANDARD_DISPLAY_TRANSACTIONS.has(code))) return null;
   if (region.some((s) => mayWrite(s) && !/^CALL\s+TRANSACTION\b/i.test(s.text) && s.keyword !== 'SET')) return null;
   return {
     verdict: 'unsupported',
     rule: 'display-transaction',
-    reason: `${codes.join(', ')} ${codes.length === 1 ? 'is a display transaction' : 'are display transactions'} by SAP's naming; nothing here creates a record.`,
+    reason: `${codes.join(', ')} ${codes.length === 1 ? 'is a display transaction' : 'are display transactions'} in the SAP standard; nothing here creates a record.`,
     lines: calls.map(rangeOf),
   };
 }
