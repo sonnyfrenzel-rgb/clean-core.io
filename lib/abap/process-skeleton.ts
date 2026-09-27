@@ -832,6 +832,14 @@ class SkeletonBuilder {
   private externallyCallableMethods = new Map<string, string>();
   /** Region keys of the entries built, so `unreached()` does not also list them as not reached. */
   private entryOfBlock = new Set<number>();
+  /**
+   * Routines a walked call names, and everything they perform in turn — the
+   * reachability the **drawing** has, as opposed to the one 2.2's call graph
+   * computes from event blocks. They differ exactly where an entry is a routine
+   * itself: a form performed by a user-exit form is drawn inside it, and must
+   * then not also be listed as code no entry reaches.
+   */
+  private reachedRoutines = new Set<string>();
 
   constructor(
     private statements: AbapStatement[],
@@ -1482,11 +1490,24 @@ class SkeletonBuilder {
    * The bare `FORM` — a user exit, an enhancement include. Last, and only when
    * nothing else in this source answered: a form a report performs is a step of
    * that report, and drawing it as a second beginning would double it.
+   *
+   * **Only a form no `PERFORM` of this source names** (`neverPerformed`), which
+   * is the sentence `DESIGN.md` §5.8 writes: *"eine `FORM`, die kein `PERFORM`
+   * erreicht"*. This used to read `unreachable` — and when nothing else in the
+   * source is an entry, reachability has no root, so *every* form is
+   * unreachable, the performed ones included. `PERFORM b` inside the entry `a`
+   * then drew `b` twice: once as the sub-process `a` opens and once as a second
+   * beginning of the process. A form that is performed is a step of whoever
+   * performs it. The one shape without such a root — routines that only perform
+   * one another in a ring — falls back to the old reading, because otherwise
+   * nothing of it would be drawn at all.
    */
   private formEntries(): EntryPoint[] {
     const out: EntryPoint[] = [];
+    const roots = this.calls.neverPerformed.filter((name) => this.formBlocks.has(name));
+    const beginnings = new Set(roots.length ? roots : this.calls.unreachable);
     for (const [name, block] of this.formBlocks) {
-      if (!this.calls.unreachable.includes(name)) continue;
+      if (!beginnings.has(name)) continue;
       const opener = this.statements[block.openIndex];
       const written = /^FORM\s+([\w/]+)/i.exec(opener.text);
       this.entryOfBlock.add(block.openIndex);
@@ -2467,6 +2488,7 @@ class SkeletonBuilder {
       return { exits: [{ from: node.id, condition: '', kind: 'sequence' }] };
     }
 
+    this.markReached(target);
     if (this.helpers.has(target)) {
       // §5.8: a routine without an effect of its own is part of its caller.
       return { exits: incoming };
@@ -3085,11 +3107,27 @@ class SkeletonBuilder {
     if (droppedEdges.size) this.edges = this.edges.filter((e) => !droppedEdges.has(e));
   }
 
+  /** A routine the walk calls runs, and so does everything it calls in turn. */
+  private markReached(name: string): void {
+    const queue = [name];
+    while (queue.length) {
+      const next = queue.pop() as string;
+      if (this.reachedRoutines.has(next)) continue;
+      this.reachedRoutines.add(next);
+      queue.push(...(this.performedFrom.get(next) ?? []));
+    }
+  }
+
+  /** Not reached by 2.2's call graph **and** not drawn by this walk. */
+  private isUnreachedForm(name: string): boolean {
+    return this.calls.unreachable.includes(name) && !this.reachedRoutines.has(name);
+  }
+
   private unreached(): UnreachedRegion[] {
     const out: UnreachedRegion[] = [];
     for (const name of this.calls.unreachable) {
       const block = this.formBlocks.get(name);
-      if (!block || this.entryOfBlock.has(block.openIndex)) continue;
+      if (!block || this.entryOfBlock.has(block.openIndex) || !this.isUnreachedForm(name)) continue;
       out.push({ name, kind: 'form', lineStart: block.lineStart, lineEnd: block.lineEnd });
     }
     // A screen module runs from a dynpro, and the dynpro is not in this source.
@@ -3114,7 +3152,7 @@ class SkeletonBuilder {
   private technicalHelpers(): FoldedForm[] {
     const out: FoldedForm[] = [];
     for (const name of this.helpers) {
-      if (this.calls.unreachable.includes(name)) continue;
+      if (this.isUnreachedForm(name)) continue;
       const block = this.formBlocks.get(name);
       if (!block) continue;
       out.push({

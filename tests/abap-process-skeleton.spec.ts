@@ -1971,3 +1971,36 @@ test.describe('roadmap 2.14 — where the process begins', () => {
     }
   });
 });
+
+/* ================================================================== *
+ * DESIGN.md §5.8 against the engine — four defects, 27.09.2026
+ *
+ * Found on the learning half of the process benchmark; every source below is
+ * written for this spec, none is taken from the benchmark. Each test quotes
+ * the sentence of §5.8 the engine did not keep.
+ * ================================================================== */
+
+test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
+  const startsOf = (skeleton: ProcessSkeleton) => skeleton.nodes.filter((n) => n.kind === 'start');
+
+  test('D3 — a FORM that a PERFORM reaches is a step of its caller, not a second beginning', () => {
+    // §5.8, Startereignis: "… und eine `FORM`, die kein `PERFORM` erreicht".
+    const skeleton = buildProcessSkeleton([
+      'FORM userexit_save.',
+      '  PERFORM post_change.',
+      'ENDFORM.',
+      '',
+      'FORM post_change.',
+      '  UPDATE zsd_log SET done = abap_true.',
+      'ENDFORM.',
+    ].join('\n'));
+    expect(startsOf(skeleton).map((n) => n.label)).toEqual(['userexit_save']);
+    // Drawn exactly once: inside the sub-process the call opens, and not in an
+    // entry region of its own.
+    const update = skeleton.nodes.filter((n) => n.anchor?.lineStart === 6);
+    expect(update.map((n) => n.region)).toEqual(['form:POST_CHANGE']);
+    expect(skeleton.regions.filter((r) => r.kind === 'entry').map((r) => r.label)).toEqual(['userexit_save']);
+    // And drawn is not "not reached".
+    expect(skeleton.notDrawn.unreached).toEqual([]);
+  });
+});
