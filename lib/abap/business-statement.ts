@@ -1240,6 +1240,90 @@ function routineHead(
   );
 }
 
+/**
+ * Die Implementierung einer aufgerufenen Methode im gelieferten Code — oder
+ * `null`, wenn sie dort nicht steht.
+ *
+ * Ein statischer Aufruf `klasse=>m( )` zählt nur, wenn `klasse` selbst im
+ * Ausschnitt definiert ist: ein `cl_salv_table=>factory( )` ist nicht die
+ * lokale Methode `factory`, die zufällig gleich heißt. `super->m( )` meint die
+ * Oberklasse, also nicht die Redefinition, in der der Aufruf steht.
+ */
+function methodImplementation(statements: readonly AbapStatement[], owner: string, name: string): AbapStatement | null {
+  const lower = owner.toLowerCase();
+  if (lower === 'super') {
+    const all = statements.filter((other) => other.keyword.toUpperCase() === 'METHOD' && new RegExp(`^METHOD\\s+(?:\\S+~)?${escapeForRegExp(name)}$`, 'i').test(other.text));
+    return all.length > 1 ? all[0] : null;
+  }
+  const staticCall = statements.some((other) => other.text.toLowerCase().includes(`${lower}=>${name.toLowerCase()}`));
+  if (staticCall && lower !== 'me') {
+    const local = statements.some((other) => {
+      const definition = /^CLASS\s+([A-Za-z0-9_/]+)\s+(?:DEFINITION|IMPLEMENTATION)\b/i.exec(other.text);
+      return definition !== null && definition[1].toLowerCase() === lower;
+    });
+    if (!local) return null;
+  }
+  return routineHead(statements, 'METHOD', name);
+}
+
+/**
+ * Was eine Routine im gelieferten Code tut, als kurze Satzteile — höchstens
+ * drei, das Schreibende zuerst: „ruft BAL_DB_SAVE auf und schreibt mit COMMIT
+ * WORK fest". Gelesen wird nur die Routine selbst, nicht, was sie aufruft.
+ */
+function routineEffects(statements: readonly AbapStatement[], head: AbapStatement): string[] {
+  const closer = `END${head.keyword.toUpperCase()}`;
+  const body: AbapStatement[] = [];
+  for (let i = head.index + 1; i < statements.length && statements[i].keyword.toUpperCase() !== closer; i += 1) {
+    body.push(statements[i]);
+  }
+  const tables = internalTables(statements);
+  const writes: string[] = [];
+  const commits: string[] = [];
+  const functions: string[] = [];
+  const reads: string[] = [];
+  const others: string[] = [];
+  const nameOf = (raw: string) => {
+    const entity = tableTerm(raw);
+    return entity ? entity.plural : raw.toUpperCase();
+  };
+  for (const statement of body) {
+    const text = statement.text;
+    const keyword = statement.keyword.toUpperCase();
+    if (keyword === 'COMMIT' && /^COMMIT\s+WORK\b/i.test(text)) commits.push('schreibt mit COMMIT WORK fest');
+    else if (/^CALL\s+FUNCTION\s+'BAPI_TRANSACTION_COMMIT'/i.test(text)) commits.push('schreibt mit BAPI_TRANSACTION_COMMIT fest');
+    else if (/^CALL\s+FUNCTION\s+'([^']+)'/i.test(text)) {
+      const fn = /^CALL\s+FUNCTION\s+'([^']+)'/i.exec(text)![1];
+      functions.push(/\bIN\s+UPDATE\s+TASK\b/i.test(text) ? `${fn} (zur Verbuchung)` : fn);
+    } else if (/^CALL\s+TRANSACTION\s+'([^']+)'/i.test(text)) {
+      others.push(`ruft die Transaktion ${/^CALL\s+TRANSACTION\s+'([^']+)'/i.exec(text)![1]} auf`);
+    } else if (['UPDATE', 'INSERT', 'MODIFY', 'DELETE'].includes(keyword) && isDbWrite(statement, tables)) {
+      const target = /^(?:UPDATE|MODIFY|INSERT\s+INTO|INSERT|DELETE\s+FROM|DELETE)\s+([A-Za-z0-9_/]+)/i.exec(text);
+      if (target) {
+        const verb =
+          keyword === 'UPDATE' ? 'ändert' : keyword === 'INSERT' ? 'legt Sätze an in' : keyword === 'DELETE' ? 'löscht aus' : 'schreibt in';
+        writes.push(`${verb} ${nameOf(target[1])}`);
+      }
+    } else if (keyword === 'SELECT') {
+      const from = /\bFROM\s+([A-Za-z0-9_/]+)/i.exec(text);
+      if (from) reads.push(nameOf(from[1]));
+    } else if (keyword === 'MESSAGE' && !/\bINTO\b/i.test(text)) others.push('gibt eine Meldung aus');
+    else if (isOutputWrite(statement)) others.push('gibt Listenzeilen aus');
+    else if (keyword === 'RAISE' && /^RAISE\s+EVENT\s+([A-Za-z0-9_]+)/i.test(text)) {
+      others.push(`löst das Ereignis ${/^RAISE\s+EVENT\s+([A-Za-z0-9_]+)/i.exec(text)![1]} aus`);
+    }
+  }
+  const unique = (items: string[]) => items.filter((item, index) => items.indexOf(item) === index);
+  const effects = [
+    ...unique(writes),
+    ...(functions.length > 0 ? [`ruft ${enumerate(unique(functions).slice(0, 3))} auf`] : []),
+    ...unique(commits),
+    ...(reads.length > 0 ? [`liest ${enumerate(unique(reads).slice(0, 3))}`] : []),
+    ...unique(others),
+  ];
+  return effects.slice(0, 3);
+}
+
 /** Eine Anweisung, hinter der Code steht, der schreiben oder festschreiben kann. */
 function callsOut(statement: AbapStatement): boolean {
   return /^(?:PERFORM|CALL|SUBMIT|COMMIT|RAISE\s+EVENT)\b/i.test(statement.text) || /->|=>/.test(statement.text);
@@ -1673,10 +1757,14 @@ function sentenceFor(
   if (keyword === 'PERFORM') {
     const name = /^PERFORM\s+(\([^)]+\)|[A-Za-z0-9_]+)/i.exec(text);
     const external = /\bIN\s+PROGRAM\b/i.test(text);
+    // F7: steht die FORM im gelieferten Code, ist ihre Wirkung belegt — und
+    // wird genannt, soweit sie sich ablesen lässt, statt „nicht belegt".
+    const head = name && !external && !/^\(/.test(name[1]) ? routineHead(statements, 'FORM', name[1]) : null;
+    const effects = head ? routineEffects(statements, head) : [];
     return {
       anchors,
-      core: `Das ${external ? 'externe ' : ''}Unterprogramm ${name ? plain(name[1]) : ''} wird aufgerufen.`.replace(/\s+/g, ' '),
-      notes: ['Seine Wirkung ist im gelieferten Code nicht belegt.'],
+      core: `Das ${external ? 'externe ' : ''}Unterprogramm ${name ? plain(name[1]) : ''} wird aufgerufen${effects.length > 0 ? `; es ${enumerate(effects)}` : ''}.`.replace(/\s+/g, ' '),
+      notes: head ? [] : ['Seine Wirkung ist im gelieferten Code nicht belegt.'],
       tag: 'perform',
     };
   }
@@ -1767,7 +1855,27 @@ function sentenceFor(
     }
     const method = /^CALL\s+METHOD\s+(\S+)/i.exec(text);
     if (method) {
-      return { anchors, core: `Das Ergebnis der gewählten Methode wird ermittelt.`, tag: 'call' };
+      const called = /^(?:(.*?)(?:->|=>))?([A-Za-z0-9_]+)$/.exec(method[1]);
+      if (!called) {
+        // `CALL METHOD (lv_name)` oder `obj->(lv_name)`: der Name steht erst zur Laufzeit fest.
+        const receiving = /\b(?:RECEIVING|IMPORTING)\s+\w+\s*=\s*(\S+)/i.exec(text);
+        return {
+          anchors,
+          core: receiving
+            ? `Das Ergebnis der zur Laufzeit gewählten Methode wird in ${plain(receiving[1])} übernommen.`
+            : 'Die zur Laufzeit gewählte Methode wird aufgerufen.',
+          tag: 'call',
+        };
+      }
+      const owner = called[1] ?? '';
+      const head = methodImplementation(statements, owner, called[2]);
+      const effects = head ? routineEffects(statements, head) : [];
+      return {
+        anchors,
+        core: `Die Methode ${called[2]}${owner ? ` von ${owner}` : ''} wird aufgerufen${effects.length > 0 ? `; sie ${enumerate(effects)}` : ''}.`,
+        notes: head ? [] : ['Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.'],
+        tag: 'call',
+      };
     }
     const transaction = /^CALL\s+TRANSACTION\s+('[^']*'|[A-Za-z0-9_]+)/i.exec(text);
     if (transaction) {
@@ -1923,7 +2031,10 @@ function sentenceFor(
   if (keyword === 'CLASS' && /\bINHERITING\s+FROM\b/i.test(text)) {
     const base = /\bINHERITING\s+FROM\s+([A-Za-z0-9_/]+)/i.exec(text);
     const known = base
-      ? statements.some((other) => new RegExp(`^CLASS\s+${base[1]}\s+DEFINITION`, 'i').test(other.text))
+      ? statements.some((other) => {
+          const definition = /^CLASS\s+([A-Za-z0-9_/]+)\s+DEFINITION\b/i.exec(other.text);
+          return definition !== null && definition[1].toLowerCase() === base[1].toLowerCase() && !/\bDEFERRED\b/i.test(other.text);
+        })
       : false;
     return {
       anchors,
@@ -1964,17 +2075,20 @@ function sentenceFor(
   if (method) {
     const owner = method[1];
     const name = method[2];
-    const defined = statements.some((other) =>
-      new RegExp(`^(?:CLASS-)?METHODS\s+${name}\b`, 'i').test(other.text),
-    );
+    // F7: „nicht belegt" nur, wenn die Methode wirklich fehlt. Bis hierher
+    // prüfte ein Muster auf `METHODS name` — in einem Template-String, in dem
+    // `\s` zu `s` und `\b` zu einem Backspace wurde; es traf nie, und jede
+    // Methode galt als fehlend, auch die im selben Quelltext implementierten.
+    const head = methodImplementation(statements, owner, name);
     const target = /^([A-Za-z0-9_()]+)\s*=/.exec(text);
+    const effects = head ? routineEffects(statements, head) : [];
     const core = target
       ? `Der Rückgabewert der Methode ${name} von ${owner} wird nach ${plain(target[1])} übernommen.`
-      : `Die Methode ${name} von ${owner} wird aufgerufen.`;
+      : `Die Methode ${name} von ${owner} wird aufgerufen${effects.length > 0 ? `; sie ${enumerate(effects)}` : ''}.`;
     return {
       anchors,
       core,
-      notes: defined ? [] : ['Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.'],
+      notes: head ? [] : ['Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.'],
       tag: 'method',
     };
   }

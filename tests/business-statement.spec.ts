@@ -557,3 +557,42 @@ test('F6 — „es wird nichts geschrieben" und „kein COMMIT WORK" nur, wenn d
   expect(intern).toContain('internen Tabelle gt_pos');
   expect(intern).not.toMatch(/kein COMMIT|eingefügt oder überschrieben/);
 });
+
+test('F7 — „nicht belegt" nur, wenn das Aufrufziel wirklich fehlt', () => {
+  const code = quelle(
+    'REPORT z_f7.',
+    'CLASS lcl_protokoll DEFINITION.',
+    '  PUBLIC SECTION.',
+    '    METHODS sichern.',
+    'ENDCLASS.',
+    'CLASS lcl_protokoll IMPLEMENTATION.',
+    '  METHOD sichern.',
+    "    CALL FUNCTION 'Z_PROTOKOLL_SICHERN'.",
+    '    COMMIT WORK.',
+    '  ENDMETHOD.',
+    'ENDCLASS.',
+    'START-OF-SELECTION.',
+    '  DATA(go_log) = NEW lcl_protokoll( ).',
+    '  PERFORM abschluss.',
+    '  go_log->sichern( ).',
+    '  PERFORM fremd IN PROGRAM zanderes.',
+    "  cl_fremd=>sichern( ).",
+    'FORM abschluss.',
+    "  UPDATE zlauf SET status = 'E' WHERE id = gv_id.",
+    'ENDFORM.',
+  );
+  const form = satzAn(code, 14).join(' ');
+  expect(form).toContain('Unterprogramm abschluss');
+  expect(form).toContain('ändert ZLAUF');
+  expect(form).not.toContain('nicht belegt');
+
+  const methode = satzAn(code, 15).join(' ');
+  expect(methode).toContain('ruft Z_PROTOKOLL_SICHERN auf');
+  expect(methode).toContain('COMMIT WORK');
+  expect(methode).not.toContain('nicht belegt');
+
+  // Was nicht im Ausschnitt steht, bleibt „nicht belegt" — auch eine globale
+  // Klasse, deren Methode zufällig so heißt wie eine lokale.
+  expect(satzAn(code, 16).join(' ')).toContain('nicht belegt');
+  expect(satzAn(code, 17).join(' ')).toContain('nicht belegt');
+});
