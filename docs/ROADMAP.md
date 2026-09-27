@@ -2402,9 +2402,10 @@ aber uneinheitlich werteten: `MESSAGE … RAISING` („angezeigt" nur, wenn der 
 Ausnahme nicht behandelt — 5 Mal an einem als falsch gewerteten Satz, 18 Mal an einem
 „gleich"-Satz, 10 davon in einem Fall, BM-199; deshalb nur *Not supported by the code*,
 nie *Contradicts*) und `RETURN`/`STOP` in `START-OF-SELECTION` mit folgendem
-`END-OF-SELECTION` („das Programm wird beendet" — 3 Treffer, 3 Fehlalarme). Ob die
-`RAISING`-Regel bleibt, ist eine Produktfrage: sie sagt Wahres, das die Richter
-überwiegend nicht für einen Fehler hielten.
+`END-OF-SELECTION` („das Programm wird beendet" — 3 Treffer, 3 Fehlalarme). Die
+`RAISING`-Regel **bleibt** (Entscheidung 27.09.2026): sie sagt Wahres, das die Richter
+überwiegend nicht für einen Fehler hielten, und steht deshalb nur als *Not supported by
+the code*.
 Messgrenze: die Richterdateien tragen je B-Satz nur die Zeilen seines Sollsatzes, nicht
 seine eigenen Anker; im Produkt prüft das Modul gegen die Anker, die die Validierung dem
 Satz gelassen hat. Vier Regeln (`WRITE … TO`, Persistenz ohne Schreibanweisung, nicht
@@ -2420,3 +2421,14 @@ Prompt. Gemessen in 17.8: 3,80 $ für zwei Durchgänge über 68 Fälle, also run
 Aufruf** bei Korpusgröße; größere Quellen entsprechend mehr. Er zählt nicht auf die fünf
 Analyse-Läufe, aber auf das Stundenlimit der Modellaufrufe des Kontos (20 je Stunde in
 `/api/gemini`); mit eigenem Schlüssel zahlt das Konto selbst.
+
+**Offen nach 17.10:**
+
+- **Sprache der erzeugten Sätze.** Weg A wie Weg B schreiben deutsch; ADR-009 verlangt
+  auch für erzeugte Inhalte Englisch. Das gilt für beide Wege gleich und ist vor 3.0 zu
+  entscheiden — Prompt, Glossar der Engine und die Regeln des Widerspruchsmoduls lesen
+  heute deutsche Sätze.
+- **Das Widerspruchsmodul ist ein Sicherheitsnetz, keine Garantie.** Auf der Prüfhälfte
+  markiert es 2 von 14 als falsch gewerteten B-Aussagen. Ein Modellsatz ohne Markierung
+  ist nicht geprüft richtig, sondern nur nicht an einer der Regeln gescheitert — deshalb
+  steht der Satz der Engine immer darunter.
