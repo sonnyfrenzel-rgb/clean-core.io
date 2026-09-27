@@ -520,7 +520,7 @@ const LOOP_BLOCKS = new Set(['loop', 'do', 'while', 'select']);
  *
  * The walk follows a chain of calls by recursing once per link, so the chain's
  * depth is the call stack's depth — and a source that is one long chain ended
- * the whole analysis in a `RangeError` (see `formRegion`). Two hundred is far
+ * the whole analysis in a `RangeError` (see `routineRegion`). Two hundred is far
  * past any chain a program written by a person has, and far short of the depth
  * at which this walk runs out of stack (measured: between 800 and 1200 links).
  */
@@ -721,6 +721,41 @@ interface Exit {
   reason?: SkeletonEdgeReason;
 }
 
+/** One `METHOD name.` inside a `CLASS x IMPLEMENTATION` of this source (D2). */
+interface MethodImpl {
+  /** `CLASS=>METHOD`, upper-cased — the routine key. */
+  key: string;
+  cls: string;
+  /** As the implementation writes it, upper-cased: `RUN`, `ZIF_X~RUN`. */
+  name: string;
+  /** The part after `~`, or the name itself. */
+  short: string;
+  block: Block;
+}
+
+/**
+ * One method call the source writes (D2) — `CALL METHOD x->m`, `x->m( … )`,
+ * `cls=>m( … )`, `me->m( … )`, `m( … )`, and a constructor behind `NEW` or
+ * `CREATE OBJECT`.
+ */
+interface MethodCall {
+  /** Upper-cased method name as the call writes it (`ZIF_X~M` stays whole). */
+  name: string;
+  /** The routine key this call resolves to, or `null` when it does not. */
+  key: string | null;
+  /** More than one implementation fits and the call does not say which. */
+  ambiguous: boolean;
+  /** The method name is computed at run time: `CALL METHOD (lv_name)`. */
+  dynamic: boolean;
+  /** The call is the whole statement, not an operand inside one. */
+  standalone: boolean;
+  constructor: boolean;
+  /** A token out of the source: `LO_ALV->DISPLAY`, `LCL_APP=>RUN`, `RUN`. */
+  label: string;
+  /** Position in the masked statement text — the order calls are evaluated in. */
+  at: number;
+}
+
 /** A fork of parallel tasks the walk found in one range — roadmap 2.17 (a). */
 interface ParallelGroup {
   /** Statement indices of the `STARTING NEW TASK` calls, in source order. */
@@ -841,8 +876,7 @@ class SkeletonBuilder {
   private formBlocks = new Map<string, Block>();
   private effects = new Map<string, Set<FormEffect>>();
   private helpers = new Set<string>();
-  private regionOfForm = new Map<string, SkeletonRegion>();
-  /** The chain of routines being expanded right now — the floor of `formRegion`. */
+  /** The chain of routines being expanded right now — the floor of `routineRegion`. */
   private expanding: string[] = [];
   private macros = new Map<string, { block: Block }>();
   /**
@@ -874,6 +908,25 @@ class SkeletonBuilder {
   private modulesWaitForScreen = false;
   /** Did the walk pass a `CALL SCREEN`? */
   private screenCalled = false;
+  /**
+   * Every routine a call in this source can open as a sub-process (D2): the
+   * forms under their name, as before, and the methods this source implements
+   * under `CLASS=>METHOD` — a key no form name can collide with, since `=>` is
+   * not a character of a name. `effects`, `helpers`, `performedFrom` and the
+   * region builder are keyed the same way, so a method is a routine exactly as
+   * a form is and nothing downstream needs to know which of the two it holds.
+   */
+  private routineBlocks = new Map<string, Block>();
+  private regionOfRoutine = new Map<string, SkeletonRegion>();
+  /** `METHOD name.` inside `CLASS x IMPLEMENTATION`, one row per implementation. */
+  private methodImpls: MethodImpl[] = [];
+  /** Classes and interfaces this source defines or implements, upper-cased. */
+  private classNames = new Set<string>();
+  /** `lo_x TYPE REF TO lcl_y` and its relatives: the class a reference variable holds. */
+  private refTypes = new Map<string, Set<string>>();
+  /** The statements, over the whole source, whose calls resolve to each method — for entries and helpers. */
+  private methodCallSites = new Map<string, number[]>();
+  private methodCallCache = new Map<number, MethodCall[]>();
 
   constructor(
     private statements: AbapStatement[],
@@ -894,9 +947,12 @@ class SkeletonBuilder {
       const m = /^FORM\s+([\w/]+)/i.exec(this.statements[block.openIndex].text);
       if (m) this.formBlocks.set(m[1].toUpperCase(), block);
     }
+    for (const [name, block] of this.formBlocks) this.routineBlocks.set(name, block);
+    this.readMethodImplementations();
     this.readFunctionBlocks();
     this.readMethodVisibility();
     this.readSelectionScreen();
+    this.readMethodCallSites();
     this.readEffects();
     this.noteWhatIsNotRead();
 
@@ -1088,17 +1144,25 @@ class SkeletonBuilder {
    * and performs three routines that all do something, so it is a step. Without
    * the closure the phase of the process with the most effect in it would be the
    * one that disappears.
+   *
+   * Since 27.09.2026 (D2) the same holds for a method this source implements:
+   * §5.8 names "eine `FORM`/Methode mit eigener Wirkung" in one breath, so a
+   * method is a routine here, and the effect travels along a method call that
+   * resolves to one exactly as it travels along a `PERFORM`.
    */
   private readEffects(): void {
-    for (const [name, block] of this.formBlocks) {
+    for (const [name, block] of this.routineBlocks) {
       this.effects.set(name, this.directEffects(block));
       this.performedFrom.set(name, []);
     }
-    for (const [name, block] of this.formBlocks) {
+    for (const [name, block] of this.routineBlocks) {
       const performed: string[] = [];
       const [from, to] = bodyRange(block);
       for (let i = from; i <= to; i++) {
         const statement = this.statements[i];
+        for (const call of this.methodCallsIn(statement)) {
+          if (call.key) performed.push(call.key);
+        }
         if (statement.keyword !== 'PERFORM') continue;
         const m = /^PERFORM\s+([\w/]+)/i.exec(statement.text);
         if (m && this.formBlocks.has(m[1].toUpperCase())) performed.push(m[1].toUpperCase());
@@ -1191,6 +1255,270 @@ class SkeletonBuilder {
       }
     }
     return false;
+  }
+
+  /* ---------------- D2: method calls ---------------- */
+
+  /**
+   * The methods this source implements, and the classes it names — read once,
+   * before the effects, because a method is a routine there (D2).
+   */
+  private readMethodImplementations(): void {
+    for (const block of this.structure.blocks) {
+      const opener = this.statements[block.openIndex];
+      if (block.kind === 'class' || block.kind === 'interface') {
+        const name = /^(?:CLASS|INTERFACE)\s+([\w/]+)/i.exec(opener.text);
+        if (name) this.classNames.add(name[1].toUpperCase());
+        continue;
+      }
+      if (block.kind !== 'method') continue;
+      const cls = this.classOf(block.openIndex);
+      const name = /^METHOD\s+([\w/~]+)/i.exec(opener.text)?.[1]?.toUpperCase();
+      if (!cls || !name) continue;
+      const key = `${cls}=>${name}`;
+      if (this.routineBlocks.has(key)) continue;
+      const tilde = name.lastIndexOf('~');
+      this.methodImpls.push({ key, cls, name, short: tilde < 0 ? name : name.slice(tilde + 1), block });
+      this.routineBlocks.set(key, block);
+    }
+  }
+
+  /** The class whose `IMPLEMENTATION` encloses this statement, upper-cased, or `null`. */
+  private classOf(index: number): string | null {
+    const enclosing = this.structure.enclosing[index] ?? [];
+    for (let i = enclosing.length - 1; i >= 0; i--) {
+      if (enclosing[i].kind !== 'class') continue;
+      const m = /^CLASS\s+([\w/]+)\s+IMPLEMENTATION\b/i.exec(this.statements[enclosing[i].openIndex].text);
+      return m ? m[1].toUpperCase() : null;
+    }
+    return null;
+  }
+
+  /**
+   * Which class a reference variable holds, as far as the source says it in so
+   * many words: `TYPE REF TO`, `DATA(x) = NEW cls( )`, `x = NEW cls( )`,
+   * `CREATE OBJECT x TYPE cls`, `CAST cls( … )`. A name declared with two
+   * different types (two scopes) is not resolved — see `resolveMethod`.
+   * And then counts, over the whole source, how often each method is called.
+   */
+  private readMethodCallSites(): void {
+    const add = (variable: string, type: string) => {
+      const name = variable.toUpperCase().replace(/^ME->/, '');
+      const set = this.refTypes.get(name) ?? new Set<string>();
+      set.add(type.toUpperCase());
+      this.refTypes.set(name, set);
+    };
+    for (const statement of this.statements) {
+      if (statement.nativeSql) continue;
+      const code = maskLiterals(statement.text);
+      for (const m of code.matchAll(/([\w/]+)\s+TYPE\s+REF\s+TO\s+([\w/]+)/gi)) add(m[1], m[2]);
+      const inline = /^(?:DATA|FINAL)\(([\w/]+)\)\s*=\s*(?:NEW|CAST)\s+([\w/]+)\(/i.exec(code);
+      if (inline) add(inline[1], inline[2]);
+      const assigned = /^((?:ME->)?[\w/]+)\s*=\s*(?:NEW|CAST)\s+([\w/]+)\(/i.exec(code);
+      if (assigned) add(assigned[1], assigned[2]);
+      const created = /^CREATE\s+OBJECT\s+((?:ME->)?[\w/]+)\s+TYPE\s+([\w/]+)/i.exec(code);
+      if (created) add(created[1], created[2]);
+    }
+    for (const statement of this.statements) {
+      for (const call of this.methodCallsIn(statement)) {
+        if (call.key) this.methodCallSites.set(call.key, [...(this.methodCallSites.get(call.key) ?? []), statement.index]);
+      }
+    }
+  }
+
+  /**
+   * The implementation a call reaches, or why there is none.
+   *
+   * **The class comes from the call, never from a guess.** `cls=>m` names it;
+   * `me->m` and a bare `m` mean the class the call is written in; `lo->m` means
+   * the class `lo` is declared with, when the source declares it with exactly
+   * one. Where the call says no class, the name decides only when exactly one
+   * implementation in this source carries it — two local classes that both
+   * implement `run` and a call `lo->run( )` on a reference this source does not
+   * type is `ambiguous`, and an ambiguous call is drawn opaque rather than
+   * pointed at one of the two (brief of 27.09.2026, D2).
+   */
+  private resolveMethod(
+    qualifier: string | null,
+    op: '->' | '=>' | null,
+    name: string,
+    index: number,
+  ): { key: string | null; ambiguous: boolean } {
+    const byName = (impl: MethodImpl) => impl.name === name || impl.short === name;
+    const unique = (found: MethodImpl[]) => (found.length === 1
+      ? { key: found[0].key, ambiguous: false }
+      : { key: null, ambiguous: found.length > 1 });
+
+    let cls: string | null = null;
+    const q = qualifier?.toUpperCase() ?? null;
+    if (op === '=>' && q) cls = q;
+    else if (op === null || q === 'ME') cls = this.classOf(index);
+    else if (q && q !== ')' && q !== 'SUPER') {
+      const types = this.refTypes.get(q);
+      if (types?.size === 1) cls = [...types][0];
+    }
+
+    if (cls) {
+      const own = this.methodImpls.filter((impl) => impl.cls === cls && impl.name === name);
+      if (own.length) return unique(own);
+      const alias = this.methodImpls.filter((impl) => impl.cls === cls && byName(impl));
+      if (alias.length) return unique(alias);
+      // An interface reference: the implementations write `lif_x~m`.
+      const viaInterface = this.methodImpls.filter((impl) => impl.name === `${cls}~${name}`);
+      if (viaInterface.length) return unique(viaInterface);
+      // A class this source does not define — `cl_salv_table=>factory` — is
+      // not answered by a local method that happens to share the name.
+      if (!this.classNames.has(cls)) return { key: null, ambiguous: false };
+    }
+    return unique(this.methodImpls.filter(byName));
+  }
+
+  /**
+   * Every method call in one statement, in the order they are written (D2).
+   *
+   * Read off the code with its literals masked, and only in the shapes ABAP
+   * gives a method call: a name directly followed by `(` — ABAP allows no blank
+   * there — after `->` or `=>`, or a bare name inside a class implementation
+   * (outside one, `name(` is an offset or a built-in function, never a
+   * method). A name behind a constructor operator (`NEW`, `CAST`, `VALUE`, …)
+   * is a type, not a call; `NEW cls( )` and `CREATE OBJECT` are read as the
+   * constructor they run.
+   */
+  private methodCallsIn(statement: AbapStatement): MethodCall[] {
+    const cached = this.methodCallCache.get(statement.index);
+    if (cached) return cached;
+    const out: MethodCall[] = [];
+    this.methodCallCache.set(statement.index, out);
+    if (statement.nativeSql || !this.worthReadingForCalls(statement)) return out;
+
+    const code = maskLiterals(statement.text).replace(/\.\s*$/, '');
+    const index = statement.index;
+    const standaloneAt = this.standaloneCallAt(statement, code);
+
+    // `CALL METHOD target …` and its short form `CALL METHOD target( … )`.
+    const explicit = /^CALL\s+METHOD\s+/i.exec(code);
+    let explicitEnd = -1;
+    if (explicit) {
+      const rest = code.slice(explicit[0].length);
+      const target = /^[^\s(]*/.exec(rest)?.[0] ?? '';
+      explicitEnd = explicit[0].length + target.length;
+      // `CALL METHOD (lv_name)` and `CALL METHOD lo->(lv_name)`.
+      const dynamic = /^(?:\S*?(?:->|=>))?\(/.test(rest);
+      const segments = target.split(/(->|=>)/);
+      const name = (segments[segments.length - 1] ?? '').toUpperCase();
+      const op = segments.length >= 3 ? segments[segments.length - 2] as '->' | '=>' : null;
+      const qualifier = segments.length >= 3 ? segments[segments.length - 3] || ')' : null;
+      const resolved = dynamic || !/^[\w/~]+$/.test(name)
+        ? { key: null, ambiguous: false }
+        : this.resolveMethod(qualifier, op, name, index);
+      out.push({
+        name, ...resolved, dynamic, standalone: true, constructor: false,
+        label: (target || 'CALL METHOD').toUpperCase(), at: 0,
+      });
+    }
+
+    const call = /(?:([\w/]+|<[\w/]+>|\))(->|=>))?([\w/~]+)\(/g;
+    let m: RegExpExecArray | null;
+    while ((m = call.exec(code))) {
+      const at = m.index;
+      if (at < explicitEnd) continue;
+      const before = code.slice(0, at);
+      // A type behind a constructor operator, and a name glued to what stands
+      // before it (`ls_x-f(`, `lv+0(`) — neither is a call.
+      if (/\b(?:NEW|CAST|CONV|VALUE|REF|EXACT|CORRESPONDING|COND|SWITCH|REDUCE|FILTER)\s+$/i.test(before)) continue;
+      let op = (m[2] as '->' | '=>' | undefined) ?? null;
+      let qualifier = m[1] ?? null;
+      const trailing = /(->|=>)$/.exec(before);
+      if (!op && trailing) {
+        // `lt_x[ 1 ]->run(`: an object the reader cannot name — still a call on one.
+        op = trailing[1] as '->' | '=>';
+        qualifier = ')';
+      } else if (!trailing && /[\w/\-+~<>@]$/.test(before)) continue;
+      if (op === null && !this.classOf(index)) continue;
+      const name = m[3].toUpperCase();
+      const resolved = this.resolveMethod(qualifier, op, name, index);
+      out.push({
+        name, ...resolved, dynamic: false, standalone: at === standaloneAt, constructor: false,
+        label: qualifier && qualifier !== ')' ? `${qualifier}${op}${m[3]}`.toUpperCase() : name,
+        at,
+      });
+    }
+
+    // A constructor runs where the object is created. It is a call only when
+    // this source implements it — otherwise there is nothing to open.
+    const created = /\bNEW\s+([\w/#]+)\(/gi;
+    while ((m = created.exec(code))) {
+      let cls = m[1].toUpperCase();
+      if (cls === '#') {
+        const target = /^(?:ME->)?([\w/]+)\s*=/i.exec(code)?.[1]?.toUpperCase();
+        const types = target ? this.refTypes.get(target) : undefined;
+        if (types?.size !== 1) continue;
+        cls = [...types][0];
+      }
+      this.pushConstructor(out, cls, m.index);
+    }
+    const createObject = /^CREATE\s+OBJECT\s+((?:ME->)?[\w/]+)(?:\s+TYPE\s+([\w/]+))?/i.exec(code);
+    if (createObject) {
+      const variable = createObject[1].toUpperCase().replace(/^ME->/, '');
+      const types = this.refTypes.get(variable);
+      const cls = createObject[2]?.toUpperCase() ?? (types?.size === 1 ? [...types][0] : null);
+      if (cls) this.pushConstructor(out, cls, 0);
+    }
+    out.sort((a, b) => a.at - b.at);
+    return out;
+  }
+
+  private pushConstructor(out: MethodCall[], cls: string, at: number): void {
+    const key = `${cls}=>CONSTRUCTOR`;
+    if (!this.routineBlocks.has(key)) return;
+    out.push({
+      name: 'CONSTRUCTOR', key, ambiguous: false, dynamic: false, standalone: false,
+      constructor: true, label: `${cls}=>CONSTRUCTOR`, at,
+    });
+  }
+
+  /** Statements whose keyword already decides what they are never hold a call worth drawing. */
+  private worthReadingForCalls(statement: AbapStatement): boolean {
+    // `check( ).`, `set( … ).`: a name glued to its bracket is a call, not the
+    // keyword it happens to spell — ABAP writes no keyword that way.
+    if (/^[\w/~]+\(/.test(statement.text)) return true;
+    if (/^(?:DATA|FINAL)\(/i.test(statement.text)) return true;
+    if (DECLARES.has(statement.keyword)) return false;
+    return !['PERFORM', 'MESSAGE', 'RAISE', 'SELECT', 'INSERT', 'UPDATE', 'MODIFY', 'DELETE',
+      'WRITE', 'SUBMIT', 'SET', 'ENDIF', 'ENDLOOP', 'ENDDO', 'ENDWHILE', 'ENDCASE', 'ENDTRY',
+      'ELSE', 'CATCH', 'CLEANUP', 'ENDSELECT', 'ENDAT'].includes(statement.keyword)
+      && !/^CALL\s+(?:FUNCTION|TRANSACTION|SCREEN|SELECTION-SCREEN|BADI|DIALOG)\b/i.test(statement.text);
+  }
+
+  /**
+   * Where the statement **is** a call — `x->m( … ).`, `cls=>m( … ).`,
+   * `m( … ).`, or a chain of them — the position of the call whose result the
+   * statement discards: the last one of the chain. `-1` for any other statement.
+   * An assignment is not one: with the brackets taken out, a top-level `=`
+   * remains (`lv(10) = x.`, `ls-f = lo->m( ).`).
+   */
+  private standaloneCallAt(statement: AbapStatement, code: string): number {
+    if (/^CALL\s+METHOD\b/i.test(code)) return -1;
+    if (!/^(?:(?:[\w/]+|<[\w/]+>|\))(?:->|=>))*[\w/~]+\(/.test(code)) return -1;
+    let depth = 0;
+    let last = -1;
+    let flat = '';
+    for (let i = 0; i < code.length; i++) {
+      const ch = code[i];
+      if (ch === '(') {
+        if (depth === 0) {
+          const head = /(?:([\w/]+|<[\w/]+>|\))(->|=>))?([\w/~]+)$/.exec(code.slice(0, i));
+          if (head) last = i - head[0].length;
+        }
+        depth += 1;
+        continue;
+      }
+      if (ch === ')') { depth = Math.max(0, depth - 1); if (depth === 0) flat += '()'; continue; }
+      if (depth === 0) flat += ch;
+    }
+    if (/=/.test(flat.replace(/->|=>/g, ''))) return -1;
+    if (!this.classOf(statement.index) && !/->|=>/.test(flat)) return -1;
+    return last;
   }
 
   /* ---------------- rule 4: the entry points ---------------- */
@@ -1517,6 +1845,12 @@ class SkeletonBuilder {
       if (!name) continue;
       const trigger = this.methodTrigger(name[1]);
       if (!trigger) continue;
+      // D2, and D3's rule for forms: a method this source calls is drawn where
+      // it is called, as a sub-process — not a second time as a beginning. A
+      // call from inside its own body (recursion) does not count.
+      const key = `${this.classOf(block.openIndex) ?? ''}=>${name[1].toUpperCase()}`;
+      const sites = this.methodCallSites.get(key) ?? [];
+      if (sites.some((site) => site < block.openIndex || site > block.closeIndex)) continue;
       this.entryOfBlock.add(block.openIndex);
       out.push({
         statement: opener,
@@ -1776,12 +2110,16 @@ class SkeletonBuilder {
     this.connect(exits, end.id);
   }
 
-  /** The region a `FORM` opens, built once however often the routine is performed. */
-  private formRegion(name: string): SkeletonRegion | null {
-    const known = this.regionOfForm.get(name);
+  /**
+   * The region a routine opens — a `FORM`, or since D2 a method this source
+   * implements — built once however often it is called.
+   */
+  private routineRegion(name: string): SkeletonRegion | null {
+    const known = this.regionOfRoutine.get(name);
     if (known) return known;
-    const block = this.formBlocks.get(name);
+    const block = this.routineBlocks.get(name);
     if (!block) return null;
+    const method = this.methodImpls.find((impl) => impl.key === name);
 
     // A chain of PERFORMs is followed by recursion — this method, the walk over
     // the routine it opens, and the PERFORM in that routine call one another —
@@ -1803,16 +2141,16 @@ class SkeletonBuilder {
 
     const opener = this.statements[block.openIndex];
     const region: SkeletonRegion = {
-      key: `form:${name}`,
+      key: method ? `method:${name}` : `form:${name}`,
       kind: 'sub-process',
-      label: name,
+      label: method ? method.name : name,
       anchor: anchorOf(opener),
       endNodeId: '',
       entryNodeId: null,
       effects: [...(this.effects.get(name) ?? [])],
     };
     this.regions.push(region);
-    this.regionOfForm.set(name, region);
+    this.regionOfRoutine.set(name, region);
 
     const closer = this.statements[block.closeIndex];
     const end = block.terminated
@@ -1820,7 +2158,9 @@ class SkeletonBuilder {
       // Rule 1: nothing closed this routine, so where it ends is a guess. A node
       // that says so must not look like a node that carries a range.
       : this.addNode('end', name, null, region, name, {
-        unanchoredReason: `FORM ${name} is not closed by ENDFORM in this source, so it has no end to anchor to.`,
+        unanchoredReason: method
+          ? `METHOD ${method.name} is not closed by ENDMETHOD in this source, so it has no end to anchor to.`
+          : `FORM ${name} is not closed by ENDFORM in this source, so it has no end to anchor to.`,
       });
     region.endNodeId = end.id;
 
@@ -2066,10 +2406,12 @@ class SkeletonBuilder {
     }
 
     const label = branch.kind === 'case' ? (branch.selector ?? 'CASE') : snippet(opener.text);
+    // D2: `IF lo->m( ) = …` runs the method before it decides.
+    const before = this.walkMethodCalls(opener, ctx, incoming);
     const gateway = this.addNode('gateway', label, anchorOf(opener), ctx.region, ctx.container, {
       detail: { branchId: branch.id, branchKind: branch.kind, arms: branch.arms.length },
     });
-    this.connect(incoming, gateway.id);
+    this.connect(before, gateway.id);
 
     const exits: Exit[] = [];
     let hasDefault = false;
@@ -2347,8 +2689,20 @@ class SkeletonBuilder {
       return { exits: [{ from: node.id, condition: '', kind: 'sequence' }], outputRun: null };
     };
 
-    if (statement.nativeSql || DECLARATIVE.has(statement.keyword)) {
+    if (statement.nativeSql) return { exits: incoming, outputRun: null };
+    if (DECLARATIVE.has(statement.keyword)) {
+      // `DATA(x) = lo->m( ).` declares and assigns in one: the assignment runs,
+      // and with it the call on its right (D2).
+      if (/^(?:DATA|FINAL)\(/i.test(text)) {
+        return { exits: this.walkMethodCalls(statement, ctx, incoming), outputRun: null };
+      }
       return { exits: incoming, outputRun: null };
+    }
+
+    // D2: `check( ).` or `exit( ).` inside a class is a call on a method of
+    // that name, and must not be read as the keyword it spells.
+    if (/^[\w/~]+\(/.test(text) && !/^(?:DATA|FINAL)\(/i.test(text)) {
+      return { exits: this.walkMethodCalls(statement, ctx, incoming), outputRun: null };
     }
 
     /* Rule 5 — one keyword, three targets. */
@@ -2508,7 +2862,8 @@ class SkeletonBuilder {
           anchorOf(statement, tokenIndexOf(statement, /^OBJECT$/i) + 1), statement);
       }
     }
-    return { exits: incoming, outputRun: null };
+    // D2: a method call — the whole statement, or an operand of it.
+    return { exits: this.walkMethodCalls(statement, ctx, incoming), outputRun: null };
   }
 
   private errorLabel(statement: AbapStatement): string {
@@ -2539,9 +2894,11 @@ class SkeletonBuilder {
    */
   private walkCheck(statement: AbapStatement, ctx: WalkContext, incoming: Exit[]): { exits: Exit[] } {
     const condition = afterKeyword(statement);
+    // D2: `CHECK lo->m( ) = …` runs the method before it decides.
+    const before = this.walkMethodCalls(statement, ctx, incoming);
     const gateway = this.addNode('gateway', snippet(statement.text), anchorOf(statement, 1),
       ctx.region, ctx.container, { detail: { source: 'CHECK', condition } });
-    this.connect(incoming, gateway.id);
+    this.connect(before, gateway.id);
 
     const falsePath: Exit[] = [{ from: gateway.id, condition: `NOT ( ${condition} )`, kind: 'conditional' }];
     if (ctx.loops.length) {
@@ -2580,32 +2937,128 @@ class SkeletonBuilder {
       return { exits: [{ from: node.id, condition: '', kind: 'sequence' }] };
     }
 
-    this.markReached(target);
-    if (this.helpers.has(target)) {
+    return { exits: this.callRoutine(target, target, anchorOf(statement, 1), ctx, incoming) };
+  }
+
+  /**
+   * A call into a routine of this source — a `PERFORM` on a local form, or
+   * since D2 a call on a method this source implements. One behaviour for both,
+   * because §5.8 names them in one breath ("eine `FORM`/Methode mit eigener
+   * Wirkung"): a routine without an effect of its own is folded into its caller
+   * (technical helper), one with an effect opens a sub-process, a small one is
+   * collapsed afterwards (`collapseSmallRegions`), and recursion stops at the
+   * region already being built.
+   */
+  private callRoutine(
+    key: string,
+    label: string,
+    at: NodeAnchor,
+    ctx: WalkContext,
+    incoming: Exit[],
+    extra: Record<string, string | number | boolean | string[]> = {},
+  ): Exit[] {
+    this.markReached(key);
+    if (this.helpers.has(key)) {
       // §5.8: a routine without an effect of its own is part of its caller.
-      return { exits: incoming };
+      return incoming;
     }
 
-    const region = this.formRegion(target);
-    const block = this.formBlocks.get(target);
-    const effects = this.effects.get(target) ?? new Set<FormEffect>();
+    const region = this.routineRegion(key);
+    const block = this.routineBlocks.get(key);
+    const effects = this.effects.get(key) ?? new Set<FormEffect>();
     const onlyRule = effects.size === 1 && effects.has('business-rule');
     // Rule 2: the anchor of the call is the call, not the routine. The routine's
     // own range travels alongside it as the secondary one, so a reader can jump
     // to the definition without the node pretending to live there.
     const anchor: NodeAnchor = {
-      ...anchorOf(statement, 1),
+      ...at,
       ...(block
         ? { secondary: { lineStart: block.lineStart, lineEnd: block.lineEnd, reason: 'routine-definition' as const } }
         : {}),
     };
-    const node = this.addNode(onlyRule ? 'business-rule-task' : 'sub-process', target,
+    const node = this.addNode(onlyRule ? 'business-rule-task' : 'sub-process', label,
       anchor, ctx.region, ctx.container, {
         ...(region ? { expandsTo: region.key } : {}),
-        detail: { effects: [...effects] },
+        detail: { effects: [...effects], ...extra },
       });
     this.connect(incoming, node.id);
-    return { exits: [{ from: node.id, condition: '', kind: 'sequence' }] };
+    return [{ from: node.id, condition: '', kind: 'sequence' }];
+  }
+
+  /**
+   * D2 — the method calls of one statement.
+   *
+   * §5.8 draws "eine `FORM`/Methode mit eigener Wirkung" as a collapsed
+   * sub-process, and until 27.09.2026 `CALL METHOD`, `x->m( … ).` and their
+   * relatives fell into the branch for moves and calculations: no node at all.
+   * Three cases, and where the line between them runs:
+   *
+   * - **The statement is the call** (`CALL METHOD …`, `lo->m( … ).`): a method
+   *   this source implements opens a sub-process exactly like a `PERFORM` on a
+   *   local form; one it does not implement — or cannot pick, because two
+   *   classes implement the name and the call does not say which — is a
+   *   `call-opaque` node that returns, exactly like a `PERFORM` into another
+   *   program. A statement that consists of a call exists only for what the
+   *   call does, so it is drawn even when the reader cannot see inside.
+   * - **The call is an operand** (`lv = lo->m( )`, `IF lo->m( ) = …`): drawn only
+   *   when the method is implemented here **and has an effect of its own**,
+   *   as a sub-process before the statement, because it runs before the value
+   *   is used. An operand the reader cannot see into is overwhelmingly a getter
+   *   or a conversion — drawing every one of them would bury the process in
+   *   boxes that say nothing, and the statement around it is still what it was.
+   * - **A constructor** (`NEW cls( )`, `CREATE OBJECT`) is an operand of that
+   *   kind: nothing unless this source implements `constructor` with an effect
+   *   of its own — then that effect happens here, and hiding it would lose a
+   *   read or a write the program does.
+   *
+   * A method body reached this way is not also an entry (`methodEntries`).
+   */
+  private walkMethodCalls(statement: AbapStatement, ctx: WalkContext, incoming: Exit[]): Exit[] {
+    let live = incoming;
+    for (const call of this.methodCallsIn(statement)) {
+      const at = anchorOf(statement, this.callToken(statement, call));
+      if (call.key && this.routineBlocks.has(call.key)) {
+        if (!call.standalone && this.helpers.has(call.key)) {
+          this.markReached(call.key);
+          continue;
+        }
+        const impl = this.methodImpls.find((m) => m.key === call.key);
+        live = this.callRoutine(call.key, impl?.name ?? call.name, at, ctx, live, {
+          method: true,
+          ...(impl ? { class: impl.cls } : {}),
+          ...(call.constructor ? { constructor: true } : {}),
+        });
+        continue;
+      }
+      if (!call.standalone) continue;
+      if (call.dynamic) {
+        this.note('dynamic-call', statement,
+          'The name of the method is computed at run time. The call is drawn, its target is not claimed.');
+      }
+      const node = this.addNode('call-opaque', call.label, at, ctx.region, ctx.container, {
+        detail: {
+          method: true,
+          dynamic: call.dynamic,
+          ...(call.ambiguous ? { ambiguous: true } : {}),
+          // The source of the method is not here, or not one of several. The
+          // flow still returns.
+          returns: true,
+        },
+      });
+      this.connect(live, node.id);
+      live = [{ from: node.id, condition: '', kind: 'sequence' }];
+    }
+    return live;
+  }
+
+  /** The token a method call's node points at — the one that names the method. */
+  private callToken(statement: AbapStatement, call: MethodCall): number {
+    if (/^CALL\s+METHOD\b/i.test(statement.text) && call.standalone) return 2;
+    const name = call.constructor ? 'NEW' : call.name.replace(/[^\w/~]/g, '');
+    const tokens = statement.text.split(' ');
+    const at = tokens.findIndex((t) => new RegExp(`(?:^|->|=>)${name.replace(/[/~]/g, '\\$&')}\\(`, 'i').test(t)
+      || (call.constructor && /^(?:NEW|OBJECT)$/i.test(t)));
+    return at < 0 ? 0 : at;
   }
 
   /**
@@ -3245,6 +3698,20 @@ class SkeletonBuilder {
   private technicalHelpers(): FoldedForm[] {
     const out: FoldedForm[] = [];
     for (const name of this.helpers) {
+      // D2: a method without an effect of its own is folded into its caller
+      // like a form, and said here like one — but only where a walked call
+      // actually folded it, since no call graph of methods says more.
+      const method = this.methodImpls.find((impl) => impl.key === name);
+      if (method) {
+        if (!this.reachedRoutines.has(name)) continue;
+        out.push({
+          name,
+          lineStart: method.block.lineStart,
+          lineEnd: method.block.lineEnd,
+          callSites: (this.methodCallSites.get(name) ?? []).length,
+        });
+        continue;
+      }
       if (this.isUnreachedForm(name)) continue;
       const block = this.formBlocks.get(name);
       if (!block) continue;

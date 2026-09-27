@@ -2084,4 +2084,110 @@ test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
     expect(skeleton.laneEvidence.filter((e) => e.kind === 'human').map((e) => e.token))
       .toEqual(['MESSAGE I012', "MESSAGE TYPE 'I'"]);
   });
+
+  test('D2 — a method call is a step: a sub-process where the source implements it, opaque where not', () => {
+    // §5.8, Eingeklappter Teilprozess: "eine `FORM`/Methode mit eigener Wirkung".
+    const skeleton = buildProcessSkeleton([
+      'REPORT zcc_calls.',
+      'CLASS lcl_order DEFINITION.',
+      '  PUBLIC SECTION.',
+      '    METHODS: save, text RETURNING VALUE(rv) TYPE string, total RETURNING VALUE(rv) TYPE i.',
+      'ENDCLASS.',
+      'CLASS lcl_order IMPLEMENTATION.',
+      '  METHOD save.',
+      '    UPDATE zsd_order SET done = abap_true.',
+      '  ENDMETHOD.',
+      '  METHOD text.',
+      "    rv = 'open'.",
+      '  ENDMETHOD.',
+      '  METHOD total.',
+      '    SELECT SINGLE netwr FROM vbak INTO @rv.',
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+      'START-OF-SELECTION.',
+      '  DATA(lo_order) = NEW lcl_order( ).',
+      '  lo_order->save( ).',
+      '  DATA(lv_text) = lo_order->text( ).',
+      '  DATA(lv_total) = lo_order->total( ).',
+      '  CALL METHOD cl_salv_table=>factory IMPORTING r_salv_table = go_alv CHANGING t_table = gt_out.',
+    ].join('\n'));
+    const at = (line: number) => skeleton.nodes.filter((n) => n.anchor?.lineStart === line);
+
+    // The statement is the call, and the method is here: a sub-process into
+    // the method's region (collapsed to the one write it does), anchored at the
+    // call, with the definition as the secondary range.
+    const save = at(19);
+    expect(save).toHaveLength(1);
+    expect(save[0].expandsTo).toBe('method:LCL_ORDER=>SAVE');
+    expect(save[0].anchor?.secondary).toMatchObject({ lineStart: 7, lineEnd: 9, reason: 'routine-definition' });
+    expect(skeleton.nodes.some((n) => n.region === 'method:LCL_ORDER=>SAVE' && n.kind === 'write')).toBe(true);
+    // An operand without an effect of its own — a getter — draws nothing, and
+    // is folded like a technical helper.
+    expect(at(20)).toEqual([]);
+    expect(skeleton.notDrawn.technicalHelpers.map((h) => h.name)).toContain('LCL_ORDER=>TEXT');
+    // An operand with an effect is a step before the statement that uses it.
+    expect(at(21).map((n) => n.expandsTo)).toEqual(['method:LCL_ORDER=>TOTAL']);
+    // A method this source does not implement is opaque, and the flow returns.
+    // (The end event of START-OF-SELECTION shares the line: it is anchored at
+    // the last statement of the block.)
+    const factory = at(22).filter((n) => n.kind !== 'end');
+    expect(factory.map((n) => [n.kind, n.label])).toEqual([['call-opaque', 'CL_SALV_TABLE=>FACTORY']]);
+    expect(factory[0].detail?.returns).toBe(true);
+    // The constructor is not implemented here: no node for `NEW`.
+    expect(at(18)).toEqual([]);
+    // In order: start → save → total → factory → end.
+    const start = skeleton.nodes.find((n) => n.kind === 'start')!;
+    const next = (id: string) => skeleton.edges.filter((e) => e.from === id).map((e) => e.to);
+    expect(next(start.id)).toEqual([save[0].id]);
+    expect(next(save[0].id)).toEqual([at(21)[0].id]);
+    expect(next(at(21)[0].id)).toEqual([factory[0].id]);
+  });
+
+  test('D2 — an ambiguous method is not guessed, and a called method is not also an entry', () => {
+    const ambiguous = buildProcessSkeleton([
+      'CLASS lcl_a IMPLEMENTATION.',
+      '  METHOD run.',
+      '    UPDATE zsd_a SET x = 1.',
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+      'CLASS lcl_b IMPLEMENTATION.',
+      '  METHOD run.',
+      '    UPDATE zsd_b SET x = 1.',
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+      'FORM userexit_go USING io_worker.',
+      '  io_worker->run( ).',
+      '  lcl_b=>run( ).',
+      'ENDFORM.',
+    ].join('\n'));
+    const at = (line: number) => ambiguous.nodes.filter((n) => n.anchor?.lineStart === line);
+    // Two classes implement `run`, and the call does not say which: opaque.
+    expect(at(12).map((n) => [n.kind, n.detail?.ambiguous])).toEqual([['call-opaque', true]]);
+    // `lcl_b=>run` says it.
+    expect(at(13).map((n) => n.expandsTo)).toEqual(['method:LCL_B=>RUN']);
+
+    // A public method of a global class that another method of this source
+    // calls is drawn there, as a sub-process — not a second time as a start.
+    // Recursion stops at the region already being built.
+    const global = buildProcessSkeleton([
+      'CLASS zcl_cc_post DEFINITION PUBLIC.',
+      '  PUBLIC SECTION.',
+      '    METHODS: run, post.',
+      'ENDCLASS.',
+      'CLASS zcl_cc_post IMPLEMENTATION.',
+      '  METHOD run.',
+      '    me->post( ).',
+      '  ENDMETHOD.',
+      '  METHOD post.',
+      '    INSERT zsd_log FROM ls_log.',
+      '    IF sy-dbcnt = 0.',
+      '      post( ).',
+      '    ENDIF.',
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+    ].join('\n'));
+    expect(startsOf(global).map((n) => n.label)).toEqual(['run']);
+    expect(global.nodes.find((n) => n.anchor?.lineStart === 7)?.expandsTo).toBe('method:ZCL_CC_POST=>POST');
+    expect(global.nodes.find((n) => n.anchor?.lineStart === 12)?.expandsTo).toBe('method:ZCL_CC_POST=>POST');
+  });
 });
