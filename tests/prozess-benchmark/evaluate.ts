@@ -190,13 +190,15 @@ function evaluate(korpusCase: KorpusCase): CaseOutcome {
  * BM_CONCAT=1: jeder Mehrdateifall wird zu **einer** Quelle zusammengefügt —
  * so, wie ein Nutzer ein Programm mit Includes ins Produkt einfügt (die
  * Analyse-Seite nimmt genau eine Quelle an). Die Datei mit REPORT/PROGRAM/
- * FUNCTION-POOL steht vorn, der Rest in Namensreihenfolge; jeder Sollanker
+ * FUNCTION-POOL steht vorn, der Rest in Byte-Reihenfolge der Namen (nicht
+ * `localeCompare`: das sortiert `_` je nach Gebietsschema anders als jedes
+ * andere Werkzeug, und die Zeilennummern liefen auseinander); jeder Sollanker
  * wird auf die Zeile in der zusammengefügten Quelle umgerechnet.
  */
 function concatenate(korpusCase: KorpusCase): KorpusCase {
   if (korpusCase.sources.length < 2) return korpusCase;
   const head = (code: string) => /^\s*(REPORT|PROGRAM|FUNCTION-POOL)\b/im.test(code);
-  const ordered = [...korpusCase.sources].sort((a, b) => Number(head(b.code)) - Number(head(a.code)) || a.name.localeCompare(b.name));
+  const ordered = [...korpusCase.sources].sort((a, b) => Number(head(b.code)) - Number(head(a.code)) || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   const offset = new Map<string, number>();
   let lines: string[] = [];
   for (const source of ordered) {
