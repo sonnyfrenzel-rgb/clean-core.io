@@ -658,10 +658,49 @@ test('F10 — keine Übergaben und Wirkungen, die der Code nicht trägt', () => 
   expect(badi).not.toMatch(/Betrag|Routentext|Freigabeprozess/);
 
   const baustein = satzAn(code, 6).join(' ');
-  expect(baustein).toContain('Ergebnis von Z_ZAEHLER_LESEN wird in gv_stand übernommen');
+  expect(baustein).toContain('Z_ZAEHLER_LESEN');
+  expect(baustein).toContain('gv_stand');
   expect(baustein).not.toContain('konvertiert');
 
   const rfc = satzAn(code, 7).join(' ');
   expect(rfc).toContain('Z_ABGLEICH wird in einem entfernten System über die eingegebene Destination aufgerufen');
   expect(rfc).not.toContain('benachrichtigt');
+});
+
+test('F11 — ein Satz je Aussage: keine Wiederholung derselben Sache an derselben Stelle', () => {
+  const code = quelle(
+    'REPORT z_f11.',
+    'START-OF-SELECTION.',
+    '  SELECT kunnr, name1 FROM kna1 INTO TABLE @DATA(lt_kunden).',
+    '  IF lt_kunden IS INITIAL.',
+    "    WRITE / 'KEINE'.",
+    '    RETURN.',
+    '  ENDIF.',
+    '  LOOP AT lt_kunden INTO DATA(ls_kunde).',
+    '    WRITE: / ls_kunde-kunnr, ls_kunde-name1.',
+    '  ENDLOOP.',
+    "  IF gv_modus = 'A'.",
+    "    WRITE / 'ANLEGEN'.",
+    '  ELSE.',
+    "    WRITE / 'AENDERN'.",
+    '  ENDIF.',
+    "  CALL FUNCTION 'Z_UMRECHNEN' EXPORTING iv_wert = gv_wert IMPORTING ev_wert = gv_neu.",
+  );
+  const alle = buildBusinessStatements(code);
+  const an = (zeile: number) => alle.filter((s) => s.anchors.some((a) => a.lineStart === zeile));
+
+  // Die Ausgabeliste ist ein Satz; die Spalten bekommen keinen eigenen daneben.
+  expect(an(9).map((s) => s.text)).toEqual(['Bei Treffern werden Kundennummer und Name als Liste ausgegeben.']);
+
+  // Wächter und Zweig über dasselbe IF sind ein Satz, nicht zwei oder drei.
+  expect(an(4).length).toBe(1);
+  expect(an(4)[0].text).toContain('Ohne Treffer wird KEINE ausgegeben');
+
+  // Ein IF … ELSE ist eine Entscheidung mit zwei Ausgängen: ein Satz.
+  const entscheidung = an(12);
+  expect(entscheidung.filter((s) => s.grain === 'group').length).toBe(1);
+  expect(entscheidung.find((s) => s.grain === 'group')!.text).toContain('sonst AENDERN ausgegeben');
+
+  // „übergibt … und übernimmt dessen Ausgabe nach …" nennt das Ergebnis schon.
+  expect(an(16).filter((s) => /übernommen|übernimmt/.test(s.text)).length).toBe(1);
 });

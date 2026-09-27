@@ -550,6 +550,10 @@ interface Draft {
   notes?: string[];
   grain?: 'statement' | 'group';
   tag?: string;
+  /** Nur am Wächter: wovor sein Rücksprung schützt (F11 führt ihn mit dem Zweig zusammen). */
+  exit?: string;
+  /** Nur am Wächter: sein Satzanfang, den der Zweig übernimmt. */
+  subject?: Lead;
 }
 
 function build(draft: Draft): BusinessStatement {
@@ -1192,7 +1196,7 @@ function guardSentence(
   const core = label
     ? `${compose(subject, `${label} ausgegeben und ${exit}`)}.`
     : `${compose(subject, exit)}.`;
-  return { anchors, core, grain: 'group', tag: 'guard' };
+  return { anchors, core, grain: 'group', tag: 'guard', exit, subject };
 }
 
 /** Was eine Datenbankzeile ändern kann — die Liste, auf die sich der Wächter beruft. */
@@ -2318,18 +2322,26 @@ function branchSentences(
   origins: Map<string, ValueOrigin>,
   loops: ReadonlySet<number>,
   stacks: Block[][],
+  guard?: Draft | null,
 ): Draft[] {
   const branches = branchChain(statements, index, loops);
   if (!branches) return [];
   const drafts: Draft[] = [];
   const parts: Array<{ branch: Branch; subject: Lead; phrase: string }> = [];
   for (const branch of branches) {
+    // Steht ein Wächter auf demselben IF, spricht der erste Zweig mit seiner
+    // Bedingung und sagt, wovor der Rücksprung schützt (F11: ein Satz statt zwei).
+    const guarded = guard && branch.kind === 'if' ? guard : null;
     const fragments = branch.body
-      .map((statement) => bodyFragment(statement, origins, stacks))
+      .map((statement) => {
+        const fragment = bodyFragment(statement, origins, stacks);
+        const leave = guarded?.anchors[guarded.anchors.length - 1];
+        return guarded?.exit && leave && statement.lineStart === leave.lineStart ? guarded.exit : fragment;
+      })
       .filter((fragment): fragment is string => fragment !== null);
     if (fragments.length === 0) continue;
     const phrase = enumerate(fragments);
-    const subject = branchSubject(branch, statements, index);
+    const subject = guarded?.subject ?? branchSubject(branch, statements, index);
     parts.push({ branch, subject, phrase });
     drafts.push({
       anchors: [range(branch.head), ...branch.body.map(range)],
@@ -2357,7 +2369,13 @@ function branchSentences(
       tag: `chain${first.branch.head.lineStart}`,
     });
   }
-  return drafts;
+  // F11: ein IF … ELSE ist **eine** Entscheidung mit zwei Ausgängen — dafür
+  // steht der „…, sonst …"-Satz, und die Einzelsätze der Zweige sagten
+  // dasselbe noch einmal. Bei ELSEIF-Ketten ist der Kettensatz nur die
+  // Aneinanderreihung der Zweigsätze; dort bleiben die Zweige.
+  const chain = drafts.find((draft) => draft.tag?.startsWith('chain'));
+  if (chain && /, sonst /.test(chain.core)) return [chain];
+  return drafts.filter((draft) => !draft.tag?.startsWith('chain'));
 }
 
 /**
@@ -2483,14 +2501,37 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
   const context: SourceContext = { stacks, loops, tables: internalTables(statements) };
   const out: BusinessStatement[] = [];
 
+  // F11: ein Satz je Aussage. Was ein gröberer Satz schon sagt — der Zweig
+  // mit seiner Bedingung, die Ausgabeliste mit allen Spalten —, sagt kein
+  // zweiter Satz an derselben Stelle noch einmal ohne Bedingung.
+  const inBranch = new Set<number>();
   for (let i = 0; i < statements.length; i += 1) {
+    // Wächter und erster Zweig sind dieselbe Aussage über dasselbe IF. Der
+    // Zweig nennt alles, was er tut; vom Wächter übernimmt er Satzanfang und
+    // das, was nur der Wächter weiß — wovor der Rücksprung schützt.
     const guard = guardSentence(statements, i, origins, context);
-    if (guard) out.push(build(guard));
-    for (const draft of branchSentences(statements, i, origins, loops, stacks)) out.push(build(draft));
+    const branches = branchSentences(statements, i, origins, loops, stacks, guard);
+    const first = branches.find(
+      (draft) => draft.tag === `branch${statements[i].lineStart}` || draft.tag === `chain${statements[i].lineStart}`,
+    );
+    if (guard && !first) out.push(build(guard));
+    for (const draft of branches) {
+      out.push(build(draft));
+      for (const anchor of draft.anchors.slice(1)) {
+        const covered = statements.find((statement) => statement.lineStart === anchor.lineStart);
+        if (covered) inBranch.add(covered.index);
+      }
+    }
   }
-  for (const draft of sequenceSentences(statements, stacks, origins)) out.push(build(draft));
+  for (const draft of sequenceSentences(statements, stacks, origins)) {
+    // Eine Folge, die ganz in einem Zweig liegt, hat der Zweig schon gesagt.
+    const indices = draft.anchors.map((anchor) => statements.find((s) => s.lineStart === anchor.lineStart)?.index ?? -1);
+    if (indices.every((index) => inBranch.has(index))) continue;
+    out.push(build(draft));
+  }
 
   // Ausgabeläufe: zusammenhängende WRITEs im selben Block.
+  const listed = new Set<number>();
   let run: AbapStatement[] = [];
   let runStack: Block[] = [];
   const flush = () => {
@@ -2499,7 +2540,12 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
       // Schleife steht; in einem Zweig der Schleife hängt sie an dessen
       // Bedingung, nicht an einem Treffer.
       const draft = listSentence(run, runStack[runStack.length - 1]?.kind === 'loop', origins);
-      if (draft) out.push(build(draft));
+      if (draft) {
+        // Eine Liste, die ganz in einem Zweig steht, nennt der Zweig schon —
+        // mit seiner Bedingung. Ihre Spalten bekommen dann auch keinen eigenen Satz.
+        if (!run.every((statement) => inBranch.has(statement.index))) out.push(build(draft));
+        for (const statement of run) listed.add(statement.index);
+      }
     }
     run = [];
   };
@@ -2527,10 +2573,14 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
       out.push(build(plainSet));
       continue;
     }
+    // Eine Spalte, die schon in der Ausgabeliste steht, bekommt keinen
+    // eigenen „x wird ausgegeben"-Satz daneben.
+    if (listed.has(statement.index) && !literalOf(writeBody(statement).replace(/\(\w{1,3}\)$/, ''))) continue;
     const draft = sentenceFor(statement, statements, stack, origins, luw);
     if (draft) out.push(build(draft));
     const result = resultSentence(statement, statements);
-    if (result) out.push(build(result));
+    // „übergibt … und übernimmt dessen Ausgabe nach y" sagt das Ergebnis schon.
+    if (result && !(draft && /übernimmt dessen Ausgabe nach/.test(draft.core))) out.push(build(result));
     const fields = resultFieldsSentence(statement);
     if (fields) out.push(build(fields));
   }
