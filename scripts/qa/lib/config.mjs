@@ -210,6 +210,17 @@ export const IGNORED_PATHS = [
   // verdict and a reason per case — and is read like any other code, in parts
   // when it is large.
   /^tests\/korpus\/manifest\.json$/,
+  // The process benchmark (27.09.2026): 200 constructed ABAP cases with their
+  // expected answers and review logs, about 40,000 lines of fixtures. The same
+  // failure as the corpus above, reproduced: the review of `be3f06343260` spent
+  // its whole budget on `tests/prozess-benchmark/cases/` and never reached the
+  // engine change beside it, so the checkpoint stayed put. What guards the data
+  // instead: `frozen-*.json` holds the SHA-256 of every case file, taken before
+  // the engine first saw them, and `validate.py` checks every hash on each run.
+  // The tools in that folder (`evaluate.ts`, `validate.py`, `report.py`) stay
+  // reviewable; only the fixtures and the hash lists are data.
+  /^tests\/prozess-benchmark\/cases\//,
+  /^tests\/prozess-benchmark\/frozen-\d{3}-\d{3}\.json$/,
   /^public\//,
   /^docs\//,
   /^scratch\//,

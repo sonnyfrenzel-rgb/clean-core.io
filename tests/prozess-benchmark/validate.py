@@ -176,6 +176,22 @@ for cid in sorted(os.listdir(ROOT)):
              for name in sorted(os.listdir(d)) if name.endswith(('.abap', '.json'))}
         frozen[cid] = h
 
+# Die eingefrorenen Hashes: jede Datei, die vor dem ersten Engine-Lauf festgehalten wurde,
+# muss noch bitgleich sein. Beim Neu-Einfrieren (--freeze) desselben Bereichs gilt der neue Stand.
+drift = 0
+if not freeze:
+    import glob
+    for path in sorted(glob.glob(os.path.join(os.path.dirname(ROOT), 'frozen-*.json'))):
+        for cid, hashes in json.load(open(path, encoding='utf-8')).items():
+            if not (lo <= int(cid[3:]) <= hi):
+                continue
+            for name, sha in hashes.items():
+                file = os.path.join(ROOT, cid, name)
+                if not os.path.exists(file) or hashlib.sha256(open(file, 'rb').read()).hexdigest() != sha:
+                    drift += 1
+                    print(f'{cid} E {name} weicht vom eingefrorenen Stand ab ({os.path.basename(path)})')
+    errors += drift
+
 print(f'\n{len(report)} Fälle, {errors} Fehler, {warnings} Warnungen')
 if report:
     tot = lambda i: sum(r[i] for r in report)
