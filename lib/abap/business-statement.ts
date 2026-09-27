@@ -1281,6 +1281,9 @@ function guardSentence(
   return { anchors, core, grain: 'group', tag: 'guard', exit, subject };
 }
 
+/** Ereignisse, die in einem Programmlauf genau einmal laufen. */
+const ONCE_EVENT = /^(?:START-OF-SELECTION|END-OF-SELECTION|INITIALIZATION|LOAD-OF-PROGRAM)\.?$/i;
+
 /** Was eine Datenbankzeile ändern kann — die Liste, auf die sich der Wächter beruft. */
 const DB_WRITE = /^(UPDATE|MODIFY|INSERT|DELETE|EXEC\s+SQL)\b|execute_update|CALL\s+TRANSACTION|IN\s+UPDATE\s+TASK/i;
 
@@ -1457,12 +1460,29 @@ function processingUnit(
  *
  * „Vor der Datenbankoperation zurückgekehrt" nur, wenn in derselben Einheit
  * hinter dem Rücksprung wirklich geschrieben wird. „Es wird nichts
- * geschrieben" nur, wenn der Weg es trägt: der Rücksprung verlässt ein
- * Ereignis (eine Routine kehrt zum Aufrufer zurück, und der macht weiter),
- * der Wächter selbst ruft nichts auf, vor ihm wurde in der Einheit nichts
- * geschrieben, und kein anderes Ereignis (END-OF-SELECTION …) schreibt oder
- * ruft etwas auf. Sonst wäre es eine Behauptung ohne Beleg — genau die, die
- * die Richter an einem `log_sichern` mit COMMIT WORK dahinter gefunden haben.
+ * geschrieben" ist eine Aussage über den **ganzen Weg** bis zum Rücksprung,
+ * und die Quellreihenfolge trägt sie nur dort, wo sie die
+ * Ausführungsreihenfolge ist. Also nur, wenn
+ *
+ * - der Rücksprung ein einmal laufendes Ereignis verlässt (START-OF-SELECTION,
+ *   INITIALIZATION …, oder den Code eines Programms ohne Ereignis): eine
+ *   Routine oder ein Include ohne REPORT kehrt zum Aufrufer zurück, und der
+ *   macht weiter; `AT USER-COMMAND`, `AT SELECTION-SCREEN` oder ein `GET` laufen
+ *   mehrfach, und ein früherer Durchlauf kann hinter dem Wächter geschrieben
+ *   haben;
+ * - der Wächter in keiner Schleife steht — sonst hat ein früherer Durchlauf
+ *   die Anweisung hinter ihm schon ausgeführt (QA d7a7d3a66683);
+ * - der Wächter selbst nichts aufruft und vor ihm in der Einheit weder
+ *   geschrieben noch etwas aufgerufen wird — ein `PERFORM protokoll` davor
+ *   kann schreiben;
+ * - kein anderes Ereignis, vor **oder** hinter der Einheit in der Quelle,
+ *   schreibt oder etwas aufruft: ein `INITIALIZATION` mit DELETE davor hat
+ *   geschrieben, bevor der Wächter überhaupt läuft.
+ *
+ * Fehlt eine Bedingung, bleibt es bei „vor der Datenbankoperation
+ * zurückgekehrt" — lieber die Aussage weglassen als sie falsch machen. Genau
+ * das haben die Richter an einem `log_sichern` mit COMMIT WORK dahinter
+ * gefunden.
  */
 function guardExit(
   statements: readonly AbapStatement[],
@@ -1479,18 +1499,32 @@ function guardExit(
   const unit = processingUnit(statements, stack, leave.index);
   const writesLater = statements.slice(leave.index + 1, unit.end).some((next) => isDbWrite(next, context.tables));
   if (!writesLater) return 'der Block verlassen';
+  // Ein Sperrbaustein (`ENQUEUE_…`/`DEQUEUE_…`) setzt eine Sperre, er schreibt
+  // keine Datenbankzeile.
+  const lockOnly = (statement: AbapStatement) =>
+    /^CALL\s+FUNCTION\s+'(?:ENQUEUE|DEQUEUE)_[A-Za-z0-9_/]+'/i.test(statement.text) &&
+    !/\bIN\s+UPDATE\s+TASK\b|\bDESTINATION\b/i.test(statement.text);
+  const acts = (statement: AbapStatement) =>
+    (callsOut(statement) && !lockOnly(statement)) ||
+    isDbWrite(statement, context.tables) ||
+    /^CREATE\s+OBJECT\b|\bNEW\s+[A-Za-z0-9_/]+\s*\(/i.test(statement.text);
+  // Ohne Ereignis ist der Code nur dann das implizite START-OF-SELECTION, wenn
+  // er ein Programm ist; ein Include oder Exit ohne REPORT kehrt zu einem
+  // Aufrufer zurück, der weitermacht.
+  const onceOnly =
+    (unit.kind === 'unknown' && statements.some((other) => /^(?:REPORT|PROGRAM)$/i.test(other.keyword))) ||
+    (unit.kind === 'event' && ONCE_EVENT.test(statements[unit.start].text.trim()));
   const quiet =
-    unit.kind !== 'routine' &&
-    !body.some((statement) => callsOut(statement) || isDbWrite(statement, context.tables)) &&
-    !statements.slice(unit.start, index).some((statement) => isDbWrite(statement, context.tables) || /^COMMIT\b/i.test(statement.text)) &&
-    !statements
-      .slice(unit.end)
-      .some(
-        (statement) =>
-          !context.stacks[statement.index].some((block) => block.kind === 'routine' || block.kind === 'class') &&
-          !/^(?:FORM|CLASS|METHOD|MODULE|FUNCTION)$/i.test(statement.keyword) &&
-          (callsOut(statement) || isDbWrite(statement, context.tables)),
-      );
+    onceOnly &&
+    !stack.some((block) => block.kind === 'loop') &&
+    !body.some(acts) &&
+    !statements.slice(unit.start, index).some(acts) &&
+    ![...statements.slice(0, unit.start), ...statements.slice(unit.end)].some(
+      (statement) =>
+        !context.stacks[statement.index].some((block) => block.kind === 'routine' || block.kind === 'class') &&
+        !/^(?:FORM|CLASS|METHOD|MODULE|FUNCTION)$/i.test(statement.keyword) &&
+        acts(statement),
+    );
   return quiet
     ? 'vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben'
     : 'vor der Datenbankoperation zurückgekehrt';

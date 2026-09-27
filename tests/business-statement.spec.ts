@@ -830,3 +830,73 @@ test('F11/F4 — Kettenausgabe im Zweig ohne zweiten Satz; ein Dialogaufruf ist 
   expect(satzAn(code, 5).filter((s) => /werden ausgegeben/.test(s))).toEqual([]);
   expect(satzAn(code, 10).join(' ')).not.toContain('Datenbankoperation');
 });
+
+test('QA d7a7d3a66683 — „es wird nichts geschrieben" nur, wo die Quellreihenfolge die Ausführung ist', () => {
+  const waechter = (...z: string[]) => satzAn(quelle(...z), z.findIndex((zeile) => /IF p_stop/.test(zeile)) + 1).join(' ');
+  const danach = ['  IF p_stop = abap_true.', '    RETURN.', '  ENDIF.'];
+
+  // Getragen: ein Programm, ein einmal laufendes Ereignis, davor nichts. Auch
+  // mit einem zweiten IF, das nur auf dem anderen Weg schreibt — wer p_stop
+  // setzt, erreicht es nicht.
+  const getragen = waechter(
+    'REPORT z_d7a.',
+    'PARAMETERS: p_stop AS CHECKBOX, p_gut AS CHECKBOX.',
+    'START-OF-SELECTION.',
+    ...danach,
+    "  IF p_gut = 'X'.",
+    "    UPDATE kna1 SET loevm = 'X' WHERE kunnr = '1'.",
+    '  ENDIF.',
+  );
+  expect(getragen).toContain('vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben');
+
+  const ohneAussage = (label: string, text: string) => {
+    expect(text, label).toContain('vor der Datenbankoperation zurückgekehrt');
+    expect(text, label).not.toContain('nichts geschrieben');
+  };
+  // In einer Schleife hat ein früherer Durchlauf schon geschrieben.
+  ohneAussage(
+    'Schleife',
+    waechter(
+      'REPORT z_d7b.',
+      'START-OF-SELECTION.',
+      '  LOOP AT gt_kunden INTO gs_kunde.',
+      ...danach,
+      "    UPDATE kna1 SET sperr = 'X' WHERE kunnr = gs_kunde-kunnr.",
+      '  ENDLOOP.',
+    ),
+  );
+  // Ein Aufruf vor dem Wächter kann schreiben — hier tut er es.
+  ohneAussage(
+    'PERFORM davor',
+    waechter(
+      'REPORT z_d7c.',
+      'START-OF-SELECTION.',
+      '  PERFORM protokoll.',
+      ...danach,
+      "  UPDATE kna1 SET loevm = 'X' WHERE kunnr = '1'.",
+      'FORM protokoll.',
+      '  INSERT zlog FROM gs_log.',
+      'ENDFORM.',
+    ),
+  );
+  // Ein Ereignis, das in der Quelle **vor** dem Wächter steht, hat schon geschrieben.
+  ohneAussage(
+    'INITIALIZATION davor',
+    waechter(
+      'REPORT z_d7d.',
+      'INITIALIZATION.',
+      '  DELETE FROM zlog WHERE datum < sy-datum.',
+      'START-OF-SELECTION.',
+      ...danach,
+      "  UPDATE kna1 SET loevm = 'X' WHERE kunnr = '1'.",
+    ),
+  );
+  // Ein mehrfach laufendes Ereignis: der vorige Benutzerbefehl hat geschrieben.
+  ohneAussage(
+    'AT USER-COMMAND',
+    waechter('REPORT z_d7e.', 'AT USER-COMMAND.', ...danach, "  UPDATE zbeleg SET status = 'X' WHERE id = gv_id."),
+  );
+  // Ein Include ohne REPORT kehrt zu einem Aufrufer zurück, der weitermacht.
+  ohneAussage('Include', waechter(...danach, "UPDATE zbeleg SET status = 'X' WHERE id = gv_id."));
+});
+
