@@ -28,6 +28,17 @@ dazu Schritt A aus dem Security-Audit von v2.19.0 und die Befunde der Vollprüfu
   neuen Benchmark aus 200 konstruierten ABAP-Fällen (`tests/prozess-benchmark/`):
   Knoten-Treffer über eingefügte Programme mit Includes von 61,3 % auf 69,4 %, auf der
   Prüfhälfte, die bei der Entwicklung verdeckt blieb, von 61,9 % auf 69,1 %.
+- **Die Fachsätze der Business-Sicht sagen nichts mehr, was der Code nicht trägt.**
+  Fünf unabhängige Prüfungen über 2.273 Sollsätze fanden dieselben Fehler: `CHECK` hieß
+  überall „kleinere werden übersprungen, die Schleife läuft weiter", jedes `sy-subrc`
+  wurde zu „Ohne Treffer", `GET PARAMETER ID` zu einer logischen Datenbank, jede
+  Transaktion zu einer „Anlage", `MESSAGE … INTO` zu einer Ausgabe, und Routinen im
+  selben Quelltext hießen „im gelieferten Code nicht belegt". Jetzt folgt der Satz der
+  Anweisung: `CHECK` nennt die Folge seines Orts, nach `sy-subrc` steht, was die setzende
+  Anweisung bedeutet („Ist die Sperre nicht zu erhalten, …"), eine gerufene Routine sagt,
+  was sie tut. Dazu ein Satz statt fünf gleichen, richtige Artikel vor Feldnamen und
+  deutsche Begriffe für die SAP-Standardtabellen und -felder. Im Referenzkorpus verletzt
+  kein Satz mehr eine der 166 verbotenen Aussagen (vorher vier).
 - **Die sieben Stufen haben einen Kopf.** Jede Stufe trägt ihren Namen aus derselben
   Liste wie der Stepper, in 22 px / 800, mit neutralem Icon statt grüner Blase und
   „Back to workspace" darüber — der Link führt in die Sicht und Ebene zurück, aus der
