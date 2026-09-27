@@ -731,7 +731,8 @@ test('F12 — kein erratenes Geschlecht vor Bezeichnern, Verb passt zum Subjekt'
   // Mit einem bekannten Fachwort bleibt das Mehrzahl-Subjekt, und das Verb passt.
   expect(satzAn(code, 8).join(' ')).toContain('Negative Beträge setzen die Route auf NEGATIV');
 
-  expect(satzAn(code, 10).join(' ')).toContain('Das Feld matnr aus zmatzuo wird gelesen');
+  expect(satzAn(code, 10).join(' ')).toContain('Die Materialnummer aus zmatzuo wird gelesen');
+  expect(satzAn(quelle('REPORT z.', 'SELECT SINGLE zfeld FROM zmatzuo INTO gv_x.'), 2).join(' ')).toContain('Das Feld zfeld aus zmatzuo wird gelesen');
   const existenz = satzAn(code, 11).join(' ');
   expect(existenz).toContain('geprüft, ob es einen passenden Satz in zsperre');
   expect(existenz).not.toContain('abap_true');
@@ -792,4 +793,19 @@ test('weitere Aussagen, die der Code nicht trägt: Auflösung, LOOP … WHERE, A
   expect(satzAn(code, 10).join(' ')).not.toContain('anderen Programms');
   expect(satzAn(code, 11).join(' ')).not.toMatch(/Eingabe/);
   expect(satzAn(code, 12).join(' ')).toContain('Hintergrundjobs');
+});
+
+test('Wortwahl — SAP-Standardtabellen und -felder heißen fachlich, mit dem richtigen Artikel', () => {
+  const code = quelle(
+    'REPORT z_wort.',
+    'PARAMETERS p_ebeln TYPE ebeln.',
+    'START-OF-SELECTION.',
+    '  SELECT matnr, werks FROM marc INTO TABLE @DATA(lt_marc).',
+    "  UPDATE ekko SET loekz = 'L' WHERE ebeln = p_ebeln.",
+    '  SELECT SINGLE lifnr FROM ekko INTO @DATA(lv_lifnr) WHERE ebeln = @p_ebeln.',
+  );
+  expect(satzAn(code, 4).join(' ')).toContain('Materialnummer und Werk');
+  // Bestellung ist weiblich: „der angegebenen Bestellung", nicht „des …".
+  expect(satzAn(code, 5).join(' ')).toContain('der angegebenen Bestellung');
+  expect(satzAn(code, 6).join(' ')).toContain('Lieferantennummer der Bestellung');
 });

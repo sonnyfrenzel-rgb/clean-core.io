@@ -52,7 +52,7 @@
  */
 
 import { readStatements, type AbapStatement, type SourceRange } from './statement-reader';
-import { isKnownField, nounPhrase, tableTerm, termFor, type BusinessTerm } from './business-glossary';
+import { genitivePhrase, isKnownField, nounPhrase, tableTerm, termFor, type BusinessTerm } from './business-glossary';
 import { buildProcessFacts } from './process-facts';
 import { readLuwStates, type LuwModel } from './luw-states';
 
@@ -797,8 +797,11 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
   const single = /\bSINGLE\b/i.test(text);
   if (single && list) {
     // Die alte Syntax trennt die Feldliste mit Leerzeichen, die neue mit Komma.
-    const fields = (list[1].includes(',') ? list[1].split(',') : list[1].split(/\s+/))
-      .map((field) => field.trim())
+    // Die alte Syntax kann das INTO vor dem FROM haben; es gehört nicht zur
+    // Feldliste. Ein Alias `v~feld` heißt im Satz nur `feld`.
+    const columns = list[1].replace(/\s+INTO\s+.*$/i, '');
+    const fields = (columns.includes(',') ? columns.split(',') : columns.split(/\s+/))
+      .map((field) => field.trim().replace(/^\w+~/, ''))
       .filter((field) => field && !/^\*$/.test(field));
     // `SELECT SINGLE @abap_true …` liest kein Feld: es prüft, ob es einen Satz gibt.
     if (fields.length === 1 && (literalOf(fields[0].replace(/^@/, '')) != null || /^@?abap_true$/i.test(fields[0]))) {
@@ -814,10 +817,12 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
     if (named.length > 0 && named.length <= 3) {
       // F12: ein unbekanntes Feld bekommt kein erratenes Geschlecht; es heißt
       // „das Feld …", und die Tabelle steht mit Namen da statt „des Satzes".
-      const owner = entity ? `des ${entity.genitive}` : `aus ${rawFrom ?? 'der Tabelle'}`;
-      const core = known
-        ? `${enumerate(named)} ${entity ? `des ${entity.genitive}` : 'des Satzes'}${restriction} ${named.length > 1 ? 'werden' : 'wird'} gelesen.`
-        : named.length > 1
+      const owner = entity ? genitivePhrase(entity) : `aus ${rawFrom ?? 'der Tabelle'}`;
+      const core = known && entity
+        ? `${enumerate(named)} ${genitivePhrase(entity)}${restriction} ${named.length > 1 ? 'werden' : 'wird'} gelesen.`
+        : known && named.length === 1
+          ? `${capitalize(nounPhrase(fields[0]))} ${owner}${restriction} wird gelesen.`
+          : named.length > 1
           ? `Die Felder ${enumerate(named)} ${owner}${restriction} werden gelesen.`
           : `Das Feld ${named[0]} ${owner}${restriction} wird gelesen.`;
       return { anchors, core, notes, tag: 'select' };
@@ -839,12 +844,12 @@ function resultFieldsSentence(statement: AbapStatement): Draft | null {
   if (statement.keyword.toUpperCase() !== 'SELECT') return null;
   const list = SELECT_LIST.exec(statement.text);
   if (!list || /COUNT\s*\(/i.test(statement.text)) return null;
-  const fields = list[1]
-    .split(',')
-    .map((field) => field.trim())
-    .filter((field) => field && field !== '*');
+  const columns = list[1].replace(/\s+INTO\s+.*$/i, '');
+  const fields = (columns.includes(',') ? columns.split(',') : columns.split(/\s+/))
+    .map((field) => field.trim().replace(/\s+AS\s+\w+$/i, ''))
+    .filter((field) => field && field !== '*' && !/^AS$/i.test(field));
   if (fields.length < 2 || fields.length > 6) return null;
-  const named = fields.map((field) => termFor(field).singular);
+  const named = fields.map((field) => (isKnownField(field) ? termFor(field).singular : plain(field).replace(/^\w+~/, '')));
   return {
     anchors: [range(statement)],
     core: `Das Ergebnis enthält ${enumerate(named)}.`,
@@ -1841,7 +1846,7 @@ function sentenceFor(
     const field = set ? capitalize(nounPhrase(set[1])) : null;
     const keyed = /\bWHERE\s+\S+\s*=\s*@?[ps]_/i.test(text);
     const core = field
-      ? `${field} ${entity ? `des ${keyed ? 'angegebenen ' : ''}${entity.genitive}` : `in ${raw}`} wird geändert.`
+      ? `${field} ${entity ? (keyed ? genitivePhrase(entity).replace(/^(des|der) /, '$1 angegebenen ') : genitivePhrase(entity)) : `in ${raw}`} wird geändert.`
       : `Eine Zeile ${entity ? `der ${entity.plural}` : `in ${raw}`} wird geändert.`;
     return {
       anchors,
