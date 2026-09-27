@@ -319,7 +319,9 @@ test.describe('every field carries its standing and its source, or is Not determ
     const expected: Record<CarrierKind, RegExp> = {
       transaction: /CALL\s+TRANSACTION|LEAVE\s+TO\s+TRANSACTION/i,
       report: /\bSUBMIT\b/i,
-      screen: /CALL\s+SCREEN|REUSE_ALV|POPUP|CL_SALV|CL_GUI/i,
+      // `MESSAGE … TYPE 'I'` / `MESSAGE i…`: the information popup, a user task
+      // since 27.09.2026 (D4).
+      screen: /CALL\s+SCREEN|REUSE_ALV|POPUP|CL_SALV|CL_GUI|MESSAGE\s+I\d|MESSAGE\b.*\bTYPE\s+'I'/i,
       program: /^\s*(?:REPORT|PROGRAM)\b/i,
     };
     const offenders: string[] = [];
@@ -804,7 +806,12 @@ test.describe('the measured reading of the two programs that have carriers', () 
     // submitted report — and two of them carry the training hint. Both hints
     // sit on a report with a selection screen and a catalogue pointer behind
     // its data; the two transactions are batch input and carry none.
-    expect(records).toBe(14);
+    //
+    // 15 since 27.09.2026 (D4): `MESSAGE '…' TYPE 'I'` in
+    // `Z_BUSINESS_PARTNER_SYNC.txt` is the popup §5.8 draws as a user task,
+    // and a user task is a screen carrier here by this file's own rule — one
+    // screen more, no hint more.
+    expect(records).toBe(15);
     expect(hints).toBe(2);
   });
 });
