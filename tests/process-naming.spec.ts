@@ -146,10 +146,10 @@ test.describe('the prompt carries ids, kinds, technical names and conditions —
     const prompt = buildNamingPrompt(ctx);
     // 110 since roadmap 2.15: three `IF sy-subrc` of this program stood behind a
     // call that already carried a boundary event, and each pair is now one
-    // element. The prompt still shows every node the skeleton has — 129 since
+    // element. The prompt still shows every node the skeleton has — 124 since
     // ADR-054, with a start event inside each of the nine routine planes and
-    // ten early ends, all of them nodes the naming may name like any other.
-    expect(ctx.skeleton.nodes.length).toBe(129);
+    // five early ends, all of them nodes the naming may name like any other.
+    expect(ctx.skeleton.nodes.length).toBe(124);
     for (const node of ctx.skeleton.nodes) {
       expect(prompt, `node ${node.id} is missing from the prompt`).toContain(`${node.id} | ${node.kind} | ${node.label}`);
     }

@@ -2238,7 +2238,7 @@
           "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-015-B02↔source.abap:B10-call 0.47, CC-015-B01↔source.abap:B6-branch6 0.36. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2. Der Fall nennt keine verbotene Aussage."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-015-B02↔source.abap:B10-call 0.47, CC-015-B01↔source.abap:B6-branch6 0.17. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-016",
@@ -3430,7 +3430,7 @@
           "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 8 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-023-B01↔source.abap:B6-branch6 0.31, CC-023-B03↔source.abap:B11-chain11 0.28, CC-023-B02↔source.abap:B10-update 0.11. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5. Der Fall nennt keine verbotene Aussage."
+      "reason": "3 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 8 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-023-B01↔source.abap:B6-branch6 0.30, CC-023-B03↔source.abap:B11-chain11 0.28, CC-023-B02↔source.abap:B10-update 0.11. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-024",
@@ -3877,7 +3877,7 @@
           "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 3 von 4, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: kein synchroner call-opaque mit Kante „und damit erledigt\"."
         }
       ],
-      "reason": "4 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 8 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-026-B03↔source.abap:B11-chain11 0.48, CC-026-B02↔source.abap:B15-commit 0.44, CC-026-B01↔source.abap:B6-call 0.43, CC-026-B04↔source.abap:B10-write 0.41. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 4. Verbotene Aussagen: 3 von 4 mit Kern, 0 davon verletzt: —."
+      "reason": "4 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 8 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-026-B03↔source.abap:B11-chain11 0.45, CC-026-B02↔source.abap:B15-commit 0.44, CC-026-B01↔source.abap:B6-call 0.43, CC-026-B04↔source.abap:B10-write 0.41. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 4. Verbotene Aussagen: 3 von 4 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-027",
@@ -6112,7 +6112,7 @@
           "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 3 von 5, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Nicht Unknown, Nicht Singleton."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-041-B02↔source.abap:B25-call 0.60. Darunter: CC-041-B01↔source.abap:B19-chain19 0.24. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5. Verbotene Aussagen: 3 von 5 mit Kern, 0 davon verletzt: —."
+      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-041-B02↔source.abap:B25-call 0.60. Darunter: CC-041-B01↔source.abap:B22-branch 0.14. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5. Verbotene Aussagen: 3 von 5 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-042",
@@ -6410,7 +6410,7 @@
           "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 4 von 4, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-043-B01↔source.abap:B6-seq6 0.44, CC-043-B02↔source.abap:B7-branch7 0.40, CC-043-B03↔source.abap:B10-list 0.33. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6. Verbotene Aussagen: 4 von 4 mit Kern, 0 davon verletzt: —."
+      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-043-B01↔source.abap:B6-seq6 0.44, CC-043-B03↔source.abap:B10-list 0.33, CC-043-B02↔source.abap:B8-perform 0.31. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6. Verbotene Aussagen: 4 von 4 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-044",
@@ -7114,7 +7114,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "9 von 12 Sollknoten verglichen (9 getroffen, 0 ohne Knoten, 0 mit anderer Art); 8 von 15 Sollkanten verglichen (5 getroffen, 2 fehlend, 1 mit anderer Art, 7 ohne aufgelöste Enden). Die Engine baut an diesem Fall 14 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: g1→ee („CHECK falsch: p_min < 0 — Er\", bedingt), c→g3 („always\", unbedingt). Andere Kantenart: g2→l („CHECK falsch: lv_value < p_m\", bedingt) → Engine loop-back. Nicht vergleichbar: a0/action@source.abap:6 — keine Brücke für „action\" an „lt_values = VALUE #( ( 5 ) ( 0 ) ( 3 ) )\", a1/action@source.abap:10 — keine Brücke für „action\" an „lv_sum = lv_sum + lv_value\", r/action@source.abap:18 — keine Brücke für „action\" an „ENDFORM\"."
+      "reason": "9 von 12 Sollknoten verglichen (9 getroffen, 0 ohne Knoten, 0 mit anderer Art); 8 von 15 Sollkanten verglichen (5 getroffen, 2 fehlend, 1 mit anderer Art, 7 ohne aufgelöste Enden). Die Engine baut an diesem Fall 12 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: g1→ee („CHECK falsch: p_min < 0 — Er\", bedingt), c→g3 („always\", unbedingt). Andere Kantenart: g2→l („CHECK falsch: lv_value < p_m\", bedingt) → Engine loop-back. Nicht vergleichbar: a0/action@source.abap:6 — keine Brücke für „action\" an „lt_values = VALUE #( ( 5 ) ( 0 ) ( 3 ) )\", a1/action@source.abap:10 — keine Brücke für „action\" an „lv_sum = lv_sum + lv_value\", r/action@source.abap:18 — keine Brücke für „action\" an „ENDFORM\"."
     },
     {
       "case": "CC-048",

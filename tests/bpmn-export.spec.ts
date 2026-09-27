@@ -160,9 +160,10 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   // (one flow node and one flow each), and each early exit inside a plane ends
   // at an `endEvent` of its own (one flow node, no flow — the flow that went to
   // the normal end goes there). Sub-processes, planes, stores and pools do not
-  // move. LEGACY 9 planes + 1 early end: 77→87 / 74→83. PO 9 planes + 8 early
-  // ends on the exported planes (two more sit in routines drawn as one step):
-  // 71→88 / 72→81. BP_SYNC and STOCK two planes, EXPENSE, INVOICE and SALES
+  // move. LEGACY 9 planes + 1 early end: 77→87 / 74→83. PO 9 planes + 4 early
+  // `RETURN` ends on the exported planes (a fifth sits in a routine drawn as one
+  // step): 71→84 / 72→81. A leaving `CHECK` gets none — §5.8 draws it as a
+  // conditional flow. BP_SYNC and STOCK two planes, EXPENSE, INVOICE and SALES
   // one; ORDER_INTEGRITY has none and does not move.
   [LEGACY, 87, 83, 15, 16, 8, 1, 1],
   // 27.09.2026 (D4): the information popup in END-OF-SELECTION is a user task
@@ -171,7 +172,7 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   ['Z_EMPLOYEE_EXPENSE_VAL.txt', 14, 13, 2, 3, 0, 0, 0],
   ['Z_INVOICE_EXTRACTOR.txt', 14, 11, 2, 3, 2, 0, 0],
   ['Z_MATERIAL_STOCK_CALC.txt', 18, 16, 4, 5, 4, 0, 0],
-  [PO, 88, 81, 9, 10, 11, 0, 0],
+  [PO, 84, 81, 9, 10, 11, 0, 0],
   // Roadmap 2.14: the file's `FORM` is now the entry point it never had, so
   // the export has something to write. 0→5 flow nodes / 0→4 flows / 0→3 data
   // stores; still one plane and no pool.
@@ -1251,16 +1252,16 @@ test.describe('ADR-054 — the events are valid BPMN, survive a round trip and n
     const inside = list<ModdleElement>(sub.flowElements);
     expect(inside.filter((e) => e.$type === 'bpmn:StartEvent').map((e) => traceOf(e)?.lineStart)).toEqual(['4']);
     const ends = inside.filter((e) => e.$type === 'bpmn:EndEvent');
+    // The `RETURN` ends on its own line; the leaving `CHECK` is a conditional
+    // flow (§5.8) and goes to the normal end, carrying its negated condition.
     expect(ends.map((e) => [e.name, traceOf(e)?.lineStart, traceOf(e)?.early ?? null])).toEqual([
       ['RELEASE_ORDER', '12', null],
       ['RELEASE_ORDER (RETURN)', '7', 'true'],
-      ['RELEASE_ORDER (CHECK)', '9', 'true'],
     ]);
-    // The condition stands on the flow into each early end, verbatim.
     const into = (end: ModdleElement) => list<ModdleElement>(end.incoming)
       .map((f) => (f.conditionExpression as { body?: string } | undefined)?.body ?? null);
     expect(into(ends[1])).toEqual(['ls_vbak-lifsk IS NOT INITIAL']);
-    expect(into(ends[2])).toEqual(['NOT ( ls_vbak-netwr > 0 )']);
+    expect(into(ends[0])).toContain('NOT ( ls_vbak-netwr > 0 )');
   });
 
   test('the file survives a round trip through bpmn-moddle, events included', async () => {

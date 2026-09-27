@@ -238,7 +238,7 @@ export function isMultiInstanceLoop(node: SkeletonNode): boolean {
 }
 
 /**
- * ADR-054 — an end event of an early exit (`RETURN`, `EXIT`, `STOP`, `CHECK`)
+ * ADR-054 — an end event of an early exit (`RETURN`, `EXIT`, `STOP`)
  * rather than the normal end at the closing word. The skeleton decided it.
  */
 export function isEarlyEnd(node: SkeletonNode): boolean {

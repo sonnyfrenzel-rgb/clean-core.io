@@ -159,13 +159,13 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // a user task is business-comparable like the ALV one beside it — **+1
     // `business-comparable`**, nothing else moved.
     //
-    // 344 since ADR-054 (27.09.2026), all of it **+36 `structural`** and nothing
+    // 339 since ADR-054 (27.09.2026), all of it **+31 `structural`** and nothing
     // reclassified: 25 routines drawn as a plane of their own begin at a start
-    // event inside that plane, and 11 early exits (`RETURN`, `EXIT`, `CHECK`)
-    // end at an end event of their own. Events are structure — they are never
+    // event inside that plane, and 6 early exits (`RETURN`, `EXIT`) end at an
+    // end event of their own. Events are structure — they are never
     // compared, never a step and never carry a standard candidate.
     expect(byClass).toEqual({
-      structural: 145,
+      structural: 140,
       technical: 104,
       'business-comparable': 71,
       unknown: 24,
@@ -190,8 +190,8 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // in `Z_ORDER_INTEGRITY_CHECK.txt`, which had no entry point until then and
     // therefore no elements: its end event, its `WRITE` and the boundary event
     // its `IF sy-subrc <> 0` folds into.
-    // 88 since ADR-054: eleven early exits end on their own line.
-    expect(byKind['end']).toEqual({ structural: 88 });
+    // 83 since ADR-054: six early exits end on their own line.
+    expect(byKind['end']).toEqual({ structural: 83 });
     expect(byKind['end-error']).toEqual({ technical: 10 });
     expect(byKind['output']).toEqual({ structural: 20 });
     expect(byKind['error-boundary']).toEqual({ technical: 22 });

@@ -81,11 +81,12 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   // routine drawn as a plane of its own gets a start event inside that plane,
   // anchored at its `FORM` line, with one flow to what it did first: one node
   // and one edge per such routine. And every early exit — `RETURN`, `EXIT`
-  // outside a loop, `STOP`, a `CHECK` that leaves the block — with something
-  // drawn after it ends on its own end event: one node each, and no edge, since
-  // the flow that led to the normal end now leads there. LEGACY 9 planes and 1
-  // early exit (`EXIT` in SELECT_ITEMS, L252): 114→124 / 116→125. PO 9 planes
-  // and 10 early exits: 110→129 / 116→125. BP_SYNC and STOCK two planes each,
+  // outside a loop, `STOP` — with something drawn after it ends on its own end
+  // event: one node each, and no edge, since the flow that led to the normal
+  // end now leads there. A leaving `CHECK` is not one of them (§5.8 draws it as
+  // a conditional flow) and still leads to the normal end. LEGACY 9 planes and
+  // 1 early exit (`EXIT` in SELECT_ITEMS, L252): 114→124 / 116→125. PO 9 planes
+  // and 5 early `RETURN`s: 110→124 / 116→125. BP_SYNC and STOCK two planes each,
   // EXPENSE, INVOICE and SALES one. ORDER_INTEGRITY has no plane and no early
   // exit and keeps its numbers.
   [LEGACY, 124, 125, 32, 4, 19, 323, 6, 1],
@@ -97,7 +98,7 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   ['Z_EMPLOYEE_EXPENSE_VAL.txt', 14, 13, 3, 1, 0, 0, 1, 0],
   ['Z_INVOICE_EXTRACTOR.txt', 18, 14, 4, 1, 0, 0, 0, 0],
   ['Z_MATERIAL_STOCK_CALC.txt', 20, 17, 6, 1, 0, 0, 0, 0],
-  [PO, 129, 125, 23, 1, 13, 147, 0, 0],
+  [PO, 124, 125, 23, 1, 13, 147, 0, 0],
   // Roadmap 2.14: this one had **no** entry point and drew nothing at all.
   // Its only routine with an effect is a `FORM` no `PERFORM` reaches, which
   // is the source saying its caller is outside this file — so it is the
@@ -185,11 +186,12 @@ test.describe('the eight programs this product ships', () => {
 
   test(`${PO} — the palette, element for element`, () => {
     expect(countKinds(skeletonOf(PO))).toEqual({
-      // ADR-054: 1 → 10 and 23 → 33 — a start inside each of the nine planes,
-      // and ten early exits (five `RETURN`, five `CHECK`) that each end on
-      // their own statement now instead of at the routine's `ENDFORM`.
+      // ADR-054: 1 → 10 and 23 → 28 — a start inside each of the nine planes,
+      // and five early `RETURN`s that each end on their own statement now
+      // instead of at the routine's `ENDFORM`. The five leaving `CHECK`s still
+      // lead to the normal end.
       start: 10,
-      end: 33,
+      end: 28,
       'end-error': 3,
       // 2.15, and this is the program the step was written for: 13 of its 31
       // gateways were `IF sy-subrc …` directly behind a `SELECT`, a
@@ -630,17 +632,11 @@ test.describe('rule 5 — CHECK leaves three different things', () => {
     const event = reasons.filter((e) => e.reason === 'check-leaves-event');
     expect(event, 'the three CHECKs in START-OF-SELECTION').toHaveLength(3);
     const entry = skeleton.regions.find((r) => r.kind === 'entry');
-    // ADR-054: each of the three leaves the block early — steps follow every
-    // one of them — so each ends on an end event of its own, on its own line,
-    // inside the entry, and the normal end is not one of them.
-    const ends = event.map((e) => skeleton.nodes.find((n) => n.id === e.to));
-    expect(ends.map((n) => [n?.kind, n?.label, n?.anchor?.lineStart, n?.detail?.early])).toEqual([
-      ['end', 'CHECK', 45, true],
-      ['end', 'CHECK', 49, true],
-      ['end', 'CHECK', 52, true],
-    ]);
-    expect(ends.every((n) => n?.region === entry?.key)).toBe(true);
-    expect(event.map((e) => e.to)).not.toContain(entry?.endNodeId);
+    // ADR-054 gives `RETURN`, `EXIT` and `STOP` an end of their own, not
+    // `CHECK`: §5.8 draws it as a conditional flow, so all three still lead to
+    // the normal end of the block, steps after them or not.
+    expect(new Set(event.map((e) => e.to))).toEqual(new Set([entry?.endNodeId]));
+    expect(skeleton.nodes.filter((n) => n.detail?.early === true && n.label === 'CHECK')).toEqual([]);
     expect(event[0].condition).toBe('NOT ( gv_rejected = abap_false )');
 
     const form = reasons.filter((e) => e.reason === 'check-leaves-form');
@@ -1385,9 +1381,9 @@ test.describe('roadmap 2.16 — lanes', () => {
       'nothing folded the authority check onto the read',
     ).not.toContain(111);
     // And no node was added anywhere: the counts are the ones 2.15 left behind.
-    // 110 → 129 with ADR-054 — nine plane starts and ten early ends, none of
+    // 110 → 124 with ADR-054 — nine plane starts and five early ends, none of
     // them a lane's doing.
-    expect(skeleton.nodes).toHaveLength(129);
+    expect(skeleton.nodes).toHaveLength(124);
     // 105 → 114 with 2.17 (b) — nine loop-body regions, each with an end event.
     // `Z_MM_PO_APPROVAL` has no `LOOP AT` at all and is untouched, which is what
     // makes it the right program for this assertion. 114 → 124 with ADR-054.
@@ -2374,6 +2370,21 @@ test.describe('ADR-054 — events in sub-processes and at early exits', () => {
     const returns = skeleton.edges.filter((e) => e.reason === 'return');
     expect(returns.map((e) => e.to)).toEqual([region?.endNodeId]);
     expect(skeleton.nodes.filter((n) => n.kind === 'end' && n.region === 'form:POST')).toHaveLength(1);
+  });
+
+  test('a CHECK that leaves the routine is a conditional flow to the normal end, not an early end', () => {
+    // §5.8 draws a leaving `CHECK` as a conditional flow, not as an element of
+    // its own — so ADR-054 gives it no end event, steps after it or not.
+    const NL = String.fromCharCode(10);
+    const source = RELEASE.replace('  IF ls_vbak-lifsk IS NOT INITIAL.' + NL + '    RETURN.' + NL + '  ENDIF.', '  CHECK ls_vbak-lifsk IS INITIAL.');
+    expect(source).toContain('CHECK ls_vbak-lifsk IS INITIAL.');
+    const skeleton = buildProcessSkeleton(source);
+    expect(skeleton.nodes.filter((n) => n.detail?.early === true)).toEqual([]);
+    const region = skeleton.regions.find((r) => r.key === 'form:RELEASE_ORDER');
+    const leaving = skeleton.edges.filter((e) => e.reason === 'check-leaves-form');
+    expect(leaving.map((e) => [e.to, e.kind, e.condition])).toEqual([
+      [region?.endNodeId, 'conditional', 'NOT ( ls_vbak-lifsk IS INITIAL )'],
+    ]);
   });
 
   test('two RETURNs in one branch before more steps are one early end', () => {

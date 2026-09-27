@@ -84,8 +84,8 @@ export type SkeletonNodeKind =
   /**
    * End event — the normal end of an entry or of a sub-process, anchored at its
    * closing word; since ADR-054 also an **early** end (`detail.early`): a
-   * `RETURN`, an `EXIT` outside a loop, a `STOP` or a `CHECK` that leaves the
-   * block while something drawn would still have followed. See `leaveEarly`.
+   * `RETURN`, an `EXIT` outside a loop or a `STOP` that leaves the block while
+   * something drawn would still have followed. See `leaveEarly`.
    */
   | 'end'
   /** Error end event — `MESSAGE … TYPE 'E'/'A'/'X'`, `RAISE`, `LEAVE PROGRAM`. */
@@ -2899,12 +2899,13 @@ class SkeletonBuilder {
   /**
    * ADR-054 — an end event of its own for every early exit.
    *
-   * `RETURN`, `EXIT` outside a loop, `STOP` and a `CHECK` that leaves the
-   * routine or the event block used to lead to the one normal end at the
-   * block's closing word, so a map showed a routine with five ways out as a
-   * routine with one. Now each of them ends on its own statement, as SAP
-   * Signavio models it and as the process benchmark expects it
-   * (`tests/prozess-benchmark/`).
+   * `RETURN`, `EXIT` outside a loop and `STOP` used to lead to the one normal
+   * end at the block's closing word, so a map showed a routine with five ways
+   * out as a routine with one. Now each of them ends on its own statement, as
+   * SAP Signavio models it and as the process benchmark expects it
+   * (`tests/prozess-benchmark/`). A `CHECK` that leaves the block is not one of
+   * them: `DESIGN.md` §5.8 draws it as a conditional flow rather than as an
+   * element of its own, and it keeps leading to the normal end (`walkCheck`).
    *
    * Rule 6 holds: the label is the keyword the source writes, the routine it
    * leaves travels in `detail.routine`, and the **condition** travels verbatim
@@ -3056,9 +3057,11 @@ class SkeletonBuilder {
     if (ctx.loops.length) {
       this.leaveTo(falsePath, ctx.loops[ctx.loops.length - 1], 'loop-back', 'check-leaves-loop');
     } else if (ctx.region.kind === 'sub-process') {
-      this.leaveEarly(statement, falsePath, ctx, 'conditional', 'check-leaves-form');
+      // ADR-054 leaves `CHECK` out on purpose: §5.8 draws it as a conditional
+      // flow, not as an element, so its false path still leads to the normal end.
+      this.leaveTo(falsePath, ctx.region.endNodeId, 'conditional', 'check-leaves-form');
     } else {
-      this.leaveEarly(statement, falsePath, ctx, 'conditional', 'check-leaves-event');
+      this.leaveTo(falsePath, ctx.region.endNodeId, 'conditional', 'check-leaves-event');
     }
     return { exits: [{ from: gateway.id, condition, kind: 'conditional' }] };
   }
