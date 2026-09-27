@@ -380,12 +380,18 @@ const range = (statement: AbapStatement): SourceRange => ({
 function plain(text: string): string {
   const inline = /^DATA\((\w+)\)$/i.exec(text.trim());
   if (inline) return inline[1];
-  return text.trim().replace(/^[@(<]+/, '').replace(/[)>]+$/, '').trim();
+  // Ein Feldsymbol `<ls_x>-feld` verliert seine Klammern ganz, nicht nur die erste.
+  return text.trim().replace(/<([A-Za-z0-9_]+)>/g, '$1').replace(/^[@(<]+/, '').replace(/[)>]+$/, '').trim();
 }
 
 /** Ob ein Bezeichner vom Selektionsbild kommt — `p_…`, `s_…`. */
 function fromSelectionScreen(identifier: string): boolean {
   return /^[@]?[ps]_/i.test(identifier.trim());
+}
+
+/** Erster Buchstabe groß — für eine Nominalgruppe am Satzanfang. */
+function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 /** Eine Aufzählung, wie man sie spricht: „A, B und C". */
@@ -529,11 +535,26 @@ function conditionClause(condition: string, subrc?: (value: string, equal: boole
   return literally;
 }
 
+/**
+ * Das Mehrzahl-Subjekt aus `conditionSubject` — aber nur, wenn es ein
+ * Deutsch-Subjekt ist: ein Vergleich über ein **bekanntes** Fachwort
+ * („Beträge größer 10000"). Über einen unbekannten Bezeichner ergäbe es
+ * „lv_frei bis einschließlich 0 setzen …", und dann steht besser der
+ * Bedingungssatz da (F12).
+ */
+function pluralSubject(condition: string): string | null {
+  const text = condition.replace(/^(IF|ELSEIF|WHILE|CHECK)\s+/i, '').trim();
+  const compare = /^(\S+)\s*(<=|>=|<>|<|>|=)\s*(\S+)$/.exec(text);
+  if (!compare || !isKnownField(compare[1])) return null;
+  if (TRUE_VALUES.test(compare[3]) || FALSE_VALUES.test(compare[3])) return null;
+  return conditionSubject(text).subject;
+}
+
 /** Das Gegenstück zu `conditionSubject` für einen `ELSE`-Zweig. */
 function elseSubject(previous: AbapStatement | undefined): string {
   if (!previous) return 'Sonst';
   const { subject, term, comparison } = conditionSubject(previous.text);
-  if (!term || !comparison) return 'Sonst';
+  if (!term || !comparison || pluralSubject(previous.text) === null) return 'Sonst';
   if (comparison === '<' || comparison === '<=') return `Größere ${term.plural}`;
   if (comparison === '>' || comparison === '>=') return `Kleinere oder gleiche ${term.plural}`;
   return `Andere ${term.plural}`;
@@ -735,18 +756,31 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
   const list = SELECT_LIST.exec(text);
   const single = /\bSINGLE\b/i.test(text);
   if (single && list) {
-    const fields = list[1]
-      .split(',')
+    // Die alte Syntax trennt die Feldliste mit Leerzeichen, die neue mit Komma.
+    const fields = (list[1].includes(',') ? list[1].split(',') : list[1].split(/\s+/))
       .map((field) => field.trim())
       .filter((field) => field && !/^\*$/.test(field));
-    const named = fields.map((field) => termFor(field).singular);
-    if (named.length > 0 && named.length <= 3) {
+    // `SELECT SINGLE @abap_true …` liest kein Feld: es prüft, ob es einen Satz gibt.
+    if (fields.length === 1 && (literalOf(fields[0].replace(/^@/, '')) != null || /^@?abap_true$/i.test(fields[0]))) {
       return {
         anchors,
-        core: `${enumerate(named)} des ${entity ? entity.genitive : 'Satzes'}${restriction} ${named.length > 1 ? 'werden' : 'wird'} gelesen.`,
+        core: `Es wird geprüft, ob es einen passenden ${entity ? `${entity.singular}-Satz` : `Satz in ${rawFrom ?? 'der Tabelle'}`}${restriction} gibt.`,
         notes,
         tag: 'select',
       };
+    }
+    const known = fields.every((field) => isKnownField(field));
+    const named = fields.map((field) => (known ? termFor(field).singular : plain(field)));
+    if (named.length > 0 && named.length <= 3) {
+      // F12: ein unbekanntes Feld bekommt kein erratenes Geschlecht; es heißt
+      // „das Feld …", und die Tabelle steht mit Namen da statt „des Satzes".
+      const owner = entity ? `des ${entity.genitive}` : `aus ${rawFrom ?? 'der Tabelle'}`;
+      const core = known
+        ? `${enumerate(named)} ${entity ? `des ${entity.genitive}` : 'des Satzes'}${restriction} ${named.length > 1 ? 'werden' : 'wird'} gelesen.`
+        : named.length > 1
+          ? `Die Felder ${enumerate(named)} ${owner}${restriction} werden gelesen.`
+          : `Das Feld ${named[0]} ${owner}${restriction} wird gelesen.`;
+      return { anchors, core, notes, tag: 'select' };
     }
   }
 
@@ -1120,7 +1154,7 @@ function initialLead(name: string, statements: readonly AbapStatement[], index: 
   }
   if (isKnownField(name)) {
     const word = termFor(name).singular;
-    return lead(negated ? `Mit einer nicht leeren ${word}` : `Ohne ${word}`);
+    return negated ? lead(`Ist ${nounPhrase(name)} nicht leer`, true) : lead(`Ohne ${word}`);
   }
   return lead(`Ist ${nounPhrase(name)} ${negated ? 'nicht ' : ''}leer`, true);
 }
@@ -1186,7 +1220,7 @@ function guardSentence(
     } else if (value === 'X') {
       subject = lead(compare[2] === '=' ? `Mit gesetztem ${name}` : `Ohne gesetztes ${name}`);
     } else {
-      subject = lead(compare[2] === '=' ? `Bei ${name} gleich ${value}` : `Bei ${name} ungleich ${value}`);
+      subject = lead(`Wenn ${conditionClause(head.text)}`, true);
     }
   } else return null;
 
@@ -1467,25 +1501,35 @@ function leaveSentence(statement: AbapStatement, statements: readonly AbapStatem
 }
 
 /** Eine Zuweisung in einem Zweig: „Negative Beträge setzen die Route auf INVALID." */
-function branchAssignment(statement: AbapStatement, stack: Block[]): Draft | null {
+function branchAssignment(statement: AbapStatement, stack: Block[], statements: readonly AbapStatement[]): Draft | null {
   const assign = /^(\S+)\s*=\s*('[^']*'|`[^`]*`|-?\d+)\s*$/.exec(statement.text);
   if (!assign) return null;
   const branch = [...stack].reverse().find((block) => block.kind === 'if' || block.kind === 'elseif' || block.kind === 'else');
   if (!branch) return null;
   const value = literalOf(assign[2]) ?? assign[2];
-  const target = termFor(assign[1]);
-  const subject = branch.kind === 'else' ? elseSubject(branch.previous) : conditionSubject(branch.head.text).subject;
+  // F12: „Negative Beträge setzen die Route" ist ein Satz mit Mehrzahl-
+  // Subjekt; „Eine leere lv_msgno setzen die Status" war keiner. Nur ein
+  // Vergleich über ein bekanntes Fachwort bleibt Subjekt, sonst trägt ein
+  // Bedingungssatz die Aussage, und der Bezeichner bekommt keinen erratenen
+  // Artikel („das Feld …").
+  const plural =
+    branch.kind === 'else'
+      ? elseSubject(branch.previous) === 'Sonst' ? null : elseSubject(branch.previous)
+      : pluralSubject(branch.head.text);
   // Ein `rv_`/`cv_`/`ev_` ist das Ergebnis der Routine selbst: der Fall
   // *erhält* diesen Wert. Eine gewöhnliche Variable wird dagegen *gesetzt*.
   const returning = /^(rv_|cv_|ev_)/i.test(assign[1].trim());
-  return {
-    anchors: [range(statement), range(branch.head)],
-    core: returning
-      ? `${subject} erhalten ${value}.`
-      : `${subject} setzen die ${target.singular} auf ${value}.`,
-    grain: 'group',
-    tag: 'branch',
-  };
+  let core: string;
+  if (plural) {
+    core = returning ? `${plural} erhalten ${value}.` : `${plural} setzen ${nounPhrase(assign[1], 'akk')} auf ${value}.`;
+  } else {
+    const subject =
+      branch.kind === 'else'
+        ? lead('Sonst')
+        : lead(`Wenn ${conditionClause(branch.head.text, subrcClauseAt(statements, branch.head.index))}`, true);
+    core = `${compose(subject, `${nounPhrase(assign[1])} auf ${value} gesetzt`)}.`;
+  }
+  return { anchors: [range(statement), range(branch.head)], core, grain: 'group', tag: 'branch' };
 }
 
 /** Eine Zuweisung ohne Zweig: „Die Review-Markierung wird auf N gesetzt." */
@@ -1495,7 +1539,7 @@ function plainAssignment(statement: AbapStatement): Draft | null {
   const value = literalOf(assign[2]) ?? assign[2];
   return {
     anchors: [range(statement)],
-    core: `Die ${termFor(plain(assign[1])).singular} wird auf ${value} gesetzt.`,
+    core: `${capitalize(nounPhrase(plain(assign[1])))} wird auf ${value} gesetzt.`,
     tag: 'set',
   };
 }
@@ -1739,10 +1783,10 @@ function sentenceFor(
     const raw = target ? plain(target[1]) : null;
     const entity = raw ? tableTerm(raw) : null;
     const set = /\bSET\s+(\S+)\s*=/i.exec(text);
-    const field = set ? termFor(set[1]).singular : null;
+    const field = set ? capitalize(nounPhrase(set[1])) : null;
     const keyed = /\bWHERE\s+\S+\s*=\s*@?[ps]_/i.test(text);
     const core = field
-      ? `Die ${field} ${entity ? `des ${keyed ? 'angegebenen ' : ''}${entity.genitive}` : `in ${raw}`} wird geändert.`
+      ? `${field} ${entity ? `des ${keyed ? 'angegebenen ' : ''}${entity.genitive}` : `in ${raw}`} wird geändert.`
       : `Eine Zeile ${entity ? `der ${entity.plural}` : `in ${raw}`} wird geändert.`;
     return {
       anchors,
@@ -2227,7 +2271,7 @@ function bodyFragment(statement: AbapStatement, origins: Map<string, ValueOrigin
     return null;
   }
   const assign = /^(\S+)\s*=\s*('[^']*'|`[^`]*`|-?\d+)\s*$/.exec(text);
-  if (assign) return `die ${termFor(assign[1]).singular} auf ${literalOf(assign[2]) ?? assign[2]} gesetzt`;
+  if (assign) return `${nounPhrase(assign[1])} auf ${literalOf(assign[2]) ?? assign[2]} gesetzt`;
   return null;
 }
 
@@ -2294,7 +2338,9 @@ function branchSubject(branch: Branch, statements: readonly AbapStatement[], cha
   // „Beträge größer 10000" ist ein Subjekt, kein Satzanfang vor „wird".
   // Das Fallbuch schreibt an dieser Stelle „Für größere Beträge wird …", und
   // genau diese Form trägt auch einen erzeugten Satz.
-  return lead(`Für ${lowerFirst(conditionSubject(head).subject)}`);
+  const plural = pluralSubject(head);
+  if (plural) return lead(`Für ${lowerFirst(plural)}`);
+  return lead(`Wenn ${conditionClause(head, subrcClauseAt(statements, chainHead))}`, true);
 }
 
 /**
@@ -2563,7 +2609,7 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
   for (let i = 0; i < statements.length; i += 1) {
     const statement = statements[i];
     const stack = stacks[i];
-    const branch = branchAssignment(statement, stack);
+    const branch = branchAssignment(statement, stack, statements);
     if (branch) {
       out.push(build(branch));
       continue;

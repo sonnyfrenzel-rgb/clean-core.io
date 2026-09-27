@@ -340,6 +340,7 @@ test('ein UPDATE mit Schlüssel wird als solches beschrieben, eines ohne nicht',
 // ---------------------------------------------------------------------------
 
 const quelle = (...z: string[]) => z.join('\n') + '\n';
+const saetze = (code: string) => buildBusinessStatements(code).map((s) => s.text);
 const satzAn = (code: string, zeile: number) =>
   buildBusinessStatements(code)
     .filter((s) => s.anchors.some((a) => a.lineStart <= zeile && zeile <= a.lineEnd))
@@ -703,4 +704,35 @@ test('F11 — ein Satz je Aussage: keine Wiederholung derselben Sache an derselb
 
   // „übergibt … und übernimmt dessen Ausgabe nach …" nennt das Ergebnis schon.
   expect(an(16).filter((s) => /übernommen|übernimmt/.test(s.text)).length).toBe(1);
+});
+
+test('F12 — kein erratenes Geschlecht vor Bezeichnern, Verb passt zum Subjekt', () => {
+  const code = quelle(
+    'REPORT z_f12.',
+    'START-OF-SELECTION.',
+    '  return_code = 1.',
+    '  IF lv_msgno IS INITIAL.',
+    "    gv_stufe = 'E'.",
+    '  ENDIF.',
+    '  IF gs_pos-betrag < 0.',
+    "    gv_route = 'NEGATIV'.",
+    '  ENDIF.',
+    '  SELECT SINGLE matnr FROM zmatzuo INTO gv_matnr WHERE kdmat = gv_kdmat.',
+    '  SELECT SINGLE @abap_true FROM zsperre INTO @DATA(lv_da) WHERE id = @gv_id.',
+  );
+  const alle = saetze(code).join(' ');
+  expect(alle).not.toMatch(/\bdie return_code\b|\bDie return_code\b/);
+  expect(alle).toContain('Das Feld return_code wird auf 1 gesetzt');
+
+  const zweig = satzAn(code, 5).join(' ');
+  expect(zweig).not.toMatch(/Eine leere lv_msgno|setzen die/);
+  expect(zweig).toContain('Wenn das Feld lv_msgno leer ist, wird das Feld gv_stufe auf E gesetzt');
+
+  // Mit einem bekannten Fachwort bleibt das Mehrzahl-Subjekt, und das Verb passt.
+  expect(satzAn(code, 8).join(' ')).toContain('Negative Beträge setzen die Route auf NEGATIV');
+
+  expect(satzAn(code, 10).join(' ')).toContain('Das Feld matnr aus zmatzuo wird gelesen');
+  const existenz = satzAn(code, 11).join(' ');
+  expect(existenz).toContain('geprüft, ob es einen passenden Satz in zsperre');
+  expect(existenz).not.toContain('abap_true');
 });

@@ -161,7 +161,7 @@ export function termFor(identifier: string): BusinessTerm {
   const stem = stemOf(identifier);
   const hit = FIELD_TERMS[stem];
   if (hit) return hit;
-  const raw = identifier.trim().replace(/^[@<]+/, '').replace(/[>]+$/, '');
+  const raw = identifier.trim().replace(/<([A-Za-z0-9_]+)>/g, '$1').replace(/^[@<]+/, '').replace(/[>]+$/, '');
   return term(raw, raw);
 }
 
@@ -245,6 +245,6 @@ export function nounPhrase(identifier: string, kasus: 'nom' | 'akk' | 'dat' = 'n
   const word = termFor(identifier);
   const genus = isKnownField(identifier) ? GENUS[word.singular] : undefined;
   if (genus) return `${ARTICLES[kasus][genus]} ${word.singular}`;
-  const raw = identifier.trim().replace(/^[@<]+/, '').replace(/[>]+$/, '');
+  const raw = identifier.trim().replace(/<([A-Za-z0-9_]+)>/g, '$1').replace(/^[@<]+/, '').replace(/[>]+$/, '');
   return `${ARTICLES[kasus].n} Feld ${raw}`;
 }
