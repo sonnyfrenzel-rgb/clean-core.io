@@ -15,6 +15,7 @@ import { verifyModelReceipt } from '@/lib/model-receipt';
 import {
   MAX_ANSWER_LENGTH,
   NAMING_FORMAT_VERSION,
+  NAMING_STAGE,
   isProcessNamingRecord,
   namingContextOf,
   validateNamingAnswer,
@@ -244,7 +245,16 @@ export async function POST(
         { status: 503 },
       );
     }
-    const verdict = verifyModelReceipt(body.receipt, { uid: gate.uid, text: body.text, key });
+    const verdict = verifyModelReceipt(body.receipt, {
+      uid: gate.uid,
+      text: body.text,
+      key,
+      // Only a call made under the naming stage may be stored as its names: the
+      // stage switch is enforced by `/api/gemini`, and a receipt from another
+      // stage would walk around it (QA review of 8f9ea35a000e, follow-up of
+      // 33a42c475f1a).
+      stage: NAMING_STAGE,
+    });
     if (!verdict.ok) {
       return NextResponse.json(
         {

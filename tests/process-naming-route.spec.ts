@@ -138,7 +138,7 @@ test('the server under test has the route', async ({ request }) => {
 });
 
 test('an answer with a verified receipt is validated against the stored source, stored and read back', async ({ request }) => {
-  const receipt = issueModelReceipt({ uid, text: ANSWER, modelId: 'gemini-2.5-flash', byok: false }, signingKey());
+  const receipt = issueModelReceipt({ uid, text: ANSWER, modelId: 'gemini-2.5-flash', byok: false, stage: 'naming' }, signingKey());
   const res = await request.post(path, { headers: headers(), data: { digest: CONTEXT.digest, text: ANSWER, receipt } });
   expect(res.status(), await res.text()).toBe(200);
   const { record } = (await res.json()) as { record: ProcessNamingRecord };
@@ -171,9 +171,9 @@ test('without a receipt that verifies for this text and this account, nothing is
   const cases: Array<[string, unknown, string]> = [
     ['absent', undefined, other],
     // A real receipt, over the answer of the previous test — not this one.
-    ['text-mismatch', issueModelReceipt({ uid, text: ANSWER, modelId: 'gemini-2.5-flash', byok: false }, signingKey()), other],
-    ['wrong-account', issueModelReceipt({ uid: otherUid, text: other, modelId: 'gemini-2.5-flash', byok: false }, signingKey()), other],
-    ['forged', issueModelReceipt({ uid, text: other, modelId: 'gemini-2.5-flash', byok: false }, 'not-the-signing-key'), other],
+    ['text-mismatch', issueModelReceipt({ uid, text: ANSWER, modelId: 'gemini-2.5-flash', byok: false, stage: 'naming' }, signingKey()), other],
+    ['wrong-account', issueModelReceipt({ uid: otherUid, text: other, modelId: 'gemini-2.5-flash', byok: false, stage: 'naming' }, signingKey()), other],
+    ['forged', issueModelReceipt({ uid, text: other, modelId: 'gemini-2.5-flash', byok: false, stage: 'naming' }, 'not-the-signing-key'), other],
   ];
   for (const [refusal, receipt, text] of cases) {
     const res = await request.post(path, { headers: headers(), data: { digest: CONTEXT.digest, text, receipt } });
@@ -183,12 +183,24 @@ test('without a receipt that verifies for this text and this account, nothing is
   expect(await stored(request), 'a refused answer replaced the stored names').toEqual(before);
 });
 
+test('a valid receipt from another stage is refused with wrong-stage (QA review of 8f9ea35a000e)', async ({ request }) => {
+  const before = await stored(request);
+  const text = JSON.stringify({ names: [{ id: DENIED, name: 'Blocked by another stage?' }] });
+  for (const stage of ['statements', 'documentation', undefined]) {
+    const receipt = issueModelReceipt({ uid, text, modelId: 'gemini-2.5-flash', byok: false, ...(stage ? { stage } : {}) }, signingKey());
+    const res = await request.post(path, { headers: headers(), data: { digest: CONTEXT.digest, text, receipt } });
+    expect(res.status(), `${stage ?? 'no stage'}: ${await res.text()}`).toBe(422);
+    expect(await res.json()).toMatchObject({ code: 'receipt-refused', refusal: 'wrong-stage' });
+  }
+  expect(await stored(request), 'a receipt of another stage replaced the names').toEqual(before);
+});
+
 test('an answer for another reading of the source is refused with 409', async ({ request }) => {
   const before = await stored(request);
   const elsewhere = namingContextOf(`${PROGRAM}\nFORM spare.\n  PERFORM release.\nENDFORM.`.replace('START-OF-SELECTION.', 'START-OF-SELECTION.\n  CLEAR gv_banfn.'));
   expect(elsewhere.digest).not.toBe(CONTEXT.digest);
   const text = JSON.stringify({ names: [{ id: DENIED, name: 'Access denied?' }] });
-  const receipt = issueModelReceipt({ uid, text, modelId: 'gemini-2.5-flash', byok: false }, signingKey());
+  const receipt = issueModelReceipt({ uid, text, modelId: 'gemini-2.5-flash', byok: false, stage: 'naming' }, signingKey());
 
   const res = await request.post(path, { headers: headers(), data: { digest: elsewhere.digest, text, receipt } });
   expect(res.status(), await res.text()).toBe(409);
@@ -205,7 +217,7 @@ test('only the owner reads or writes the names, and no browser reads them out of
   expect(JSON.stringify(await read.json())).not.toContain('Access denied?');
 
   const text = JSON.stringify({ names: [{ id: DENIED, name: 'Somebody else decides' }] });
-  const receipt = issueModelReceipt({ uid: otherUid, text, modelId: 'gemini-2.5-flash', byok: false }, signingKey());
+  const receipt = issueModelReceipt({ uid: otherUid, text, modelId: 'gemini-2.5-flash', byok: false, stage: 'naming' }, signingKey());
   const write = await request.post(path, { headers: headers(otherToken), data: { digest: CONTEXT.digest, text, receipt } });
   expect(write.status()).toBe(404);
   expect((await stored(request))?.names.map((n) => n.name)).toEqual(['Access denied?']);

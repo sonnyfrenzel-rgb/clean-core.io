@@ -279,6 +279,11 @@ test.describe('QA review of 8f9ea35a000e', () => {
 
   test('33a42c475f1a: the route asks for the statements stage, and the proxy signs the stage it was called under', () => {
     expect(read('app/api/projects/[projectId]/statement-proposal/route.ts')).toMatch(/stage: STATEMENT_STAGE,/);
+    expect(read('app/api/projects/[projectId]/process-naming/route.ts'), 'the naming store takes any stage').toMatch(/stage: NAMING_STAGE,/);
+    // runs/create asks for none, and says why where it does not.
+    const runs = read('app/api/runs/create/route.ts');
+    expect(runs.slice(runs.indexOf('verifyModelReceipt(body.modelReceipt'), runs.indexOf('const attested'))).not.toMatch(/stage:/);
+    expect(runs).toMatch(/No `stage` asked for, deliberately/);
     expect(read('app/api/gemini/route.ts')).toMatch(/\.\.\.\(stage !== undefined \? \{ stage \} : \{\}\)/);
   });
 
