@@ -75,7 +75,7 @@ export const STATEMENT_SOURCE_NAME = 'source.abap';
 export const STATEMENT_COST_LINE =
   'One model call. Not counted against your analysis runs; it counts toward the hourly limit on model calls of this account.';
 export const STATEMENT_COST_LINE_BYOK =
-  'One model call, with your own Gemini key. Not counted against your analysis runs.';
+  'One model call, with your own Gemini key. Not counted against your analysis runs; it counts toward the hourly limit on model calls of this account.';
 
 /** What the reader keeps when there is no proposal. */
 export const EVIDENCE_KEPT = 'The sentences reconstructed from the code stand as they are.';
