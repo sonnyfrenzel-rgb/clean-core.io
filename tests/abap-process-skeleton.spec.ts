@@ -2121,6 +2121,47 @@ test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
       .toEqual(['MESSAGE I012', "MESSAGE TYPE 'I'"]);
   });
 
+  test('a FORM named ON END OF TASK is called by the runtime: an entry of its own, not "not reached"', () => {
+    // §5.8 draws a start event where the source says something outside its own
+    // flow calls a routine (2.14: "FUNCTION", "MODULE … INPUT/OUTPUT"). The
+    // asynchronous call names its callback in so many words. Written for this test.
+    const source = [
+      'REPORT zasync_callback.', //                                                    1
+      'START-OF-SELECTION.', //                                                        2
+      "  CALL FUNCTION 'Z_PRICE_TASK' STARTING NEW TASK 'T1'", //                      3
+      '    PERFORMING take_result ON END OF TASK.', //                                 4
+      '  WAIT UNTIL gv_done = abap_true.', //                                          5
+      'FORM take_result USING pv_task TYPE clike.', //                                 6
+      "  RECEIVE RESULTS FROM FUNCTION 'Z_PRICE_TASK' IMPORTING ev_price = gv_price.", // 7
+      '  IF sy-subrc <> 0.', //                                                        8
+      '    RETURN.', //                                                                9
+      '  ENDIF.', //                                                                   10
+      "  UPDATE zprice SET price = @gv_price WHERE id = 1.", //                        11
+      '  gv_done = abap_true.', //                                                     12
+      'ENDFORM.', //                                                                   13
+      'FORM never_called.', //                                                         14
+      "  CALL FUNCTION 'Z_OTHER_TASK' STARTING NEW TASK 'T2'", //                      15
+      '    PERFORMING orphan_result ON END OF TASK.', //                               16
+      'ENDFORM.', //                                                                   17
+      'FORM orphan_result USING pv_task TYPE clike.', //                               18
+      "  UPDATE zprice SET price = 0 WHERE id = 2.", //                                19
+      'ENDFORM.', //                                                                   20
+    ].join('\n');
+    const skeleton = buildProcessSkeleton(source);
+    const starts = skeleton.nodes.filter((n) => n.kind === 'start');
+    expect(starts.map((n) => [n.label, n.anchor?.lineStart, n.detail?.origin, n.detail?.trigger])).toEqual([
+      ['START-OF-SELECTION', 2, 'event', undefined],
+      ['take_result', 6, 'callback', 'ON END OF TASK'],
+    ]);
+    const region = skeleton.regions.find((r) => r.anchor?.lineStart === 6);
+    const inside = skeleton.nodes.filter((n) => n.region === region?.key).map((n) => [n.kind, n.anchor?.lineStart]);
+    expect(inside).toEqual(expect.arrayContaining([['gateway', 8], ['end', 9], ['write', 11], ['end', 13]]));
+    // The trigger is written down, so it is not "not determined".
+    expect(skeleton.notes.filter((n) => n.reason === 'entry-trigger-not-determined')).toEqual([]);
+    // A callback of a call nothing reaches is not reached either.
+    expect(skeleton.notDrawn.unreached.map((u) => u.name)).toEqual(['NEVER_CALLED', 'ORPHAN_RESULT']);
+  });
+
   test('D2 — a method call is a step: a sub-process where the source implements it, opaque where not', () => {
     // §5.8, Eingeklappter Teilprozess: "eine `FORM`/Methode mit eigener Wirkung".
     const skeleton = buildProcessSkeleton([

@@ -845,7 +845,7 @@ interface WalkContext {
  * says "this is callable from outside", and every one of them is a word that
  * stands in the source rather than a reading of what the program means.
  */
-type EntryOrigin = 'event' | 'implicit' | 'function' | 'method' | 'module' | 'form';
+type EntryOrigin = 'event' | 'implicit' | 'function' | 'method' | 'module' | 'form' | 'callback';
 
 interface EntryPoint {
   statement: AbapStatement;
@@ -973,6 +973,12 @@ class SkeletonBuilder {
   /** Did the walk pass a `CALL SCREEN`? */
   private screenCalled = false;
   /**
+   * Routines a walked `CALL FUNCTION … STARTING NEW TASK` names with
+   * `PERFORMING form ON END OF TASK` or `CALLING meth ON END OF TASK`, in the
+   * order the walk met them — see `callbackEntries`.
+   */
+  private callbacks: Array<{ key: string; label: string; site: AbapStatement }> = [];
+  /**
    * Every routine a call in this source can open as a sub-process (D2): the
    * forms under their name, as before, and the methods this source implements
    * under `CLASS=>METHOD` — a key no form name can collide with, since `=>` is
@@ -1032,6 +1038,12 @@ class SkeletonBuilder {
     const entries = this.readEntryPoints();
     for (const entry of entries) this.buildEntryRegion(entry);
     for (const entry of this.deferredModuleEntries()) this.buildEntryRegion(entry);
+    // A callback's own walk can start another task, so this runs until the
+    // walks name nothing new.
+    for (let next = 0; next < this.callbacks.length; next++) {
+      const entry = this.callbackEntry(this.callbacks[next]);
+      if (entry) this.buildEntryRegion(entry);
+    }
     // ADR-054, once every region is walked: an early end is only early where
     // something drawn would still have followed it.
     this.settleEarlyEnds();
@@ -1718,6 +1730,69 @@ class SkeletonBuilder {
   private deferredModuleEntries(): EntryPoint[] {
     if (!this.modulesWaitForScreen || !this.screenCalled) return [];
     return this.noteTriggers(this.moduleEntries());
+  }
+
+  /**
+   * `CALL FUNCTION … STARTING NEW TASK … PERFORMING form ON END OF TASK` (or
+   * `CALLING meth ON END OF TASK`) — the routine the **runtime** calls when the
+   * asynchronous task ends.
+   *
+   * No `PERFORM` names it, so the call graph of 2.2 counts it as unreachable,
+   * and until 27.09.2026 this file listed the one routine that takes the task's
+   * results — `RECEIVE RESULTS`, the checks on them, the log — under "not
+   * reached", although the statement right here names it as the thing that
+   * runs. It is the same kind of evidence as a `MODULE … INPUT` (D1): a caller
+   * outside the source's own flow, written down in the source. So it becomes an
+   * entry of its own, and only once the walk has passed the call that names it:
+   * a callback of a call nothing reaches is not reached either.
+   *
+   * It is not drawn at the call site as a sub-process on purpose. It does not
+   * run there — the caller goes on at once, and the callback runs whenever the
+   * task comes back — so a box in the caller's sequence would put it in an
+   * order the program does not have.
+   */
+  private recordCallback(statement: AbapStatement): void {
+    if (!/\bSTARTING\s+NEW\s+TASK\b/i.test(statement.text)) return;
+    const code = maskLiterals(statement.text);
+    const form = /\bPERFORMING\s+([\w/]+)\s+ON\s+END\s+OF\s+TASK\b/i.exec(code);
+    if (form) {
+      const key = form[1].toUpperCase();
+      if (this.formBlocks.has(key)) this.pushCallback(key, form[1], statement);
+      return;
+    }
+    const method = /\bCALLING\s+(?:([\w/]+|<[\w/]+>)(->|=>))?([\w/~]+)\s+ON\s+END\s+OF\s+TASK\b/i.exec(code);
+    if (!method) return;
+    const { key, ambiguous } = this.resolveMethod(method[1] ?? null, (method[2] as '->' | '=>' | undefined) ?? null,
+      method[3].toUpperCase(), statement.index);
+    if (key && !ambiguous && this.routineBlocks.has(key)) this.pushCallback(key, method[3], statement);
+  }
+
+  private pushCallback(key: string, label: string, site: AbapStatement): void {
+    if (this.callbacks.some((c) => c.key === key)) return;
+    this.callbacks.push({ key, label, site });
+  }
+
+  /**
+   * The entry a recorded callback opens — or `null` where the routine is
+   * already drawn: a callback the source also performs is a sub-process of that
+   * caller, and drawing it a second time as a beginning would be D3 again.
+   */
+  private callbackEntry(callback: { key: string; label: string; site: AbapStatement }): EntryPoint | null {
+    const block = this.routineBlocks.get(callback.key);
+    if (!block || this.reachedRoutines.has(callback.key) || this.entryOfBlock.has(block.openIndex)) return null;
+    this.entryOfBlock.add(block.openIndex);
+    return {
+      statement: this.statements[block.openIndex],
+      lastIndex: block.closeIndex - 1,
+      endStatement: this.statements[Math.min(block.closeIndex, this.statements.length - 1)],
+      label: callback.label,
+      rank: RUNTIME_ORDER.length,
+      implicit: false,
+      origin: 'callback',
+      // Determined, unlike the other entries that are not event blocks: the
+      // statement that names it says what calls it.
+      trigger: 'ON END OF TASK',
+    };
   }
 
   /** The classic event blocks, unchanged since rule 4 — a report says it itself. */
@@ -3312,6 +3387,7 @@ class SkeletonBuilder {
     });
     this.connect(incoming, node.id);
     this.readLaneEvidence(statement, kind, label, call?.destination);
+    this.recordCallback(statement);
     const exits: Exit[] = [{ from: node.id, condition: '', kind: 'sequence' }];
 
     if (/\bEXCEPTIONS\b/i.test(statement.text) && this.handlesSubrcAfter(statement.index)) {
