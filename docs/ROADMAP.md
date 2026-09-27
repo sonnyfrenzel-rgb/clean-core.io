@@ -2368,7 +2368,7 @@ beiden wird markiert.
 
 | Nr. | Schritt | Größe |
 |---|---|---|
-| 17.10 | **Gebaut 27.09.2026.** **Weg B in die Business-Sicht, Weg A als Beleg darunter, Widerspruch markiert.** Eine eigene Modellstufe `statements` (Schalter wie `naming`, bis 3.0 nur mit der Arbeitsraum-Vorschau angeboten), ausgelöst **nur** über einen Knopf in der Dokumentation, mit der Kostenzeile vor dem Klick. Der Weg ist der der Namensstufe: Browser → `/api/gemini` (Stufenschalter, fehlender Schlüssel, eigener Schlüssel, Stundenlimit je Konto) → `POST /api/projects/{id}/statement-proposal` mit Quittung; die Route baut den Kontext aus der gespeicherten Quelle nach, verweigert eine fremde Quelle (409) und eine Antwort ohne gültige Quittung (422), prüft mit `validateStatementAnswer` und speichert per Admin SDK unter `projects/{id}/statement_proposal/current` — **nie** in Lauf, Quittung, Signatur oder Audit-Pack, keine Regeländerung. Leser lesen, nur der Besitzer fordert an. Der Widerspruch prüft `lib/statement-contradiction.ts` deterministisch an den Ankern des B-Satzes, beim Anzeigen, nicht gespeichert. **Gemessen:** siehe unten. | M |
+| 17.10 | **Gebaut 27.09.2026.** **Weg B in die Business-Sicht, Weg A als Beleg darunter, Widerspruch markiert.** Eine eigene Modellstufe `statements` (Schalter wie `naming`, bis 3.0 nur mit der Arbeitsraum-Vorschau angeboten), ausgelöst **nur** über einen Knopf in der Dokumentation, mit der Kostenzeile vor dem Klick. Der Weg ist der der Namensstufe: Browser → `/api/gemini` (Stufenschalter, fehlender Schlüssel, eigener Schlüssel, Stundenlimit je Konto) → `POST /api/projects/{id}/statement-proposal` mit Quittung; die Route baut den Kontext aus der gespeicherten Quelle nach, verweigert eine fremde Quelle (409) und eine Antwort ohne gültige Quittung (422) — seit der QA-Prüfung von 8f9ea35a000e auch eine Quittung, die `/api/gemini` unter einer anderen Stufe als `statements` ausgestellt hat (die Stufe ist jetzt Teil der signierten Quittung), prüft mit `validateStatementAnswer` und speichert per Admin SDK unter `projects/{id}/statement_proposal/current` — **nie** in Lauf, Quittung, Signatur oder Audit-Pack, keine Regeländerung. Leser lesen, nur der Besitzer fordert an. Der Widerspruch prüft `lib/statement-contradiction.ts` deterministisch an den Ankern des B-Satzes, beim Anzeigen, nicht gespeichert. **Gemessen:** siehe unten. | M |
 
 **Ergebnis 17.10 (gemessen, 27.09.2026).** Zuerst die Korrektur an 17.8: dort hieß es
 „B schlägt A nicht — A bleibt allein", mit 7 und 9 gegen 69 von 173. Das Maß war das
@@ -2388,24 +2388,30 @@ markiert wird; Fehlalarm = markierter B-Satz an einem Sollsatz mit Urteil `gleic
 
 | | Treffer „falsch" | verbotene Schlüsse markiert | Fehlalarme an „gleich" | markiert insgesamt |
 |---|---|---|---|---|
-| Lernhälfte (100 Fälle) | 11 von 25 (44 %) | 4 von 12 | 8 von 1.580 (0,5 %) | 21 von 1.658 |
-| Prüfhälfte (100 Fälle) | **2 von 14 (14 %)** | **0 von 7** | **13 von 1.869 (0,7 %)** | 14 von 1.930 |
+| Lernhälfte (100 Fälle) | 11 von 25 (44 %) | 4 von 12 | 7 von 1.580 (0,4 %) | 20 von 1.658 |
+| Prüfhälfte (100 Fälle) | **2 von 14 (14 %)** | **0 von 7** | **6 von 1.869 (0,3 %)** | 8 von 1.930 |
 
 Ehrlich gelesen: **das Modul ist vorsichtig, aber es findet wenig.** Die Fehlalarmquote
 hält auf der Prüfhälfte (unter 1 %), die Trefferquote nicht — von den 11 Treffern der
 Lernhälfte stammen 5 aus einem Fall (BM-012, fünfmal `MESSAGE … INTO`), und auf der
 Prüfhälfte kommt dieses Muster nicht vor. Die meisten falschen B-Aussagen sind inhaltlich (ein erfundener
 „aktiv"-Filter, ein Rückgabecode aus dem falschen Aufruf, `AT END OF` mit unzuverlässigem
-Feldwert) und für eine Regel ohne Deutung nicht zu greifen. **Alle 21 „Fehlalarme"**
+Feldwert) und für eine Regel ohne Deutung nicht zu greifen. **Alle 13 „Fehlalarme"**
 beider Hälften kommen aus zwei Regeln, deren Aussage **am Code stimmt**, die die Richter
 aber uneinheitlich werteten: `MESSAGE … RAISING` („angezeigt" nur, wenn der Aufrufer die
-Ausnahme nicht behandelt — 5 Mal an einem als falsch gewerteten Satz, 18 Mal an einem
-„gleich"-Satz, 10 davon in einem Fall, BM-199; deshalb nur *Not supported by the code*,
+Ausnahme nicht behandelt — 5 Mal an einem als falsch gewerteten Satz, 10 Mal an einem
+„gleich"-Satz, 4 davon in einem Fall, BM-199; deshalb nur *Not supported by the code*,
 nie *Contradicts*) und `RETURN`/`STOP` in `START-OF-SELECTION` mit folgendem
 `END-OF-SELECTION` („das Programm wird beendet" — 3 Treffer, 3 Fehlalarme). Die
 `RAISING`-Regel **bleibt** (Entscheidung 27.09.2026): sie sagt Wahres, das die Richter
 überwiegend nicht für einen Fehler hielten, und steht deshalb nur als *Not supported by
 the code*.
+Die Zahlen sind der Stand nach der QA-Prüfung von 8f9ea35a000e (vorher 8 und 13
+Fehlalarme, Treffer unverändert): eine benannte `MESSAGE … INTO` wird nicht mehr
+markiert, wenn im selben Bereich etwas anderes ausgeben kann, `SELECT` gilt nicht mehr als
+Schreiben, und „Anzeigetransaktion" heißt nur noch eine feste Liste von SAP-Standardcodes
+— nie ein Z-Code. Die Prüfhälfte ist dabei nicht zur Entwicklung benutzt worden; die
+Änderungen kamen aus den Befunden, nicht aus ihren Zahlen.
 Messgrenze: die Richterdateien tragen je B-Satz nur die Zeilen seines Sollsatzes, nicht
 seine eigenen Anker; im Produkt prüft das Modul gegen die Anker, die die Validierung dem
 Satz gelassen hat. Vier Regeln (`WRITE … TO`, Persistenz ohne Schreibanweisung, nicht

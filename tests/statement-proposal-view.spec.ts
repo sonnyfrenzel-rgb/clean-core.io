@@ -40,7 +40,10 @@ import type { StatementProposalPanelProps } from '../components/documentation/St
  */
 
 const ROOT = path.resolve(__dirname, '..');
-const OUT = path.resolve(ROOT, 'tmp', 'statement-proposal-view');
+// One bundle per worker process: the four tests run in parallel, each worker
+// runs `beforeAll`, and two writers of one file hand a third a half-written
+// bundle ("Unterminated string constant").
+const OUT = path.resolve(ROOT, 'tmp', 'statement-proposal-view', String(process.pid));
 
 type View = (props: { doc: ProcessDocumentation; proposal?: StatementProposalPanelProps }) => React.ReactElement;
 let ProcessDocumentationView: View;
