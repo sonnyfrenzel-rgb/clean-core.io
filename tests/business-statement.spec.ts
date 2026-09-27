@@ -423,3 +423,22 @@ test('F2 — die Wortwahl nach sy-subrc folgt der Anweisung, die es gesetzt hat'
   expect(offen).toContain('Rückgabewert ungleich 0');
   expect(offen).not.toContain('Treffer');
 });
+
+test('F3 — nur GET <knoten> ist eine logische Datenbank; GET PARAMETER, TIME, REFERENCE nicht', () => {
+  const code = quelle(
+    'REPORT z_f3.',
+    'INITIALIZATION.',
+    "  GET PARAMETER ID 'BUK' FIELD p_bukrs.",
+    '  GET TIME STAMP FIELD gv_stempel.',
+    '  GET REFERENCE OF gs_kopf INTO gr_kopf.',
+    'GET pernr.',
+    "  WRITE / 'X'.",
+  );
+  for (const zeile of [3, 4, 5]) {
+    const text = satzAn(code, zeile).join(' ');
+    expect(text, `Zeile ${zeile}`).not.toContain('logischen Datenbank');
+    expect(text.length, `Zeile ${zeile} hat keinen Satz`).toBeGreaterThan(0);
+  }
+  expect(satzAn(code, 3).join(' ')).toContain('Benutzerparameter BUK');
+  expect(satzAn(code, 6).join(' ')).toContain('logischen Datenbank');
+});

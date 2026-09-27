@@ -1508,6 +1508,36 @@ function sentenceFor(
     if (/^GET\s+BADI\b/i.test(text)) {
       return { anchors, core: 'Die konfigurierte BAdI-Implementierung wird angefordert.', tag: 'get' };
     }
+    // Nur `GET knoten` ist das Ereignis einer logischen Datenbank (F3). Alles
+    // andere mit GET liest einen Wert aus der Laufzeitumgebung.
+    const parameter = /^GET\s+PARAMETER\s+ID\s+('[^']*'|\S+)\s+FIELD\s+(\S+)/i.exec(text);
+    if (parameter) {
+      return {
+        anchors,
+        core: `Der Benutzerparameter ${literalOf(parameter[1]) ?? parameter[1]} wird in ${plain(parameter[2])} übernommen.`,
+        tag: 'get',
+      };
+    }
+    const stamp = /^GET\s+TIME\s+STAMP\s+FIELD\s+(\S+)/i.exec(text);
+    if (stamp) return { anchors, core: `Der aktuelle Zeitstempel wird in ${plain(stamp[1])} übernommen.`, tag: 'get' };
+    if (/^GET\s+TIME\b/i.test(text)) {
+      const field = /\bFIELD\s+(\S+)/i.exec(text);
+      return {
+        anchors,
+        core: field
+          ? `Die aktuelle Uhrzeit wird in ${plain(field[1])} übernommen.`
+          : 'Datum und Uhrzeit des Laufs (sy-datum, sy-uzeit) werden aktualisiert.',
+        tag: 'get',
+      };
+    }
+    const reference = /^GET\s+REFERENCE\s+OF\s+(\S+)\s+INTO\s+(\S+)/i.exec(text);
+    if (reference) {
+      return { anchors, core: `Eine Referenz auf ${plain(reference[1])} wird in ${plain(reference[2])} abgelegt.`, tag: 'get' };
+    }
+    if (/^GET\s+CURSOR\b/i.test(text)) {
+      return { anchors, core: 'Die Cursorposition auf dem Bild oder in der Liste wird gelesen.', tag: 'get' };
+    }
+    if (!isLdbGet(text)) return null;
     const ldb = /^GET\s+([A-Za-z0-9_]+)/i.exec(text);
     const entity = ldb ? tableTerm(ldb[1]) : null;
     return {
