@@ -95,7 +95,11 @@ test('the deploy job refuses the emulator flag, and never sets it', () => {
   const step = steps.find((lines) => (runOf(lines) ?? '').includes('NEXT_PUBLIC_USE_FIREBASE_EMULATOR'));
   expect(step, 'no step of the deploy job checks the emulator flag').toBeTruthy();
   expect(step!.some((l) => /^\s*(- )?if:/.test(l)), 'the check must not be conditional').toBe(false);
-  expect(step!.some((l) => /^\s*continue-on-error:\s*true/.test(l)), 'the check must stop the job').toBe(false);
+  // Any `continue-on-error`, whatever its value: `${{ true }}` is as fatal as `true`
+  // (QA review of 29be9543e26a, 4362a7dbc9fd). The same for the job itself.
+  expect(step!.some((l) => /^\s*(- )?continue-on-error\s*:/.test(l)), 'the check must stop the job').toBe(false);
+  const jobHeader = jobLines.slice(0, jobLines.findIndex((l) => /^ {4}steps:/.test(l)));
+  expect(jobHeader.some((l) => /^ {4}continue-on-error\s*:/.test(l)), 'the deploy job must not continue on error').toBe(false);
   const script = runOf(step!) as string;
 
   const run = (flag: string | undefined) => {
