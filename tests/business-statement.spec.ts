@@ -829,6 +829,20 @@ test('F11/F4 — Kettenausgabe im Zweig ohne zweiten Satz; ein Dialogaufruf ist 
   );
   expect(satzAn(code, 5).filter((s) => /werden ausgegeben/.test(s))).toEqual([]);
   expect(satzAn(code, 10).join(' ')).not.toContain('Datenbankoperation');
+
+  // QA cb41c1e00bc0: dass kein Listensatz mehr dasteht, genügt nicht — die
+  // Kette muss im Zweigsatz stehen, ganz, mit seiner Bedingung, und genau einmal.
+  const an5 = buildBusinessStatements(code).filter((s) => s.anchors.some((a) => a.lineStart === 5));
+  const zweig = an5.filter((s) => s.grain === 'group');
+  expect(zweig.length, 'genau ein Zweigsatz trägt die Kette').toBe(1);
+  expect(zweig[0].text).toMatch(/^Wenn das Feld p_test gesetzt ist, wird /);
+  for (const wert of ['Materialnummer', 'Werk', 'TEST']) expect(zweig[0].text).toContain(`${wert} ausgegeben`);
+  expect(zweig[0].text).toContain('der Schleifendurchlauf übersprungen');
+  // Daneben steht an Zeile 5 höchstens der Satz zum ausgegebenen Literal —
+  // keine Spalte der Kette ein zweites Mal ohne Bedingung.
+  const daneben = an5.filter((s) => s.grain === 'statement').map((s) => s.text);
+  expect(daneben.filter((text) => /Materialnummer|Werk/.test(text))).toEqual([]);
+  expect(daneben).toEqual(['TEST wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.']);
 });
 
 test('QA d7a7d3a66683 — „es wird nichts geschrieben" nur, wo die Quellreihenfolge die Ausführung ist', () => {
