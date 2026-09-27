@@ -8,6 +8,13 @@ import {
   stepEvidence,
   type ProcessDocumentation,
 } from '@/lib/process-documentation';
+import { pairWithEvidence, proposalAt } from '@/lib/statement-proposal';
+import {
+  ProposedStatementLine,
+  StatementPair,
+  StatementProposalPanel,
+  type StatementProposalPanelProps,
+} from '@/components/documentation/StatementProposal';
 
 /**
  * Stage 4's document as the engine wrote it — roadmap 3.0.5, Weg C.
@@ -16,9 +23,23 @@ import {
  * this screen is a field of the stored document, every anchor is the one the
  * engine recorded, and every gap is printed with its reason. The provenance
  * chips are the nine of `lib/provenance.ts`, through the one chip component.
+ *
+ * Roadmap 17.10: with `proposal`, the model's business sentences stand on top
+ * of the engine's — at each element and in the whole-program list — and the
+ * engine's sentence stays beneath each one as the evidence
+ * (`components/documentation/StatementProposal.tsx`). Without it, or without a
+ * stored proposal for this source, the page is what it was.
  */
-export default function ProcessDocumentationView({ doc }: { doc: ProcessDocumentation }) {
+export default function ProcessDocumentationView({
+  doc,
+  proposal,
+}: {
+  doc: ProcessDocumentation;
+  proposal?: StatementProposalPanelProps;
+}) {
   const statementById = new Map(doc.statements.map((s) => [s.id, s]));
+  const proposals = proposal?.view?.state === 'proposed' ? proposal.view.statements : [];
+  const rows = proposals.length > 0 ? pairWithEvidence(doc.statements, proposals) : null;
 
   return (
     <div data-engine-documentation className="space-y-8">
@@ -51,6 +72,7 @@ export default function ProcessDocumentationView({ doc }: { doc: ProcessDocument
             <tbody className="divide-y divide-gray-100 bg-white text-gray-700">
               {doc.steps.map((step) => {
                 const sentence = step.statementId ? statementById.get(step.statementId) : undefined;
+                const proposed = proposalAt(proposals, step.anchor);
                 return (
                   <tr key={step.id} data-doc-step={step.id}>
                     <td className="px-4 py-3 align-top">
@@ -71,7 +93,9 @@ export default function ProcessDocumentationView({ doc }: { doc: ProcessDocument
                         <span className="mt-1 inline-block"><CcProvenanceChip value={step.namingProvenance} note="name" /></span>
                       )}
                     </td>
-                    <td className="px-4 py-3 align-top max-w-md">{sentence ? sentence.text : ''}</td>
+                    <td className="px-4 py-3 align-top max-w-md">
+                      {proposed ? <StatementPair proposal={proposed} evidence={sentence?.text ?? null} /> : sentence ? sentence.text : ''}
+                    </td>
                     <td className="px-4 py-3 align-top whitespace-nowrap">
                       {step.anchor ? (
                         rangeWords(step.anchor)
@@ -97,13 +121,31 @@ export default function ProcessDocumentationView({ doc }: { doc: ProcessDocument
             ? 'The engine formed no business statement from this source.'
             : `${doc.statements.length} statements, in the order of the program.`}
         </p>
+        {proposal && <StatementProposalPanel {...proposal} />}
         <ul className="space-y-2 text-sm text-slate-700">
-          {doc.statements.map((statement) => (
-            <li key={statement.id} className="flex flex-col md:flex-row md:gap-3">
-              <span className="flex-1">{statement.text}</span>
-              <span className="text-[11px] text-slate-400 md:whitespace-nowrap">{anchorsWords(statement.anchors)}</span>
-            </li>
-          ))}
+          {rows
+            ? rows.map((row, i) =>
+                row.proposals.length > 0 ? (
+                  <li key={row.evidence?.id ?? `p-${i}`} data-doc-statement-row="paired" className="flex flex-col md:flex-row md:gap-3">
+                    <div className="flex-1">
+                      {row.proposals.map((p) => <ProposedStatementLine key={p.id} proposal={p} />)}
+                      {row.evidence && (
+                        <p data-statement-evidence="" className="mt-1 text-[12px] text-cc-ink-muted">
+                          <CcProvenanceChip value="reconstructed" /> {row.evidence.text}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-cc-ink-muted md:whitespace-nowrap">
+                      {anchorsWords(row.evidence ? row.evidence.anchors : row.proposals.flatMap((p) => p.anchors))}
+                    </span>
+                  </li>
+                ) : row.evidence ? (
+                  <StatementRow key={row.evidence.id} text={row.evidence.text} anchors={row.evidence.anchors} />
+                ) : null,
+              )
+            : doc.statements.map((statement) => (
+                <StatementRow key={statement.id} text={statement.text} anchors={statement.anchors} />
+              ))}
         </ul>
       </section>
 
@@ -178,5 +220,15 @@ export default function ProcessDocumentationView({ doc }: { doc: ProcessDocument
         </ul>
       </section>
     </div>
+  );
+}
+
+/** An engine sentence with its lines — the list as it was before 17.10. */
+function StatementRow({ text, anchors }: { text: string; anchors: ProcessDocumentation['statements'][number]['anchors'] }) {
+  return (
+    <li className="flex flex-col md:flex-row md:gap-3">
+      <span className="flex-1">{text}</span>
+      <span className="text-[11px] text-slate-400 md:whitespace-nowrap">{anchorsWords(anchors)}</span>
+    </li>
   );
 }

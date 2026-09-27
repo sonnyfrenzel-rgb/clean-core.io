@@ -41,8 +41,14 @@
  *     switch for two consents is the thing this list exists to prevent;
  *   - the names never reach a signature. A stage whose output does is a
  *     different kind of stage, and its receipt means something else.
+ *
+ * `statements` (roadmap 17.10) is a stage of its own for the same reasons:
+ * the business sentences are a separate model call with a separate consent,
+ * asked for by a button and never by an analysis, and switching them off must
+ * leave the names and the narrative where they are. Like the names, they never
+ * reach a signature.
  */
-export const MODEL_STAGES = ['analyze', 'naming', 'design', 'transformation', 'documentation', 'testing'] as const;
+export const MODEL_STAGES = ['analyze', 'naming', 'statements', 'design', 'transformation', 'documentation', 'testing'] as const;
 
 export type ModelStage = (typeof MODEL_STAGES)[number];
 
@@ -54,7 +60,7 @@ export type ModelStage = (typeof MODEL_STAGES)[number];
  * a settings row for a process map the account cannot open would be the half
  * of a rebuild `docs/ROADMAP.md` §4 promises nobody sees.
  */
-export const PREVIEW_MODEL_STAGES: readonly ModelStage[] = Object.freeze(['naming'] as ModelStage[]);
+export const PREVIEW_MODEL_STAGES: readonly ModelStage[] = Object.freeze(['naming', 'statements'] as ModelStage[]);
 
 /** The stages a settings screen offers, in order. */
 export function offeredModelStages(showPreview: boolean): ModelStage[] {
@@ -65,6 +71,7 @@ export function offeredModelStages(showPreview: boolean): ModelStage[] {
 export const MODEL_STAGE_LABELS: Record<ModelStage, string> = {
   analyze: 'Analysis narrative',
   naming: 'Business names',
+  statements: 'Business sentences',
   design: 'Solution design blueprint',
   transformation: 'Transformed code',
   documentation: 'Documentation and business blueprint',
@@ -76,6 +83,8 @@ export const MODEL_STAGE_DESCRIPTIONS: Record<ModelStage, string> = {
     'The prose around the evidence: summary, gaps, standardisation fit. The findings, the route and the Clean Core Score are computed without a model and are unaffected.',
   naming:
     'Proposed business names for the steps and lanes of the process reconstructed from the code. The process, its technical names and every line anchor are computed without a model and stay as they are.',
+  statements:
+    'A proposed business sentence for each step of the process, asked for with a button. The sentence reconstructed from the code stays beneath each one as the evidence, and a proposal the code contradicts is marked.',
   design: 'The target architecture blueprint and the non-functional requirements.',
   transformation: 'The ABAP Cloud or CAP code proposal.',
   documentation: 'The technical documentation and the business blueprint.',

@@ -157,10 +157,12 @@ test.describe('die Prüfung verwirft und zählt, sie repariert nie', () => {
   });
 });
 
-test('Weg B ist noch nicht verdrahtet: kein Produktcode importiert das Modul, und es ruft kein Netz', () => {
+test('Weg B ist verdrahtet, und nur über die Vorschlagsstufe von 17.10: zwei Importeure, kein Netz', () => {
   const moduleSource = readFileSync(join(process.cwd(), 'lib/business-statement-prompt.ts'), 'utf8');
   expect(moduleSource).not.toMatch(/\bfetch\s*\(/);
   expect(moduleSource).not.toMatch(/generativelanguage|GEMINI_API_KEY|process\.env/);
+  // An import, not a mention: a comment that names the module is not a way to it.
+  const IMPORTS_IT = /from '[^']*business-statement-prompt'/;
   const importers: string[] = [];
   const walk = (dir: string) => {
     for (const name of readdirSync(dir)) {
@@ -168,7 +170,7 @@ test('Weg B ist noch nicht verdrahtet: kein Produktcode importiert das Modul, un
       if (statSync(abs).isDirectory()) {
         if (name === 'node_modules' || name.startsWith('.')) continue;
         walk(abs);
-      } else if (/\.(ts|tsx)$/.test(name) && readFileSync(abs, 'utf8').includes('business-statement-prompt')) {
+      } else if (/\.(ts|tsx)$/.test(name) && IMPORTS_IT.test(readFileSync(abs, 'utf8'))) {
         importers.push(abs);
       }
     }
@@ -176,9 +178,16 @@ test('Weg B ist noch nicht verdrahtet: kein Produktcode importiert das Modul, un
   for (const root of ['app', 'components', 'hooks']) walk(join(process.cwd(), root));
   for (const name of readdirSync(join(process.cwd(), 'lib'))) {
     const abs = join(process.cwd(), 'lib', name);
-    if (statSync(abs).isFile() && name !== 'business-statement-prompt.ts' && readFileSync(abs, 'utf8').includes('business-statement-prompt')) {
+    if (statSync(abs).isFile() && name !== 'business-statement-prompt.ts' && IMPORTS_IT.test(readFileSync(abs, 'utf8'))) {
       importers.push(abs);
     }
   }
-  expect(importers, 'Roadmap 17.8 misst zuerst; die Verdrahtung entscheidet Sonny danach').toEqual([]);
+  // Sonny, 27.09.2026 (Roadmap 17.10): B kommt in die Business-Sicht — über
+  // `lib/statement-proposal.ts` und die Route, die die Antwort prüft und
+  // speichert. Kein Lauf, keine Signatur, kein Audit-Pack liest das Modul.
+  const rel = importers.map((abs) => abs.slice(process.cwd().length + 1).split('\\').join('/')).sort();
+  expect(rel, 'ein weiterer Weg zu den Modellsätzen — gehört er in eine Signatur?').toEqual([
+    'app/api/projects/[projectId]/statement-proposal/route.ts',
+    'lib/statement-proposal.ts',
+  ]);
 });

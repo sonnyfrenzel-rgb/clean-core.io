@@ -28,10 +28,11 @@ import type { ProvenanceValue } from './provenance';
  *     `Omit<…, 'analysis'>`, und ein Fachsatz ist eine Lesart, deren Wortlaut
  *     sich ändern darf, ohne dass eine Quittung bricht.
  *
- * Noch **nicht verdrahtet** — kein Aufruf aus der Oberfläche, keiner aus
- * `/api/runs/create`. 17.8 misst zuerst, ob dieser Weg die Engine überhaupt
- * schlägt; erst danach entscheidet Sonny, ob er in die Business-Sicht kommt.
- * Wenn, dann über `/api/gemini`, den einzigen Weg nach außen.
+ * **Verdrahtet seit 17.10** (Sonny, 27.09.2026): `lib/statement-proposal.ts`
+ * bestellt den Satz über `/api/gemini`, den einzigen Weg nach außen, und
+ * `app/api/projects/[projectId]/statement-proposal/route.ts` prüft und
+ * speichert ihn — auf Knopfdruck, nie aus `/api/runs/create`. In der
+ * Business-Sicht steht er über dem Satz aus Weg A, der als Beleg bleibt.
  *
  * Rein: keine Netzaufrufe, kein Schlüssel, kein Zustand.
  */

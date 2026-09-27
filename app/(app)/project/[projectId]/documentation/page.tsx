@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useDialogFocus } from '@/hooks/useDialogFocus';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc, runTransaction } from 'firebase/firestore';
-import { getDb } from '@/lib/firebase';
+import { getAuth, getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import Stepper from '@/components/Stepper';
@@ -37,6 +37,8 @@ import { escapeHtml } from '@/lib/utils';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { useProcessMap } from '@/hooks/useProcessMap';
 import { useProcessMapAddress } from '@/hooks/useProcessMapAddress';
+import { useStatementProposal } from '@/hooks/useStatementProposal';
+import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import { buildNavigation, levelOf, resolveMapAddress } from '@/lib/process-navigation';
 import {
   ensureProcessBaseline,
@@ -155,7 +157,7 @@ const extractJSON = (text: string) => {
 export default function DocumentationPage() {
   const { projectId } = useParams();
   const router = useRouter();
-  useUserProfile();
+  const { profile } = useUserProfile();
   /** Roadmap 1.2 — this stage calls a model, so it has a switch and it can be keyless. */
   const modelAvailability = useModelAvailability();
 
@@ -410,6 +412,20 @@ Structure the JSON exactly like this:
     project?.name || '',
     modelAvailability,
   );
+
+  /**
+   * Roadmap 17.10 — the model's business sentences over the engine's, behind
+   * the workspace preview until 3.0. Read on opening, asked for only by the
+   * button in the documentation; the owner asks, an invited reader reads.
+   */
+  const projectIdStr = (Array.isArray(projectId) ? projectId[0] : projectId) ?? null;
+  const statementProposal = useStatementProposal(
+    projectIdStr,
+    signedSource?.source ?? null,
+    workspaceShellEnabled(profile),
+    modelAvailability,
+  );
+  const isOwner = !!project && getAuth().currentUser?.uid === project.userId;
 
   /**
    * Roadmap 3.0.5, Weg C — the documentation is read out of the code.
@@ -1249,7 +1265,17 @@ Structure the JSON exactly like this:
           </div>
 
           {activeTab === 'technical' && engineDoc ? (
-            <ProcessDocumentationView doc={engineDoc} />
+            <ProcessDocumentationView
+              doc={engineDoc}
+              proposal={workspaceShellEnabled(profile) ? {
+                view: statementProposal.view,
+                canRequest: isOwner,
+                byok: modelAvailability.keySource === 'byok',
+                requesting: statementProposal.requesting,
+                message: statementProposal.message,
+                onRequest: statementProposal.request,
+              } : undefined}
+            />
           ) : activeTab === 'technical' ? (
             <div className="space-y-8">
               {/* Roadmap 3.0.5 — a blueprint stored before the engine wrote this

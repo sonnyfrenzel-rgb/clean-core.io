@@ -18,7 +18,8 @@ import { adminSetDoc } from './helpers/admin-seed';
 const STAMP = Date.now();
 const SIGN_IN = 'Sign-in-Pass-1!';
 const PROJECT_ID = `reader-routes-${STAMP}`;
-const ROUTES = ['process-map', 'process-naming', 'process-revisions', 'process-states'] as const;
+// Roadmap 17.10 added the model's business sentences, gated exactly like the names.
+const ROUTES = ['process-map', 'process-naming', 'statement-proposal', 'process-revisions', 'process-states'] as const;
 
 const tokens: Record<'owner' | 'reader' | 'stranger', string> = { owner: '', reader: '', stranger: '' };
 const headersOf = (who: keyof typeof tokens) => ({ Authorization: `Bearer ${tokens[who]}`, 'Content-Type': 'application/json' });
