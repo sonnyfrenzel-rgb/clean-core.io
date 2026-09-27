@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { spawnSync } from 'child_process';
 import { GEMINI_TEST_STUB_HEADER, geminiTestStubActive } from '../lib/gemini-test-stub';
 
 /**
@@ -64,10 +65,50 @@ test('the route asks after every gate, and replaces the provider call and nothin
 
 test('the deploy job refuses the emulator flag, and never sets it', () => {
   const deploy = fs.readFileSync(path.join(__dirname, '..', '.github', 'workflows', 'deploy.yml'), 'utf8');
-  const deployJob = deploy.slice(deploy.search(/^\s{2}deploy:/m));
-  expect(deployJob.length, 'no deploy job found in deploy.yml').toBeGreaterThan(20);
-  // The job stops the build with the flag on — gate 2 of the stub rests on that line.
-  expect(deployJob).toContain("FATAL: NEXT_PUBLIC_USE_FIREBASE_EMULATOR must not be 'true' in deploy!");
+  // QA review of d126dcc4bd7e (8742b4804028): reading the text proved only that the
+  // message is written somewhere in the job. Parse the workflow, find the step that
+  // carries the check, and run that step's script — with the flag it must fail,
+  // without it it must pass. A commented-out check, a step switched off with `if:`
+  // or softened with `continue-on-error` no longer passes.
+  // No YAML parser is a declared dependency, so the job is cut into its steps by
+  // indentation — the one shape GitHub Actions gives a step list.
+  const jobStart = deploy.search(/^ {2}deploy:\s*$/m);
+  expect(jobStart, 'no deploy job in deploy.yml').toBeGreaterThan(-1);
+  const rest = deploy.slice(jobStart).split(/\r?\n/);
+  const jobLines = [rest[0], ...rest.slice(1).filter((_, i, all) => !all.slice(0, i + 1).some((l) => /^ {2}\S/.test(l)))];
+  const steps: string[][] = [];
+  for (const line of jobLines) {
+    if (/^ {6}- /.test(line)) steps.push([line]);
+    else if (steps.length && (/^ {7,}\S/.test(line) || line.trim() === '')) steps[steps.length - 1].push(line);
+  }
+  const runOf = (lines: string[]) => {
+    const at = lines.findIndex((l) => /^\s*run:\s*\|\s*$/.test(l));
+    if (at < 0) return null;
+    const indent = (lines[at + 1] ?? '').match(/^ */)?.[0].length ?? 0;
+    const body: string[] = [];
+    for (const l of lines.slice(at + 1)) {
+      if (l.trim() !== '' && (l.match(/^ */)?.[0].length ?? 0) < indent) break;
+      body.push(l.slice(indent));
+    }
+    return body.join('\n');
+  };
+  const step = steps.find((lines) => (runOf(lines) ?? '').includes('NEXT_PUBLIC_USE_FIREBASE_EMULATOR'));
+  expect(step, 'no step of the deploy job checks the emulator flag').toBeTruthy();
+  expect(step!.some((l) => /^\s*(- )?if:/.test(l)), 'the check must not be conditional').toBe(false);
+  expect(step!.some((l) => /^\s*continue-on-error:\s*true/.test(l)), 'the check must stop the job').toBe(false);
+  const script = runOf(step!) as string;
+
+  const run = (flag: string | undefined) => {
+    const env = {
+      PATH: process.env.PATH ?? '',
+      ...(flag !== undefined ? { NEXT_PUBLIC_USE_FIREBASE_EMULATOR: flag } : {}),
+    } as unknown as NodeJS.ProcessEnv;
+    return spawnSync('bash', ['-c', script], { env, encoding: 'utf8' }).status;
+  };
+  expect(run('true'), 'with the flag on, the step must fail').not.toBe(0);
+  expect(run(undefined), 'without the flag, the step must pass').toBe(0);
+  expect(run('false')).toBe(0);
+
   // …and no line of the job sets it.
-  expect(deployJob).not.toMatch(/^\s*NEXT_PUBLIC_USE_FIREBASE_EMULATOR:\s*'?true'?\s*$/m);
+  expect(jobLines.join('\n')).not.toMatch(/^\s*NEXT_PUBLIC_USE_FIREBASE_EMULATOR:\s*['"]?true['"]?\s*$/m);
 });
