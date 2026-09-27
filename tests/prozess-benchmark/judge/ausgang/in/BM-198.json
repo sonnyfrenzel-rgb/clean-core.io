@@ -1,0 +1,556 @@
+{
+ "id": "BM-198",
+ "titel": "Nächtliche Lastgangübermittlung an Messstellen-/Netzbetreiber: Jobkette, XML/JSON-Nachricht, HTTP-Versand mit Wiederholung",
+ "prozess": "Der Steuerreport ZISU_EDM_SCHEDULER läuft nachts als Job und plant die Lastgangübermittlung für den Stichtag (Standard: Vortag). Ist der Betriebsschalter ZISU_EDM_EXPORT_ACTIVE in der TVARVC nicht gesetzt, meldet er das und plant nichts ein. Sonst legt er den Job ZISU_EDM_EXPORT an, ordnet ihm den Exportreport mit Stichtag, Format, Destination und Testkennzeichen zu und gibt ihn zum Sofortstart frei; Fehler dabei brechen mit Fehlermeldung ab. Danach legt er ohne Rückgabeprüfung den Abgleichjob ZISU_EDM_RECON an und gibt ihn entweder auf das Ereignis ZISU_EDM_EXPORT_DONE oder als Nachfolger des Exportjobs frei. Der Exportreport leitet für den Benutzer TSCHNEIDER auf das Q-Gateway um, legt ein Anwendungsprotokoll an (ohne Protokoll Abbruch) und liest die Zählpunkte mit am Stichtag gültiger Zählpunktbezeichnung und Empfängerzuordnung; ohne Treffer geht er per STOP direkt in den Abschluss. Bereits mit Status S gesendete Zählpunkte werden aussortiert, für die übrigen werden die Viertelstundenwerte gelesen; ist keiner mehr offen, liest FOR ALL ENTRIES mit leerer Treibertabelle alle Profilwerte aller Tage, und die selektierten Zählpunkte werden erneut gesendet. Je Zählpunkt entsteht ein Lastgang: unter 96 Werten gilt er als lückenhaft (Status L, Tage der Zeitumstellung mit 92 Werten werden damit nie gesendet), gestörte Werte oder eine gescheiterte XML-Transformation führen zu Status E. Die Nachricht enthält Absender, Empfänger, Zählpunkt, Tag, Viertelstundenwerte mit Qualität und eine Kontrollsumme und wird je nach Format als JSON oder XML aufgebaut. Im Testlauf wird nur die Größe aufgelistet und kein Status geschrieben. Sonst wird per HTTP-POST gesendet und bei anderen Antworten als 2xx oder 4xx bis zur Höchstzahl mit verdoppelter Wartezeit wiederholt; ohne Verbindung zur Destination wird nicht gesendet. Angenommene Lastgänge erhalten Status S, alle anderen Status F mit dem letzten HTTP-Code und einen Protokolleintrag; der Status wird mit aufsummierter Versuchszahl fortgeschrieben und je Zählpunkt festgeschrieben. Am Ende sichert der Report das Protokoll, löst außer im Testlauf das Ereignis für den Abgleichjob ohne Erfolgsprüfung aus und gibt eine Summenliste aus.",
+ "verboten": [
+  "zisu_edm_export_f01.abap:26 — kein Fachsatz „es werden immer nur die Werte des Stichtags und nur noch nicht gesendete Zählpunkte übermittelt“: ist gt_open leer (alle selektierten Zählpunkte bereits mit Status S), entfällt bei FOR ALL ENTRIES die gesamte WHERE-Bedingung einschließlich des Stichtags; es werden alle Profilwerte gelesen und die selektierten Zählpunkte erneut mit allen gespeicherten Tagen gesendet",
+  "zisu_edm_export.abap:109 — kein Fachsatz „ohne Zählpunkte endet der Lauf, ohne den Abgleichjob anzustoßen“: STOP führt in END-OF-SELECTION, dort wird das Protokoll gesichert und außer im Testlauf das Ereignis ZISU_EDM_EXPORT_DONE ausgelöst",
+  "zisu_edm_scheduler.abap:151 — kein Fachsatz „die Übermittlung wird per RFC im Altsystem ISU_OLD_PRD eingeplant“: die FORM wird nirgends aufgerufen",
+  "zcl_isu_edm_payload.abap:113 — kein Fachsatz „der Lastgang wird als EDIFACT-MSCONS erzeugt“: die Methode wird nie aufgerufen, versendet wird nur XML oder JSON über das Gateway"
+ ],
+ "saetze": [
+  {
+   "id": "BM-198-B01",
+   "soll": "Vor der Einplanung wird geprüft, ob die Lastgangübermittlung über den Betriebsschalter ZISU_EDM_EXPORT_ACTIVE freigegeben ist; fehlt der Schalter oder ist er nicht gesetzt, wird ein Hinweis ausgegeben und nichts eingeplant.",
+   "zeilen": [
+    251,
+    255,
+    256,
+    257
+   ],
+   "code": [
+    "251:   SELECT SINGLE low FROM tvarvc INTO gv_active",
+    "255:   IF sy-subrc <> 0 OR gv_active <> 'X'.",
+    "256:     MESSAGE s002 DISPLAY LIKE 'W'.",
+    "257:     RETURN."
+   ],
+   "engine": [
+    "low des Satzes wird gelesen.",
+    "Für sy-subrc <> 0 OR gv_active <> 'X' wird eine Meldung ausgegeben und der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-198-B02",
+   "soll": "Als Übertragungsformat sind nur XML (X) und JSON (J) zulässig; ein anderes Format wird auf dem Selektionsbild mit Fehlermeldung abgewiesen.",
+   "zeilen": [
+    245,
+    246
+   ],
+   "code": [
+    "245:   IF p_mode <> 'X' AND p_mode <> 'J'.",
+    "246:     MESSAGE e001 WITH p_mode."
+   ],
+   "engine": [
+    "Für p_mode <> 'X' AND p_mode <> 'J' wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-198-B03",
+   "soll": "Für den Export wird ein Hintergrundjob ZISU_EDM_EXPORT angelegt, dem der Exportreport mit Stichtag, Format, Zieldestination und Testkennzeichen als Schritt zugeordnet wird.",
+   "zeilen": [
+    261,
+    275
+   ],
+   "code": [
+    "261:   CALL FUNCTION 'JOB_OPEN'",
+    "275:   SUBMIT zisu_edm_export"
+   ],
+   "engine": [
+    "Der Code übergibt gc_job_export an JOB_OPEN und übernimmt dessen Ausgabe nach gv_jobcount_exp.",
+    "Das konvertierte Ergebnis wird in gv_jobcount_exp übernommen.",
+    "Das Kindprogramm zisu_edm_export wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes."
+   ]
+  },
+  {
+   "id": "BM-198-B04",
+   "soll": "Der Exportjob wird zum sofortigen Start freigegeben.",
+   "zeilen": [
+    283
+   ],
+   "code": [
+    "283:   CALL FUNCTION 'JOB_CLOSE'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein JOB_CLOSE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-198-B05",
+   "soll": "Scheitert das Anlegen oder die Freigabe des Exportjobs, bricht die Einplanung mit Fehlermeldung ab.",
+   "zeilen": [
+    271,
+    272,
+    297,
+    298
+   ],
+   "code": [
+    "271:   IF sy-subrc <> 0.",
+    "272:     MESSAGE e003 WITH gc_job_export.",
+    "297:   IF sy-subrc <> 0.",
+    "298:     MESSAGE e004 WITH gc_job_export sy-subrc."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-198-B06",
+   "soll": "Für den Abgleich wird ein zweiter Job ZISU_EDM_RECON mit dem Abgleichreport für denselben Stichtag angelegt; ob das Anlegen dieses Jobs gelingt, wird nicht geprüft.",
+   "zeilen": [
+    302,
+    316
+   ],
+   "code": [
+    "302:   CALL FUNCTION 'JOB_OPEN'",
+    "316:   SUBMIT zisu_edm_recon"
+   ],
+   "engine": [
+    "Der Code übergibt gc_job_recon an JOB_OPEN und übernimmt dessen Ausgabe nach gv_jobcount_rec.",
+    "Das konvertierte Ergebnis wird in gv_jobcount_rec übernommen.",
+    "Das Kindprogramm zisu_edm_recon wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes."
+   ]
+  },
+  {
+   "id": "BM-198-B07",
+   "soll": "Standardmäßig wird der Abgleichjob so freigegeben, dass er startet, sobald das Ereignis ZISU_EDM_EXPORT_DONE mit dem Stichtag als Parameter ausgelöst wird; ohne Ereignissteuerung wird er als Nachfolger des Exportjobs eingeplant, abhängig von dessen Endestatus.",
+   "zeilen": [
+    321,
+    324,
+    334
+   ],
+   "code": [
+    "321:   IF p_event = 'X'.",
+    "324:     CALL FUNCTION 'JOB_CLOSE'",
+    "334:     CALL FUNCTION 'JOB_CLOSE'"
+   ],
+   "engine": [
+    "Mit gesetztem p_event wird JOB_CLOSE aufgerufen.",
+    "Mit gesetztem p_event wird JOB_CLOSE aufgerufen, sonst JOB_CLOSE aufgerufen.",
+    "Der Funktionsbaustein JOB_CLOSE wird aufgerufen.",
+    "Für andere p_event wird JOB_CLOSE aufgerufen.",
+    "Der Funktionsbaustein JOB_CLOSE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-198-B08",
+   "soll": "Scheitert die Freigabe des Abgleichjobs, bricht die Einplanung mit Fehlermeldung ab; sonst werden die Nummern beider Jobs gemeldet.",
+   "zeilen": [
+    344,
+    345,
+    348
+   ],
+   "code": [
+    "344:   IF sy-subrc <> 0.",
+    "345:     MESSAGE e004 WITH gc_job_recon sy-subrc.",
+    "348:   MESSAGE s005 WITH gv_jobcount_exp gv_jobcount_rec."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-198-B09",
+   "soll": "Läuft der Export unter dem Benutzer TSCHNEIDER, werden die Lastgänge nicht an das produktive, sondern an das Q-Gateway gesendet.",
+   "zeilen": [
+    73,
+    74
+   ],
+   "code": [
+    "73:   IF sy-uname = 'TSCHNEIDER'.",
+    "74:     p_dest = 'ZEDM_MPO_GATEWAY_Q'."
+   ],
+   "engine": [
+    "Für sy-uname mit dem Wert TSCHNEIDER wird die Destination auf ZEDM_MPO_GATEWAY_Q gesetzt.",
+    "sy-uname mit dem Wert TSCHNEIDER setzen die Destination auf ZEDM_MPO_GATEWAY_Q."
+   ]
+  },
+  {
+   "id": "BM-198-B10",
+   "soll": "Für den Lauf wird ein Anwendungsprotokoll zum Stichtag angelegt; gelingt das nicht, wird der Lauf abgebrochen, bevor etwas gesendet wird.",
+   "zeilen": [
+    83,
+    91,
+    93
+   ],
+   "code": [
+    "83:   CALL FUNCTION 'BAL_LOG_CREATE'",
+    "91:   IF sy-subrc <> 0.",
+    "93:     MESSAGE a020."
+   ],
+   "engine": [
+    "Der Code übergibt gs_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_log.",
+    "Das konvertierte Ergebnis wird in gv_log übernommen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-198-B11",
+   "soll": "Selektiert werden die Zählpunkte (auch eingeschränkt auf eine Auswahl), deren externe Zählpunktbezeichnung und deren Empfängerzuordnung am Stichtag gültig sind.",
+   "zeilen": [
+    97
+   ],
+   "code": [
+    "97:   SELECT t~int_ui, t~ext_ui, h~uistrutyp, m~receiver_id AS receiver"
+   ],
+   "engine": [
+    "Das Ergebnis enthält t~int_ui, t~ext_ui, h~uistrutyp und m~receiver_id AS receiver.",
+    "Es werden Sätze aus euitrans selektiert."
+   ]
+  },
+  {
+   "id": "BM-198-B12",
+   "soll": "Gibt es keinen solchen Zählpunkt, wird ein Hinweis ausgegeben und die Verarbeitung beendet; der Abschluss mit Protokollsicherung, Ereignis und Summenliste läuft trotzdem.",
+   "zeilen": [
+    107,
+    108,
+    109
+   ],
+   "code": [
+    "107:   IF gt_pod IS INITIAL.",
+    "108:     MESSAGE s010 WITH p_date.",
+    "109:     STOP."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-198-B13",
+   "soll": "Zählpunkte, deren Lastgang für den Stichtag bereits erfolgreich gesendet wurde, werden aus der Versandmenge genommen.",
+   "zeilen": [
+    500,
+    505,
+    506
+   ],
+   "code": [
+    "500:   SELECT * FROM zisu_edm_stat INTO TABLE lt_stat",
+    "505:   LOOP AT lt_stat INTO DATA(ls_stat).",
+    "506:     DELETE gt_open WHERE int_ui = ls_stat-int_ui."
+   ],
+   "engine": [
+    "Es werden Sätze aus zisu_edm_stat mit dem eingegebenen ab_date selektiert.",
+    "Jede Zeile aus lt_stat wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-198-B14",
+   "soll": "Für die verbleibenden Zählpunkte werden die Viertelstundenwerte des Stichtags gelesen.",
+   "zeilen": [
+    510
+   ],
+   "code": [
+    "510:   SELECT * FROM zisu_edm_prof INTO TABLE gt_prof"
+   ],
+   "engine": [
+    "Es werden Sätze aus zisu_edm_prof mit dem eingegebenen ab_date selektiert."
+   ]
+  },
+  {
+   "id": "BM-198-B15",
+   "soll": "Sind alle selektierten Zählpunkte schon gesendet, bleibt die Treibermenge leer und es werden die Profilwerte aller Zählpunkte und aller Tage gelesen; die selektierten Zählpunkte werden dann erneut übermittelt, und zwar mit den Werten aller gespeicherten Tage.",
+   "zeilen": [
+    118,
+    510
+   ],
+   "code": [
+    "118:     READ TABLE gt_pod INTO DATA(ls_pod) WITH KEY int_ui = lg_pod.",
+    "510:   SELECT * FROM zisu_edm_prof INTO TABLE gt_prof"
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Es werden Sätze aus zisu_edm_prof mit dem eingegebenen ab_date selektiert."
+   ]
+  },
+  {
+   "id": "BM-198-B16",
+   "soll": "Die Profilwerte werden je Zählpunkt zu einem Lastgang zusammengefasst; Zählpunkte, die nicht zur Selektion gehören, werden übersprungen.",
+   "zeilen": [
+    115,
+    118,
+    119
+   ],
+   "code": [
+    "115:   LOOP AT gt_prof INTO DATA(ls_prof)",
+    "118:     READ TABLE gt_pod INTO DATA(ls_pod) WITH KEY int_ui = lg_pod.",
+    "119:     CHECK sy-subrc = 0."
+   ],
+   "engine": [
+    "Jede Zeile aus gt_prof wird einzeln verarbeitet.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Nur sy-subrc mit dem Wert 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-198-B17",
+   "soll": "Ein Lastgang mit weniger als 96 Viertelstundenwerten gilt als lückenhaft: er wird nicht gesendet, im Protokoll gewarnt und mit Status L vermerkt.",
+   "zeilen": [
+    126,
+    128,
+    129
+   ],
+   "code": [
+    "126:     IF gv_cnt < 96.",
+    "128:       log_msg 'W' '011' ls_pod-ext_ui gv_cnt.",
+    "129:       PERFORM write_status USING ls_pod 'L' 0 0."
+   ],
+   "engine": [
+    "Für gv_cnt kleiner 96 wird write_status aufgerufen.",
+    "Das Unterprogramm write_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-198-B18",
+   "soll": "Enthält der Lastgang einen gestörten Messwert (Kennzeichen X), wird keine Nachricht erzeugt; der Fehler wird protokolliert und der Zählpunkt mit Status E vermerkt.",
+   "zeilen": [
+    141,
+    142,
+    411,
+    412
+   ],
+   "code": [
+    "141:         log_msg 'E' '012' ls_pod-ext_ui gv_text.",
+    "142:         PERFORM write_status USING ls_pod 'E' 0 0.",
+    "411:     IF line_exists( it_values[ status_flag = 'X' ] ).",
+    "412:       RAISE EXCEPTION TYPE zcx_isu_edm"
+   ],
+   "engine": [
+    "Das Unterprogramm write_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-198-B19",
+   "soll": "Die Nachricht enthält den eigenen Netzbetreiber als Absender, den zugeordneten Marktpartner als Empfänger, den Zählpunkt, den Tag und je Viertelstunde Zeitstempel, Menge, Einheit und Qualität (gemessen, Ersatzwert, vorläufig, sonst unbekannt).",
+   "zeilen": [
+    418,
+    424
+   ],
+   "code": [
+    "418:     ls_msg-sender   = gc_sender.",
+    "424:     ls_msg-intervals = VALUE #( FOR ls_v IN it_values"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-198-B20",
+   "soll": "Als Kontrollsumme wird die Summe aller Viertelstundenmengen mitgegeben.",
+   "zeilen": [
+    435
+   ],
+   "code": [
+    "435:     ls_msg-total = REDUCE ty_qty( INIT s = CONV ty_qty( 0 )"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-198-B21",
+   "soll": "Im JSON-Format wird die Nachricht als JSON serialisiert und die Zählpunktangabe in die vom Gateway erwartete Schreibweise meLo gebracht.",
+   "zeilen": [
+    439,
+    442,
+    447
+   ],
+   "code": [
+    "439:     CASE iv_format.",
+    "442:         rv_body = /ui2/cl_json=>serialize(",
+    "447:         REPLACE ALL OCCURRENCES OF '\"melo\"' IN rv_body WITH '\"meLo\"'."
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode serialize von /ui2/cl_json wird nach rv_body übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-198-B22",
+   "soll": "Sonst wird die Nachricht über die Transformation ZISU_EDM_LASTGANG in XML überführt und als UTF-8 deklariert; scheitert die Transformation, gilt der Lastgang als fehlerhaft aufbereitet (Status E).",
+   "zeilen": [
+    452,
+    456,
+    463
+   ],
+   "code": [
+    "452:             CALL TRANSFORMATION zisu_edm_lastgang",
+    "456:             RAISE EXCEPTION TYPE zcx_isu_edm",
+    "463:         REPLACE FIRST OCCURRENCE OF 'encoding=\"utf-16\"' IN rv_body"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-198-B23",
+   "soll": "Im Testlauf wird statt des Versands je Zählpunkt die Nachrichtengröße aufgelistet, und es wird kein Versandstatus geschrieben.",
+   "zeilen": [
+    146,
+    148,
+    608
+   ],
+   "code": [
+    "146:     IF p_test = 'X'.",
+    "148:       WRITE: / ls_pod-ext_ui, gv_len, 'Testlauf - nicht gesendet'(t01).",
+    "608:   CHECK p_test IS INITIAL."
+   ],
+   "engine": [
+    "Mit gesetztem p_test wird ls_pod-ext_ui ausgegeben, gv_len ausgegeben und 'Testlauf - nicht gesendet'(t01) ausgegeben.",
+    "Bei Treffern werden ls_pod-ext_ui, gv_len und 'Testlauf - nicht gesendet'(t01) als Liste ausgegeben.",
+    "ls_pod-ext_ui wird ausgegeben.",
+    "gv_len wird ausgegeben.",
+    "'Testlauf - nicht gesendet'(t01) wird ausgegeben.",
+    "Nur Eine leere p_test gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-198-B24",
+   "soll": "Der Lastgang wird per HTTP-POST mit dem Stichtag im Kopf an das Gateway der gewählten Destination gesendet.",
+   "zeilen": [
+    537,
+    562
+   ],
+   "code": [
+    "537:   cl_http_client=>create_by_destination(",
+    "562:     lo_client->send("
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode create_by_destination von cl_http_client wird nach cl_http_client übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode send von lo_client wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-198-B25",
+   "soll": "Lässt sich keine Verbindung zur Destination aufbauen, wird kein Versuch unternommen und der Lastgang gilt als nicht gesendet.",
+   "zeilen": [
+    549,
+    551
+   ],
+   "code": [
+    "549:   IF sy-subrc <> 0.",
+    "551:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-198-B26",
+   "soll": "Antwortet das Gateway weder mit Annahme (2xx) noch mit fachlicher Ablehnung (4xx), wird bis zur eingestellten Höchstzahl von Versuchen erneut gesendet, mit ab 5 Sekunden jeweils verdoppelter Wartezeit.",
+   "zeilen": [
+    560,
+    582,
+    585
+   ],
+   "code": [
+    "560:   DO p_maxtry TIMES.",
+    "582:     IF cv_http BETWEEN 200 AND 299 OR cv_http BETWEEN 400 AND 499.",
+    "585:     WAIT UP TO lv_wait SECONDS."
+   ],
+   "engine": [
+    "Für cv_http BETWEEN 200 AND 299 OR cv_http BETWEEN 400 AND 499 wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-198-B27",
+   "soll": "Nimmt das Gateway an, zählt der Lastgang als gesendet (Status S); andernfalls wird er protokolliert und mit Status F und dem letzten HTTP-Code vermerkt, damit er beim nächsten Lauf erneut versucht wird.",
+   "zeilen": [
+    154,
+    160,
+    162
+   ],
+   "code": [
+    "154:     IF gv_http BETWEEN 200 AND 299.",
+    "160:       log_msg 'E' '013' ls_pod-ext_ui gv_http.",
+    "162:     PERFORM write_status USING ls_pod gv_status gv_http gv_tries."
+   ],
+   "engine": [
+    "Für gv_http BETWEEN 200 AND 299 wird die Status auf S gesetzt.",
+    "Für gv_http BETWEEN 200 AND 299 wird die Status auf S gesetzt, sonst die Status auf F gesetzt.",
+    "gv_http BETWEEN 200 AND 299 setzen die Status auf S.",
+    "Sonst wird die Status auf F gesetzt.",
+    "Das Unterprogramm write_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird write_status aufgerufen und COMMIT WORK ausgeführt."
+   ]
+  },
+  {
+   "id": "BM-198-B28",
+   "soll": "Der Versandstatus je Zählpunkt und Stichtag wird mit Empfänger, HTTP-Code, über alle Läufe aufsummierter Versuchszahl und Änderer fortgeschrieben.",
+   "zeilen": [
+    610,
+    623
+   ],
+   "code": [
+    "610:   SELECT SINGLE * FROM zisu_edm_stat INTO ls_stat",
+    "623:   MODIFY zisu_edm_stat FROM ls_stat."
+   ],
+   "engine": [
+    "Es werden Sätze aus zisu_edm_stat mit dem eingegebenen ab_date selektiert.",
+    "Eine Zeile in zisu_edm_stat wird eingefügt oder überschrieben. sy-subrc wird danach nicht ausgewertet."
+   ]
+  },
+  {
+   "id": "BM-198-B29",
+   "soll": "Nach jedem Zählpunkt wird festgeschrieben, damit bereits Gesendetes bei einem Abbruch als gesendet erhalten bleibt.",
+   "zeilen": [
+    164
+   ],
+   "code": [
+    "164:     COMMIT WORK."
+   ],
+   "engine": [
+    "Es wird write_status aufgerufen und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-198-B30",
+   "soll": "Am Ende des Laufs wird das Anwendungsprotokoll gesichert.",
+   "zeilen": [
+    169
+   ],
+   "code": [
+    "169:   CALL FUNCTION 'BAL_DB_SAVE'"
+   ],
+   "engine": [
+    "Es wird eine Zeile aufgenommen und BAL_DB_SAVE aufgerufen.",
+    "Der Code übergibt gt_handle an BAL_DB_SAVE und übernimmt dessen Ausgabe nach gt_lognum.",
+    "Das konvertierte Ergebnis wird in gt_lognum übernommen."
+   ]
+  },
+  {
+   "id": "BM-198-B31",
+   "soll": "Außer im Testlauf wird das Ereignis ZISU_EDM_EXPORT_DONE mit dem Stichtag ausgelöst, auf das der Abgleichjob wartet; ob das Auslösen gelingt, wird nicht geprüft.",
+   "zeilen": [
+    182,
+    185
+   ],
+   "code": [
+    "182:   IF p_test IS INITIAL.",
+    "185:     CALL FUNCTION 'BP_EVENT_RAISE'"
+   ],
+   "engine": [
+    "Ohne p_test wird BP_EVENT_RAISE aufgerufen.",
+    "Der Funktionsbaustein BP_EVENT_RAISE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-198-B32",
+   "soll": "Abschließend werden die Zahl gesendeter, fehlerhafter und lückenhafter Lastgänge, die Zahl geschriebener Statussätze und die Protokollnummer ausgegeben.",
+   "zeilen": [
+    199
+   ],
+   "code": [
+    "199:   WRITE: / 'Gesendet:'(t02),     gv_sent,"
+   ],
+   "engine": [
+    "Bei Treffern werden 'Gesendet:'(t02), gv_sent, 'Fehlerhaft:'(t03), gv_failed, 'Lueckenhaft:'(t04), gv_skipped, 'Statussaetze:'(t05), gv_stat_upd, 'Protokoll:'(t06), gv_lognumber, gv_msgcnt und 'Meldungen'(t07) als Liste ausgegeben.",
+    "'Gesendet:'(t02) wird ausgegeben.",
+    "gv_sent wird ausgegeben."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,367 @@
+{
+ "id": "BM-177",
+ "titel": "IS-Retail Artikelstamm: Lieferantenkatalog per XML-Transformation übernehmen, Artikel anlegen, listen, auslaufen lassen",
+ "prozess": "Der Report wird mit Lieferant, Dateipfad, Verkaufsorganisation, Vertriebsweg und Kennzeichen für Listung, Neustart und Testlauf gestartet; ein gesperrter oder unbekannter Lieferant wird abgewiesen. Er liest die Feldzuordnung des Lieferanten oder ersatzweise die Standardzuordnung und bricht ohne Zuordnung ab. Die XML-Katalogdatei wird vom Applikationsserver gelesen und per Transformation in Katalogzeilen umgesetzt; Lese- oder Transformationsfehler brechen ab, ein leerer Katalog endet mit Hinweis. Ohne Neustart setzt der Lauf nach dem zuletzt in INDX gesicherten Stand auf. Zeilen mit Status N oder A führen zur Artikelpflege: der Artikel wird über die EAN gesucht, eine Änderung zu unbekannter EAN ist ein Fehler, ein neuer Artikel erhält eine interne Nummer, die Katalogfelder werden über die Zuordnung – teils mit dynamisch gerufenen Konvertierungsmethoden – auf die Artikeldaten übertragen und per Retail-BAPI gepflegt, mit Rollback und Protokoll im Fehlerfall. Erfolgreich angelegte neue Artikel werden auf Wunsch asynchron gelistet, auch im Testlauf. Zeilen mit Status D setzen den Artikel im Echtlauf direkt auf den Auslaufstatus AU. Alle 100 Zeilen wird im Echtlauf ein Wiederaufsetzpunkt gesichert und am Ende gelöscht. Zum Schluss werden die Fehler gezählt und das Protokoll als ALV angezeigt.",
+ "verboten": [
+  "zrt_katalog_import_f01.abap:98 — kein Fachsatz „im Testlauf wird nichts verändert“: für neue Katalogartikel gilt die Pflege im Testlauf als erfolgreich, der Listungsbaustein wird asynchron angestoßen und festgeschrieben – mit leerer Artikelnummer",
+  "zrt_katalog_import_f02.abap:37 — kein Fachsatz „Einkaufs- und Verkaufspreise aus dem Katalog werden als Konditionen gepflegt“: das FORM wird nie gerufen",
+  "zrt_katalog_import_c01.abap:60 — kein Fachsatz „nicht konvertierbare Katalogwerte werden abgewiesen“: fehlt die Methode, wird der Rohwert übernommen; andere Fehler der Methode werden nicht abgefangen",
+  "zrt_katalog_import_f01.abap:103 — kein Fachsatz „nach einem Abbruch setzt der Lauf genau nach der letzten verarbeiteten Zeile auf“: gesichert wird nur alle 100 Zeilen, bis zu 99 Zeilen werden erneut verarbeitet"
+ ],
+ "saetze": [
+  {
+   "id": "BM-177-B01",
+   "soll": "Ein unbekannter oder gesperrter Lieferant wird im Selektionsbild mit Fehlermeldung abgewiesen.",
+   "zeilen": [
+    23,
+    26,
+    27
+   ],
+   "code": [
+    "23:   SELECT SINGLE lifnr FROM lfa1 INTO @DATA(lv_lifnr)",
+    "26:   IF sy-subrc <> 0.",
+    "27:     MESSAGE e001 WITH p_lifnr.            \"Lieferant & unbekannt/gesperrt"
+   ],
+   "engine": [
+    "lifnr des Satzes mit dem eingegebenen lifnr wird gelesen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-177-B02",
+   "soll": "Die Feldzuordnung Katalog → Artikel wird für den Lieferanten gelesen; gibt es keine eigene, gilt die Standardzuordnung; fehlt auch die, bricht der Lauf mit Fehlermeldung ab.",
+   "zeilen": [
+    118,
+    123,
+    127,
+    128
+   ],
+   "code": [
+    "118:   SELECT quelle ziel konv_klasse konv_methode FROM zrt_katmap",
+    "123:     SELECT quelle ziel konv_klasse konv_methode FROM zrt_katmap",
+    "127:   IF gt_map IS INITIAL.",
+    "128:     MESSAGE e002 WITH p_lifnr."
+   ],
+   "engine": [
+    "Es werden Sätze aus zrt_katmap mit dem eingegebenen lifnr selektiert.",
+    "Es werden Sätze aus zrt_katmap selektiert.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-177-B03",
+   "soll": "Die Katalogdatei wird binär vom Applikationsserver gelesen; ist sie nicht zu öffnen, bricht der Lauf ab.",
+   "zeilen": [
+    138,
+    139,
+    140,
+    142
+   ],
+   "code": [
+    "138:   OPEN DATASET p_file FOR INPUT IN BINARY MODE.",
+    "139:   IF sy-subrc <> 0.",
+    "140:     MESSAGE e003 WITH p_file.",
+    "142:   READ DATASET p_file INTO lv_xml."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-177-B04",
+   "soll": "Das XML wird per Transformation in Katalogzeilen umgesetzt; ein Transformationsfehler bricht den Lauf mit dessen Text ab, ein leerer Katalog beendet ihn mit Hinweis.",
+   "zeilen": [
+    146,
+    150,
+    153,
+    154,
+    155
+   ],
+   "code": [
+    "146:       CALL TRANSFORMATION zrt_katalog",
+    "150:       MESSAGE lx_trafo->get_text( ) TYPE 'E'.",
+    "153:   IF gt_kat IS INITIAL.",
+    "154:     MESSAGE s004 DISPLAY LIKE 'W'.",
+    "155:     LEAVE LIST-PROCESSING."
+   ],
+   "engine": [
+    "Eine Meldung wird ausgegeben.",
+    "Ohne Treffer wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-177-B05",
+   "soll": "Mit dem Neustart-Kennzeichen wird ein gespeicherter Wiederaufsetzpunkt gelöscht und von vorn begonnen.",
+   "zeilen": [
+    168,
+    169
+   ],
+   "code": [
+    "168:   IF p_neu = abap_true.",
+    "169:     DELETE FROM DATABASE indx(zk) ID p_lifnr."
+   ],
+   "engine": [
+    "Für p_neu mit dem Wert abap_true wird die gv_start_idx auf 1 gesetzt und der Block verlassen.",
+    "Bei p_neu gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "p_neu mit dem Wert abap_true setzen die gv_start_idx auf 1."
+   ]
+  },
+  {
+   "id": "BM-177-B06",
+   "soll": "Sonst wird der letzte gesicherte Stand des Lieferanten gelesen und, falls er innerhalb des Katalogs liegt, ab der folgenden Zeile weitergemacht.",
+   "zeilen": [
+    174,
+    175,
+    176
+   ],
+   "code": [
+    "174:   IMPORT idx = lv_idx FROM DATABASE indx(zk) ID p_lifnr.",
+    "175:   IF sy-subrc = 0 AND lv_idx < lines( gt_kat ).",
+    "176:     gv_start_idx = lv_idx + 1."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-177-B07",
+   "soll": "Katalogzeilen mit Status N (neu) oder A (Änderung) führen zur Artikelpflege, Status D zum Auslauf; jeder andere Status wird als Fehler protokolliert.",
+   "zeilen": [
+    195,
+    197,
+    199,
+    202
+   ],
+   "code": [
+    "195:     CASE ls_kat-status.",
+    "197:         PERFORM artikel_pflegen USING ls_kat CHANGING lv_matnr lv_ok.",
+    "199:         PERFORM auslauf_setzen USING ls_kat.",
+    "202:         prot ls_kat-lief_artnr space 'E' 'Unbekannter Katalogstatus'."
+   ],
+   "engine": [
+    "Das Unterprogramm artikel_pflegen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Das Unterprogramm auslauf_setzen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-177-B08",
+   "soll": "Der Artikel wird über die EAN gesucht; eine Änderung zu einer unbekannten EAN wird als Fehler protokolliert.",
+   "zeilen": [
+    240,
+    242
+   ],
+   "code": [
+    "240:   SELECT SINGLE matnr FROM mean INTO cv_matnr",
+    "242:   IF sy-subrc <> 0 AND us_kat-status = 'A'."
+   ],
+   "engine": [
+    "matnr des Satzes wird gelesen.",
+    "Für sy-subrc <> 0 AND us_kat-status = 'A' wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-177-B09",
+   "soll": "Im Testlauf wird die Artikelpflege nur protokolliert und als erfolgreich gewertet.",
+   "zeilen": [
+    247
+   ],
+   "code": [
+    "247:   IF p_test = abap_true."
+   ],
+   "engine": [
+    "Für p_test mit dem Wert abap_true wird der Block verlassen.",
+    "Bei p_test gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-177-B10",
+   "soll": "Für einen neuen Artikel wird eine interne Artikelnummer der Artikelart HAWA gezogen.",
+   "zeilen": [
+    253,
+    254
+   ],
+   "code": [
+    "253:   IF cv_matnr IS INITIAL.",
+    "254:     CALL FUNCTION 'BAPI_MATERIAL_GETINTNUMBERRET'"
+   ],
+   "engine": [
+    "Ohne cv_matnr wird BAPI_MATERIAL_GETINTNUMBERRET aufgerufen.",
+    "Der Funktionsbaustein BAPI_MATERIAL_GETINTNUMBERRET wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-177-B11",
+   "soll": "Die Katalogfelder werden gemäß Zuordnung auf die Artikeldaten übertragen; Quell- oder Zielfelder, die es nicht gibt, werden übergangen.",
+   "zeilen": [
+    70,
+    72,
+    76,
+    263
+   ],
+   "code": [
+    "70:     LOOP AT mt_map INTO DATA(ls_map).",
+    "72:       IF sy-subrc <> 0.",
+    "76:       CHECK sy-subrc = 0.",
+    "263:   go_mapper->abbilden( EXPORTING is_kat     = us_kat"
+   ],
+   "engine": [
+    "Jede Zeile aus mt_map wird einzeln verarbeitet.",
+    "Nur sy-subrc mit dem Wert 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Die Methode abbilden von go_mapper wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-177-B12",
+   "soll": "Ist für ein Feld eine Konvertierungsmethode hinterlegt, wird sie dynamisch gerufen; existiert sie nicht, wird der Wert unverändert übernommen.",
+   "zeilen": [
+    78,
+    98
+   ],
+   "code": [
+    "78:       IF ls_map-konv_klasse IS NOT INITIAL.",
+    "98:         CALL METHOD (is_map-konv_klasse)=>(is_map-konv_methode)"
+   ],
+   "engine": [
+    "Das Ergebnis der gewählten Methode wird ermittelt."
+   ]
+  },
+  {
+   "id": "BM-177-B13",
+   "soll": "Der Artikel wird mit Grund-, Verkaufs- und Logistikdaten und der Warengruppe aus dem Katalog per Retail-Artikel-BAPI angelegt bzw. geändert.",
+   "zeilen": [
+    278
+   ],
+   "code": [
+    "278:   CALL FUNCTION 'BAPI_MATERIAL_MAINTAINDATA_RT'"
+   ],
+   "engine": [
+    "Der Code übergibt ls_head an BAPI_MATERIAL_MAINTAINDATA_RT und übernimmt dessen Ausgabe nach ls_ret.",
+    "Das konvertierte Ergebnis wird in ls_ret übernommen."
+   ]
+  },
+  {
+   "id": "BM-177-B14",
+   "soll": "Meldet das BAPI einen Fehler, wird zurückgerollt und der Fehler protokolliert; sonst wird festgeschrieben und der Erfolg protokolliert.",
+   "zeilen": [
+    286,
+    287,
+    292
+   ],
+   "code": [
+    "286:   IF ls_ret-type CA 'EA'.",
+    "287:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "292:   CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Für ls_ret-type CA 'EA' wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-177-B15",
+   "soll": "Ein erfolgreich gepflegter neuer Artikel wird, wenn gewünscht, asynchron in Verkaufsorganisation und Vertriebsweg gelistet.",
+   "zeilen": [
+    206,
+    325,
+    331
+   ],
+   "code": [
+    "206:     IF lv_ok = abap_true AND p_list = abap_true AND ls_kat-status = 'N'.",
+    "325:   CALL FUNCTION 'Z_RT_LISTUNG_ANLEGEN' IN BACKGROUND TASK",
+    "331:   COMMIT WORK."
+   ],
+   "engine": [
+    "Für lv_ok = abap_true AND p_list = abap_true AND ls_kat-status = 'N' wird listen aufgerufen.",
+    "Der Funktionsbaustein Z_RT_LISTUNG_ANLEGEN wird aufgerufen.",
+    "Es wird Z_RT_LISTUNG_ANLEGEN aufgerufen und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-177-B16",
+   "soll": "Bei Status D wird der Artikel zur EAN gesucht und im Echtlauf direkt auf den Auslaufstatus AU gesetzt; unbekannte EANs werden stillschweigend übergangen.",
+   "zeilen": [
+    303,
+    305,
+    309,
+    311
+   ],
+   "code": [
+    "303:   SELECT SINGLE matnr FROM mean INTO @DATA(lv_matnr)",
+    "305:   IF sy-subrc <> 0.",
+    "309:   IF p_test = abap_false.",
+    "311:     UPDATE mara SET mstae = 'AU'"
+   ],
+   "engine": [
+    "matnr des Satzes wird gelesen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Für p_test mit dem Wert abap_false wird eine Zeile geändert.",
+    "Die mstae in mara wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. sy-subrc wird danach nicht ausgewertet."
+   ]
+  },
+  {
+   "id": "BM-177-B17",
+   "soll": "Im Echtlauf wird alle 100 Katalogzeilen der Stand als Wiederaufsetzpunkt gesichert und festgeschrieben.",
+   "zeilen": [
+    211,
+    212,
+    213
+   ],
+   "code": [
+    "211:     IF lv_idx MOD 100 = 0 AND p_test = abap_false.",
+    "212:       EXPORT idx = lv_idx TO DATABASE indx(zk) ID p_lifnr.",
+    "213:       COMMIT WORK."
+   ],
+   "engine": [
+    "Für lv_idx MOD 100 = 0 AND p_test = abap_false wird COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-177-B18",
+   "soll": "Nach erfolgreichem Durchlauf wird der Wiederaufsetzpunkt im Echtlauf gelöscht.",
+   "zeilen": [
+    217,
+    218,
+    219
+   ],
+   "code": [
+    "217:   IF p_test = abap_false.",
+    "218:     DELETE FROM DATABASE indx(zk) ID p_lifnr.",
+    "219:     COMMIT WORK."
+   ],
+   "engine": [
+    "Für p_test mit dem Wert abap_false wird COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-177-B19",
+   "soll": "Am Ende wird die Zahl der Fehler gemeldet und das Protokoll als ALV angezeigt.",
+   "zeilen": [
+    344,
+    347,
+    348,
+    355
+   ],
+   "code": [
+    "344:   lv_fehler = REDUCE i( INIT n = 0",
+    "347:   IF lv_fehler > 0.",
+    "348:     MESSAGE s010 WITH lv_fehler DISPLAY LIKE 'W'.",
+    "355:       lo_alv->display( )."
+   ],
+   "engine": [
+    "Für lv_fehler größer 0 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,201 @@
+{
+ "id": "BM-073",
+ "titel": "Freigabe von Wartungsplan-Aufträgen im Dialog (SALV) und im Hintergrund",
+ "prozess": "Die Instandhaltungsplanung startet den Report mit Planungswerk, Horizont und Auftragsarten, oder er läuft nachts als Job. Er liest die Aufträge mit Wartungsplanbezug, deren Eckstart im Horizont liegt, und behält nur solche im Status eröffnet. Für jeden Kandidaten prüft er, ob das Equipment inaktiv ist, und kennzeichnet ihn entsprechend als nicht freigebbar oder freigebbar. Ohne Kandidaten meldet er das und endet. Im Hintergrund gibt er sofort alle freigebbaren Aufträge frei; im Dialog zeigt er zunächst die Liste und gibt erst frei, wenn der Planer Zeilen markiert und „Freigeben“ drückt. Jede Freigabe erfolgt einzeln über die Auftrags-BAPI mit Sichern; bei Fehler wird zurückgerollt und „Freigabe fehlgeschlagen“ vermerkt, sonst festgeschrieben und „freigegeben“ vermerkt. Die Liste zeigt je Auftrag den Status; im Job landet sie im Spool.",
+ "verboten": [
+  "zpm_wp_freigabe.abap:34 — kein Fachsatz „Im Dialog werden alle Aufträge automatisch freigegeben“ (im Dialog erst nach Markierung und Drucktaste)",
+  "zpm_wp_freigabe_cl.abap:87 — kein Fachsatz „Aufträge ohne Equipment werden nicht freigegeben“ (ohne Equipment gilt der Auftrag als freigebbar)",
+  "gesamte Scheibe — kein Fachsatz „Der Wartungsplan wird terminiert oder neue Aufträge werden erzeugt“ (der Report gibt nur vorhandene Aufträge frei)",
+  "zpm_wp_freigabe_cl.abap:49 — kein Fachsatz „Materialverfügbarkeit oder Kapazität werden vor der Freigabe geprüft“"
+ ],
+ "saetze": [
+  {
+   "id": "BM-073-B01",
+   "soll": "Es werden Instandhaltungsaufträge des Planungswerks mit Wartungsplanbezug, der gewählten Auftragsart (Vorschlag PM02) und einem Eckstarttermin bis heute plus Horizonttage (Vorschlag 14) gelesen.",
+   "zeilen": [
+    24,
+    87
+   ],
+   "code": [
+    "24:   go_app->select_orders( iv_iwerk = p_iwerk",
+    "87:     SELECT a~aufnr a~auart i~warpl i~equnr k~gstrp a~ktext"
+   ],
+   "engine": [
+    "Die Methode select_orders von go_app wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Es werden Sätze aus aufk selektiert."
+   ]
+  },
+  {
+   "id": "BM-073-B02",
+   "soll": "Nur Aufträge, deren Systemstatus EROF (eröffnet) aktiv ist, kommen in die Kandidatenliste.",
+   "zeilen": [
+    100,
+    104
+   ],
+   "code": [
+    "100:       SELECT SINGLE objnr FROM jest INTO lv_objnr",
+    "104:       IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "objnr des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-073-B03",
+   "soll": "Ist das Equipment des Auftrags inaktiv (Status INAK), wird der Auftrag mit „Equipment inaktiv - nicht freigeben“ gekennzeichnet, sonst als „freigebbar“.",
+   "zeilen": [
+    108,
+    109,
+    129
+   ],
+   "code": [
+    "108:       DATA(lv_inakt) = equipment_inaktiv( <ls_row>-equnr ).",
+    "109:       IF lv_inakt = abap_true.",
+    "129:     SELECT SINGLE objnr FROM jest INTO lv_objnr"
+   ],
+   "engine": [
+    "Für lv_inakt mit dem Wert abap_true wird die Status auf Equipment inaktiv - nicht freigeben gesetzt.",
+    "Für lv_inakt mit dem Wert abap_true wird die Status auf Equipment inaktiv - nicht freigeben gesetzt, sonst die Status auf freigebbar gesetzt.",
+    "lv_inakt mit dem Wert abap_true setzen die Status auf Equipment inaktiv - nicht freigeben.",
+    "objnr des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-073-B04",
+   "soll": "Aufträge ohne Equipment gelten als freigebbar.",
+   "zeilen": [
+    125
+   ],
+   "code": [
+    "125:     CHECK iv_equnr IS NOT INITIAL."
+   ],
+   "engine": [
+    "Nur Eine nicht leere iv_equnr gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-073-B05",
+   "soll": "Ohne Kandidaten wird „Keine freizugebenden Wartungsauftraege“ gemeldet und der Lauf beendet.",
+   "zeilen": [
+    28,
+    29,
+    30
+   ],
+   "code": [
+    "28:   IF go_app->mt_rows IS INITIAL.",
+    "29:     MESSAGE 'Keine freizugebenden Wartungsauftraege' TYPE 'S'.",
+    "30:     RETURN."
+   ],
+   "engine": [
+    "Ohne go_app->mt_rows wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne go_app->mt_rows wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-073-B06",
+   "soll": "Im Hintergrundlauf werden alle freigebbaren Kandidaten freigegeben, bevor die Liste ausgegeben wird.",
+   "zeilen": [
+    34,
+    35,
+    145
+   ],
+   "code": [
+    "34:   IF sy-batch = abap_true.",
+    "35:     go_app->release( VALUE #( ) ).",
+    "145:     IF it_idx IS INITIAL."
+   ],
+   "engine": [
+    "Die Methode release von go_app wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-073-B07",
+   "soll": "Jeder freigebbare Auftrag wird einzeln freigegeben und gesichert; nicht freigebbare Zeilen werden übergangen.",
+   "zeilen": [
+    153,
+    160
+   ],
+   "code": [
+    "153:       CHECK sy-subrc = 0 AND <ls_row>-frei = abap_true.",
+    "160:       CALL FUNCTION 'BAPI_ALM_ORDER_MAINTAIN'"
+   ],
+   "engine": [
+    "Nur sy-subrc = 0 AND <ls_row>-frei = abap_true gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Der Funktionsbaustein BAPI_ALM_ORDER_MAINTAIN wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-073-B08",
+   "soll": "Meldet die Freigabe einen Fehler oder Abbruch, wird zurückgerollt und „Freigabe fehlgeschlagen“ vermerkt; sonst wird festgeschrieben, „freigegeben“ vermerkt und die Zeile als nicht mehr freigebbar markiert.",
+   "zeilen": [
+    165,
+    166,
+    169
+   ],
+   "code": [
+    "165:       IF line_exists( lt_return[ type = 'E' ] ) OR line_exists( lt_return[ type = 'A' ] ).",
+    "166:         CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "169:         CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Für line_exists( lt_return[ type = 'E' ] ) OR line_exists( lt_return[ type = 'A' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf Freigabe fehlgeschlagen gesetzt.",
+    "Für line_exists( lt_return[ type = 'E' ] ) OR line_exists( lt_return[ type = 'A' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf Freigabe fehlgeschlagen gesetzt, sonst BAPI_TRANSACTION_COMMIT aufgerufen und die Status auf freigegeben gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf Freigabe fehlgeschlagen gesetzt.",
+    "line_exists( lt_return[ type = 'E' ] ) OR line_exists( lt_return[ type = 'A' ] ) setzen die Status auf Freigabe fehlgeschlagen.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen und die Status auf freigegeben gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen und die Status auf freigegeben gesetzt."
+   ]
+  },
+  {
+   "id": "BM-073-B09",
+   "soll": "Die Kandidatenliste wird als ALV mit der Zusatzfunktion „Freigeben“ angezeigt, im Hintergrund als Spoolliste.",
+   "zeilen": [
+    38,
+    180,
+    186,
+    187
+   ],
+   "code": [
+    "38:   go_app->display( ).",
+    "180:     cl_salv_table=>factory( IMPORTING r_salv_table = mo_alv",
+    "186:     SET HANDLER on_added_function FOR mo_alv->get_event( ).",
+    "187:     mo_alv->display( )."
+   ],
+   "engine": [
+    "Die Methode display von go_app wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Der Rückgabewert der Methode factory von cl_salv_table wird nach cl_salv_table übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode get_event von mo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode display von mo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-073-B10",
+   "soll": "Im Dialog gibt die Funktion „Freigeben“ die markierten Zeilen frei und frischt die Liste auf; ohne Markierung erscheint „Bitte Zeilen markieren“.",
+   "zeilen": [
+    192,
+    195,
+    196,
+    199,
+    200
+   ],
+   "code": [
+    "192:     CASE e_salv_function.",
+    "195:         IF lt_sel IS INITIAL.",
+    "196:           MESSAGE 'Bitte Zeilen markieren' TYPE 'I'.",
+    "199:         release( lt_sel ).",
+    "200:         mo_alv->refresh( )."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen.",
+    "Die Methode refresh von mo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

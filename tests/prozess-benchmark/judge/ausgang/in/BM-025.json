@@ -1,0 +1,68 @@
+{
+ "id": "BM-025",
+ "titel": "Offene Inventurdifferenzen je Werk und Lagerort",
+ "prozess": "Vor dem Buchen der Inventurdifferenzen startet die Lagerleitung den Report mit Werk, optional Lagerort und Geschäftsjahr. Er liest alle Positionen von Inventurbelegen, die gezählt sind, deren Differenz aber noch nicht gebucht ist. Ist ein Lagerort vorgegeben, werden die übrigen Lagerorte herausgefiltert. Für jede Position wird die Mengendifferenz Zählmenge minus Buchbestand berechnet und zusammen mit Beleg, Position, Material, Lagerort, Buchbestand und Zählmenge ausgegeben; negative Differenzen erscheinen rot, alle anderen grün. Der Report bucht nichts.",
+ "verboten": [
+  "source.abap:12 — kein Fachsatz „Die Differenzen werden gebucht“ (XDIFF = space wird nur gelesen; nichts wird gebucht)",
+  "source.abap:22 — kein Fachsatz „Der Differenzwert in Euro wird berechnet“ (es ist eine Mengendifferenz)",
+  "source.abap:23 — kein Fachsatz „Positionen ohne Differenz werden ausgeblendet“ (Nulldifferenzen erscheinen grün in der Liste)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-025-B01",
+   "soll": "Es werden die Inventurbelegpositionen des Werks und Geschäftsjahres gelesen, die bereits gezählt, deren Differenzen aber noch nicht gebucht sind.",
+   "zeilen": [
+    12
+   ],
+   "code": [
+    "12:   SELECT * FROM iseg INTO TABLE gt_iseg"
+   ],
+   "engine": [
+    "Es werden Sätze aus iseg mit dem eingegebenen werks und dem eingegebenen gjahr selektiert."
+   ]
+  },
+  {
+   "id": "BM-025-B02",
+   "soll": "Ist ein Lagerort angegeben, bleiben nur dessen Positionen übrig.",
+   "zeilen": [
+    17,
+    18
+   ],
+   "code": [
+    "17:   IF p_lgort IS NOT INITIAL.",
+    "18:     DELETE gt_iseg WHERE lgort <> p_lgort."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-025-B03",
+   "soll": "Je Position wird die Differenz aus Zählmenge und Buchbestand berechnet.",
+   "zeilen": [
+    22
+   ],
+   "code": [
+    "22:     gv_diff = gs_iseg-menge - gs_iseg-buchm."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-025-B04",
+   "soll": "Inventurbeleg, Position, Material, Lagerort, Buchbestand, Zählmenge und Differenz werden ausgegeben, Minderbestände rot und Mehrbestände grün.",
+   "zeilen": [
+    23,
+    28
+   ],
+   "code": [
+    "23:     IF gv_diff < 0.",
+    "28:     WRITE: / gs_iseg-iblnr, gs_iseg-zeili, gs_iseg-matnr, gs_iseg-lgort,"
+   ],
+   "engine": [
+    "Bei Treffern werden gs_iseg-iblnr, gs_iseg-zeili, gs_iseg-matnr, gs_iseg-lgort, gs_iseg-buchm, gs_iseg-menge und gv_diff als Liste ausgegeben.",
+    "gs_iseg-iblnr wird ausgegeben.",
+    "gs_iseg-zeili wird ausgegeben.",
+    "gs_iseg-matnr wird ausgegeben.",
+    "gs_iseg-lgort wird ausgegeben."
+   ]
+  }
+ ]
+}

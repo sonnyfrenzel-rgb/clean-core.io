@@ -1,0 +1,154 @@
+{
+ "id": "BM-071",
+ "urteile": [
+  {
+   "id": "BM-071-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Schnittstelle des Bausteins."
+  },
+  {
+   "id": "BM-071-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Prüfung auf Z_MES_IF und Verlassen ohne Berechtigung genannt; Status E und Meldungstext nur als 'Zeile aufgenommen'."
+  },
+  {
+   "id": "BM-071-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'mes_id des Satzes wird gelesen' und Verlassen bei Treffer; 'bereits erfolgreich gebucht', Status D und Hinweistext fehlen."
+  },
+  {
+   "id": "BM-071-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "ENQUEUE und bei Konflikt Text 'Auftrag gesperrt - MES wiederholt spaeter' mit Protokoll erkannt; Status L fehlt; 'schreibe_log ... nicht belegt' ist falsch, die FORM ist mitgeliefert."
+  },
+  {
+   "id": "BM-071-B05",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Bei fehlendem Auftrag oder autyp ungleich 10 Text 'Kein Fertigungsauftrag' – fachlich dasselbe, Bedingung technisch; 'die Text' falscher Artikel."
+  },
+  {
+   "id": "BM-071-B06",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "STATUS_CHECK und ohne Treffer 'Auftrag nicht freigegeben' – fachlich dasselbe."
+  },
+  {
+   "id": "BM-071-B07",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "STATUS_CHECK und bei Treffer 'Auftrag technisch abgeschlossen' – fachlich dasselbe."
+  },
+  {
+   "id": "BM-071-B08",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Lesen aufpl/vornr und ohne Treffer 'Vorgang im Auftrag nicht vorhanden' – fachlich dasselbe."
+  },
+  {
+   "id": "BM-071-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "DEQUEUE, Protokoll und Verlassen bei lv_ok = abap_false erkannt; Status E fehlt; 'schreibe_log ... nicht belegt' falsch."
+  },
+  {
+   "id": "BM-071-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf BAPI_PRODORDCONF_CREATE_TT genannt; Mengen, Endrückmeldung und MES-ID im Text fehlen; 'buche_rueckmeldung ... nicht belegt' falsch."
+  },
+  {
+   "id": "BM-071-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback bei Meldungstyp E/A erkannt; Status E mit Fehlertext fehlt."
+  },
+  {
+   "id": "BM-071-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen' – Warten, Übernahme von Rückmeldenummer/-zähler und Status S fehlen."
+  },
+  {
+   "id": "BM-071-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "DEQUEUE_ESORDER und schreibe_log genannt, nur über Namen; 'schreibe_log ... nicht belegt' falsch."
+  },
+  {
+   "id": "BM-071-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Schreiben in zmes_rm_log mit sofortigem COMMIT erkannt; Inhalt des Protokolleintrags fehlt."
+  },
+  {
+   "id": "BM-071-B15",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Rückgabe an das MES."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

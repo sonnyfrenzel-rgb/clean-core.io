@@ -1,0 +1,224 @@
+{
+ "id": "BM-155",
+ "titel": "Veranstaltungsmanagement: Pflichtschulung abteilungsweise buchen mit Kapazität, Voraussetzung und Warteliste",
+ "prozess": "Die Personalentwicklung bucht eine Pflichtschulung für ganze Organisationseinheiten, standardmäßig als Testlauf. Zuerst wird geprüft, ob die Veranstaltung künftig stattfindet und nicht nur geplant ist; sonst bricht der Lauf ab. Dabei werden Maximalkapazität, Zahl fester Buchungen und die über den Veranstaltungstyp hinterlegte Voraussetzungsqualifikation ermittelt. Teilnehmer sind alle Mitarbeiter, die heute einer gewählten Einheit zugeordnet sind, ohne Statusprüfung. Je Mitarbeiter wird abgelehnt, wer schon gebucht oder auf der Warteliste ist oder die geforderte Qualifikation nicht gültig besitzt. Bei erschöpfter Kapazität wird er auf die Warteliste gesetzt, sonst fest gebucht; beides wird über Ereignisse protokolliert. Ablehnungen werden mit Grund ausgegeben. Im Echtlauf werden die Buchungen am Ende festgeschrieben, im Testlauf verworfen, und die Zahlen gebuchter und wartender Teilnehmer ausgegeben.",
+ "verboten": [
+  "zpe_book_participants.abap:50 — kein Fachsatz „nur aktive Mitarbeiter werden gebucht“ (kein Beschäftigungsstatus geprüft, trotz Kommentar)",
+  "zpe_book_participants.abap:60 — kein Fachsatz „jede andere Ausnahme wird ebenfalls protokolliert“ (eine fremde Ausnahmeklasse führt beim CAST zu einem Laufzeitfehler)",
+  "zcl_pe_booking.abap:103 — kein Fachsatz „Wartelistenplätze zählen zur Belegung“ (nur feste Buchungen werden gezählt)",
+  "gesamte Scheibe — kein Fachsatz „Teilnehmer werden per Mail eingeladen“ (keine Korrespondenz)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-155-B01",
+   "soll": "Zur gewählten Veranstaltung wird geprüft, ob sie künftig stattfindet und nicht nur geplant ist; sonst bricht der Lauf mit Fehlermeldung ab.",
+   "zeilen": [
+    41,
+    44,
+    118,
+    121,
+    123
+   ],
+   "code": [
+    "41:       lo_booking = NEW zcl_pe_booking( iv_event = p_event",
+    "44:       MESSAGE lx_book TYPE 'E'.",
+    "118:     SELECT SINGLE istat FROM hrp1000 INTO lv_istat",
+    "121:     IF sy-subrc <> 0 OR lv_istat = '2'.",
+    "123:       RAISE EXCEPTION TYPE zcx_pe_booking"
+   ],
+   "engine": [
+    "Eine Meldung wird ausgegeben.",
+    "istat des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-155-B02",
+   "soll": "Für die Veranstaltung werden die Maximalkapazität und die Zahl fester Buchungen ermittelt; ohne Kapazitätsangabe gilt keine Grenze.",
+   "zeilen": [
+    127,
+    130,
+    172
+   ],
+   "code": [
+    "127:     SELECT SINGLE kapz3 FROM hrp1024 INTO mv_capmax",
+    "130:     SELECT COUNT(*) FROM hrp1001 INTO mv_booked",
+    "172:     IF mv_capmax > 0 AND mv_booked >= mv_capmax."
+   ],
+   "engine": [
+    "kapz3 des Satzes wird gelesen.",
+    "Die Zahl der Sätze wird ermittelt.",
+    "Für mv_capmax > 0 AND mv_booked >= mv_capmax wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-155-B03",
+   "soll": "Über den Veranstaltungstyp wird die als Voraussetzung hinterlegte Qualifikation bestimmt.",
+   "zeilen": [
+    136,
+    139,
+    140
+   ],
+   "code": [
+    "136:     SELECT SINGLE sobid FROM hrp1001 INTO lv_evtyp",
+    "139:     IF sy-subrc = 0.",
+    "140:       SELECT SINGLE qualid FROM zpe_evt_prereq INTO mv_prereq"
+   ],
+   "engine": [
+    "sobid des Satzes wird gelesen.",
+    "qualid des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-155-B04",
+   "soll": "Teilnehmer sind alle Mitarbeiter, die heute einer der gewählten Organisationseinheiten zugeordnet sind.",
+   "zeilen": [
+    50
+   ],
+   "code": [
+    "50:   SELECT DISTINCT pernr FROM pa0001"
+   ],
+   "engine": [
+    "Es werden Sätze aus pa0001 selektiert."
+   ]
+  },
+  {
+   "id": "BM-155-B05",
+   "soll": "Wer bereits gebucht ist oder auf der Warteliste steht, wird abgelehnt.",
+   "zeilen": [
+    148,
+    153,
+    154
+   ],
+   "code": [
+    "148:     SELECT SINGLE @abap_true FROM hrp1001",
+    "153:     IF lv_exists = abap_true.",
+    "154:       RAISE EXCEPTION TYPE zcx_pe_booking"
+   ],
+   "engine": [
+    "abap_true des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-155-B06",
+   "soll": "Verlangt der Veranstaltungstyp eine Qualifikation und besitzt der Mitarbeiter sie nicht gültig, wird er abgelehnt.",
+   "zeilen": [
+    159,
+    160,
+    166,
+    167
+   ],
+   "code": [
+    "159:     IF mv_prereq IS NOT INITIAL.",
+    "160:       SELECT SINGLE @abap_true FROM hrp1001",
+    "166:       IF lv_qualified = abap_false.",
+    "167:         RAISE EXCEPTION TYPE zcx_pe_booking"
+   ],
+   "engine": [
+    "abap_true des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-155-B07",
+   "soll": "Ist die Kapazität ausgeschöpft, wird der Mitarbeiter mit Wartelistenpriorität eingetragen und als Warteliste protokolliert.",
+   "zeilen": [
+    31,
+    173,
+    174
+   ],
+   "code": [
+    "31:     WRITE: / ev_pernr, 'auf Warteliste'.",
+    "173:       create_relation( iv_pernr = iv_pernr iv_prio = gc_wait ).",
+    "174:       RAISE EVENT waitlisted EXPORTING ev_pernr = iv_pernr."
+   ],
+   "engine": [
+    "ev_pernr und auf Warteliste werden ausgegeben.",
+    "ev_pernr wird ausgegeben.",
+    "auf Warteliste wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Für mv_capmax > 0 AND mv_booked >= mv_capmax wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-155-B08",
+   "soll": "Sonst wird die feste Teilnahme ab heute unbefristet angelegt, die Buchungszahl erhöht und die Buchung protokolliert.",
+   "zeilen": [
+    27,
+    178,
+    179,
+    180
+   ],
+   "code": [
+    "27:     WRITE: / ev_pernr, 'gebucht'.",
+    "178:     create_relation( iv_pernr = iv_pernr iv_prio = gc_fixed ).",
+    "179:     mv_booked = mv_booked + 1.",
+    "180:     RAISE EVENT booked EXPORTING ev_pernr = iv_pernr."
+   ],
+   "engine": [
+    "ev_pernr und gebucht werden ausgegeben.",
+    "ev_pernr wird ausgegeben.",
+    "gebucht wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-155-B09",
+   "soll": "Die Teilnahmebeziehung wird im Testlauf nur im Puffer, im Echtlauf über die Verbuchung angelegt; scheitert die Anlage, wird der Mitarbeiter abgelehnt.",
+   "zeilen": [
+    185,
+    205,
+    206
+   ],
+   "code": [
+    "185:     CALL FUNCTION 'RH_RELATION_MAINTAIN'",
+    "205:     IF sy-subrc <> 0.",
+    "206:       RAISE EXCEPTION TYPE zcx_pe_booking"
+   ],
+   "engine": [
+    "Der Funktionsbaustein RH_RELATION_MAINTAIN wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-155-B10",
+   "soll": "Jede Ablehnung wird mit Personalnummer und Grund ausgegeben.",
+   "zeilen": [
+    60,
+    61
+   ],
+   "code": [
+    "60:         lx_book = CAST zcx_pe_booking( lx_any ).",
+    "61:         WRITE: / ls_pernr-pernr, lx_book->get_text( )."
+   ],
+   "engine": [
+    "Bei Treffern werden ls_pernr-pernr und lx_book->get_text( ) als Liste ausgegeben.",
+    "ls_pernr-pernr wird ausgegeben.",
+    "lx_book->get_text( ) wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-155-B11",
+   "soll": "Im Echtlauf werden alle Buchungen am Ende festgeschrieben, im Testlauf verworfen; danach werden die Zahlen gebuchter und wartender Teilnehmer ausgegeben.",
+   "zeilen": [
+    65,
+    66,
+    68,
+    71
+   ],
+   "code": [
+    "65:   IF p_test = abap_false.",
+    "66:     COMMIT WORK AND WAIT.",
+    "68:     ROLLBACK WORK.",
+    "71:   WRITE: / 'Gebucht:', lo_log->mv_booked, 'Warteliste:', lo_log->mv_waiting."
+   ],
+   "engine": [
+    "Für p_test mit dem Wert abap_false wird COMMIT WORK ausgeführt.",
+    "Für p_test mit dem Wert abap_false wird COMMIT WORK ausgeführt, sonst ROLLBACK WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Für andere p_test wird ROLLBACK WORK ausgeführt.",
+    "Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert.",
+    "Gebucht:, lo_log->mv_booked, Warteliste: und lo_log->mv_waiting werden ausgegeben.",
+    "Gebucht: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lo_log->mv_booked wird ausgegeben.",
+    "Warteliste: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lo_log->mv_waiting wird ausgegeben."
+   ]
+  }
+ ]
+}

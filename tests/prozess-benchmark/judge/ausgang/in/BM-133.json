@@ -1,0 +1,210 @@
+{
+ "id": "BM-133",
+ "titel": "PSM Grants Management: kostenbasierte Sponsorenabrechnung als Lastschriftanforderung mit RETRY bei Sperre",
+ "prozess": "Der Monatsjob wird mit Förderungen, Buchungskreis, Stichtag und Testlaufschalter gestartet und legt dafür ein Abrechnungsobjekt an. Das Objekt liest alle bis zum Stichtag gültigen Förderungen des Buchungskreises mit kostenbasierter Abrechnungsregel; gibt es keine, bricht der Job mit einer Fehlermeldung ab. Je Förderung liest es die für den Fördertyp nicht förderfähigen Sponsored Classes, summiert die Ist-Ausgaben bis zum Stichtag je Klasse und addiert nur die förderfähigen. Davon zieht es alle bereits abgerechneten Beträge ab. Ist nichts abzurechnen, oder handelt es sich um einen Testlauf, vermerkt es das und legt nichts an. Sonst ermittelt es den Debitor des Sponsors und legt eine Lastschriftanforderung ZGMA mit dem Betrag als Kondition in EUR an. Ist der Beleg gesperrt, wartet es zwei Sekunden und versucht es erneut, insgesamt höchstens dreimal; danach wird die Förderung auf den nächsten Lauf verschoben. Scheitert die Anlage anders, rollt es zurück und übernimmt den Fehlertext. Gelingt sie, vermerkt es Stichtag, Anforderungsnummer und Betrag in der eigenen Abrechnungstabelle und schreibt fest. Zum Schluss listet der Job je Förderung Betrag, Anforderungsnummer und Ergebnistext.",
+ "verboten": [
+  "zcl_gm_sponsor_billing.abap:154 — kein Fachsatz „die Anforderung wird in der Förderwährung angelegt“: die Kondition wird immer in EUR übergeben",
+  "zcl_gm_sponsor_billing.abap:126 — kein Fachsatz „nach drei vergeblichen Versuchen wird zurückgerollt“: nach dem letzten Versuch wird nur ein Text gesetzt, ohne Rollback",
+  "zcl_gm_sponsor_billing.abap:117 — kein Fachsatz „die Ausgaben werden als abgerechnet gekennzeichnet“: vermerkt wird nur ein Summenbetrag je Stichtag, die Einzelposten bleiben unverändert",
+  "gesamte Scheibe — kein Fachsatz „die Faktura an den Sponsor wird erstellt“: angelegt wird nur die Lastschriftanforderung, fakturiert wird später"
+ ],
+ "saetze": [
+  {
+   "id": "BM-133-B01",
+   "soll": "Es werden die gültigen Förderungen des Buchungskreises mit kostenbasierter Abrechnungsregel gelesen; gibt es keine, bricht der Job mit einer Fehlermeldung ab.",
+   "zeilen": [
+    21,
+    80,
+    86,
+    87
+   ],
+   "code": [
+    "21:       MESSAGE lx_err TYPE 'E'.",
+    "80:     SELECT * FROM gmgr",
+    "86:     IF lt_grant IS INITIAL.",
+    "87:       RAISE EXCEPTION TYPE zcx_gm_billing"
+   ],
+   "engine": [
+    "Eine Meldung wird ausgegeben.",
+    "Es werden Sätze aus gmgr selektiert."
+   ]
+  },
+  {
+   "id": "BM-133-B02",
+   "soll": "Für jede Förderung werden die nicht förderfähigen Sponsored Classes ihres Fördertyps gelesen.",
+   "zeilen": [
+    102
+   ],
+   "code": [
+    "102:     SELECT sponsored_class FROM zgm_unallow"
+   ],
+   "engine": [
+    "Es werden Sätze aus zgm_unallow selektiert."
+   ]
+  },
+  {
+   "id": "BM-133-B03",
+   "soll": "Die Ist-Ausgaben der Förderung bis zum Stichtag werden je Sponsored Class summiert, und nur die förderfähigen Klassen werden addiert.",
+   "zeilen": [
+    106,
+    114,
+    117
+   ],
+   "code": [
+    "106:     SELECT rsponsored_class, SUM( hsl ) AS betrag",
+    "114:       IF line_exists( lt_unallow[ table_line = ls_k-rsponsored_class ] ).",
+    "117:       lv_ausgaben = lv_ausgaben + ls_k-betrag."
+   ],
+   "engine": [
+    "Das Ergebnis enthält rsponsored_class und SUM( hsl ) AS betrag.",
+    "Es werden Sätze aus gmia selektiert."
+   ]
+  },
+  {
+   "id": "BM-133-B04",
+   "soll": "Der abzurechnende Betrag ist die Summe der förderfähigen Ausgaben abzüglich aller bereits abgerechneten Beträge.",
+   "zeilen": [
+    120,
+    124
+   ],
+   "code": [
+    "120:     SELECT SUM( betrag ) FROM zgm_billed",
+    "124:     rs_result-betrag = lv_ausgaben - lv_abgerechnet."
+   ],
+   "engine": [
+    "Es werden Sätze aus zgm_billed selektiert."
+   ]
+  },
+  {
+   "id": "BM-133-B05",
+   "soll": "Ist nichts abzurechnen, wird das für die Förderung vermerkt und keine Anforderung angelegt.",
+   "zeilen": [
+    125,
+    127
+   ],
+   "code": [
+    "125:     IF rs_result-betrag <= 0.",
+    "127:       RETURN."
+   ],
+   "engine": [
+    "Für Beträge bis einschließlich 0 wird die Text auf Nichts abzurechnen gesetzt und der Block verlassen.",
+    "Beträge bis einschließlich 0 setzen die Text auf Nichts abzurechnen.",
+    "Es wird die Text auf Nichts abzurechnen gesetzt und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-133-B06",
+   "soll": "Im Testlauf wird der Betrag nur ausgewiesen.",
+   "zeilen": [
+    129,
+    131
+   ],
+   "code": [
+    "129:     IF mv_test = abap_true.",
+    "131:       RETURN."
+   ],
+   "engine": [
+    "Für mv_test mit dem Wert abap_true wird die Text auf Testlauf - keine Anforderung gesetzt und der Block verlassen.",
+    "Bei mv_test gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "mv_test mit dem Wert abap_true setzen die Text auf Testlauf - keine Anforderung.",
+    "Es wird die Text auf Testlauf - keine Anforderung gesetzt und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-133-B07",
+   "soll": "Im Echtlauf wird der Debitor des Sponsors ermittelt.",
+   "zeilen": [
+    134
+   ],
+   "code": [
+    "134:     SELECT SINGLE customer FROM gmsponsor"
+   ],
+   "engine": [
+    "Kundennummer des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-133-B08",
+   "soll": "Für den Sponsor wird eine Lastschriftanforderung der Art ZGMA mit dem Betrag als Kondition ZGM0 und der Fördernummer als Bestellnummer angelegt.",
+   "zeilen": [
+    140,
+    180
+   ],
+   "code": [
+    "140:         rs_result-vbeln = create_request( is_grant  = is_grant",
+    "180:     CALL FUNCTION 'BAPI_SALESORDER_CREATEFROMDAT2'"
+   ],
+   "engine": [
+    "Der Code übergibt ls_header an BAPI_SALESORDER_CREATEFROMDAT2 und übernimmt dessen Ausgabe nach rv_vbeln.",
+    "Das konvertierte Ergebnis wird in rv_vbeln übernommen."
+   ]
+  },
+  {
+   "id": "BM-133-B09",
+   "soll": "Meldet die Anlage, dass Sponsor oder Beleg gerade bearbeitet werden, wird nach zwei Sekunden Wartezeit bis zu dreimal insgesamt versucht; danach wird die Förderung auf den nächsten Lauf verschoben.",
+   "zeilen": [
+    152,
+    153,
+    154,
+    192,
+    193
+   ],
+   "code": [
+    "152:         IF lv_try < 3.",
+    "153:           WAIT UP TO 2 SECONDS.",
+    "154:           RETRY.",
+    "192:     IF line_exists( lt_ret[ type = 'E' id = 'V1' number = '042' ] ).",
+    "193:       RAISE EXCEPTION TYPE zcx_gm_locked."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-133-B10",
+   "soll": "Liefert die Anlage keine Belegnummer, wird zurückgerollt und der Fehlertext übernommen.",
+   "zeilen": [
+    158,
+    195
+   ],
+   "code": [
+    "158:         CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "195:     IF rv_vbeln IS INITIAL."
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-133-B11",
+   "soll": "Nach erfolgreicher Anlage wird die Abrechnung mit Stichtag, Anforderungsnummer und Betrag vermerkt und alles festgeschrieben.",
+   "zeilen": [
+    143,
+    147
+   ],
+   "code": [
+    "143:         INSERT zgm_billed FROM @( VALUE zgm_billed( grant_nbr = is_grant-grant_nbr",
+    "147:         CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen und die Text auf Lastschriftanforderung angelegt gesetzt."
+   ]
+  },
+  {
+   "id": "BM-133-B12",
+   "soll": "Je Förderung werden Betrag, Anforderungsnummer und Ergebnistext gelistet.",
+   "zeilen": [
+    25
+   ],
+   "code": [
+    "25:     WRITE: / ls_res-grant_nbr, ls_res-betrag, ls_res-vbeln, ls_res-text."
+   ],
+   "engine": [
+    "Bei Treffern werden ls_res-grant_nbr, Betrag, Belegnummer und Text als Liste ausgegeben.",
+    "ls_res-grant_nbr wird ausgegeben.",
+    "Betrag wird ausgegeben.",
+    "Belegnummer wird ausgegeben.",
+    "Text wird ausgegeben."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,310 @@
+{
+ "id": "BM-057",
+ "urteile": [
+  {
+   "id": "BM-057-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur Aufruf BAL_LOG_CREATE mit Variablennamen; Anwendungsprotokoll mit Lauf-ID als externer Nummer nicht fachlich."
+  },
+  {
+   "id": "BM-057-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'ENQUEUE_EZFI_CLOSE_RUN wird aufgerufen'; exklusive Sperre gegen Doppellauf nicht fachlich."
+  },
+  {
+   "id": "BM-057-B03",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen' entspricht Meldung und Ende; dass der Sperrende genannt wird, fehlt."
+  },
+  {
+   "id": "BM-057-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Sätze aus t001 selektiert'; Buchungsperiodenvariante nicht erkennbar."
+  },
+  {
+   "id": "BM-057-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus t001b und Intervallvergleich nur technisch; offene Abschlussperiode im ersten Intervall nicht fachlich."
+  },
+  {
+   "id": "BM-057-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum stillen Übergehen ohne Periodensteuerung."
+  },
+  {
+   "id": "BM-057-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufnahme in gt_bukrs bei Periode im Intervall erkannt; Warnung bei geschlossener Periode fehlt."
+  },
+  {
+   "id": "BM-057-B08",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu 'keine offene Periode → keine Schritte'."
+  },
+  {
+   "id": "BM-057-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus zfi_close_step mit rtype; aktive Schritte und Customizing-Reihenfolge fehlen."
+  },
+  {
+   "id": "BM-057-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Lesen aus zfi_close_stat mit runid/gjahr/monat technisch vollständig; 'bisheriger Schrittstatus' nicht fachlich benannt."
+  },
+  {
+   "id": "BM-057-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'In der Tabelle wird nach einer passenden Zeile gesucht'; Überspringen erfolgreicher Schritte fehlt."
+  },
+  {
+   "id": "BM-057-B12",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Verzweigung nach Schritttyp."
+  },
+  {
+   "id": "BM-057-B13",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Dynamischer Aufruf von gs_step-formname und lv_fname mit 'Wirkung nicht belegt' bzw. 'entscheidet sich zur Laufzeit' – fachlich dasselbe (Ziel nicht im Code bestimmt); 'Eingabe' ist ungenau, gemeint ist Customizing."
+  },
+  {
+   "id": "BM-057-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "'Die gv_rc wird auf 8 gesetzt' – dass ein unbekannter Schritttyp als Fehler gilt, ist nicht erkennbar."
+  },
+  {
+   "id": "BM-057-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Schreiben in zfi_close_stat und COMMIT genannt; Status erfolgreich/fehlerhaft sowie Benutzer und Zeitpunkt fehlen."
+  },
+  {
+   "id": "BM-057-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Verlassen bei Fehler eines kritischen Schritts technisch genannt; Abbruchkennzeichen und Protokolleintrag fehlen."
+  },
+  {
+   "id": "BM-057-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus zfi_accrual mit gjahr/monat; 'noch nicht gebucht' und Einschränkung auf Buchungskreise fehlen."
+  },
+  {
+   "id": "BM-057-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Belegart SA und das Aufnehmen von Zeilen in lt_gl/lt_amt genannt; Aufwand mit Kostenstelle an Abgrenzungskonto fehlt; 'Die ls_head-doc_type' falscher Artikel."
+  },
+  {
+   "id": "BM-057-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Verzweigung CHECK- vs. POST-BAPI richtig, aber nur über BAPI-Namen."
+  },
+  {
+   "id": "BM-057-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback und cv_rc = 4 erkannt; Protokollierung mit Buchungskreis fehlt; 'sy-subrc mit dem Wert 0 erhalten 4' unverständlich."
+  },
+  {
+   "id": "BM-057-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Commit und Änderung von 'posted' im Echtlauf genannt; Belegnummer fehlt, 'Die posted' falscher Artikel."
+  },
+  {
+   "id": "BM-057-B22",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Start von rapost2000 je Zeile aus gt_bukrs erkannt; Abschreibungslauf, Periode und Testlauf-Parameter fehlen."
+  },
+  {
+   "id": "BM-057-B23",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "'Das Kindprogramm wird gestartet' – Variante aus Customizing fehlt."
+  },
+  {
+   "id": "BM-057-B24",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "'Die cv_rc wird auf 0 gesetzt' – dass der Schritt unabhängig vom Programmergebnis als erfolgreich gilt, wird nicht gesagt."
+  },
+  {
+   "id": "BM-057-B25",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Asynchroner Start von Z_FI_CLOSE_STEP_BUKRS in eigener Task je Zeile aus gt_bukrs erkannt; Prüfzweck und Servergruppe fehlen."
+  },
+  {
+   "id": "BM-057-B26",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Startfehler der Task."
+  },
+  {
+   "id": "BM-057-B27",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Sätze aus zfi_close_acct' und 'aus bsis selektiert'; Saldo der offenen Posten der Nullkonten nicht erkennbar."
+  },
+  {
+   "id": "BM-057-B28",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "ev_rc = 4 bei Saldo ungleich 0 erkannt; Meldung mit Konto/Saldo und 'ausgeglichen' fehlen; 'vor der Datenbankoperation zurückgekehrt' ist falsch (EXIT verlässt nur die Schleife)."
+  },
+  {
+   "id": "BM-057-B29",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Entgegennahme der Rückmeldungen."
+  },
+  {
+   "id": "BM-057-B30",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "cv_rc = 4 bei Zeitüberschreitung/Fehlern technisch genannt; das Warten mit 30-Minuten-Grenze fehlt."
+  },
+  {
+   "id": "BM-057-B31",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Speichern in zfi_close_run genannt; die Statuswerte abgebrochen/ohne offene Periode/erfolgreich fehlen."
+  },
+  {
+   "id": "BM-057-B32",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "BAL_DB_SAVE, COMMIT und DEQUEUE werden genannt, aber nur über Bausteinnamen."
+  },
+  {
+   "id": "BM-057-B33",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingung p_mail und Versand technisch; Mailinhalt fehlt, 'kleinere werden übersprungen, die Schleife läuft weiter' falsch (CHECK in FORM), 'Nur Eine nicht leere p_mail gehen' fehlerhaft."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

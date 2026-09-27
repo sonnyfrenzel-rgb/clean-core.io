@@ -1,0 +1,111 @@
+{
+ "id": "BM-155",
+ "urteile": [
+  {
+   "id": "BM-155-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"istat des Satzes wird gelesen\" und \"Eine Meldung wird ausgegeben\"; Prüfung auf künftige, nicht nur geplante Veranstaltung und Abbruch fehlen."
+  },
+  {
+   "id": "BM-155-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "kapz3 lesen, Zählung und Kapazitätsbedingung technisch erkannt; \"ohne Kapazität keine Grenze\" nicht benannt."
+  },
+  {
+   "id": "BM-155-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"sobid/qualid des Satzes wird gelesen\"; Veranstaltungstyp und Voraussetzungsqualifikation nicht benannt."
+  },
+  {
+   "id": "BM-155-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus pa0001 selektiert\"; heutige Zuordnung zu den gewählten Einheiten fehlt."
+  },
+  {
+   "id": "BM-155-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"abap_true des Satzes wird gelesen\"; bestehende Buchung/Warteliste und Ablehnung fehlen."
+  },
+  {
+   "id": "BM-155-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"abap_true des Satzes wird gelesen\"; Qualifikationsprüfung und Ablehnung fehlen."
+  },
+  {
+   "id": "BM-155-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Ausgabe \"auf Warteliste\" und Kapazitätsbedingung erkannt; Eintrag mit Wartelistenpriorität nicht benannt."
+  },
+  {
+   "id": "BM-155-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Ausgabe \"gebucht\" erkannt; feste Teilnahme und Hochzählen fehlen."
+  },
+  {
+   "id": "BM-155-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"RH_RELATION_MAINTAIN wird aufgerufen\"; Puffer/Verbuchung und Ablehnung bei Fehlschlag fehlen."
+  },
+  {
+   "id": "BM-155-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Ausgabe von Personalnummer und Ausnahmetext erkannt, nur technisch."
+  },
+  {
+   "id": "BM-155-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Commit im Echtlauf, Rollback sonst und Ausgabe \"Gebucht:/Warteliste:\" technisch vollständig, fachlich nicht formuliert."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

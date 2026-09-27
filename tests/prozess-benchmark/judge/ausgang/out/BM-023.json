@@ -1,0 +1,36 @@
+{
+ "id": "BM-023",
+ "urteile": [
+  {
+   "id": "BM-023-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Schleife über xmseg und \"nur 551/552 gehen weiter\" stimmen, aber nur technisch; \"kleinere werden übersprungen\" passt nicht zu einer Gleichheitsprüfung."
+  },
+  {
+   "id": "BM-023-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur die innere Bedingung (grund/kostl leer); die Wertgrenze 5.000 in Hauswährung fehlt."
+  },
+  {
+   "id": "BM-023-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"eine Meldung wird ausgegeben\" – Fehlermeldung mit Material/Wert und Abbruch der Buchung fehlen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

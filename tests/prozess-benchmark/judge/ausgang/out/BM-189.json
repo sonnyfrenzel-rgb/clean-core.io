@@ -1,0 +1,63 @@
+{
+ "id": "BM-189",
+ "urteile": [
+  {
+   "id": "BM-189-B01",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur „Für i_initflag … wird eine Zeile aufgenommen“; DataSource-Prüfung und Abbruch fehlen."
+  },
+  {
+   "id": "BM-189-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "„Eine Zeile wird in s_s_if-t_select aufgenommen“; Merken der Selektionen/Paketgröße nicht fachlich."
+  },
+  {
+   "id": "BM-189-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Tabellensuche; Einschränkung ab Änderungsdatum fehlt."
+  },
+  {
+   "id": "BM-189-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum OPEN CURSOR."
+  },
+  {
+   "id": "BM-189-B05",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum FETCH."
+  },
+  {
+   "id": "BM-189-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu NO_MORE_DATA."
+  },
+  {
+   "id": "BM-189-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Schleife über e_t_data; Terminverzugsberechnung fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

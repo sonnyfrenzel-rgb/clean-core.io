@@ -1,0 +1,28 @@
+{
+ "id": "BM-083",
+ "urteile": [
+  {
+   "id": "BM-083-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur 'HR_READ_INFOTYPE wird aufgerufen'; was gelesen wird (IT0001 zum Stichtag) fehlt."
+  },
+  {
+   "id": "BM-083-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu NOT_ASSIGNED."
+  },
+  {
+   "id": "BM-083-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Rückgabe von Org-Einheit und Kostenstelle."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,278 @@
+{
+ "id": "BM-154",
+ "titel": "Reisekosten: Genehmigungsfristen überwachen – automatisch genehmigen, erinnern, eskalieren",
+ "prozess": "Ein täglicher Job überwacht die Genehmigungsfristen der Reisekosten. Er liest alle eingereichten Reisen mit Datum und Belegsumme (ohne Beleg null); gibt es keine, endet er mit Hinweis. Als Genehmiger gilt der Leiter der Organisationseinheit des Reisenden; ist der Reisende selbst Leiter, wird die Platzhalternummer 99999999 eingetragen, ohne Zuordnung wird die Reise nur gekennzeichnet. Je Genehmiger werden die offenen Reisen geprüft: Kleinbeträge nach der Automatikfrist werden automatisch genehmigt (im Testlauf nur vermerkt, bei Fehler zurückgerollt), ältere Reisen über der Eskalationsfrist zur Eskalation und über der Erinnerungsfrist zur Erinnerung vorgemerkt. Jeder bekannte Genehmiger mit Erinnerungen erhält eine Sammelmail. Für säumige Genehmiger wird deren eigener Vorgesetzter ermittelt und per Mail informiert. Mails gehen nur im Echtlauf an hinterlegte Adressen. Am Ende zeigt eine Liste jede Reise mit der ergriffenen Aktion.",
+ "verboten": [
+  "ztv_approval_monitor_f01.abap:56 — kein Fachsatz „Reisen von Führungskräften werden an die nächsthöhere Ebene geleitet“ (eingetragen wird ein Platzhalter; für ihn gibt es weder Mailadresse noch Organisationszuordnung, Erinnerung und Eskalation laufen ins Leere)",
+  "ztv_approval_monitor_f01.abap:95 — kein Fachsatz „nur Reisen mit Belegen werden automatisch genehmigt“ (ohne Beleg ist der Betrag null und fällt unter die Grenze)",
+  "ztv_approval_monitor_f01.abap:172 — kein Fachsatz „im Testlauf werden Mails an eine Testadresse geschickt“ (im Testlauf wird gar nicht gesendet)",
+  "gesamte Scheibe — kein write-Knoten auf Reisetabellen (Statusänderung nur über BAPI_TRIP_APPROVE)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-154-B01",
+   "soll": "Es werden alle zur Genehmigung eingereichten Reisen mit ihrem Datum gelesen und für sie die Summe der erfassten Belege gebildet.",
+   "zeilen": [
+    46,
+    54
+   ],
+   "code": [
+    "46:   SELECT p~pernr, p~reinr, h~dates",
+    "54:   SELECT pernr, reinr, SUM( rec_amount ) AS amount"
+   ],
+   "engine": [
+    "Das Ergebnis enthält p~pernr, p~reinr und h~dates.",
+    "Es werden Sätze aus ptrv_perio selektiert.",
+    "Das Ergebnis enthält pernr, reinr und SUM( rec_amount ) AS amount.",
+    "Es werden Sätze aus ptrv_srec selektiert."
+   ]
+  },
+  {
+   "id": "BM-154-B02",
+   "soll": "Je Reise werden die Tage seit dem Reisedatum und der Belegbetrag festgehalten; eine Reise ohne Beleg erhält den Betrag null.",
+   "zeilen": [
+    63
+   ],
+   "code": [
+    "63:     APPEND VALUE ty_work("
+   ],
+   "engine": [
+    "Eine Zeile wird in gt_work aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-154-B03",
+   "soll": "Liegt keine Reise in Genehmigung, endet der Lauf mit einem Hinweis.",
+   "zeilen": [
+    33,
+    34,
+    35
+   ],
+   "code": [
+    "33:   IF gt_work IS INITIAL.",
+    "34:     WRITE: / 'Keine Reisen in Genehmigung.'.",
+    "35:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird Keine Reisen in Genehmigung. ausgegeben und der Block verlassen.",
+    "Es wird Keine Reisen in Genehmigung. ausgegeben und der Block verlassen.",
+    "Keine Reisen in Genehmigung. wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-154-B04",
+   "soll": "Als Genehmiger gilt der Leiter der heutigen Organisationseinheit des Reisenden; Reisen ohne Organisationszuordnung werden gekennzeichnet und nicht weiter bearbeitet.",
+   "zeilen": [
+    78,
+    88,
+    92,
+    107
+   ],
+   "code": [
+    "78:     CALL FUNCTION 'HR_READ_INFOTYPE'",
+    "88:     IF sy-subrc <> 0 OR lt_p0001 IS INITIAL.",
+    "92:     PERFORM get_leader USING lt_p0001[ 1 ]-orgeh",
+    "107:   CALL FUNCTION 'RH_GET_LEADER'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "Für sy-subrc <> 0 OR lt_p0001 IS INITIAL wird die ls_work>-action auf KEIN_ORG gesetzt.",
+    "sy-subrc <> 0 OR lt_p0001 IS INITIAL setzen die ls_work>-action auf KEIN_ORG.",
+    "Das Unterprogramm get_leader wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Code übergibt '01' an RH_GET_LEADER und übernimmt dessen Ausgabe nach lv_type.",
+    "Das konvertierte Ergebnis wird in lv_type übernommen."
+   ]
+  },
+  {
+   "id": "BM-154-B05",
+   "soll": "Ist der Reisende selbst der Leiter, wird statt eines echten Genehmigers die Platzhalter-Personalnummer 99999999 eingetragen.",
+   "zeilen": [
+    95,
+    96
+   ],
+   "code": [
+    "95:     IF <ls_work>-approver = <ls_work>-pernr.",
+    "96:       <ls_work>-approver = '99999999'."
+   ],
+   "engine": [
+    "Für ls_work>-approver mit dem Wert ls_work>-pernr wird die ls_work>-approver auf 99999999 gesetzt.",
+    "ls_work>-approver mit dem Wert ls_work>-pernr setzen die ls_work>-approver auf 99999999."
+   ]
+  },
+  {
+   "id": "BM-154-B06",
+   "soll": "Die unbearbeiteten Reisen werden je Genehmiger gemeinsam betrachtet.",
+   "zeilen": [
+    129,
+    133,
+    134
+   ],
+   "code": [
+    "129:   LOOP AT gt_work INTO DATA(ls_group_key)",
+    "133:     LOOP AT GROUP <lg_appr> ASSIGNING FIELD-SYMBOL(<ls_w>).",
+    "134:       CHECK <ls_w>-action IS INITIAL."
+   ],
+   "engine": [
+    "Jede Zeile aus gt_work wird einzeln verarbeitet.",
+    "Jede Zeile aus GROUP wird einzeln verarbeitet.",
+    "Nur Eine leere ls_w>-action gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-154-B07",
+   "soll": "Eine Reise bis zum Kleinbetragsgrenzwert, die mindestens die Frist für automatische Genehmigung wartet, wird automatisch genehmigt – auch wenn sie schon eskalationsreif wäre.",
+   "zeilen": [
+    135,
+    136
+   ],
+   "code": [
+    "135:       IF <ls_w>-amount <= p_auto AND <ls_w>-days >= p_dauto.",
+    "136:         PERFORM auto_approve CHANGING <ls_w>."
+   ],
+   "engine": [
+    "Für <ls_w>-amount <= p_auto AND <ls_w>-days >= p_dauto wird auto_approve aufgerufen.",
+    "Für <ls_w>-amount <= p_auto AND <ls_w>-days >= p_dauto wird auto_approve aufgerufen, sonst die ls_w>-action auf ESKALATION gesetzt und eine Zeile aufgenommen beziehungsweise die ls_w>-action auf ERINNERUNG gesetzt und eine Zeile aufgenommen.",
+    "Das Unterprogramm auto_approve wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-154-B08",
+   "soll": "Im Testlauf wird die automatische Genehmigung nur vermerkt; im Echtlauf wird die Reise genehmigt und bei Fehlermeldung zurückgerollt und als Fehler markiert, sonst festgeschrieben.",
+   "zeilen": [
+    154,
+    158,
+    164,
+    165,
+    168
+   ],
+   "code": [
+    "154:   IF p_test = abap_true.",
+    "158:   CALL FUNCTION 'BAPI_TRIP_APPROVE'",
+    "164:   IF line_exists( lt_return[ type = 'E' ] ).",
+    "165:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "168:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Für p_test mit dem Wert abap_true wird die cs_work-action auf AUTO(TEST) gesetzt und der Block verlassen.",
+    "Bei p_test gleich abap_true wird der Block verlassen.",
+    "p_test mit dem Wert abap_true setzen die cs_work-action auf AUTO(TEST).",
+    "Der Funktionsbaustein BAPI_TRIP_APPROVE wird aufgerufen.",
+    "Für line_exists( lt_return[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die cs_work-action auf FEHLER gesetzt.",
+    "Für line_exists( lt_return[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die cs_work-action auf FEHLER gesetzt, sonst BAPI_TRANSACTION_COMMIT aufgerufen und die cs_work-action auf AUTO gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die cs_work-action auf FEHLER gesetzt.",
+    "line_exists( lt_return[ type = 'E' ] ) setzen die cs_work-action auf FEHLER.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen und die cs_work-action auf AUTO gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen und die cs_work-action auf AUTO gesetzt."
+   ]
+  },
+  {
+   "id": "BM-154-B09",
+   "soll": "Andere Reisen, die die Eskalationsfrist erreicht haben, werden zur Eskalation vorgemerkt, solche über der Erinnerungsfrist zur Erinnerung.",
+   "zeilen": [
+    137,
+    140
+   ],
+   "code": [
+    "137:       ELSEIF <ls_w>-days >= p_desc.",
+    "140:       ELSEIF <ls_w>-days >= p_drem."
+   ],
+   "engine": [
+    "Für <ls_w>-amount <= p_auto AND <ls_w>-days >= p_dauto wird auto_approve aufgerufen, sonst die ls_w>-action auf ESKALATION gesetzt und eine Zeile aufgenommen beziehungsweise die ls_w>-action auf ERINNERUNG gesetzt und eine Zeile aufgenommen.",
+    "Für ls_w>-days ab p_desc wird die ls_w>-action auf ESKALATION gesetzt und eine Zeile aufgenommen.",
+    "ls_w>-days ab p_desc setzen die ls_w>-action auf ESKALATION.",
+    "Für ls_w>-days ab p_drem wird die ls_w>-action auf ERINNERUNG gesetzt und eine Zeile aufgenommen.",
+    "ls_w>-days ab p_drem setzen die ls_w>-action auf ERINNERUNG."
+   ]
+  },
+  {
+   "id": "BM-154-B10",
+   "soll": "Hat ein bekannter Genehmiger Reisen zur Erinnerung, erhält er eine Sammelmail mit allen diesen Reisen.",
+   "zeilen": [
+    145,
+    146
+   ],
+   "code": [
+    "145:     IF lt_remind IS NOT INITIAL AND <lg_appr>-approver IS NOT INITIAL.",
+    "146:       PERFORM send_mail USING <lg_appr>-approver lt_remind 'Erinnerung'."
+   ],
+   "engine": [
+    "Für lt_remind IS NOT INITIAL AND <lg_appr>-approver IS NOT INITIAL wird send_mail aufgerufen.",
+    "Das Unterprogramm send_mail wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-154-B11",
+   "soll": "Für jeden Genehmiger mit eskalierten Reisen wird dessen eigener Vorgesetzter ermittelt und erhält eine Eskalationsmail; ohne Zuordnung oder ohne anderen Vorgesetzten entfällt die Eskalation.",
+   "zeilen": [
+    180,
+    182,
+    195,
+    196,
+    199
+   ],
+   "code": [
+    "180:   LOOP AT gt_esc INTO DATA(ls_esc)",
+    "182:     CALL FUNCTION 'HR_READ_INFOTYPE'",
+    "195:     PERFORM get_leader USING lt_p0001[ 1 ]-orgeh CHANGING lv_boss.",
+    "196:     IF lv_boss IS INITIAL OR lv_boss = lv_approver.",
+    "199:     PERFORM send_mail USING lv_boss"
+   ],
+   "engine": [
+    "Jede Zeile aus gt_esc wird einzeln verarbeitet.",
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "Das Unterprogramm get_leader wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Das Unterprogramm send_mail wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-154-B12",
+   "soll": "Mails werden nur im Echtlauf und nur an Empfänger mit hinterlegter Mailadresse versendet und je Mail festgeschrieben; ein Sendefehler wird nur gemeldet.",
+   "zeilen": [
+    212,
+    213,
+    218,
+    231,
+    232,
+    234
+   ],
+   "code": [
+    "212:   CHECK p_test IS INITIAL.",
+    "213:   SELECT SINGLE usrid_long FROM pa0105 INTO @lv_mail",
+    "218:   IF sy-subrc <> 0.",
+    "231:       lo_send->send( ).",
+    "232:       COMMIT WORK.",
+    "234:       MESSAGE lx_bcs->get_text( ) TYPE 'S' DISPLAY LIKE 'E'."
+   ],
+   "engine": [
+    "Nur Eine leere p_test gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "usrid_long des Satzes wird gelesen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-154-B13",
+   "soll": "Zum Schluss werden alle Reisen mit Wartetagen, Betrag, Genehmiger und ergriffener Aktion als Liste angezeigt.",
+   "zeilen": [
+    40,
+    241,
+    244
+   ],
+   "code": [
+    "40:   PERFORM show_result.",
+    "241:       cl_salv_table=>factory( IMPORTING r_salv_table = DATA(lo_alv)",
+    "244:       lo_alv->display( )."
+   ],
+   "engine": [
+    "Es wird determine_approvers aufgerufen, process_by_approver aufgerufen, escalate aufgerufen und show_result aufgerufen.",
+    "Das Unterprogramm show_result wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Rückgabewert der Methode factory von cl_salv_table wird nach cl_salv_table übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

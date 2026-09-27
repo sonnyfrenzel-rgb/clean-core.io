@@ -1,0 +1,37 @@
+{
+ "id": "BM-064",
+ "urteile": [
+  {
+   "id": "BM-064-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Werksfilter 1000/1100 technisch richtig; 'kleinere werden übersprungen, die Schleife läuft weiter' ist falsch (CHECK beendet die Methode), dass die Freigabe dann ohne Prüfung zugelassen wird, fehlt."
+  },
+  {
+   "id": "BM-064-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'plnnr des Satzes wird gelesen' – Prüfplanzuordnung für Material/Werk ohne Löschkennzeichen nicht erkennbar."
+  },
+  {
+   "id": "BM-064-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Ohne Treffer wird eine Meldung ausgegeben'; Ablehnung der Freigabe über die Ausnahme ERROR fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

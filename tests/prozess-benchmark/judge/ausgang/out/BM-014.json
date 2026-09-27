@@ -1,0 +1,124 @@
+{
+ "id": "BM-014",
+ "urteile": [
+  {
+   "id": "BM-014-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus likp selektiert\" – Warenausgang, Fakturastatus, Fakturasperre und Selektion fehlen."
+  },
+  {
+   "id": "BM-014-B02",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Protokollieren und Ende erkennbar, aber \"es wird nichts geschrieben\" ist falsch: log_sichern speichert das Anwendungsprotokoll mit BAL_DB_SAVE und COMMIT WORK."
+  },
+  {
+   "id": "BM-014-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Schleife über gt_vkorg und Unterprogramm sammellauf \"Wirkung nicht belegt\" – Sammellauf je Verkaufsorganisation nur erahnbar."
+  },
+  {
+   "id": "BM-014-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Sperre nur als ENQUEUE_EZSD_BILLRUN, der Doppelstart irreführend als \"Ohne Treffer\"; Fehler 401 nur \"Zeile aufgenommen\"."
+  },
+  {
+   "id": "BM-014-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Kindprogramm rv60sbat wird gestartet\" und p_test = abap_false – Standard-Sammellauf für genau diese Lieferungen nicht fachlich benannt."
+  },
+  {
+   "id": "BM-014-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"sonst eine Zeile aufgenommen\"; Testlauf und Inhalt der Protokollzeile nicht erkennbar."
+  },
+  {
+   "id": "BM-014-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Nur \"DEQUEUE_EZSD_BILLRUN wird aufgerufen\", nicht das Lösen der Sperre."
+  },
+  {
+   "id": "BM-014-B08",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "CHECK-Satz \"kleinere werden übersprungen, die Schleife läuft weiter\" – das Unterprogramm endet im Testlauf; Prüfung auf Rechnung als Folgebeleg nur als vbfa-Selektion und Tabellensuche."
+  },
+  {
+   "id": "BM-014-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Ohne Treffer wird eine Zeile aufgenommen\" – Zählung und Warnung 404 mit Auftraggeber fehlen."
+  },
+  {
+   "id": "BM-014-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "BAL-Bausteine und COMMIT genannt, \"Anwendungsprotokoll wird gesichert\" nicht fachlich formuliert; Objekt ZSD/BILLRUN und Aufbewahrung fehlen."
+  },
+  {
+   "id": "BM-014-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Für gv_fehler > 0 AND p_mail IS NOT INITIAL wird mail_senden aufgerufen\", Methoden \"nicht belegt\" – Mail mit Anzahl an die Adresse nicht fachlich."
+  },
+  {
+   "id": "BM-014-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"Eine Meldung wird ausgegeben\" ohne den Auslöser gescheiterter Mailversand."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,205 @@
+{
+ "id": "BM-135",
+ "titel": "Treasury Geldhandel: fällige Festgelder automatisch prolongieren und den Buchungslauf als Job einplanen (dynamischer Tabellenname, SUBMIT VIA JOB)",
+ "prozess": "Der Report läuft morgens mit Buchungskreis, Stichtag, Testlaufschalter und Buchungsschalter (beide vorbelegt). Zuerst bestimmt er über die Variablentabelle, aus welcher Tabelle die Zinssätze kommen; ohne Eintrag gilt das Tagesfixing. Dann liest er die am Stichtag fälligen Festgelder des Buchungskreises mit aktiver Rollover-Regel; gibt es keine, schreibt er einen Hinweis und endet. Je Festgeld liest er den Zinssatz für Währung und neue Laufzeit aus der bestimmten Tabelle; fehlt er, protokolliert er das Geschäft zur manuellen Bearbeitung. Sonst liest er den Nominalbetrag aus dem Kapitalzugang des alten Geschäfts. Im Testlauf protokolliert er nur den Zinssatz. Im Echtlauf legt er beim selben Partner ein neues Festgeld über den Nominalbetrag mit der neuen Laufzeit und dem Zinssatz an; bei Fehler rollt er zurück und protokolliert die Meldung, sonst schreibt er fest, zählt und protokolliert das neue Geschäft. Wurden im Echtlauf Geschäfte angelegt und ist Buchen gewünscht, plant er den Treasury-Buchungslauf für Buchungskreis und Stichtag als sofort startenden Hintergrundjob ein; scheitert die Anlage des Jobs, erscheint ein Hinweis, eine fehlgeschlagene Freigabe bleibt unbemerkt. Zum Schluss listet er das Protokoll. Das alte Geschäft bleibt unverändert.",
+ "verboten": [
+  "ztrm_festgeld_rollover_f01.abap:62 — kein Fachsatz „das fällige Festgeld wird abgerechnet oder als prolongiert gekennzeichnet“: am alten Geschäft ändert der Report nichts",
+  "ztrm_festgeld_rollover_f01.abap:115 — kein Fachsatz „die neuen Geschäfte werden gebucht“: der Report plant den Buchungslauf nur ein, ob und was gebucht wird, entscheidet das Standardprogramm",
+  "ztrm_festgeld_rollover_f01.abap:42 — kein Fachsatz „der Zinssatz kommt immer aus dem Tagesfixing“: die Quelltabelle wird zur Laufzeit aus der Variablentabelle bestimmt",
+  "ztrm_festgeld_rollover.abap:39 — kein Fachsatz „ohne fällige Festgelder wird ein leeres Protokoll ausgegeben“: der Lauf endet vor der Protokollausgabe"
+ ],
+ "saetze": [
+  {
+   "id": "BM-135-B01",
+   "soll": "Die Tabelle, aus der die Zinssätze kommen, wird aus der Variablentabelle gelesen; ist keine gepflegt, gilt das Tagesfixing.",
+   "zeilen": [
+    60,
+    63,
+    64
+   ],
+   "code": [
+    "60:   SELECT SINGLE low FROM tvarvc INTO gv_tab",
+    "63:   IF sy-subrc <> 0 OR gv_tab IS INITIAL.",
+    "64:     gv_tab = 'ZTRM_ZINS_TAG'."
+   ],
+   "engine": [
+    "low des Satzes wird gelesen.",
+    "Für sy-subrc <> 0 OR gv_tab IS INITIAL wird die Tabelle auf ZTRM_ZINS_TAG gesetzt.",
+    "sy-subrc <> 0 OR gv_tab IS INITIAL setzen die Tabelle auf ZTRM_ZINS_TAG."
+   ]
+  },
+  {
+   "id": "BM-135-B02",
+   "soll": "Es werden die am Stichtag fälligen Festgelder des Buchungskreises gelesen, für die eine aktive Rollover-Regel mit neuer Laufzeit besteht.",
+   "zeilen": [
+    72
+   ],
+   "code": [
+    "72:   SELECT f~bukrs f~rfha f~kontrh f~wgschft1 r~lz_tage"
+   ],
+   "engine": [
+    "Es werden Sätze aus vtbfha mit dem eingegebenen Buchungskreis und dem eingegebenen f~delfz selektiert."
+   ]
+  },
+  {
+   "id": "BM-135-B03",
+   "soll": "Gibt es keine, wird ein Hinweis ausgegeben und der Lauf beendet.",
+   "zeilen": [
+    37,
+    38,
+    39
+   ],
+   "code": [
+    "37:   IF gt_fha IS INITIAL.",
+    "38:     WRITE: / 'Keine fälligen Festgelder mit Rollover-Regel am', p_datum.",
+    "39:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird Keine fälligen Festgelder mit Rollover-Regel am ausgegeben, p_datum ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird Keine fälligen Festgelder mit Rollover-Regel am ausgegeben und der Block verlassen.",
+    "Keine fälligen Festgelder mit Rollover-Regel am und p_datum werden ausgegeben.",
+    "Es wird Keine fälligen Festgelder mit Rollover-Regel am ausgegeben, p_datum ausgegeben und der Block verlassen.",
+    "Keine fälligen Festgelder mit Rollover-Regel am wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "p_datum wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-135-B04",
+   "soll": "Je Festgeld wird der Zinssatz für Währung und neue Laufzeit am Stichtag aus der Zinsquelle gelesen; fehlt er, wird das Geschäft zur manuellen Bearbeitung protokolliert.",
+   "zeilen": [
+    93,
+    97
+   ],
+   "code": [
+    "93:   SELECT SINGLE zins FROM (gv_tab) INTO lv_zins",
+    "97:   IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "zins des Satzes mit dem eingegebenen datum wird gelesen. Die Tabelle ist über die Zuweisung in Zeile 64 festgelegt.",
+    "Ohne Treffer wird eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-135-B05",
+   "soll": "Der Nominalbetrag des fälligen Geschäfts wird aus seinem Kapitalzugang gelesen.",
+   "zeilen": [
+    103
+   ],
+   "code": [
+    "103:   SELECT SINGLE bzbetr FROM vtbfhapo INTO lv_nomin"
+   ],
+   "engine": [
+    "bzbetr des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-135-B06",
+   "soll": "Im Testlauf wird nur der ermittelte Zinssatz protokolliert.",
+   "zeilen": [
+    108
+   ],
+   "code": [
+    "108:   IF p_test = 'X'."
+   ],
+   "engine": [
+    "Mit gesetztem p_test wird eine Zeile aufgenommen und der Block verlassen.",
+    "Mit gesetztem p_test wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-135-B07",
+   "soll": "Im Echtlauf wird beim selben Partner ein neues Festgeld über den Nominalbetrag vom Stichtag bis Stichtag plus Laufzeit zum ermittelten Zinssatz angelegt.",
+   "zeilen": [
+    113
+   ],
+   "code": [
+    "113:   CALL FUNCTION 'BAPI_FTR_TIMEDEPOSIT_CREATE'"
+   ],
+   "engine": [
+    "Der Code übergibt is_fha-bukrs an BAPI_FTR_TIMEDEPOSIT_CREATE und übernimmt dessen Ausgabe nach lv_rfha.",
+    "Das konvertierte Ergebnis wird in lv_rfha übernommen."
+   ]
+  },
+  {
+   "id": "BM-135-B08",
+   "soll": "Meldet die Anlage einen Fehler, wird zurückgerollt und die Fehlermeldung protokolliert; sonst wird festgeschrieben und das neue Geschäft protokolliert.",
+   "zeilen": [
+    129,
+    130,
+    134
+   ],
+   "code": [
+    "129:   IF line_exists( lt_return[ type = 'E' ] ).",
+    "130:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "134:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Für line_exists( lt_return[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen.",
+    "Für line_exists( lt_return[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen, sonst BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-135-B09",
+   "soll": "Wurden im Echtlauf neue Geschäfte angelegt und ist die Buchung gewünscht, wird der Treasury-Buchungslauf für Buchungskreis und Stichtag als sofort startender Hintergrundjob eingeplant.",
+   "zeilen": [
+    46,
+    154,
+    166,
+    170
+   ],
+   "code": [
+    "46:   IF p_test IS INITIAL AND p_post = 'X' AND gv_neu > 0.",
+    "154:   CALL FUNCTION 'JOB_OPEN'",
+    "166:   SUBMIT rftbbb00 WITH SELECTION-TABLE lt_sel",
+    "170:   CALL FUNCTION 'JOB_CLOSE'"
+   ],
+   "engine": [
+    "Für p_test IS INITIAL AND p_post = 'X' AND gv_neu > 0 wird buchungslauf_einplanen aufgerufen.",
+    "Der Code übergibt lv_job an JOB_OPEN und übernimmt dessen Ausgabe nach lv_count.",
+    "Das konvertierte Ergebnis wird in lv_count übernommen.",
+    "Das Kindprogramm rftbbb00 wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes.",
+    "Der Funktionsbaustein JOB_CLOSE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-135-B10",
+   "soll": "Kann der Job nicht angelegt werden, erscheint ein Hinweis und es wird nichts eingeplant; ob die Freigabe des Jobs gelingt, wird nicht geprüft.",
+   "zeilen": [
+    161,
+    162
+   ],
+   "code": [
+    "161:   IF sy-subrc <> 0.",
+    "162:     MESSAGE 'Buchungsjob konnte nicht angelegt werden' TYPE 'I'."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-135-B11",
+   "soll": "Zum Schluss werden je Festgeld altes und neues Geschäft, Zinssatz und Ergebnistext gelistet.",
+   "zeilen": [
+    185
+   ],
+   "code": [
+    "185:     WRITE: / ls_prot-rfha_alt, ls_prot-rfha_neu, ls_prot-zins, ls_prot-text."
+   ],
+   "engine": [
+    "Bei Treffern werden ls_prot-rfha_alt, ls_prot-rfha_neu, ls_prot-zins und Text als Liste ausgegeben.",
+    "ls_prot-rfha_alt wird ausgegeben.",
+    "ls_prot-rfha_neu wird ausgegeben.",
+    "ls_prot-zins wird ausgegeben.",
+    "Text wird ausgegeben."
+   ]
+  }
+ ]
+}

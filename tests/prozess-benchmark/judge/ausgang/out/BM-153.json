@@ -1,0 +1,89 @@
+{
+ "id": "BM-153",
+ "urteile": [
+  {
+   "id": "BM-153-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Berechtigung auf Z_MSS_PRX wird geprüft\"; Bedingung fremder Benutzer und Abweisung fehlen."
+  },
+  {
+   "id": "BM-153-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "pernr lesen und Meldung ohne Treffer erkannt; Kommunikationssatz und Abweisung (Ausnahme) nicht benannt."
+  },
+  {
+   "id": "BM-153-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"RH_STRUC_GET wird aufgerufen\"; Personen ohne Führungskraft fehlen."
+  },
+  {
+   "id": "BM-153-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Eine Meldung wird ausgegeben\"; Verwerfen der Liste und Ausnahme fehlen."
+  },
+  {
+   "id": "BM-153-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife und HR_READ_INFOTYPE erkannt; Org-Zuordnung am Periodenende und Auslassen fehlen."
+  },
+  {
+   "id": "BM-153-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Berechtigung auf P_ORGIN wird geprüft\"; Ausblenden und Zählen fehlen."
+  },
+  {
+   "id": "BM-153-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur HR_READ_INFOTYPE; Summierung der Abwesenheitstage fehlt."
+  },
+  {
+   "id": "BM-153-B08",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Einstufung FREI/NORMAL/HOCH."
+  },
+  {
+   "id": "BM-153-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Übernahme von build_absence_overview (\"Wirkung nicht belegt\"); Sortierung und ausgeblendete Anzahl fehlen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

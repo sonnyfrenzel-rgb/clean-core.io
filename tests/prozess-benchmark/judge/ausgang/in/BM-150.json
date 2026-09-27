@@ -1,0 +1,127 @@
+{
+ "id": "BM-150",
+ "titel": "ESS-Urlaubsantrag: Zusatzprüfung auf Sperrzeit, Überschneidung und Restanspruch",
+ "prozess": "Bevor ein Mitarbeiter im ESS einen Abwesenheitsantrag absendet, ruft die BAdI-Implementierung diese Prüfung. Sie ermittelt Personalbereich und -teilbereich zum Antragsbeginn und weist einen Erholungsurlaub ab, der in eine dort hinterlegte Urlaubssperre fällt. Überschneidet sich der Antrag mit einer bestehenden Abwesenheit, wird er ebenfalls abgewiesen. Die Dauer wird in Kalendertagen gezählt. Bei Erholungsurlaub wird der Restanspruch aus den gültigen Kontingenten 01 und 02 gebildet und ein Antrag über dem Rest abgewiesen; Krankheitsarten werden grundsätzlich abgewiesen, andere Arten ohne Kontingentprüfung durchgelassen. Zulässige Anträge über zehn Tage erhalten ein Hinweiskennzeichen für den Genehmiger. Gespeichert wird hier nichts.",
+ "verboten": [
+  "source.abap:49 — kein Fachsatz „es werden Arbeitstage laut Arbeitszeitplan gezählt“ (Kalendertage)",
+  "source.abap:75 — kein Fachsatz „lange Anträge werden abgelehnt oder eskaliert“ (nur Hinweiskennzeichen)",
+  "source.abap:20 — kein Fachsatz „ohne Organisationszuordnung wird der Antrag abgewiesen“ (kein sy-subrc-Check)",
+  "gesamte Scheibe — kein write-Knoten (der Antrag wird hier nicht gespeichert oder genehmigt)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-150-B01",
+   "soll": "Für den Antragsteller wird der Personalbereich und -teilbereich zum Antragsbeginn ermittelt.",
+   "zeilen": [
+    20
+   ],
+   "code": [
+    "20:     SELECT SINGLE werks, btrtl FROM pa0001"
+   ],
+   "engine": [
+    "Das Ergebnis enthält werks und btrtl.",
+    "werks und btrtl des Satzes werden gelesen."
+   ]
+  },
+  {
+   "id": "BM-150-B02",
+   "soll": "Fällt ein Erholungsurlaub in eine für den Teilbereich hinterlegte Urlaubssperre, wird der Antrag abgewiesen.",
+   "zeilen": [
+    27,
+    32,
+    33
+   ],
+   "code": [
+    "27:     SELECT COUNT(*) FROM zpt_url_sperre",
+    "32:     IF sy-subrc = 0 AND iv_awart = '0100'.",
+    "33:       RAISE EXCEPTION TYPE zcx_ess_leave"
+   ],
+   "engine": [
+    "Die Zahl der Sätze wird ermittelt."
+   ]
+  },
+  {
+   "id": "BM-150-B03",
+   "soll": "Überschneidet sich der Antrag mit einer bereits erfassten, nicht gesperrten Abwesenheit, wird er abgewiesen.",
+   "zeilen": [
+    38,
+    44,
+    45
+   ],
+   "code": [
+    "38:     SELECT SINGLE @abap_true FROM pa2001",
+    "44:     IF lv_overlap = abap_true.",
+    "45:       RAISE EXCEPTION TYPE zcx_ess_leave"
+   ],
+   "engine": [
+    "abap_true des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-150-B04",
+   "soll": "Die Antragsdauer wird in Kalendertagen einschließlich Beginn und Ende gezählt.",
+   "zeilen": [
+    49
+   ],
+   "code": [
+    "49:     lv_days = iv_endda - iv_begda + 1."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-150-B05",
+   "soll": "Bei Erholungsurlaub wird der Restanspruch aus den noch nicht abgelaufenen Kontingenten 01 und 02 gebildet; übersteigt die Dauer den Rest, wird der Antrag abgewiesen.",
+   "zeilen": [
+    54,
+    59,
+    62,
+    63
+   ],
+   "code": [
+    "54:         SELECT anzhl, kverb FROM pa2006",
+    "59:         DATA(lv_rest) = REDUCE ptm_quonum( INIT r = 0",
+    "62:         IF lv_days > lv_rest.",
+    "63:           RAISE EXCEPTION TYPE zcx_ess_leave"
+   ],
+   "engine": [
+    "Das Ergebnis enthält anzhl und kverb.",
+    "Es werden Sätze aus pa2006 selektiert."
+   ]
+  },
+  {
+   "id": "BM-150-B06",
+   "soll": "Krankheitsarten dürfen nicht über ESS beantragt werden und werden abgewiesen.",
+   "zeilen": [
+    66,
+    68
+   ],
+   "code": [
+    "66:       WHEN '0200' OR '0210'.",
+    "68:         RAISE EXCEPTION TYPE zcx_ess_leave"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-150-B07",
+   "soll": "Andere Abwesenheitsarten werden ohne Kontingentprüfung durchgelassen.",
+   "zeilen": [
+    70
+   ],
+   "code": [
+    "70:       WHEN OTHERS."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-150-B08",
+   "soll": "Dauert der zulässige Antrag mehr als zehn Tage, erhält der Genehmiger einen Hinweis.",
+   "zeilen": [
+    75
+   ],
+   "code": [
+    "75:     rv_warning = xsdbool( lv_days > 10 )."
+   ],
+   "engine": []
+  }
+ ]
+}

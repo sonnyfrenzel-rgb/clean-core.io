@@ -1,0 +1,44 @@
+{
+ "id": "BM-163",
+ "urteile": [
+  {
+   "id": "BM-163-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Lesen aus vekp mit eingegebenem vpobjkey; dass es die Handling Units der Auslieferung sind, sagt nur der Tabellenname."
+  },
+  {
+   "id": "BM-163-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Sätze aus vepo selektiert“; Bezug zu den HUs und das Lesen aller Packpositionen bei leerer HU-Tabelle fehlen."
+  },
+  {
+   "id": "BM-163-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Ausgabe nur als Feldnamen (exidv, vhilm, brgew); HU-Nummer, Packmittel, Gewicht nicht fachlich benannt."
+  },
+  {
+   "id": "BM-163-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig",
+    "grammatik"
+   ],
+   "kurz": "Feldausgabe technisch („5 ls_vepo-matnr“ verstümmelt), Einschränkung auf Positionen der jeweiligen HU fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

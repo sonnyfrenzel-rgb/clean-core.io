@@ -1,0 +1,490 @@
+{
+ "id": "BM-060",
+ "titel": "IDoc-Eingang Anlagenzugänge aus dem Investitionssystem: prüfen, Anlage anlegen, Zugang buchen, IDoc-Status setzen",
+ "prozess": "Ein externes Investitionssystem schickt aktivierte Maßnahmen als IDoc vom Nachrichtentyp ZFIAA_ACQ; die ALE-Eingangsverarbeitung ruft dafür den Eingangsbaustein mit einem Paket von IDocs auf. Ein IDoc mit falschem Nachrichtentyp bricht den ganzen Aufruf mit WRONG_FUNCTION_CALLED ab. Für jedes IDoc werden Kopf- und Wertsegment übernommen und dann geprüft: Buchungskreis vorhanden, Anlagenklasse aus der Investitionskategorie über eine Z-Zuordnung ermittelbar und angelegt, gelieferte Kostenstelle zum Aktivierungsdatum gültig, Betrag positiv. Danach wird über die Z-Referenztabelle ausgeschlossen, dass dieselbe externe Referenz des Absenders schon verbucht wurde. Ist für den Buchungskreis ein existierender Kunden-Exit gepflegt, wird er dynamisch aufgerufen und kann die Daten ändern oder das IDoc ablehnen. Anschließend legt ein eigener Baustein die Anlage per BAPI an, bucht den Zugang mit Bewegungsart 100 ohne Kreditor, schreibt die Referenz und schreibt alles gemeinsam fest; scheitert einer dieser Schritte, wird die gesamte LUW einschließlich der angelegten Anlage zurückgerollt. Jeder Prüffehler, jede Dublette, jede Exit-Ablehnung und jeder Buchungsfehler führt zu einem Statussatz 51, ein erfolgreiches IDoc zu Status 53 mit Anlage und Beleg; die Verarbeitung geht jeweils mit dem nächsten IDoc weiter. Die Statussätze werden nur bereitgestellt, geschrieben werden sie von der ALE-Schicht. Zum Schluss wird das Workflow-Ergebnis auf Fehler gesetzt, wenn mindestens ein IDoc des Pakets fehlerhaft war, sonst auf Erfolg.",
+ "verboten": [
+  "lzfiaa_idocf01.abap:116 — kein Fachsatz „der Baustein schreibt die IDoc-Status 51/53 in die Datenbank (EDIDS)“ (er füllt nur die Tabelle IDOC_STATUS; das Schreiben übernimmt die ALE-Eingangsschicht)",
+  "z_idoc_input_zfiaa.abap:107 — kein Fachsatz, der ein konkretes Ziel oder eine konkrete Wirkung des Kunden-Exits benennt (der Bausteinname kommt zur Laufzeit aus ZFIAA_CUST und ist nicht im Fall)",
+  "z_fi_aa_create_and_post.abap:112 — kein Fachsatz „die Anlage wird dem Projekt/PSP-Element zugeordnet“ (das Projekt wird nur in der Z-Referenztabelle abgelegt, nicht an die BAPIs übergeben)",
+  "z_idoc_input_zfiaa.abap:99 — kein Fachsatz „eine Dublette wird erneut gebucht oder als erfolgreich (53) quittiert“ (sie erhält Status 51, es wird nichts gebucht)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-060-B01",
+   "soll": "Die ALE-Eingangsverarbeitung übergibt dem Baustein ein Paket von IDocs, das Kontrollsatz für Kontrollsatz einzeln verarbeitet wird.",
+   "zeilen": [
+    303,
+    352
+   ],
+   "code": [
+    "303: FUNCTION z_idoc_input_zfiaa.",
+    "352:   LOOP AT idoc_contrl INTO gs_edidc."
+   ],
+   "engine": [
+    "Jede Zeile aus idoc_contrl wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-060-B02",
+   "soll": "Trägt ein IDoc einen anderen Nachrichtentyp als ZFIAA_ACQ, wird der gesamte Aufruf mit der Ausnahme WRONG_FUNCTION_CALLED abgebrochen.",
+   "zeilen": [
+    358,
+    359
+   ],
+   "code": [
+    "358:     IF gs_edidc-mestyp <> gc_mestyp.",
+    "359:       RAISE wrong_function_called."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-060-B03",
+   "soll": "Aus dem Kopfsegment werden Buchungskreis, externe Referenz, Investitionskategorie, Bezeichnung, Kostenstelle, Aktivierungsdatum und Projekt übernommen, der Absenderpartner dient als externes System.",
+   "zeilen": [
+    367,
+    369
+   ],
+   "code": [
+    "367:       CASE gs_edidd-segnam.",
+    "369:           MOVE gs_edidd-sdata TO gs_z1hdr."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-060-B04",
+   "soll": "Aus dem Wertsegment werden Zugangsbetrag, Währung, Bezugsdatum, Buchungsdatum und Menge übernommen; andere Segmente werden ignoriert.",
+   "zeilen": [
+    367,
+    379
+   ],
+   "code": [
+    "367:       CASE gs_edidd-segnam.",
+    "379:           MOVE gs_edidd-sdata TO gs_z1val."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-060-B05",
+   "soll": "Der gelieferte Buchungskreis muss existieren, sonst ist das IDoc fehlerhaft.",
+   "zeilen": [
+    62,
+    64,
+    69
+   ],
+   "code": [
+    "62:   SELECT SINGLE bukrs FROM t001 INTO lv_bukrs",
+    "64:   IF sy-subrc <> 0.",
+    "69:     RETURN."
+   ],
+   "engine": [
+    "Buchungskreis des Satzes wird gelesen.",
+    "Ohne Treffer wird die gs_err-msgid auf ZFIAA gesetzt, die gs_err-msgno auf 001 gesetzt und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "sy-subrc ungleich 0 setzen die gs_err-msgid auf ZFIAA.",
+    "sy-subrc ungleich 0 setzen die gs_err-msgno auf 001."
+   ]
+  },
+  {
+   "id": "BM-060-B06",
+   "soll": "Die Anlagenklasse wird aus der Investitionskategorie über eine kundeneigene Zuordnung bestimmt, zuerst buchungskreisspezifisch und ersatzweise über den generischen Eintrag für alle Buchungskreise.",
+   "zeilen": [
+    73,
+    511,
+    514,
+    515
+   ],
+   "code": [
+    "73:   gs_hdr-anlkl = go_mapper->get_asset_class(",
+    "511:     SELECT SINGLE anlkl FROM zfiaa_clsmap INTO rv_anlkl",
+    "514:     IF sy-subrc <> 0.",
+    "515:       SELECT SINGLE anlkl FROM zfiaa_clsmap INTO rv_anlkl"
+   ],
+   "engine": [
+    "Die Methode get_asset_class von go_mapper wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "anlkl des Satzes wird gelesen.",
+    "anlkl des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-060-B07",
+   "soll": "Die ermittelte Anlagenklasse muss im System angelegt sein; fehlt die Zuordnung oder die Klasse, ist das IDoc fehlerhaft.",
+   "zeilen": [
+    76,
+    78,
+    84
+   ],
+   "code": [
+    "76:   SELECT SINGLE anlkl FROM anka INTO gs_hdr-anlkl",
+    "78:   IF sy-subrc <> 0.",
+    "84:     RETURN."
+   ],
+   "engine": [
+    "anlkl des Satzes wird gelesen.",
+    "Ohne Treffer wird die gs_err-msgid auf ZFIAA gesetzt, die gs_err-msgno auf 002 gesetzt und der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die gs_err-msgid auf ZFIAA.",
+    "sy-subrc ungleich 0 setzen die gs_err-msgno auf 002."
+   ]
+  },
+  {
+   "id": "BM-060-B08",
+   "soll": "Eine gelieferte Kostenstelle muss im Kostenrechnungskreis des Buchungskreises zum Aktivierungsdatum gültig sein, sonst ist das IDoc fehlerhaft; ohne Kostenstelle entfällt diese Prüfung.",
+   "zeilen": [
+    88,
+    89,
+    93,
+    99,
+    527,
+    530,
+    536
+   ],
+   "code": [
+    "88:   IF gs_hdr-kostl IS NOT INITIAL.",
+    "89:     lv_valid = go_mapper->check_cost_center(",
+    "93:     IF lv_valid = abap_false.",
+    "99:       RETURN.",
+    "527:     SELECT SINGLE kokrs FROM tka02 INTO mv_kokrs",
+    "530:     SELECT SINGLE kostl FROM csks INTO lv_kostl",
+    "536:     IF sy-subrc = 0."
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode check_cost_center von go_mapper wird nach lv_valid übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Für lv_valid mit dem Wert abap_false wird die gs_err-msgid auf ZFIAA gesetzt, die gs_err-msgno auf 003 gesetzt und der Block verlassen.",
+    "lv_valid mit dem Wert abap_false setzen die gs_err-msgid auf ZFIAA.",
+    "lv_valid mit dem Wert abap_false setzen die gs_err-msgno auf 003.",
+    "kokrs des Satzes wird gelesen.",
+    "kostl des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-060-B09",
+   "soll": "Ein Zugangsbetrag von null oder kleiner macht das IDoc fehlerhaft.",
+   "zeilen": [
+    104,
+    108
+   ],
+   "code": [
+    "104:   IF gs_val-anbtr <= 0.",
+    "108:     gv_error = abap_true."
+   ],
+   "engine": [
+    "Für gs_val-anbtr bis einschließlich 0 wird die gs_err-msgid auf ZFIAA gesetzt und die gs_err-msgno auf 004 gesetzt.",
+    "gs_val-anbtr bis einschließlich 0 setzen die gs_err-msgid auf ZFIAA.",
+    "gs_val-anbtr bis einschließlich 0 setzen die gs_err-msgno auf 004."
+   ]
+  },
+  {
+   "id": "BM-060-B10",
+   "soll": "Scheitert eine Prüfung, erhält das IDoc den Fehlerstatus 51 mit der Prüfmeldung und die Verarbeitung geht mit dem nächsten IDoc weiter.",
+   "zeilen": [
+    392,
+    393
+   ],
+   "code": [
+    "392:     IF gv_error = abap_true.",
+    "393:       PERFORM fill_status TABLES idoc_status return_variables"
+   ],
+   "engine": [
+    "Für gv_error mit dem Wert abap_true wird fill_status aufgerufen.",
+    "Das Unterprogramm fill_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-060-B11",
+   "soll": "Es wird geprüft, ob dieselbe externe Referenz desselben Absenders bereits verbucht wurde.",
+   "zeilen": [
+    126,
+    129,
+    399
+   ],
+   "code": [
+    "126:   SELECT SINGLE * FROM zfiaa_extref INTO ls_ref",
+    "129:   CHECK sy-subrc = 0.",
+    "399:     PERFORM check_duplicate CHANGING lv_dup."
+   ],
+   "engine": [
+    "Es werden Sätze aus zfiaa_extref selektiert.",
+    "Nur sy-subrc mit dem Wert 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Das Unterprogramm check_duplicate wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-060-B12",
+   "soll": "Eine bereits verbuchte Referenz wird als Dublette abgewiesen: das IDoc erhält Status 51 mit Hinweis auf die vorhandene Anlage, gebucht wird nichts.",
+   "zeilen": [
+    131,
+    400,
+    401
+   ],
+   "code": [
+    "131:   cv_dup = abap_true.",
+    "400:     IF lv_dup = abap_true.",
+    "401:       PERFORM fill_status TABLES idoc_status return_variables"
+   ],
+   "engine": [
+    "Für lv_dup mit dem Wert abap_true wird fill_status aufgerufen.",
+    "Das Unterprogramm fill_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-060-B13",
+   "soll": "Ist für den Buchungskreis ein aktiver Kunden-Exit gepflegt und existiert der Baustein, wird er dynamisch aufgerufen und kann Kopf- und Wertdaten verändern.",
+   "zeilen": [
+    407,
+    408,
+    409,
+    543,
+    546,
+    549
+   ],
+   "code": [
+    "407:     lv_exit_fb = go_mapper->get_exit_fb( gs_hdr-bukrs ).",
+    "408:     IF lv_exit_fb IS NOT INITIAL.",
+    "409:       CALL FUNCTION lv_exit_fb",
+    "543:     SELECT SINGLE exit_fb FROM zfiaa_cust INTO rv_fb",
+    "546:     CHECK sy-subrc = 0 AND rv_fb IS NOT INITIAL.",
+    "549:     CALL FUNCTION 'FUNCTION_EXISTS'"
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode get_exit_fb von go_mapper wird nach lv_exit_fb übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Mit einer nicht leeren lv_exit_fb wird lv_exit_fb aufgerufen.",
+    "Der Funktionsbaustein lv_exit_fb wird aufgerufen. Welcher Baustein das ist, entscheidet die Eingabe zur Laufzeit.",
+    "exit_fb des Satzes wird gelesen.",
+    "Nur sy-subrc = 0 AND rv_fb IS NOT INITIAL gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Der Funktionsbaustein FUNCTION_EXISTS wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-060-B14",
+   "soll": "Ein gepflegter, aber nicht vorhandener Exit-Baustein wird verworfen, und die Verarbeitung läuft ohne Exit weiter.",
+   "zeilen": [
+    555,
+    556
+   ],
+   "code": [
+    "555:     IF sy-subrc <> 0.",
+    "556:       CLEAR rv_fb."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-060-B15",
+   "soll": "Lehnt der Kunden-Exit ab oder bricht er ab, erhält das IDoc Status 51.",
+   "zeilen": [
+    419,
+    424
+   ],
+   "code": [
+    "419:       IF sy-subrc <> 0.",
+    "424:         PERFORM fill_status TABLES idoc_status return_variables"
+   ],
+   "engine": [
+    "Ohne Treffer wird die gs_err-msgid auf ZFIAA gesetzt, die gs_err-msgno auf 020 gesetzt und fill_status aufgerufen.",
+    "sy-subrc ungleich 0 setzen die gs_err-msgid auf ZFIAA.",
+    "sy-subrc ungleich 0 setzen die gs_err-msgno auf 020.",
+    "Das Unterprogramm fill_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-060-B16",
+   "soll": "Anlage anlegen, Zugang buchen und Referenz sichern geschehen in einem eigenen Baustein als eine gemeinsame LUW.",
+   "zeilen": [
+    173,
+    437
+   ],
+   "code": [
+    "173: FUNCTION z_fi_aa_create_and_post.",
+    "437:     CALL FUNCTION 'Z_FI_AA_CREATE_AND_POST'"
+   ],
+   "engine": [
+    "Der Code übergibt gs_hdr an Z_FI_AA_CREATE_AND_POST und übernimmt dessen Ausgabe nach lv_anln1.",
+    "Das konvertierte Ergebnis wird in lv_anln1 übernommen."
+   ]
+  },
+  {
+   "id": "BM-060-B17",
+   "soll": "Der Anlagenstammsatz wird im Buchungskreis mit Anlagenklasse, Bezeichnung, Aktivierungsdatum und Kostenstelle angelegt.",
+   "zeilen": [
+    221
+   ],
+   "code": [
+    "221:   CALL FUNCTION 'BAPI_FIXEDASSET_CREATE1'"
+   ],
+   "engine": [
+    "Der Code übergibt ls_key an BAPI_FIXEDASSET_CREATE1 und übernimmt dessen Ausgabe nach ev_anln1.",
+    "Das konvertierte Ergebnis wird in ev_anln1 übernommen."
+   ]
+  },
+  {
+   "id": "BM-060-B18",
+   "soll": "Scheitert das Anlegen, wird die LUW zurückgerollt und ein Fehler zurückgemeldet.",
+   "zeilen": [
+    234,
+    236,
+    238
+   ],
+   "code": [
+    "234:   IF ls_return-type CA 'EA'.",
+    "236:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "238:     RETURN."
+   ],
+   "engine": [
+    "Für ls_return-type CA 'EA' wird eine Zeile aufgenommen, BAPI_TRANSACTION_ROLLBACK aufgerufen, die ev_subrc auf 4 gesetzt und der Block verlassen.",
+    "Es wird eine Zeile aufgenommen, BAPI_TRANSACTION_ROLLBACK aufgerufen, die ev_subrc auf 4 gesetzt und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "ls_return-type CA 'EA' erhalten 4."
+   ]
+  },
+  {
+   "id": "BM-060-B19",
+   "soll": "Danach wird der Zugang mit Bewegungsart 100 ohne Kreditor gegen Verrechnungskonto gebucht, mit Betrag, Währung, Menge, Buchungs- und Bezugsdatum aus dem IDoc.",
+   "zeilen": [
+    257
+   ],
+   "code": [
+    "257:   CALL FUNCTION 'BAPI_ASSET_ACQUISITION_POST'"
+   ],
+   "engine": [
+    "Es wird die ls_add-base_uom auf ST gesetzt und BAPI_ASSET_ACQUISITION_POST aufgerufen.",
+    "Der Code übergibt ls_gen an BAPI_ASSET_ACQUISITION_POST und übernimmt dessen Ausgabe nach ls_docref.",
+    "Das konvertierte Ergebnis wird in ls_docref übernommen."
+   ]
+  },
+  {
+   "id": "BM-060-B20",
+   "soll": "Scheitert die Zugangsbuchung, werden Buchung und die eben angelegte Anlage gemeinsam zurückgerollt.",
+   "zeilen": [
+    264,
+    267,
+    269
+   ],
+   "code": [
+    "264:   IF ls_return-type CA 'EA'.",
+    "267:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "269:     RETURN."
+   ],
+   "engine": [
+    "Für ls_return-type CA 'EA' wird eine Zeile aufgenommen, BAPI_TRANSACTION_ROLLBACK aufgerufen, die ev_subrc auf 8 gesetzt und der Block verlassen.",
+    "Es wird eine Zeile aufgenommen, BAPI_TRANSACTION_ROLLBACK aufgerufen, die ev_subrc auf 8 gesetzt und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "ls_return-type CA 'EA' erhalten 8."
+   ]
+  },
+  {
+   "id": "BM-060-B21",
+   "soll": "Die externe Referenz wird mit Anlage, Belegnummer, Geschäftsjahr und Projekt in der Referenztabelle festgehalten.",
+   "zeilen": [
+    284
+   ],
+   "code": [
+    "284:   INSERT zfiaa_extref FROM ls_ref."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-060-B22",
+   "soll": "Lässt sich die Referenz nicht speichern, weil sie inzwischen existiert, wird alles zurückgerollt.",
+   "zeilen": [
+    285,
+    292,
+    294
+   ],
+   "code": [
+    "285:   IF sy-subrc <> 0.",
+    "292:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "294:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird die Typ auf E gesetzt, die Fall auf ZFIAA gesetzt, die ls_return-number auf 005 gesetzt, eine Zeile aufgenommen, BAPI_TRANSACTION_ROLLBACK aufgerufen, die ev_subrc auf 12 gesetzt und der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die Typ auf E.",
+    "sy-subrc ungleich 0 setzen die Fall auf ZFIAA.",
+    "sy-subrc ungleich 0 setzen die ls_return-number auf 005.",
+    "Es wird eine Zeile aufgenommen, BAPI_TRANSACTION_ROLLBACK aufgerufen, die ev_subrc auf 12 gesetzt und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "sy-subrc ungleich 0 erhalten 12."
+   ]
+  },
+  {
+   "id": "BM-060-B23",
+   "soll": "Erst danach werden Anlage, Zugang und Referenz gemeinsam festgeschrieben.",
+   "zeilen": [
+    297
+   ],
+   "code": [
+    "297:   CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-060-B24",
+   "soll": "Schlägt Anlegen, Buchen oder Referenz fehl, erhält das IDoc Status 51 mit der letzten Meldung des Bausteins.",
+   "zeilen": [
+    448,
+    456
+   ],
+   "code": [
+    "448:     IF lv_subrc <> 0.",
+    "456:       PERFORM fill_status TABLES idoc_status return_variables"
+   ],
+   "engine": [
+    "Für lv_subrc ungleich 0 wird fill_status aufgerufen.",
+    "Das Unterprogramm fill_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-060-B25",
+   "soll": "Erfolgreich verarbeitete IDocs erhalten Status 53 mit Anlagennummer, Unternummer und Belegnummer.",
+   "zeilen": [
+    467
+   ],
+   "code": [
+    "467:     PERFORM fill_status TABLES idoc_status return_variables"
+   ],
+   "engine": [
+    "Das Unterprogramm fill_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-060-B26",
+   "soll": "Für jedes IDoc wird ein Statussatz bereitgestellt und die IDoc-Nummer als verarbeitet oder fehlerhaft an den Workflow zurückgemeldet.",
+   "zeilen": [
+    161,
+    165,
+    171
+   ],
+   "code": [
+    "161:   APPEND gs_status TO ct_status.",
+    "165:   IF iv_status = gc_stat_err.",
+    "171:   APPEND ct_retvar."
+   ],
+   "engine": [
+    "Eine Zeile wird in ct_status aufgenommen.",
+    "Für Status mit dem Wert gc_stat_err wird die ct_retvar-wf_param auf Error_IDOCs gesetzt.",
+    "Für Status mit dem Wert gc_stat_err wird die ct_retvar-wf_param auf Error_IDOCs gesetzt, sonst die ct_retvar-wf_param auf Processed_IDOCs gesetzt.",
+    "Status mit dem Wert gc_stat_err setzen die ct_retvar-wf_param auf Error_IDOCs.",
+    "Eine Zeile wird aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-060-B27",
+   "soll": "Hatte mindestens ein IDoc des Pakets Status 51, wird das Workflow-Ergebnis auf Fehler gesetzt, sonst auf Erfolg.",
+   "zeilen": [
+    167,
+    472,
+    473,
+    475
+   ],
+   "code": [
+    "167:     gv_any_error = abap_true.",
+    "472:   IF gv_any_error = abap_true.",
+    "473:     workflow_result = gc_wf_error.",
+    "475:     workflow_result = gc_wf_ok."
+   ],
+   "engine": [
+    "Für Status mit dem Wert gc_stat_err wird die ct_retvar-wf_param auf Error_IDOCs gesetzt.",
+    "Für Status mit dem Wert gc_stat_err wird die ct_retvar-wf_param auf Error_IDOCs gesetzt, sonst die ct_retvar-wf_param auf Processed_IDOCs gesetzt."
+   ]
+  }
+ ]
+}

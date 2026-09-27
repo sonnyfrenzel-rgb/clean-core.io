@@ -1,0 +1,203 @@
+{
+ "id": "BM-100",
+ "urteile": [
+  {
+   "id": "BM-100-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Ende mit Meldung ohne Zeiger korrekt; das Lesen der offenen Zeiger nur als 'CHANGE_POINTERS_READ wird aufgerufen'."
+  },
+  {
+   "id": "BM-100-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Bausteinaufruf BAL_LOG_CREATE; Löschfrist fehlt, 'konvertiertes Ergebnis' trifft nicht zu."
+  },
+  {
+   "id": "BM-100-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'jede Zeile aus gt_cp wird einzeln verarbeitet'; Objektschlüssel als Kundennummer und Verdichtung fehlen."
+  },
+  {
+   "id": "BM-100-B04",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "'Es werden Kunden selektiert' und 'Ohne Treffer wird der Block verlassen' decken das Soll ab."
+  },
+  {
+   "id": "BM-100-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "Felder kdgrp/bzirk/vkbur und smtp_addr nur als Feldnamen; 'mit dem eingegebenen Verkaufsorganisation'."
+  },
+  {
+   "id": "BM-100-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Lesen von cvi_cust_link und but000 genannt; Ermittlung der Geschäftspartnernummer nicht fachlich."
+  },
+  {
+   "id": "BM-100-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'In der Tabelle wird nach einer passenden Zeile gesucht'; 'ohne Vertriebsdaten erledigt ohne Übertragung' fehlt."
+  },
+  {
+   "id": "BM-100-B08",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Inhalt des Übertragungssatzes."
+  },
+  {
+   "id": "BM-100-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Aktion D bei loevm, sonst U – nur als Feldzuweisung mit verstümmeltem Namen 'ls_kna1>-loevm'."
+  },
+  {
+   "id": "BM-100-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "'eine Zeile wird aufgenommen' bei Paketgröße bzw. Rest – Paketbildung nicht fachlich."
+  },
+  {
+   "id": "BM-100-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "p_par/send_parallel, SPBT_INITIALIZE und bei Fehler log_add + send_serial – nur technisch; 'Wirkung nicht belegt' und 'konvertiert' falsch."
+  },
+  {
+   "id": "BM-100-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Z_CRM_CUSTOMER_UPSERT wird asynchron in einer eigenen Task gestartet' – Servergruppe/freier Prozess fehlt, CRM-Adapter nur als Bausteinname."
+  },
+  {
+   "id": "BM-100-B13",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Warten und Wiederholen."
+  },
+  {
+   "id": "BM-100-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "Nur 'log_add aufgerufen und Block verlassen'; Kommunikationsfehler und 'kein erneuter Versuch' fehlen."
+  },
+  {
+   "id": "BM-100-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Für gv_recv kleiner gv_sent wird log_add aufgerufen' – Wartezeit und Warnung nicht fachlich."
+  },
+  {
+   "id": "BM-100-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "technisch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird log_add aufgerufen' – gescheitertes Paket ist kein Treffer-Fall; Ergebnis je Kunde fehlt."
+  },
+  {
+   "id": "BM-100-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Für andere ls_result-rc wird log_add aufgerufen'; Erledigt-Vermerk für erfolgreiche Kunden fehlt."
+  },
+  {
+   "id": "BM-100-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Serieller Bausteinaufruf und 'Ohne Treffer log_add' – Erledigt-Vermerk fehlt, 'Ohne Treffer'/'konvertiert' falsch."
+  },
+  {
+   "id": "BM-100-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Tabellensuche, 'Bei Treffer eine Zeile aufgenommen', CHANGE_POINTERS_STATUS_WRITE – 'nur erledigte Kunden, Rest bleibt offen' fehlt."
+  },
+  {
+   "id": "BM-100-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "BAL_DB_SAVE und COMMIT – Sichern des Logs nur als Bausteinname."
+  },
+  {
+   "id": "BM-100-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Kindprogramm rbdcpclr wird gestartet' – Bedingung 'auf Wunsch' und Reorganisation fehlen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

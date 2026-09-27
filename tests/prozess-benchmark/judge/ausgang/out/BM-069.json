@@ -1,0 +1,87 @@
+{
+ "id": "BM-069",
+ "urteile": [
+  {
+   "id": "BM-069-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus qals mit dem eingegebenen werk' – Herkunft, Entstehungsdatum und 'noch ohne Verwendungsentscheid' fehlen."
+  },
+  {
+   "id": "BM-069-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen' entspricht dem Soll; Meldungstext nicht genannt."
+  },
+  {
+   "id": "BM-069-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'vcode des Satzes wird gelesen' – dass ein vorhandener Entscheid zum stillen Überspringen führt, fehlt."
+  },
+  {
+   "id": "BM-069-B04",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Bei gv_rej > 0 wird das Ergebnis 'Merkmal zurueckgewiesen - manueller VE' protokolliert – fachlich dasselbe; Bedingung technisch, 'die gs_log-ergebnis' falscher Artikel."
+  },
+  {
+   "id": "BM-069-B05",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Zählungen und bei gv_bew < gv_plan 'Offene Merkmale - kein VE' protokolliert – fachlich dasselbe, Bedingung technisch."
+  },
+  {
+   "id": "BM-069-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Auswahlmenge ZFREI, erzwungener Abschluss und BAPI-Aufruf genannt; Code aus dem Parameter und Einschränkung auf fehlerfreie, vollständig bewertete Lose fehlen."
+  },
+  {
+   "id": "BM-069-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback bei Typ E/A, sonst Commit und 'VE gesetzt' erkannt; Protokollierung des Fehlertexts fehlt; 'auf VE gesetzt gesetzt' fehlerhaft."
+  },
+  {
+   "id": "BM-069-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufrufe factory/display genannt mit 'Verhalten nicht belegt'; Anzeige des Protokolls als ALV-Liste nicht gesagt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

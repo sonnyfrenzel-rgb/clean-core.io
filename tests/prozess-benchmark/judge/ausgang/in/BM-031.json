@@ -1,0 +1,230 @@
+{
+ "id": "BM-031",
+ "titel": "Rechnungsprüfung MIRO: kreditorspezifische Preis-/Mengentoleranz beim Sichern (INVOICE_UPDATE)",
+ "prozess": "Beim Sichern einer Eingangsrechnung in MIRO ruft die Logistik-Rechnungsprüfung die BAdI-Implementierung. Gutschriften und nachträgliche Belastungen werden nicht geprüft. Für echte Rechnungen wird die Toleranz ermittelt: zuerst kreditorspezifisch, dann als Buchungskreis-Default, notfalls eine feste Preistoleranz von 5 %. Ist die Prüfung für den Kreditor abgeschaltet, endet sie. Sonst wird jede Position mit Bestellbezug gegen die Bestellposition geprüft: Positionen ohne lesbare Bestellung oder mit Nullmengen werden übersprungen, für die übrigen werden Stückpreisabweichung in Prozent und Differenzbetrag berechnet, bei WE-bezogener Prüfung zusätzlich die Menge über der gelieferten, noch nicht berechneten Menge. Eine Position ist auffällig bei Preisabweichung über Toleranz oder bei Mengenüberschreitung, wenn der Kreditor sie nicht erlaubt; ihre Differenz wird summiert und eine Protokollzeile gebildet. Ohne Auffälligkeit wird normal gesichert. Übersteigt die Differenzsumme eine gepflegte harte Grenze, verhindert eine Fehlermeldung das Sichern. Sonst wird gesichert, und ein Verbuchungsbaustein schreibt die Abweichungen als offene Fälle für die Kreditorenbuchhaltung; scheitert das, bricht die Verbuchung ab.",
+ "verboten": [
+  "zcl_im_invoice_update.abap:78 — kein Fachsatz „Die Rechnung wird zur Zahlung gesperrt“ (es wird nur protokolliert; ein Zahlsperrgrund wird nicht gesetzt)",
+  "zcl_im_invoice_update.abap:73 — kein Fachsatz „Die Rechnung wird geparkt“ (das Sichern wird verhindert, nicht in Parken umgelenkt)",
+  "zcl_mm_iv_check.abap:78 — kein Fachsatz „Mengenprüfung für alle Positionen“ (nur bei WE-bezogener Rechnungsprüfung)",
+  "gesamte Scheibe — kein Fachsatz „Unterschreitungen des Bestellpreises werden gemeldet“ (nur positive Abweichung über Toleranz löst aus; negative Abweichung ist nie größer als die Toleranz)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-031-B01",
+   "soll": "Beim Sichern einer Eingangsrechnung in der Logistik-Rechnungsprüfung werden nur Rechnungen geprüft; Gutschriften und nachträgliche Belastungen bleiben ungeprüft.",
+   "zeilen": [
+    34,
+    45,
+    46
+   ],
+   "code": [
+    "34:   METHOD if_ex_invoice_update~change_at_save.",
+    "45:     IF s_rbkp_new-xrech <> 'X' OR s_rbkp_new-tbtkz = 'X'.",
+    "46:       RETURN."
+   ],
+   "engine": [
+    "Für s_rbkp_new-xrech <> 'X' OR s_rbkp_new-tbtkz = 'X' wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-031-B02",
+   "soll": "Die Toleranz wird zuerst kreditorspezifisch für den Buchungskreis gesucht, dann als Buchungskreis-Default, und fehlt beides, gilt eine feste Preistoleranz von 5 %.",
+   "zeilen": [
+    136,
+    140,
+    146
+   ],
+   "code": [
+    "136:     SELECT SINGLE * FROM zmm_iv_tol INTO rs_tol",
+    "140:       SELECT SINGLE * FROM zmm_iv_tol INTO rs_tol",
+    "146:         rs_tol-preis_pct = c_default_pct."
+   ],
+   "engine": [
+    "Es werden Sätze aus zmm_iv_tol selektiert.",
+    "Es werden Sätze aus zmm_iv_tol selektiert."
+   ]
+  },
+  {
+   "id": "BM-031-B03",
+   "soll": "Ist die Prüfung für den Kreditor abgeschaltet, wird die Rechnung ohne Prüfung gesichert.",
+   "zeilen": [
+    52,
+    53
+   ],
+   "code": [
+    "52:     IF ls_tol-inaktiv = 'X'.",
+    "53:       RETURN."
+   ],
+   "engine": [
+    "Mit gesetztem ls_tol-inaktiv wird der Block verlassen.",
+    "Mit gesetztem ls_tol-inaktiv wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-031-B04",
+   "soll": "Geprüft werden nur Rechnungspositionen mit Bestellbezug.",
+   "zeilen": [
+    56
+   ],
+   "code": [
+    "56:     LOOP AT ti_rseg_new INTO ls_rseg WHERE ebeln IS NOT INITIAL."
+   ],
+   "engine": [
+    "Jede Zeile aus ti_rseg_new wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-031-B05",
+   "soll": "Je Position wird die Bestellposition gelesen; fehlt sie oder sind Preiseinheit bzw. Rechnungsmenge null, wird die Position übersprungen.",
+   "zeilen": [
+    58,
+    158,
+    161
+   ],
+   "code": [
+    "58:       IF ls_result-not_found = abap_true.",
+    "158:     SELECT SINGLE * FROM ekpo INTO ls_ekpo",
+    "161:     IF sy-subrc <> 0 OR ls_ekpo-peinh = 0 OR is_rseg-menge = 0."
+   ],
+   "engine": [
+    "Es werden Sätze aus ekpo selektiert.",
+    "Für sy-subrc <> 0 OR ls_ekpo-peinh = 0 OR is_rseg-menge = 0 wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-031-B06",
+   "soll": "Rechnungs- und Bestellpreis werden je Einheit verglichen; daraus ergeben sich die prozentuale Preisabweichung und der Differenzbetrag über die Rechnungsmenge.",
+   "zeilen": [
+    167,
+    170
+   ],
+   "code": [
+    "167:     lv_po_price = ls_ekpo-netpr / ls_ekpo-peinh.",
+    "170:       rs_result-price_dev_pct = ( lv_iv_price - lv_po_price ) * 100 / lv_po_price."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-031-B07",
+   "soll": "Bei WE-bezogener Rechnungsprüfung wird die Rechnungsmenge gegen die gelieferte, noch nicht berechnete Menge aus der Bestellentwicklung gestellt; nur ein Überhang zählt als Mengenüberschreitung.",
+   "zeilen": [
+    175,
+    180,
+    186,
+    187
+   ],
+   "code": [
+    "175:     SELECT SUM( CASE shkzg WHEN 'S' THEN menge ELSE 0 - menge END )",
+    "180:     SELECT SUM( CASE shkzg WHEN 'S' THEN menge ELSE 0 - menge END )",
+    "186:     IF ls_ekpo-webre = 'X'.",
+    "187:       rs_result-qty_over = is_rseg-menge - ( lv_we_menge - lv_re_menge )."
+   ],
+   "engine": [
+    "Es werden Sätze aus ekbe selektiert.",
+    "Es werden Sätze aus ekbe selektiert."
+   ]
+  },
+  {
+   "id": "BM-031-B08",
+   "soll": "Eine Position ist auffällig, wenn die Preisabweichung die Toleranz übersteigt oder, falls der Kreditor keine Mengenüberschreitung erlaubt, mehr berechnet als offen geliefert wurde.",
+   "zeilen": [
+    63,
+    64,
+    66
+   ],
+   "code": [
+    "63:       IF ls_result-price_dev_pct > ls_tol-preis_pct.",
+    "64:         ls_log-reason = 'P'.",
+    "66:         ls_log-reason = 'M'."
+   ],
+   "engine": [
+    "Für ls_result-price_dev_pct größer ls_tol-preis_pct wird die ls_log-reason auf P gesetzt.",
+    "Für ls_result-price_dev_pct größer ls_tol-preis_pct wird die ls_log-reason auf P gesetzt, sonst die ls_log-reason auf M gesetzt.",
+    "ls_result-price_dev_pct größer ls_tol-preis_pct setzen die ls_log-reason auf P.",
+    "Für ls_result-qty_over > 0 AND ls_tol-menge_ueber = space wird die ls_log-reason auf M gesetzt.",
+    "ls_result-qty_over > 0 AND ls_tol-menge_ueber = space setzen die ls_log-reason auf M."
+   ]
+  },
+  {
+   "id": "BM-031-B09",
+   "soll": "Für jede auffällige Position wird der Differenzbetrag summiert und eine Protokollzeile mit Rechnung, Bestellung, Kreditor, Differenz, Benutzer und Datum gebildet.",
+   "zeilen": [
+    71,
+    72
+   ],
+   "code": [
+    "71:       lv_block = abap_true.",
+    "72:       lv_sum_diff = lv_sum_diff + ls_result-diff_amount."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-031-B10",
+   "soll": "Ohne auffällige Position wird die Rechnung normal gesichert.",
+   "zeilen": [
+    85,
+    86
+   ],
+   "code": [
+    "85:     IF lv_block = abap_false.",
+    "86:       RETURN."
+   ],
+   "engine": [
+    "Für lv_block mit dem Wert abap_false wird der Block verlassen.",
+    "Bei lv_block gleich abap_false wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-031-B11",
+   "soll": "Übersteigt die Summe der Differenzen eine gepflegte harte Betragsgrenze, wird das Sichern mit einer Fehlermeldung verhindert.",
+   "zeilen": [
+    90,
+    91
+   ],
+   "code": [
+    "90:     IF ls_tol-hart_betrag > 0 AND lv_sum_diff > ls_tol-hart_betrag.",
+    "91:       MESSAGE e120(zmm) WITH lv_sum_diff ls_tol-hart_betrag"
+   ],
+   "engine": [
+    "Für ls_tol-hart_betrag > 0 AND lv_sum_diff > ls_tol-hart_betrag wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-031-B12",
+   "soll": "Sonst wird die Rechnung gesichert und die Abweichungen werden mit der Verbuchung als offene Nacharbeitsfälle für die Kreditorenbuchhaltung protokolliert.",
+   "zeilen": [
+    11,
+    12,
+    96
+   ],
+   "code": [
+    "11:     ls_log-status = 'O'.          \"offen fuer Kreditorenbuchhaltung",
+    "12:     MODIFY zmm_iv_log FROM ls_log.",
+    "96:     CALL FUNCTION 'Z_MM_IV_LOG_WRITE' IN UPDATE TASK"
+   ],
+   "engine": [
+    "Es wird die Status auf O gesetzt und eine Zeile eingefügt oder überschrieben.",
+    "Die Status wird auf O gesetzt.",
+    "Eine Zeile in zmm_iv_log wird eingefügt oder überschrieben. Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK.",
+    "Der Baustein Z_MM_IV_LOG_WRITE wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Ob ein COMMIT WORK ihn auf jedem Weg anstößt, ist im gelieferten Code nicht bestimmt."
+   ]
+  },
+  {
+   "id": "BM-031-B13",
+   "soll": "Scheitert das Schreiben des Protokolls, bricht die Verbuchung mit Abbruchmeldung ab.",
+   "zeilen": [
+    13,
+    14
+   ],
+   "code": [
+    "13:     IF sy-subrc <> 0.",
+    "14:       MESSAGE a121(zmm) WITH ls_log-belnr ls_log-buzei."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

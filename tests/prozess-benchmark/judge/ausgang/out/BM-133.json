@@ -1,0 +1,117 @@
+{
+ "id": "BM-133",
+ "urteile": [
+  {
+   "id": "BM-133-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus gmgr selektiert\" und \"Eine Meldung wird ausgegeben\"; Gültigkeit, Buchungskreis, kostenbasierte Regel und Abbruch fehlen."
+  },
+  {
+   "id": "BM-133-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus zgm_unallow selektiert\"; nicht förderfähige Klassen je Fördertyp nicht benannt."
+  },
+  {
+   "id": "BM-133-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Summe hsl je rsponsored_class aus gmia technisch erkennbar; Stichtag und das Auslassen nicht förderfähiger Klassen fehlen."
+  },
+  {
+   "id": "BM-133-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus zgm_billed selektiert\"; Abzug der bereits abgerechneten Beträge fehlt."
+  },
+  {
+   "id": "BM-133-B05",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "\"Für Beträge bis einschließlich 0 wird die Text auf Nichts abzurechnen gesetzt und der Block verlassen\" trifft Vermerk und Nicht-Anlage; \"die Text\"."
+  },
+  {
+   "id": "BM-133-B06",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Im Testlauf Text \"Testlauf - keine Anforderung\" und Rückkehr vor der Datenbankoperation; mehrfach, \"die Text\", \"setzen\"."
+  },
+  {
+   "id": "BM-133-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "unvollstaendig"
+   ],
+   "kurz": "\"Kundennummer des Satzes wird gelesen\" ohne Bezug zum Sponsor und zum Echtlauf."
+  },
+  {
+   "id": "BM-133-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Übergabe an BAPI_SALESORDER_CREATEFROMDAT2 und \"konvertierte Ergebnis\"; Lastschriftanforderung ZGMA, Kondition, Bestellnummer fehlen."
+  },
+  {
+   "id": "BM-133-B09",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu Wartezeit und Wiederholung bei Sperre."
+  },
+  {
+   "id": "BM-133-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"BAPI_TRANSACTION_ROLLBACK wird aufgerufen\"; Bedingung (keine Belegnummer) und Übernahme des Fehlertexts fehlen."
+  },
+  {
+   "id": "BM-133-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Commit und Text \"Lastschriftanforderung angelegt\" erkannt; Vermerk in zgm_billed mit Stichtag/Nummer/Betrag fehlt; \"die Text\"."
+  },
+  {
+   "id": "BM-133-B12",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "\"ls_res-grant_nbr, Betrag, Belegnummer und Text als Liste\" entspricht der Liste je Förderung; Rest Wiederholung."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,88 @@
+{
+ "id": "BM-010",
+ "urteile": [
+  {
+   "id": "BM-010-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus bsid selektiert\" – weder offene Soll-Posten noch Ausschluss Sonderhauptbuch noch Buchungskreis/Kunde."
+  },
+  {
+   "id": "BM-010-B02",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig",
+    "grammatik"
+   ],
+   "kurz": "Nur der Ausdruck zfbdt + zbd1t < sy-datum - p_tage; \"kleinere werden übersprungen\" ist verkehrt (übersprungen werden die nicht überfälligen, also größeren Daten), die Summierung je Kunde fehlt."
+  },
+  {
+   "id": "BM-010-B03",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "\"Nur Beträge ab p_minbt gehen weiter; kleinere werden übersprungen\" trifft die Mindestbetragsgrenze, nur mit Parameternamen."
+  },
+  {
+   "id": "BM-010-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Ausgabe \"bereits gesperrt\" bei nicht leerer gv_aufsd erkennbar, aber technisch, sechsfach zerlegt; dass nichts weiter geschieht, fehlt."
+  },
+  {
+   "id": "BM-010-B05",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Für p_test mit dem Wert abap_true wird Kundennummer, Betrag und ‚würde gesperrt (Testlauf)‘ ausgegeben\" – fachlich erkennbar trotz p_test; mehrfach zerlegt, \"belegt nur das Erreichen\"."
+  },
+  {
+   "id": "BM-010-B06",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Sperre nur als ENQUEUE_EXKNA1; \"Bei Treffern werden Kundennummer, in Bearbeitung durch … ausgegeben\" ist falsch (Ausgabe nur bei gescheiterter Sperre), das Überspringen fehlt."
+  },
+  {
+   "id": "BM-010-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Die aufsd des Kunden wird geändert\" und DEQUEUE_EXKNA1 – Wert 07 und Freigabe der Sperre nur technisch bzw. aus dem Ausgabetext erschließbar."
+  },
+  {
+   "id": "BM-010-B08",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "\"Mit COMMIT WORK wird die Änderung persistiert\" – Festschreiben der Änderungen, mit Fachjargon."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

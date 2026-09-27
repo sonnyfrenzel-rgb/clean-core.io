@@ -1,0 +1,134 @@
+{
+ "id": "BM-186",
+ "titel": "OData-Filial-App Werbeaktionen: GET_ENTITYSET mit Pflichtfilter, Berechtigung je Filiale, dynamischem WHERE",
+ "prozess": "Die Filial-App fragt über den OData-Service die Werbeaktionen an. Die Methode übernimmt die Filter der Anfrage und wertet sie einzeln aus: Der Filialfilter wird als Filialbereich übernommen, der Filter Aktiv schränkt auf Aktionen ein, deren Laufzeit den heutigen Tag enthält, und jeder andere Filter wird mit „Filter nicht unterstützt“ abgewiesen. Fehlt der Filialfilter, wird die Anfrage mit „Filter WERKS ist Pflicht“ abgewiesen. Danach prüft die Methode für jede angefragte Filiale die Anzeigeberechtigung und entfernt Filialen ohne Berechtigung; geprüft wird dabei nur der Von-Wert der Filterzeile. Bleibt keine Filiale übrig, folgt ein Berechtigungsfehler. Dann liest sie die Aktionen dieser Filialen mit Text, Laufzeit und Rabattsatz, nach Beginndatum sortiert; ohne Filter Aktiv sind das alle, auch abgelaufene. Die Liste wird auf die angefragte Seite zugeschnitten. Ist eine Trefferzahl angefordert, meldet die Methode die Zahl der gelieferten Zeilen, nicht die Gesamtzahl. Geschrieben wird nichts.",
+ "verboten": [
+  "zcl_zret_promo_dpc_ext.abap:68 — kein Fachsatz „die Gesamtzahl der passenden Aktionen wird gemeldet“: gezählt wird nach dem Abschneiden der Seite, gemeldet wird nur die Anzahl der gelieferten Zeilen",
+  "zcl_zret_promo_dpc_ext.abap:35 — kein Fachsatz „die Berechtigung wird für alle angefragten Filialen vollständig geprüft“: geprüft wird nur der Von-Wert jeder Filterzeile; bei Intervallen oder Mustern bleiben die übrigen Filialen ungeprüft im Filter",
+  "zcl_zret_promo_dpc_ext.abap:49 — kein Fachsatz „ohne Filter Aktiv werden nur künftige Aktionen geliefert“: ohne diesen Filter ist die dynamische Bedingung leer und es werden alle Aktionen der Filialen geliefert, auch abgelaufene",
+  "gesamte Scheibe — kein Fachsatz „Aktionen werden angelegt oder geändert“: die Methode liest nur"
+ ],
+ "saetze": [
+  {
+   "id": "BM-186-B01",
+   "soll": "Die App fragt Werbeaktionen mit Filtern ab; ausgewertet werden die Filter Filiale und Aktiv.",
+   "zeilen": [
+    12,
+    15
+   ],
+   "code": [
+    "12:     DATA(lt_filter) = io_tech_request_context->get_filter( )->get_filter_select_options( ).",
+    "15:       CASE ls_filter-property."
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode get_filter von io_tech_request_context wird nach lt_filter übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-186-B02",
+   "soll": "Mit dem Filter Aktiv werden nur Aktionen berücksichtigt, die heute laufen.",
+   "zeilen": [
+    19
+   ],
+   "code": [
+    "19:           lv_where = |a~ab_datum <= '{ sy-datum }' AND a~bis_datum >= '{ sy-datum }'|."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-186-B03",
+   "soll": "Jeder andere Filter wird mit dem Fehler „Filter nicht unterstützt“ abgewiesen.",
+   "zeilen": [
+    21
+   ],
+   "code": [
+    "21:           RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-186-B04",
+   "soll": "Ohne Filialfilter wird die Anfrage mit „Filter WERKS ist Pflicht“ abgewiesen.",
+   "zeilen": [
+    27,
+    28
+   ],
+   "code": [
+    "27:     IF lt_werks IS INITIAL.",
+    "28:       RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-186-B05",
+   "soll": "Filialen, für die der Benutzer keine Anzeigeberechtigung hat, werden aus der Anfrage entfernt.",
+   "zeilen": [
+    34,
+    35,
+    38
+   ],
+   "code": [
+    "34:     LOOP AT lt_werks INTO DATA(ls_werks).",
+    "35:       AUTHORITY-CHECK OBJECT 'M_MATE_WRK'",
+    "38:       IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Jede Zeile aus lt_werks wird einzeln verarbeitet.",
+    "Die Berechtigung auf M_MATE_WRK wird geprüft."
+   ]
+  },
+  {
+   "id": "BM-186-B06",
+   "soll": "Bleibt keine berechtigte Filiale übrig, wird die Anfrage mit einem Berechtigungsfehler abgewiesen.",
+   "zeilen": [
+    43,
+    44
+   ],
+   "code": [
+    "43:     IF lt_werks IS INITIAL.",
+    "44:       RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-186-B07",
+   "soll": "Die Aktionen der berechtigten Filialen werden mit Text, Laufzeit und Rabattsatz nach Beginndatum sortiert gelesen.",
+   "zeilen": [
+    49
+   ],
+   "code": [
+    "49:     SELECT a~aktnr, a~akttext, a~ab_datum, a~bis_datum,"
+   ],
+   "engine": [
+    "Das Ergebnis enthält a~aktnr, a~akttext, a~ab_datum, a~bis_datum, f~werks und a~rabatt_proz.",
+    "Es werden Sätze aus zret_aktion selektiert."
+   ]
+  },
+  {
+   "id": "BM-186-B08",
+   "soll": "Die Ergebnisliste wird auf die angefragte Seite ($skip/$top) zugeschnitten.",
+   "zeilen": [
+    59,
+    63
+   ],
+   "code": [
+    "59:     IF is_paging-top > 0.",
+    "63:     IF is_paging-skip > 0."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-186-B09",
+   "soll": "Auf Anforderung wird die Anzahl der zurückgegebenen Aktionen als Trefferzahl gemeldet.",
+   "zeilen": [
+    67
+   ],
+   "code": [
+    "67:     IF io_tech_request_context->has_inlinecount( ) = abap_true."
+   ],
+   "engine": [
+    "Die Methode has_inlinecount von io_tech_request_context wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

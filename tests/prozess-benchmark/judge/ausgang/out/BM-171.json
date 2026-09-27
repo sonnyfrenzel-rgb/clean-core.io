@@ -1,0 +1,131 @@
+{
+ "id": "BM-171",
+ "urteile": [
+  {
+   "id": "BM-171-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Ohne Treffer wird eine Meldung ausgegeben“; weder Öffnen der CSV-Datei noch Abbruch mit Fehlermeldung benannt."
+  },
+  {
+   "id": "BM-171-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Zerlegen der Zeilen."
+  },
+  {
+   "id": "BM-171-B03",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "Ohne Sätze Meldung und Verlassen des Blocks – entspricht dem Sollsatz (Anzeige als Fehler als Detail fehlt)."
+  },
+  {
+   "id": "BM-171-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Ausgabe von p_file/p_test nur technisch, „Bei Treffern“ statt Listenbeginn, Zusatz „belegt nur das Erreichen“."
+  },
+  {
+   "id": "BM-171-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „cv_msgno auf 030 gesetzt“; Bedingung „Zählerstand nicht numerisch“ fehlt."
+  },
+  {
+   "id": "BM-171-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Bedingung und Fehler 031 korrekt, aber nur als gs_satz-adat > sy-datum; „erhalten 031“ ungrammatisch."
+  },
+  {
+   "id": "BM-171-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Fehler 032 bei fehlendem Treffer korrekt, aber „equnr des Satzes“; unbekanntes Gerät nicht fachlich benannt."
+  },
+  {
+   "id": "BM-171-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Lesen aus eabl und Fehler 033 bei Stand < letzter Stand nur als Code-Ausdruck; Zählerrücklauf nicht benannt."
+  },
+  {
+   "id": "BM-171-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Warnzeile bei lv_abw > p_tol technisch; Tagesverbrauchsvergleich und „Satz bleibt gültig“ fehlen."
+  },
+  {
+   "id": "BM-171-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Fehlerzeile mit gv_msgno technisch; Zählen und Nicht-Hochladen fehlen."
+  },
+  {
+   "id": "BM-171-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Ohne p_test BAPI_MTRREADDOC_UPLOAD-Aufruf; Ablesebeleg-Upload nicht fachlich formuliert."
+  },
+  {
+   "id": "BM-171-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback mit Fehlerausgabe, sonst Commit – nur als FB-Namen und Feldnamen; Zählen fehlt."
+  },
+  {
+   "id": "BM-171-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Zählerausgabe technisch („Bei Treffern“); Ausfall bei fehlerhaftem letzten Satz fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,75 @@
+{
+ "id": "BM-107",
+ "urteile": [
+  {
+   "id": "BM-107-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Bedingung Werk 2000 nur als Code; 'kleinere werden übersprungen, die Schleife läuft weiter' ist falsch (CHECK in einer Methode)."
+  },
+  {
+   "id": "BM-107-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus ihgns selektiert' – Zählung nicht erteilter Genehmigungen fehlt."
+  },
+  {
+   "id": "BM-107-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "'Für lv_offen größer 0 wird eine Meldung ausgegeben' – Ablehnung der Freigabe mit Anzahl/Auftrag fehlt."
+  },
+  {
+   "id": "BM-107-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'Sätze aus afvc' und 'aus zpm_freisch' – Vorgänge ZWCM und Freischaltungen nur als Tabellennamen."
+  },
+  {
+   "id": "BM-107-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "'Für Status ungleich AKT wird der Block verlassen' – der Fall 'keine Freischaltung erfasst' und die Bedeutung fehlen."
+  },
+  {
+   "id": "BM-107-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Für lv_isol_ok mit dem Wert abap_false wird der Block verlassen' – Abbruch beim ersten Vorgang nur technisch."
+  },
+  {
+   "id": "BM-107-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "'Für lv_isol_ok ... wird eine Meldung ausgegeben' – Ablehnung der Freigabe zum Vorgang fehlt fachlich."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

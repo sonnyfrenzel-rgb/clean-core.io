@@ -1,0 +1,125 @@
+{
+ "id": "BM-148",
+ "titel": "Organisationsmanagement: Führungsspanne rekursiv über die Linienhierarchie",
+ "prozess": "Die Personalleitung startet eine Auswertung der Führungsspanne ab einer Wurzeleinheit zu einem Stichtag. Der Report läuft die Linienhierarchie rekursiv ab: Für jede Einheit ermittelt er über den Auswertungsweg O-S-P die direkt über Planstellen zugeordneten Personen und zählt sie. Die Einheit wird mit Ebene und Personenzahl vorgemerkt, dann werden die direkt untergeordneten Einheiten gelesen und genauso ausgewertet. Einheiten jenseits der eingegebenen Höchsttiefe werden samt Teilbaum übergangen; der Anwender erhält dann einen Hinweis. Das Ergebnis wird als ALV-Liste angezeigt; scheitert die Anzeige, endet der Report mit einer Fehlermeldung. Personen mit mehreren Planstellen zählen mehrfach, und es wird nichts verändert.",
+ "verboten": [
+  "source.abap:53 — kein Fachsatz „die Personenzahl enthält alle Personen des Teilbaums“ (Weg O-S-P zählt nur die Einheit selbst)",
+  "source.abap:67 — kein Fachsatz „jede Person wird genau einmal gezählt“ (Mehrfachbesetzung zählt mehrfach)",
+  "source.abap:50 — kein Fachsatz „ein Zyklus in der Hierarchie wird erkannt“ (es gibt nur eine Tiefengrenze)",
+  "gesamte Scheibe — kein write-Knoten (die Organisationsstruktur wird nicht verändert)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-148-B01",
+   "soll": "Ab der eingegebenen Wurzeleinheit wird die Linienhierarchie Einheit für Einheit abgelaufen.",
+   "zeilen": [
+    23
+   ],
+   "code": [
+    "23:   PERFORM walk USING p_root 1."
+   ],
+   "engine": [
+    "Das Unterprogramm walk wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-148-B02",
+   "soll": "Liegt eine Einheit tiefer als die zulässige Ebenenzahl, wird sie samt Teilbaum nicht ausgewertet und die Abschneidung vermerkt.",
+   "zeilen": [
+    48,
+    50
+   ],
+   "code": [
+    "48:   IF pv_depth > p_maxd.",
+    "50:     RETURN."
+   ],
+   "engine": [
+    "Für pv_depth größer p_maxd wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-148-B03",
+   "soll": "Für jede Einheit werden am Stichtag über Planstellen die direkt zugeordneten Personen ermittelt und gezählt; Personen in untergeordneten Einheiten zählen dort.",
+   "zeilen": [
+    53,
+    66,
+    67
+   ],
+   "code": [
+    "53:   CALL FUNCTION 'RH_STRUC_GET'",
+    "66:   IF sy-subrc = 0.",
+    "67:     ls_out-persons = REDUCE i( INIT n = 0"
+   ],
+   "engine": [
+    "Der Funktionsbaustein RH_STRUC_GET wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-148-B04",
+   "soll": "Die Einheit wird mit ihrer Hierarchieebene und der Personenzahl vorgemerkt.",
+   "zeilen": [
+    73
+   ],
+   "code": [
+    "73:   APPEND ls_out TO gt_out."
+   ],
+   "engine": [
+    "Eine Zeile wird in gt_out aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-148-B05",
+   "soll": "Die am Stichtag direkt untergeordneten Organisationseinheiten werden gelesen und jeweils auf der nächsten Ebene genauso ausgewertet.",
+   "zeilen": [
+    75,
+    84,
+    87
+   ],
+   "code": [
+    "75:   SELECT * FROM hrp1001 INTO TABLE lt_sub",
+    "84:   LOOP AT lt_sub INTO ls_sub.",
+    "87:     PERFORM walk USING lv_child lv_next."
+   ],
+   "engine": [
+    "Es werden Sätze aus hrp1001 selektiert.",
+    "Jede Zeile aus lt_sub wird einzeln verarbeitet.",
+    "Das Unterprogramm walk wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-148-B06",
+   "soll": "Wurden Teilbäume wegen der Tiefe abgeschnitten, erhält der Anwender einen Hinweis.",
+   "zeilen": [
+    25,
+    26
+   ],
+   "code": [
+    "25:   IF gv_too_deep = abap_true.",
+    "26:     MESSAGE i398(00) WITH 'Hierarchie tiefer als' p_maxd 'Ebenen,'"
+   ],
+   "engine": [
+    "Für gv_too_deep mit dem Wert abap_true wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-148-B07",
+   "soll": "Alle ausgewerteten Einheiten werden mit Ebene und Personenzahl als Liste angezeigt; scheitert die Listanzeige, bricht der Report mit Fehlermeldung ab.",
+   "zeilen": [
+    31,
+    33,
+    35
+   ],
+   "code": [
+    "31:       cl_salv_table=>factory( IMPORTING r_salv_table = DATA(lo_alv)",
+    "33:       lo_alv->display( ).",
+    "35:       MESSAGE lx_salv TYPE 'E'."
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode factory von cl_salv_table wird nach cl_salv_table übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,358 @@
+{
+ "id": "BM-120",
+ "titel": "Freischaltung (WCM) im Modulpool: Auftrag sperren, Schritte setzen und im Vier-Augen-Prinzip prüfen, zurücknehmen, verbuchen, Status „freigeschaltet“",
+ "prozess": "Der Monteur ruft die Freischalttransaktion auf und gibt einen Instandhaltungsauftrag ein. Mit „Weiter“ prüft das Programm, dass es ein Instandhaltungsauftrag und freigegeben ist, merkt sich, ob er technisch abgeschlossen ist, und sperrt ihn; jeder Fehler wird am Einstiegsbild gemeldet. Dann liest es die Freischaltschritte aller Vorgänge in Vorgangs- und Schrittfolge; ohne Schritte hebt es die Sperre auf und meldet einen Fehler. Sonst merkt es den Auftrag im Benutzerkontext und zeigt die Schrittliste. Dort vermerkt „Setzen“ markierte offene oder zurückgenommene Schritte als gesetzt mit Benutzer und Zeitpunkt. „Prüfen“ macht markierte gesetzte Schritte wirksam; hat der Prüfer den Schritt selbst gesetzt, bricht es mit Fehler ab, außer für den Benutzer WCM_ADMIN, und bereits in dieser Aktion geprüfte Schritte bleiben geprüft. „Zurücknehmen“ ist nur bei technisch abgeschlossenem Auftrag erlaubt und setzt markierte wirksame Schritte zurück. „Sichern“ meldet ohne Änderungen nur einen Hinweis; sonst werden alle Schritte zur Verbuchung vorgemerkt, bei keinem offenen oder nur gesetzten Schritt erhält der Auftrag den Anwenderstatus „freigeschaltet“, und alles wird synchron festgeschrieben, wobei die Verbuchung Schritte und Statusprotokoll schreibt. „Zurück“ fragt bei ungesicherten Änderungen nach: Ja sichert, Abbrechen bleibt in der Liste, Nein verwirft; danach wird die Sperre aufgehoben und zum Einstieg zurückgekehrt. Abbrechen oder Beenden hebt die Sperre ohne Rückfrage auf und verlässt die Transaktion.",
+ "verboten": [
+  "mzpm_freischalt_f01.abap:165 — kein Fachsatz „der Auftrag gilt nur als freigeschaltet, wenn alle Schritte wirksam sind“: geprüft wird nur, dass kein Schritt OFFEN oder GESETZT ist; sind alle Schritte zurückgenommen, wird E0010 ebenfalls gesetzt",
+  "mzpm_freischalt_f01.abap:110 — kein Fachsatz „das Vier-Augen-Prinzip gilt ausnahmslos“: der Benutzer WCM_ADMIN darf eigene Schritte prüfen",
+  "mzpm_freischalt_f01.abap:111 — kein Fachsatz „bei einem Vier-Augen-Verstoß bleiben alle markierten Schritte unverändert“: die vorher in derselben Schleife geprüften Schritte stehen bereits auf AKT und werden beim nächsten Sichern geschrieben",
+  "gesamte Scheibe — kein Fachsatz „die Berechtigung des Benutzers für Werk oder Auftrag wird geprüft“: das Programm enthält keine Berechtigungsprüfung; die PBO-Module (Include MZPM_FREISCHALT_O01) liegen nicht im Fall"
+ ],
+ "saetze": [
+  {
+   "id": "BM-120-B01",
+   "soll": "Abbrechen oder Beenden hebt die Sperre auf den Auftrag auf und verlässt die Transaktion ohne Rückfrage; ungesicherte Änderungen verfallen.",
+   "zeilen": [
+    225,
+    227,
+    230
+   ],
+   "code": [
+    "225:   CASE ok_code.",
+    "227:       CALL FUNCTION 'DEQUEUE_EZPM_FREISCH'",
+    "230:       LEAVE PROGRAM."
+   ],
+   "engine": [
+    "Der Funktionsbaustein DEQUEUE_EZPM_FREISCH wird aufgerufen.",
+    "Es wird DEQUEUE_EZPM_FREISCH aufgerufen und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-120-B02",
+   "soll": "Mit „Weiter“ wird der eingegebene Auftrag geprüft; ist er kein Instandhaltungsauftrag, wird er mit Fehlermeldung abgewiesen.",
+   "zeilen": [
+    48,
+    56,
+    57,
+    241,
+    244
+   ],
+   "code": [
+    "48:   SELECT SINGLE a~aufnr, a~auart, a~objnr, a~werks, f~iwerk,",
+    "56:   IF sy-subrc <> 0.",
+    "57:     MESSAGE e230 WITH gv_aufnr.",
+    "241:   CASE ok_code.",
+    "244:       PERFORM auftrag_lesen."
+   ],
+   "engine": [
+    "Es werden Sätze aus aufk selektiert.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Das Unterprogramm auftrag_lesen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird auftrag_lesen aufgerufen und schritte_lesen aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-120-B03",
+   "soll": "Ist der Auftrag nicht freigegeben, wird er mit Fehlermeldung abgewiesen.",
+   "zeilen": [
+    60,
+    67,
+    68
+   ],
+   "code": [
+    "60:   CALL FUNCTION 'STATUS_CHECK'",
+    "67:   IF sy-subrc <> 0.",
+    "68:     MESSAGE e231 WITH gv_aufnr."
+   ],
+   "engine": [
+    "Der Funktionsbaustein STATUS_CHECK wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-120-B04",
+   "soll": "Es wird vermerkt, ob der Auftrag technisch abgeschlossen ist.",
+   "zeilen": [
+    71,
+    78
+   ],
+   "code": [
+    "71:   CALL FUNCTION 'STATUS_CHECK'",
+    "78:   gv_teco = xsdbool( sy-subrc = 0 )."
+   ],
+   "engine": [
+    "Der Funktionsbaustein STATUS_CHECK wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-120-B05",
+   "soll": "Der Auftrag wird für die Freischaltung gesperrt; bearbeitet ihn schon jemand, wird mit Fehlermeldung abgewiesen.",
+   "zeilen": [
+    80,
+    87,
+    88
+   ],
+   "code": [
+    "80:   CALL FUNCTION 'ENQUEUE_EZPM_FREISCH'",
+    "87:   IF sy-subrc <> 0.",
+    "88:     MESSAGE e232 WITH gv_aufnr sy-msgv1."
+   ],
+   "engine": [
+    "Der Funktionsbaustein ENQUEUE_EZPM_FREISCH wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-120-B06",
+   "soll": "Die Freischaltschritte aller Vorgänge des Auftrags werden in Vorgangs- und Schrittfolge gelesen; gibt es keine, wird die Sperre aufgehoben und mit Fehlermeldung abgewiesen.",
+   "zeilen": [
+    99,
+    108,
+    109,
+    112,
+    245
+   ],
+   "code": [
+    "99:   SELECT f~aufpl, f~aplzl, v~vornr, v~ltxa1, f~schritt, f~objekt,",
+    "108:   IF gt_steps IS INITIAL.",
+    "109:     CALL FUNCTION 'DEQUEUE_EZPM_FREISCH'",
+    "112:     MESSAGE e233 WITH gv_aufnr.",
+    "245:       PERFORM schritte_lesen."
+   ],
+   "engine": [
+    "Es werden Sätze aus zpm_freisch selektiert.",
+    "Ohne Treffer wird DEQUEUE_EZPM_FREISCH aufgerufen und eine Meldung ausgegeben.",
+    "Der Funktionsbaustein DEQUEUE_EZPM_FREISCH wird aufgerufen.",
+    "Es wird DEQUEUE_EZPM_FREISCH aufgerufen und eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird auftrag_lesen aufgerufen und schritte_lesen aufgerufen.",
+    "Das Unterprogramm schritte_lesen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-120-B07",
+   "soll": "Danach wird die Auftragsnummer im Benutzerkontext vorgemerkt und die Schrittliste angezeigt.",
+   "zeilen": [
+    246,
+    247
+   ],
+   "code": [
+    "246:       SET PARAMETER ID 'ANR' FIELD gv_aufnr.",
+    "247:       LEAVE TO SCREEN 0200."
+   ],
+   "engine": [
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-120-B08",
+   "soll": "„Setzen“ vermerkt markierte offene oder zurückgenommene Schritte als gesetzt mit Benutzer und Zeitpunkt; andere markierte Schritte bleiben mit Hinweis unverändert.",
+   "zeilen": [
+    123,
+    124,
+    125,
+    128,
+    273
+   ],
+   "code": [
+    "123:   LOOP AT gt_steps ASSIGNING FIELD-SYMBOL(<ls_st>) WHERE mark = abap_true.",
+    "124:     IF <ls_st>-status <> 'OFFEN' AND <ls_st>-status <> 'ZURUECK'.",
+    "125:       MESSAGE i234 WITH <ls_st>-vornr <ls_st>-schritt.",
+    "128:     <ls_st>-status      = 'GESETZT'.",
+    "273:       PERFORM schritt_setzen."
+   ],
+   "engine": [
+    "Jede Zeile aus gt_steps wird einzeln verarbeitet.",
+    "Für <ls_st>-status <> 'OFFEN' AND <ls_st>-status <> 'ZURUECK' wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Die Status wird auf GESETZT gesetzt.",
+    "Das Unterprogramm schritt_setzen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-120-B09",
+   "soll": "„Prüfen“ macht markierte gesetzte Schritte wirksam (AKT) mit Prüfer und Zeitpunkt; nicht gesetzte markierte Schritte werden übergangen.",
+   "zeilen": [
+    143,
+    144,
+    148,
+    276
+   ],
+   "code": [
+    "143:   LOOP AT gt_steps ASSIGNING FIELD-SYMBOL(<ls_st>) WHERE mark = abap_true.",
+    "144:     CHECK <ls_st>-status = 'GESETZT'.",
+    "148:     <ls_st>-status       = 'AKT'.",
+    "276:       PERFORM schritt_pruefen."
+   ],
+   "engine": [
+    "Jede Zeile aus gt_steps wird einzeln verarbeitet.",
+    "Nur Status mit dem Wert GESETZT gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Die Status wird auf AKT gesetzt.",
+    "Das Unterprogramm schritt_pruefen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-120-B10",
+   "soll": "Hat der Prüfer den Schritt selbst gesetzt, wird die Prüfung mit Fehlermeldung abgebrochen, außer der Benutzer ist WCM_ADMIN.",
+   "zeilen": [
+    145,
+    146
+   ],
+   "code": [
+    "145:     IF <ls_st>-gesetzt_von = sy-uname AND sy-uname <> 'WCM_ADMIN'.",
+    "146:       MESSAGE e236 WITH <ls_st>-vornr <ls_st>-schritt."
+   ],
+   "engine": [
+    "Für <ls_st>-gesetzt_von = sy-uname AND sy-uname <> 'WCM_ADMIN' wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-120-B11",
+   "soll": "„Zurücknehmen“ ist nur bei technisch abgeschlossenem Auftrag erlaubt und setzt markierte wirksame Schritte mit Benutzer auf zurückgenommen.",
+   "zeilen": [
+    164,
+    165,
+    167,
+    169,
+    279
+   ],
+   "code": [
+    "164:   IF gv_teco = abap_false.",
+    "165:     MESSAGE e237 WITH gv_aufnr.",
+    "167:   LOOP AT gt_steps ASSIGNING FIELD-SYMBOL(<ls_st>)",
+    "169:     <ls_st>-status      = 'ZURUECK'.",
+    "279:       PERFORM schritt_zuruecknehmen."
+   ],
+   "engine": [
+    "Für gv_teco mit dem Wert abap_false wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Jede Zeile aus gt_steps wird einzeln verarbeitet.",
+    "Die Status wird auf ZURUECK gesetzt.",
+    "Das Unterprogramm schritt_zuruecknehmen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-120-B12",
+   "soll": "„Sichern“ ohne Änderungen meldet nur, dass nichts zu sichern ist.",
+   "zeilen": [
+    187,
+    188,
+    189,
+    282
+   ],
+   "code": [
+    "187:   IF gv_changed = abap_false.",
+    "188:     MESSAGE s238.",
+    "189:     RETURN.",
+    "282:       PERFORM sichern."
+   ],
+   "engine": [
+    "Für gv_changed mit dem Wert abap_false wird eine Meldung ausgegeben und der Block verlassen.",
+    "Bei gv_changed gleich abap_false wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen.",
+    "Das Unterprogramm sichern wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-120-B13",
+   "soll": "Sonst werden alle Schritte des Auftrags zur Verbuchung vorgemerkt.",
+   "zeilen": [
+    193
+   ],
+   "code": [
+    "193:   CALL FUNCTION 'Z_PM_FREISCH_VERBUCHEN' IN UPDATE TASK"
+   ],
+   "engine": [
+    "Der Baustein Z_PM_FREISCH_VERBUCHEN wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 210."
+   ]
+  },
+  {
+   "id": "BM-120-B14",
+   "soll": "Ist kein Schritt mehr offen oder nur gesetzt, erhält der Auftrag den Anwenderstatus E0010 „freigeschaltet“.",
+   "zeilen": [
+    200,
+    202
+   ],
+   "code": [
+    "200:   IF NOT line_exists( gt_steps[ status = 'OFFEN' ] )",
+    "202:     CALL FUNCTION 'STATUS_CHANGE_EXTERN'"
+   ],
+   "engine": [
+    "Für NOT line_exists( gt_steps[ status = 'OFFEN' ] ) AND NOT line_exists( gt_steps[ status = 'GESETZT' ] ) wird STATUS_CHANGE_EXTERN aufgerufen.",
+    "Der Funktionsbaustein STATUS_CHANGE_EXTERN wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-120-B15",
+   "soll": "Alles wird synchron festgeschrieben und die Sicherung bestätigt.",
+   "zeilen": [
+    210,
+    212
+   ],
+   "code": [
+    "210:   COMMIT WORK AND WAIT.",
+    "212:   MESSAGE s240 WITH gv_aufnr."
+   ],
+   "engine": [
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Mit AND WAIT wird auf die Verbuchung gewartet; sy-subrc wird danach aber nicht ausgewertet.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-120-B16",
+   "soll": "Die Verbuchung schreibt die Schritte und protokolliert je Schritt den Status mit Benutzer, Datum und Uhrzeit.",
+   "zeilen": [
+    389,
+    391
+   ],
+   "code": [
+    "389:   MODIFY zpm_freisch FROM TABLE it_freisch.",
+    "391:   INSERT zpm_freisch_log FROM TABLE @( VALUE #( FOR ls_f IN it_freisch[]"
+   ],
+   "engine": [
+    "Eine Zeile in zpm_freisch wird eingefügt oder überschrieben. sy-subrc wird danach nicht ausgewertet."
+   ]
+  },
+  {
+   "id": "BM-120-B17",
+   "soll": "„Zurück“ fragt bei ungesicherten Änderungen, ob gesichert werden soll: Ja sichert, Abbrechen bleibt auf der Liste, Nein verwirft; danach wird die Sperre aufgehoben und zum Einstieg zurückgekehrt.",
+   "zeilen": [
+    285,
+    286,
+    294,
+    295,
+    296,
+    297,
+    300,
+    304
+   ],
+   "code": [
+    "285:       IF gv_changed = abap_true.",
+    "286:         CALL FUNCTION 'POPUP_TO_CONFIRM'",
+    "294:         IF lv_answer = '1'.",
+    "295:           PERFORM sichern.",
+    "296:         ELSEIF lv_answer = 'A'.",
+    "297:           RETURN.",
+    "300:       CALL FUNCTION 'DEQUEUE_EZPM_FREISCH'",
+    "304:       LEAVE TO SCREEN 0100."
+   ],
+   "engine": [
+    "Für gv_changed mit dem Wert abap_true wird POPUP_TO_CONFIRM aufgerufen.",
+    "Der Code übergibt 'Freischaltung' an POPUP_TO_CONFIRM und übernimmt dessen Ausgabe nach lv_answer.",
+    "Das konvertierte Ergebnis wird in lv_answer übernommen.",
+    "Für lv_answer mit dem Wert 1 wird sichern aufgerufen.",
+    "Für lv_answer mit dem Wert 1 wird sichern aufgerufen, sonst der Block verlassen.",
+    "Das Unterprogramm sichern wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Für lv_answer mit dem Wert A wird der Block verlassen.",
+    "Der Funktionsbaustein DEQUEUE_EZPM_FREISCH wird aufgerufen.",
+    "Die Screenfolge wird beendet."
+   ]
+  }
+ ]
+}

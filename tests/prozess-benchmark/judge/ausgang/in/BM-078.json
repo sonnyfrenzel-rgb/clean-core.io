@@ -1,0 +1,376 @@
+{
+ "id": "BM-078",
+ "titel": "MES-Dateischnittstelle: Auftragsexport, Rückmelde- und Wareneingangsimport mit Dublettenprüfung",
+ "prozess": "Ein Job läuft alle 15 Minuten je Werk. Er legt ein Anwendungs-Log an und führt je nach Auswahl Export und Import aus. Beim Export liest er die Fertigungsaufträge mit Eckstart im Horizont, behält freigegebene, noch nicht exportierte und schreibt je Auftrag Kopf-, Vorgangs- und Komponentensätze in eine neue CSV-Datei im Ausgangsverzeichnis; danach merkt er die Aufträge als exportiert und schreibt fest. Beim Import liest er die Eingangsdatei des Werks vollständig ein. Rückmeldesätze bucht er als Vorgangsrückmeldung, sofern nicht schon eine Rückmeldung mit derselben MES-ID existiert; Wareneingangssätze bucht er als Wareneingang zum Fertigungsauftrag, sofern nicht schon ein Materialbeleg mit derselben Referenz existiert. Fehler führen zum Rollback des einzelnen Satzes und zu einem Protokolleintrag. Danach kopiert er die Eingangsdatei ins Archiv und löscht sie; ist das Archiv nicht schreibbar, bleibt sie liegen. Zum Schluss schreibt er alle Protokollzeilen ins Anwendungs-Log und lässt den Job bei Fehlern mit einer Fehlermeldung abbrechen.",
+ "verboten": [
+  "zpp_mes_file_f01.abap:59 — kein Fachsatz „Geänderte Aufträge werden erneut exportiert“ (ein einmal exportierter Auftrag geht laut Code und Kommentar nie wieder raus)",
+  "zpp_mes_file_f02.abap:44 — kein Fachsatz „Fehlerhafte Sätze bleiben zur Wiederholung liegen“ (die ganze Datei wird archiviert und gelöscht, auch fehlerhafte Sätze)",
+  "zpp_mes_file_f02.abap:152 — kein Fachsatz „Warnungen der Warenbewegung führen zum Rollback“ (entscheidend ist nur, ob ein Materialbeleg entstand)",
+  "gesamte Scheibe — kein Fachsatz „Komponenten werden im Import verbraucht“ (Satzart G bucht nur den Wareneingang 101, Komponentenverbrauch 261 kommt im Code nicht vor)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-078-B01",
+   "soll": "Zu Beginn jedes Laufs wird ein Anwendungs-Log ZPP/MESFILE mit 30 Tagen Aufbewahrung angelegt; gelingt das nicht, läuft die Schnittstelle ohne Log weiter.",
+   "zeilen": [
+    20,
+    343,
+    350
+   ],
+   "code": [
+    "20:   PERFORM log_anlegen.",
+    "343:   CALL FUNCTION 'BAL_LOG_CREATE'",
+    "350:   IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Das Unterprogramm log_anlegen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_handle.",
+    "Das konvertierte Ergebnis wird in gv_handle übernommen."
+   ]
+  },
+  {
+   "id": "BM-078-B02",
+   "soll": "Export und Import laufen jeweils nur, wenn sie im Selektionsbild gewählt sind (Vorschlag: beide).",
+   "zeilen": [
+    22,
+    26
+   ],
+   "code": [
+    "22:   IF p_exp = abap_true.",
+    "26:   IF p_imp = abap_true."
+   ],
+   "engine": [
+    "Für p_exp mit dem Wert abap_true wird export aufgerufen.",
+    "Für p_imp mit dem Wert abap_true wird import aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-078-B03",
+   "soll": "Für den Export werden Fertigungsaufträge des Werks gelesen, deren Eckstart bis heute plus der gewählten Tage (Vorschlag 2) reicht; ohne Treffer wird das informativ protokolliert.",
+   "zeilen": [
+    59,
+    61,
+    69,
+    70
+   ],
+   "code": [
+    "59:   lv_bis = sy-datum + p_tage.",
+    "61:   SELECT a~aufnr a~objnr k~aufpl k~gstrp k~gltrp p~matnr p~psmng p~amein",
+    "69:   IF sy-subrc <> 0.",
+    "70:     mes_log 'I' 'Export: keine Auftraege im Horizont'."
+   ],
+   "engine": [
+    "Es werden Sätze aus aufk mit dem eingegebenen a~werks selektiert.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-078-B04",
+   "soll": "Exportiert werden nur freigegebene Aufträge, die noch nicht exportiert wurden.",
+   "zeilen": [
+    76,
+    84,
+    89,
+    91
+   ],
+   "code": [
+    "76:     CALL FUNCTION 'STATUS_CHECK'",
+    "84:     IF sy-subrc <> 0.",
+    "89:     SELECT SINGLE aufnr FROM zmes_export INTO lv_dummy",
+    "91:     IF sy-subrc = 0."
+   ],
+   "engine": [
+    "Der Funktionsbaustein STATUS_CHECK wird aufgerufen.",
+    "aufnr des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-078-B05",
+   "soll": "Je Auftrag entsteht ein Kopfsatz H mit Material, Menge, Einheit, Eckstart und Eckende, je Vorgang ein Satz O mit Vorgangstext und Arbeitsplatz-ID und je nicht gelöschter Komponente ein Satz C mit Material, Bedarfsmenge, Einheit und Lagerort.",
+   "zeilen": [
+    95,
+    99,
+    106
+   ],
+   "code": [
+    "95:     lv_out = |H;{ ls_auf-aufnr };{ ls_auf-matnr };{ ls_auf-psmng };{ ls_auf-amein };| &&",
+    "99:     SELECT vornr ltxa1 arbid FROM afvc INTO TABLE lt_vg",
+    "106:     SELECT matnr bdmng meins lgort FROM resb INTO TABLE lt_komp"
+   ],
+   "engine": [
+    "Es werden Sätze aus afvc selektiert.",
+    "Es werden Sätze aus resb selektiert."
+   ]
+  },
+  {
+   "id": "BM-078-B06",
+   "soll": "Gibt es keine neuen Aufträge, wird das informativ protokolliert und keine Datei erzeugt.",
+   "zeilen": [
+    118,
+    120
+   ],
+   "code": [
+    "118:   IF lt_out IS INITIAL.",
+    "120:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-078-B07",
+   "soll": "Die Sätze werden in eine neue Exportdatei mit Werk und Zeitstempel im Ausgangsverzeichnis geschrieben; ist die Datei nicht schreibbar, wird ein Fehler protokolliert und der Export beendet.",
+   "zeilen": [
+    124,
+    125,
+    132,
+    134
+   ],
+   "code": [
+    "124:   OPEN DATASET lv_file FOR OUTPUT IN TEXT MODE ENCODING UTF-8.",
+    "125:   IF sy-subrc <> 0.",
+    "132:     TRANSFER lv_out TO lv_file.",
+    "134:   CLOSE DATASET lv_file."
+   ],
+   "engine": [
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-078-B08",
+   "soll": "Nach dem Schreiben werden die exportierten Aufträge als exportiert vermerkt und festgeschrieben; die Anzahl wird protokolliert.",
+   "zeilen": [
+    136,
+    137,
+    140
+   ],
+   "code": [
+    "136:   INSERT zmes_export FROM TABLE lt_export ACCEPTING DUPLICATE KEYS.",
+    "137:   COMMIT WORK.",
+    "140:   mes_log 'S' gv_text."
+   ],
+   "engine": [
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-078-B09",
+   "soll": "Für den Import wird die Eingangsdatei RM_<Werk>.csv geöffnet; fehlt sie, wird das informativ protokolliert.",
+   "zeilen": [
+    152,
+    153,
+    154
+   ],
+   "code": [
+    "152:   OPEN DATASET lv_file FOR INPUT IN TEXT MODE ENCODING UTF-8.",
+    "153:   IF sy-subrc <> 0.",
+    "154:     mes_log 'I' 'Import: keine Rueckmeldedatei vorhanden'."
+   ],
+   "engine": [
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-078-B10",
+   "soll": "Die Datei wird vollständig eingelesen und geschlossen; jede Zeile wird in Satzart, MES-ID, Auftrag, Vorgang, Menge, Ausschuss, Einheit, Lagerort, Charge und Endrückmeldekennzeichen zerlegt.",
+   "zeilen": [
+    158,
+    165,
+    169
+   ],
+   "code": [
+    "158:   DO.",
+    "165:   CLOSE DATASET lv_file.",
+    "169:     SPLIT lv_line AT ';' INTO ls_satz-typ ls_satz-mesid ls_satz-aufnr ls_satz-vornr"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-078-B11",
+   "soll": "Satzart R wird als Rückmeldung, Satzart G als Wareneingang verarbeitet; unbekannte Satzarten werden als Fehler protokolliert.",
+   "zeilen": [
+    174,
+    176,
+    178,
+    181
+   ],
+   "code": [
+    "174:     CASE ls_satz-typ.",
+    "176:         PERFORM rueckmeldung USING ls_satz.",
+    "178:         PERFORM wareneingang USING ls_satz.",
+    "181:         mes_log 'E' gv_text."
+   ],
+   "engine": [
+    "Das Unterprogramm rueckmeldung wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Das Unterprogramm wareneingang wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-078-B12",
+   "soll": "Existiert zum Auftrag bereits eine nicht stornierte Rückmeldung mit dem Text „MES <ID>“, wird die Rückmeldung als bereits gebucht (Warnung) übersprungen.",
+   "zeilen": [
+    202,
+    206
+   ],
+   "code": [
+    "202:   SELECT SINGLE rueck FROM afru INTO lv_rueck",
+    "206:   IF sy-subrc = 0."
+   ],
+   "engine": [
+    "rueck des Satzes wird gelesen.",
+    "Bei Treffer wird der Block verlassen.",
+    "Bei Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-078-B13",
+   "soll": "Sonst wird eine Vorgangsrückmeldung mit Gutmenge, Ausschuss, Einheit, Endrückmeldekennzeichen und dem Text „MES <ID>“ gebucht; bei Fehler zurückgerollt und als Fehler protokolliert, sonst festgeschrieben und als Erfolg protokolliert.",
+   "zeilen": [
+    221,
+    228,
+    229,
+    233
+   ],
+   "code": [
+    "221:   CALL FUNCTION 'BAPI_PRODORDCONF_CREATE_TT'",
+    "228:   IF ls_return-type CA 'EA' OR line_exists( lt_detail[ type = 'E' ] ).",
+    "229:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "233:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Es wird eine Zeile aufgenommen und BAPI_PRODORDCONF_CREATE_TT aufgerufen.",
+    "Der Funktionsbaustein BAPI_PRODORDCONF_CREATE_TT wird aufgerufen.",
+    "Das konvertierte Ergebnis wird in ls_return übernommen.",
+    "Für ls_return-type CA 'EA' OR line_exists( lt_detail[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Für ls_return-type CA 'EA' OR line_exists( lt_detail[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-078-B14",
+   "soll": "Gibt es zum Auftrag bereits einen Materialbeleg mit Bewegungsart 101 und der MES-ID als Referenz, wird der Wareneingang als bereits gebucht (Warnung) übersprungen.",
+   "zeilen": [
+    254,
+    261
+   ],
+   "code": [
+    "254:   SELECT SINGLE m~mblnr",
+    "261:   IF sy-subrc = 0."
+   ],
+   "engine": [
+    "m~mblnr INTO lv_mblnr des Satzes wird gelesen.",
+    "Bei Treffer wird der Block verlassen.",
+    "Bei Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-078-B15",
+   "soll": "Sonst wird ein Wareneingang zum Fertigungsauftrag (Bewegungsart 101) mit Lagerort, Charge, Menge und der MES-ID als Referenzbeleg im Werk gebucht.",
+   "zeilen": [
+    270,
+    282
+   ],
+   "code": [
+    "270:   ls_code-gm_code    = '02'.",
+    "282:   CALL FUNCTION 'BAPI_GOODSMVT_CREATE'"
+   ],
+   "engine": [
+    "Die ls_code-gm_code wird auf 02 gesetzt.",
+    "Es wird eine Zeile aufgenommen und BAPI_GOODSMVT_CREATE aufgerufen.",
+    "Der Code übergibt ls_head an BAPI_GOODSMVT_CREATE und übernimmt dessen Ausgabe nach lv_mblnr.",
+    "Das konvertierte Ergebnis wird in lv_mblnr übernommen."
+   ]
+  },
+  {
+   "id": "BM-078-B16",
+   "soll": "Entsteht kein Materialbeleg, wird zurückgerollt und der erste Fehlertext protokolliert; sonst wird festgeschrieben und der Materialbeleg protokolliert.",
+   "zeilen": [
+    293,
+    294,
+    299
+   ],
+   "code": [
+    "293:   IF lv_mblnr IS INITIAL.",
+    "294:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "299:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Ohne lv_mblnr wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Ohne lv_mblnr wird BAPI_TRANSACTION_ROLLBACK aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-078-B17",
+   "soll": "Nach der Verarbeitung aller Sätze wird die Eingangsdatei vollständig in eine Archivdatei mit Zeitstempel kopiert und danach gelöscht; ist das Archiv nicht schreibbar, bleibt die Eingangsdatei mit Fehlerprotokoll liegen, scheitert das Löschen, wird gewarnt.",
+   "zeilen": [
+    185,
+    316,
+    317,
+    323,
+    327,
+    328
+   ],
+   "code": [
+    "185:   PERFORM archivieren USING lv_file lt_in.",
+    "316:   OPEN DATASET lv_arch FOR OUTPUT IN TEXT MODE ENCODING UTF-8.",
+    "317:   IF sy-subrc <> 0.",
+    "323:     TRANSFER lv_line TO lv_arch.",
+    "327:   DELETE DATASET iv_file.",
+    "328:   IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Das Unterprogramm archivieren wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-078-B18",
+   "soll": "Zum Schluss werden alle Protokollzeilen ins Anwendungs-Log geschrieben, gesichert und festgeschrieben.",
+   "zeilen": [
+    364,
+    365,
+    375,
+    380
+   ],
+   "code": [
+    "364:   LOOP AT gt_log INTO ls_log.",
+    "365:     CALL FUNCTION 'BAL_LOG_MSG_ADD_FREE_TEXT'",
+    "375:   CALL FUNCTION 'BAL_DB_SAVE'",
+    "380:   COMMIT WORK."
+   ],
+   "engine": [
+    "Jede Zeile aus gt_log wird einzeln verarbeitet.",
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD_FREE_TEXT wird aufgerufen.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Es wird BAL_DB_SAVE aufgerufen und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-078-B19",
+   "soll": "Gab es im Hintergrundlauf Fehler, endet der Job mit einer Fehlermeldung samt Fehleranzahl, damit die Leitstelle ihn als abgebrochen sieht.",
+   "zeilen": [
+    383,
+    384
+   ],
+   "code": [
+    "383:   IF gv_fehler > 0 AND sy-batch = abap_true.",
+    "384:     MESSAGE e300 WITH gv_fehler."
+   ],
+   "engine": [
+    "Für gv_fehler > 0 AND sy-batch = abap_true wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

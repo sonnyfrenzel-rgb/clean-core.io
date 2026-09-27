@@ -1,0 +1,168 @@
+{
+ "id": "BM-108",
+ "titel": "Serviceverträge vor Laufzeitende automatisch verlängern, gruppiert je Kunde",
+ "prozess": "Der Report wird mit Verkaufsorganisationen, optionalen Kunden, einer Vorlaufzeit in Tagen und einem Testlaufkennzeichen gestartet. Er liest alle nicht gekündigten Kontrakte der Selektion, deren Laufzeit zwischen heute und dem Vorlaufdatum endet; gibt es keine, endet er mit einem Hinweis. Danach liest er die Verlängerungsregeln je Vertragsart und verarbeitet die Verträge gruppiert je Kunde. Verträge, deren Vertragsart keine Regel hat, werden übersprungen. Für die übrigen wird das neue Laufzeitende als altes Ende plus die in der Regel gepflegten Tage berechnet, ohne gepflegte Tage plus 365 Tage. Im Echtlauf wird das Laufzeitende über den Kontrakt-BAPI geändert; meldet dieser einen Fehler, wird die Änderung zurückgenommen und der Vertrag als fehlgeschlagen gelistet, sonst wird sie festgeschrieben. Jeder verlängerte, im Testlauf nur simulierte Vertrag erscheint mit altem und neuem Ende, und je Kunde folgt eine Summenzeile mit der Anzahl.",
+ "verboten": [
+  "source.abap:84 — kein Fachsatz „im Testlauf werden keine Verträge als verlängert gezählt“: der Zähler und die Liste laufen auch im Testlauf, die Summenzeile meldet dort simulierte Verlängerungen",
+  "source.abap:53 — kein Fachsatz „Verträge ohne Regel werden um ein Jahr verlängert“: ohne Regel wird der Vertrag übersprungen; die 365 Tage gelten nur für Regeln ohne gepflegte Tage",
+  "gesamte Scheibe — kein Fachsatz „der Kunde wird über die Verlängerung benachrichtigt“: es gibt nur die Liste",
+  "source.abap:32 — kein Fachsatz „nur Serviceverträge einer bestimmten Vertragsart werden verlängert“: selektiert wird jeder Kontrakt (Belegtyp G); die Art steuert erst über die Regeltabelle"
+ ],
+ "saetze": [
+  {
+   "id": "BM-108-B01",
+   "soll": "Es werden nicht gekündigte Kontrakte (Belegtyp G) der Selektion ermittelt, deren Laufzeit zwischen heute und der eingegebenen Anzahl Tage endet.",
+   "zeilen": [
+    32
+   ],
+   "code": [
+    "32:   SELECT k~vbeln k~kunnr k~auart v~venddat"
+   ],
+   "engine": [
+    "Es werden Aufträge selektiert."
+   ]
+  },
+  {
+   "id": "BM-108-B02",
+   "soll": "Gibt es keine solchen Verträge, endet der Lauf mit einer Hinweismeldung.",
+   "zeilen": [
+    41,
+    42,
+    43
+   ],
+   "code": [
+    "41:   IF gt_ctr IS INITIAL.",
+    "42:     MESSAGE s300(zcs).",
+    "43:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-108-B03",
+   "soll": "Die Verlängerungsregeln je Vertragsart werden gelesen.",
+   "zeilen": [
+    45
+   ],
+   "code": [
+    "45:   SELECT * FROM zcs_verl_regel INTO TABLE gt_regel."
+   ],
+   "engine": [
+    "Es werden Sätze aus zcs_verl_regel selektiert."
+   ]
+  },
+  {
+   "id": "BM-108-B04",
+   "soll": "Die Verträge werden je Kunde verarbeitet.",
+   "zeilen": [
+    47,
+    50
+   ],
+   "code": [
+    "47:   LOOP AT gt_ctr INTO DATA(ls_ctr)",
+    "50:     LOOP AT GROUP <lg_kunde> INTO DATA(ls_m)."
+   ],
+   "engine": [
+    "Jede Zeile aus gt_ctr wird einzeln verarbeitet.",
+    "Jede Zeile aus GROUP wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-108-B05",
+   "soll": "Verträge, für deren Vertragsart keine Verlängerungsregel gepflegt ist, werden übersprungen.",
+   "zeilen": [
+    51,
+    53
+   ],
+   "code": [
+    "51:       READ TABLE gt_regel INTO DATA(ls_regel)",
+    "53:       IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-108-B06",
+   "soll": "Das neue Laufzeitende ist das alte Ende plus die in der Regel gepflegten Tage, ohne gepflegte Tage plus 365 Tage.",
+   "zeilen": [
+    56
+   ],
+   "code": [
+    "56:       DATA(lv_neu) = COND d( WHEN ls_regel-verl_tage > 0"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-108-B07",
+   "soll": "Im Echtlauf wird das Laufzeitende des Vertrags auf das neue Datum geändert.",
+   "zeilen": [
+    60,
+    64
+   ],
+   "code": [
+    "60:       IF p_test IS INITIAL.",
+    "64:         CALL FUNCTION 'BAPI_CUSTOMERCONTRACT_CHANGE'"
+   ],
+   "engine": [
+    "Ohne p_test wird die gs_hdrx-updateflag auf U gesetzt, BAPI_CUSTOMERCONTRACT_CHANGE aufgerufen und BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Eine leere p_test setzen die gs_hdrx-updateflag auf U.",
+    "Der Funktionsbaustein BAPI_CUSTOMERCONTRACT_CHANGE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-108-B08",
+   "soll": "Meldet die Änderung einen Fehler, wird sie zurückgenommen und der Vertrag als fehlgeschlagen gelistet; sonst wird sie festgeschrieben.",
+   "zeilen": [
+    72,
+    73,
+    74,
+    77
+   ],
+   "code": [
+    "72:         IF line_exists( gt_return[ type = 'E' ] ).",
+    "73:           CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "74:           WRITE: / ls_m-vbeln, 'Verlängerung fehlgeschlagen'.",
+    "77:         CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Ohne p_test wird die gs_hdrx-updateflag auf U gesetzt, BAPI_CUSTOMERCONTRACT_CHANGE aufgerufen und BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Für line_exists( gt_return[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen, Belegnummer ausgegeben und Verlängerung fehlgeschlagen ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen, Belegnummer ausgegeben und Verlängerung fehlgeschlagen ausgegeben.",
+    "Bei Treffern werden Belegnummer und Verlängerung fehlgeschlagen als Liste ausgegeben.",
+    "Belegnummer wird ausgegeben.",
+    "Verlängerung fehlgeschlagen wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-108-B09",
+   "soll": "Jeder verlängerte Vertrag wird mit altem und neuem Laufzeitende gelistet, je Kunde folgt eine Summenzeile mit der Anzahl.",
+   "zeilen": [
+    82,
+    84
+   ],
+   "code": [
+    "82:       WRITE: / ls_m-vbeln, ls_m-venddat, '->', lv_neu.",
+    "84:     WRITE: / 'Kunde', <lg_kunde>-kunnr, ':', gv_anz, 'Verträge verlängert'."
+   ],
+   "engine": [
+    "Bei Treffern werden Belegnummer, ls_m-venddat, ->, lv_neu, Kunde, Kundennummer, :, gv_anz und Verträge verlängert als Liste ausgegeben.",
+    "Belegnummer wird ausgegeben.",
+    "ls_m-venddat wird ausgegeben.",
+    "-> wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_neu wird ausgegeben.",
+    "Kunde wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Kundennummer wird ausgegeben.",
+    ": wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_anz wird ausgegeben.",
+    "Verträge verlängert wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,79 @@
+{
+ "id": "BM-081",
+ "titel": "Monitoring-Job: Rückstau offener Änderungszeiger je Nachrichtentyp",
+ "prozess": "Ein Hintergrundjob überwacht den ALE-Versand von Stammdaten. Er zählt die noch unverarbeiteten Änderungszeiger für den eingegebenen Nachrichtentyp (Vorschlag ZMATMAS). Ist kein Zeiger offen, meldet er das und endet. Übersteigt die Anzahl die eingegebene Schwelle (Vorschlag 5000), bricht der Job mit einer Fehlermeldung „Rückstau“ ab, damit die Jobüberwachung alarmiert. Sonst gibt er Nachrichtentyp und Anzahl offener Zeiger aus. Der Job verarbeitet und verändert selbst keine Änderungszeiger.",
+ "verboten": [
+  "source.abap:9 — kein Fachsatz „Änderungszeiger werden verarbeitet oder IDocs erzeugt“ (der Report zählt nur).",
+  "source.abap:18 — kein Fachsatz „Änderungszeiger werden gelöscht oder zurückgesetzt“ (die Meldung bricht nur ab).",
+  "gesamte Scheibe — kein write-Knoten (kein Datenbankschreiben)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-081-B01",
+   "soll": "Es wird gezählt, wie viele Änderungszeiger des gewählten Nachrichtentyps noch nicht verarbeitet sind.",
+   "zeilen": [
+    9
+   ],
+   "code": [
+    "9:   SELECT COUNT(*) FROM bdcp2 INTO lv_count"
+   ],
+   "engine": [
+    "Die Zahl der Sätze mit dem eingegebenen mestype wird ermittelt."
+   ]
+  },
+  {
+   "id": "BM-081-B02",
+   "soll": "Gibt es keine offenen Änderungszeiger, wird das gemeldet und der Lauf beendet.",
+   "zeilen": [
+    12,
+    13,
+    14
+   ],
+   "code": [
+    "12:   IF lv_count = 0.",
+    "13:     WRITE: / 'Keine offenen Änderungszeiger für', p_mestyp.",
+    "14:     RETURN."
+   ],
+   "engine": [
+    "Für Anzahlen mit dem Wert 0 wird Keine offenen Änderungszeiger für ausgegeben, p_mestyp ausgegeben und der Block verlassen.",
+    "Bei lv_count gleich 0 wird Keine offenen Änderungszeiger für ausgegeben und der Block verlassen.",
+    "Bei Treffern werden Keine offenen Änderungszeiger für und p_mestyp als Liste ausgegeben.",
+    "Es wird Keine offenen Änderungszeiger für ausgegeben, p_mestyp ausgegeben und der Block verlassen.",
+    "Keine offenen Änderungszeiger für wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "p_mestyp wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-081-B03",
+   "soll": "Liegt die Anzahl über der eingegebenen Schwelle, bricht der Job mit der Meldung „Rückstau“ ab.",
+   "zeilen": [
+    16,
+    18
+   ],
+   "code": [
+    "16:   IF lv_count > p_limit.",
+    "18:     MESSAGE e398(00) WITH 'Rückstau' p_mestyp lv_count 'Änderungszeiger'."
+   ],
+   "engine": [
+    "Für Anzahlen größer p_limit wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-081-B04",
+   "soll": "Sonst wird die Anzahl offener Änderungszeiger für den Nachrichtentyp ausgegeben.",
+   "zeilen": [
+    20
+   ],
+   "code": [
+    "20:   WRITE: / p_mestyp, lv_count, 'offene Änderungszeiger'."
+   ],
+   "engine": [
+    "Bei Treffern werden p_mestyp, Anzahl und offene Änderungszeiger als Liste ausgegeben.",
+    "p_mestyp wird ausgegeben.",
+    "Anzahl wird ausgegeben.",
+    "offene Änderungszeiger wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  }
+ ]
+}

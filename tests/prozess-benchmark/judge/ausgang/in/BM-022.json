@@ -1,0 +1,51 @@
+{
+ "id": "BM-022",
+ "titel": "Gesperrter und QM-Bestand eines Materials im Werk (Funktionsbaustein)",
+ "prozess": "Das Dispositions-Cockpit ruft den Baustein mit Material und Werk auf. Er liest alle nicht zum Löschen vorgemerkten Lagerortsegmente des Materials im Werk. Gibt es keines, endet er mit der Ausnahme NOT_FOUND. Andernfalls summiert er über alle Lagerorte den gesperrten Bestand und den Qualitätsprüfbestand getrennt auf und gibt beide Summen zurück. Der frei verwendbare Bestand wird nicht ermittelt, und es wird nichts gebucht.",
+ "verboten": [
+  "source.abap:20 — kein Fachsatz „Frei verwendbarer Bestand wird ermittelt“ (LABST wird nur als Typ verwendet, summiert werden SPEME und INSME)",
+  "source.abap:25 — kein Fachsatz „Das Material existiert nicht“ (die Ausnahme sagt nur, dass im Werk kein nicht gelöschter Lagerort gefunden wurde)",
+  "gesamte Scheibe — kein Fachsatz „Bestand wird umgebucht oder gesperrt“ (nur Lesen und Summieren)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-022-B01",
+   "soll": "Für das übergebene Material und Werk werden die nicht zum Löschen vorgemerkten Lagerortbestände gelesen.",
+   "zeilen": [
+    20
+   ],
+   "code": [
+    "20:   SELECT * FROM mard INTO TABLE lt_mard"
+   ],
+   "engine": [
+    "Es werden Sätze aus mard selektiert."
+   ]
+  },
+  {
+   "id": "BM-022-B02",
+   "soll": "Existiert kein solcher Lagerort, endet der Baustein mit der Ausnahme NOT_FOUND.",
+   "zeilen": [
+    24,
+    25
+   ],
+   "code": [
+    "24:   IF sy-subrc <> 0.",
+    "25:     RAISE not_found."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-022-B03",
+   "soll": "Über alle Lagerorte werden der gesperrte Bestand und der Bestand in Qualitätsprüfung je für sich aufsummiert und zurückgegeben.",
+   "zeilen": [
+    29,
+    30
+   ],
+   "code": [
+    "29:     ev_sperr = ev_sperr + ls_mard-speme.",
+    "30:     ev_qual  = ev_qual  + ls_mard-insme."
+   ],
+   "engine": []
+  }
+ ]
+}

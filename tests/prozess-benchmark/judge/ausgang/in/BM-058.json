@@ -1,0 +1,477 @@
+{
+ "id": "BM-058",
+ "titel": "Umsatzsteuer-Voranmeldung mit Kennzahlzuordnung, Kontenabstimmung und Datei auf dem Applikationsserver",
+ "prozess": "Die Steuerabteilung startet den Report monatlich mit Buchungskreis, Geschäftsjahr, Monat, Abstimmtoleranz und optional Sondervorauszahlung, Berichtigungs- und Testlaufkennzeichen. Nach der Berechtigungsprüfung für den Buchungskreis wird der Meldemonat als Buchungsdatumsintervall bestimmt und im Kundenprotokoll geprüft, ob der Monat schon gemeldet wurde; eine erneute Echtmeldung ohne Berichtigungskennzeichen wird mit einer Fehlermeldung abgebrochen. Anschließend liest der Report die Belegköpfe des Monats und deren Steuerzeilen; ohne Belege kehrt er zum Selektionsbild zurück. Jede Steuerzeile wird über eine Kunden-Mappingtabelle einer Bemessungs- und/oder Steuer-Kennzahl zugeordnet, vorzeichengerecht nach Soll/Haben summiert und gegebenenfalls für die Meldung im Vorzeichen umgekehrt; Steuerkennzeichen ohne Zuordnung werden als Fehler gesammelt und sperren die Meldung. Die Steuerbeträge je Konto werden gegen die Salden der Steuerkonten aus BSIS abgestimmt, Differenzen über der Toleranz erscheinen nur als Warnung. Im Dezember wird die Sondervorauszahlung als Kennzahl 39 angesetzt und von der Zahllast abgezogen, Bemessungsgrundlagen werden auf volle Euro abgeschnitten, und die Zahllast wird als Kennzahl 83 angefügt. Nur im Echtlauf ohne Zuordnungsfehler baut die Kundenklasse mit der Steuernummer des Buchungskreises eine XML-Datei auf und schreibt sie auf den Applikationsserver; fehlende Steuernummer oder eine nicht zu öffnende Datei brechen mit Fehlermeldung ab. Danach wird ein Protokolleintrag angelegt und festgeschrieben, ein bereits vorhandener Eintrag führt nur zu einem Hinweis. Zum Schluss zeigt eine ALV-Liste Kennzahlen, Fehler und Warnungen. Eine Übermittlung an das Finanzamt findet im Report nicht statt.",
+ "verboten": [
+  "zcl_fi_ustva_xml.abap:82 — kein Fachsatz „die Voranmeldung wird an das Finanzamt (ELSTER) übermittelt“ (es wird nur eine Datei auf dem Applikationsserver geschrieben; der Kommentar „nicht uebermittelt“ in der Klasse beschreibt nur den Dateiinhalt)",
+  "zfi_ustva_f01.abap:38 — kein Fachsatz „maßgeblich ist das Steuermeldedatum bzw. Leistungsdatum“ (selektiert wird nach Buchungsdatum BUDAT)",
+  "zfi_ustva_f01.abap:147 — kein Fachsatz „Salden werden aus FAGLFLEXT/Summentabellen gelesen“ (nur auskommentiert) und kein Fachsatz „jede Einzelbuchung geht in den Saldo ein“ (FOR ALL ENTRIES ohne Belegnummer/Position fasst gleiche Zeilen zusammen)",
+  "zfi_ustva_f01.abap:198 — kein Fachsatz „Beträge werden kaufmännisch gerundet“ (TRUNC schneidet die Cent ab, ROUND ist auskommentiert; Steuerbeträge bleiben centgenau)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-058-B01",
+   "soll": "Vor jeder Verarbeitung wird geprüft, ob der Anwender Belege des eingegebenen Buchungskreises anzeigen darf; ohne diese Berechtigung bricht der Report mit einer Fehlermeldung ab.",
+   "zeilen": [
+    20,
+    23,
+    24
+   ],
+   "code": [
+    "20:   AUTHORITY-CHECK OBJECT 'F_BKPF_BUK'",
+    "23:   IF sy-subrc <> 0.",
+    "24:     MESSAGE e001 WITH p_bukrs."
+   ],
+   "engine": [
+    "Die Berechtigung auf F_BKPF_BUK wird geprüft.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-058-B02",
+   "soll": "Der Meldezeitraum ist der gewählte Kalendermonat vom ersten bis zum letzten Tag, abgegrenzt über das Buchungsdatum.",
+   "zeilen": [
+    28,
+    29
+   ],
+   "code": [
+    "28:   CONCATENATE p_gjahr p_monat '01' INTO gv_von.",
+    "29:   gv_bis = gv_von + 31."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-058-B03",
+   "soll": "Im Meldeprotokoll wird gesucht, ob für Buchungskreis, Geschäftsjahr und Monat bereits eine Meldung mit Status S protokolliert ist.",
+   "zeilen": [
+    154
+   ],
+   "code": [
+    "154:   SELECT SINGLE * FROM zfi_ustva_prot INTO ls_prot"
+   ],
+   "engine": [
+    "Es werden Sätze aus zfi_ustva_prot mit dem eingegebenen Buchungskreis, dem eingegebenen gjahr und dem eingegebenen monat selektiert."
+   ]
+  },
+  {
+   "id": "BM-058-B04",
+   "soll": "Liegt eine solche Meldung vor und ist weder Berichtigung noch Testlauf gewählt, bricht der Report mit einer Fehlermeldung zur Doppelmeldung ab.",
+   "zeilen": [
+    159,
+    161
+   ],
+   "code": [
+    "159:   IF sy-subrc = 0 AND p_korr = abap_false AND p_test = abap_false.",
+    "161:     MESSAGE e002 WITH p_monat p_gjahr ls_prot-erdat."
+   ],
+   "engine": [
+    "Für sy-subrc = 0 AND p_korr = abap_false AND p_test = abap_false wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-058-B05",
+   "soll": "Die laufende Nummer der neuen Meldung ist die höchste bisher für den Monat protokollierte Nummer plus eins.",
+   "zeilen": [
+    166,
+    170
+   ],
+   "code": [
+    "166:   SELECT MAX( lfdnr ) FROM zfi_ustva_prot INTO gv_lfdnr",
+    "170:   gv_lfdnr = gv_lfdnr + 1."
+   ],
+   "engine": [
+    "Es werden Sätze aus zfi_ustva_prot mit dem eingegebenen Buchungskreis, dem eingegebenen gjahr und dem eingegebenen monat selektiert."
+   ]
+  },
+  {
+   "id": "BM-058-B06",
+   "soll": "Es werden die Belegköpfe des Buchungskreises mit Buchungsdatum im Meldemonat und leerem Belegstatus gelesen.",
+   "zeilen": [
+    180
+   ],
+   "code": [
+    "180:   SELECT bukrs belnr gjahr budat blart"
+   ],
+   "engine": [
+    "Es werden Sätze aus bkpf mit dem eingegebenen Buchungskreis selektiert."
+   ]
+  },
+  {
+   "id": "BM-058-B07",
+   "soll": "Gibt es im Meldemonat keine Belege, wird ein Hinweis ausgegeben und zum Selektionsbild zurückgekehrt.",
+   "zeilen": [
+    187,
+    188,
+    189
+   ],
+   "code": [
+    "187:   IF sy-subrc <> 0.",
+    "188:     MESSAGE s003 WITH p_monat p_gjahr DISPLAY LIKE 'E'.",
+    "189:     LEAVE LIST-PROCESSING."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-058-B08",
+   "soll": "Zu diesen Belegen werden die Steuerzeilen mit Steuerkennzeichen, Soll/Haben-Kennzeichen, Bemessungsgrundlage, Steuerbetrag und Steuerkonto gelesen.",
+   "zeilen": [
+    200
+   ],
+   "code": [
+    "200:   SELECT bukrs belnr gjahr buzei mwskz shkzg hwbas hwste hkont"
+   ],
+   "engine": [
+    "Es werden Sätze aus bset selektiert."
+   ]
+  },
+  {
+   "id": "BM-058-B09",
+   "soll": "Die Zuordnung der Steuerkennzeichen zu den Kennzahlen der Voranmeldung wird für Deutschland aus der Kunden-Mappingtabelle gelesen.",
+   "zeilen": [
+    218
+   ],
+   "code": [
+    "218:   SELECT * FROM zfi_ustva_map INTO TABLE gt_map"
+   ],
+   "engine": [
+    "Es werden Sätze aus zfi_ustva_map selektiert."
+   ]
+  },
+  {
+   "id": "BM-058-B10",
+   "soll": "Für jede Steuerzeile wird die Kennzahlzuordnung ihres Steuerkennzeichens nachgeschlagen.",
+   "zeilen": [
+    222,
+    223
+   ],
+   "code": [
+    "222:   LOOP AT gt_bset INTO gs_bset.",
+    "223:     READ TABLE gt_map INTO gs_map"
+   ],
+   "engine": [
+    "Jede Zeile aus gt_bset wird einzeln verarbeitet.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-058-B11",
+   "soll": "Ein Steuerkennzeichen ohne Zuordnung wird als Fehler gesammelt, die Steuerzeile bleibt unberücksichtigt, und die Meldung gilt als gesperrt.",
+   "zeilen": [
+    226,
+    233
+   ],
+   "code": [
+    "226:     IF sy-subrc <> 0.",
+    "233:       gv_fehler = abap_true."
+   ],
+   "engine": [
+    "Ohne Treffer wird die gs_meld-typ auf E gesetzt.",
+    "sy-subrc ungleich 0 setzen die gs_meld-typ auf E."
+   ]
+  },
+  {
+   "id": "BM-058-B12",
+   "soll": "Beträge aus Sollzeilen (Vorsteuer) werden negativ, Beträge aus Habenzeilen (Umsatzsteuer) positiv gewertet.",
+   "zeilen": [
+    240,
+    241
+   ],
+   "code": [
+    "240:     IF gs_bset-shkzg = 'S'.",
+    "241:       lv_bmg = - lv_bmg."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-058-B13",
+   "soll": "Die vorzeichengerechten Steuerbeträge werden zur Zahllast aufsummiert und je Steuerkonto für die Abstimmung gesammelt.",
+   "zeilen": [
+    246,
+    250
+   ],
+   "code": [
+    "246:     gv_zahllast = gv_zahllast + lv_ste.",
+    "250:     COLLECT gs_konto INTO gt_konto."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-058-B14",
+   "soll": "Ist für das Steuerkennzeichen eine Vorzeichenumkehr gepflegt, werden Bemessungsgrundlage und Steuer für die Meldung mit umgekehrtem Vorzeichen geführt.",
+   "zeilen": [
+    253,
+    254
+   ],
+   "code": [
+    "253:     IF gs_map-umkehr = abap_true.",
+    "254:       lv_bmg = - lv_bmg."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-058-B15",
+   "soll": "Die Bemessungsgrundlage wird auf die Bemessungs-Kennzahl und der Steuerbetrag auf die Steuer-Kennzahl kumuliert, jeweils nur wenn die Kennzahl gepflegt ist.",
+   "zeilen": [
+    258,
+    259,
+    261,
+    262
+   ],
+   "code": [
+    "258:     IF gs_map-kz_bmg IS NOT INITIAL.",
+    "259:       kz_add gs_map-kz_bmg 'B' lv_bmg.",
+    "261:     IF gs_map-kz_st IS NOT INITIAL.",
+    "262:       kz_add gs_map-kz_st 'S' lv_ste."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-058-B16",
+   "soll": "Für die betroffenen Steuerkonten werden die Buchungen des Meldemonats im Geschäftsjahr gelesen und vorzeichengerecht (Haben positiv) zu einem Saldo je Konto summiert.",
+   "zeilen": [
+    289,
+    300
+   ],
+   "code": [
+    "289:   SELECT hkont shkzg dmbtr FROM bsis",
+    "300:     ls_saldo-saldo_hk = COND #( WHEN ls_bsis-shkzg = 'H' THEN ls_bsis-dmbtr"
+   ],
+   "engine": [
+    "Es werden Sätze aus bsis mit dem eingegebenen Buchungskreis, dem eingegebenen gjahr und dem eingegebenen monat selektiert."
+   ]
+  },
+  {
+   "id": "BM-058-B17",
+   "soll": "Je Steuerkonto wird die Differenz zwischen der Summe der Steuerzeilen und dem Kontensaldo gebildet.",
+   "zeilen": [
+    311
+   ],
+   "code": [
+    "311:     <ls_konto>-differenz = <ls_konto>-steuer_bset - <ls_konto>-saldo_hk."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-058-B18",
+   "soll": "Übersteigt der Betrag der Differenz die eingegebene Toleranz, wird für das Konto eine Warnung gesammelt; die Meldung wird dadurch nicht gesperrt.",
+   "zeilen": [
+    312,
+    319
+   ],
+   "code": [
+    "312:     IF abs( <ls_konto>-differenz ) > p_toler.",
+    "319:       gv_warnung = abap_true."
+   ],
+   "engine": [
+    "Für abs( <ls_konto>-differenz ) > p_toler wird die gs_meld-typ auf W gesetzt und eine Zeile aufgenommen.",
+    "abs( <ls_konto>-differenz ) > p_toler setzen die gs_meld-typ auf W."
+   ]
+  },
+  {
+   "id": "BM-058-B19",
+   "soll": "Nur in der Dezember-Meldung wird eine eingegebene Sondervorauszahlung als Kennzahl 39 angesetzt und von der Zahllast abgezogen.",
+   "zeilen": [
+    331,
+    332,
+    333
+   ],
+   "code": [
+    "331:   IF p_monat = 12 AND p_sovz IS NOT INITIAL.",
+    "332:     kz_add '39' 'S' p_sovz.",
+    "333:     gv_zahllast = gv_zahllast - p_sovz."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-058-B20",
+   "soll": "Bemessungsgrundlagen werden durch Abschneiden der Cent auf volle Euro gebracht, Steuerbeträge bleiben centgenau.",
+   "zeilen": [
+    339,
+    340
+   ],
+   "code": [
+    "339:     IF <ls_kz>-art = 'B'.",
+    "340:       <ls_kz>-betrag_rund = trunc( <ls_kz>-betrag )."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-058-B21",
+   "soll": "Die verbleibende Zahllast wird als Kennzahl 83 angefügt.",
+   "zeilen": [
+    349
+   ],
+   "code": [
+    "349:   gs_kz-betrag      = gv_zahllast."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-058-B22",
+   "soll": "Sind Steuerkennzeichen ohne Zuordnung aufgetreten, wird ein Hinweis ausgegeben und weder Datei noch Protokolleintrag erzeugt.",
+   "zeilen": [
+    46,
+    47
+   ],
+   "code": [
+    "46:   IF gv_fehler = abap_true.",
+    "47:     MESSAGE 'Nicht zugeordnete Steuerkennzeichen - keine Datei erzeugt' TYPE 'I'."
+   ],
+   "engine": [
+    "Für gv_fehler mit dem Wert abap_true wird eine Meldung ausgegeben.",
+    "Für gv_fehler mit dem Wert abap_true wird eine Meldung ausgegeben, sonst datei_schreiben aufgerufen und protokoll_schreiben aufgerufen.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-058-B23",
+   "soll": "Im Testlauf werden weder Datei noch Protokolleintrag erzeugt; es wird nur die Liste angezeigt.",
+   "zeilen": [
+    48
+   ],
+   "code": [
+    "48:   ELSEIF p_test = abap_false."
+   ],
+   "engine": [
+    "Für gv_fehler mit dem Wert abap_true wird eine Meldung ausgegeben, sonst datei_schreiben aufgerufen und protokoll_schreiben aufgerufen.",
+    "Für p_test mit dem Wert abap_false wird datei_schreiben aufgerufen und protokoll_schreiben aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-058-B24",
+   "soll": "Für die Datei wird die Steuernummer des Buchungskreises gelesen; fehlt sie, entsteht kein Dateiinhalt und der Report bricht mit einer Fehlermeldung ab.",
+   "zeilen": [
+    101,
+    103,
+    375,
+    377
+   ],
+   "code": [
+    "101:     SELECT SINGLE stnr FROM zfi_ustva_stnr INTO lv_stnr",
+    "103:     IF sy-subrc <> 0.",
+    "375:   IF lt_zeilen IS INITIAL.",
+    "377:     MESSAGE e004 WITH p_bukrs."
+   ],
+   "engine": [
+    "stnr des Satzes wird gelesen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-058-B25",
+   "soll": "Der Dateiinhalt enthält Jahr, Monat, Steuernummer und je Kennzahl mit einem von null verschiedenen Meldebetrag ein Element.",
+   "zeilen": [
+    113,
+    115,
+    118
+   ],
+   "code": [
+    "113:     LOOP AT it_kz INTO ls_kz.",
+    "115:       IF ls_kz-betrag_rund = 0.",
+    "118:       lv_wert = |{ ls_kz-betrag_rund NUMBER = RAW }|."
+   ],
+   "engine": [
+    "Jede Zeile aus it_kz wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-058-B26",
+   "soll": "Die Zeilen werden als UTF-8-Textdatei unter einem aus Pfad, Buchungskreis, Jahr und Monat gebildeten Namen auf den Applikationsserver geschrieben.",
+   "zeilen": [
+    130,
+    136,
+    138,
+    380
+   ],
+   "code": [
+    "130:     OPEN DATASET iv_datei FOR OUTPUT IN TEXT MODE ENCODING UTF-8.",
+    "136:       TRANSFER lv_zeile TO iv_datei.",
+    "138:     CLOSE DATASET iv_datei.",
+    "380:   lv_ok = lo_xml->schreiben( iv_datei = gv_datei it_zeilen = lt_zeilen )."
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode schreiben von lo_xml wird nach lv_ok übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-058-B27",
+   "soll": "Lässt sich die Datei nicht öffnen, bricht der Report mit einer Fehlermeldung ab.",
+   "zeilen": [
+    131,
+    132,
+    381,
+    382
+   ],
+   "code": [
+    "131:     IF sy-subrc <> 0.",
+    "132:       RETURN.",
+    "381:   IF lv_ok = abap_false.",
+    "382:     MESSAGE e005 WITH gv_datei."
+   ],
+   "engine": [
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Für lv_ok mit dem Wert abap_false wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-058-B28",
+   "soll": "Nach geschriebener Datei wird ein Protokolleintrag mit laufender Nummer, Status S, Berichtigungskennzeichen, Zahllast, Dateiname, Warnkennzeichen und Ersteller angelegt und festgeschrieben.",
+   "zeilen": [
+    405,
+    410
+   ],
+   "code": [
+    "405:   INSERT zfi_ustva_prot FROM ls_prot.",
+    "410:     COMMIT WORK."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben, sonst COMMIT WORK ausgeführt.",
+    "Für andere sy-subrc wird COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-058-B29",
+   "soll": "Scheitert das Anlegen des Protokolleintrags, wird nur ein Hinweis ausgegeben; die Datei bleibt bestehen.",
+   "zeilen": [
+    406,
+    408
+   ],
+   "code": [
+    "406:   IF sy-subrc <> 0.",
+    "408:     MESSAGE 'Protokolleintrag existiert bereits - bitte pruefen' TYPE 'I'."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Ohne Treffer wird eine Meldung ausgegeben, sonst COMMIT WORK ausgeführt.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-058-B30",
+   "soll": "Abschließend werden Kennzahlen mit Betrag und Meldebetrag sowie die gesammelten Fehler und Warnungen in einer ALV-Liste angezeigt.",
+   "zeilen": [
+    438
+   ],
+   "code": [
+    "438:   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ]
+  }
+ ]
+}

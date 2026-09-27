@@ -1,0 +1,48 @@
+{
+ "id": "BM-183",
+ "urteile": [
+  {
+   "id": "BM-183-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "„attach_for_read … Verhalten nicht belegt“; Öffnen des Tarifspeichers nicht fachlich."
+  },
+  {
+   "id": "BM-183-B02",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "„Rückgabewert von build_area wird nach zcl_tm_tarif_loader übernommen“ ist falsch (statischer Aufruf ohne Rückgabe); Neuaufbau bei fehlender Version nicht erkannt."
+  },
+  {
+   "id": "BM-183-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "grammatik"
+   ],
+   "kurz": "„Rückgabewert der Methode get_satz von >root“ (verstümmelt); Tarifsatz zur Relation nicht fachlich."
+  },
+  {
+   "id": "BM-183-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu KEIN_TARIF."
+  },
+  {
+   "id": "BM-183-B05",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Preisformel."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

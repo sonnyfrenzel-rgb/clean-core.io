@@ -1,0 +1,105 @@
+{
+ "id": "BM-015",
+ "urteile": [
+  {
+   "id": "BM-015-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Ohne Berechtigung auf V_VBAK_AAT wird der Block verlassen\" – Abbruch stimmt, aber Berechtigungsobjekt statt Retourenauftragsart ZRE, Fehler 500 nur als \"fehler aufgerufen\"."
+  },
+  {
+   "id": "BM-015-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Sätze aus vbrk\" und \"Ohne Treffer wird fehler aufgerufen\" – Faktura und Fehler 501 nicht fachlich benannt."
+  },
+  {
+   "id": "BM-015-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Bedingung nur als gs_vbrk-fksto/sfakn; storniert/Stornobeleg und Fehler 502 nicht erkennbar."
+  },
+  {
+   "id": "BM-015-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Bedingung inkl. Kulanzausnahme vorhanden, aber nur als sy-datum - gs_vbrk-fkdat > gc_frist_tage; 365 Tage/Fehler 503 fehlen."
+  },
+  {
+   "id": "BM-015-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Tabellensuche und \"Ohne Treffer wird fehler aufgerufen\" – dass die Position zur Faktura gehören muss, nicht fachlich."
+  },
+  {
+   "id": "BM-015-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Mengenvergleich nur als ls_item-menge + lv_bereits > ls_vbrp-fkimg; bereits retournierte Menge aus dem Belegfluss nicht benannt."
+  },
+  {
+   "id": "BM-015-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Schleife über it_items und \"Bei Treffern wird der Block verlassen\" – dass bei Fehlern keine Retoure angelegt wird, nicht fachlich."
+  },
+  {
+   "id": "BM-015-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur BAPI-Aufruf mit ls_hdr/cv_retoure; Retourenauftrag mit Fakturabezug nicht fachlich."
+  },
+  {
+   "id": "BM-015-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback bei cv_retoure IS INITIAL OR iv_simulate richtig, aber nur technisch; keine Retourennummer fehlt."
+  },
+  {
+   "id": "BM-015-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur COMMIT-Baustein; der Eintrag ins Retourenprotokoll (Zeile 127) fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

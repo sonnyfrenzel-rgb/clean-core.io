@@ -1,0 +1,73 @@
+{
+ "id": "BM-186",
+ "urteile": [
+  {
+   "id": "BM-186-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "„get_filter … Verhalten nicht belegt“; Auswertung der Filter Filiale/Aktiv fehlt."
+  },
+  {
+   "id": "BM-186-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Filter Aktiv."
+  },
+  {
+   "id": "BM-186-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Abweisung anderer Filter."
+  },
+  {
+   "id": "BM-186-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Pflichtfilter WERKS."
+  },
+  {
+   "id": "BM-186-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife und Berechtigungsprüfung M_MATE_WRK; Entfernen nicht berechtigter Filialen fehlt."
+  },
+  {
+   "id": "BM-186-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Berechtigungsfehler."
+  },
+  {
+   "id": "BM-186-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Selektion aus zret_aktion mit Feldliste; Sortierung und berechtigte Filialen fehlen."
+  },
+  {
+   "id": "BM-186-B08",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Paging."
+  },
+  {
+   "id": "BM-186-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "„has_inlinecount … Verhalten nicht belegt“; Meldung der Trefferzahl fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

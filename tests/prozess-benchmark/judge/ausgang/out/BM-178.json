@@ -1,0 +1,167 @@
+{
+ "id": "BM-178",
+ "urteile": [
+  {
+   "id": "BM-178-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Zwei Aufrufe CUOV_GET_FUNCTION_ARGUMENT für Z_LAENGE_M/Z_QUERSCHNITT; Abbruch mit internem Fehler fehlt."
+  },
+  {
+   "id": "BM-178-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Lesen von Z_VERLEGEART; Vorbelegung mit Erdverlegung fehlt."
+  },
+  {
+   "id": "BM-178-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Sätze aus zvc_kabeltyp selektiert“; inkonsistente Konfiguration bei unbekanntem Typ fehlt."
+  },
+  {
+   "id": "BM-178-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Gewichtsberechnung."
+  },
+  {
+   "id": "BM-178-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Selektion aus zvc_trommel und Ausstieg bei passender Trommel technisch; „kleinste“ und Inkonsistenz fehlen."
+  },
+  {
+   "id": "BM-178-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Nur CUOV_SET_FUNCTION_ARGUMENT-Aufrufe; Rückschreiben von Trommel und Gewicht nicht fachlich."
+  },
+  {
+   "id": "BM-178-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Berechtigungsprüfung V_VBAK_VKO und Meldung; Bezug auf Sperrkennzeichen und Abweisung fehlen."
+  },
+  {
+   "id": "BM-178-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "„Es werden Aufträge selektiert“ und Hinweis ohne Treffer; konfigurierte, nicht voll gelieferte Positionen fehlen."
+  },
+  {
+   "id": "BM-178-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "FB-Aufruf und „Zeile aufgenommen“ ohne Treffer; Meldung ohne Sperrvorschlag nicht erkannt."
+  },
+  {
+   "id": "BM-178-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "„Für sy-subrc 4 wird eine Zeile aufgenommen“; nicht numerische Werte und kein Sperrvorschlag nicht fachlich."
+  },
+  {
+   "id": "BM-178-B11",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Vorbelegung Erdverlegung in der Nachprüfung."
+  },
+  {
+   "id": "BM-178-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "„Für lv_soll ungleich iv_trommel wird eine Zeile aufgenommen“ usw.; Trommel- und Längenprüfung nur als Code."
+  },
+  {
+   "id": "BM-178-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Es wird eine Zeile aufgenommen und der Block verlassen“; „keine Trommel passt“ als einzige Abweichung nicht gesagt."
+  },
+  {
+   "id": "BM-178-B14",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum CATCH des unbekannten Kabeltyps."
+  },
+  {
+   "id": "BM-178-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Blockverlassen ohne Meldungen und Schleife über lt_meld; Vormerkung als sperrrelevant fehlt."
+  },
+  {
+   "id": "BM-178-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf sperren bei p_sperr, Schleife, BAPI_SALESORDER_CHANGE; Liefersperre am Kopf und „nicht schon gesperrt“ fehlen."
+  },
+  {
+   "id": "BM-178-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Rollback bzw. Commit je mit „Zeile aufgenommen“ erkannt, aber nur als FB-Namen; Protokoll nicht fachlich."
+  },
+  {
+   "id": "BM-178-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Ausgabe Belegnummer/Text „bei Treffern“ und ALV „nicht belegt“; Sperrprotokoll/Abweichungsliste nicht erkannt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

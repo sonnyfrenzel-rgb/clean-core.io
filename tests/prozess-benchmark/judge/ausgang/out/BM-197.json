@@ -1,0 +1,268 @@
+{
+ "id": "BM-197",
+ "urteile": [
+  {
+   "id": "BM-197-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "retrieve „nicht belegt“ und Blockverlassen ohne Treffer; Einschränkung auf Frachtaufträge fehlt."
+  },
+  {
+   "id": "BM-197-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "retrieve_by_association „nicht belegt“ und Schleife; Gruppierung je Frachtauftrag fehlt."
+  },
+  {
+   "id": "BM-197-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Gewichtssumme."
+  },
+  {
+   "id": "BM-197-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Gefahrgutkennzeichen."
+  },
+  {
+   "id": "BM-197-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur update „nicht belegt“; Bedingung „nur bei Änderung“ fehlt."
+  },
+  {
+   "id": "BM-197-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "retrieve und Selektion aus ztm_veh_cap; Ladegewicht/ADR nicht fachlich."
+  },
+  {
+   "id": "BM-197-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „low des Satzes wird gelesen“; Toleranz und Vorgabe 0 fehlen."
+  },
+  {
+   "id": "BM-197-B08",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu Aufträgen ohne Fahrzeugtyp."
+  },
+  {
+   "id": "BM-197-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur add_message „nicht belegt“; Warnung und Konsistenz nicht gesagt."
+  },
+  {
+   "id": "BM-197-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur add_message „nicht belegt“; Überladungsprüfung und Inkonsistenz fehlen."
+  },
+  {
+   "id": "BM-197-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur add_message „nicht belegt“; ADR-Prüfung fehlt."
+  },
+  {
+   "id": "BM-197-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Berechtigungsprüfung Z_TM_FOREL und Rückkehr ohne Berechtigung; Ablehnung aller Aufträge nicht gesagt."
+  },
+  {
+   "id": "BM-197-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur add_message „nicht belegt“; Hinweis bei bereits freigegeben nicht erkannt."
+  },
+  {
+   "id": "BM-197-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur add_message „nicht belegt“; Ablehnung ohne Frachtführer nicht erkannt."
+  },
+  {
+   "id": "BM-197-B15",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "GET TIME STAMP wird als Verarbeitung von LDB-„TIME-Sätzen“ gedeutet – falsch; Status/Freigeber/Zeitpunkt nicht genannt."
+  },
+  {
+   "id": "BM-197-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "CHANGEDOCUMENT_OPEN/SINGLE_CASE/CLOSE-Aufrufe; Änderungsbeleg alt/neu nicht fachlich."
+  },
+  {
+   "id": "BM-197-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "BCS-Methodenaufrufe „nicht belegt“; Info-Mail an Disponenten nicht erkannt."
+  },
+  {
+   "id": "BM-197-B18",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Verwerfen von Mailfehlern."
+  },
+  {
+   "id": "BM-197-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Blockverlassen für andere Aktionsnamen; Weiterreichen an Standardverarbeitung fehlt."
+  },
+  {
+   "id": "BM-197-B20",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur fehlenden Frachtauftragsnummer."
+  },
+  {
+   "id": "BM-197-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur convert_altern_key „nicht belegt“; Ablehnung „nicht gefunden“ fehlt."
+  },
+  {
+   "id": "BM-197-B22",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur do_action „nicht belegt“; Freigabeaktion nicht fachlich."
+  },
+  {
+   "id": "BM-197-B23",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur cleanup „nicht belegt“; Rückgabe der Meldungen als Fehler fehlt."
+  },
+  {
+   "id": "BM-197-B24",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur save „nicht belegt“; Behandlung abgelehnten Sicherns fehlt."
+  },
+  {
+   "id": "BM-197-B25",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "get_messages/add_message_text_only „nicht belegt“; Geschäftsfehler fehlt."
+  },
+  {
+   "id": "BM-197-B26",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur retrieve „nicht belegt“; Rückgabe des neuen Stands nicht erkannt."
+  },
+  {
+   "id": "BM-197-B27",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu Filtern der Liste."
+  },
+  {
+   "id": "BM-197-B28",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "query „nicht belegt“ und Verlassen ohne Treffer; Suche nach Frachtaufträgen nicht fachlich."
+  },
+  {
+   "id": "BM-197-B29",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "retrieve/paging „nicht belegt“; Felder, Gesamtzahl vor dem Kürzen fehlen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,143 @@
+{
+ "id": "BM-012",
+ "urteile": [
+  {
+   "id": "BM-012-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Einzelverarbeitung und Schritte nur bei gv_error = abap_false sind erkennbar, aber nur über idoc_contrl/gv_error und Unterprogrammnamen."
+  },
+  {
+   "id": "BM-012-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Übernahme von Bestellart und Währung."
+  },
+  {
+   "id": "BM-012-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Kundenbestellnummer (Qualifier 001)."
+  },
+  {
+   "id": "BM-012-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Übernahme des Auftraggebers."
+  },
+  {
+   "id": "BM-012-B05",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu Positionssegmenten und Materialidentifikation."
+  },
+  {
+   "id": "BM-012-B06",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingung nur technisch; \"wird eine Meldung ausgegeben\" ist falsch – MESSAGE … INTO füllt nur gv_msg, abgelehnt wird über gv_error."
+  },
+  {
+   "id": "BM-012-B07",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus zsd_edi_kunde selektiert\"; ohne Treffer \"Meldung ausgegeben\" – es wird nichts ausgegeben (MESSAGE INTO), die Abbildung auf Debitor/Vertriebsbereich/Auftragsart fehlt."
+  },
+  {
+   "id": "BM-012-B08",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"aufsd des Kunden wird gelesen\" und \"Meldung ausgegeben\" – die Ablehnung erfolgt über den IDoc-Status, keine Ausgabe."
+  },
+  {
+   "id": "BM-012-B09",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"matnr des Satzes wird gelesen\" statt Umschlüsselung über Kunden-Material-Info; \"Meldung ausgegeben\" widerspricht MESSAGE INTO."
+  },
+  {
+   "id": "BM-012-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Konvertierungsbaustein mit ls_item>-lfmat/matnr genannt; dass das Ergebnis ungeprüft bleibt, fehlt."
+  },
+  {
+   "id": "BM-012-B11",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Belegnummer des Auftrags wird gelesen\", bei Treffer \"Meldung ausgegeben\" – Dublettenprüfung nicht benannt, keine Ausgabe (MESSAGE INTO)."
+  },
+  {
+   "id": "BM-012-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur BAPI-Aufruf mit ls_hdr und gv_vbeln; Anlage eines Kundenauftrags mit Positionen/Einteilungen nicht fachlich."
+  },
+  {
+   "id": "BM-012-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Jede Zeile aus lt_ret wird einzeln verarbeitet\"; Fehler-/Abbruchmeldung als Fehlermarkierung fehlt."
+  },
+  {
+   "id": "BM-012-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Status 51 bei Fehler, sonst 53 erkennbar, aber über gv_error, \"die Status\", msgid/msgno; Fehlermeldung bzw. Auftragsnummer als Anwendungsobjekt fehlen; sechsfach."
+  },
+  {
+   "id": "BM-012-B15",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Workflow-Fehlerergebnis."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "satz": "Für gt_items IS INITIAL OR gs_head-bstkd IS INITIAL wird eine Meldung ausgegeben.",
+   "begruendung": "Beschreibt MESSAGE e110 … INTO gv_msg (lzsd_edi_ordf01.abap:57) als Ausgabe – der verbotene output-Knoten."
+  }
+ ],
+ "soll_zweifel": []
+}

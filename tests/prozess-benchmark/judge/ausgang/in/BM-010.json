@@ -1,0 +1,153 @@
+{
+ "id": "BM-010",
+ "titel": "Auftragssperre bei überfälligen Posten: BSID summieren, KNA1 direkt ändern",
+ "prozess": "Der Report läuft täglich nachts als Job, mit Buchungskreisen, optionalen Kunden, Überfälligkeitstagen, Mindestbetrag und Testlaufkennzeichen. Er liest die offenen Soll-Posten der Kunden ohne Sonderhauptbuchvorgänge. Posten, deren Fälligkeit mehr als die eingegebenen Tage zurückliegt, summiert er je Kunde. Für jeden Kunden, dessen Summe den Mindestbetrag erreicht, prüft er die zentrale Auftragssperre; ist schon eine gesetzt, protokolliert er das. Im Testlauf listet er die Kandidaten nur auf. Im Echtlauf sperrt er den Kundenstamm, überspringt den Kunden mit Protokoll, wenn dieser gerade bearbeitet wird, und setzt sonst die Auftragssperre 07 direkt im Kundenstamm, gibt die Sperre frei und protokolliert. Am Ende schreibt er alle Änderungen mit einem COMMIT fest. Gutschriften werden nicht gegengerechnet und Beträge verschiedener Buchungskreise werden ohne Währungsumrechnung addiert.",
+ "verboten": [
+  "source.abap:34 — kein Fachsatz „Gutschriften und Zahlungen werden gegengerechnet“: es werden nur Soll-Posten (SHKZG = 'S') gelesen",
+  "source.abap:44 — kein Fachsatz „je Buchungskreis und Währung summiert“: summiert wird nur je Kunde über alle ausgewählten Buchungskreise in Hauswährungsbeträgen",
+  "source.abap:69 — kein Fachsatz „die Sperre wird mit Änderungsbeleg im Business Partner gesetzt“: das UPDATE schreibt direkt in KNA1",
+  "gesamte Scheibe — kein Fachsatz „Kunden werden wieder entsperrt, wenn die Posten bezahlt sind“: der Report setzt nur Sperren"
+ ],
+ "saetze": [
+  {
+   "id": "BM-010-B01",
+   "soll": "Es werden die offenen Soll-Posten ohne Sonderhauptbuchkennzeichen der ausgewählten Buchungskreise und Kunden gelesen.",
+   "zeilen": [
+    34
+   ],
+   "code": [
+    "34:   SELECT kunnr dmbtr zfbdt zbd1t FROM bsid INTO TABLE gt_op"
+   ],
+   "engine": [
+    "Es werden Sätze aus bsid selektiert."
+   ]
+  },
+  {
+   "id": "BM-010-B02",
+   "soll": "Nur Posten, deren Fälligkeit (Basisdatum plus Skontotage 1) mehr als die eingegebene Anzahl Tage zurückliegt, werden je Kunde aufsummiert.",
+   "zeilen": [
+    41,
+    44
+   ],
+   "code": [
+    "41:     CHECK gs_op-zfbdt + gs_op-zbd1t < sy-datum - p_tage.",
+    "44:     COLLECT gs_sum INTO gt_sum."
+   ],
+   "engine": [
+    "Nur gs_op-zfbdt + gs_op-zbd1t < sy-datum - p_tage gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-010-B03",
+   "soll": "Kunden, deren überfällige Summe unter dem Mindestbetrag liegt, bleiben unberührt.",
+   "zeilen": [
+    48
+   ],
+   "code": [
+    "48:     CHECK gs_sum-betrag >= p_minbt."
+   ],
+   "engine": [
+    "Nur Beträge ab p_minbt gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-010-B04",
+   "soll": "Hat der Kunde bereits eine Auftragssperre, wird das nur protokolliert.",
+   "zeilen": [
+    49,
+    50,
+    51
+   ],
+   "code": [
+    "49:     SELECT SINGLE aufsd FROM kna1 INTO gv_aufsd WHERE kunnr = gs_sum-kunnr.",
+    "50:     IF gv_aufsd IS NOT INITIAL.",
+    "51:       WRITE: / gs_sum-kunnr, 'bereits gesperrt:', gv_aufsd."
+   ],
+   "engine": [
+    "aufsd des Kunden wird gelesen.",
+    "Mit einer nicht leeren gv_aufsd wird Kundennummer ausgegeben, bereits gesperrt: ausgegeben und gv_aufsd ausgegeben.",
+    "Bei Treffern werden Kundennummer, bereits gesperrt: und gv_aufsd als Liste ausgegeben.",
+    "Kundennummer wird ausgegeben.",
+    "bereits gesperrt: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_aufsd wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-010-B05",
+   "soll": "Im Testlauf werden die Sperrkandidaten mit Betrag nur aufgelistet.",
+   "zeilen": [
+    54,
+    55
+   ],
+   "code": [
+    "54:     IF p_test = abap_true.",
+    "55:       WRITE: / gs_sum-kunnr, gs_sum-betrag, 'würde gesperrt (Testlauf)'."
+   ],
+   "engine": [
+    "Für p_test mit dem Wert abap_true wird Kundennummer ausgegeben, Betrag ausgegeben und würde gesperrt (Testlauf) ausgegeben.",
+    "Bei Treffern werden Kundennummer, Betrag und würde gesperrt (Testlauf) als Liste ausgegeben.",
+    "Kundennummer wird ausgegeben.",
+    "Betrag wird ausgegeben.",
+    "würde gesperrt (Testlauf) wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-010-B06",
+   "soll": "Im Echtlauf wird der Kundenstamm gesperrt; ist er gerade in Bearbeitung, wird der Kunde übersprungen und der Bearbeiter protokolliert.",
+   "zeilen": [
+    58,
+    65,
+    66
+   ],
+   "code": [
+    "58:     CALL FUNCTION 'ENQUEUE_EXKNA1'",
+    "65:     IF sy-subrc <> 0.",
+    "66:       WRITE: / gs_sum-kunnr, 'in Bearbeitung durch', sy-msgv1."
+   ],
+   "engine": [
+    "Der Funktionsbaustein ENQUEUE_EXKNA1 wird aufgerufen.",
+    "Ohne Treffer wird Kundennummer ausgegeben, in Bearbeitung durch ausgegeben und sy-msgv1 ausgegeben.",
+    "Bei Treffern werden Kundennummer, in Bearbeitung durch und sy-msgv1 als Liste ausgegeben.",
+    "Kundennummer wird ausgegeben.",
+    "in Bearbeitung durch wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "sy-msgv1 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-010-B07",
+   "soll": "Sonst erhält der Kunde die zentrale Auftragssperre 07, die Kundensperre wird wieder freigegeben und der Vorgang protokolliert.",
+   "zeilen": [
+    69,
+    70,
+    73
+   ],
+   "code": [
+    "69:     UPDATE kna1 SET aufsd = '07' WHERE kunnr = gs_sum-kunnr.",
+    "70:     CALL FUNCTION 'DEQUEUE_EXKNA1'",
+    "73:     WRITE: / gs_sum-kunnr, gs_sum-betrag, 'Auftragssperre 07 gesetzt'."
+   ],
+   "engine": [
+    "Es wird eine Zeile geändert, DEQUEUE_EXKNA1 aufgerufen, Kundennummer ausgegeben, Betrag ausgegeben und Auftragssperre 07 gesetzt ausgegeben.",
+    "Die aufsd des Kunden wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. sy-subrc wird danach nicht ausgewertet.",
+    "Der Funktionsbaustein DEQUEUE_EXKNA1 wird aufgerufen.",
+    "Bei Treffern werden Kundennummer, Betrag und Auftragssperre 07 gesetzt als Liste ausgegeben.",
+    "Kundennummer wird ausgegeben.",
+    "Betrag wird ausgegeben.",
+    "Auftragssperre 07 gesetzt wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-010-B08",
+   "soll": "Am Ende werden alle gesetzten Sperren festgeschrieben.",
+   "zeilen": [
+    76
+   ],
+   "code": [
+    "76:   COMMIT WORK."
+   ],
+   "engine": [
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,145 @@
+{
+ "id": "BM-088",
+ "titel": "Zeitbuchungen aus Zutrittskontrolle per Datei importieren",
+ "prozess": "Ein nächtlicher Job übernimmt die Kommen/Gehen-Buchungen eines Zutrittskontrollsystems aus einer CSV-Datei auf dem Applikationsserver. Ist die Datei nicht lesbar, bricht er mit Fehlermeldung ab; sonst legt er eine Fehlerdatei an. Zeile für Zeile zerlegt er Personalnummer, Datum, Uhrzeit und Satzart. Andere Satzarten als P10 (Kommen) und P20 (Gehen) schreibt er in die Fehlerdatei. Danach prüft er über den Infotyp 0000, ob der Mitarbeiter am Buchungstag aktiv beschäftigt ist; sonst geht die Zeile ebenfalls in die Fehlerdatei. Gültige Buchungen speichert er mit Erfassungsdatum und -benutzer in einer Z-Tabelle; bereits vorhandene Sätze landen als Dublette in der Fehlerdatei. Am Dateiende schreibt er die Buchungen fest; nur wenn keine Zeile abgewiesen wurde, löscht er die Eingangsdatei. Abschließend gibt er die Zähler aus.",
+ "verboten": [
+  "source.abap:57 — kein Fachsatz „Zeitereignisse werden in die Zeitwirtschaft (TEVEN) gebucht“ (Ziel ist nur die Z-Tabelle).",
+  "source.abap:69 — kein Fachsatz „fehlerhafte Zeilen verhindern die Übernahme der Datei“ (gültige Zeilen werden trotzdem gespeichert; nur das Löschen der Datei unterbleibt).",
+  "source.abap:70 — kein Fachsatz „Datei wird archiviert/verschoben“ (sie wird gelöscht).",
+  "source.abap:45 — kein Fachsatz über eine HR-Berechtigungsprüfung (es gibt keine)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-088-B01",
+   "soll": "Die Buchungsdatei des Zutrittskontrollsystems wird vom Applikationsserver gelesen; ist sie nicht lesbar, bricht der Job mit Fehlermeldung ab.",
+   "zeilen": [
+    20,
+    21,
+    22
+   ],
+   "code": [
+    "20:   OPEN DATASET p_file FOR INPUT IN TEXT MODE ENCODING DEFAULT.",
+    "21:   IF sy-subrc <> 0.",
+    "22:     MESSAGE e001(zhr_if) WITH p_file."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-088-B02",
+   "soll": "Für abgewiesene Zeilen wird eine Fehlerdatei angelegt.",
+   "zeilen": [
+    24
+   ],
+   "code": [
+    "24:   OPEN DATASET p_errf FOR OUTPUT IN TEXT MODE ENCODING DEFAULT."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-088-B03",
+   "soll": "Jede Zeile wird in Personalnummer, Datum, Uhrzeit und Satzart zerlegt.",
+   "zeilen": [
+    27,
+    31
+   ],
+   "code": [
+    "27:     READ DATASET p_file INTO lv_line.",
+    "31:     SPLIT lv_line AT ';' INTO lv_pernr lv_date lv_time lv_type."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-088-B04",
+   "soll": "Zeilen mit einer anderen Satzart als Kommen (P10) oder Gehen (P20) gehen in die Fehlerdatei.",
+   "zeilen": [
+    38,
+    39
+   ],
+   "code": [
+    "38:     IF lv_type <> 'P10' AND lv_type <> 'P20'.",
+    "39:       TRANSFER lv_line TO p_errf."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-088-B05",
+   "soll": "Ist der Mitarbeiter am Buchungstag nicht aktiv beschäftigt (Status 3), geht die Zeile in die Fehlerdatei.",
+   "zeilen": [
+    45,
+    49,
+    50
+   ],
+   "code": [
+    "45:     SELECT SINGLE stat2 FROM pa0000 INTO lv_stat2",
+    "49:     IF sy-subrc <> 0 OR lv_stat2 <> '3'.",
+    "50:       TRANSFER lv_line TO p_errf."
+   ],
+   "engine": [
+    "stat2 des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-088-B06",
+   "soll": "Gültige Buchungen werden mit Erfassungsdatum und -benutzer gespeichert; bereits vorhandene Buchungen gehen als Dublette in die Fehlerdatei.",
+   "zeilen": [
+    57,
+    58,
+    59
+   ],
+   "code": [
+    "57:     INSERT zhr_timerec FROM ls_rec.",
+    "58:     IF sy-subrc <> 0.                \"Dublette",
+    "59:       TRANSFER lv_line TO p_errf."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-088-B07",
+   "soll": "Nach dem Dateiende werden die übernommenen Buchungen festgeschrieben.",
+   "zeilen": [
+    68
+   ],
+   "code": [
+    "68:   COMMIT WORK."
+   ],
+   "engine": [
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-088-B08",
+   "soll": "Nur wenn keine Zeile abgewiesen wurde, wird die Eingangsdatei gelöscht.",
+   "zeilen": [
+    69,
+    70
+   ],
+   "code": [
+    "69:   IF lv_err = 0.",
+    "70:     DELETE DATASET p_file."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-088-B09",
+   "soll": "Zum Schluss werden die Anzahl übernommener und abgewiesener Zeilen ausgegeben.",
+   "zeilen": [
+    72,
+    73
+   ],
+   "code": [
+    "72:   WRITE: / 'Übernommen:', lv_ok.",
+    "73:   WRITE: / 'Fehler:', lv_err."
+   ],
+   "engine": [
+    "Übernommen:, lv_ok, Fehler: und lv_err werden ausgegeben.",
+    "Übernommen: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_ok wird ausgegeben.",
+    "Fehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_err wird ausgegeben."
+   ]
+  }
+ ]
+}

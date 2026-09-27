@@ -1,0 +1,199 @@
+{
+ "id": "BM-018",
+ "urteile": [
+  {
+   "id": "BM-018-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"katr1 des Kunden wird gelesen\"; Übergabe als Kopfmerkmal der Preisfindung fehlt."
+  },
+  {
+   "id": "BM-018-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "Auftragsart ZWEB erkennbar, Ziel nur als \"die tkomk-zzkatr auf W\"; Kundenkategorie nicht benannt, \"setzen die\"."
+  },
+  {
+   "id": "BM-018-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"prodh des Satzes wird gelesen\"; erste Hierarchiestufe und Übergabe je Position fehlen."
+  },
+  {
+   "id": "BM-018-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus zsd_kampagne selektiert\" – gültige Kampagne mit höchster Priorität und Übergabe fehlen."
+  },
+  {
+   "id": "BM-018-B05",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Drei CHECK-Sätze \"kleinere werden übersprungen, die Schleife läuft weiter\" – in der Bedingung gibt es keine Schleife, ein Fehlschlag lässt ZKA1 nicht zu; \"Nur Eine nicht leere … gehen\"."
+  },
+  {
+   "id": "BM-018-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Berechtigungsprüfung auf Z_REPRICE und \"eine Meldung\" genannt; dass ohne sie keine Neubewertung stattfindet, fehlt."
+  },
+  {
+   "id": "BM-018-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Hinweis und Ende ohne Treffer stimmen; welche Aufträge (nicht erledigt/abgesagt) selektiert werden, fehlt."
+  },
+  {
+   "id": "BM-018-B08",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "\"Für Sperrkennzeichen mit dem Wert Z7 wird … der Block verlassen\" – Z7-Aufträge werden übersprungen; \"die Status auf I\"."
+  },
+  {
+   "id": "BM-018-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "konv_summe \"nicht belegt\" und \"Sätze aus konv\" – Festhalten des bisherigen ZKA1-Werts nicht fachlich."
+  },
+  {
+   "id": "BM-018-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "ENQUEUE und \"Ohne Treffer wird die Status auf E gesetzt\" – gesperrter Auftrag irreführend als fehlender Treffer."
+  },
+  {
+   "id": "BM-018-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"BAPI_SALESORDER_CHANGE wird aufgerufen\"; Neupreisfindung mit Preisfindungsart und Simulation fehlen."
+  },
+  {
+   "id": "BM-018-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Rollback, Status E und Verlassen bei Fehlerzeile technisch richtig; \"fehlerhaft ausgewiesen\" nur als \"die Status auf E\"."
+  },
+  {
+   "id": "BM-018-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Im Testlauf Rollback und Status I; \"Simulation ohne Fehler\" und fehlende Werte nicht erkennbar."
+  },
+  {
+   "id": "BM-018-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "COMMIT-Baustein, \"netwr knumv des Auftrags wird gelesen\", konv_summe \"nicht belegt\" – Festschreiben und Neulesen nur technisch."
+  },
+  {
+   "id": "BM-018-B15",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Abweichungsberechnung."
+  },
+  {
+   "id": "BM-018-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "Bedingung abs(abw_proz) > p_maxd, preissperre_setzen \"nicht belegt\", Status W/E – Liefersperre Z7 zur Preisprüfung nicht benannt."
+  },
+  {
+   "id": "BM-018-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Rollback bei Fehlerzeile, sonst COMMIT – korrekt, aber nur mit Bausteinnamen und \"Bei Treffer\"."
+  },
+  {
+   "id": "BM-018-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Für ls_out-netwr_neu ungleich ls_out-netwr_alt wird eine Zeile aufgenommen\" – Vormerkung zum Protokoll mit Werten nicht fachlich."
+  },
+  {
+   "id": "BM-018-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Registrierung zur Verbuchung, COMMIT und Schreiben in zsd_reprice_log beschrieben, aber Echtlauf-Bedingung technisch und Abbruch der Verbuchung (Typ A) nur \"eine Meldung\"."
+  },
+  {
+   "id": "BM-018-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "ALV-Methoden \"nicht belegt\", Rückgabewert fälschlich \"nach cl_salv_table\"; Ergebnisliste nicht fachlich."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

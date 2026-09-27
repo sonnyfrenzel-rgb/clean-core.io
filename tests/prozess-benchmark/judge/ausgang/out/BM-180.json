@@ -1,0 +1,162 @@
+{
+ "id": "BM-180",
+ "urteile": [
+  {
+   "id": "BM-180-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Meldung und Ende bei Schalter ungleich X und nicht ZOLL_ADMIN nur als Code-Bedingung; „schalter_pruefen nicht belegt“."
+  },
+  {
+   "id": "BM-180-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Selektionen aus marc und zft_praef_erg mit Feldlisten; Fertigerzeugnisse/bisheriges Ergebnis nicht fachlich."
+  },
+  {
+   "id": "BM-180-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Hinweis und Verlassen ohne Erzeugnisse erkannt; dass die leere Liste trotzdem erscheint, fehlt."
+  },
+  {
+   "id": "BM-180-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "„bewerten – Verhalten nicht belegt“ und Tabellensuche; Zwischenspeicher-Übernahme nicht fachlich."
+  },
+  {
+   "id": "BM-180-B05",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Zyklus-/Tiefenprüfung."
+  },
+  {
+   "id": "BM-180-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Gründe „Keine gueltige Lieferantenerklaerung“/„Lieferant ohne Ursprungserklaerung“ erkannt; Zukaufteil-Bezug und Wert fehlen."
+  },
+  {
+   "id": "BM-180-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Stücklistenauflösung per FB und Grund „Keine Stueckliste zum Stichtag“ erkannt, aber technisch."
+  },
+  {
+   "id": "BM-180-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Schleife über lt_stb; Bewertung und Wertsummen fehlen."
+  },
+  {
+   "id": "BM-180-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Lesen von stprs/peinh; Mindestwert-Regel fehlt."
+  },
+  {
+   "id": "BM-180-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Lesen von stawn/max_anteil und 40 als Vorgabe ohne Treffer – nur technisch."
+  },
+  {
+   "id": "BM-180-B11",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Ursprungsentscheidung."
+  },
+  {
+   "id": "BM-180-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Eine Zeile wird in gt_erg aufgenommen“; Vergleich mit bisherigem Ergebnis fehlt."
+  },
+  {
+   "id": "BM-180-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "ergebnisse_sichern bei p_upd erkannt; „eine Zeile“ statt aller Ergebnisse."
+  },
+  {
+   "id": "BM-180-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Schleife, SWE_EVENT_CREATE, Meldung „ohne Treffer“; Ereignis an den Zoll bei Verlust nicht fachlich."
+  },
+  {
+   "id": "BM-180-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein"
+   ],
+   "kurz": "„Mit COMMIT WORK wird die Änderung persistiert“; gemeinsames Festschreiben von Ergebnissen und Ereignissen nicht gesagt."
+  },
+  {
+   "id": "BM-180-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Gruppierung, Feldausgabe und „PRAEFERENZ VERLOREN“ nur technisch (COLOR-Zusätze als Feld)."
+  },
+  {
+   "id": "BM-180-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Ausgabe „lv_anz von lines(gt_erg) Materialien mit Praeferenzursprung“ – Inhalt erkennbar, aber technisch."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

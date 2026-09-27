@@ -1,0 +1,356 @@
+{
+ "id": "BM-016",
+ "titel": "Massenänderung Kundenaufträge per Batch-Input VA02: Datei, Zeilenprüfung, CALL TRANSACTION, Protokoll",
+ "prozess": "Der Report wird vom Innendienst im Dialog oder als Job mit einer CSV-Datei (Auftrag; Position; Feld; Wert) gestartet, die entweder am Arbeitsplatz oder auf dem Applikationsserver liegt; für Serverdateien wird ein absoluter Pfad erzwungen. Er liest die Datei, überspringt die Überschrift und zerlegt jede Zeile; ist die Datei unlesbar oder leer, endet er mit einem Hinweis. Für den Lauf legt er ein Anwendungsprotokoll an. Jede Zeile wird geprüft: Der Auftrag muss existieren, der Benutzer braucht die Änderungsberechtigung für den Vertriebsbereich, eine Liefersperre darf nur ohne Position kommen, und für Menge, Absagegrund und Liefertermin muss die Position existieren und darf nicht erledigt sein; andere Felder werden abgelehnt. Fehlerhafte Zeilen werden rot markiert, gezählt und protokolliert. Im Testlauf werden die übrigen Zeilen nur gelb markiert. Im Echtlauf prüft der Report mit einer sofort wieder gelösten Probesperre, ob der Auftrag bearbeitet wird, baut eine VA02-Bildfolge für das jeweilige Feld und führt sie synchron aus. Eine Fehlermeldung oder eine fehlende Sicherungsmeldung macht die Zeile rot, sonst wird sie als geändert gezählt. Nur im Echtlauf wird das Protokoll gesichert. Am Ende zeigt er eine Summenmeldung und die Ergebnisliste.",
+ "verboten": [
+  "zsd_mass_va02_f03.abap:39 — kein Fachsatz „der Auftrag bleibt bis zur Änderung gesperrt“: die Sperre wird sofort wieder gelöst, zwischen Prüfung und VA02 kann ein anderer Benutzer zugreifen",
+  "zsd_mass_va02_f03.abap:50 — kein Fachsatz „Warnungen verhindern die Änderung“: ausgewertet wird nur Meldungstyp E und die Sicherungsmeldung",
+  "zsd_mass_va02_f01.abap:84 — kein Fachsatz „auch der Testlauf hinterlässt ein Protokoll“: im Testlauf wird das Anwendungsprotokoll nicht gesichert",
+  "zsd_mass_va02_f03.abap:89 — kein Fachsatz „leere Werte werden ignoriert“: ein leerer Wert in der Datei löscht die Liefersperre"
+ ],
+ "saetze": [
+  {
+   "id": "BM-016-B01",
+   "soll": "Soll eine Datei vom Applikationsserver gelesen werden, muss ihr Pfad absolut sein, sonst bleibt der Benutzer mit Fehler 600 auf dem Selektionsbild.",
+   "zeilen": [
+    25,
+    26
+   ],
+   "code": [
+    "25:   IF p_appl = abap_true AND p_file(1) <> '/'.",
+    "26:     MESSAGE e600."
+   ],
+   "engine": [
+    "Für p_appl = abap_true AND p_file(1) <> '/' wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-016-B02",
+   "soll": "Eine Serverdatei wird zeilenweise gelesen; lässt sie sich nicht öffnen, erscheint Hinweis 602 und es wird nichts verarbeitet.",
+   "zeilen": [
+    57,
+    58,
+    62,
+    64
+   ],
+   "code": [
+    "57:     OPEN DATASET lv_file FOR INPUT IN TEXT MODE ENCODING DEFAULT.",
+    "58:     IF sy-subrc <> 0.",
+    "62:     DO.",
+    "64:       IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-016-B03",
+   "soll": "Eine Arbeitsplatzdatei wird hochgeladen; scheitert der Upload, erscheint Hinweis 602 und es wird nichts verarbeitet.",
+   "zeilen": [
+    71,
+    79
+   ],
+   "code": [
+    "71:     CALL FUNCTION 'GUI_UPLOAD'",
+    "79:     IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Für andere p_appl wird GUI_UPLOAD aufgerufen.",
+    "Der Funktionsbaustein GUI_UPLOAD wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-016-B04",
+   "soll": "Die erste Zeile gilt als Überschrift; jede weitere Zeile wird in Auftragsnummer, Positionsnummer, Feldname und neuen Wert zerlegt, Nummern werden mit führenden Nullen aufgefüllt.",
+   "zeilen": [
+    89
+   ],
+   "code": [
+    "89:     SPLIT lv_line AT ';' INTO ls_up-vbeln ls_up-posnr ls_up-feld ls_up-wert."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-016-B05",
+   "soll": "Enthält die Datei keine Datenzeilen, endet der Report mit Hinweis 601.",
+   "zeilen": [
+    31,
+    32
+   ],
+   "code": [
+    "31:   IF gt_upload IS INITIAL.",
+    "32:     MESSAGE s601 DISPLAY LIKE 'E'."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-016-B06",
+   "soll": "Für den Lauf wird ein Anwendungsprotokoll ZSD/MASSVA02 mit dem Dateinamen als externer Nummer angelegt.",
+   "zeilen": [
+    109
+   ],
+   "code": [
+    "109:   CALL FUNCTION 'BAL_LOG_CREATE'"
+   ],
+   "engine": [
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_log.",
+    "Das konvertierte Ergebnis wird in gv_log übernommen."
+   ]
+  },
+  {
+   "id": "BM-016-B07",
+   "soll": "Jede Zeile ist zunächst grün; eine Zeile, deren Auftrag nicht existiert, wird rot markiert.",
+   "zeilen": [
+    149,
+    159,
+    160
+   ],
+   "code": [
+    "149:   LOOP AT gt_upload INTO DATA(ls_up).",
+    "159:     SELECT SINGLE * FROM vbak INTO ls_vbak WHERE vbeln = ls_up-vbeln.",
+    "160:     IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Jede Zeile aus gt_upload wird einzeln verarbeitet.",
+    "Es werden Aufträge selektiert.",
+    "Ohne Treffer wird zeile_fehler aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-016-B08",
+   "soll": "Fehlt dem Benutzer die Änderungsberechtigung für Verkaufsorganisation, Vertriebsweg und Sparte des Auftrags, wird die Zeile rot markiert.",
+   "zeilen": [
+    166,
+    171
+   ],
+   "code": [
+    "166:     AUTHORITY-CHECK OBJECT 'V_VBAK_VKO'",
+    "171:     IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Die Berechtigung auf V_VBAK_VKO wird geprüft.",
+    "Ohne Treffer wird zeile_fehler aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-016-B09",
+   "soll": "Eine Liefersperre darf nur ohne Positionsnummer angegeben werden.",
+   "zeilen": [
+    177,
+    180
+   ],
+   "code": [
+    "177:     CASE ls_up-feld.",
+    "180:         IF ls_up-posnr IS NOT INITIAL."
+   ],
+   "engine": [
+    "Mit einer nicht leeren ls_up-posnr wird zeile_fehler aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-016-B10",
+   "soll": "Für Menge, Absagegrund und Liefertermin muss die Position existieren und darf nicht vollständig erledigt sein.",
+   "zeilen": [
+    185,
+    188,
+    191
+   ],
+   "code": [
+    "185:         SELECT SINGLE gbsta FROM vbup INTO lv_gbsta",
+    "188:         IF sy-subrc <> 0.",
+    "191:         ELSEIF lv_gbsta = 'C'."
+   ],
+   "engine": [
+    "gbsta des Satzes wird gelesen.",
+    "Ohne Treffer wird zeile_fehler aufgerufen.",
+    "Ohne Treffer wird zeile_fehler aufgerufen, sonst zeile_fehler aufgerufen.",
+    "Für lv_gbsta mit dem Wert C wird zeile_fehler aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-016-B11",
+   "soll": "Andere Feldnamen werden als nicht unterstützt abgelehnt.",
+   "zeilen": [
+    196
+   ],
+   "code": [
+    "196:         PERFORM zeile_fehler USING 'Feld nicht unterstützt'(e06)"
+   ],
+   "engine": [
+    "Das Unterprogramm zeile_fehler wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-016-B12",
+   "soll": "Jeder Zeilenfehler färbt die Zeile rot, erhöht den Fehlerzähler und landet mit Zeile, Auftrag und Position im Anwendungsprotokoll.",
+   "zeilen": [
+    211,
+    218
+   ],
+   "code": [
+    "211:   cs_res-ampel = icon_red_light.",
+    "218:   CALL FUNCTION 'BAL_LOG_MSG_ADD'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-016-B13",
+   "soll": "Nur grüne Zeilen werden ausgeführt; im Testlauf werden sie gelb als „geprüft, nicht geändert“ markiert.",
+   "zeilen": [
+    241,
+    244
+   ],
+   "code": [
+    "241:   LOOP AT gt_result ASSIGNING FIELD-SYMBOL(<ls_res>)",
+    "244:     IF p_test = abap_true."
+   ],
+   "engine": [
+    "Jede Zeile aus gt_result wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-016-B14",
+   "soll": "Im Echtlauf wird vorab geprüft, ob der Auftrag gerade bearbeitet wird; dann wird die Zeile rot markiert, sonst die Probesperre sofort wieder gelöst.",
+   "zeilen": [
+    251,
+    258,
+    263
+   ],
+   "code": [
+    "251:     CALL FUNCTION 'ENQUEUE_EVVBAKE'",
+    "258:     IF sy-subrc <> 0.",
+    "263:     CALL FUNCTION 'DEQUEUE_EVVBAKE'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein ENQUEUE_EVVBAKE wird aufgerufen.",
+    "Ohne Treffer wird zeile_fehler aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EVVBAKE wird aufgerufen.",
+    "Es wird DEQUEUE_EVVBAKE aufgerufen und bdc_aufbauen aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-016-B15",
+   "soll": "Für die Zeile wird eine VA02-Bildfolge erzeugt: bei Liefersperre über das Kopfbild Versand, sonst über „Position suchen“ und dann Menge, Absagegrund oder Liefertermin der ersten Positionszeile, jeweils mit Sichern.",
+   "zeilen": [
+    267,
+    307,
+    322
+   ],
+   "code": [
+    "267:     PERFORM bdc_aufbauen USING <ls_res>.",
+    "307:   CASE is_res-feld.",
+    "322:       CASE is_res-feld."
+   ],
+   "engine": [
+    "Es wird DEQUEUE_EVVBAKE aufgerufen und bdc_aufbauen aufgerufen.",
+    "Das Unterprogramm bdc_aufbauen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-016-B16",
+   "soll": "Der Auftrag wird per VA02 im gewählten Anzeigemodus mit synchroner Verbuchung geändert.",
+   "zeilen": [
+    270
+   ],
+   "code": [
+    "270:     CALL TRANSACTION 'VA02' USING gt_bdcdata"
+   ],
+   "engine": [
+    "Die Anlage wird über die Transaktion VA02 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ]
+  },
+  {
+   "id": "BM-016-B17",
+   "soll": "Liefert die Transaktion eine Fehlermeldung, wird die Zeile mit deren Text rot markiert.",
+   "zeilen": [
+    274,
+    275,
+    279
+   ],
+   "code": [
+    "274:     READ TABLE gt_bdcmsg INTO DATA(ls_msg) WITH KEY msgtyp = 'E'.",
+    "275:     IF sy-subrc = 0.",
+    "279:       PERFORM zeile_fehler USING lv_text CHANGING <ls_res>."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird eine Meldung ausgegeben und zeile_fehler aufgerufen.",
+    "Es wird eine Meldung ausgegeben und zeile_fehler aufgerufen.",
+    "Das Unterprogramm zeile_fehler wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-016-B18",
+   "soll": "Nur mit der Sicherungsmeldung V1 311 gilt die Zeile als geändert und wird gezählt; fehlt sie, wird die Zeile rot markiert.",
+   "zeilen": [
+    282,
+    284,
+    285,
+    288
+   ],
+   "code": [
+    "282:       READ TABLE gt_bdcmsg TRANSPORTING NO FIELDS",
+    "284:       IF sy-subrc = 0.",
+    "285:         gv_ok = gv_ok + 1.",
+    "288:         PERFORM zeile_fehler USING 'Keine Sicherungsmeldung'(e08)"
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Für andere sy-subrc wird zeile_fehler aufgerufen.",
+    "Das Unterprogramm zeile_fehler wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-016-B19",
+   "soll": "Das Anwendungsprotokoll wird nur im Echtlauf gesichert und festgeschrieben.",
+   "zeilen": [
+    124,
+    127,
+    132
+   ],
+   "code": [
+    "124:   CHECK p_test = abap_false.",
+    "127:   CALL FUNCTION 'BAL_DB_SAVE'",
+    "132:   COMMIT WORK."
+   ],
+   "engine": [
+    "Nur p_test mit dem Wert abap_false gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Es wird eine Zeile aufgenommen, BAL_DB_SAVE aufgerufen und COMMIT WORK ausgeführt.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-016-B20",
+   "soll": "Am Ende erscheinen eine Summenmeldung mit Zeilen, Änderungen und Fehlern und eine ALV-Liste aller Zeilen mit Ampel und Text.",
+   "zeilen": [
+    342,
+    345,
+    355
+   ],
+   "code": [
+    "342:   MESSAGE s603 WITH lines( gt_result ) gv_ok gv_err.",
+    "345:       cl_salv_table=>factory(",
+    "355:   lo_alv->display( )."
+   ],
+   "engine": [
+    "Eine Meldung wird ausgegeben.",
+    "Der Rückgabewert der Methode factory von cl_salv_table wird nach cl_salv_table übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,110 @@
+{
+ "id": "BM-189",
+ "titel": "BW-Extraktor Projektmeilensteine: generische DataSource mit Pseudo-Delta, Paketweise, Terminverzug",
+ "prozess": "Das BW ruft den Extraktor zuerst zur Initialisierung und danach wiederholt zur Datenübertragung auf. Bei der Initialisierung prüft der Baustein, ob die DataSource ZPS_MEILENSTEIN angefordert ist, und bricht sonst mit Fehler ab; im Erfolgsfall merkt er sich Selektionen, Anforderungsnummer und Paketgröße. Beim ersten Datenaufruf übernimmt er die Projektselektion und schränkt, falls das BW ein Änderungsdatum mitgibt, auf Meilensteine ab diesem Datum ein; ohne Änderungsdatum liest er alle. Er öffnet dann die Meilensteine aus dem kundeneigenen View zum paketweisen Lesen. Bei jedem Aufruf liest er das nächste Paket in der angeforderten Größe; ist nichts mehr vorhanden, schließt er den Cursor und meldet das Ende der Übertragung. Für jeden gelieferten Meilenstein berechnet er den Terminverzug: bei offenem, überfälligem Meilenstein die Tage bis heute, bei verspätet erreichtem die Tage bis zum Ist-Termin, sonst null. Das Paket geht ans BW zurück. Im System wird nichts geändert.",
+ "verboten": [
+  "source.abap:33 — kein Fachsatz „bei unbekannter DataSource wird die Meldung R3 009 ausgegeben“: der Zweig IF 1 = 2 wird nie ausgeführt und dient nur dem Verwendungsnachweis; es wird auch kein Protokolleintrag geschrieben",
+  "source.abap:50 — kein Fachsatz „es werden nur seit der letzten Extraktion geänderte Meilensteine geliefert“: der Baustein führt keinen Deltazeiger; eingeschränkt wird nur, wenn das BW ein Änderungsdatum in der Selektion mitgibt, sonst wird alles geliefert",
+  "gesamte Scheibe — kein Fachsatz „Meilensteine werden im Projekt aktualisiert oder als verspätet gekennzeichnet“: der Terminverzug wird nur im Extraktionspaket berechnet, nichts wird zurückgeschrieben"
+ ],
+ "saetze": [
+  {
+   "id": "BM-189-B01",
+   "soll": "Beim Initialisierungsaufruf aus dem BW wird geprüft, ob die angeforderte DataSource ZPS_MEILENSTEIN ist; sonst wird der Aufruf mit Fehler abgebrochen.",
+   "zeilen": [
+    28,
+    30,
+    34
+   ],
+   "code": [
+    "28:   IF i_initflag = sbiwa_c_flag_on.",
+    "30:     CASE i_dsource.",
+    "34:         RAISE error_passed_to_mess_handler."
+   ],
+   "engine": [
+    "Für i_initflag mit dem Wert sbiwa_c_flag_on wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-189-B02",
+   "soll": "Die Selektionen und die Paketgröße der Anforderung werden für die folgenden Datenaufrufe gemerkt.",
+   "zeilen": [
+    36
+   ],
+   "code": [
+    "36:     APPEND LINES OF i_t_select TO s_s_if-t_select."
+   ],
+   "engine": [
+    "Für i_initflag mit dem Wert sbiwa_c_flag_on wird eine Zeile aufgenommen.",
+    "Eine Zeile wird in s_s_if-t_select aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-189-B03",
+   "soll": "Beim ersten Datenaufruf werden die Projektselektion übernommen und, falls angegeben, nur Meilensteine ab dem angeforderten Änderungsdatum berücksichtigt.",
+   "zeilen": [
+    43,
+    48,
+    50
+   ],
+   "code": [
+    "43:     IF s_counter_datapakid = 0.",
+    "48:       READ TABLE s_s_if-t_select INTO ls_sel WITH KEY fieldnm = 'AEDAT'.",
+    "50:         lv_where = |aedat >= '{ ls_sel-low }'|."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-189-B04",
+   "soll": "Die Projektmeilensteine der Selektion werden zum paketweisen Lesen geöffnet.",
+   "zeilen": [
+    52
+   ],
+   "code": [
+    "52:       OPEN CURSOR WITH HOLD s_cursor FOR"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-189-B05",
+   "soll": "Je Aufruf wird das nächste Paket Meilensteine in der angeforderten Paketgröße gelesen.",
+   "zeilen": [
+    58
+   ],
+   "code": [
+    "58:     FETCH NEXT CURSOR s_cursor"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-189-B06",
+   "soll": "Sind keine Meilensteine mehr vorhanden, wird das Ende der Datenübertragung gemeldet.",
+   "zeilen": [
+    61,
+    63
+   ],
+   "code": [
+    "61:     IF sy-subrc <> 0.",
+    "63:       RAISE no_more_data."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-189-B07",
+   "soll": "Für jeden Meilenstein wird der Terminverzug in Tagen berechnet: bei offenem, überfälligem Meilenstein bis heute, bei verspätet erreichtem bis zum Ist-Termin, sonst null.",
+   "zeilen": [
+    67,
+    68
+   ],
+   "code": [
+    "67:     LOOP AT e_t_data ASSIGNING FIELD-SYMBOL(<ls_data>).",
+    "68:       <ls_data>-verzug_tage = COND #("
+   ],
+   "engine": [
+    "Jede Zeile aus e_t_data wird einzeln verarbeitet."
+   ]
+  }
+ ]
+}

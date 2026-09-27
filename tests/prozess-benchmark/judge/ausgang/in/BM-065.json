@@ -1,0 +1,69 @@
+{
+ "id": "BM-065",
+ "titel": "Eingabeprüfung Gutmenge in der Werkerrückmeldung (PAI-Modul)",
+ "prozess": "Im Rückmeldedynpro des Werker-Terminals prüft dieses PAI-Modul die eingegebene Gutmenge, sobald Vorgang oder Menge geändert werden. Es liest zum Vorgang des aktuellen Auftrags die geplante Vorgangsmenge und die bereits rückgemeldete Gutmenge. Existiert der Vorgang nicht, bricht eine Fehlermeldung den Dialogschritt ab und der Werker muss korrigieren. Aus Vorgangsmenge minus rückgemeldeter Gutmenge ergibt sich die offene Menge; ist die eingegebene Gutmenge größer, wird sie mit einer Fehlermeldung samt offener Menge zurückgewiesen. Sonst ist die Eingabe akzeptiert; gebucht wird hier nichts.",
+ "verboten": [
+  "gesamte Scheibe — kein Fachsatz „Die Rückmeldung wird gebucht“ (das Modul prüft nur die Eingabe, es bucht nichts)",
+  "source.abap:24 — kein Fachsatz „Ausschuss wird bei der offenen Menge abgezogen“ (nur Gutmenge LMNGA geht ein)",
+  "source.abap:25 — kein Fachsatz „Eine Überlieferung wird als Warnung zugelassen“ (die Meldung ist vom Typ E und blockiert)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-065-B01",
+   "soll": "Zum eingegebenen Vorgang des aktuellen Auftrags werden die geplante Vorgangsmenge und die bereits rückgemeldete Gutmenge gelesen.",
+   "zeilen": [
+    14
+   ],
+   "code": [
+    "14:   SELECT SINGLE v~mgvrg v~lmnga"
+   ],
+   "engine": [
+    "Das Ergebnis enthält v~mgvrg v~lmnga INTO (lv_mgvrg und lv_lmnga).",
+    "v~mgvrg v~lmnga INTO (lv_mgvrg und lv_lmnga) des Satzes werden gelesen."
+   ]
+  },
+  {
+   "id": "BM-065-B02",
+   "soll": "Gibt es den Vorgang nicht, wird die Eingabe mit einer Fehlermeldung zurückgewiesen und das Dynpro bleibt zur Korrektur stehen.",
+   "zeilen": [
+    20,
+    21
+   ],
+   "code": [
+    "20:   IF sy-subrc <> 0.",
+    "21:     MESSAGE e001(zpp_rm) WITH zpp_s_rm-vornr."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-065-B03",
+   "soll": "Die offene Menge ergibt sich aus Vorgangsmenge minus bereits rückgemeldeter Gutmenge.",
+   "zeilen": [
+    24
+   ],
+   "code": [
+    "24:   lv_offen = lv_mgvrg - lv_lmnga."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-065-B04",
+   "soll": "Übersteigt die eingegebene Gutmenge die offene Menge, wird die Eingabe mit einer Fehlermeldung unter Angabe der offenen Menge zurückgewiesen; sonst wird sie akzeptiert.",
+   "zeilen": [
+    25,
+    26
+   ],
+   "code": [
+    "25:   IF zpp_s_rm-gutmenge > lv_offen.",
+    "26:     MESSAGE e002(zpp_rm) WITH lv_offen."
+   ],
+   "engine": [
+    "Für zpp_s_rm-gutmenge größer lv_offen wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

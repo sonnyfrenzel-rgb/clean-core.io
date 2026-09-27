@@ -1,0 +1,45 @@
+{
+ "id": "BM-141",
+ "urteile": [
+  {
+   "id": "BM-141-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Verarbeitung je Mitarbeiter aus der logischen Datenbank erkannt; Ermittlung der Hauptbankverbindung fehlt."
+  },
+  {
+   "id": "BM-141-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Nur zlsch ungleich C geht weiter ist technisch richtig; \"kleinere werden übersprungen\" ist falsch, Barzahlung nicht benannt."
+  },
+  {
+   "id": "BM-141-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingung und Ausgabe Personalnummer mit Text \"keine Hauptbankverbindung mit IBAN\" erkannt; Zählen fehlt, Bedingung technisch."
+  },
+  {
+   "id": "BM-141-B04",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Anzahl Mitarbeiter ohne Bankverbindung: und Anzahl werden ausgegeben\" entspricht dem Sollsatz."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

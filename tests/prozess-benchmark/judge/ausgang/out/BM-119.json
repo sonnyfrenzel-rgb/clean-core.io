@@ -1,0 +1,180 @@
+{
+ "id": "BM-119",
+ "urteile": [
+  {
+   "id": "BM-119-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "Werk lesen und 'Ohne Treffer eine Meldung' – Abweisung am Selektionsbild mit Fehler nicht benannt."
+  },
+  {
+   "id": "BM-119-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Für sy-subrc <> 0 OR gt_files IS INITIAL wird eine Meldung ausgegeben und der Block verlassen' – Verzeichnisliste nur als Bausteinname, Bedingung als Code."
+  },
+  {
+   "id": "BM-119-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Dateifilter *.xml nur als Code; 'kleinere werden übersprungen' ist sinnlos für einen Mustervergleich."
+  },
+  {
+   "id": "BM-119-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird prot aufgerufen' – nicht lesbare Datei/Verbleib im Eingang nicht benannt, 'Ohne Treffer' passt nicht zu OPEN DATASET."
+  },
+  {
+   "id": "BM-119-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'prot aufgerufen'; Transformation und XML-Fehler fehlen, 'prot Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-119-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Stofflesung und 'Ohne Treffer prot' – CAS-Zuordnung und Warnung/Liegenbleiben nicht fachlich."
+  },
+  {
+   "id": "BM-119-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Datumsvergleich nur als Code, Folge nur 'prot aufgerufen'; 'nicht übernommen, als erledigt' fehlt."
+  },
+  {
+   "id": "BM-119-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "'Für p_test ... prot aufgerufen ... nichts geschrieben' – Sinn nur technisch, Inhalte (Stoff, LGK, WGK) fehlen."
+  },
+  {
+   "id": "BM-119-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "falsch"
+   ],
+   "kurz": "'Z_EHS_KATASTER_UPDATE wird zur Verbuchung registriert' trifft den Mechanismus; übernommene Daten und Protokoll fehlen fachlich."
+  },
+  {
+   "id": "BM-119-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "datei_archivieren bei gv_ok und Echtlauf, 'Ohne Treffer prot' – Archivieren/Löschen im Eingang nicht benannt."
+  },
+  {
+   "id": "BM-119-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "Lesen von Matrix und Kataster, Methode pruefen – Prüfung je Lagerort nicht fachlich; 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-119-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'In der Tabelle wird nach einer passenden Zeile gesucht'; werksspezifisch vor allgemein und unbekannte Lagerklasse fehlen."
+  },
+  {
+   "id": "BM-119-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife und Feldsymbolbindung – Zulässigkeitsregel 1/2 fehlt."
+  },
+  {
+   "id": "BM-119-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'prot aufgerufen'; offene Aufgabe ZUSLAG (INSERT zehs_aufgabe) fehlt."
+  },
+  {
+   "id": "BM-119-B15",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Ohne p_test wird COMMIT WORK ausgeführt' und 'Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen' entsprechen dem Soll."
+  },
+  {
+   "id": "BM-119-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "'Die lgk in zehs_kataster wird geändert' und 'Ohne Treffer eine Meldung' – Abbruch der Verbuchung (MESSAGE A) und Historisierung fehlen."
+  },
+  {
+   "id": "BM-119-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur 'protokoll_anzeigen/display aufgerufen'; 'Wirkung nicht belegt' falsch."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

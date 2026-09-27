@@ -1,0 +1,206 @@
+{
+ "id": "BM-033",
+ "titel": "IDoc-Eingang Wareneingang vom Logistikdienstleister mit Bestell- und Dublettenprüfung",
+ "prozess": "Der Logistikdienstleister meldet jeden Wareneingang als IDoc ZWEGR; die ALE-Eingangsverarbeitung ruft den Baustein mit einem oder mehreren IDocs. Ist der Nachrichtentyp falsch, bricht er ab. Für jedes IDoc liest er das Kopfsegment (Lieferschein, Bestellung, Daten) und die Positionssegmente (Bestellposition, Menge, Charge, Lagerort) und ignoriert unbekannte Segmente. Fehlen Bestellung oder Positionen, ist das IDoc fehlerhaft. Danach prüft er nacheinander, ob die Bestellung existiert und nicht gelöscht ist (und übernimmt ihren Lieferanten), ob jede Position offen ist und ob derselbe Lieferschein des Lieferanten schon gebucht wurde; der erste Fehler beendet die Prüfungen. Sind alle Prüfungen bestanden, bucht er einen Wareneingang zur Bestellung mit Bewegungsart 101; bei Fehler rollt er zurück. Fehlerhafte IDocs erhalten Status 51 und werden dem Workflow als Fehler gemeldet, erfolgreiche werden mit Materialbeleg in der Dublettentabelle registriert und erhalten Status 53. Festgeschrieben wird durch die ALE-Schicht.",
+ "verboten": [
+  "lz_idoc_zwegr_f01.abap:105 — kein Fachsatz „Der Wareneingang wird sofort festgeschrieben“ (kein Commit im Baustein; das macht die ALE-Schicht)",
+  "lz_idoc_zwegr_f01.abap:52 — kein Fachsatz „Überlieferungen werden abgelehnt“ (die Menge wird nicht gegen die offene Bestellmenge geprüft)",
+  "lz_idoc_zwegr_f01.abap:14 — kein Fachsatz „Unbekannte Segmente führen zu Status 51“ (sie werden ignoriert)",
+  "z_idoc_input_zwegr.abap:66 — kein Fachsatz „Die Bestellung wird als erledigt markiert“ (es wird nur die eigene Registrierungstabelle geschrieben)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-033-B01",
+   "soll": "Der Baustein verarbeitet nur Wareneingangsmeldungen des Nachrichtentyps ZWEGR; wird er für einen anderen Typ gerufen, bricht er mit Ausnahme ab.",
+   "zeilen": [
+    171,
+    172
+   ],
+   "code": [
+    "171:   IF idoc_contrl-mestyp <> 'ZWEGR'.",
+    "172:     RAISE wrong_function_called."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-033-B02",
+   "soll": "Jedes IDoc des Pakets wird einzeln verarbeitet.",
+   "zeilen": [
+    175
+   ],
+   "code": [
+    "175:   LOOP AT idoc_contrl."
+   ],
+   "engine": [
+    "Jede Zeile aus idoc_contrl wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-033-B03",
+   "soll": "Aus dem Kopfsegment werden Lieferschein, Bestellnummer und Buchungs- und Belegdatum übernommen, aus den Positionssegmenten Bestellposition, Menge, Charge und Lagerort; unbekannte Segmente werden ignoriert.",
+   "zeilen": [
+    14,
+    16,
+    18
+   ],
+   "code": [
+    "14:     CASE pt_data-segnam.",
+    "16:         ps_head = pt_data-sdata.",
+    "18:         ls_pos = pt_data-sdata."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-033-B04",
+   "soll": "Fehlen Bestellnummer oder Positionen, ist das IDoc fehlerhaft.",
+   "zeilen": [
+    25,
+    26,
+    27
+   ],
+   "code": [
+    "25:   IF ps_head-ebeln IS INITIAL OR pt_pos[] IS INITIAL.",
+    "26:     pv_error = abap_true.",
+    "27:     pv_msg   = 'Kopfsegment oder Positionen fehlen'."
+   ],
+   "engine": [
+    "Für ps_head-ebeln IS INITIAL OR pt_pos[] IS INITIAL wird die pv_msg auf Kopfsegment oder Positionen fehlen gesetzt.",
+    "ps_head-ebeln IS INITIAL OR pt_pos[] IS INITIAL setzen die pv_msg auf Kopfsegment oder Positionen fehlen."
+   ]
+  },
+  {
+   "id": "BM-033-B05",
+   "soll": "Die Bestellung muss existieren und darf nicht gelöscht sein; ihr Lieferant wird für die weitere Verarbeitung übernommen.",
+   "zeilen": [
+    39,
+    41,
+    46
+   ],
+   "code": [
+    "39:   SELECT SINGLE * FROM ekko INTO ls_ekko",
+    "41:   IF sy-subrc <> 0 OR ls_ekko-loekz <> space.",
+    "46:   ps_head-lifnr = ls_ekko-lifnr."
+   ],
+   "engine": [
+    "Es werden Sätze aus ekko selektiert.",
+    "Für sy-subrc <> 0 OR ls_ekko-loekz <> space wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-033-B06",
+   "soll": "Jede gemeldete Position muss als Bestellposition existieren, darf nicht gelöscht und nicht endgeliefert sein; die erste nicht offene Position macht das IDoc fehlerhaft.",
+   "zeilen": [
+    49,
+    52,
+    55
+   ],
+   "code": [
+    "49:     SELECT SINGLE * FROM ekpo INTO ls_ekpo",
+    "52:     IF sy-subrc <> 0 OR ls_ekpo-loekz <> space OR ls_ekpo-elikz = 'X'.",
+    "55:       RETURN."
+   ],
+   "engine": [
+    "Es werden Sätze aus ekpo selektiert.",
+    "Für sy-subrc <> 0 OR ls_ekpo-loekz <> space OR ls_ekpo-elikz = 'X' wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-033-B07",
+   "soll": "Wurde der Lieferschein dieses Lieferanten bereits gebucht, wird das IDoc als Dublette mit dem früheren Materialbeleg abgelehnt.",
+   "zeilen": [
+    64,
+    67,
+    68,
+    69
+   ],
+   "code": [
+    "64:   SELECT SINGLE mblnr FROM zmm_3pl_we INTO @DATA(lv_mblnr)",
+    "67:   IF sy-subrc = 0.",
+    "68:     pv_error = abap_true.",
+    "69:     pv_msg   = |Lieferschein { ps_head-lfsnr } bereits mit { lv_mblnr } gebucht|."
+   ],
+   "engine": [
+    "mblnr des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-033-B08",
+   "soll": "Sonst wird ein Wareneingang zur Bestellung (Bewegungsart 101) mit Lieferschein als Referenz und je Position Menge, Charge und Lagerort gebucht.",
+   "zeilen": [
+    87,
+    95,
+    105
+   ],
+   "code": [
+    "87:   ls_code-gm_code     = '01'.",
+    "95:     ls_item-move_type = '101'.",
+    "105:   CALL FUNCTION 'BAPI_GOODSMVT_CREATE'"
+   ],
+   "engine": [
+    "Die ls_code-gm_code wird auf 01 gesetzt.",
+    "Es wird die ls_item-move_type auf 101 gesetzt und die ls_item-mvt_ind auf B gesetzt.",
+    "Die ls_item-move_type wird auf 101 gesetzt.",
+    "Der Code übergibt ls_head an BAPI_GOODSMVT_CREATE und übernimmt dessen Ausgabe nach pv_mblnr.",
+    "Das konvertierte Ergebnis wird in pv_mblnr übernommen."
+   ]
+  },
+  {
+   "id": "BM-033-B09",
+   "soll": "Meldet die Buchung einen Fehler oder entsteht kein Materialbeleg, wird zurückgerollt und der Fehlertext übernommen.",
+   "zeilen": [
+    117,
+    118
+   ],
+   "code": [
+    "117:   IF sy-subrc = 0 OR pv_mblnr IS INITIAL.",
+    "118:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "engine": [
+    "Für sy-subrc = 0 OR pv_mblnr IS INITIAL wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-033-B10",
+   "soll": "Ein fehlerhaftes IDoc erhält Status 51 mit dem Fehlertext und wird dem Workflow als Fehler-IDoc gemeldet.",
+   "zeilen": [
+    196,
+    197,
+    199
+   ],
+   "code": [
+    "196:     IF lv_error = abap_true.",
+    "197:       PERFORM status_setzen TABLES idoc_status",
+    "199:       return_variables-wf_param = 'Error_IDOCs'."
+   ],
+   "engine": [
+    "Für lv_error mit dem Wert abap_true wird status_setzen aufgerufen, die return_variables-wf_param auf Error_IDOCs gesetzt, eine Zeile aufgenommen und die workflow_result auf 99999 gesetzt.",
+    "Für lv_error mit dem Wert abap_true wird status_setzen aufgerufen, die return_variables-wf_param auf Error_IDOCs gesetzt, eine Zeile aufgenommen und die workflow_result auf 99999 gesetzt, sonst status_setzen aufgerufen, die return_variables-wf_param auf Processed_IDOCs gesetzt und eine Zeile aufgenommen.",
+    "Das Unterprogramm status_setzen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird status_setzen aufgerufen und die return_variables-wf_param auf Error_IDOCs gesetzt.",
+    "lv_error mit dem Wert abap_true setzen die return_variables-wf_param auf Error_IDOCs.",
+    "lv_error mit dem Wert abap_true setzen die workflow_result auf 99999."
+   ]
+  },
+  {
+   "id": "BM-033-B11",
+   "soll": "Ein erfolgreich gebuchtes IDoc registriert Lieferschein, Lieferant, Materialbeleg und IDoc-Nummer für die Dublettenprüfung und erhält Status 53 mit der Materialbelegnummer.",
+   "zeilen": [
+    131,
+    204,
+    211
+   ],
+   "code": [
+    "131:   pt_status-status = pv_status.",
+    "204:       INSERT zmm_3pl_we FROM @( VALUE #( xblnr = ls_head-lfsnr",
+    "211:       PERFORM status_setzen TABLES idoc_status"
+   ],
+   "engine": [
+    "Für lv_error mit dem Wert abap_true wird status_setzen aufgerufen, die return_variables-wf_param auf Error_IDOCs gesetzt, eine Zeile aufgenommen und die workflow_result auf 99999 gesetzt, sonst status_setzen aufgerufen, die return_variables-wf_param auf Processed_IDOCs gesetzt und eine Zeile aufgenommen.",
+    "Für andere lv_error wird status_setzen aufgerufen, die return_variables-wf_param auf Processed_IDOCs gesetzt und eine Zeile aufgenommen.",
+    "Das Unterprogramm status_setzen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird status_setzen aufgerufen und die return_variables-wf_param auf Processed_IDOCs gesetzt."
+   ]
+  }
+ ]
+}

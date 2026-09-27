@@ -1,0 +1,38 @@
+{
+ "id": "BM-025",
+ "urteile": [
+  {
+   "id": "BM-025-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus iseg mit werks und gjahr\" – gezählt/Differenz nicht gebucht fehlt."
+  },
+  {
+   "id": "BM-025-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Lagerortfilter."
+  },
+  {
+   "id": "BM-025-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Differenzberechnung."
+  },
+  {
+   "id": "BM-025-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Ausgabe nur als gs_iseg-iblnr … gv_diff; Rot/Grün für Minder-/Mehrbestand fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

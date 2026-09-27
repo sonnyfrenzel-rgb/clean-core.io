@@ -1,0 +1,62 @@
+{
+ "id": "BM-168",
+ "urteile": [
+  {
+   "id": "BM-168-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „cuobj des Satzes wird gelesen“; Abbruch bei nicht konfigurierter Position fehlt."
+  },
+  {
+   "id": "BM-168-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur FB-Aufruf VC_I_GET_CONFIGURATION; Merkmalbewertung und Ausnahme bei Fehler fehlen."
+  },
+  {
+   "id": "BM-168-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu Pflicht- und optionalen Merkmalen."
+  },
+  {
+   "id": "BM-168-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Grundvariante aus der Spannung."
+  },
+  {
+   "id": "BM-168-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Inhalt stimmt (X an Stelle 2, Prüfplanhinweis EX01), aber nur als rs_erg-fertvar+1(1)/rs_erg-hinweis."
+  },
+  {
+   "id": "BM-168-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Edelstahl-E."
+  },
+  {
+   "id": "BM-168-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „plnnr des Satzes wird gelesen“; Hinweis auf manuelle Zuordnung fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

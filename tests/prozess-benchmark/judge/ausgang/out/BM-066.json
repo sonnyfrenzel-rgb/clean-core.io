@@ -1,0 +1,81 @@
+{
+ "id": "BM-066",
+ "urteile": [
+  {
+   "id": "BM-066-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen' – Abbruch erkannt, aber dass die Datei nicht geöffnet werden kann, wird nicht gesagt ('Treffer' passt nicht)."
+  },
+  {
+   "id": "BM-066-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum zeilenweisen Einlesen und Zerlegen."
+  },
+  {
+   "id": "BM-066-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Schließen der Datei."
+  },
+  {
+   "id": "BM-066-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife und 'gs_tt-fin_conf auf X' bei endrm erkannt; Vorgangsrückmeldung mit Gut-/Ausschussmenge und End- vs. Teilrückmeldung nicht fachlich; 'setzen die gs_tt-fin_conf' fehlerhaft."
+  },
+  {
+   "id": "BM-066-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Aufruf BAPI_PRODORDCONF_CREATE_TT mit p_test genannt; dass im Testlauf nur simuliert wird, nicht fachlich; 'konvertierte Ergebnis' inhaltsleer."
+  },
+  {
+   "id": "BM-066-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Rollback und Ausgabe 'FEHLER' mit Meldungstext erkannt; Auslöser nur als 'sy-subrc = 0 OR gs_return-type CA EA'."
+  },
+  {
+   "id": "BM-066-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Commit ohne p_test und Ausgabe 'OK' erkannt; Warten auf die Verbuchung fehlt, nur technisch."
+  },
+  {
+   "id": "BM-066-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Zähler nur als gv_ok/gv_err mit Beschriftungen, zerstückelt mit Leerfloskeln."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

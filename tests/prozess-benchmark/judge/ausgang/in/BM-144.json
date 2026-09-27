@@ -1,0 +1,73 @@
+{
+ "id": "BM-144",
+ "titel": "Reisekosten: Altersliste genehmigter, noch nicht abgerechneter Reisen",
+ "prozess": "Die Reisestelle startet eine Altersliste genehmigter, aber noch nicht abgerechneter Reisen und gibt eine Tagesgrenze ein. Liegt die Grenze nicht zwischen 1 und 365, weist das Selektionsbild die Eingabe mit einer Fehlermeldung ab. Sonst werden Reisen gelesen, die genehmigt und zur Abrechnung vorgesehen sind und deren Ende mindestens so viele Tage zurückliegt. Für jede Reise wird das Alter seit Reiseende berechnet und als KRITISCH (über 90 Tage), WARNUNG (über 60 Tage) oder OFFEN eingestuft. Die Reisen werden mit Alter und Einstufung aufgelistet; es wird nichts gebucht, gemahnt oder geändert.",
+ "verboten": [
+  "source.abap:26 — kein Fachsatz „Reisende werden gemahnt oder die Reisen abgerechnet“ (nur Liste)",
+  "source.abap:13 — kein Fachsatz „abgelehnte oder offene Reiseanträge werden gelistet“ (nur Status genehmigt/abzurechnen)",
+  "gesamte Scheibe — kein write-Knoten (kein Datenbankschreiben)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-144-B01",
+   "soll": "Eine Tagesgrenze außerhalb von 1 bis 365 wird auf dem Selektionsbild mit einer Fehlermeldung abgewiesen.",
+   "zeilen": [
+    7,
+    8
+   ],
+   "code": [
+    "7:   IF p_days < 1 OR p_days > 365.",
+    "8:     MESSAGE e010(ztv) WITH p_days."
+   ],
+   "engine": [
+    "Für p_days < 1 OR p_days > 365 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-144-B02",
+   "soll": "Es werden Reisen gelesen, die genehmigt und zur Abrechnung vorgesehen sind und deren Reiseende mindestens die eingegebene Anzahl Tage zurückliegt.",
+   "zeilen": [
+    13
+   ],
+   "code": [
+    "13:   SELECT h~pernr, h~reinr, h~datb1"
+   ],
+   "engine": [
+    "Das Ergebnis enthält h~pernr, h~reinr und h~datb1.",
+    "Es werden Sätze aus ptrv_head selektiert."
+   ]
+  },
+  {
+   "id": "BM-144-B03",
+   "soll": "Je Reise wird das Alter in Tagen seit Reiseende bestimmt und als „KRITISCH“ über 90, „WARNUNG“ über 60 und sonst „OFFEN“ eingestuft.",
+   "zeilen": [
+    22,
+    23
+   ],
+   "code": [
+    "22:     DATA(lv_age) = CONV i( sy-datum - ls_trip-datb1 ).",
+    "23:     DATA(lv_flag) = COND string( WHEN lv_age > 90 THEN 'KRITISCH'"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-144-B04",
+   "soll": "Jede Reise wird mit Personalnummer, Reisenummer, Reiseende, Alter und Einstufung ausgegeben.",
+   "zeilen": [
+    26
+   ],
+   "code": [
+    "26:     WRITE: / ls_trip-pernr, ls_trip-reinr, ls_trip-datb1, lv_age, lv_flag."
+   ],
+   "engine": [
+    "Bei Treffern werden ls_trip-pernr, ls_trip-reinr, ls_trip-datb1, lv_age und lv_flag als Liste ausgegeben.",
+    "ls_trip-pernr wird ausgegeben.",
+    "ls_trip-reinr wird ausgegeben.",
+    "ls_trip-datb1 wird ausgegeben.",
+    "lv_age wird ausgegeben.",
+    "lv_flag wird ausgegeben."
+   ]
+  }
+ ]
+}

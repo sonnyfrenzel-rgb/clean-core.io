@@ -1,0 +1,118 @@
+{
+ "id": "BM-135",
+ "urteile": [
+  {
+   "id": "BM-135-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Lesen von \"low\" und Vorbelegung ZTRM_ZINS_TAG erkannt, aber nicht als Zinsquelle/Tagesfixing; \"setzen die Tabelle\"."
+  },
+  {
+   "id": "BM-135-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus vtbfha mit Buchungskreis und \"f~delfz\"; aktive Rollover-Regel fehlt."
+  },
+  {
+   "id": "BM-135-B03",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Ohne Treffer wird Keine fälligen Festgelder ... ausgegeben, p_datum ausgegeben und der Block verlassen\" trifft Hinweis und Ende; sechsfach."
+  },
+  {
+   "id": "BM-135-B04",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Die Tabelle ist über die Zuweisung in Zeile 64 festgelegt\" ist falsch: die Quelltabelle kommt zur Laufzeit aus der Variablentabelle; manuelle Bearbeitung nicht benannt."
+  },
+  {
+   "id": "BM-135-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"bzbetr des Satzes wird gelesen\"; Nominalbetrag/Kapitalzugang nicht benannt."
+  },
+  {
+   "id": "BM-135-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Im Testlauf \"eine Zeile aufgenommen und Block verlassen\"; dass nur der Zinssatz protokolliert wird, fehlt."
+  },
+  {
+   "id": "BM-135-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Übergabe an BAPI_FTR_TIMEDEPOSIT_CREATE; neues Festgeld, Partner, Betrag, Laufzeit, Zins fehlen."
+  },
+  {
+   "id": "BM-135-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Fehler -> Rollback + Protokollzeile, sonst Commit + Protokollzeile ist technisch vollständig, fachlich nicht benannt."
+  },
+  {
+   "id": "BM-135-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Bedingung und JOB_OPEN/SUBMIT rftbbb00/JOB_CLOSE erkannt, nicht als Einplanung des Buchungslaufs für Buchungskreis/Stichtag."
+  },
+  {
+   "id": "BM-135-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung und Verlassen bei Fehler erkannt (\"Ohne Treffer\" unpassend); dass die Freigabe nicht geprüft wird, fehlt."
+  },
+  {
+   "id": "BM-135-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Protokollliste erkannt, nur Feldnamen, fünffach."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "satz": "zins des Satzes mit dem eingegebenen datum wird gelesen. Die Tabelle ist über die Zuweisung in Zeile 64 festgelegt.",
+   "begruendung": "Legt die Zinsquelle auf den Tagesfixing-Default (Zeile 64) fest; die Tabelle wird zur Laufzeit aus der Variablentabelle bestimmt (verbotener Schluss \"Zinssatz kommt immer aus dem Tagesfixing\")."
+  }
+ ],
+ "soll_zweifel": []
+}

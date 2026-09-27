@@ -1,0 +1,93 @@
+{
+ "id": "BM-026",
+ "urteile": [
+  {
+   "id": "BM-026-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus eban mit werks, ekorg, frgkz\" – offen, nicht gelöscht, fester Lieferant fehlen; Bestellanforderungen nicht benannt."
+  },
+  {
+   "id": "BM-026-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "\"Ohne Treffer wird eine Meldung ausgegeben und die Screenfolge beendet\" – Meldung und Ende; fünffach."
+  },
+  {
+   "id": "BM-026-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Jede Zeile aus gt_lifnr wird einzeln verarbeitet\"; Gruppierung und eine Bestellung je Lieferant fehlen."
+  },
+  {
+   "id": "BM-026-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Die gs_header-comp_code wird auf 1000 gesetzt\" – nur Buchungskreis, technisch; Bestellart, Lieferant, EKORG, Einkäufergruppe fehlen."
+  },
+  {
+   "id": "BM-026-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Schleife über gt_eban; Positionsbildung in Zehnerschritten mit Banf-Bezug und Menge fehlt."
+  },
+  {
+   "id": "BM-026-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "BAPI_PO_CREATE1 mit gs_header/gv_ebeln; Anlage einer Bestellung und Testlauf-Simulation nicht fachlich."
+  },
+  {
+   "id": "BM-026-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen … ‚Fehler - keine Bestellung angelegt‘ ausgegeben\" – Bedingung \"Fehler in der Rückmeldung\" nur als \"Treffer\", Fortfahren fehlt."
+  },
+  {
+   "id": "BM-026-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Mit gesetztem p_test wird gv_lifnr ausgegeben, Testlauf ok, ausgegeben, lines( gt_item ) ausgegeben\" – Positionsanzahl nur technisch, siebenfach zerlegt."
+  },
+  {
+   "id": "BM-026-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "\"Für andere p_test wird BAPI_TRANSACTION_COMMIT aufgerufen … Das vom Funktionsbaustein zurückgegebene Feld ausgegeben\" – Festschreiben und Bestellnummer nur technisch."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,86 @@
+{
+ "id": "BM-190",
+ "urteile": [
+  {
+   "id": "BM-190-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur ENQUEUE-Aufruf; bis zu fünf Versuche fehlen."
+  },
+  {
+   "id": "BM-190-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Wartepause."
+  },
+  {
+   "id": "BM-190-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Eine Meldung wird ausgegeben“; Abbruch mit SPERRFEHLER fehlt."
+  },
+  {
+   "id": "BM-190-B04",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "„Ohne Treffer wird eine Meldung ausgegeben“ unterstellt eine Meldung nach gescheiterter Sperre; tatsächlich greift die Prüfung nie, die Reservierung läuft ohne Sperre weiter."
+  },
+  {
+   "id": "BM-190-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "„Sätze aus zyard_platz selektiert“ – Stellplatz nur als Tabellenname."
+  },
+  {
+   "id": "BM-190-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "DEQUEUE und Meldung bei Code-Bedingung; Ablehnung mit PLATZ_BELEGT nicht gesagt."
+  },
+  {
+   "id": "BM-190-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "„Methode add von cl_abap_tstmp – nicht belegt“; Reservierungsende nicht fachlich."
+  },
+  {
+   "id": "BM-190-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "„Eine Zeile in zyard_platz wird geändert“ ohne Commit; Status R und Container fehlen."
+  },
+  {
+   "id": "BM-190-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Nur DEQUEUE-Aufruf; Aufheben der Stellplatzsperre nicht fachlich."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

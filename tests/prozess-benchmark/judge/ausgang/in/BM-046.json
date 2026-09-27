@@ -1,0 +1,160 @@
+{
+ "id": "BM-046",
+ "titel": "Mahnsperre auf offene Posten mit offenem Klärungsfall setzen",
+ "prozess": "Die Debitorenbuchhaltung startet den Report vor dem Mahnlauf für Buchungskreise und Kunden, standardmäßig als Testlauf. Gelesen werden die offenen Posten ohne Mahnsperre; gibt es keine, endet der Lauf mit einem Hinweis. Zu den Belegen werden offene Klärungsfälle aus einer Z-Tabelle gelesen, und nur Posten mit offenem Klärungsfall werden weiter betrachtet. Im Testlauf werden sie lediglich gelistet. Im Echtlauf wird die gewählte Mahnsperre über die Standard-Massenänderung am Posten gesetzt; bei Erfolg wird der Klärungsfall auf Status S gesetzt, bei Fehler wird gezählt und gemeldet. Am Ende folgt im Echtlauf ein COMMIT WORK und eine Zählerzeile.",
+ "verboten": [
+  "source.abap:81 — kein Fachsatz „Kunde wird gemahnt“ oder „Mahnlauf wird gestartet“ (es wird nur die Mahnsperre gesetzt)",
+  "source.abap:64 — kein Fachsatz „Posten ohne Klärungsfall werden entsperrt“ (sie werden nur übersprungen)",
+  "source.abap:106 — kein Fachsatz „erst dieser COMMIT schreibt die Mahnsperre fest“ (die Massenänderung sichert den Beleg selbst; der COMMIT betrifft die Statusänderung der Klärungsfälle)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-046-B01",
+   "soll": "Es werden die offenen Debitorenposten der gewählten Buchungskreise und Kunden gelesen, die noch keine Mahnsperre tragen.",
+   "zeilen": [
+    37
+   ],
+   "code": [
+    "37:   SELECT bukrs kunnr belnr gjahr buzei mansp"
+   ],
+   "engine": [
+    "Es werden Sätze aus bsid selektiert."
+   ]
+  },
+  {
+   "id": "BM-046-B02",
+   "soll": "Gibt es keine solchen Posten, erhält der Anwender einen Hinweis und der Lauf endet.",
+   "zeilen": [
+    42,
+    43,
+    44
+   ],
+   "code": [
+    "42:   IF lt_op IS INITIAL.",
+    "43:     MESSAGE 'Keine ungesperrten offenen Posten gefunden' TYPE 'S'.",
+    "44:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-046-B03",
+   "soll": "Zu diesen Belegen werden die offenen Klärungsfälle (Status O) aus der kundeneigenen Klärungsfalltabelle gelesen.",
+   "zeilen": [
+    47
+   ],
+   "code": [
+    "47:   SELECT * FROM zfi_klaerfall INTO TABLE lt_klaer"
+   ],
+   "engine": [
+    "Es werden Sätze aus zfi_klaerfall selektiert."
+   ]
+  },
+  {
+   "id": "BM-046-B04",
+   "soll": "Posten ohne offenen Klärungsfall werden übersprungen.",
+   "zeilen": [
+    59,
+    64
+   ],
+   "code": [
+    "59:     READ TABLE lt_klaer TRANSPORTING NO FIELDS",
+    "64:     IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-046-B05",
+   "soll": "Im Testlauf werden die betroffenen Posten nur als „würde gesperrt“ gelistet; es wird nichts geändert.",
+   "zeilen": [
+    68,
+    69
+   ],
+   "code": [
+    "68:     IF p_test = 'X'.",
+    "69:       WRITE: / ls_op-belnr, ls_op-buzei, 'wuerde gesperrt (Testlauf)'."
+   ],
+   "engine": [
+    "Mit gesetztem p_test wird ls_op-belnr ausgegeben, ls_op-buzei ausgegeben und wuerde gesperrt (Testlauf) ausgegeben.",
+    "Bei Treffern werden ls_op-belnr, ls_op-buzei und wuerde gesperrt (Testlauf) als Liste ausgegeben.",
+    "ls_op-belnr wird ausgegeben.",
+    "ls_op-buzei wird ausgegeben.",
+    "wuerde gesperrt (Testlauf) wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-046-B06",
+   "soll": "Im Echtlauf wird am Posten die gewählte Mahnsperre (Vorschlag R) über die Standard-Massenänderung für Belegpositionen gesetzt.",
+   "zeilen": [
+    81
+   ],
+   "code": [
+    "81:     CALL FUNCTION 'FI_ITEMS_MASS_CHANGE'"
+   ],
+   "engine": [
+    "Der Code übergibt ls_bseg an FI_ITEMS_MASS_CHANGE und übernimmt dessen Ausgabe nach lt_errtab.",
+    "Das konvertierte Ergebnis wird in lt_errtab übernommen."
+   ]
+  },
+  {
+   "id": "BM-046-B07",
+   "soll": "Gelingt die Sperre, wird der Klärungsfall auf Status S gesetzt und der Erfolg gemeldet; sonst wird ein Fehler gemeldet und der Fehlerzähler erhöht.",
+   "zeilen": [
+    92,
+    94,
+    98,
+    101
+   ],
+   "code": [
+    "92:     IF sy-subrc = 0.",
+    "94:       UPDATE zfi_klaerfall SET status = 'S'",
+    "98:       WRITE: / ls_op-belnr, ls_op-buzei, 'Mahnsperre gesetzt'.",
+    "101:       WRITE: / ls_op-belnr, ls_op-buzei, 'Fehler beim Setzen der Sperre'."
+   ],
+   "engine": [
+    "Bei Treffer wird eine Zeile geändert, ls_op-belnr ausgegeben, ls_op-buzei ausgegeben und Mahnsperre gesetzt ausgegeben.",
+    "Bei Treffer wird eine Zeile geändert, ls_op-belnr ausgegeben, ls_op-buzei ausgegeben und Mahnsperre gesetzt ausgegeben, sonst ls_op-belnr ausgegeben, ls_op-buzei ausgegeben und Fehler beim Setzen der Sperre ausgegeben.",
+    "Es wird eine Zeile geändert, ls_op-belnr ausgegeben, ls_op-buzei ausgegeben und Mahnsperre gesetzt ausgegeben.",
+    "Die Status in zfi_klaerfall wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. sy-subrc wird danach nicht ausgewertet.",
+    "Bei Treffern werden ls_op-belnr, ls_op-buzei und Mahnsperre gesetzt als Liste ausgegeben.",
+    "ls_op-belnr wird ausgegeben.",
+    "ls_op-buzei wird ausgegeben.",
+    "Mahnsperre gesetzt wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Für andere sy-subrc wird ls_op-belnr ausgegeben, ls_op-buzei ausgegeben und Fehler beim Setzen der Sperre ausgegeben.",
+    "Bei Treffern werden ls_op-belnr, ls_op-buzei und Fehler beim Setzen der Sperre als Liste ausgegeben.",
+    "ls_op-belnr wird ausgegeben.",
+    "ls_op-buzei wird ausgegeben.",
+    "Fehler beim Setzen der Sperre wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-046-B08",
+   "soll": "Nach allen Posten wird im Echtlauf COMMIT WORK ausgelöst, und die Zähler für gesperrte und fehlerhafte Posten werden ausgegeben.",
+   "zeilen": [
+    105,
+    106,
+    109
+   ],
+   "code": [
+    "105:   IF p_test IS INITIAL.",
+    "106:     COMMIT WORK.",
+    "109:   WRITE: / 'Gesperrt:', lv_cnt_ok, 'Fehler:', lv_cnt_err."
+   ],
+   "engine": [
+    "Ohne p_test wird COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Gesperrt:, lv_cnt_ok, Fehler: und lv_cnt_err werden ausgegeben.",
+    "Gesperrt: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_cnt_ok wird ausgegeben.",
+    "Fehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_cnt_err wird ausgegeben."
+   ]
+  }
+ ]
+}

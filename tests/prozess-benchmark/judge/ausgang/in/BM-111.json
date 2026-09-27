@@ -1,0 +1,211 @@
+{
+ "id": "BM-111",
+ "titel": "Strukturliste Technische Plätze: rekursive IFLOT-Hierarchie mit Equipments, dynamischem Filter und Absprung",
+ "prozess": "Der Planer gibt einen Einstiegsplatz, eine Höchstebene, ein Kennzeichen für die Equipmentanzeige sowie optional Standortwerke und Platzarten ein; ein unbekannter Einstiegsplatz wird schon bei der Eingabe abgewiesen. Beim Start bildet der Report aus Werks- und Platzartauswahl eine dynamische Zusatzbedingung und löst dann die Struktur ab dem Einstiegsplatz rekursiv auf. Für jeden Platz liest er die direkt untergeordneten Plätze mit Text, eingeschränkt durch die Zusatzbedingung, sodass ein nicht passender Platz mit seinem ganzen Teilbaum entfällt. Plätze mit aktivem Status inaktiv werden samt Teilbaum übersprungen, alle anderen werden eingerückt gelistet und gezählt. Ist die Equipmentanzeige gewählt, erscheinen darunter die aktuell direkt eingebauten Equipments ohne Unterequipments. Danach wird der Platz selbst weiter aufgelöst; auf der Höchstebene endet die Auflösung mit dem Hinweis „weitere Ebenen“, unabhängig davon, ob es tiefere Plätze gibt. Der Einstiegsplatz selbst erscheint nicht in der Liste. Am Ende stehen die Anzahl der Plätze und Equipments. Ein Doppelklick auf eine Zeile springt ohne Einstiegsbild in die Anzeige des Equipments oder des Technischen Platzes. Es wird nichts geschrieben.",
+ "verboten": [
+  "zpm_tplatz_baum_f01.abap:38 — kein Fachsatz „der Hinweis ‚weitere Ebenen‘ erscheint nur, wenn es tiefere Plätze gibt“: er erscheint für jeden Platz der Höchstebene, ohne dass Unterplätze gelesen werden",
+  "zpm_tplatz_baum_f01.abap:43 — kein Fachsatz „der Werks-/Platzartfilter blendet nur einzelne Plätze aus“: ein nicht passender Platz wird mit seinem gesamten Teilbaum nicht aufgelöst",
+  "zpm_tplatz_baum_f01.abap:109 — kein Knoten und kein Fachsatz „die Struktur wird als ALV angezeigt“: LIST_ALV wird nie aufgerufen",
+  "zpm_tplatz_baum.abap:52 — kein Fachsatz „der Einstiegsplatz und seine Equipments werden gelistet“: aufgelöst werden nur seine Unterplätze"
+ ],
+ "saetze": [
+  {
+   "id": "BM-111-B01",
+   "soll": "Der eingegebene Einstiegsplatz wird bei der Eingabe geprüft; existiert er nicht, wird die Eingabe mit Fehlermeldung abgewiesen.",
+   "zeilen": [
+    42,
+    44,
+    45
+   ],
+   "code": [
+    "42:   SELECT SINGLE tplnr FROM iflot INTO gv_tplnr",
+    "44:   IF sy-subrc <> 0.",
+    "45:     MESSAGE e020(zpm) WITH p_top."
+   ],
+   "engine": [
+    "tplnr des Satzes mit dem eingegebenen tplnr wird gelesen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-111-B02",
+   "soll": "Aus der Platzart- und der Werksauswahl wird eine Zusatzbedingung für die Platzlesung gebildet; ohne Auswahl gilt keine Einschränkung.",
+   "zeilen": [
+    51,
+    82,
+    83,
+    85,
+    89
+   ],
+   "code": [
+    "51:   PERFORM build_where.",
+    "82:   IF s_fltyp[] IS NOT INITIAL.",
+    "83:     gv_where = 'FLTYP IN S_FLTYP'.",
+    "85:   IF s_swerk[] IS NOT INITIAL.",
+    "89:     CONCATENATE gv_where 'SWERK IN S_SWERK' INTO gv_where"
+   ],
+   "engine": [
+    "Das Unterprogramm build_where wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird build_where aufgerufen und expand aufgerufen.",
+    "Mit einer nicht leeren s_fltyp[] wird die Prädikat auf FLTYP IN S_FLTYP gesetzt.",
+    "Eine nicht leere s_fltyp[] setzen die Prädikat auf FLTYP IN S_FLTYP."
+   ]
+  },
+  {
+   "id": "BM-111-B03",
+   "soll": "Die Struktur wird ab dem Einstiegsplatz Ebene für Ebene aufgelöst; der Einstiegsplatz selbst erscheint nicht in der Liste.",
+   "zeilen": [
+    52
+   ],
+   "code": [
+    "52:   PERFORM expand USING p_top 0."
+   ],
+   "engine": [
+    "Es wird build_where aufgerufen und expand aufgerufen.",
+    "Das Unterprogramm expand wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-111-B04",
+   "soll": "Ist die Höchstebene erreicht, wird für den Platz der Hinweis „weitere Ebenen“ ausgegeben und nicht weiter aufgelöst.",
+   "zeilen": [
+    108,
+    109,
+    110
+   ],
+   "code": [
+    "108:   IF pv_level >= p_maxl.",
+    "109:     WRITE: AT /lv_indent '... weitere Ebenen unter', pv_parent.",
+    "110:     RETURN."
+   ],
+   "engine": [
+    "Für pv_level ab p_maxl wird AT /lv_indent '... weitere Ebenen unter' ausgegeben, pv_parent ausgegeben und der Block verlassen.",
+    "AT /lv_indent '... weitere Ebenen unter' und pv_parent werden ausgegeben.",
+    "Es wird AT /lv_indent '... weitere Ebenen unter' ausgegeben, pv_parent ausgegeben und der Block verlassen.",
+    "AT /lv_indent '... weitere Ebenen unter' wird ausgegeben.",
+    "pv_parent wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-111-B05",
+   "soll": "Zu einem Platz werden die direkt untergeordneten Plätze mit Text in Anmeldesprache gelesen, eingeschränkt durch die Zusatzbedingung, und nach Platznummer sortiert.",
+   "zeilen": [
+    113
+   ],
+   "code": [
+    "113:   SELECT tplnr tplma pltxt objnr FROM iflo INTO TABLE lt_child"
+   ],
+   "engine": [
+    "Es werden Sätze aus iflo selektiert."
+   ]
+  },
+  {
+   "id": "BM-111-B06",
+   "soll": "Untergeordnete Plätze mit aktivem Systemstatus „inaktiv“ werden samt ihrem gesamten Teilbaum ausgelassen.",
+   "zeilen": [
+    121,
+    125
+   ],
+   "code": [
+    "121:     SELECT SINGLE stat FROM jest INTO lv_dummy",
+    "125:     IF sy-subrc = 0."
+   ],
+   "engine": [
+    "stat des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-111-B07",
+   "soll": "Jeder übrige Platz wird eingerückt nach Ebene mit Text gelistet und gezählt.",
+   "zeilen": [
+    130
+   ],
+   "code": [
+    "130:     WRITE AT /lv_indent ls_child-tplnr COLOR COL_KEY."
+   ],
+   "engine": [
+    "Bei Treffern werden AT /lv_indent ls_child-tplnr COLOR COL_KEY und ls_child-pltxt als Liste ausgegeben.",
+    "AT /lv_indent ls_child-tplnr COLOR COL_KEY wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-111-B08",
+   "soll": "Ist die Equipmentanzeige gewählt, werden die aktuell direkt am Platz eingebauten Equipments ohne Unterequipments mit Kurztext gelesen, eingerückt gelistet und gezählt.",
+   "zeilen": [
+    136,
+    137,
+    154,
+    162,
+    167
+   ],
+   "code": [
+    "136:     IF p_equi = 'X'.",
+    "137:       PERFORM list_equi USING ls_child-tplnr lv_next.",
+    "154:   SELECT z~equnr t~eqktx INTO TABLE lt_equi",
+    "162:   CHECK sy-subrc = 0.",
+    "167:     WRITE AT /lv_indent ls_equi-equnr COLOR COL_NORMAL."
+   ],
+   "engine": [
+    "Mit gesetztem p_equi wird list_equi aufgerufen.",
+    "Das Unterprogramm list_equi wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es werden Sätze aus equz selektiert.",
+    "Nur sy-subrc mit dem Wert 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Bei Treffern werden AT /lv_indent ls_equi-equnr COLOR COL_NORMAL und ls_equi-eqktx als Liste ausgegeben.",
+    "AT /lv_indent ls_equi-equnr COLOR COL_NORMAL wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-111-B09",
+   "soll": "Danach wird der Platz selbst als Ausgangspunkt der nächsten Ebene aufgelöst.",
+   "zeilen": [
+    139
+   ],
+   "code": [
+    "139:     PERFORM expand USING ls_child-tplnr lv_next."
+   ],
+   "engine": [
+    "Das Unterprogramm expand wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-111-B10",
+   "soll": "Am Ende der Liste werden die Anzahl gelisteter Plätze und Equipments ausgegeben.",
+   "zeilen": [
+    57
+   ],
+   "code": [
+    "57:   WRITE: / 'Technische Plätze:', gv_anz_pl,"
+   ],
+   "engine": [
+    "Technische Plätze:, gv_anz_pl, Equipments: und gv_anz_eq werden ausgegeben.",
+    "Technische Plätze: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_anz_pl wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-111-B11",
+   "soll": "Ein Doppelklick auf ein Equipment öffnet dessen Anzeige, ein Doppelklick auf einen Platz die Platzanzeige, jeweils ohne Einstiegsbild.",
+   "zeilen": [
+    63,
+    64,
+    65,
+    66,
+    67,
+    68
+   ],
+   "code": [
+    "63:   IF gv_equnr IS NOT INITIAL.",
+    "64:     SET PARAMETER ID 'EQN' FIELD gv_equnr.",
+    "65:     CALL TRANSACTION 'IE03' AND SKIP FIRST SCREEN.",
+    "66:   ELSEIF gv_tplnr IS NOT INITIAL.",
+    "67:     SET PARAMETER ID 'IFL' FIELD gv_tplnr.",
+    "68:     CALL TRANSACTION 'IL03' AND SKIP FIRST SCREEN."
+   ],
+   "engine": [
+    "Die Anlage wird über die Transaktion IE03 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion.",
+    "Die Anlage wird über die Transaktion IL03 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ]
+  }
+ ]
+}

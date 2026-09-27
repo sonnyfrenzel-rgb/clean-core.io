@@ -1,0 +1,41 @@
+{
+ "id": "BM-003",
+ "urteile": [
+  {
+   "id": "BM-003-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik"
+   ],
+   "kurz": "\"Die xkwert wird auf 0 gesetzt\" – richtig, aber Variablenname statt Zuschlag/Konditionswert, falscher Artikel."
+  },
+  {
+   "id": "BM-003-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus zsd_minmenge selektiert\" – Tabellenname statt Mindestmenge/Zuschlag, Schlüssel Verkaufsorganisation/Warengruppe fehlt."
+  },
+  {
+   "id": "BM-003-B03",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "CHECK-Satz behauptet \"kleinere werden übersprungen, die Schleife läuft weiter\" – es gibt keine Schleife, die Formel endet; die Folge \"Zuschlag bleibt null\" fehlt."
+  },
+  {
+   "id": "BM-003-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Setzen des festen Zuschlags an Zeile 17/18."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

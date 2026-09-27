@@ -1,0 +1,44 @@
+{
+ "id": "BM-145",
+ "urteile": [
+  {
+   "id": "BM-145-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"low des Satzes wird gelesen\"; Aktivierungsschalter nicht benannt."
+  },
+  {
+   "id": "BM-145-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "Bedingung inkl. HRADMIN01 und Meldung technisch vollständig; LEAVE PROGRAM beendet das Programm, nicht nur \"die Screenfolge\"."
+  },
+  {
+   "id": "BM-145-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus hrp1001 selektiert\"; Qualifikationszuordnungen und Zeitfenster fehlen."
+  },
+  {
+   "id": "BM-145-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Liste erkannt, nur Feldnamen objid/sobid/endda."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

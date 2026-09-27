@@ -1,0 +1,210 @@
+{
+ "id": "BM-138",
+ "urteile": [
+  {
+   "id": "BM-138-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "screen-input 0 für Gruppe EIN erkannt, nicht als \"Kontierung und Betrag gesperrt nach Prüfung\"; \"setzen die screen-input\"."
+  },
+  {
+   "id": "BM-138-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Die Screenfolge wird beendet\" erkannt; Verwerfen der Eingaben ohne Rückfrage fehlt."
+  },
+  {
+   "id": "BM-138-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen von fictr und Meldung ohne Treffer erkannt; Gültigkeit zum Tagesdatum und Neueingabe fehlen."
+  },
+  {
+   "id": "BM-138-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Verfall der Verfügbarkeitsprüfung."
+  },
+  {
+   "id": "BM-138-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"verfuegbar des Satzes wird gelesen\" und Unterprogrammaufruf \"Wirkung nicht belegt\"."
+  },
+  {
+   "id": "BM-138-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung bei gv_verfuegbar < Betrag erkannt; Inhalt des Hinweises und \"ungeprüft\" fehlen."
+  },
+  {
+   "id": "BM-138-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Eine Meldung wird ausgegeben\"; Kennzeichnung als geprüft fehlt."
+  },
+  {
+   "id": "BM-138-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung bei gv_geprueft = false erkannt, nicht als Verhindern des Einreichens."
+  },
+  {
+   "id": "BM-138-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "NUMBER_GET_NEXT und Meldung bei Fehler erkannt (\"konvertierte Ergebnis\"); Antragsnummer und \"nicht gesichert\" fehlen."
+  },
+  {
+   "id": "BM-138-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Verbuchungsregistrierung, workflow_ereignis und COMMIT technisch korrekt; Antrag \"offen\", Ereignis CREATED nicht benannt, \"Wirkung nicht belegt\"."
+  },
+  {
+   "id": "BM-138-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung und Beenden der Screenfolge erkannt; dass die Antragsnummer gemeldet wird, fehlt."
+  },
+  {
+   "id": "BM-138-B12",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "GET PARAMETER ID wird als Satzverarbeitung einer logischen Datenbank gedeutet; Abbruch (A-Meldung) fehlt."
+  },
+  {
+   "id": "BM-138-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldungen bei Status ungleich O und bei Antragsteller = Benutzer erkannt; dass damit keine Entscheidung möglich ist, fehlt."
+  },
+  {
+   "id": "BM-138-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "ENQUEUE und Meldung erkannt; sperrender Benutzer nicht benannt."
+  },
+  {
+   "id": "BM-138-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Bei Entscheid G Aufruf FMFR_CREATE_FROM_DATA erkannt, nicht als Mittelvormerkung ZV; \"die lv_event\"."
+  },
+  {
+   "id": "BM-138-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback und Meldung erkannt; \"Antrag bleibt offen\" fehlt, \"Ohne Treffer\" unpassend."
+  },
+  {
+   "id": "BM-138-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "POPUP_TO_CONFIRM und Rückkehr ohne Schreiben bei Antwort ungleich 1 erkannt, nur technisch."
+  },
+  {
+   "id": "BM-138-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Verbuchung, Ereignis und COMMIT technisch erkannt; Status, Entscheider, Datum, Belegnummer nicht benannt."
+  },
+  {
+   "id": "BM-138-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Ohne Treffer wird eine Meldung ausgegeben\"; Protokoll und Abbruch der Verbuchung fehlen."
+  },
+  {
+   "id": "BM-138-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "SWE_EVENT_CREATE und Meldung erkannt; \"nur Hinweis, Antrag trotzdem gespeichert\" fehlt."
+  },
+  {
+   "id": "BM-138-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Beenden nach \"entscheiden\" erkannt; dass es auch nach abgebrochener Ablehnung gilt, fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

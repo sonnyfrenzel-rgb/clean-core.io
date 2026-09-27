@@ -1,0 +1,392 @@
+{
+ "id": "BM-139",
+ "titel": "FSCM-Kreditprüfung beim Sichern des Kundenauftrags: RFC ins zentrale Kreditmanagement, dynamische Ersatzregel, Liefersperre, Protokoll und stündliche Nachprüfung",
+ "prozess": "Beim Sichern eines Kundenauftrags prüft der Exit, ob der Beleg ein Auftrag ist, nicht angezeigt wird und seine Auftragsart in der Verkaufsorganisation kreditrelevant ist. Dann summiert er den Nettowert der nicht abgelehnten, nicht gelöschten Positionen und holt eine Kreditentscheidung. Ist die Prüfung zentral abgeschaltet, lautet sie „OK“. Sonst liest der Prüfbaustein Kreditsegment, RFC-Ziel und Ersatzregel der Verkaufsorganisation (fehlen sie, endet die Prüfung mit Fehlermeldung) und fragt das zentrale FSCM-Kreditmanagement. Ist es nicht erreichbar, entscheidet eine im Customizing gepflegte, dynamisch aufgerufene Ersatzregel auf replizierten Daten; lässt sie sich nicht aufrufen, wird gesperrt. Die Regeln rechnen mit Limit minus repliziertem Obligo, bei veraltetem Replikat nur mit der Hälfte: Standard gibt bis zum freien Limit frei, sperrt bis 110 % und lehnt darüber ab; die strenge Regel sperrt über dem Limit; die Exportregel gibt bei gültigem Akkreditiv frei. Bei „OK“ löst der Exit eine vorhandene Liefersperre Z1, bei „Sperre“ setzt er sie und zeigt das freie Limit, bei „Ablehnen“ verhindert er das Sichern. Die Entscheidung wird beim Sichern mit Belegnummer protokolliert. Ein stündlicher Job prüft gesperrte Aufträge der letzten Tage mit ihrem Kopf-Nettowert erneut und entfernt bei „OK“ die Liefersperre, im Testlauf listet er nur; am Ende meldet er die Anzahlen.",
+ "verboten": [
+  "z_sd_fscm_credit_check.abap:87 — kein Fachsatz „bei RFC-Ausfall gilt immer die Standardregel“: welche Regel läuft, steht im Customizing der Verkaufsorganisation und ist dynamisch",
+  "zcl_credit_rules.abap:50 — kein Fachsatz „ohne repliziertes Obligo wird das volle Limit angesetzt“: ohne Replikat ist der Stand leer und gilt als veraltet, es zählt nur das halbe Limit",
+  "zsd_credit_monitor.abap:29 — kein Fachsatz „der Job prüft denselben Wert wie beim Sichern“: geprüft wird der Nettowert des Auftragskopfs, nicht die Summe der nicht abgelehnten Positionen",
+  "mv45afzz_zcredit.abap:59 — kein Fachsatz „ein abgelehnter Auftrag wird mit Sperre gesichert“: die Fehlermeldung verhindert das Sichern"
+ ],
+ "saetze": [
+  {
+   "id": "BM-139-B01",
+   "soll": "Beim Sichern eines Auftrags (nicht im Anzeigemodus) wird nur geprüft, wenn die Auftragsart in der Verkaufsorganisation als kreditrelevant hinterlegt ist.",
+   "zeilen": [
+    113,
+    114,
+    117,
+    120
+   ],
+   "code": [
+    "113:   CHECK t180-trtyp <> 'A'.",
+    "114:   CHECK vbak-vbtyp = 'C'.",
+    "117:   SELECT SINGLE @abap_true FROM zsd_cr_auart INTO @DATA(lv_rel)",
+    "120:   IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Nur t180-trtyp ungleich A gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Nur vbak-vbtyp mit dem Wert C gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "abap_true des Satzes wird gelesen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-139-B02",
+   "soll": "Der zu prüfende Auftragswert ist die Summe der Nettowerte aller nicht abgelehnten und nicht gelöschten Positionen.",
+   "zeilen": [
+    125
+   ],
+   "code": [
+    "125:   lv_wert = REDUCE netwr_ak( INIT s = 0"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-139-B03",
+   "soll": "Ist die FSCM-Prüfung zentral abgeschaltet, gilt der Auftrag als in Ordnung.",
+   "zeilen": [
+    248,
+    251
+   ],
+   "code": [
+    "248:   SELECT SINGLE low FROM tvarvc INTO lv_aktiv",
+    "251:   IF lv_aktiv <> 'X'."
+   ],
+   "engine": [
+    "low des Satzes wird gelesen.",
+    "Ohne gesetztes lv_aktiv wird die es_result-entscheid auf OK gesetzt, die es_result-quelle auf AUS gesetzt und der Block verlassen.",
+    "Ohne gesetztes lv_aktiv wird der Block verlassen.",
+    "lv_aktiv ungleich X setzen die es_result-entscheid auf OK.",
+    "lv_aktiv ungleich X setzen die es_result-quelle auf AUS."
+   ]
+  },
+  {
+   "id": "BM-139-B04",
+   "soll": "Zur Verkaufsorganisation werden Kreditsegment, RFC-Ziel des FSCM-Systems und Ersatzregel gelesen; fehlen sie, endet die Prüfung mit der Fehlermeldung „kein Kreditsegment“.",
+   "zeilen": [
+    258,
+    260,
+    261
+   ],
+   "code": [
+    "258:   SELECT SINGLE * FROM zsd_cr_segm INTO ls_seg",
+    "260:   IF sy-subrc <> 0.",
+    "261:     MESSAGE e403(zsd) WITH iv_vkorg RAISING no_segment."
+   ],
+   "engine": [
+    "Es werden Sätze aus zsd_cr_segm selektiert.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-139-B05",
+   "soll": "Zuerst entscheidet das zentrale FSCM-Kreditmanagement über Kunde, Segment und Auftragswert und liefert das freie Limit.",
+   "zeilen": [
+    266,
+    280
+   ],
+   "code": [
+    "266:   CALL FUNCTION 'Z_UKM_ORDER_CHECK_RFC'",
+    "280:   IF sy-subrc = 0."
+   ],
+   "engine": [
+    "Ein entferntes System wird über die eingegebene Destination benachrichtigt. Welches System und was dort geschieht, ist aus dem gelieferten Code nicht ableitbar.",
+    "Das konvertierte Ergebnis wird in es_result-entscheid übernommen.",
+    "Bei Treffer wird die es_result-quelle auf FSCM gesetzt und der Block verlassen.",
+    "Bei Treffer wird der Block verlassen.",
+    "sy-subrc mit dem Wert 0 setzen die es_result-quelle auf FSCM."
+   ]
+  },
+  {
+   "id": "BM-139-B06",
+   "soll": "Ist das FSCM-System nicht erreichbar, entscheidet die für die Verkaufsorganisation gepflegte Ersatzregel, ohne Pflege die Standardregel.",
+   "zeilen": [
+    289,
+    290,
+    295
+   ],
+   "code": [
+    "289:   IF lv_class IS INITIAL OR lv_meth IS INITIAL.",
+    "290:     lv_class = 'ZCL_CREDIT_RULES'.",
+    "295:       CALL METHOD (lv_class)=>(lv_meth)"
+   ],
+   "engine": [
+    "Für lv_class IS INITIAL OR lv_meth IS INITIAL wird die lv_class auf ZCL_CREDIT_RULES gesetzt und die lv_meth auf RULE_STANDARD gesetzt.",
+    "lv_class IS INITIAL OR lv_meth IS INITIAL setzen die lv_class auf ZCL_CREDIT_RULES.",
+    "Es wird die lv_class auf ZCL_CREDIT_RULES gesetzt und die lv_meth auf RULE_STANDARD gesetzt.",
+    "lv_class IS INITIAL OR lv_meth IS INITIAL setzen die lv_meth auf RULE_STANDARD.",
+    "Das Ergebnis der gewählten Methode wird ermittelt."
+   ]
+  },
+  {
+   "id": "BM-139-B07",
+   "soll": "Lässt sich die Ersatzregel nicht aufrufen, wird der Auftrag vorsichtshalber gesperrt.",
+   "zeilen": [
+    305
+   ],
+   "code": [
+    "305:       es_result-entscheid  = 'SPERRE'."
+   ],
+   "engine": [
+    "Es wird die es_result-entscheid auf SPERRE gesetzt und die es_result-quelle auf FEHLER gesetzt.",
+    "Die es_result-entscheid wird auf SPERRE gesetzt."
+   ]
+  },
+  {
+   "id": "BM-139-B08",
+   "soll": "Die Ersatzregeln rechnen mit einem freien Limit aus Kreditlimit minus repliziertem Obligo; ohne Limit ist es null, und ist das Replikat älter als einen Tag, zählt nur die Hälfte.",
+   "zeilen": [
+    351,
+    359,
+    363,
+    365,
+    366
+   ],
+   "code": [
+    "351:     SELECT SINGLE credit_limit FROM ukmbp_cms_sgm INTO @DATA(lv_limit)",
+    "359:     SELECT SINGLE exposure, stand FROM zukm_expo_repl INTO @DATA(ls_exp)",
+    "363:     rv_free = lv_limit - ls_exp-exposure.",
+    "365:     IF ls_exp-stand < sy-datum - 1.",
+    "366:       rv_free = rv_free / 2."
+   ],
+   "engine": [
+    "credit_limit des Satzes wird gelesen.",
+    "Das Ergebnis enthält exposure und stand.",
+    "exposure und stand des Satzes werden gelesen."
+   ]
+  },
+  {
+   "id": "BM-139-B09",
+   "soll": "Die Standardregel gibt bis zum freien Limit frei, sperrt bis 110 % davon und lehnt darüber ab.",
+   "zeilen": [
+    374
+   ],
+   "code": [
+    "374:     rv_result = COND #( WHEN iv_amount <= lv_free         THEN 'OK'"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-139-B10",
+   "soll": "Die strenge Regel gibt bis zum freien Limit frei und sperrt sonst.",
+   "zeilen": [
+    382
+   ],
+   "code": [
+    "382:     rv_result = COND #( WHEN iv_amount <= lv_free THEN 'OK'"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-139-B11",
+   "soll": "Die Exportregel gibt Kunden mit gültigem Akkreditiv frei und entscheidet sonst nach der strengen Regel.",
+   "zeilen": [
+    388,
+    392,
+    395
+   ],
+   "code": [
+    "388:     SELECT SINGLE @abap_true FROM zsd_lc INTO @DATA(lv_lc)",
+    "392:       rv_result = 'OK'.",
+    "395:     rv_result = rule_strict( iv_partner = iv_partner"
+   ],
+   "engine": [
+    "abap_true des Satzes wird gelesen.",
+    "Bei Treffer wird die Ergebnis auf OK gesetzt und der Block verlassen.",
+    "sy-subrc mit dem Wert 0 erhalten OK.",
+    "Es wird die Ergebnis auf OK gesetzt und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-139-B12",
+   "soll": "Bei „OK“ wird eine früher gesetzte Kredit-Liefersperre Z1 am Auftrag gelöst.",
+   "zeilen": [
+    140,
+    143,
+    144
+   ],
+   "code": [
+    "140:   CASE ls_res-entscheid.",
+    "143:       IF vbak-lifsk = 'Z1'.",
+    "144:         vbak-lifsk = space."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-139-B13",
+   "soll": "Bei „Sperre“ erhält der Auftrag die Liefersperre Z1 und der Anwender einen Hinweis mit dem freien Limit.",
+   "zeilen": [
+    147,
+    148
+   ],
+   "code": [
+    "147:       vbak-lifsk = 'Z1'.",
+    "148:       MESSAGE i401(zsd) WITH ls_res-freies_limit ls_res-waers."
+   ],
+   "engine": [
+    "Es wird die Sperrkennzeichen auf Z1 gesetzt und eine Meldung ausgegeben.",
+    "Die Sperrkennzeichen wird auf Z1 gesetzt.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-139-B14",
+   "soll": "Bei „Ablehnen“ wird das Sichern mit einer Fehlermeldung verhindert.",
+   "zeilen": [
+    150
+   ],
+   "code": [
+    "150:       MESSAGE e402(zsd) WITH vbak-kunnr."
+   ],
+   "engine": [
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-139-B15",
+   "soll": "Die Entscheidung wird beim Sichern mit der endgültigen Belegnummer und dem Benutzer über die Verbuchung protokolliert.",
+   "zeilen": [
+    154,
+    163,
+    171,
+    207
+   ],
+   "code": [
+    "154:   EXPORT credit_result = ls_res TO MEMORY ID 'ZSD_CREDIT'.",
+    "163:   IMPORT credit_result = ls_res FROM MEMORY ID 'ZSD_CREDIT'.",
+    "171:   CALL FUNCTION 'Z_SD_CREDIT_LOG_WRITE' IN UPDATE TASK",
+    "207:   INSERT zsd_credit_log FROM ls_log."
+   ],
+   "engine": [
+    "Der Baustein Z_SD_CREDIT_LOG_WRITE wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Ob ein COMMIT WORK ihn auf jedem Weg anstößt, ist im gelieferten Code nicht bestimmt."
+   ]
+  },
+  {
+   "id": "BM-139-B16",
+   "soll": "Ist am Auftragskopf noch kein Kreditsegment eingetragen, wird das der Verkaufsorganisation übernommen.",
+   "zeilen": [
+    184,
+    185
+   ],
+   "code": [
+    "184:   IF vbak-zzcr_segm IS INITIAL.",
+    "185:     SELECT SINGLE credit_sgmnt FROM zsd_cr_segm INTO vbak-zzcr_segm"
+   ],
+   "engine": [
+    "credit_sgmnt des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-139-B17",
+   "soll": "Ein stündlicher Job liest die Aufträge der gewählten Verkaufsorganisationen mit Liefersperre Z1 aus den letzten Tagen; gibt es keine, meldet er das.",
+   "zeilen": [
+    29,
+    35,
+    36
+   ],
+   "code": [
+    "29:   SELECT vbeln, kunnr, vkorg, waerk, netwr",
+    "35:   IF lt_auf IS INITIAL.",
+    "36:     MESSAGE s404(zsd)."
+   ],
+   "engine": [
+    "Das Ergebnis enthält Belegnummer, Kundennummer, Verkaufsorganisation, waerk und Nettowert.",
+    "Es werden Aufträge selektiert.",
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-139-B18",
+   "soll": "Für jeden gesperrten Auftrag wird die Kreditentscheidung für seinen Nettowert erneut geholt; ist sie nicht „OK“ oder schlägt sie fehl, bleibt er gesperrt.",
+   "zeilen": [
+    41,
+    53,
+    54
+   ],
+   "code": [
+    "41:     CALL FUNCTION 'Z_SD_FSCM_CREDIT_CHECK'",
+    "53:     IF sy-subrc <> 0 OR gs_res-entscheid <> 'OK'.",
+    "54:       WRITE: / ls_auf-vbeln, ls_auf-kunnr, 'weiter gesperrt', gs_res-quelle."
+   ],
+   "engine": [
+    "Der Code übergibt ls_auf-kunnr an Z_SD_FSCM_CREDIT_CHECK und übernimmt dessen Ausgabe nach gs_res.",
+    "Das konvertierte Ergebnis wird in gs_res übernommen.",
+    "Für sy-subrc <> 0 OR gs_res-entscheid <> 'OK' wird Belegnummer ausgegeben, Kundennummer ausgegeben, weiter gesperrt ausgegeben und gs_res-quelle ausgegeben.",
+    "Bei Treffern werden Belegnummer, Kundennummer, weiter gesperrt und gs_res-quelle als Liste ausgegeben.",
+    "Belegnummer wird ausgegeben.",
+    "Kundennummer wird ausgegeben.",
+    "weiter gesperrt wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gs_res-quelle wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-139-B19",
+   "soll": "Im Testlauf wird ein freigabefähiger Auftrag nur gelistet.",
+   "zeilen": [
+    58,
+    59
+   ],
+   "code": [
+    "58:     IF p_test = abap_true.",
+    "59:       WRITE: / ls_auf-vbeln, ls_auf-kunnr, 'würde freigegeben', gs_res-quelle."
+   ],
+   "engine": [
+    "Für p_test mit dem Wert abap_true wird Belegnummer ausgegeben, Kundennummer ausgegeben, würde freigegeben ausgegeben und gs_res-quelle ausgegeben.",
+    "Bei Treffern werden Belegnummer, Kundennummer, würde freigegeben und gs_res-quelle als Liste ausgegeben.",
+    "Belegnummer wird ausgegeben.",
+    "Kundennummer wird ausgegeben.",
+    "würde freigegeben wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gs_res-quelle wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-139-B20",
+   "soll": "Sonst wird die Liefersperre am Auftragskopf entfernt; bei Fehler wird zurückgerollt, sonst festgeschrieben, und das Ergebnis gelistet.",
+   "zeilen": [
+    67,
+    74,
+    75,
+    79
+   ],
+   "code": [
+    "67:     CALL FUNCTION 'BAPI_SALESORDER_CHANGE'",
+    "74:     IF line_exists( gt_ret[ type = 'E' ] ).",
+    "75:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "79:       CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAPI_SALESORDER_CHANGE wird aufgerufen.",
+    "Für line_exists( gt_ret[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen, Belegnummer ausgegeben, Kundennummer ausgegeben und Freigabe fehlgeschlagen ausgegeben.",
+    "Für line_exists( gt_ret[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen, Belegnummer ausgegeben, Kundennummer ausgegeben und Freigabe fehlgeschlagen ausgegeben, sonst BAPI_TRANSACTION_COMMIT aufgerufen, Belegnummer ausgegeben, Kundennummer ausgegeben, freigegeben ausgegeben und gs_res-quelle ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen, Belegnummer ausgegeben, Kundennummer ausgegeben und Freigabe fehlgeschlagen ausgegeben.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen, Belegnummer ausgegeben, Kundennummer ausgegeben, freigegeben ausgegeben und gs_res-quelle ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen, Belegnummer ausgegeben, Kundennummer ausgegeben, freigegeben ausgegeben und gs_res-quelle ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-139-B21",
+   "soll": "Am Ende stehen die Anzahlen freigegebener, weiter gesperrter und fehlgeschlagener Aufträge im Jobprotokoll.",
+   "zeilen": [
+    90
+   ],
+   "code": [
+    "90:   WRITE: / 'Freigegeben:', gv_frei, 'weiter gesperrt:', gv_gesp,"
+   ],
+   "engine": [
+    "Freigegeben:, gv_frei, weiter gesperrt:, gv_gesp, Fehler: und gv_fehl werden ausgegeben.",
+    "Freigegeben: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_frei wird ausgegeben.",
+    "weiter gesperrt: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_gesp wird ausgegeben."
+   ]
+  }
+ ]
+}

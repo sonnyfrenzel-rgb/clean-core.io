@@ -1,0 +1,105 @@
+{
+ "id": "BM-091",
+ "urteile": [
+  {
+   "id": "BM-091-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "'Es werden Kunden selektiert' – Einschränkungen (keine Löschvormerkung, Nummern, Kontengruppen) fehlen."
+  },
+  {
+   "id": "BM-091-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen' entspricht dem Soll."
+  },
+  {
+   "id": "BM-091-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen von cvi_cust_link und Tabellensuche genannt; dass verknüpfte Kunden übersprungen werden, fehlt."
+  },
+  {
+   "id": "BM-091-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird add_issue aufgerufen und der Block verlassen' – Folge 'Fehler Länderschlüssel unbekannt' fehlt; 'Wirkung nicht belegt' ist falsch, add_issue steht im gelieferten Code."
+  },
+  {
+   "id": "BM-091-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "Bedingung nur als Code, Folge nur 'add_issue aufgerufen'; 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-091-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "Bedingung nur als Code (xegld/stceg), Folge nur 'add_issue'; Warnung 'USt-Id fehlt' nicht benannt."
+  },
+  {
+   "id": "BM-091-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "'addrnumber gelesen' und 'Ohne Treffer add_issue' – fehlende ZAV-Adresse als Fehler nicht fachlich benannt."
+  },
+  {
+   "id": "BM-091-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "falsch"
+   ],
+   "kurz": "'Aufträge selektiert' und 'lv_last kleiner gv_limit → add_issue'; Inaktivität und der Fall 'kein Beleg' fehlen."
+  },
+  {
+   "id": "BM-091-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "p_upd, 'loevm des Kunden geändert' und COMMIT genannt; dass inaktive Kunden zum Löschen vorgemerkt werden, fehlt fachlich."
+  },
+  {
+   "id": "BM-091-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur 'Methode display wird aufgerufen'; ALV-Liste der Befunde nicht benannt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,260 @@
+{
+ "id": "BM-094",
+ "titel": "Generischer Schnittstellen-Eingangsverteiler mit dynamischem CALL FUNCTION, PERFORM und SUBMIT",
+ "prozess": "Ein alle fünf Minuten eingeplanter Job verteilt Nachrichten aus der kundeneigenen Inbox-Tabelle. Er lädt die aktiven Routen und liest höchstens die eingegebene Anzahl neuer oder noch zu wiederholender Nachrichten in Eingangsreihenfolge; ohne Nachrichten endet er mit einer Meldung. Er legt ein Anwendungslog an und sperrt jede Nachricht; von parallelen Jobs gesperrte Nachrichten überspringt er. Zur Verteilung schlägt er die Route des Nachrichtentyps nach – ohne Route ist die Nachricht fehlerhaft. Je nach Routingart ruft er dynamisch einen Funktionsbaustein, eine FORM-Routine in einem Programm (nur wenn vorhanden) oder startet einen Report; eine unbekannte Art ist ein Fehler. Bei Erfolg setzt er Status S und schreibt fest. Bei Fehler verwirft er die Änderungen des Verarbeiters, setzt Status R mit erhöhtem Zähler, solange Wiederholungen übrig sind, sonst Status E und protokolliert den Fehler im Anwendungslog; danach schreibt er fest. Nach jeder Nachricht gibt er die Sperre frei, am Ende sichert er das Log. Eine fehlende FORM-Routine oder ein Report-Aufruf gelten ungeprüft als Erfolg, ein fehlender Baustein führt zum Abbruch.",
+ "verboten": [
+  "zif_inbox_dispatch_f01.abap:42 — kein Fachsatz „fehlt die FORM-Routine, wird die Nachricht als Fehler markiert“ (IF FOUND überspringt stillschweigend; der Returncode bleibt 0 und die Nachricht erhält Status S).",
+  "zif_inbox_dispatch_f01.abap:27 — kein Fachsatz „ein nicht vorhandener Baustein wird als Fehler protokolliert“ (EXCEPTIONS OTHERS fängt CALL_FUNCTION_NOT_FOUND nicht; Laufzeitabbruch).",
+  "zif_inbox_dispatch.abap:61 — kein Fachsatz „nach dem Sperren wird geprüft, ob die Nachricht noch offen ist“ (kein erneutes Lesen; Doppelverarbeitung durch parallele Jobs möglich).",
+  "zif_inbox_dispatch_f01.abap:46 — kein Fachsatz „das Ergebnis des Reports wird ausgewertet“ (Erfolg wird pauschal angenommen)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-094-B01",
+   "soll": "Es werden die aktiven Routen je Nachrichtentyp geladen.",
+   "zeilen": [
+    34
+   ],
+   "code": [
+    "34:   SELECT * FROM zif_routing INTO TABLE gt_route"
+   ],
+   "engine": [
+    "Es werden Sätze aus zif_routing selektiert."
+   ]
+  },
+  {
+   "id": "BM-094-B02",
+   "soll": "Es werden höchstens die eingegebene Anzahl neuer oder noch zu wiederholender Nachrichten der gewählten Typen in Eingangsreihenfolge gelesen; gibt es keine, endet der Lauf mit einer Meldung.",
+   "zeilen": [
+    37,
+    42,
+    43
+   ],
+   "code": [
+    "37:   SELECT * FROM zif_inbox INTO TABLE gt_inbox",
+    "42:   IF gt_inbox IS INITIAL.",
+    "43:     MESSAGE s100(zif)."
+   ],
+   "engine": [
+    "Es werden Sätze aus zif_inbox selektiert.",
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-094-B03",
+   "soll": "Für den Lauf wird ein Anwendungslog angelegt, das nach 30 Tagen gelöscht werden darf.",
+   "zeilen": [
+    51
+   ],
+   "code": [
+    "51:   CALL FUNCTION 'BAL_LOG_CREATE'"
+   ],
+   "engine": [
+    "Der Code übergibt gs_logh an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_log.",
+    "Das konvertierte Ergebnis wird in gv_log übernommen."
+   ]
+  },
+  {
+   "id": "BM-094-B04",
+   "soll": "Jede Nachricht wird gesperrt; ist sie von einem parallelen Job gesperrt, wird sie übersprungen.",
+   "zeilen": [
+    61,
+    68
+   ],
+   "code": [
+    "61:     CALL FUNCTION 'ENQUEUE_EZIF_INBOX'",
+    "68:     IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Der Funktionsbaustein ENQUEUE_EZIF_INBOX wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-094-B05",
+   "soll": "Gibt es für den Nachrichtentyp keine aktive Route, gilt die Nachricht als fehlerhaft.",
+   "zeilen": [
+    103,
+    105,
+    107
+   ],
+   "code": [
+    "103:   READ TABLE gt_route INTO ls_route",
+    "105:   IF sy-subrc <> 0.",
+    "107:     pv_msg = |Keine aktive Route für { ps_inbox-mestyp }|."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird die pv_rc auf 8 gesetzt und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "sy-subrc ungleich 0 setzen die pv_rc auf 8."
+   ]
+  },
+  {
+   "id": "BM-094-B06",
+   "soll": "Bei Routingart F wird der konfigurierte Funktionsbaustein mit der Nachricht aufgerufen und liefert Returncode und Meldung; eine klassische Ausnahme gilt als Fehler.",
+   "zeilen": [
+    114,
+    122,
+    124
+   ],
+   "code": [
+    "114:       CALL FUNCTION lv_fm",
+    "122:       IF sy-subrc <> 0.",
+    "124:         pv_msg = |Ausnahme in { lv_fm }|."
+   ],
+   "engine": [
+    "Der Code übergibt ps_inbox an lv_fm und übernimmt dessen Ausgabe nach pv_rc. Welcher Baustein das ist, entscheidet die Eingabe zur Laufzeit.",
+    "Das konvertierte Ergebnis wird in pv_rc übernommen.",
+    "Ohne Treffer wird die pv_rc auf 8 gesetzt.",
+    "sy-subrc ungleich 0 setzen die pv_rc auf 8."
+   ]
+  },
+  {
+   "id": "BM-094-B07",
+   "soll": "Bei Routingart P wird die konfigurierte FORM-Routine im konfigurierten Programm aufgerufen, sofern sie existiert.",
+   "zeilen": [
+    129
+   ],
+   "code": [
+    "129:       PERFORM (lv_form) IN PROGRAM (lv_prog)"
+   ],
+   "engine": [
+    "Das externe Unterprogramm lv_form wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-094-B08",
+   "soll": "Bei Routingart S wird der konfigurierte Report mit der Nachrichten-Id gestartet und die Nachricht danach als erfolgreich betrachtet.",
+   "zeilen": [
+    133,
+    134
+   ],
+   "code": [
+    "133:       SUBMIT (lv_prog) WITH p_msgid = ps_inbox-msgid AND RETURN.",
+    "134:       pv_rc = 0."
+   ],
+   "engine": [
+    "Das Kindprogramm wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes.",
+    "Die pv_rc wird auf 0 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-094-B09",
+   "soll": "Eine unbekannte Routingart gilt als Fehler.",
+   "zeilen": [
+    137
+   ],
+   "code": [
+    "137:       pv_msg = |Routingart { ls_route-kind } unbekannt|."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-094-B10",
+   "soll": "Bei Erfolg erhält die Nachricht Status S mit Verarbeitungsdatum, was sofort festgeschrieben wird.",
+   "zeilen": [
+    147,
+    148,
+    151
+   ],
+   "code": [
+    "147:   IF pv_rc = 0.",
+    "148:     UPDATE zif_inbox SET status    = 'S'",
+    "151:     COMMIT WORK."
+   ],
+   "engine": [
+    "Für pv_rc mit dem Wert 0 wird eine Zeile geändert, COMMIT WORK ausgeführt und der Block verlassen.",
+    "Bei pv_rc gleich 0 wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Es wird eine Zeile geändert, COMMIT WORK ausgeführt und der Block verlassen.",
+    "Die Status in zif_inbox wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. sy-subrc wird danach nicht ausgewertet.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-094-B11",
+   "soll": "Bei einem Fehler werden die Änderungen des Verarbeiters verworfen.",
+   "zeilen": [
+    156
+   ],
+   "code": [
+    "156:   ROLLBACK WORK."
+   ],
+   "engine": [
+    "Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert."
+   ]
+  },
+  {
+   "id": "BM-094-B12",
+   "soll": "Solange Wiederholungen übrig sind, erhält die Nachricht Status R mit erhöhtem Zähler und Fehlertext.",
+   "zeilen": [
+    157,
+    158
+   ],
+   "code": [
+    "157:   IF ps_inbox-retry + 1 < p_retry.",
+    "158:     UPDATE zif_inbox SET status = 'R'"
+   ],
+   "engine": [
+    "Für ps_inbox-retry + 1 < p_retry wird eine Zeile geändert.",
+    "Für ps_inbox-retry + 1 < p_retry wird eine Zeile geändert, sonst eine Zeile geändert und log_error aufgerufen.",
+    "Die Status in zif_inbox wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. sy-subrc wird danach nicht ausgewertet."
+   ]
+  },
+  {
+   "id": "BM-094-B13",
+   "soll": "Ist die letzte Wiederholung verbraucht, erhält sie Status E und der Fehler wird mit Nachrichten-Id und -typ ins Anwendungslog geschrieben.",
+   "zeilen": [
+    163,
+    167,
+    186
+   ],
+   "code": [
+    "163:     UPDATE zif_inbox SET status = 'E'",
+    "167:     PERFORM log_error USING ps_inbox pv_msg.",
+    "186:   CALL FUNCTION 'BAL_LOG_MSG_ADD'"
+   ],
+   "engine": [
+    "Für ps_inbox-retry + 1 < p_retry wird eine Zeile geändert, sonst eine Zeile geändert und log_error aufgerufen.",
+    "Sonst wird eine Zeile geändert und log_error aufgerufen.",
+    "Es wird eine Zeile geändert und log_error aufgerufen.",
+    "Die Status in zif_inbox wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. sy-subrc wird danach nicht ausgewertet.",
+    "Das Unterprogramm log_error wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-094-B14",
+   "soll": "Nach der Verarbeitung wird die Sperre der Nachricht freigegeben.",
+   "zeilen": [
+    76
+   ],
+   "code": [
+    "76:     CALL FUNCTION 'DEQUEUE_EZIF_INBOX'"
+   ],
+   "engine": [
+    "Es wird dispatch aufgerufen, finish aufgerufen und DEQUEUE_EZIF_INBOX aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EZIF_INBOX wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-094-B15",
+   "soll": "Am Ende wird das Anwendungslog gesichert und festgeschrieben.",
+   "zeilen": [
+    82,
+    87
+   ],
+   "code": [
+    "82:   CALL FUNCTION 'BAL_DB_SAVE'",
+    "87:   COMMIT WORK."
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Es wird BAL_DB_SAVE aufgerufen und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  }
+ ]
+}

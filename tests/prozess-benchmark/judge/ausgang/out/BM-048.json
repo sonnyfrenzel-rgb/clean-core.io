@@ -1,0 +1,57 @@
+{
+ "id": "BM-048",
+ "urteile": [
+  {
+   "id": "BM-048-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus anla mit c~gjahr und c~afabe' – Buchungskreise, Anlagenklassen und 'nicht deaktiviert' fehlen, nur technische Namen."
+  },
+  {
+   "id": "BM-048-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen' entspricht Hinweis und Ende."
+  },
+  {
+   "id": "BM-048-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Berechnung von Anschaffungswert, AfA und Restbuchwert."
+  },
+  {
+   "id": "BM-048-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Die drei Status und ihre Reihenfolge sind richtig, die Bedingungen aber nur als ls_out-rbw/ls_out-ahk/ls_raw-aktiv; 'die Status', 'setzen die Status' grammatisch falsch."
+  },
+  {
+   "id": "BM-048-B05",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Option 'nur Restbuchwert null'."
+  },
+  {
+   "id": "BM-048-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufrufe display/factory werden genannt; ALV-Anzeige und Abbruch mit Fehlermeldung nicht erkennbar; 'Wirkung im gelieferten Code nicht belegt' ist falsch, FORM display steht ab Zeile 91 im Quelltext."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

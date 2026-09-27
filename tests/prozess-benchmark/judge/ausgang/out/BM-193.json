@@ -1,0 +1,210 @@
+{
+ "id": "BM-193",
+ "urteile": [
+  {
+   "id": "BM-193-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "grammatik"
+   ],
+   "kurz": "get_parameter „von >client_window“ und load_unfall „nicht belegt“; Laden der Meldung zur Nummer nicht fachlich."
+  },
+  {
+   "id": "BM-193-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "„Ohne iv_unfall_nr wird die Status auf 01 gesetzt“; Erfasser und Tagesdatum fehlen."
+  },
+  {
+   "id": "BM-193-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Sätze aus zehs_unfall selektiert“; Merken als Vergleichsstand fehlt."
+  },
+  {
+   "id": "BM-193-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Blockverlassen ohne Treffer und wd_get_api „nicht belegt“; Fehlermeldung „nicht gefunden“ fehlt."
+  },
+  {
+   "id": "BM-193-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "check_mandatory „nicht belegt“ und Schleife über lt_pflicht; Pflichtfelder nicht genannt."
+  },
+  {
+   "id": "BM-193-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "grammatik"
+   ],
+   "kurz": "ASSIGN, CHECK sy-subrc („kleinere werden übersprungen“) und report_attribute_error_message „von >mo_msg_mgr“; Feldmarkierung nur technisch."
+  },
+  {
+   "id": "BM-193-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "„Für lv_fehler mit dem Wert abap_true wird der Block verlassen“ – inhaltlich richtig, aber technisch."
+  },
+  {
+   "id": "BM-193-B08",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "„Ohne ls_unfall-unfall_nr wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben“ ist falsch – eine neue Meldung erhält eine Nummer und wird geschrieben; ZEHS_UNF nicht genannt."
+  },
+  {
+   "id": "BM-193-B09",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Enthält denselben falschen Satz „Ohne ls_unfall-unfall_nr … nichts geschrieben“; Hinweis auf den Nummernkreis nur als „report_error_message – nicht belegt“."
+  },
+  {
+   "id": "BM-193-B10",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Meldepflicht."
+  },
+  {
+   "id": "BM-193-B11",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Statuswechsel 01 → 02."
+  },
+  {
+   "id": "BM-193-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "„Eine Zeile in zehs_unfall wird eingefügt oder überschrieben“ – richtig, aber nur mit Tabellennamen."
+  },
+  {
+   "id": "BM-193-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Rollback „ohne Treffer“ und report_error_message „nicht belegt“; Fehlermeldung an den Benutzer nicht fachlich."
+  },
+  {
+   "id": "BM-193-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Registrierung von ZEHS_UNF_WRITE_DOCUMENT in der Verbuchung; Änderungsbeleg alt/neu nicht fachlich."
+  },
+  {
+   "id": "BM-193-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "COMMIT stößt Verbuchung an, set_attribute „nicht belegt“; Anzeige der Nummer nicht erkannt."
+  },
+  {
+   "id": "BM-193-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „send_sifa_mail – nicht belegt“; Bedingung „erstmals meldepflichtig“ fehlt."
+  },
+  {
+   "id": "BM-193-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus tvarvc und Verlassen „ohne gesetztes lv_aktiv“; Schalter ZEHS_UNFALL_MAIL nicht fachlich."
+  },
+  {
+   "id": "BM-193-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "smtp_addr gelesen, sonst Sammeladresse; Sicherheitsfachkraft des Werks nicht benannt."
+  },
+  {
+   "id": "BM-193-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "„Eine Zeile wird in lt_text aufgenommen“ und send „nicht belegt“; Mailinhalt fehlt."
+  },
+  {
+   "id": "BM-193-B20",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur „wd_get_api – nicht belegt“; Warnung bei Versandfehler fehlt."
+  },
+  {
+   "id": "BM-193-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Drei Methodenaufrufe „nicht belegt“; Bestätigung, Schreibschutz, Seitenwechsel nicht erkannt."
+  },
+  {
+   "id": "BM-193-B22",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "„Für lv_ok mit dem Wert abap_false wird der Block verlassen“; Verbleib in der Maske nicht fachlich."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

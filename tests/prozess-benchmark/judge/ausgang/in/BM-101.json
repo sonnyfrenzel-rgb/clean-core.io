@@ -1,0 +1,82 @@
+{
+ "id": "BM-101",
+ "titel": "Messbelege je Equipment: Messpunkte aus IMPTT, Ablesungen aus IMRG listen",
+ "prozess": "Der Planer startet den Report mit einer Equipmentnummer (Pflicht) und einem Ab-Datum. Der Report ermittelt die Objektnummer des Equipments und liest dazu alle nicht inaktiven Messpunkte. Zu diesen Messpunkten liest er alle Messbelege ab dem Datum und sortiert sie je Messpunkt nach Datum und Uhrzeit absteigend. Stornierte Messbelege werden übersprungen, alle anderen werden mit Messpunkt, Belegnummer, Datum, Messwert, Einheit und Bewertungscode gelistet. Existiert das Equipment nicht oder hat es keine aktiven Messpunkte, bleibt die Treibertabelle leer, und die FOR-ALL-ENTRIES-Lesung liefert dann die Messbelege aller Messpunkte des Systems ab dem Datum. Es wird nichts geschrieben.",
+ "verboten": [
+  "source.abap:21 — kein Fachsatz „ohne aktive Messpunkte wird eine leere Liste ausgegeben“: ohne Leermengenschutz liest FOR ALL ENTRIES bei leerer Messpunkttabelle die Messbelege aller Messpunkte ab dem Datum",
+  "source.abap:15 — kein Fachsatz „ein unbekanntes Equipment wird mit Fehlermeldung abgewiesen“: sy-subrc wird nicht ausgewertet",
+  "gesamte Scheibe — kein Fachsatz „es wird nur der letzte Messbeleg je Messpunkt angezeigt“: die Sortierung ordnet nur, ausgegeben werden alle nicht stornierten Belege"
+ ],
+ "saetze": [
+  {
+   "id": "BM-101-B01",
+   "soll": "Zum eingegebenen Equipment wird die Objektnummer ermittelt.",
+   "zeilen": [
+    15
+   ],
+   "code": [
+    "15:   SELECT SINGLE objnr FROM equi INTO lv_objnr"
+   ],
+   "engine": [
+    "objnr des Satzes mit dem eingegebenen equnr wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-101-B02",
+   "soll": "Es werden alle aktiven Messpunkte des Equipments gelesen.",
+   "zeilen": [
+    17
+   ],
+   "code": [
+    "17:   SELECT * FROM imptt INTO TABLE lt_imptt"
+   ],
+   "engine": [
+    "Es werden Sätze aus imptt selektiert."
+   ]
+  },
+  {
+   "id": "BM-101-B03",
+   "soll": "Zu diesen Messpunkten werden alle Messbelege ab dem eingegebenen Datum gelesen und je Messpunkt absteigend nach Ablesezeitpunkt sortiert.",
+   "zeilen": [
+    21,
+    25
+   ],
+   "code": [
+    "21:   SELECT * FROM imrg INTO TABLE lt_imrg",
+    "25:   SORT lt_imrg BY point idate DESCENDING itime DESCENDING."
+   ],
+   "engine": [
+    "Es werden Sätze aus imrg selektiert."
+   ]
+  },
+  {
+   "id": "BM-101-B04",
+   "soll": "Stornierte Messbelege werden übersprungen.",
+   "zeilen": [
+    27
+   ],
+   "code": [
+    "27:     CHECK ls_imrg-cancl IS INITIAL."
+   ],
+   "engine": [
+    "Nur Eine leere ls_imrg-cancl gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-101-B05",
+   "soll": "Jeder übrige Messbeleg wird mit Messpunkt, Belegnummer, Datum, Messwert, Einheit und Bewertungscode ausgegeben.",
+   "zeilen": [
+    28
+   ],
+   "code": [
+    "28:     WRITE: / ls_imrg-point, ls_imrg-mdocm, ls_imrg-idate,"
+   ],
+   "engine": [
+    "Bei Treffern werden ls_imrg-point, ls_imrg-mdocm, ls_imrg-idate, ls_imrg-readg, ls_imrg-recdu und ls_imrg-vlcod als Liste ausgegeben.",
+    "ls_imrg-point wird ausgegeben.",
+    "ls_imrg-mdocm wird ausgegeben.",
+    "ls_imrg-idate wird ausgegeben."
+   ]
+  }
+ ]
+}

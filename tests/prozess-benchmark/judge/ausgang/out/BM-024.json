@@ -1,0 +1,44 @@
+{
+ "id": "BM-024",
+ "urteile": [
+  {
+   "id": "BM-024-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus lfa1 mit dem eingegebenen m~ekorg\" – Einkaufs- bzw. zentrale Buchungssperre als Auswahlkriterium fehlt."
+  },
+  {
+   "id": "BM-024-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "\"Ohne Treffer wird 'Keine gesperrten Lieferanten'(001) ausgegeben und der Block verlassen\" – inhaltlich gleich, mit Textsymbol, dreifach."
+  },
+  {
+   "id": "BM-024-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "ALV-Methoden \"nicht belegt\", Rückgabewert fälschlich \"nach cl_salv_table\"; ALV-Liste mit Lieferantendaten nicht benannt."
+  },
+  {
+   "id": "BM-024-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"Eine Meldung wird ausgegeben\"; Fehler beim Erzeugen und Abbruch fehlen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

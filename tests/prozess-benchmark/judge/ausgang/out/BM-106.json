@@ -1,0 +1,86 @@
+{
+ "id": "BM-106",
+ "urteile": [
+  {
+   "id": "BM-106-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Nur 'Ohne Treffer wird eine Meldung ausgegeben'; Öffnen der Datei und Abbruch fehlen, 'Ohne Treffer' passt nicht zu OPEN DATASET."
+  },
+  {
+   "id": "BM-106-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Ohne Treffer wird der Block verlassen' (Dateiende); satzweises Lesen und Zerlegen fehlen."
+  },
+  {
+   "id": "BM-106-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Ausgabe 'Satz fehlerhaft:' erkannt, aber als 'Bei Treffern' – tatsächlich im Fehlerfall der Umwandlung; Überspringen fehlt."
+  },
+  {
+   "id": "BM-106-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Plausi-Baustein und Ausgabe 'kleiner als letzter Zählerstand' genannt; widersprüchlich 'Ohne Treffer' und 'Bei Treffern', 'konvertiert' falsch, Überspringen fehlt."
+  },
+  {
+   "id": "BM-106-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch"
+   ],
+   "kurz": "Ausgabe 'Testlauf, Zuwachs:' bei p_test erkennbar; 'kein Messbeleg' fehlt, 'Bei Treffern' falsch, 'Das vom Funktionsbaustein zurückgegebene Feld' holprig."
+  },
+  {
+   "id": "BM-106-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Übergabe an MEASUREM_DOCUM_RFC_SINGLE_001; Anlage eines Messbelegs mit Herkunft BDE nicht benannt, 'konvertiert' falsch."
+  },
+  {
+   "id": "BM-106-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "'Fehler beim Anlegen' und COMMIT genannt, aber Bedingung 'Ohne Treffer'/'Bei Treffern' falsch; sofortiges Festschreiben nur generisch."
+  },
+  {
+   "id": "BM-106-B08",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Schließen der Datei."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

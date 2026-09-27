@@ -1,0 +1,180 @@
+{
+ "id": "BM-120",
+ "urteile": [
+  {
+   "id": "BM-120-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "DEQUEUE genannt; 'die Screenfolge wird beendet' trifft LEAVE PROGRAM (Transaktion verlassen) nicht, Abbrechen/Beenden ohne Rückfrage fehlt."
+  },
+  {
+   "id": "BM-120-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus aufk und 'Ohne Treffer eine Meldung' – Prüfung auf Instandhaltungsauftrag und Abweisung nicht benannt; 'auftrag_lesen Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-120-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "STATUS_CHECK und 'Ohne Treffer eine Meldung' – Status 'freigegeben' nicht benannt, 'Ohne Treffer' passt nicht."
+  },
+  {
+   "id": "BM-120-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'STATUS_CHECK wird aufgerufen'; Vermerk TECO fehlt."
+  },
+  {
+   "id": "BM-120-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "ENQUEUE und 'Ohne Treffer eine Meldung' – Sperrkonflikt mit Bearbeiter nicht benannt."
+  },
+  {
+   "id": "BM-120-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Lesen aus zpm_freisch und 'Ohne Treffer DEQUEUE + Meldung' – Reihenfolge und Fehlerabweisung nur technisch; 'schritte_lesen Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-120-B07",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Einziger Satz 'Die Screenfolge wird beendet' – LEAVE TO SCREEN 0200 zeigt die Schrittliste; die Vormerkung im Benutzerkontext fehlt."
+  },
+  {
+   "id": "BM-120-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Schleife, Hinweis bei anderem Status und 'Die Status wird auf GESETZT gesetzt' – Benutzer/Zeitpunkt fehlen; 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-120-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "'Nur Status mit dem Wert GESETZT gehen weiter' und 'auf AKT gesetzt' – Prüfer/Zeitpunkt fehlen; 'kleinere werden übersprungen' falsch."
+  },
+  {
+   "id": "BM-120-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "Bedingung nur als Code, Folge nur 'eine Meldung' – Abbruch mit Fehler (Vier-Augen) nicht benannt."
+  },
+  {
+   "id": "BM-120-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "Meldung bei nicht TECO und 'Status auf ZURUECK' – Einschränkung auf wirksame Schritte und Abweisung nur technisch."
+  },
+  {
+   "id": "BM-120-B12",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "'Für gv_changed mit dem Wert abap_false wird eine Meldung ausgegeben ... nichts geschrieben' entspricht dem Soll; 'sichern Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-120-B13",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'Z_PM_FREISCH_VERBUCHEN wird zur Verbuchung registriert ... erst mit dem COMMIT WORK' entspricht dem Vormerken zur Verbuchung."
+  },
+  {
+   "id": "BM-120-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Bedingung korrekt, aber nur 'STATUS_CHANGE_EXTERN aufgerufen'; Anwenderstatus E0010 'freigeschaltet' fehlt."
+  },
+  {
+   "id": "BM-120-B15",
+   "urteil": "gleich",
+   "mangel": [
+    "zu_allgemein"
+   ],
+   "kurz": "'Mit AND WAIT wird auf die Verbuchung gewartet' und 'eine Meldung' entsprechen synchronem Festschreiben mit Bestätigung."
+  },
+  {
+   "id": "BM-120-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Eine Zeile in zpm_freisch wird eingefügt oder überschrieben' – es sind alle Schritte (FROM TABLE); das Statusprotokoll fehlt."
+  },
+  {
+   "id": "BM-120-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "Popup, Ja→sichern, A→bleiben, DEQUEUE genannt; 'Screenfolge wird beendet' statt Rückkehr zum Einstieg, 'konvertiert'/'nicht belegt' falsch."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

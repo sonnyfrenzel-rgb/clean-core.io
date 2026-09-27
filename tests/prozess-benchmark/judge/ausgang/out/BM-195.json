@@ -1,0 +1,165 @@
+{
+ "id": "BM-195",
+ "urteile": [
+  {
+   "id": "BM-195-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „low des Satzes wird gelesen“; Schalter ZFT_EMBARGO_AKTIV nicht fachlich."
+  },
+  {
+   "id": "BM-195-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu Auftragstyp/Anlegen-Ändern."
+  },
+  {
+   "id": "BM-195-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Tabellensuche; Warenempfänger bzw. Auftraggeber als Empfangsland fehlen."
+  },
+  {
+   "id": "BM-195-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „xegld des Satzes wird gelesen“; Ausnahme DE/EU fehlt."
+  },
+  {
+   "id": "BM-195-B05",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "„Der Betrag wird der Methode pruefen übergeben und ein Routentext übernommen“ ist erfunden – übergeben werden Kopf und Positionen."
+  },
+  {
+   "id": "BM-195-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Fall ohne Implementierung."
+  },
+  {
+   "id": "BM-195-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Tabellensuche und „Bei Treffer wird eine Meldung ausgegeben“; Abbruch des Sicherns nicht gesagt."
+  },
+  {
+   "id": "BM-195-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "„Für lv_ft_sperre … die Sperrkennzeichen auf Z1 gesetzt“ – Inhalt stimmt, technisch und ungrammatisch."
+  },
+  {
+   "id": "BM-195-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Sperre und Meldung; Protokolleintrag im Embargoprotokoll fehlt."
+  },
+  {
+   "id": "BM-195-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Selektion aus zft_sanktion und Ausstieg ohne Treffer; Sanktionsmuster des Landes und „keine Sperre“ nicht fachlich."
+  },
+  {
+   "id": "BM-195-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Selektion aus marc mit stawn; Warennummern zu Positionen nicht fachlich."
+  },
+  {
+   "id": "BM-195-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik"
+   ],
+   "kurz": "Schleife und „Nur Eine leere ls_vbap-abgru gehen weiter“; Löschkennzeichen nicht erwähnt."
+  },
+  {
+   "id": "BM-195-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "„wird eine Zeile aufgenommen“; vorsorgliche Sperre fehlt."
+  },
+  {
+   "id": "BM-195-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Musterabgleich mit „Zeile aufgenommen“ technisch; Sperre und Abbruch/Warnung je Sanktionsart fehlen."
+  },
+  {
+   "id": "BM-195-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "embargo_art-Lesen und Ausstieg ohne Treffer; „bleibt ungesperrt“ nicht fachlich."
+  },
+  {
+   "id": "BM-195-B16",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Totalembargo."
+  },
+  {
+   "id": "BM-195-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "zz_ruestung-Lesen und „Zeile aufgenommen“; Sperre bei Rüstungsgut fehlt."
+  },
+  {
+   "id": "BM-195-B18",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu anderen Embargoarten."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

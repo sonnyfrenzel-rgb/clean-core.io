@@ -1,0 +1,36 @@
+{
+ "id": "BM-062",
+ "urteile": [
+  {
+   "id": "BM-062-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus qals selektiert' – Prüflos nicht benannt, Ausnahme LOS_NICHT_GEFUNDEN fehlt."
+  },
+  {
+   "id": "BM-062-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'Sätze aus qave selektiert' – Verwendungsentscheid nur über den Tabellennamen."
+  },
+  {
+   "id": "BM-062-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Freigabe bei Bewertung A."
+  },
+  {
+   "id": "BM-062-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Fall ohne Freigabe."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

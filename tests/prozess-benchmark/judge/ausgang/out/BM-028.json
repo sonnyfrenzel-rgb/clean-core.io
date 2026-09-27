@@ -1,0 +1,84 @@
+{
+ "id": "BM-028",
+ "urteile": [
+  {
+   "id": "BM-028-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Ohne Treffer wird eine Meldung ausgegeben\" – die nicht lesbare Datei ist kein fehlender Treffer; Fehlermeldung und Abbruch fehlen, Datei nicht benannt."
+  },
+  {
+   "id": "BM-028-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Lesen und Zerlegen der Zeilen."
+  },
+  {
+   "id": "BM-028-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"labst des Satzes wird gelesen\"; frei verwendbarer Bestand am abgebenden Lagerort nicht benannt."
+  },
+  {
+   "id": "BM-028-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingung technisch, Ausgabe \"Bestand nicht ausreichend:\" mit gv_labst erkennbar; dass nicht gebucht wird, fehlt."
+  },
+  {
+   "id": "BM-028-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Die gs_item-move_type wird auf 301 gesetzt\" und BAPI_GOODSMVT_CREATE – Umlagerung Werk an Werk und Testlauf-Simulation nicht fachlich."
+  },
+  {
+   "id": "BM-028-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen … gs_return-message ausgegeben\" – Auslöser Fehler/Abbruch nur als \"Treffer\"."
+  },
+  {
+   "id": "BM-028-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "\"Ohne p_test wird BAPI_TRANSACTION_COMMIT aufgerufen … Das vom Funktionsbaustein zurückgegebene Feld ausgegeben\" – Festschreiben und Materialbeleg nur technisch."
+  },
+  {
+   "id": "BM-028-B08",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Sonst wird gs_line-matnr, gs_line-werks und Testlauf ohne Fehler ausgegeben\" – fehlerfreier Testlauf je Zeile erkennbar."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

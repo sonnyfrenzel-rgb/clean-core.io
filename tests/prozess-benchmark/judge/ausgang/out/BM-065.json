@@ -1,0 +1,43 @@
+{
+ "id": "BM-065",
+ "urteile": [
+  {
+   "id": "BM-065-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "'v~mgvrg v~lmnga INTO (lv_mgvrg und lv_lmnga) des Satzes werden gelesen' – nur ABAP-Fragment, Vorgangsmenge und rückgemeldete Gutmenge nicht fachlich."
+  },
+  {
+   "id": "BM-065-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Ohne Treffer wird eine Meldung ausgegeben'; Zurückweisung mit Fehler und Stehenbleiben des Dynpros fehlen."
+  },
+  {
+   "id": "BM-065-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Berechnung der offenen Menge."
+  },
+  {
+   "id": "BM-065-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Für zpp_s_rm-gutmenge größer lv_offen wird eine Meldung ausgegeben' – Bedingung richtig, aber technisch; Zurückweisung als Fehler mit offener Menge fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

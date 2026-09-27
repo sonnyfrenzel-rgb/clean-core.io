@@ -1,0 +1,47 @@
+{
+ "id": "BM-085",
+ "urteile": [
+  {
+   "id": "BM-085-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen des Stapels (batch_id) genannt, Einschränkung auf Status N fehlt."
+  },
+  {
+   "id": "BM-085-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'jede Zeile wird einzeln verarbeitet'; die Pflichtfeldprüfung per Makro fehlt völlig."
+  },
+  {
+   "id": "BM-085-B03",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Engine sagt 'eine Zeile geändert', der Code setzt alle neuen Zeilen des Stapels auf V; 'Ohne Treffer' statt 'ohne Fehler'; 'Die Status ... wird geändert'."
+  },
+  {
+   "id": "BM-085-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "'Sonst wird Pflichtfeldfehler: ausgegeben und lv_nerr ausgegeben' – Sonst-Zweig erkannt, Anzahl nur als Variablenname, 'unverändert' fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

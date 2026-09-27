@@ -1,0 +1,184 @@
+{
+ "id": "BM-117",
+ "urteile": [
+  {
+   "id": "BM-117-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "'Für sy-subrc = 0 AND p_test IS INITIAL wird eine Meldung ausgegeben' – Abweisung einer vergebenen Rückrufnummer nur technisch."
+  },
+  {
+   "id": "BM-117-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus objk mit o~matnr selektiert' – ausgelieferte Serialnummern im Zeitraum nicht benannt; 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-117-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus lips und Tabellensuche; Entfernen nicht passender Chargen fehlt."
+  },
+  {
+   "id": "BM-117-B04",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen' entspricht dem Soll."
+  },
+  {
+   "id": "BM-117-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen von likp mit Kunde/Land; Zuordnung je Serialnummer und Sortierung fehlen; 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-117-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Testlauf-Ausgabe und 'nichts geschrieben' erkannt; Kundenzeile fehlt, '5 ls_ser-sernr' verstümmelt, 'Bei Treffern' und 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-117-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "ENQUEUE_EZCS_RR und 'Ohne Treffer eine Meldung' – Abbruch bei Sperre nicht benannt, 'Ohne Treffer' passt nicht."
+  },
+  {
+   "id": "BM-117-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Mit COMMIT WORK wird die Änderung persistiert'; Anlage von Rückrufkopf und Positionen fehlt."
+  },
+  {
+   "id": "BM-117-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Jede Zeile aus gt_ser' und kunden_informieren – Verarbeitung je Kunde nicht ausgesprochen."
+  },
+  {
+   "id": "BM-117-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "'qmnum gelesen' und 'Bei Treffer Block verlassen' – Wiederverwendung der vorhandenen Meldung nicht benannt."
+  },
+  {
+   "id": "BM-117-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Ausgabe 'Meldung nicht angelegt' genannt, aber mit 'Bei Treffern' statt 'ohne Kunde'; 'Der Rückgabewert' unklar."
+  },
+  {
+   "id": "BM-117-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur BAPI_ALM_NOTIF_CREATE/SAVE mit gc_qmart; S3, Priorität, Auftraggeber, Positionen fehlen; 'konvertiert' falsch."
+  },
+  {
+   "id": "BM-117-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "Rollback bei E-Meldung und Ausgabe 'Meldung nicht angelegt' – nur technisch, 'Bei Treffern' falsch."
+  },
+  {
+   "id": "BM-117-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Die qmnum in zcs_rr_pos wird geändert' – Vermerk der Meldungsnummer nur als Feldname."
+  },
+  {
+   "id": "BM-117-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "Kanalklasse lesen, dynamischer Methodenaufruf, 'Kanal fehlgeschlagen' – Landes-/Standardkanal nicht fachlich; 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-117-B16",
+   "urteil": "gleich",
+   "mangel": [],
+   "kurz": "'Mit COMMIT WORK wird die Änderung persistiert' entspricht dem Festschreiben."
+  },
+  {
+   "id": "BM-117-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "SUBMIT zcs_rueckruf_brief, LIST_FROM_MEMORY, WRITE_LIST – Briefdruck und Listenanzeige nur über Namen."
+  },
+  {
+   "id": "BM-117-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "STATUS_CHANGE_EXTERN, Fehlerausgabe je Equipment und COMMIT – Status E0005 fehlt, 'Ohne Treffer'/'Bei Treffern' widersprüchlich."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

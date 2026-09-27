@@ -1,0 +1,45 @@
+{
+ "id": "BM-143",
+ "urteile": [
+  {
+   "id": "BM-143-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus hrp1000 mit plvar\"; aktive Organisationseinheiten und Stichtag fehlen."
+  },
+  {
+   "id": "BM-143-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus hrp1001 mit plvar\"; Beziehung B012, Stichtag und Verhalten bei leerer Einheitenmenge fehlen."
+  },
+  {
+   "id": "BM-143-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Schleife, Suche und \"nur sy-subrc ungleich 0 geht weiter\" technisch erkannt; \"kleinere werden übersprungen\" sinnlos; Leitungsbeziehung nicht benannt."
+  },
+  {
+   "id": "BM-143-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Ausgabe von objid/stext erkannt, nur Feldnamen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

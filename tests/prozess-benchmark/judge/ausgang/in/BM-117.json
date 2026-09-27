@@ -1,0 +1,397 @@
+{
+ "id": "BM-117",
+ "titel": "Rückrufaktion: ausgelieferte Serialnummern ermitteln, Rückruf anlegen, Servicemeldung je Kunde, Landeskanal dynamisch, Briefe, Equipmentstatus",
+ "prozess": "Der Sachbearbeiter startet den Rückruf mit Rückrufnummer, Grund, Material und optional Serialnummern, Chargen und Lieferzeitraum; im Echtlauf wird eine bereits vergebene Rückrufnummer schon am Selektionsbild abgewiesen. Das Programm ermittelt alle mit Lieferungen ausgelieferten Serialnummern des Materials im Zeitraum und behält bei Chargenangabe nur die aus Positionen dieser Chargen; ohne Treffer endet es mit einem Hinweis. Jeder Serialnummer ordnet es Warenempfänger und Land aus der Lieferung zu. Im Testlauf listet es die Betroffenen unter Kundenzeilen und endet. Im Echtlauf sperrt es den Rückruf (bei Sperre Abbruch), legt Rückrufkopf und je Serialnummer eine Position an und schreibt fest. Dann bearbeitet es jeden Kunden mit seinen Serialnummern: Eine Klasse verwendet eine vorhandene Rückrufmeldung oder legt eine Servicemeldung S3 mit einer Position je Serialnummer an; ohne Kunden oder bei Fehler wird der Kunde als „Meldung nicht angelegt“ gelistet, wobei ein Fehler auch die noch offenen Änderungen der vorherigen Kunden zurückrollt. Die Meldungsnummer wird an den Positionen vermerkt und der Kunde über den für sein Land gepflegten Kanal informiert, ersatzweise den Standardkanal; danach wird festgeschrieben. Anschließend erzeugt ein Druckreport die Rückrufbriefe, deren Liste angezeigt wird, und an allen betroffenen Equipments wird der Anwenderstatus „Rückruf“ gesetzt.",
+ "verboten": [
+  "zcs_rueckruf_f01.abap:68 — kein Fachsatz „im Testprotokoll erscheint je Kunde genau eine Kopfzeile“: KUNNR steht in der Struktur hinter SERNR, AT NEW reagiert auf jede Änderung der Felder davor und schreibt die Kundenzeile vor jeder Serialnummer",
+  "zcl_cs_rr_notif.abap:77 — kein Fachsatz „ein Fehler betrifft nur die Meldung dieses Kunden“: der Rollback verwirft auch die noch nicht festgeschriebenen Meldungen und Positionsvermerke aller vorher bearbeiteten Kunden dieses Laufs, deren Kanalbenachrichtigung aber schon erfolgt ist",
+  "zcs_rueckruf_f01.abap:162 — kein Fachsatz „der Kunde erhält einen Brief/eine E-Mail“: was der Kanal tut, bestimmt eine Klasse aus ZCS_RR_KANAL, die nicht im Fall liegt",
+  "zcs_rueckruf_f01.abap:233 — kein Knoten und kein Fachsatz „der Vertrieb wird per Mail informiert“: MAIL_AN_VERTRIEB wird nie aufgerufen"
+ ],
+ "saetze": [
+  {
+   "id": "BM-117-B01",
+   "soll": "Im Echtlauf wird eine bereits vergebene Rückrufnummer schon auf dem Selektionsbild abgewiesen.",
+   "zeilen": [
+    22,
+    24,
+    25
+   ],
+   "code": [
+    "22:   SELECT SINGLE rrnr FROM zcs_rr_hdr INTO gv_rrnr",
+    "24:   IF sy-subrc = 0 AND p_test IS INITIAL.",
+    "25:     MESSAGE e601(zcs) WITH p_rrnr."
+   ],
+   "engine": [
+    "rrnr des Satzes mit dem eingegebenen rrnr wird gelesen.",
+    "Für sy-subrc = 0 AND p_test IS INITIAL wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-117-B02",
+   "soll": "Es werden alle Serialnummern des Materials ermittelt, die im eingegebenen Zeitraum mit einer Lieferung ausgeliefert wurden.",
+   "zeilen": [
+    30,
+    151
+   ],
+   "code": [
+    "30:   PERFORM seriennummern_ermitteln.",
+    "151:   SELECT o~sernr, o~matnr, o~equnr, s~lief_nr, s~posnr, s~datum"
+   ],
+   "engine": [
+    "Das Unterprogramm seriennummern_ermitteln wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Das Ergebnis enthält o~sernr, o~matnr, o~equnr, s~lief_nr, s~posnr und s~datum.",
+    "Es werden Sätze aus objk mit dem eingegebenen o~matnr selektiert."
+   ]
+  },
+  {
+   "id": "BM-117-B03",
+   "soll": "Sind Chargen angegeben, bleiben nur Serialnummern aus Lieferpositionen dieser Chargen; Positionen ohne Treffer fallen heraus.",
+   "zeilen": [
+    161,
+    162,
+    169,
+    172,
+    173
+   ],
+   "code": [
+    "161:   IF s_charg[] IS NOT INITIAL AND gt_ser IS NOT INITIAL.",
+    "162:     SELECT vbeln, posnr, charg FROM lips",
+    "169:       READ TABLE lt_lips INTO DATA(ls_lips)",
+    "172:       IF sy-subrc <> 0 OR ls_lips-charg NOT IN s_charg.",
+    "173:         DELETE gt_ser."
+   ],
+   "engine": [
+    "Das Ergebnis enthält Belegnummer, posnr und charg.",
+    "Es werden Sätze aus lips selektiert.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-117-B04",
+   "soll": "Ohne betroffene Serialnummern endet der Lauf mit einem Hinweis.",
+   "zeilen": [
+    31,
+    32,
+    33
+   ],
+   "code": [
+    "31:   IF gt_ser IS INITIAL.",
+    "32:     MESSAGE s602(zcs) WITH p_matnr.",
+    "33:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-117-B05",
+   "soll": "Jeder Serialnummer werden Warenempfänger und dessen Land aus der Lieferung zugeordnet; die Liste wird nach Kunde sortiert.",
+   "zeilen": [
+    36,
+    185,
+    193
+   ],
+   "code": [
+    "36:   PERFORM kunden_ermitteln.",
+    "185:   SELECT l~vbeln, l~kunnr, k~land1",
+    "193:     <ls_ser>-kunnr = VALUE #( lt_likp[ vbeln = <ls_ser>-lief_nr ]-kunnr OPTIONAL )."
+   ],
+   "engine": [
+    "Das Unterprogramm kunden_ermitteln wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Das Ergebnis enthält Belegnummer, Kundennummer und Länderschlüssel.",
+    "Es werden Sätze aus likp selektiert."
+   ]
+  },
+  {
+   "id": "BM-117-B06",
+   "soll": "Im Testlauf werden die betroffenen Serialnummern mit Equipment, Lieferung und Datum unter einer Kundenzeile gelistet, und der Lauf endet ohne Änderungen.",
+   "zeilen": [
+    38,
+    39,
+    40,
+    208,
+    211
+   ],
+   "code": [
+    "38:   IF p_test = abap_true.",
+    "39:     PERFORM protokoll_ausgeben.",
+    "40:     RETURN.",
+    "208:     AT NEW kunnr.",
+    "211:     WRITE: /5 ls_ser-sernr, ls_ser-equnr, ls_ser-lief_nr, ls_ser-datum."
+   ],
+   "engine": [
+    "Für p_test mit dem Wert abap_true wird protokoll_ausgeben aufgerufen und der Block verlassen.",
+    "Bei p_test gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Das Unterprogramm protokoll_ausgeben wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird protokoll_ausgeben aufgerufen und der Block verlassen.",
+    "Bei Treffern werden 5 ls_ser-sernr, ls_ser-equnr, ls_ser-lief_nr und ls_ser-datum als Liste ausgegeben.",
+    "5 ls_ser-sernr wird ausgegeben.",
+    "ls_ser-equnr wird ausgegeben.",
+    "ls_ser-lief_nr wird ausgegeben.",
+    "ls_ser-datum wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-117-B07",
+   "soll": "Im Echtlauf wird der Rückruf gesperrt; ist er gesperrt, bricht der Lauf mit Fehlermeldung ab.",
+   "zeilen": [
+    43,
+    219,
+    226,
+    227
+   ],
+   "code": [
+    "43:   PERFORM rueckruf_anlegen.",
+    "219:   CALL FUNCTION 'ENQUEUE_EZCS_RR'",
+    "226:   IF sy-subrc <> 0.",
+    "227:     MESSAGE e603(zcs) WITH p_rrnr."
+   ],
+   "engine": [
+    "Das Unterprogramm rueckruf_anlegen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird rueckruf_anlegen aufgerufen, kunden_informieren aufgerufen, briefe_drucken aufgerufen und equipments_kennzeichnen aufgerufen.",
+    "Der Funktionsbaustein ENQUEUE_EZCS_RR wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-117-B08",
+   "soll": "Der Rückruf wird mit Material, Grund, Anzahl und Status OFFEN angelegt, alle betroffenen Serialnummern mit Kunde, Equipment und Lieferung als Positionen, und sofort festgeschrieben.",
+   "zeilen": [
+    237,
+    238,
+    244
+   ],
+   "code": [
+    "237:   INSERT zcs_rr_hdr FROM gs_hdr.",
+    "238:   INSERT zcs_rr_pos FROM TABLE @( VALUE #( FOR ls_s IN gt_ser",
+    "244:   COMMIT WORK."
+   ],
+   "engine": [
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-117-B09",
+   "soll": "Die Kunden werden einzeln bearbeitet, jeweils mit allen ihren Serialnummern.",
+   "zeilen": [
+    44,
+    256
+   ],
+   "code": [
+    "44:   PERFORM kunden_informieren.",
+    "256:   LOOP AT gt_ser INTO DATA(ls_ser)"
+   ],
+   "engine": [
+    "Es wird rueckruf_anlegen aufgerufen, kunden_informieren aufgerufen, briefe_drucken aufgerufen und equipments_kennzeichnen aufgerufen.",
+    "Das Unterprogramm kunden_informieren wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Jede Zeile aus gt_ser wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-117-B10",
+   "soll": "Gibt es zum Rückruf und Kunden bereits eine Meldung, wird sie verwendet.",
+   "zeilen": [
+    87,
+    92,
+    93
+   ],
+   "code": [
+    "87:     SELECT SINGLE qmnum FROM zcs_rr_pos",
+    "92:     IF sy-subrc = 0.",
+    "93:       RETURN."
+   ],
+   "engine": [
+    "qmnum des Satzes wird gelesen.",
+    "Bei Treffer wird der Block verlassen.",
+    "Bei Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-117-B11",
+   "soll": "Serialnummern ohne ermittelten Kunden erhalten keine Meldung; der Fall wird gelistet.",
+   "zeilen": [
+    96,
+    97,
+    269
+   ],
+   "code": [
+    "96:     IF iv_kunnr IS INITIAL.",
+    "97:       RAISE EXCEPTION TYPE zcx_cs_rr",
+    "269:         WRITE: / 'Kunde', <ls_kd>-kunnr, 'Meldung nicht angelegt:', gv_text."
+   ],
+   "engine": [
+    "Bei Treffern werden Kunde, Kundennummer, Meldung nicht angelegt: und Der Rückgabewert als Liste ausgegeben.",
+    "Kunde wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Kundennummer wird ausgegeben.",
+    "Meldung nicht angelegt: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Der Rückgabewert wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-117-B12",
+   "soll": "Sonst wird je Kunde eine Servicemeldung S3 „Rückruf“ mit Priorität 1, dem Kunden als Auftraggeber und einer Position je Serialnummer angelegt und gesichert.",
+   "zeilen": [
+    111,
+    130,
+    263
+   ],
+   "code": [
+    "111:     CALL FUNCTION 'BAPI_ALM_NOTIF_CREATE'",
+    "130:     CALL FUNCTION 'BAPI_ALM_NOTIF_SAVE'",
+    "263:         lv_qmnum = NEW zcl_cs_rr_notif( )->create( iv_rrnr  = p_rrnr"
+   ],
+   "engine": [
+    "Der Code übergibt gc_qmart an BAPI_ALM_NOTIF_CREATE und übernimmt dessen Ausgabe nach ls_exp.",
+    "Das konvertierte Ergebnis wird in ls_exp übernommen.",
+    "Der Code übergibt ls_exp-notif_no an BAPI_ALM_NOTIF_SAVE und übernimmt dessen Ausgabe nach ls_exp.",
+    "Das konvertierte Ergebnis wird in ls_exp übernommen."
+   ]
+  },
+  {
+   "id": "BM-117-B13",
+   "soll": "Meldet das Anlegen einen Fehler, wird zurückgerollt, der Kunde als „Meldung nicht angelegt“ gelistet und übersprungen.",
+   "zeilen": [
+    122,
+    123,
+    124,
+    269
+   ],
+   "code": [
+    "122:     IF line_exists( lt_ret[ type = 'E' ] ).",
+    "123:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "124:       RAISE EXCEPTION TYPE zcx_cs_rr",
+    "269:         WRITE: / 'Kunde', <ls_kd>-kunnr, 'Meldung nicht angelegt:', gv_text."
+   ],
+   "engine": [
+    "Für line_exists( lt_ret[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Bei Treffern werden Kunde, Kundennummer, Meldung nicht angelegt: und Der Rückgabewert als Liste ausgegeben.",
+    "Kunde wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Kundennummer wird ausgegeben.",
+    "Meldung nicht angelegt: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Der Rückgabewert wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-117-B14",
+   "soll": "Die Meldungsnummer wird an allen Rückrufpositionen des Kunden vermerkt.",
+   "zeilen": [
+    273
+   ],
+   "code": [
+    "273:     UPDATE zcs_rr_pos SET qmnum = lv_qmnum"
+   ],
+   "engine": [
+    "Es wird eine Zeile geändert und kanal_informieren aufgerufen.",
+    "Die qmnum in zcs_rr_pos wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ]
+  },
+  {
+   "id": "BM-117-B15",
+   "soll": "Der Kunde wird über den für sein Land gepflegten Informationskanal benachrichtigt, ersatzweise über den Standardkanal; scheitert der Aufruf, wird das gelistet.",
+   "zeilen": [
+    277,
+    294,
+    296,
+    297,
+    302,
+    309
+   ],
+   "code": [
+    "277:     PERFORM kanal_informieren USING <ls_kd>-kunnr <ls_kd>-land1 lv_qmnum.",
+    "294:   SELECT SINGLE klasse FROM zcs_rr_kanal INTO lv_class",
+    "296:   IF sy-subrc <> 0.",
+    "297:     SELECT SINGLE klasse FROM zcs_rr_kanal INTO lv_class",
+    "302:       CALL METHOD (lv_class)=>(lv_meth)",
+    "309:       WRITE: / 'Kunde', pv_kunnr, 'Kanal fehlgeschlagen:', gv_text."
+   ],
+   "engine": [
+    "Es wird eine Zeile geändert und kanal_informieren aufgerufen.",
+    "Das Unterprogramm kanal_informieren wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "klasse des Satzes wird gelesen.",
+    "klasse des Satzes wird gelesen.",
+    "Das Ergebnis der gewählten Methode wird ermittelt.",
+    "Kunde, pv_kunnr, Kanal fehlgeschlagen: und Der Rückgabewert werden ausgegeben.",
+    "Kunde wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "pv_kunnr wird ausgegeben.",
+    "Kanal fehlgeschlagen: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Der Rückgabewert wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-117-B16",
+   "soll": "Nach allen Kunden werden Meldungsnummern und Kanalergebnisse festgeschrieben.",
+   "zeilen": [
+    279
+   ],
+   "code": [
+    "279:   COMMIT WORK."
+   ],
+   "engine": [
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-117-B17",
+   "soll": "Die Rückrufbriefe werden über den Druckreport erzeugt und dessen Liste angezeigt.",
+   "zeilen": [
+    45,
+    321,
+    326,
+    333
+   ],
+   "code": [
+    "45:   PERFORM briefe_drucken.",
+    "321:   SUBMIT zcs_rueckruf_brief",
+    "326:   CALL FUNCTION 'LIST_FROM_MEMORY'",
+    "333:   CALL FUNCTION 'WRITE_LIST'"
+   ],
+   "engine": [
+    "Es wird rueckruf_anlegen aufgerufen, kunden_informieren aufgerufen, briefe_drucken aufgerufen und equipments_kennzeichnen aufgerufen.",
+    "Das Unterprogramm briefe_drucken wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Das Kindprogramm zcs_rueckruf_brief wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes.",
+    "Der Funktionsbaustein LIST_FROM_MEMORY wird aufgerufen.",
+    "Es wird LIST_FROM_MEMORY aufgerufen und WRITE_LIST aufgerufen.",
+    "Der Funktionsbaustein WRITE_LIST wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-117-B18",
+   "soll": "An jedem betroffenen Equipment wird der Anwenderstatus E0005 „Rückruf“ gesetzt; Fehler werden je Equipment gelistet, am Ende wird festgeschrieben.",
+   "zeilen": [
+    46,
+    349,
+    351,
+    357,
+    358,
+    361
+   ],
+   "code": [
+    "46:   PERFORM equipments_kennzeichnen.",
+    "349:   LOOP AT gt_ser INTO DATA(ls_ser) WHERE equnr IS NOT INITIAL.",
+    "351:     CALL FUNCTION 'STATUS_CHANGE_EXTERN'",
+    "357:     IF sy-subrc <> 0.",
+    "358:       WRITE: / 'Equipment', ls_ser-equnr, 'Status Rückruf nicht gesetzt'.",
+    "361:   COMMIT WORK."
+   ],
+   "engine": [
+    "Es wird rueckruf_anlegen aufgerufen, kunden_informieren aufgerufen, briefe_drucken aufgerufen und equipments_kennzeichnen aufgerufen.",
+    "Das Unterprogramm equipments_kennzeichnen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Jede Zeile aus gt_ser wird einzeln verarbeitet.",
+    "Der Funktionsbaustein STATUS_CHANGE_EXTERN wird aufgerufen.",
+    "Ohne Treffer wird Equipment ausgegeben, ls_ser-equnr ausgegeben und Status Rückruf nicht gesetzt ausgegeben.",
+    "Bei Treffern werden Equipment, ls_ser-equnr und Status Rückruf nicht gesetzt als Liste ausgegeben.",
+    "Equipment wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "ls_ser-equnr wird ausgegeben.",
+    "Status Rückruf nicht gesetzt wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  }
+ ]
+}

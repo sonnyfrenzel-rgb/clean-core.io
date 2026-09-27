@@ -1,0 +1,194 @@
+{
+ "id": "BM-099",
+ "urteile": [
+  {
+   "id": "BM-099-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Funktionsauswahl im Einstiegsbild."
+  },
+  {
+   "id": "BM-099-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "Lesen lfa1 und 'Meldung' bei fehlendem/gesperrtem Kreditor – dass die Pflege mit Fehler verweigert wird, fehlt."
+  },
+  {
+   "id": "BM-099-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "'Berechtigung auf Z_VCERT wird geprüft' + 'Ohne Treffer Meldung' – Aktivität je Modus fehlt, 'Ohne Treffer' passt nicht zur Berechtigung."
+  },
+  {
+   "id": "BM-099-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Beide Bedingungen (sy-subrc/gv_mode) mit 'eine Meldung' – Existenzregel je Modus nur als Code."
+  },
+  {
+   "id": "BM-099-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "ENQUEUE, lock_cert bei gv_mode <> gc_display und 'Ohne Treffer Meldung' – Ablehnung mit Namen des Sperrers fehlt; 'Ohne Treffer' falsch."
+  },
+  {
+   "id": "BM-099-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'ruft eine Screenfolge ab 200 auf' – Übernahme der gespeicherten Daten fehlt."
+  },
+  {
+   "id": "BM-099-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'ctext des Satzes wird gelesen'; Name/Ort und Restlaufzeit fehlen."
+  },
+  {
+   "id": "BM-099-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "screen-input auf 0 für Gruppe EDT genannt, Anzeigemodus-Bedingung fehlt; 'Eine Zeile in SCREEN wird eingefügt oder überschrieben' ist falsch (MODIFY SCREEN ist kein Datenbankschreiben)."
+  },
+  {
+   "id": "BM-099-B09",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Für gv_mode mit dem Wert gc_display wird eine Meldung ausgegeben und der Block verlassen ... nichts geschrieben' entspricht dem Soll."
+  },
+  {
+   "id": "BM-099-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "Datumsvergleich und ctype-Lesung mit 'eine Meldung' – Prüfungen nur technisch, Abweisung nicht benannt."
+  },
+  {
+   "id": "BM-099-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Status E bei valid_to < sy-datum, sonst G – Bedeutung abgelaufen/gültig fehlt."
+  },
+  {
+   "id": "BM-099-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Eine Zeile in zvcert wird eingefügt oder überschrieben' – Änderer/Datum fehlen."
+  },
+  {
+   "id": "BM-099-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "COMMIT und Meldung genannt; das Änderungsprotokoll (INSERT zvcert_log) fehlt."
+  },
+  {
+   "id": "BM-099-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "unlock_cert und 'Screenfolge beendet' – Rückkehr zum Einstiegsbild fehlt; 'unlock_cert Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-099-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "Popup und 'bei gv_answer ungleich 1 ... nichts geschrieben' treffen den Sinn nur technisch; Vorschlag Nein fehlt, 'konvertiertes Ergebnis' falsch."
+  },
+  {
+   "id": "BM-099-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "COMMIT und Meldung genannt, das Löschen des Zertifikats (DELETE zvcert) fehlt."
+  },
+  {
+   "id": "BM-099-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "delete_cert/unlock_cert und 'Screenfolge beendet' – Rückkehr zum Einstiegsbild fehlt; 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-099-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "'Nur gv_locked mit dem Wert X gehen weiter' trifft den Kern technisch; 'kleinere werden übersprungen, die Schleife läuft weiter' ist falsch (CHECK in einer FORM, keine Schleife)."
+  },
+  {
+   "id": "BM-099-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "unlock_cert bei gv_locked genannt; LEAVE PROGRAM verlässt die Transaktion, nicht nur 'die Screenfolge'."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

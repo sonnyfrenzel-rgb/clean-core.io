@@ -1,0 +1,380 @@
+{
+ "id": "BM-018",
+ "titel": "Kampagnenpreise: Preisfindungs-Exits und Bedingung 905, Neubewertung offener Aufträge per BAPI mit Liefersperre bei großer Abweichung",
+ "prozess": "Bei jeder Preisfindung eines Kundenauftrags ergänzen zwei Exits die Kommunikationsstrukturen: im Kopf die Kundenkategorie des Auftraggebers (bei Webshop-Aufträgen fest W), je Position die erste Produkthierarchiestufe und die am Preisdatum gültige Kampagne mit höchster Priorität. Die Bedingung 905 lässt den Kampagnenrabatt ZKA1 nur zu, wenn eine Kampagne gefunden wurde, der Auftrag keine Freilieferung ist und die Position nicht abgesagt ist. Nach einem Kampagnenstart bewertet der Report mit Berechtigung Z_REPRICE alle offenen Aufträge der Selektion neu; ohne Aufträge endet er mit Hinweis. Aufträge mit Liefersperre Z7 überspringt er, gesperrte Aufträge meldet er als Fehler. Für jeden anderen hält er den bisherigen ZKA1-Wert fest und führt die Preisfindung per BAPI mit der gewählten Preisfindungsart aus; im Testlauf nur simuliert und ohne neue Werte. Fehler führen zum Verwerfen. Im Echtlauf schreibt er die neuen Preise fest, liest Nettowert und ZKA1 neu und berechnet die prozentuale Abweichung. Überschreitet sie den Grenzwert, setzt er die Liefersperre Z7 zur Preisprüfung. Aufträge mit geändertem Nettowert werden gesammelt und am Ende über die Verbuchung protokolliert. Zum Schluss zeigt er die Ergebnisliste.",
+ "verboten": [
+  "zsd_reprice_f01.abap:126 — kein Fachsatz „Aufträge mit zu großer Abweichung behalten ihre alten Preise“: die neuen Preise sind zu diesem Zeitpunkt bereits festgeschrieben, Z7 sperrt nur die Lieferung",
+  "rv61a905.abap:13 — kein Fachsatz „die Bedingung berechnet den Kampagnenrabatt“: sie entscheidet nur, ob die Kondition ZKA1 gilt; der Wert kommt aus den Konditionssätzen",
+  "zsd_reprice.abap:77 — kein Fachsatz „jede Neubewertung wird sofort protokolliert“: das Protokoll wird erst nach allen Aufträgen gesammelt verbucht; die Auftragsänderungen sind dann schon einzeln festgeschrieben",
+  "zsd_reprice_f01.abap:92 — kein Fachsatz „der Testlauf zeigt die neuen Preise“: die Simulation liefert keine Werte, neuer Nettowert und ZKA1 bleiben leer"
+ ],
+ "saetze": [
+  {
+   "id": "BM-018-B01",
+   "soll": "Bei der Preisfindung eines Kundenauftrags wird die Kundenkategorie (Attribut 1 des Auftraggebers) als zusätzliches Kopfmerkmal übergeben.",
+   "zeilen": [
+    98,
+    100,
+    101
+   ],
+   "code": [
+    "98:   SELECT SINGLE katr1 FROM kna1 INTO lv_katr1",
+    "100:   IF sy-subrc = 0.",
+    "101:     tkomk-zzkatr = lv_katr1."
+   ],
+   "engine": [
+    "katr1 des Kunden wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-018-B02",
+   "soll": "Webshop-Aufträge (Auftragsart ZWEB) erhalten unabhängig vom Kundenstamm die Kategorie W.",
+   "zeilen": [
+    109,
+    110
+   ],
+   "code": [
+    "109:   IF vbak-auart = 'ZWEB'.",
+    "110:     tkomk-zzkatr = 'W'."
+   ],
+   "engine": [
+    "Für Auftragsarten mit dem Wert ZWEB wird die tkomk-zzkatr auf W gesetzt.",
+    "Auftragsarten mit dem Wert ZWEB setzen die tkomk-zzkatr auf W."
+   ]
+  },
+  {
+   "id": "BM-018-B03",
+   "soll": "Für jede Position wird die erste Stufe der Produkthierarchie aus den Vertriebsdaten des Materials übergeben.",
+   "zeilen": [
+    126,
+    130
+   ],
+   "code": [
+    "126:   SELECT SINGLE prodh FROM mvke INTO lv_prodh",
+    "130:   tkomp-zzprodh1 = lv_prodh(5)."
+   ],
+   "engine": [
+    "prodh des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-018-B04",
+   "soll": "Gibt es für Verkaufsorganisation und Produkthierarchie am Preisdatum eine gültige Kampagne, wird die mit der höchsten Priorität als Positionsmerkmal übergeben, sonst bleibt die Kampagne leer.",
+   "zeilen": [
+    134,
+    142,
+    143
+   ],
+   "code": [
+    "134:   SELECT * FROM zsd_kampagne INTO ls_kamp",
+    "142:   IF sy-subrc = 0.",
+    "143:     tkomp-zzkampagne = ls_kamp-kampagne."
+   ],
+   "engine": [
+    "Es werden Sätze aus zsd_kampagne selektiert."
+   ]
+  },
+  {
+   "id": "BM-018-B05",
+   "soll": "Der Kampagnenrabatt greift nur bei gefundener Kampagne, nicht bei Freilieferungen (ZFD) und nicht bei abgesagten Positionen.",
+   "zeilen": [
+    155,
+    156,
+    157,
+    158
+   ],
+   "code": [
+    "155:   CHECK komp-zzkampagne IS NOT INITIAL.",
+    "156:   CHECK komk-auart <> 'ZFD'.",
+    "157:   CHECK komp-abgru IS INITIAL.",
+    "158:   sy-subrc = 0."
+   ],
+   "engine": [
+    "Nur Eine nicht leere komp-zzkampagne gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Nur Auftragsarten ungleich ZFD gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Nur Eine leere komp-abgru gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Die sy-subrc wird auf 0 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-018-B06",
+   "soll": "Die Neubewertung ist nur mit der Berechtigung Z_REPRICE (Ändern) möglich.",
+   "zeilen": [
+    57,
+    59,
+    60
+   ],
+   "code": [
+    "57:   AUTHORITY-CHECK OBJECT 'Z_REPRICE'",
+    "59:   IF sy-subrc <> 0.",
+    "60:     MESSAGE e801."
+   ],
+   "engine": [
+    "Die Berechtigung auf Z_REPRICE wird geprüft.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-018-B07",
+   "soll": "Neu bewertet werden Kundenaufträge der Selektion, die weder vollständig erledigt noch vollständig abgesagt sind; ohne Treffer endet der Report mit einem Hinweis.",
+   "zeilen": [
+    64,
+    65,
+    185
+   ],
+   "code": [
+    "64:   IF gt_auftrag IS INITIAL.",
+    "65:     MESSAGE s802.",
+    "185:   SELECT k~vbeln k~knumv k~netwr k~waerk k~kunnr k~lifsk"
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen.",
+    "Es werden Aufträge selektiert."
+   ]
+  },
+  {
+   "id": "BM-018-B08",
+   "soll": "Aufträge, die bereits die Liefersperre Z7 tragen, werden nicht erneut bewertet.",
+   "zeilen": [
+    216
+   ],
+   "code": [
+    "216:   IF is_auftrag-lifsk = 'Z7'."
+   ],
+   "engine": [
+    "Für Sperrkennzeichen mit dem Wert Z7 wird die Status auf I gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "Bei is_auftrag-lifsk gleich Z7 wird der Block verlassen.",
+    "Sperrkennzeichen mit dem Wert Z7 setzen die Status auf I."
+   ]
+  },
+  {
+   "id": "BM-018-B09",
+   "soll": "Vor der Neubewertung wird der bisherige Kampagnenrabatt ZKA1 des Auftrags festgehalten.",
+   "zeilen": [
+    223,
+    340
+   ],
+   "code": [
+    "223:   PERFORM konv_summe USING is_auftrag-knumv 'ZKA1'",
+    "340:   SELECT SUM( kwert ) FROM konv INTO cv_summe"
+   ],
+   "engine": [
+    "Das Unterprogramm konv_summe wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird konv_summe aufgerufen und ENQUEUE_EVVBAKE aufgerufen.",
+    "Es werden Sätze aus konv selektiert."
+   ]
+  },
+  {
+   "id": "BM-018-B10",
+   "soll": "Ein Auftrag in Bearbeitung wird mit Fehler übersprungen.",
+   "zeilen": [
+    226,
+    233
+   ],
+   "code": [
+    "226:   CALL FUNCTION 'ENQUEUE_EVVBAKE'",
+    "233:   IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Es wird konv_summe aufgerufen und ENQUEUE_EVVBAKE aufgerufen.",
+    "Der Funktionsbaustein ENQUEUE_EVVBAKE wird aufgerufen.",
+    "Ohne Treffer wird die Status auf E gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die Status auf E."
+   ]
+  },
+  {
+   "id": "BM-018-B11",
+   "soll": "Die Preisfindung des Auftrags wird mit der gewählten Preisfindungsart neu ausgeführt, im Testlauf nur simuliert.",
+   "zeilen": [
+    243
+   ],
+   "code": [
+    "243:   CALL FUNCTION 'BAPI_SALESORDER_CHANGE'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAPI_SALESORDER_CHANGE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-018-B12",
+   "soll": "Meldet die Neubewertung einen Fehler oder Abbruch, wird verworfen und der Auftrag mit der Meldung als fehlerhaft ausgewiesen.",
+   "zeilen": [
+    252,
+    255,
+    256
+   ],
+   "code": [
+    "252:   LOOP AT lt_ret INTO ls_ret WHERE type CA 'EA'.",
+    "255:   IF sy-subrc = 0.",
+    "256:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "engine": [
+    "Jede Zeile aus lt_ret wird einzeln verarbeitet.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen, die Status auf E gesetzt, DEQUEUE_EVVBAKE aufgerufen, eine Zeile aufgenommen und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf E gesetzt.",
+    "sy-subrc mit dem Wert 0 setzen die Status auf E."
+   ]
+  },
+  {
+   "id": "BM-018-B13",
+   "soll": "Im Testlauf wird die Simulation verworfen und nur „Simulation ohne Fehler“ ausgewiesen, ohne neue Werte.",
+   "zeilen": [
+    266,
+    268
+   ],
+   "code": [
+    "266:   IF p_test = abap_true.",
+    "268:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "engine": [
+    "Für p_test mit dem Wert abap_true wird BAPI_TRANSACTION_ROLLBACK aufgerufen, die Status auf I gesetzt, DEQUEUE_EVVBAKE aufgerufen, eine Zeile aufgenommen und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf I gesetzt.",
+    "p_test mit dem Wert abap_true setzen die Status auf I."
+   ]
+  },
+  {
+   "id": "BM-018-B14",
+   "soll": "Im Echtlauf werden die neuen Preise festgeschrieben und danach neuer Nettowert und neuer Kampagnenrabatt gelesen.",
+   "zeilen": [
+    278,
+    289,
+    291
+   ],
+   "code": [
+    "278:   CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "289:   SELECT SINGLE netwr knumv FROM vbak INTO (ls_out-netwr_neu, lv_knumv)",
+    "291:   PERFORM konv_summe USING lv_knumv 'ZKA1'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "netwr knumv des Auftrags wird gelesen.",
+    "Das Unterprogramm konv_summe wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-018-B15",
+   "soll": "Die Abweichung ist die Änderung des Nettowerts in Prozent des alten Nettowerts; bei altem Nettowert null bleibt sie null.",
+   "zeilen": [
+    294,
+    295
+   ],
+   "code": [
+    "294:   IF ls_out-netwr_alt <> 0.",
+    "295:     ls_out-abw_proz = ( ls_out-netwr_neu - ls_out-netwr_alt ) * 100"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-018-B16",
+   "soll": "Liegt die Abweichung betragsmäßig über dem Grenzwert, erhält der Auftrag die Liefersperre Z7 zur Preisprüfung; der Auftrag gilt dann als Warnung, gelingt die Sperre nicht, als Fehler.",
+   "zeilen": [
+    299,
+    300,
+    302,
+    362
+   ],
+   "code": [
+    "299:   IF abs( ls_out-abw_proz ) > p_maxd.",
+    "300:     PERFORM preissperre_setzen USING is_auftrag-vbeln",
+    "302:     IF lv_gesperrt = abap_true.",
+    "362:   CALL FUNCTION 'BAPI_SALESORDER_CHANGE'"
+   ],
+   "engine": [
+    "Für abs( ls_out-abw_proz ) > p_maxd wird preissperre_setzen aufgerufen.",
+    "Für abs( ls_out-abw_proz ) > p_maxd wird preissperre_setzen aufgerufen, sonst die Status auf S gesetzt.",
+    "Das Unterprogramm preissperre_setzen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Für lv_gesperrt mit dem Wert abap_true wird die Status auf W gesetzt.",
+    "Für lv_gesperrt mit dem Wert abap_true wird die Status auf W gesetzt, sonst die Status auf E gesetzt.",
+    "lv_gesperrt mit dem Wert abap_true setzen die Status auf W.",
+    "Der Funktionsbaustein BAPI_SALESORDER_CHANGE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-018-B17",
+   "soll": "Die Liefersperre wird nur ohne Fehlermeldung festgeschrieben, sonst verworfen.",
+   "zeilen": [
+    370,
+    371,
+    372,
+    374
+   ],
+   "code": [
+    "370:   READ TABLE lt_ret TRANSPORTING NO FIELDS WITH KEY type = 'E'.",
+    "371:   IF sy-subrc = 0.",
+    "372:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "374:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Für andere sy-subrc wird BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-018-B18",
+   "soll": "Aufträge mit geändertem Nettowert werden mit altem und neuem Wert, Preisfindungsart und Benutzer zum Protokoll vorgemerkt.",
+   "zeilen": [
+    314
+   ],
+   "code": [
+    "314:   IF ls_out-netwr_neu <> ls_out-netwr_alt."
+   ],
+   "engine": [
+    "Für ls_out-netwr_neu ungleich ls_out-netwr_alt wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-018-B19",
+   "soll": "Nach allen Aufträgen werden im Echtlauf die vorgemerkten Protokollsätze gemeinsam über die Verbuchung geschrieben; scheitert das Schreiben, bricht die Verbuchung ab.",
+   "zeilen": [
+    73,
+    74,
+    77,
+    170,
+    172
+   ],
+   "code": [
+    "73:   IF p_test = abap_false AND gt_log IS NOT INITIAL.",
+    "74:     CALL FUNCTION 'Z_SD_REPRICE_LOG_UPD' IN UPDATE TASK",
+    "77:     COMMIT WORK.",
+    "170:   MODIFY zsd_reprice_log FROM TABLE it_log.",
+    "172:     MESSAGE a803(zsd)."
+   ],
+   "engine": [
+    "Für p_test = abap_false AND gt_log IS NOT INITIAL wird Z_SD_REPRICE_LOG_UPD aufgerufen und COMMIT WORK ausgeführt.",
+    "Der Baustein Z_SD_REPRICE_LOG_UPD wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 77.",
+    "Es wird Z_SD_REPRICE_LOG_UPD aufgerufen und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt.",
+    "Eine Zeile in zsd_reprice_log wird eingefügt oder überschrieben.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-018-B20",
+   "soll": "Zum Schluss wird je Auftrag eine Liste mit altem und neuem Nettowert, Abweichung, Kampagnenrabatt vorher/nachher, Status und Text angezeigt.",
+   "zeilen": [
+    389,
+    399
+   ],
+   "code": [
+    "389:       cl_salv_table=>factory( IMPORTING r_salv_table = lo_alv",
+    "399:   lo_alv->display( )."
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode factory von cl_salv_table wird nach cl_salv_table übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

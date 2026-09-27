@@ -1,0 +1,212 @@
+{
+ "id": "BM-074",
+ "titel": "IDoc-Eingang Prüfergebnisse aus dem LIMS mit optionaler Qualitätsmeldung",
+ "prozess": "Das Labor-Informationssystem schickt Prüfergebnisse als IDoc; ALE ruft die Eingangsverarbeitung mit einem Paket von IDocs auf. Für jedes IDoc liest sie Kopf und Merkmalsergebnisse aus den Segmenten; ein fremder Nachrichtentyp bricht mit Ausnahme ab. Sie prüft, ob Kopf und Merkmale vorhanden sind, ob das Prüflos existiert, ob noch kein Verwendungsentscheid vorliegt und ob der Vorgang zum Prüflos gehört. Scheitert eine Prüfung, erhält das IDoc Status 51 mit dem Grund und die Verarbeitung geht mit dem nächsten weiter. Sonst erfasst sie die Merkmalsergebnisse mit Mittelwert und Bewertung über die BAPI. Scheitert das, rollt sie die offene LUW zurück und setzt Status 51. Hat das LIMS eine Meldung angefordert und ist ein Merkmal zurückgewiesen, legt sie zum Prüflos eine Qualitätsmeldung an und sichert sie; ein Fehler dabei ändert am Erfolg des IDocs nichts. Erfolgreiche IDocs erhalten Status 53; die Statussätze gehen an ALE zurück, die das Festschreiben übernimmt.",
+ "verboten": [
+  "idoc_input_zqmres.abap:57 — kein Fachsatz „Ein Fehler betrifft nur das eigene IDoc“ (ROLLBACK WORK verwirft bei Massenverarbeitung auch noch nicht festgeschriebene Änderungen vorheriger IDocs desselben Pakets, deren Status bereits 53 ist)",
+  "gesamte Scheibe — kein Fachsatz „Der Verwendungsentscheid wird gesetzt“ (es werden nur Ergebnisse erfasst)",
+  "lzqm_limsf01.abap:115 — kein Fachsatz „Die Qualitätsmeldung ist nachweislich gesichert“ (das RETURN des Sicherns wird nicht geprüft)",
+  "lzqm_limsf01.abap:35 — kein Fachsatz „Die interne Vorgangsnummer wird an die BAPI übergeben“ (sie wird nur zur Existenzprüfung gelesen; übergeben wird die Vorgangsnummer aus dem IDoc)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-074-B01",
+   "soll": "Die Eingangsverarbeitung erhält ein Paket von LIMS-IDocs und verarbeitet sie einzeln; ein IDoc eines anderen Nachrichtentyps bricht die Verarbeitung mit der Ausnahme WRONG_FUNCTION_CALLED ab.",
+   "zeilen": [
+    56,
+    57,
+    58
+   ],
+   "code": [
+    "56:   LOOP AT idoc_contrl.",
+    "57:     IF idoc_contrl-mestyp <> 'ZQMRES'.",
+    "58:       RAISE wrong_function_called."
+   ],
+   "engine": [
+    "Jede Zeile aus idoc_contrl wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-074-B02",
+   "soll": "Aus den Segmenten werden der Kopf (Prüflos, Vorgang, Labor, Meldungswunsch) und die Merkmalsergebnisse (Merkmalnummer, Mittelwert, Bewertung) übernommen; unbekannte Segmente werden ignoriert.",
+   "zeilen": [
+    63,
+    64
+   ],
+   "code": [
+    "63:     LOOP AT idoc_data WHERE docnum = idoc_contrl-docnum.",
+    "64:       CASE idoc_data-segnam."
+   ],
+   "engine": [
+    "Jede Zeile aus idoc_data wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-074-B03",
+   "soll": "Fehlen Kopf oder Merkmale, gilt das IDoc als unvollständig.",
+   "zeilen": [
+    114
+   ],
+   "code": [
+    "114:   IF gs_kopf-prueflos IS INITIAL OR gt_pos IS INITIAL."
+   ],
+   "engine": [
+    "Für gs_kopf-prueflos IS INITIAL OR gt_pos IS INITIAL wird die gv_msg auf IDoc ohne Kopf oder ohne Merkmale gesetzt und der Block verlassen.",
+    "gs_kopf-prueflos IS INITIAL OR gt_pos IS INITIAL setzen die gv_msg auf IDoc ohne Kopf oder ohne Merkmale."
+   ]
+  },
+  {
+   "id": "BM-074-B04",
+   "soll": "Ein unbekanntes Prüflos wird mit „Prueflos … unbekannt“ abgelehnt.",
+   "zeilen": [
+    119,
+    121
+   ],
+   "code": [
+    "119:   SELECT SINGLE * FROM qals INTO ls_qals",
+    "121:   IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Es werden Sätze aus qals selektiert.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-074-B05",
+   "soll": "Hat das Prüflos bereits einen Verwendungsentscheid, werden keine Ergebnisse mehr angenommen.",
+   "zeilen": [
+    127,
+    130
+   ],
+   "code": [
+    "127:   SELECT SINGLE vcode FROM qave INTO lv_vcode",
+    "130:   IF sy-subrc = 0."
+   ],
+   "engine": [
+    "vcode des Satzes wird gelesen.",
+    "Bei Treffer wird der Block verlassen.",
+    "Bei Treffer wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-074-B06",
+   "soll": "Der gemeldete Vorgang muss zum Prüflos gehören, sonst wird das IDoc abgelehnt.",
+   "zeilen": [
+    135,
+    138
+   ],
+   "code": [
+    "135:   SELECT SINGLE vorglfnr FROM qapo INTO gv_vorglfnr",
+    "138:   IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "vorglfnr des Satzes wird gelesen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-074-B07",
+   "soll": "Ein abgelehntes IDoc erhält Status 51 mit dem Ablehnungsgrund und das Paketergebnis wird auf Fehler gesetzt; es geht mit dem nächsten IDoc weiter.",
+   "zeilen": [
+    76,
+    77,
+    79
+   ],
+   "code": [
+    "76:     IF lv_ok = abap_false.",
+    "77:       PERFORM status_setzen TABLES idoc_status",
+    "79:       workflow_result = '99999'."
+   ],
+   "engine": [
+    "Für lv_ok mit dem Wert abap_false wird status_setzen aufgerufen und die workflow_result auf 99999 gesetzt.",
+    "Das Unterprogramm status_setzen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird status_setzen aufgerufen und die workflow_result auf 99999 gesetzt.",
+    "lv_ok mit dem Wert abap_false setzen die workflow_result auf 99999."
+   ]
+  },
+  {
+   "id": "BM-074-B08",
+   "soll": "Die Merkmalsergebnisse werden mit Mittelwert und Bewertung als abgeschlossen und bewertet zum Prüflosvorgang erfasst, mit einem Vermerk des Labors.",
+   "zeilen": [
+    83,
+    158,
+    171
+   ],
+   "code": [
+    "83:     PERFORM ergebnisse_buchen CHANGING lv_ok.",
+    "158:   LOOP AT gt_pos INTO ls_pos.",
+    "171:   CALL FUNCTION 'BAPI_INSPOPER_RECORDRESULTS'"
+   ],
+   "engine": [
+    "Das Unterprogramm ergebnisse_buchen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Jede Zeile aus gt_pos wird einzeln verarbeitet.",
+    "Der Code übergibt gs_kopf-prueflos an BAPI_INSPOPER_RECORDRESULTS und übernimmt dessen Ausgabe nach ls_return.",
+    "Das konvertierte Ergebnis wird in ls_return übernommen."
+   ]
+  },
+  {
+   "id": "BM-074-B09",
+   "soll": "Scheitert die Erfassung, wird die offene Datenbank-LUW zurückgerollt und das IDoc erhält Status 51 mit dem BAPI-Fehlertext.",
+   "zeilen": [
+    84,
+    85,
+    86,
+    181
+   ],
+   "code": [
+    "84:     IF lv_ok = abap_false.",
+    "85:       ROLLBACK WORK.",
+    "86:       PERFORM status_setzen TABLES idoc_status",
+    "181:   IF ls_return-type CA 'EA'."
+   ],
+   "engine": [
+    "Für lv_ok mit dem Wert abap_false wird ROLLBACK WORK ausgeführt, status_setzen aufgerufen und die workflow_result auf 99999 gesetzt.",
+    "Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert.",
+    "Es wird ROLLBACK WORK ausgeführt, status_setzen aufgerufen und die workflow_result auf 99999 gesetzt.",
+    "Das Unterprogramm status_setzen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "lv_ok mit dem Wert abap_false setzen die workflow_result auf 99999.",
+    "Für ls_return-type CA 'EA' wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-074-B10",
+   "soll": "Wünscht das LIMS eine Meldung und ist mindestens ein Merkmal zurückgewiesen, wird zum Prüflos eine Qualitätsmeldung der Art Z3 angelegt und gesichert; scheitert das Anlegen, bleibt das IDoc trotzdem erfolgreich.",
+   "zeilen": [
+    92,
+    201,
+    210,
+    215
+   ],
+   "code": [
+    "92:     IF gs_kopf-meldung = 'X' AND line_exists( gt_pos[ bewertung = 'R' ] ).",
+    "201:   CALL FUNCTION 'BAPI_QUALNOT_CREATE'",
+    "210:   IF line_exists( lt_return[ type = 'E' ] ).",
+    "215:   CALL FUNCTION 'BAPI_QUALNOT_SAVE'"
+   ],
+   "engine": [
+    "Für gs_kopf-meldung = 'X' AND line_exists( gt_pos[ bewertung = 'R' ] ) wird qmeldung_anlegen aufgerufen.",
+    "Der Code übergibt gc_qmart an BAPI_QUALNOT_CREATE und übernimmt dessen Ausgabe nach ls_export.",
+    "Das konvertierte Ergebnis wird in ls_export übernommen.",
+    "Für line_exists( lt_return[ type = 'E' ] ) wird der Block verlassen.",
+    "Der Funktionsbaustein BAPI_QUALNOT_SAVE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-074-B11",
+   "soll": "Erfolgreich verarbeitete IDocs erhalten Status 53 mit der Anzahl erfasster Ergebnisse und gegebenenfalls der Meldungsnummer.",
+   "zeilen": [
+    96,
+    226
+   ],
+   "code": [
+    "96:     PERFORM status_setzen TABLES idoc_status",
+    "226: FORM status_setzen TABLES ct_status STRUCTURE bdidocstat"
+   ],
+   "engine": [
+    "Das Unterprogramm status_setzen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

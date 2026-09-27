@@ -1,0 +1,65 @@
+{
+ "id": "BM-050",
+ "urteile": [
+  {
+   "id": "BM-050-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus aufk mit dem eingegebenen Buchungskreis' – Auftragstyp, Auftragsarten und Auftragsnummern fehlen."
+  },
+  {
+   "id": "BM-050-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Ausgabe 'Keine Innenauftraege selektiert.' und Verlassen entspricht dem Soll; mehrfach und mit Leerfloskel."
+  },
+  {
+   "id": "BM-050-B03",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "STATUS_CHECK-Aufruf und bei Fehlschlag Ausgabe 'nicht freigegeben - uebersprungen' je Auftrag – fachlich dasselbe; Bedingung nur als 'Ohne Treffer', viele Wiederholungen und Leerfloskeln."
+  },
+  {
+   "id": "BM-050-B04",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Die Anlage wird über die Transaktion KO88 angestoßen' – KO88 ist die Auftragsabrechnung, keine Anlage; Periode, Geschäftsjahr und Testlauf-Schalter fehlen."
+  },
+  {
+   "id": "BM-050-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Ausgaben 'Fehler'/'abgerechnet' erkannt, aber die Bedingung (Fehlermeldung in der Rückmeldung) nur als 'passende Zeile gesucht'; viele Wiederholungen."
+  },
+  {
+   "id": "BM-050-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Ausgabe der Zähler nur als lv_ok/lv_err/p_test mit Beschriftungen, zerstückelt in Einzelsätze mit Leerfloskeln."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

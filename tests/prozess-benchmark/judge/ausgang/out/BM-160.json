@@ -1,0 +1,164 @@
+{
+ "id": "BM-160",
+ "urteile": [
+  {
+   "id": "BM-160-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"pernr des Satzes wird gelesen\"; Abweisung ohne Zuordnung fehlt."
+  },
+  {
+   "id": "BM-160-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Abweisung fremder Personalnummern."
+  },
+  {
+   "id": "BM-160-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "reqid lesen und Meldung bei Treffer erkannt; offener Antrag und Abweisung (Ausnahme) nicht benannt."
+  },
+  {
+   "id": "BM-160-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "validate/ADDR_POSTAL_CODE_CHECK und Meldung erkannt (\"Wirkung nicht belegt\"); Prüfkriterien fehlen."
+  },
+  {
+   "id": "BM-160-B05",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"create_uuid_c32_static wird aufgerufen, Wirkung nicht belegt\"; Speichern mit Status NEU nicht ausgesagt."
+  },
+  {
+   "id": "BM-160-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "needs_approval und Status GENEHMIGUNG erkannt; Kriterien Land/Abgerechnet-bis nicht benannt."
+  },
+  {
+   "id": "BM-160-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Status GENEHMIGUNG mit SWE_EVENT_CREATE und FEHLER bei Fehlschlag technisch vollständig."
+  },
+  {
+   "id": "BM-160-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "apply und Status UEBERNOMMEN/FEHLER erkannt, \"Wirkung nicht belegt\"; \"Sonst setzen die Status\"."
+  },
+  {
+   "id": "BM-160-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "Statusänderung über Verbuchung mit COMMIT erkannt; Bearbeiter/Datum und Rückgabe nicht benannt; \"Die Status\"."
+  },
+  {
+   "id": "BM-160-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Ohne Treffer wird eine Meldung ausgegeben\"; Abbruch der Verbuchung nicht benannt."
+  },
+  {
+   "id": "BM-160-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus zess_addr_req selektiert\"; Abweisung unbekannter/nicht offener Anträge fehlt."
+  },
+  {
+   "id": "BM-160-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "HR_READ_INFOTYPE und P_ORGIN-Prüfung erkannt; Schreibrecht des Genehmigers und Abweisung fehlen."
+  },
+  {
+   "id": "BM-160-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "apply, ABGELEHNT, Verbuchung und COMMIT erkannt; unbekannte Entscheidung fehlt; \"Die Status\"."
+  },
+  {
+   "id": "BM-160-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur BAPI_EMPLOYEE_ENQUEUE; Wiederholung mit Wartezeit und Scheitern fehlen."
+  },
+  {
+   "id": "BM-160-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "HR_INFOTYPE_OPERATION 0006, DEQUEUE, HR_READ_SUBTYPE erkannt; neue Hauptanschrift ab Umzugsdatum nicht benannt."
+  },
+  {
+   "id": "BM-160-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Schalter lesen, Verlassen wenn abgeschaltet, Versand erkannt; Bedingung Rückwirkung und Nachrichteninhalt fehlen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

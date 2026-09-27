@@ -1,0 +1,71 @@
+{
+ "id": "BM-161",
+ "titel": "IS-U: Verbrauch je Zähler aus aufeinanderfolgenden Ablesungen (EABL)",
+ "prozess": "Der Report wird mit einer Zählerauswahl und einem Pflichtzeitraum für das Ablesedatum gestartet. Er liest die Ablesungen dieser Zähler aus der IS-U-Ablesetabelle und sortiert sie je Zähler nach Datum. Beim Wechsel auf einen neuen Zähler wird die gemerkte Vorablesung verworfen. Ablesungen, deren Status nicht 1 ist, werden übergangen und dienen auch nicht als Vorablesung. Für jede weitere berücksichtigte Ablesung wird der Verbrauch als Differenz der Vorkommastellen des Zählerstands zur vorigen berücksichtigten Ablesung berechnet und mit Zähler, Ablesedatum und Stand ausgegeben. Die erste berücksichtigte Ablesung eines Zählers erscheint nicht in der Liste. Zählerüberläufe oder Gerätewechsel werden nicht erkannt, sodass negative Verbräuche möglich sind. Es wird nichts geschrieben.",
+ "verboten": [
+  "source.abap:33 — kein Fachsatz „die erste Ablesung eines Zählers wird mit Verbrauch ausgegeben“: ohne Vorablesung wird nur der Ausgangsstand gemerkt; auch ein echter Vorstand 0 gilt als „keine Vorablesung“",
+  "source.abap:34 — kein Fachsatz „Zählerüberlauf bzw. Zählerwechsel wird berücksichtigt“: die Differenz wird ohne Prüfung gebildet und kann negativ werden",
+  "gesamte Scheibe — kein Fachsatz „Ablesungen werden plausibilisiert, geschätzt oder zur Abrechnung freigegeben“: der Report liest und listet nur"
+ ],
+ "saetze": [
+  {
+   "id": "BM-161-B01",
+   "soll": "Es werden die Ablesungen der ausgewählten Zähler im eingegebenen Ablesezeitraum gelesen und je Zähler nach Ablesedatum sortiert.",
+   "zeilen": [
+    21
+   ],
+   "code": [
+    "21:   SELECT equnr adat v_zwstand ablstat"
+   ],
+   "engine": [
+    "Es werden Sätze aus eabl selektiert."
+   ]
+  },
+  {
+   "id": "BM-161-B02",
+   "soll": "Mit jedem neuen Zähler beginnt die Verbrauchsrechnung ohne Vorablesung.",
+   "zeilen": [
+    28
+   ],
+   "code": [
+    "28:     AT NEW equnr."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-161-B03",
+   "soll": "Nur Ablesungen mit Ablesestatus 1 werden berücksichtigt; alle anderen werden übergangen und zählen auch nicht als Vorablesung.",
+   "zeilen": [
+    32
+   ],
+   "code": [
+    "32:     CHECK gs_abl-ablstat = '1'."
+   ],
+   "engine": [
+    "Nur gs_abl-ablstat mit dem Wert 1 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-161-B04",
+   "soll": "Liegt eine Vorablesung vor, wird der Verbrauch als Differenz der Zählerstände (Vorkommastellen) berechnet und mit Zähler, Ablesedatum und Zählerstand ausgegeben.",
+   "zeilen": [
+    33,
+    34,
+    35
+   ],
+   "code": [
+    "33:     IF gv_vorstand IS NOT INITIAL.",
+    "34:       gv_verbr = gs_abl-v_zwstand - gv_vorstand.",
+    "35:       WRITE: / gs_abl-equnr, gs_abl-adat, gs_abl-v_zwstand, gv_verbr."
+   ],
+   "engine": [
+    "Mit einer nicht leeren gv_vorstand wird gs_abl-equnr ausgegeben, gs_abl-adat ausgegeben, gs_abl-v_zwstand ausgegeben und gv_verbr ausgegeben.",
+    "Bei Treffern werden gs_abl-equnr, gs_abl-adat, gs_abl-v_zwstand und gv_verbr als Liste ausgegeben.",
+    "gs_abl-equnr wird ausgegeben.",
+    "gs_abl-adat wird ausgegeben.",
+    "gs_abl-v_zwstand wird ausgegeben.",
+    "gv_verbr wird ausgegeben."
+   ]
+  }
+ ]
+}

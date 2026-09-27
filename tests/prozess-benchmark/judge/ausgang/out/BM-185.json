@@ -1,0 +1,50 @@
+{
+ "id": "BM-185",
+ "urteile": [
+  {
+   "id": "BM-185-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur CHANGEDOCUMENT_READ-Aufruf; Vertrag, Objekt und Ab-Datum fehlen."
+  },
+  {
+   "id": "BM-185-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Schleife über gt_cdred; Sortierung nicht gesagt."
+  },
+  {
+   "id": "BM-185-B03",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "Behauptet Ausgabe von Datum (udate) und Benutzer (username) je Änderung – im AT NEW sind diese Felder leer; Gruppenwechsel nicht erkannt."
+  },
+  {
+   "id": "BM-185-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Feldbezeichnung, alt, neu nur als ls_cd-Felder („5 ls_cd-ftext“)."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "satz": "ls_cd-udate wird ausgegeben. / ls_cd-username wird ausgegeben.",
+   "grund": "Suggeriert, dass je Änderung Datum und Benutzer ausgegeben werden; innerhalb AT NEW changenr sind sie initial (verbotener Schluss zu source.abap:28)."
+  }
+ ],
+ "soll_zweifel": []
+}

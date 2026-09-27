@@ -1,0 +1,75 @@
+{
+ "id": "BM-067",
+ "urteile": [
+  {
+   "id": "BM-067-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Sätze aus qmel selektiert'; Meldungsart M1, Planungswerke und 'ohne Auftrag' fehlen."
+  },
+  {
+   "id": "BM-067-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Ausgabe 'Keine offenen Stoermeldungen ohne Auftrag' und Verlassen entspricht dem Soll."
+  },
+  {
+   "id": "BM-067-B03",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "'Ohne gs_mel-equnr wird gs_mel-qmnum ausgegeben und ohne Equipment - uebersprungen ausgegeben' – fachlich dasselbe, Feldnamen technisch."
+  },
+  {
+   "id": "BM-067-B04",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "Nur 'build_bdc ... Wirkung nicht belegt' – falsch, FORM build_bdc steht ab Zeile 91; Inhalt der Mappe (PM01, Meldungsbezug, Werk, Text) fehlt."
+  },
+  {
+   "id": "BM-067-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "'Die Anlage wird über die Transaktion IW31 angestoßen' – Auftragsanlage über IW31 richtig; Modus, synchrone Verbuchung und Sammeln der Meldungen fehlen."
+  },
+  {
+   "id": "BM-067-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "Ausgabe 'FEHLER:' mit Text bzw. 'verarbeitet' erkannt; Auslöser (Fehlermeldung) nur als 'passende Zeile'; 'eine Meldung wird ausgegeben' ist falsch (MESSAGE ... INTO gv_text)."
+  },
+  {
+   "id": "BM-067-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Zähler nur als gv_ok/gv_err mit Beschriftungen, zerstückelt mit Leerfloskeln."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,67 @@
+{
+ "id": "BM-104",
+ "titel": "Gefahrstoffe ohne freigegebenes Sicherheitsdatenblatt je Sprache (STVARV-Schalter)",
+ "prozess": "Der Report wird mit einer optionalen Stoffauswahl und einer Sprache gestartet. Zuerst liest er den Schalter ZEHS_SDB_CHECK aus der Variablenpflege; ist dieser nicht auf X gesetzt, endet der Lauf sofort ohne Liste. Sonst ermittelt er alle nicht gelöschten realen Stoffe der Auswahl, zu denen in der gewählten Sprache kein Sicherheitsdatenblatt im Status freigegeben existiert. Jeder dieser Stoffe erscheint mit Stoff-ID, Satznummer und Sprache in einer Liste. Ein Zweig, der für diese Stoffe die Generierung eines Sicherheitsdatenblatts anstoßen würde, ist mit IF 1 = 2 stillgelegt und wird nie ausgeführt. Es wird nichts geschrieben.",
+ "verboten": [
+  "source.abap:30 — kein Fachsatz „für fehlende Stoffe wird ein Sicherheitsdatenblatt angefordert oder generiert“: der Zweig ist mit IF 1 = 2 tot, SDB_ANFORDERN wird nie ausgeführt",
+  "source.abap:36 — kein Knoten und kein Fachsatz zum Aufruf des Generators ZEHS_SDB_GENERATE: das FORM wird nie erreicht",
+  "gesamte Scheibe — kein Fachsatz „Sicherheitsdatenblätter werden versandt oder freigegeben“: der Report liest und listet nur"
+ ],
+ "saetze": [
+  {
+   "id": "BM-104-B01",
+   "soll": "Der Report liest den Aktivierungsschalter ZEHS_SDB_CHECK aus der Variablenpflege.",
+   "zeilen": [
+    14
+   ],
+   "code": [
+    "14:   SELECT SINGLE low FROM tvarvc INTO lv_aktiv"
+   ],
+   "engine": [
+    "low des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-104-B02",
+   "soll": "Ist der Schalter nicht gesetzt, endet der Lauf ohne Ausgabe.",
+   "zeilen": [
+    16,
+    17
+   ],
+   "code": [
+    "16:   IF lv_aktiv <> 'X'.",
+    "17:     STOP."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-104-B03",
+   "soll": "Es werden alle nicht gelöschten realen Stoffe der Selektion ermittelt, zu denen in der gewählten Sprache kein freigegebenes Sicherheitsdatenblatt existiert.",
+   "zeilen": [
+    19
+   ],
+   "code": [
+    "19:   SELECT * FROM estrh AS s INTO TABLE lt_spec"
+   ],
+   "engine": [
+    "Es werden Sätze aus estrh mit dem eingegebenen d~langu selektiert."
+   ]
+  },
+  {
+   "id": "BM-104-B04",
+   "soll": "Jeder dieser Stoffe wird mit Stoff-ID, Satznummer und Sprache als „kein freigegebenes SDB“ gelistet.",
+   "zeilen": [
+    28
+   ],
+   "code": [
+    "28:     WRITE: / ls_spec-subid, ls_spec-recn, p_langu,"
+   ],
+   "engine": [
+    "Bei Treffern werden ls_spec-subid, ls_spec-recn, p_langu und kein freigegebenes SDB als Liste ausgegeben.",
+    "ls_spec-subid wird ausgegeben.",
+    "ls_spec-recn wird ausgegeben.",
+    "p_langu wird ausgegeben."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,240 @@
+{
+ "id": "BM-077",
+ "urteile": [
+  {
+   "id": "BM-077-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Die Screenfolge wird beendet' zum Beenden; Scan von Auftrag/Vorgang und Personalnummer fehlen."
+  },
+  {
+   "id": "BM-077-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'pernr des Satzes wird gelesen' und Meldung ohne Treffer; heute gültiger Organisationssatz und Zurückweisung mit Fehler nicht fachlich."
+  },
+  {
+   "id": "BM-077-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Zerlegen des Barcodes."
+  },
+  {
+   "id": "BM-077-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus afko selektiert' und Verlassen ohne Treffer; gelesene Auftragsdaten und 'Scan ungültig' nicht fachlich."
+  },
+  {
+   "id": "BM-077-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "STATUS_CHECK und Verlassen ohne Treffer; dass der Auftrag freigegeben sein muss, wird nicht gesagt."
+  },
+  {
+   "id": "BM-077-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus afvc (als ABAP-Fragment) und Verlassen ohne Treffer; Berechnung der offenen Menge fehlt."
+  },
+  {
+   "id": "BM-077-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'arbpl des Satzes' und 'maktx des Satzes wird gelesen' – Arbeitsplatz und Materialkurztext nur als Feldnamen."
+  },
+  {
+   "id": "BM-077-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Sätze aus afvc selektiert'; Ermittlung der höchsten Vorgangsnummer und 'letzter Vorgang' fehlen."
+  },
+  {
+   "id": "BM-077-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Für gv_ok = abap_false wird eine Meldung ausgegeben' – Zurückweisung mit Fehler und Stehenbleiben des Scanbilds nicht gesagt."
+  },
+  {
+   "id": "BM-077-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus resb und komponenten_lesen genannt; 'Die Screenfolge wird beendet' ist falsch (LEAVE TO SCREEN 0200 zeigt das Mengenbild), 'komponenten_lesen ... nicht belegt' ebenfalls."
+  },
+  {
+   "id": "BM-077-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch"
+   ],
+   "kurz": "screen-input 1 im letzten Vorgang, sonst 0 technisch richtig; 'Eine Zeile in SCREEN wird ... Angekündigt, nicht persistiert ... kein COMMIT WORK' ist sachfremd und falsch."
+  },
+  {
+   "id": "BM-077-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen der Charge, Meldung ohne Treffer und Übernahme in gt_komp genannt; Existenz für Material/Werk nicht fachlich; 'nicht persistiert, kein COMMIT' für eine interne Tabelle ist falsch."
+  },
+  {
+   "id": "BM-077-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Für gutmenge <= 0 AND ausschuss <= 0 wird eine Meldung ausgegeben' – Logik richtig, Pflicht zur Mengenerfassung nur technisch."
+  },
+  {
+   "id": "BM-077-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Grenze offen * 1.1 erkannt, aber Fehler und Warnung nur als 'eine Meldung, sonst eine Meldung' – der Unterschied fehlt."
+  },
+  {
+   "id": "BM-077-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Für ausschuss > 0 AND grund IS INITIAL wird eine Meldung ausgegeben' – Logik richtig, Grund-Pflicht nur technisch."
+  },
+  {
+   "id": "BM-077-B16",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "'Die Screenfolge wird beendet' widerspricht LEAVE TO SCREEN 0100 (Rückkehr zum Scanbild)."
+  },
+  {
+   "id": "BM-077-B17",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "Nur 'rueckmelden ... Wirkung nicht belegt' – falsch, die FORM ist mitgeliefert; Aufbau der Rückmeldung fehlt."
+  },
+  {
+   "id": "BM-077-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife über Komponenten und Bewegungsart 261 genannt; anteilige Menge und Charge fehlen; 'Die ls_gm-move_type' falscher Artikel."
+  },
+  {
+   "id": "BM-077-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Bewegungsart 101 bei letztem Vorgang und Gutmenge > 0 erkannt; 'Wareneingang' und Lagerort nicht fachlich benannt."
+  },
+  {
+   "id": "BM-077-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'BAPI_PRODORDCONF_CREATE_TT wird aufgerufen'; gemeinsame Buchung und Verknüpfung mit Warenbewegungen fehlen."
+  },
+  {
+   "id": "BM-077-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback und Meldung bei Fehler sowie Verlassen erkannt; Popup und Verbleib im Mengenbild fehlen."
+  },
+  {
+   "id": "BM-077-B22",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'BAPI_TRANSACTION_COMMIT wird aufgerufen'; Warten und Merken der Rückmeldenummer fehlen."
+  },
+  {
+   "id": "BM-077-B23",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Etikettendruck bei Endrückmeldung und Hinweis bei Fehlschlag technisch erkannt ('Ohne Treffer wird eine Meldung ausgegeben')."
+  },
+  {
+   "id": "BM-077-B24",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "'Eine Meldung wird ausgegeben' trifft die Erfolgsmeldung; 'Die Screenfolge wird beendet' ist falsch (Rückkehr zum Scanbild 0100)."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

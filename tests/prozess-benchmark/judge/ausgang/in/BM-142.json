@@ -1,0 +1,78 @@
+{
+ "id": "BM-142",
+ "titel": "Zeiterfassungsterminal: Ausweisnummer prüfen und Personalnummer zurückgeben",
+ "prozess": "Ein Zeiterfassungsterminal ruft beim Stempeln per RFC diesen Baustein mit der gelesenen Ausweisnummer und dem Buchungstag auf. Zuerst wird die Personalnummer gesucht, deren Ausweissatz (Infotyp 0050) am Buchungstag gilt. Wird keine gefunden, endet der Aufruf mit der Ausnahme „Ausweis unbekannt“. Danach wird der Beschäftigungsstatus am Buchungstag gelesen; ist er nicht „aktiv“ (auch wenn gar kein Satz existiert), wird die Personalnummer geleert und der Aufruf endet mit „Mitarbeiter nicht aktiv“. Sonst erhält das Terminal die Personalnummer. Der Baustein speichert selbst keine Zeitbuchung.",
+ "verboten": [
+  "gesamte Scheibe — kein Fachsatz „die Zeitbuchung wird gespeichert“ (der Baustein prüft nur, TEVEN wird nicht geschrieben)",
+  "source.abap:23 — kein Fachsatz „ohne Status-Satz wird der Mitarbeiter als aktiv behandelt“ — fehlt der Satz, ist der Status leer und die Anfrage wird als inaktiv abgewiesen",
+  "gesamte Scheibe — kein Fachsatz über eine Berechtigungsprüfung (es gibt keine)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-142-B01",
+   "soll": "Zur am Terminal gelesenen Ausweisnummer wird die Personalnummer ermittelt, deren Ausweissatz am Buchungstag gültig ist.",
+   "zeilen": [
+    15
+   ],
+   "code": [
+    "15:   SELECT SINGLE pernr FROM pa0050 INTO ev_pernr"
+   ],
+   "engine": [
+    "pernr des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-142-B02",
+   "soll": "Ist der Ausweis am Buchungstag keinem Mitarbeiter zugeordnet, wird die Anfrage mit „Ausweis unbekannt“ abgewiesen.",
+   "zeilen": [
+    19,
+    20
+   ],
+   "code": [
+    "19:   IF sy-subrc <> 0.",
+    "20:     MESSAGE e001(zpt_term) WITH iv_zausw RAISING badge_unknown."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-142-B03",
+   "soll": "Für den gefundenen Mitarbeiter wird der Beschäftigungsstatus am Buchungstag gelesen.",
+   "zeilen": [
+    23
+   ],
+   "code": [
+    "23:   SELECT SINGLE stat2 FROM pa0000 INTO lv_stat2"
+   ],
+   "engine": [
+    "stat2 des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-142-B04",
+   "soll": "Ist der Mitarbeiter nicht aktiv beschäftigt, wird die Personalnummer gelöscht und die Anfrage mit „Mitarbeiter nicht aktiv“ abgewiesen.",
+   "zeilen": [
+    27,
+    29
+   ],
+   "code": [
+    "27:   IF lv_stat2 <> '3'.",
+    "29:     RAISE employee_inactive."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-142-B05",
+   "soll": "Andernfalls erhält das Terminal die Personalnummer zurück.",
+   "zeilen": [
+    32
+   ],
+   "code": [
+    "32: ENDFUNCTION."
+   ],
+   "engine": []
+  }
+ ]
+}

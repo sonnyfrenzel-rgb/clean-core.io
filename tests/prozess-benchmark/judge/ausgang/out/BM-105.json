@@ -1,0 +1,42 @@
+{
+ "id": "BM-105",
+ "urteile": [
+  {
+   "id": "BM-105-B01",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch"
+   ],
+   "kurz": "Engine deutet GET PARAMETER ID als Verarbeitung von Sätzen einer logischen Datenbank; tatsächlich wird der Platz aus dem Benutzerparameter vorbelegt."
+  },
+  {
+   "id": "BM-105-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus equz mit dem eingegebenen i~tplnr' und verstümmelter INTO-Satz – Zeitsegment und übergeordnetes Equipment nicht fachlich."
+  },
+  {
+   "id": "BM-105-B03",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'Für Anzahlen größer p_max wird der Block verlassen' entspricht dem stillen Abbruch."
+  },
+  {
+   "id": "BM-105-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Nur 'gv_equnr und gv_heqnr als Liste ausgegeben'."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

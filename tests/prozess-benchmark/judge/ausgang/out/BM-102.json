@@ -1,0 +1,48 @@
+{
+ "id": "BM-102",
+ "urteile": [
+  {
+   "id": "BM-102-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'cjump des Satzes wird gelesen' – Zählerüberlaufwert und Zählerbedingung nicht benannt."
+  },
+  {
+   "id": "BM-102-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus imrg selektiert' / 'enthält idate, itime, readg' – jüngster nicht stornierter Beleg bis Datum fehlt."
+  },
+  {
+   "id": "BM-102-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Zuwachsberechnung."
+  },
+  {
+   "id": "BM-102-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "'Für ev_diff < 0 AND lv_cjump IS INITIAL wird eine Meldung ausgegeben' – Abbruch mit READING_TOO_LOW und fachliche Bedingung fehlen."
+  },
+  {
+   "id": "BM-102-B05",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Überlaufkorrektur."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

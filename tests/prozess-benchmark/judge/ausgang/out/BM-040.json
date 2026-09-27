@@ -1,0 +1,156 @@
+{
+ "id": "BM-040",
+ "urteile": [
+  {
+   "id": "BM-040-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Vorschlag \"morgen\"."
+  },
+  {
+   "id": "BM-040-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "DAY_IN_WEEK und \"Sätze aus zmm_sto_route\" – aktive Belieferungen des Wochentags aus dem Belieferungsplan nicht fachlich."
+  },
+  {
+   "id": "BM-040-B03",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "log_meldung, log_sichern und Ende genannt, aber \"es wird nichts geschrieben\" ist falsch – log_sichern speichert das Protokoll mit BAL_DB_SAVE und COMMIT WORK; Warnung nicht erkennbar."
+  },
+  {
+   "id": "BM-040-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Feldliste matnr, minbe, mabst, bstrf, ausme und \"Sätze aus marc\" – Dispositionsmerkmal ZN, Lösch-/Sperrfilter fehlen."
+  },
+  {
+   "id": "BM-040-B05",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Ein entferntes System wird … benachrichtigt\" – der RFC holt die Abverkäufe, er benachrichtigt nicht; Ausfall als \"Ohne Treffer\", Weiterrechnen ohne Abverkäufe fehlt."
+  },
+  {
+   "id": "BM-040-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus s032/ekpo selektiert\" und Tabellensuche – die Formel Bestand + offene UB − Abverkauf fehlt."
+  },
+  {
+   "id": "BM-040-B07",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Bedarfsmenge."
+  },
+  {
+   "id": "BM-040-B08",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Überspringen ohne Bedarf."
+  },
+  {
+   "id": "BM-040-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "BAPI_PO_CREATE1 und create_sto \"nicht belegt\" – Umlagerungsbestellung mit lieferndem Werk nicht fachlich."
+  },
+  {
+   "id": "BM-040-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Rollback bei first_error, log_meldung und Verlassen ohne ls_res-ebeln – technisch, Weitergehen zur nächsten Filiale nur implizit."
+  },
+  {
+   "id": "BM-040-B11",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "\"Für p_test mit dem Wert abap_true wird die Text auf Testlauf: UB simuliert gesetzt … und der Block verlassen\" – Ende der Filiale nach Simulation."
+  },
+  {
+   "id": "BM-040-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "COMMIT, ekpo, BAPI_OUTB_DELIVERY_CREATE_STO, Rollback – Festschreiben der UB und Anlage der Auslieferung nicht fachlich."
+  },
+  {
+   "id": "BM-040-B13",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Für lv_error mit dem Wert abap_true wird eine Meldung ausgegeben\" – MESSAGE … INTO mv_error gibt nichts aus; Bedingung Sofort-WA und Warenausgangsbuchung nicht fachlich."
+  },
+  {
+   "id": "BM-040-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "log_meldung \"nicht belegt\" und \"Zeile in gt_result\" – Erfolgsprotokoll auch nach WA-Fehler nicht erkennbar."
+  },
+  {
+   "id": "BM-040-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Verlassen im Testlauf und COMMIT – Ablage im INDX (ZSTO + Datum) und Filter auf Filialen mit Lieferung fehlen."
+  },
+  {
+   "id": "BM-040-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Ausgabe nur als ls_res-werks, ls_res-reswk … und Zähler; Rotfärbung für Fehler fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

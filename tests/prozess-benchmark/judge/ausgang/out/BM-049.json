@@ -1,0 +1,62 @@
+{
+ "id": "BM-049",
+ "urteile": [
+  {
+   "id": "BM-049-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "falsch"
+   ],
+   "kurz": "'Jede Zeile aus t_bkpf wird einzeln verarbeitet' – die Einschränkung auf Belegarten KR/RE fehlt. 'Jede Zeile ... wird einzeln verarbeitet' ist falsch, die Schleife hat eine WHERE-Einschränkung."
+  },
+  {
+   "id": "BM-049-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "'In der Tabelle wird nach einer passenden Zeile gesucht' – Kreditorenzeile und Abbruch der Prüfung fehlen."
+  },
+  {
+   "id": "BM-049-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Feldnamen (land1 stceg, xegld, Länderschlüssel); Lieferant, USt-IdNr., EU-Mitgliedschaft und Buchungskreisland nicht erkennbar."
+  },
+  {
+   "id": "BM-049-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur EU-Auslands-Bedingung."
+  },
+  {
+   "id": "BM-049-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Ohne lv_stceg wird eine Meldung ausgegeben' – dass die Buchung mit Fehler abgebrochen wird und es um die USt-IdNr. geht, fehlt."
+  },
+  {
+   "id": "BM-049-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "falsch"
+   ],
+   "kurz": "Schleife, Lesen von mwskz und Meldung ohne Treffer genannt; Prüfung gegen EU-Kennzeichenliste und Abbruch nicht fachlich erkennbar. 'Jede Zeile ... wird einzeln verarbeitet' ist falsch, die Schleife hat eine WHERE-Einschränkung."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

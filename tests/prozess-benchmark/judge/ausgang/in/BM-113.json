@@ -1,0 +1,227 @@
+{
+ "id": "BM-113",
+ "titel": "Serviceaufträge aufwandsbezogen fakturieren: DP90 per Batch-Input oder Dialog, DIP-Profil, Anwendungslog",
+ "prozess": "Der Report wird mit Aufträgen, Auftragsarten (Pflicht), Werken, einem Stichtag und einem Dialogkennzeichen gestartet. Zuerst eröffnet er ein Anwendungslog; gelingt das nicht, bricht er ab. Dann liest er alle Serviceaufträge, die bis zum Stichtag technisch abgeschlossen sind, deren Auftragsart ein DIP-Profil zugeordnet ist und für die noch keine Fakturaanforderung protokolliert ist; ohne Treffer springt er direkt zum Abschluss. Garantieaufträge werden nur als Warnung protokolliert. Für die übrigen summiert er die Istkosten und überspringt Aufträge ohne positive Kosten mit einer Warnung; weil das Kennzeichen dafür nie zurückgesetzt wird, gelten nach dem ersten solchen Auftrag auch alle folgenden als kostenlos. Im Dialogmodus öffnet er die aufwandsbezogene Fakturierung mit vorbelegtem Auftrag ohne Einstiegsbild, und der Sachbearbeiter schließt sie selbst ab, ohne dass das protokolliert wird. Im Hintergrund erzeugt er die Fakturaanforderung per Batch-Input mit Auftrag, DIP-Profil und Stichtag. Findet er die Erfolgsmeldung, speichert er die Belegnummer zum Auftrag in der Protokolltabelle, schreibt fest und vermerkt den Erfolg; sonst übernimmt er alle Fehlermeldungen der Transaktion ins Anwendungslog. Am Ende wird das Anwendungslog gesichert und angezeigt.",
+ "verboten": [
+  "zcs_sm_faktura.abap:75 — kein Fachsatz „jeder Auftrag wird einzeln auf Istkosten geprüft“: gv_skip wird nie zurückgesetzt; nach dem ersten Auftrag ohne Istkosten gelten alle folgenden als kostenlos und werden nicht fakturiert",
+  "zcs_sm_faktura.abap:83 — kein Fachsatz „im Dialog fakturierte Aufträge werden protokolliert“: nur der Hintergrundweg schreibt ZCS_SM_FAKLOG, im Dialog abgerechnete Aufträge werden im nächsten Lauf erneut vorgeschlagen",
+  "zcs_sm_faktura_f01.abap:41 — kein Fachsatz „die Faktura wird erstellt“: DP90 erzeugt eine Fakturaanforderung (Lastschriftanforderung), die Faktura selbst entsteht außerhalb des Falls",
+  "gesamte Scheibe — kein Fachsatz „der Auftrag wird nach der Fakturierung abgeschlossen oder gesperrt“: der Auftragsstatus wird nicht verändert"
+ ],
+ "saetze": [
+  {
+   "id": "BM-113-B01",
+   "soll": "Zu Beginn wird ein Anwendungslog für die Fakturierung eröffnet; gelingt das nicht, bricht das Programm ab.",
+   "zeilen": [
+    49,
+    169,
+    176,
+    177
+   ],
+   "code": [
+    "49:   PERFORM log_open.",
+    "169:   CALL FUNCTION 'BAL_LOG_CREATE'",
+    "176:   IF sy-subrc <> 0.",
+    "177:     MESSAGE a501(zcs)."
+   ],
+   "engine": [
+    "Das Unterprogramm log_open wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_log.",
+    "Das konvertierte Ergebnis wird in gv_log übernommen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-113-B02",
+   "soll": "Es werden Serviceaufträge der Selektion ermittelt, die bis zum Stichtag technisch abgeschlossen sind, deren Auftragsart ein DIP-Profil zugeordnet ist und für die noch keine Fakturaanforderung protokolliert ist.",
+   "zeilen": [
+    51
+   ],
+   "code": [
+    "51:   SELECT a~aufnr a~auart a~objnr a~zzgarant m~dippr"
+   ],
+   "engine": [
+    "Es werden Sätze aus aufk selektiert."
+   ]
+  },
+  {
+   "id": "BM-113-B03",
+   "soll": "Ohne solche Aufträge endet die Verarbeitung, das (leere) Protokoll wird dennoch gesichert und angezeigt.",
+   "zeilen": [
+    65,
+    66,
+    90
+   ],
+   "code": [
+    "65:   IF gt_ord IS INITIAL.",
+    "66:     RETURN.",
+    "90: END-OF-SELECTION."
+   ],
+   "engine": [
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-113-B04",
+   "soll": "Garantieaufträge werden nicht fakturiert, sondern mit einer Warnung protokolliert.",
+   "zeilen": [
+    70,
+    71
+   ],
+   "code": [
+    "70:     IF ls_ord-zzgarant = 'X'.",
+    "71:       PERFORM log_msg USING ls_ord-aufnr 'W' 'Garantieauftrag - keine Fakturierung'."
+   ],
+   "engine": [
+    "Mit gesetztem ls_ord-zzgarant wird log_msg aufgerufen.",
+    "Das Unterprogramm log_msg wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-113-B05",
+   "soll": "Für jeden übrigen Auftrag werden die Istkosten summiert; sind sie nicht positiv, wird der Auftrag als ohne Istkosten markiert.",
+   "zeilen": [
+    75,
+    105,
+    108,
+    109
+   ],
+   "code": [
+    "75:     PERFORM check_costs USING ls_ord CHANGING gv_skip.",
+    "105:   SELECT SUM( wkgbtr ) FROM coep INTO lv_sum",
+    "108:   IF lv_sum <= 0.",
+    "109:     pv_skip = abap_true."
+   ],
+   "engine": [
+    "Das Unterprogramm check_costs wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es werden Sätze aus coep selektiert."
+   ]
+  },
+  {
+   "id": "BM-113-B06",
+   "soll": "Markierte Aufträge werden mit der Warnung „Keine Istkosten“ protokolliert und nicht fakturiert.",
+   "zeilen": [
+    76,
+    77
+   ],
+   "code": [
+    "76:     IF gv_skip = abap_true.",
+    "77:       PERFORM log_msg USING ls_ord-aufnr 'W' 'Keine Istkosten'."
+   ],
+   "engine": [
+    "Für gv_skip mit dem Wert abap_true wird log_msg aufgerufen.",
+    "Das Unterprogramm log_msg wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-113-B07",
+   "soll": "Im Dialogmodus wird die aufwandsbezogene Fakturierung mit vorbelegtem Auftrag ohne Einstiegsbild aufgerufen, der Sachbearbeiter schließt sie selbst ab.",
+   "zeilen": [
+    81,
+    82,
+    83
+   ],
+   "code": [
+    "81:     IF p_dial = 'X'.",
+    "82:       SET PARAMETER ID 'ANR' FIELD ls_ord-aufnr.",
+    "83:       CALL TRANSACTION 'DP90' AND SKIP FIRST SCREEN."
+   ],
+   "engine": [
+    "Die Anlage wird über die Transaktion DP90 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ]
+  },
+  {
+   "id": "BM-113-B08",
+   "soll": "Im Hintergrund wird die Fakturaanforderung mit Auftrag, DIP-Profil und Stichtag per Batch-Input erzeugt und gesichert.",
+   "zeilen": [
+    85,
+    132
+   ],
+   "code": [
+    "85:       PERFORM bill_bdc USING ls_ord.",
+    "132:   CALL TRANSACTION 'DP90' USING gt_bdc"
+   ],
+   "engine": [
+    "Für andere p_dial wird bill_bdc aufgerufen.",
+    "Das Unterprogramm bill_bdc wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Die Anlage wird über die Transaktion DP90 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ]
+  },
+  {
+   "id": "BM-113-B09",
+   "soll": "Meldet die Transaktion die gesicherte Anforderung, wird die Belegnummer zum Auftrag im Fakturaprotokoll gespeichert, festgeschrieben und im Anwendungslog als Erfolg vermerkt.",
+   "zeilen": [
+    138,
+    140,
+    142,
+    146,
+    148
+   ],
+   "code": [
+    "138:   READ TABLE gt_msg INTO DATA(ls_msg)",
+    "140:   IF sy-subrc = 0.",
+    "142:     INSERT zcs_sm_faklog FROM @( VALUE #( aufnr = ps_ord-aufnr",
+    "146:     COMMIT WORK.",
+    "148:     PERFORM log_msg USING ps_ord-aufnr 'S' lv_vbeln."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird COMMIT WORK ausgeführt und log_msg aufgerufen.",
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Das Unterprogramm log_msg wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-113-B10",
+   "soll": "Sonst werden alle Fehler- und Abbruchmeldungen der Transaktion zum Auftrag ins Anwendungslog übernommen.",
+   "zeilen": [
+    151,
+    155
+   ],
+   "code": [
+    "151:     LOOP AT gt_msg INTO ls_msg WHERE msgtyp CA 'EA'.",
+    "155:       PERFORM log_msg USING ps_ord-aufnr 'E' lv_text."
+   ],
+   "engine": [
+    "Jede Zeile aus gt_msg wird einzeln verarbeitet.",
+    "Es wird eine Meldung ausgegeben und log_msg aufgerufen.",
+    "Das Unterprogramm log_msg wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-113-B11",
+   "soll": "Jeder Protokolleintrag wird mit Auftragsnummer und Text dem Anwendungslog hinzugefügt.",
+   "zeilen": [
+    194
+   ],
+   "code": [
+    "194:   CALL FUNCTION 'BAL_LOG_MSG_ADD'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-113-B12",
+   "soll": "Am Ende wird das Anwendungslog gesichert und angezeigt.",
+   "zeilen": [
+    91,
+    206,
+    212
+   ],
+   "code": [
+    "91:   PERFORM log_show.",
+    "206:   CALL FUNCTION 'BAL_DB_SAVE'",
+    "212:   CALL FUNCTION 'BAL_DSP_LOG_DISPLAY'"
+   ],
+   "engine": [
+    "Das Unterprogramm log_show wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Es wird BAL_DB_SAVE aufgerufen und BAL_DSP_LOG_DISPLAY aufgerufen.",
+    "Der Funktionsbaustein BAL_DSP_LOG_DISPLAY wird aufgerufen."
+   ]
+  }
+ ]
+}

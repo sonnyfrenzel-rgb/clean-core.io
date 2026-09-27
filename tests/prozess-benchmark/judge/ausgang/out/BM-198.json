@@ -1,0 +1,311 @@
+{
+ "id": "BM-198",
+ "urteile": [
+  {
+   "id": "BM-198-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Meldung und Verlassen bei „sy-subrc <> 0 OR gv_active <> 'X'“ nach tvarvc-Lesen – Inhalt erkennbar, Betriebsschalter nicht fachlich benannt."
+  },
+  {
+   "id": "BM-198-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung bei p_mode ungleich X/J; Abweisung auf dem Selektionsbild und Formate XML/JSON nicht fachlich."
+  },
+  {
+   "id": "BM-198-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "JOB_OPEN-Aufruf und „Kindprogramm zisu_edm_export wird gestartet“; Zuordnung als Jobschritt mit Parametern nicht erkannt."
+  },
+  {
+   "id": "BM-198-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur JOB_CLOSE-Aufruf; Sofortstart nicht gesagt."
+  },
+  {
+   "id": "BM-198-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Ohne Treffer wird eine Meldung ausgegeben“; Abbruch der Einplanung nicht gesagt."
+  },
+  {
+   "id": "BM-198-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "JOB_OPEN und „Kindprogramm zisu_edm_recon gestartet“; fehlende Erfolgsprüfung nicht erwähnt."
+  },
+  {
+   "id": "BM-198-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "„Mit gesetztem p_event wird JOB_CLOSE aufgerufen, sonst JOB_CLOSE“ – Ereignis- vs. Nachfolgersteuerung nicht erkennbar."
+  },
+  {
+   "id": "BM-198-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Meldungen; Abbruch bzw. Meldung der Jobnummern nicht fachlich."
+  },
+  {
+   "id": "BM-198-B09",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "„Für sy-uname TSCHNEIDER wird die Destination auf ZEDM_MPO_GATEWAY_Q gesetzt“ – entspricht der Umleitung aufs Q-Gateway."
+  },
+  {
+   "id": "BM-198-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "BAL_LOG_CREATE und Meldung ohne Treffer; Abbruch des Laufs nicht gesagt."
+  },
+  {
+   "id": "BM-198-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Selektion aus euitrans mit Feldliste; Gültigkeit am Stichtag und Empfängerzuordnung fehlen."
+  },
+  {
+   "id": "BM-198-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Meldung ohne Treffer; STOP und weiterlaufender Abschluss fehlen."
+  },
+  {
+   "id": "BM-198-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Selektion aus zisu_edm_stat und Schleife; Herausnahme bereits gesendeter Zählpunkte fehlt."
+  },
+  {
+   "id": "BM-198-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "„Sätze aus zisu_edm_prof mit dem eingegebenen ab_date selektiert“; Viertelstundenwerte nicht fachlich."
+  },
+  {
+   "id": "BM-198-B15",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "Behauptet Selektion „mit dem eingegebenen ab_date“; bei leerer Treibertabelle entfällt diese Bedingung – der Sonderfall wird übersehen."
+  },
+  {
+   "id": "BM-198-B16",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "„kleinere werden übersprungen“ falsch (übersprungen wird sy-subrc 4); Zusammenfassen je Zählpunkt nicht gesagt."
+  },
+  {
+   "id": "BM-198-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "„Für gv_cnt kleiner 96 wird write_status aufgerufen“; Status L, Warnung, kein Versand fehlen."
+  },
+  {
+   "id": "BM-198-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur write_status „nicht belegt“; gestörte Werte und Status E fehlen."
+  },
+  {
+   "id": "BM-198-B19",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Nachrichteninhalt."
+  },
+  {
+   "id": "BM-198-B20",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Kontrollsumme."
+  },
+  {
+   "id": "BM-198-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur serialize „nicht belegt“; JSON-Format und meLo-Schreibweise fehlen."
+  },
+  {
+   "id": "BM-198-B22",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur XML-Transformation."
+  },
+  {
+   "id": "BM-198-B23",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Testlaufzeile richtig erkannt, aber „Nur Eine leere p_test gehen weiter; … die Schleife läuft weiter“ falsch (CHECK in FORM write_status ohne Schleife)."
+  },
+  {
+   "id": "BM-198-B24",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "„Rückgabewert von create_by_destination wird nach cl_http_client übernommen“ ist falsch (Client geht nach lo_client); HTTP-POST nicht erkannt."
+  },
+  {
+   "id": "BM-198-B25",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Blockverlassen ohne Treffer; „gilt als nicht gesendet“ fehlt."
+  },
+  {
+   "id": "BM-198-B26",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Ausstieg bei 2xx/4xx technisch; Wiederholung mit verdoppelter Wartezeit fehlt."
+  },
+  {
+   "id": "BM-198-B27",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "„die Status auf S … sonst F“ erkannt; Protokoll und HTTP-Code fehlen."
+  },
+  {
+   "id": "BM-198-B28",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen und MODIFY zisu_edm_stat; aufsummierte Versuche, Empfänger, Änderer fehlen."
+  },
+  {
+   "id": "BM-198-B29",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "COMMIT nach write_status; „nach jedem Zählpunkt“ nicht gesagt."
+  },
+  {
+   "id": "BM-198-B30",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "BAL_DB_SAVE-Aufruf; Sichern des Anwendungsprotokolls nicht fachlich."
+  },
+  {
+   "id": "BM-198-B31",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "„Ohne p_test wird BP_EVENT_RAISE aufgerufen“; Ereignisname und Abgleichjob fehlen."
+  },
+  {
+   "id": "BM-198-B32",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Summenzeile als Liste von Textsymbolen und Variablen („Bei Treffern“)."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "satz": "Es werden Sätze aus zisu_edm_prof mit dem eingegebenen ab_date selektiert.",
+   "grund": "Unterstellt eine Einschränkung auf den Stichtag; bei leerer Treibertabelle (FOR ALL ENTRIES) entfällt sie und alle Tage werden gelesen und gesendet (verbotener Schluss zu zisu_edm_export_f01.abap:26)."
+  }
+ ],
+ "soll_zweifel": []
+}

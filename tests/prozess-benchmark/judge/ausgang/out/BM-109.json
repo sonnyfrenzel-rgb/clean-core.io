@@ -1,0 +1,88 @@
+{
+ "id": "BM-109",
+ "urteile": [
+  {
+   "id": "BM-109-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus likp selektiert' – Kunde/Material, WA-Zeitraum und Verdichtung fehlen."
+  },
+  {
+   "id": "BM-109-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird der Block verlassen' entspricht dem Soll."
+  },
+  {
+   "id": "BM-109-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus estmj selektiert' – Zuordnung Material zu realem Stoff nicht benannt."
+  },
+  {
+   "id": "BM-109-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus zehs_sdb_log selektiert' – Bedingung und Bedeutung 'bereits erhalten' fehlen."
+  },
+  {
+   "id": "BM-109-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Tabellensuche; Überspringen ohne Stoff fehlt."
+  },
+  {
+   "id": "BM-109-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Tabellensuche; Überspringen bereits belieferter Kunden fehlt."
+  },
+  {
+   "id": "BM-109-B07",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Es wird eine Zeile aufgenommen, Kundennummer ..., gs_link-subid ..., Belegnummer ... und SDB fällig ausgegeben' deckt Vormerken und Liste ab."
+  },
+  {
+   "id": "BM-109-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'Für p_vers IS INITIAL OR gt_todo IS INITIAL wird der Block verlassen' – nur Code."
+  },
+  {
+   "id": "BM-109-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "JOB_OPEN, SUBMIT und JOB_CLOSE genannt; Ablage unter der Jobnummer und Sofortstart fehlen, 'Kindprogramm wird gestartet' statt 'in Job eingeplant', 'konvertiert' falsch."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

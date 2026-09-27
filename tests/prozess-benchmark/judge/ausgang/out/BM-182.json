@@ -1,0 +1,47 @@
+{
+ "id": "BM-182",
+ "urteile": [
+  {
+   "id": "BM-182-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „gwlen des Satzes wird gelesen“; Garantieende Kundengarantie nicht fachlich."
+  },
+  {
+   "id": "BM-182-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung bei Code-Bedingung; Ablehnung mit Ausnahme GARANTIE_ABGELAUFEN fehlt."
+  },
+  {
+   "id": "BM-182-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "„übergibt '01' an NUMBER_GET_NEXT“; Nummernkreisobjekt ZWTY_ANTR und Antragsnummer nicht fachlich."
+  },
+  {
+   "id": "BM-182-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Statusvergabe P/F."
+  },
+  {
+   "id": "BM-182-B05",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum INSERT des Antrags."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

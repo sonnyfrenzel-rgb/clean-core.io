@@ -1,0 +1,321 @@
+{
+ "id": "BM-194",
+ "titel": "CIF-Integrationsmodelle je Werk generieren und aktivieren, Queue-Prüfung, Materialfilter im CIF-Userexit",
+ "prozess": "Der Report läuft als Schritt des nächtlichen CIF-Jobs und liest zuerst die selektierten Werke; gibt es keines, wird das protokolliert und über STOP direkt zum Sichern des Protokolls gesprungen. Je Werk bildet er aus Präfix und Werksnummer einen Modellnamen und startet die Standardgenerierung RIMODGEN mit einer Variante, die er um Modellname, APO-Zielsystem, Anwendung PPDS und das Werk übersteuert; die Ergebnisliste wird im Speicher abgelegt. Fehlt diese Liste, wird das Werk als fehlerhaft protokolliert und übersprungen. Sonst wandelt er die Liste in Text um und sucht nach „Fehler“ oder „Error“; bei einem Treffer bricht er die Suche ab, protokolliert die Generierung als fehlerhaft und aktiviert das Modell nicht. Im Testlauf bleibt es bei der Generierung, sonst wird das Modell mit RIMODAC2 aktiviert und ohne Auswertung der Aktivierungsliste als aktiviert protokolliert. Nur im Echtlauf wartet der Report danach die eingestellte Zeit und liest zur RFC-Destination des APO-Systems die CIF-Ausgangsqueues mit Fehlerstatus; ohne Treffer protokolliert er fehlerfreie Queues, sonst je Queue eine Fehlerzeile mit der Zahl der hängenden LUWs. Zum Schluss werden alle gesammelten Meldungen in ein Anwendungsprotokoll mit 30 Tagen Aufbewahrung geschrieben und im Dialog angezeigt. Bei jeder Übertragung von Materialstammdaten ins APO filtert der Userexit ZXCIFUU01 Material-Werks-Kombinationen heraus, deren Dispositionsmerkmal im Werk in der Ausschlusstabelle ZAPO_CIF_EXCL steht; der Materialkopf bleibt dabei in der Übertragung. Für den Benutzer CIF_ADMIN und bei leerer Übergabe wird nicht gefiltert, und Kombinationen ohne Werksdaten gehen unverändert durch.",
+ "verboten": [
+  "zapo_cif_imod.abap:135 — kein Fachsatz „schlägt die Aktivierung fehl, wird das Werk als fehlerhaft protokolliert“: die Aktivierungsliste wird in den Speicher gestellt, aber nie gelesen; protokolliert wird immer „aktiviert“",
+  "zapo_cif_imod.abap:128 — kein Fachsatz „im Testlauf wird nichts verändert“: RIMODGEN wird auch im Testlauf ausgeführt und generiert das Integrationsmodell; nur Aktivierung und Queue-Prüfung entfallen",
+  "zapo_cif_imod.abap:188 — kein Fachsatz „für jede Queue wird ihr Fehlerstatus protokolliert“: in der Gruppenstufe AT END OF qname trägt das Feld qstate rechts vom Gruppenschlüssel nicht mehr den Wert der Zeile, die Protokollzeile nennt verlässlich nur Queue-Name und LUW-Anzahl",
+  "zapo_cif_imod.abap:169 — kein Fachsatz „fehlt die RFC-Destination zum APO, wird ein Fehler gemeldet“: das Ergebnis wird nicht geprüft; mit leerer Destination werden keine Queues gefunden und „CIF-Queues ohne Fehler“ protokolliert",
+  "gesamte Scheibe — kein Fachsatz „die Eingabe des logischen Systems wird auf dem Selektionsbild geprüft“: die Prüfung AT SELECTION-SCREEN ON p_logsys ist auskommentiert",
+  "zxcifuu01.abap:59 — kein Fachsatz „das Material wird im APO gelöscht oder gesperrt“: der Userexit entfernt nur die Material-Werks-Zeile aus der aktuellen Übertragung, Materialkopf und bereits übertragene Daten im APO bleiben unberührt"
+ ],
+ "saetze": [
+  {
+   "id": "BM-194-B01",
+   "soll": "Es werden die Werke der Selektion gelesen, für die Integrationsmodelle erzeugt werden sollen.",
+   "zeilen": [
+    65
+   ],
+   "code": [
+    "65:   SELECT werks name1 FROM t001w INTO TABLE gt_werks"
+   ],
+   "engine": [
+    "Es werden Sätze aus t001w selektiert."
+   ]
+  },
+  {
+   "id": "BM-194-B02",
+   "soll": "Gibt es keines der Werke, wird das im Protokoll vermerkt und die Verarbeitung direkt beim Sichern des Protokolls fortgesetzt.",
+   "zeilen": [
+    67,
+    68,
+    69
+   ],
+   "code": [
+    "67:   IF sy-subrc <> 0.",
+    "68:     log_msg 'E' space 'Keine Werke zur Selektion gefunden'.",
+    "69:     STOP."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-194-B03",
+   "soll": "Je Werk wird ein Integrationsmodell aus Präfix und Werksnummer benannt und mit der vorgegebenen Variante für das APO-Zielsystem, die Anwendung PPDS und genau dieses Werk generiert.",
+   "zeilen": [
+    74,
+    85
+   ],
+   "code": [
+    "74:     CONCATENATE p_prefx gs_werks-werks INTO gv_model.",
+    "85:     SUBMIT rimodgen USING SELECTION-SET p_varnt"
+   ],
+   "engine": [
+    "Das Kindprogramm rimodgen wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes."
+   ]
+  },
+  {
+   "id": "BM-194-B04",
+   "soll": "Liefert die Generierung kein Protokoll, wird das Werk als fehlerhaft protokolliert und übersprungen.",
+   "zeilen": [
+    90,
+    96,
+    97
+   ],
+   "code": [
+    "90:     CALL FUNCTION 'LIST_FROM_MEMORY'",
+    "96:     IF sy-subrc <> 0.",
+    "97:       log_msg 'E' gs_werks-werks 'Generierung ohne Protokoll - Modell prüfen (CFM1)'."
+   ],
+   "engine": [
+    "Der Funktionsbaustein LIST_FROM_MEMORY wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-194-B05",
+   "soll": "Das Generierungsprotokoll wird in Text umgewandelt und nach dem ersten Vorkommen von „Fehler“ oder „Error“ durchsucht.",
+   "zeilen": [
+    102,
+    116,
+    117
+   ],
+   "code": [
+    "102:     CALL FUNCTION 'LIST_TO_ASCI'",
+    "116:     LOOP AT gt_ascii INTO gs_ascii.",
+    "117:       IF gs_ascii CS 'Fehler' OR gs_ascii CS 'Error'."
+   ],
+   "engine": [
+    "Der Funktionsbaustein LIST_TO_ASCI wird aufgerufen.",
+    "Es wird LIST_TO_ASCI aufgerufen und LIST_FREE_MEMORY aufgerufen.",
+    "Jede Zeile aus gt_ascii wird einzeln verarbeitet.",
+    "Für gs_ascii CS 'Fehler' OR gs_ascii CS 'Error' wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-194-B06",
+   "soll": "Enthält das Protokoll einen Fehlertext, wird das Modell nicht aktiviert und das Werk als fehlerhaft protokolliert.",
+   "zeilen": [
+    123,
+    124
+   ],
+   "code": [
+    "123:     IF gv_fehler = abap_true.",
+    "124:       log_msg 'E' gs_werks-werks 'Generierung fehlerhaft, Modell nicht aktiviert'."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-194-B07",
+   "soll": "Im Testlauf wird das Modell nur generiert, nicht aktiviert, und das so protokolliert.",
+   "zeilen": [
+    128,
+    129
+   ],
+   "code": [
+    "128:     IF p_test = abap_true.",
+    "129:       log_msg 'I' gs_werks-werks 'Testlauf: Modell generiert, nicht aktiviert'."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-194-B08",
+   "soll": "Andernfalls wird das generierte Integrationsmodell für das APO-Zielsystem aktiviert und als aktiviert protokolliert, ohne das Aktivierungsprotokoll auszuwerten.",
+   "zeilen": [
+    135,
+    143
+   ],
+   "code": [
+    "135:     SUBMIT rimodac2 WITH model   = gv_model",
+    "143:     log_msg 'S' gs_werks-werks 'Integrationsmodell aktiviert'."
+   ],
+   "engine": [
+    "Das Kindprogramm rimodac2 wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes."
+   ]
+  },
+  {
+   "id": "BM-194-B09",
+   "soll": "Nur im Echtlauf wird nach der eingestellten Wartezeit geprüft, ob die Übertragung ins APO in den CIF-Ausgangsqueues hängt.",
+   "zeilen": [
+    148,
+    151,
+    153
+   ],
+   "code": [
+    "148:   CHECK p_test = abap_false.",
+    "151:   WAIT UP TO p_wait SECONDS.",
+    "153:   PERFORM check_queues."
+   ],
+   "engine": [
+    "Nur p_test mit dem Wert abap_false gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Das Unterprogramm check_queues wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-194-B10",
+   "soll": "Zum APO-Zielsystem wird die RFC-Destination bestimmt, und es werden die CIF-Queues zu dieser Destination mit Status SYSFAIL, CPICERR oder STOP gelesen.",
+   "zeilen": [
+    169,
+    172
+   ],
+   "code": [
+    "169:   SELECT SINGLE rfcdest FROM tblsysdest INTO lv_dest",
+    "172:   SELECT qname qstate FROM trfcqout INTO TABLE gt_queue"
+   ],
+   "engine": [
+    "rfcdest des Satzes mit dem eingegebenen logsys wird gelesen.",
+    "Es werden Sätze aus trfcqout selektiert."
+   ]
+  },
+  {
+   "id": "BM-194-B11",
+   "soll": "Gibt es keine fehlerhaften Queues, wird „CIF-Queues ohne Fehler“ protokolliert.",
+   "zeilen": [
+    176,
+    177
+   ],
+   "code": [
+    "176:   IF sy-subrc <> 0.",
+    "177:     log_msg 'S' space 'CIF-Queues ohne Fehler'."
+   ],
+   "engine": [
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-194-B12",
+   "soll": "Je fehlerhafter Queue wird eine Fehlerzeile mit der Anzahl der hängenden LUWs protokolliert.",
+   "zeilen": [
+    183,
+    188,
+    189
+   ],
+   "code": [
+    "183:   LOOP AT gt_queue INTO gs_queue.",
+    "188:     AT END OF qname.",
+    "189:       log_msg 'E' space |Queue { gs_queue-qname } Status { gs_queue-qstate }: { gv_anz } LUW(s) (SMQ1)|."
+   ],
+   "engine": [
+    "Jede Zeile aus gt_queue wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-194-B13",
+   "soll": "Alle gesammelten Meldungen werden in einem Anwendungsprotokoll zum APO-Zielsystem und Tagesdatum gesichert, das 30 Tage aufbewahrt wird.",
+   "zeilen": [
+    213,
+    222,
+    232
+   ],
+   "code": [
+    "213:   CALL FUNCTION 'BAL_LOG_CREATE'",
+    "222:     CALL FUNCTION 'BAL_LOG_MSG_ADD_FREE_TEXT'",
+    "232:   CALL FUNCTION 'BAL_DB_SAVE'"
+   ],
+   "engine": [
+    "Der Code übergibt ls_bal_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach lv_handle.",
+    "Das konvertierte Ergebnis wird in lv_handle übernommen.",
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD_FREE_TEXT wird aufgerufen.",
+    "Es wird eine Zeile aufgenommen und BAL_DB_SAVE aufgerufen.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-194-B14",
+   "soll": "Im Dialog wird das Protokoll anschließend angezeigt, im Hintergrundjob nicht.",
+   "zeilen": [
+    238,
+    239
+   ],
+   "code": [
+    "238:   IF sy-batch IS INITIAL.",
+    "239:     CALL FUNCTION 'BAL_DSP_LOG_DISPLAY'"
+   ],
+   "engine": [
+    "Ohne sy-batch wird BAL_DSP_LOG_DISPLAY aufgerufen.",
+    "Der Funktionsbaustein BAL_DSP_LOG_DISPLAY wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-194-B15",
+   "soll": "Bei der Übertragung von Materialstammdaten ins APO wird für den Benutzer CIF_ADMIN nichts gefiltert.",
+   "zeilen": [
+    273,
+    274
+   ],
+   "code": [
+    "273: IF sy-uname = 'CIF_ADMIN'.",
+    "274:   EXIT."
+   ],
+   "engine": [
+    "Für sy-uname mit dem Wert CIF_ADMIN wird der Block verlassen.",
+    "Bei sy-uname gleich CIF_ADMIN wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-194-B16",
+   "soll": "Ohne zu übertragende Material-Werks-Kombinationen endet der Filter sofort.",
+   "zeilen": [
+    277,
+    278
+   ],
+   "code": [
+    "277: IF ct_cif_matloc[] IS INITIAL.",
+    "278:   EXIT."
+   ],
+   "engine": [
+    "Ohne ct_cif_matloc[] wird der Block verlassen.",
+    "Ohne ct_cif_matloc[] wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-194-B17",
+   "soll": "Es werden die ausgeschlossenen Dispositionsmerkmale je Werk sowie die Werksdaten der zu übertragenden Materialien gelesen.",
+   "zeilen": [
+    281,
+    283
+   ],
+   "code": [
+    "281: SELECT * FROM zapo_cif_excl INTO TABLE lt_excl.",
+    "283: SELECT * FROM marc INTO TABLE lt_marc"
+   ],
+   "engine": [
+    "Es werden Sätze aus zapo_cif_excl selektiert.",
+    "Es werden Sätze aus marc selektiert."
+   ]
+  },
+  {
+   "id": "BM-194-B18",
+   "soll": "Material-Werks-Kombinationen ohne Werksdaten werden unverändert übertragen.",
+   "zeilen": [
+    291,
+    294
+   ],
+   "code": [
+    "291:   READ TABLE lt_marc INTO ls_marc",
+    "294:   CHECK sy-subrc = 0."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Nur sy-subrc mit dem Wert 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-194-B19",
+   "soll": "Hat das Material im Werk ein ausgeschlossenes Dispositionsmerkmal, wird es für dieses Werk aus der Übertragung ins APO entfernt; der Materialkopf bleibt in der Übertragung.",
+   "zeilen": [
+    300,
+    303,
+    305
+   ],
+   "code": [
+    "300:   READ TABLE lt_excl TRANSPORTING NO FIELDS",
+    "303:   IF sy-subrc = 0.",
+    "305:     DELETE ct_cif_matloc INDEX lv_idx."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  }
+ ]
+}

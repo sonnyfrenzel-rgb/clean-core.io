@@ -1,0 +1,172 @@
+{
+ "id": "BM-096",
+ "urteile": [
+  {
+   "id": "BM-096-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Nachrichtentyp-Prüfung."
+  },
+  {
+   "id": "BM-096-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "Nur Schleife über pt_data und 'parse_segments ... Wirkung nicht belegt' – die Routine steht im gelieferten Code; das Ignorieren unbekannter Segmente fehlt."
+  },
+  {
+   "id": "BM-096-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur die Konvertierung der Materialnummer; Branche, Materialart und übrige Kopffelder fehlen."
+  },
+  {
+   "id": "BM-096-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu den Kurztexten."
+  },
+  {
+   "id": "BM-096-B05",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu den Werksdaten des Segments."
+  },
+  {
+   "id": "BM-096-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu alternativen Mengeneinheiten."
+  },
+  {
+   "id": "BM-096-B07",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu den Kundenfeldern."
+  },
+  {
+   "id": "BM-096-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Vergleichsbedingung Datum/Uhrzeit nur als Code, Folge 'pv_skip auf X' und 'add_status aufgerufen'; Status 68/Überspringen fehlt fachlich, 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-096-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch"
+   ],
+   "kurz": "'Ohne gs_head-material wird set_error aufgerufen, die pv_error auf X gesetzt' – Sinn nur technisch, Meldung 001 fehlt; 'set_error Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-096-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "'mtart gelesen' + 'Ohne Treffer set_error' – Materialart nicht definiert = Fehler nur technisch."
+  },
+  {
+   "id": "BM-096-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "'werks gelesen' + 'Ohne Treffer set_error' – undefiniertes Werk nur technisch, Meldung 003 fehlt."
+  },
+  {
+   "id": "BM-096-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch"
+   ],
+   "kurz": "'Ohne gv_error wird post_material aufgerufen' – Kern erkennbar nur über Namen; 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-096-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "ENQUEUE_EMMARAE + 'Ohne Treffer set_error' – Sperrkonflikt ist kein 'Treffer'; sperrender Benutzer/Meldung 004 fehlen."
+  },
+  {
+   "id": "BM-096-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "BAPI_MATERIAL_SAVEDATA + Fehler bei type CA 'EA' – nur technisch; 'konvertiertes Ergebnis' und 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-096-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Schleife je Werk, X-Flags, BAPI und Abbruch bei Fehler vorhanden, aber nur als Code; Sichten und Meldung 006 nicht fachlich."
+  },
+  {
+   "id": "BM-096-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "COMMIT sonst ROLLBACK und DEQUEUE genannt – nur über Bausteinnamen."
+  },
+  {
+   "id": "BM-096-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "MODIFY zmm_idoc_serial und msgty S genannt; Status 53 und 'letzter Stand des Materials' fehlen, 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-096-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "unvollstaendig",
+    "grammatik"
+   ],
+   "kurz": "workflow_result 99999 und msgty E genannt, Status 51 und Fehlermeldung fehlen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

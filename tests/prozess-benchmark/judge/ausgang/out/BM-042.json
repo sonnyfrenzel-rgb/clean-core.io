@@ -1,0 +1,38 @@
+{
+ "id": "BM-042",
+ "urteile": [
+  {
+   "id": "BM-042-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Filter auf DZ/DA ist technisch richtig genannt, aber 'kleinere werden übersprungen, die Schleife läuft weiter' ist falsch (Gleichheitsprüfung, CHECK verlässt die FORM, keine Schleife)."
+  },
+  {
+   "id": "BM-042-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Übernahme der Referenznummer in die Zuordnung."
+  },
+  {
+   "id": "BM-042-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'xopvw des Satzes wird gelesen' nennt nur das Feld; dass im Sachkontenstamm die OP-Führung geprüft wird, ist nicht erkennbar."
+  },
+  {
+   "id": "BM-042-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Setzen der Zuordnung aus dem Belegkopftext."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

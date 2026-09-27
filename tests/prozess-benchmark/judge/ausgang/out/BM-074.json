@@ -1,0 +1,123 @@
+{
+ "id": "BM-074",
+ "urteile": [
+  {
+   "id": "BM-074-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Jede Zeile aus idoc_contrl wird einzeln verarbeitet' trifft die Einzelverarbeitung; Abbruch bei fremdem Nachrichtentyp fehlt."
+  },
+  {
+   "id": "BM-074-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Jede Zeile aus idoc_data wird einzeln verarbeitet' – ignoriert die Einschränkung auf das aktuelle IDoc (WHERE docnum) und sagt nichts über Kopf/Merkmalsegmente."
+  },
+  {
+   "id": "BM-074-B03",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Bei fehlendem Prüflos oder fehlenden Positionen wird 'IDoc ohne Kopf oder ohne Merkmale' gesetzt und verlassen – fachlich dasselbe."
+  },
+  {
+   "id": "BM-074-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus qals und Verlassen ohne Treffer; Ablehnung mit 'Prueflos ... unbekannt' fehlt."
+  },
+  {
+   "id": "BM-074-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'vcode des Satzes wird gelesen' und Verlassen bei Treffer; dass bei vorhandenem Verwendungsentscheid keine Ergebnisse angenommen werden, nicht fachlich."
+  },
+  {
+   "id": "BM-074-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'vorglfnr des Satzes wird gelesen' und Verlassen ohne Treffer; Zugehörigkeit des Vorgangs zum Prüflos und Ablehnung nicht fachlich."
+  },
+  {
+   "id": "BM-074-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "status_setzen und workflow_result 99999 bei lv_ok = abap_false erkannt; Status 51 mit Grund fehlt; 'status_setzen ... nicht belegt' ist falsch, die FORM ist mitgeliefert."
+  },
+  {
+   "id": "BM-074-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife und BAPI_INSPOPER_RECORDRESULTS genannt; Mittelwert/Bewertung und Labor-Vermerk fehlen; 'ergebnisse_buchen ... nicht belegt' falsch."
+  },
+  {
+   "id": "BM-074-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "ROLLBACK WORK, status_setzen und Paketfehler erkannt; Status 51 mit BAPI-Fehlertext fehlt; 'status_setzen ... nicht belegt' falsch."
+  },
+  {
+   "id": "BM-074-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingung Meldungswunsch und Bewertung R, QUALNOT_CREATE/SAVE genannt; Meldungsart Z3 nur als gc_qmart, dass ein Fehler den IDoc-Erfolg nicht ändert, fehlt."
+  },
+  {
+   "id": "BM-074-B11",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "Nur 'status_setzen ... Wirkung nicht belegt' – Status 53 mit Ergebnisanzahl/Meldungsnummer fehlt, die Behauptung ist falsch (FORM ab Zeile 226)."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

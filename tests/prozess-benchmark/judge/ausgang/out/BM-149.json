@@ -1,0 +1,92 @@
+{
+ "id": "BM-149",
+ "urteile": [
+  {
+   "id": "BM-149-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus ptrv_perio mit Buchungskreis; genehmigt/offen und aktuelle Zugehörigkeit fehlen."
+  },
+  {
+   "id": "BM-149-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Meldung ohne Treffer erkannt; LEAVE LIST-PROCESSING als \"Screenfolge beendet\" nur ungenau als Ende des Laufs."
+  },
+  {
+   "id": "BM-149-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Lesen aus ptrv_srec erkannt, Belege nur als Tabellenname."
+  },
+  {
+   "id": "BM-149-B04",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Ohne Treffer wird ... ohne Belege - nicht freigegeben ausgegeben\" trifft Nicht-Freigabe und Ausweis in der Liste."
+  },
+  {
+   "id": "BM-149-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Änderung von abrec in ptrv_perio im Echtlauf erkannt, nicht als \"abzurechnen\"; Vormerken des Mitarbeiters fehlt; \"Die abrec\"."
+  },
+  {
+   "id": "BM-149-B06",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Bedingung Testlauf oder keine Freigabe mit Ausgabe \"kein Job eingeplant\" und Verlassen entspricht dem Sollsatz."
+  },
+  {
+   "id": "BM-149-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "COMMIT, JOB_OPEN und Meldung erkannt; Abbruch und Fortbestehen der Freigaben fehlen."
+  },
+  {
+   "id": "BM-149-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "SUBMIT rprtec00 und JOB_CLOSE erkannt; Variante ZMONAT, vorgemerkte Mitarbeiter, Sofortstart fehlen."
+  },
+  {
+   "id": "BM-149-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Ausgabe \"Reiseabrechnung eingeplant, Job\" mit lv_jobname und Rückgabefeld kommt nahe, Jobnummer nicht benannt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

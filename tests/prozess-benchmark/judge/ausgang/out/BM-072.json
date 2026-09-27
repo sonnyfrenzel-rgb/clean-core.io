@@ -1,0 +1,120 @@
+{
+ "id": "BM-072",
+ "urteile": [
+  {
+   "id": "BM-072-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Prüfung auf C_AFKO_AWK und Meldung genannt; Werk/Auftragsart und Verbleib im Selektionsbild mit Fehlermeldung nicht fachlich."
+  },
+  {
+   "id": "BM-072-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus plaf mit dem eingegebenen plwrk' – Disponenten, Materialien, Horizont, LA und Eigenfertigung fehlen."
+  },
+  {
+   "id": "BM-072-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Verwerfen nicht fixierter und zur Sortierung."
+  },
+  {
+   "id": "BM-072-B04",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen' entspricht Hinweis und Ende."
+  },
+  {
+   "id": "BM-072-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen von mmsta und bei Z1 Protokollzeile und Verlassen erkannt; Fertigungssperre, rote Ampel und 'nicht umgesetzt' nicht fachlich."
+  },
+  {
+   "id": "BM-072-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Lesungen aus resb/mard und Schleife; Summierung des frei verwendbaren Bestands je Komponente nicht erkennbar."
+  },
+  {
+   "id": "BM-072-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Für lv_bestand kleiner ls_resb-bdmng wird eine Zeile aufgenommen und der Block verlassen' – Logik richtig, Fehlteil, gelbe Ampel und Nicht-Umsetzung nicht fachlich."
+  },
+  {
+   "id": "BM-072-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "Aufruf BAPI_PRODORD_CREATE_FROM_PLORD mit Planauftragsnummer erkannt; Auftragsart fehlt; 'umsetzen ... Wirkung nicht belegt' ist falsch, die FORM ist mitgeliefert."
+  },
+  {
+   "id": "BM-072-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback und Protokollzeile bei Fehler technisch; rote Ampel und Fehlertext nicht genannt."
+  },
+  {
+   "id": "BM-072-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Commit und Protokollzeile genannt; neue Auftragsnummer, grüne Ampel und 'umgesetzt' fehlen."
+  },
+  {
+   "id": "BM-072-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Sofortfreigabe über BAPI_PRODORD_RELEASE, Rollback mit Protokoll bei Fehler, sonst Commit – Ablauf richtig, aber nur technisch; Protokolltext fehlt."
+  },
+  {
+   "id": "BM-072-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "REUSE_ALV_GRID_DISPLAY genannt; Protokollinhalt fehlt; 'ausgabe ... Wirkung nicht belegt' falsch, die FORM ist mitgeliefert."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

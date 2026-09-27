@@ -1,0 +1,207 @@
+{
+ "id": "BM-115",
+ "titel": "Garantieprüfung beim Sichern der Meldung: Garantievererbung, Kundengarantie-Hinweis, Lieferantenregress mit dynamischer Nummernvergabe",
+ "prozess": "Beim Sichern einer Meldung ruft das System den Kundenexit auf. Die Prüfung greift nur beim Anlegen von Stör- oder Servicemeldungen der Arten M2 und S2 mit Equipment; hat ein Massenupload über das ABAP-Memory das Überspringen angefordert, wird ohne Prüfung gesichert. Sonst ermittelt ein Kundenbaustein die am Meldungsdatum gültige Garantie, zuerst am Equipment, dann bis zu fünf Stufen aufwärts über das jeweils übergeordnete Equipment; den Lieferanten übernimmt er stets aus dem gemeldeten Equipment. Ohne Garantie wird die Meldung ohne weitere Wirkung gesichert. Bei Kundengarantie erhält der Erfasser im Dialog einen Hinweis mit dem Garantieende. Bei Lieferantengarantie liest der Exit aus der Variablenpflege den Namen des Nummernbausteins für den Buchungskreis, zieht damit dynamisch eine Regressnummer und merkt den Regress mit Status NEU in einer Kundentabelle vor; scheitert das, verhindert er das Sichern mit Fehlermeldung. Die Regressnummer wird für das Regressschreiben im Memory abgelegt und dem Erfasser im Dialog gemeldet. Andere Garantiearten bleiben unbehandelt.",
+ "verboten": [
+  "z_pm_warranty_check.abap:30 — kein Fachsatz „die Lieferantengarantie hat Vorrang vor der Kundengarantie“: SELECT SINGLE ohne Sortierung liefert bei mehreren gültigen Garantien eine beliebige",
+  "z_pm_warranty_check.abap:54 — kein Fachsatz „der Regress geht an den Lieferanten des garantiegebenden Equipments“: der Lieferant wird immer vom gemeldeten Equipment gelesen, auch wenn die Garantie geerbt ist",
+  "zxqqmu20.abap:57 — kein Fachsatz „ohne gepflegten Nummernbaustein wird der Regress ohne Nummer vorgemerkt“: bei fehlendem TVARVC-Eintrag ist der Bausteinname leer und der Aufruf bricht mit Laufzeitfehler ab; das Ziel ist aus dem Fall nicht bekannt",
+  "gesamte Scheibe — kein Fachsatz „der Regress wird beim Lieferanten eingereicht oder gebucht“: er wird nur in ZPM_REGRESS mit Status NEU vorgemerkt"
+ ],
+ "saetze": [
+  {
+   "id": "BM-115-B01",
+   "soll": "Die Garantieprüfung greift nur beim Anlegen von Stör- (M2) oder Servicemeldungen (S2) mit Equipment.",
+   "zeilen": [
+    92
+   ],
+   "code": [
+    "92: CHECK i_aktyp = 'H'"
+   ],
+   "engine": [
+    "Nur i_aktyp = 'H' AND ( i_viqmel-qmart = 'M2' OR i_viqmel-qmart = 'S2' ) AND i_viqmel-equnr IS NOT INITIAL gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-115-B02",
+   "soll": "Hat der Massenupload das Überspringen angefordert, wird die Meldung ohne Garantieprüfung gesichert.",
+   "zeilen": [
+    97,
+    98,
+    99
+   ],
+   "code": [
+    "97: IMPORT skip = lv_skip FROM MEMORY ID 'ZPM_GARANTIE_SKIP'.",
+    "98: IF lv_skip = abap_true.",
+    "99:   RETURN."
+   ],
+   "engine": [
+    "Für lv_skip mit dem Wert abap_true wird der Block verlassen.",
+    "Bei lv_skip gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-115-B03",
+   "soll": "Für das Equipment wird die am Meldungsdatum gültige Garantie ermittelt; gibt es keine, wird ohne weitere Prüfung gesichert.",
+   "zeilen": [
+    102,
+    111,
+    112
+   ],
+   "code": [
+    "102: CALL FUNCTION 'Z_PM_WARRANTY_CHECK'",
+    "111: IF sy-subrc <> 0.",
+    "112:   RETURN."
+   ],
+   "engine": [
+    "Der Code übergibt i_viqmel-equnr an Z_PM_WARRANTY_CHECK und übernimmt dessen Ausgabe nach ls_war.",
+    "Das konvertierte Ergebnis wird in ls_war übernommen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-115-B04",
+   "soll": "Eine Garantie wird zuerst am Equipment selbst gesucht.",
+   "zeilen": [
+    46,
+    51
+   ],
+   "code": [
+    "46:     SELECT SINGLE gaart mganr gwldt gwlen FROM bgmkobj",
+    "51:     IF sy-subrc = 0."
+   ],
+   "engine": [
+    "gaart mganr gwldt gwlen des Satzes wird gelesen.",
+    "Bei Treffer wird der Block verlassen.",
+    "Bei Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-115-B05",
+   "soll": "Hat das Equipment keine gültige Garantie, wird sie über bis zu fünf Stufen vom jeweils übergeordneten Equipment geerbt; ohne übergeordnetes Equipment endet die Suche.",
+   "zeilen": [
+    42,
+    57,
+    60
+   ],
+   "code": [
+    "42:   WHILE lv_level < 5.",
+    "57:     SELECT SINGLE heqnr FROM equz INTO lv_equnr",
+    "60:     IF sy-subrc <> 0 OR lv_equnr IS INITIAL."
+   ],
+   "engine": [
+    "heqnr des Satzes wird gelesen.",
+    "Für sy-subrc <> 0 OR lv_equnr IS INITIAL wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-115-B06",
+   "soll": "Wird keine Garantie gefunden, meldet der Prüfbaustein „keine Garantie“.",
+   "zeilen": [
+    65,
+    66
+   ],
+   "code": [
+    "65:   IF es_warranty-gaart IS INITIAL.",
+    "66:     RAISE no_warranty."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-115-B07",
+   "soll": "Als Garantielieferant wird der Lieferant aus dem Stamm des gemeldeten Equipments übernommen.",
+   "zeilen": [
+    70
+   ],
+   "code": [
+    "70:   SELECT SINGLE elief FROM equi INTO es_warranty-lifnr"
+   ],
+   "engine": [
+    "elief des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-115-B08",
+   "soll": "Bei Kundengarantie erhält der Erfasser im Dialog einen Hinweis mit Garantieende.",
+   "zeilen": [
+    115,
+    118,
+    119
+   ],
+   "code": [
+    "115: CASE ls_war-gaart.",
+    "118:     IF sy-batch IS INITIAL.",
+    "119:       MESSAGE i220(zpm) WITH i_viqmel-equnr ls_war-gwlen."
+   ],
+   "engine": [
+    "Ohne sy-batch wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-115-B09",
+   "soll": "Bei Lieferantengarantie wird der Baustein für die Regressnummer des Buchungskreises aus der Variablenpflege gelesen und damit eine Regressnummer gezogen.",
+   "zeilen": [
+    125,
+    129
+   ],
+   "code": [
+    "125:     SELECT SINGLE low FROM tvarvc INTO lv_fname",
+    "129:     CALL FUNCTION lv_fname"
+   ],
+   "engine": [
+    "low des Satzes wird gelesen.",
+    "Der Funktionsbaustein lv_fname wird aufgerufen. Welcher Baustein das ist, entscheidet die Eingabe zur Laufzeit.",
+    "Das konvertierte Ergebnis wird in lv_regnr übernommen."
+   ]
+  },
+  {
+   "id": "BM-115-B10",
+   "soll": "Der Regress wird mit Meldung, Garantie-Equipment, Lieferant, Garantie und Status NEU vorgemerkt; scheitert das, wird das Sichern der Meldung mit Fehler verhindert.",
+   "zeilen": [
+    142,
+    143,
+    144
+   ],
+   "code": [
+    "142:     INSERT zpm_regress FROM ls_regr.",
+    "143:     IF sy-subrc <> 0.",
+    "144:       MESSAGE e221(zpm) WITH lv_regnr RAISING exit_from_save."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-115-B11",
+   "soll": "Die Regressnummer wird für das Regressschreiben bereitgelegt und der Erfasser im Dialog informiert.",
+   "zeilen": [
+    148,
+    149,
+    150
+   ],
+   "code": [
+    "148:     EXPORT regnr = lv_regnr TO MEMORY ID 'ZPM_REGRESS'.",
+    "149:     IF sy-batch IS INITIAL.",
+    "150:       MESSAGE i222(zpm) WITH ls_war-lifnr lv_regnr."
+   ],
+   "engine": [
+    "Ohne sy-batch wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-115-B12",
+   "soll": "Andere Garantiearten werden nicht behandelt.",
+   "zeilen": [
+    153
+   ],
+   "code": [
+    "153:   WHEN OTHERS."
+   ],
+   "engine": []
+  }
+ ]
+}

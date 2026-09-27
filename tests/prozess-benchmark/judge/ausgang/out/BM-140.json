@@ -1,0 +1,153 @@
+{
+ "id": "BM-140",
+ "urteile": [
+  {
+   "id": "BM-140-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus vtbfha selektiert\"; offene Devisengeschäfte, Selektion und Beträge fehlen."
+  },
+  {
+   "id": "BM-140-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung und Verlassen erkannt; CHECK gt_mtm als Schleife mit \"kleinere werden übersprungen\" beschrieben; Wegfall von Export/Sicherung/Liste fehlt."
+  },
+  {
+   "id": "BM-140-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus ztrm_fwd_pts zum Datum erkannt; Terminpunkte/Währungen nicht benannt."
+  },
+  {
+   "id": "BM-140-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "READ_EXCHANGE_RATE und Meldung bei Fehlschlag erkannt; Mittelkurs gegen EUR und \"nicht bewertet\" fehlen."
+  },
+  {
+   "id": "BM-140-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife über Terminpunkte und Abbruch beim passenden Band technisch erkannt; Addition zum Mittelkurs fehlt."
+  },
+  {
+   "id": "BM-140-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Marktwertberechnung."
+  },
+  {
+   "id": "BM-140-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Ohne Treffer wird der Block verlassen\"; Import aus dem Datencluster und \"keine Veränderung\" fehlen."
+  },
+  {
+   "id": "BM-140-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"In der Tabelle wird nach einer passenden Zeile gesucht\"; Veränderungsberechnung fehlt."
+  },
+  {
+   "id": "BM-140-B09",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Summierung positiver Marktwerte."
+  },
+  {
+   "id": "BM-140-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen von low/limit und Aufruf pruefen (\"Wirkung nicht belegt\") erkannt; Standardlimit-Logik und Zeitpunkt fehlen."
+  },
+  {
+   "id": "BM-140-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Eine Zeile wird in gt_breach aufgenommen\"; Bedingung und Ereignis fehlen."
+  },
+  {
+   "id": "BM-140-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Meldung bei Fehler; XML-Schreiben in die Datei fehlt."
+  },
+  {
+   "id": "BM-140-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Ohne p_test wird stand_sichern aufgerufen\" und COMMIT erkannt; Sichern im Datencluster nicht benannt."
+  },
+  {
+   "id": "BM-140-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Kopfzeile je Kontrahent und Geschäftszeile erkannt, nur mit Feldnamen."
+  },
+  {
+   "id": "BM-140-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Ausgabe \"Limitüberschreitung\" mit Feldern erkannt; Hervorhebung fehlt."
+  },
+  {
+   "id": "BM-140-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "SUBMIT, LIST_FROM_MEMORY und WRITE_LIST bei Treffer erkannt, nicht als Anhängen der Positionsliste formuliert."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

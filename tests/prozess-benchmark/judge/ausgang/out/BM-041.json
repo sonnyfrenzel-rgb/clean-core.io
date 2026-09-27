@@ -1,0 +1,51 @@
+{
+ "id": "BM-041",
+ "urteile": [
+  {
+   "id": "BM-041-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik"
+   ],
+   "kurz": "Lesen nach Buchungskreis und Kunde ist genannt, aber nur als 'Sätze aus bsid' statt offene Debitorenposten; 'dem eingegebenen Kundennummer' ist falscher Artikel."
+  },
+  {
+   "id": "BM-041-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Berechnung der Nettofälligkeit an Zeile 21."
+  },
+  {
+   "id": "BM-041-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Die Bedingung 'lv_faell kleiner p_stich' steht nur technisch da; Vorzeichen für Habenposten und Aufsummierung fehlen."
+  },
+  {
+   "id": "BM-041-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Die Listenausgabe ist erkannt, aber nur mit Variablennamen (ls_bsid-belnr, lv_faell) und mehrfach wiederholt."
+  },
+  {
+   "id": "BM-041-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "'lv_summe wird ausgegeben' trifft technisch zu; 'Bei Treffern ... Summe' suggeriert eine Bedingung, die Summenzeile wird aber immer ausgegeben; 'belegt nur das Erreichen dieser Stelle' ist inhaltsleer."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

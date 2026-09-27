@@ -1,0 +1,40 @@
+{
+ "id": "BM-103",
+ "urteile": [
+  {
+   "id": "BM-103-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Bedingung S1/S3 nur als Code; 'kleinere werden übersprungen, die Schleife läuft weiter' ist falsch (CHECK in einer Methode, keine Schleife)."
+  },
+  {
+   "id": "BM-103-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Für sy-uname mit dem Wert TWEBER wird der Block verlassen' entspricht dem Soll."
+  },
+  {
+   "id": "BM-103-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'kukla des Kunden wird gelesen' – Kundenklassifizierung nur als Feldname."
+  },
+  {
+   "id": "BM-103-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Prioritätsableitung."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

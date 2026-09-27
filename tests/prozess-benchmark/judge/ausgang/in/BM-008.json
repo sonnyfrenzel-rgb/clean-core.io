@@ -1,0 +1,136 @@
+{
+ "id": "BM-008",
+ "titel": "Lieferung zum Auftrag per BAPI: Sperr- und Kreditprüfung, Commit nur ohne Fehler und außerhalb des Testlaufs",
+ "prozess": "Der Funktionsbaustein wird vom Versandleitstand oder dem Nachtjob mit Auftrag, Versandstelle, Stichtag und Testlaufkennzeichen aufgerufen. Er prüft nacheinander, ob der Auftrag existiert, ob er eine Liefersperre hat und ob sein Kreditstatus nicht ok oder nur teilweise freigegeben ist; in jedem dieser Fälle gibt er eine Meldung zurück und legt nichts an. Dann liest er alle nicht abgesagten Positionen; gibt es keine, endet er mit einer Warnung. Andernfalls übergibt er diese Positionen mit ihrer vollen Auftragsmenge an den Standard-BAPI zur Anlage einer Auslieferung. Enthält die Rückmeldung einen Fehler oder ist Testlauf gesetzt, rollt er zurück und gibt keine Lieferungsnummer zurück. Sonst schreibt er die Lieferung synchron fest und gibt Lieferungsnummer und Anzahl der Lieferungen zurück.",
+ "verboten": [
+  "source.abap:48 — kein Fachsatz „es wird nur die offene Restmenge geliefert“: übergeben wird die volle Auftragsmenge, die Begrenzung auf die offene Menge leistet höchstens der Standard",
+  "source.abap:75 — kein Fachsatz „Abbruchmeldungen (Typ A) verhindern das Festschreiben“: gesucht wird nur Typ E",
+  "source.abap:42 — kein Fachsatz „Aufträge ohne Kreditprüfung werden abgelehnt“: nur die Status B und C halten auf, ein fehlender Statussatz nicht"
+ ],
+ "saetze": [
+  {
+   "id": "BM-008-B01",
+   "soll": "Existiert der Auftrag nicht, wird die Fehlermeldung 301 zurückgegeben und keine Lieferung angelegt.",
+   "zeilen": [
+    28,
+    29,
+    32
+   ],
+   "code": [
+    "28:   SELECT SINGLE lifsk FROM vbak INTO lv_lifsk WHERE vbeln = iv_vbeln.",
+    "29:   IF sy-subrc <> 0.",
+    "32:     RETURN."
+   ],
+   "engine": [
+    "Sperrkennzeichen des Auftrags wird gelesen.",
+    "Ohne Treffer wird eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-008-B02",
+   "soll": "Hat der Auftrag eine Liefersperre, wird mit Meldung 302 und der Sperre abgebrochen.",
+   "zeilen": [
+    34,
+    37
+   ],
+   "code": [
+    "34:   IF lv_lifsk IS NOT INITIAL.",
+    "37:     RETURN."
+   ],
+   "engine": [
+    "Mit einer nicht leeren Sperrkennzeichen wird eine Zeile aufgenommen und der Block verlassen.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-008-B03",
+   "soll": "Ist der Auftrag kreditgesperrt oder nur teilweise freigegeben (Kreditstatus B oder C), wird mit Meldung 303 abgebrochen.",
+   "zeilen": [
+    41,
+    42,
+    45
+   ],
+   "code": [
+    "41:   SELECT SINGLE cmgst FROM vbuk INTO lv_cmgst WHERE vbeln = iv_vbeln.",
+    "42:   IF lv_cmgst = 'B' OR lv_cmgst = 'C'.",
+    "45:     RETURN."
+   ],
+   "engine": [
+    "cmgst des Satzes wird gelesen.",
+    "Für lv_cmgst = 'B' OR lv_cmgst = 'C' wird eine Zeile aufgenommen und der Block verlassen.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-008-B04",
+   "soll": "Liefervorlage sind alle nicht abgesagten Positionen mit ihrer vollen Auftragsmenge; gibt es keine, endet der Baustein mit der Warnung 304.",
+   "zeilen": [
+    48,
+    51,
+    54
+   ],
+   "code": [
+    "48:   SELECT posnr kwmeng vrkme FROM vbap INTO TABLE lt_pos",
+    "51:   IF lt_pos IS INITIAL.",
+    "54:     RETURN."
+   ],
+   "engine": [
+    "Es werden Sätze aus vbap selektiert.",
+    "Ohne Treffer wird eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-008-B05",
+   "soll": "Zu diesen Positionen wird für die Versandstelle und das Stichtagsdatum eine Auslieferung angelegt.",
+   "zeilen": [
+    63
+   ],
+   "code": [
+    "63:   CALL FUNCTION 'BAPI_OUTB_DELIVERY_CREATE_SLS'"
+   ],
+   "engine": [
+    "Der Code übergibt iv_vstel an BAPI_OUTB_DELIVERY_CREATE_SLS und übernimmt dessen Ausgabe nach ev_delivery.",
+    "Das konvertierte Ergebnis wird in ev_delivery übernommen."
+   ]
+  },
+  {
+   "id": "BM-008-B06",
+   "soll": "Enthält das Ergebnis eine Fehlermeldung oder ist Testlauf gesetzt, wird die Lieferanlage zurückgerollt und keine Lieferungsnummer zurückgegeben.",
+   "zeilen": [
+    75,
+    76,
+    77
+   ],
+   "code": [
+    "75:   READ TABLE et_return TRANSPORTING NO FIELDS WITH KEY type = 'E'.",
+    "76:   IF sy-subrc = 0 OR iv_testrun = abap_true.",
+    "77:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Für sy-subrc = 0 OR iv_testrun = abap_true wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Für sy-subrc = 0 OR iv_testrun = abap_true wird BAPI_TRANSACTION_ROLLBACK aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-008-B07",
+   "soll": "Sonst wird die Lieferung synchron festgeschrieben und ihre Nummer zurückgegeben.",
+   "zeilen": [
+    80
+   ],
+   "code": [
+    "80:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Für sy-subrc = 0 OR iv_testrun = abap_true wird BAPI_TRANSACTION_ROLLBACK aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,175 @@
+{
+ "id": "BM-038",
+ "urteile": [
+  {
+   "id": "BM-038-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur BAL_LOG_CREATE mit ls_log/mv_handle; Protokoll ZWM/WAVE, externe Nummer und 30 Tage nicht fachlich."
+  },
+  {
+   "id": "BM-038-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus likp mit k~vstel und k~lgnum\" – Routen, WA-Datum, Kommissionier-/WM-Status und Sperre fehlen."
+  },
+  {
+   "id": "BM-038-B03",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Meldung und Ende genannt, add/save \"nicht belegt\", aber \"es wird nichts geschrieben\" ist falsch – go_log->save( ) sichert das Protokoll mit BAL_DB_SAVE und COMMIT WORK."
+  },
+  {
+   "id": "BM-038-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu Sortierung und Kappung."
+  },
+  {
+   "id": "BM-038-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "ENQUEUE und \"Ohne Treffer wird die Status auf L gesetzt und der Block verlassen\" – fremd gesperrte Lieferung als \"Ohne Treffer\", Warnung fehlt."
+  },
+  {
+   "id": "BM-038-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "L_TO_CREATE_DN mit p_lgnum/lv_tanum – Anlage des Transportauftrags und Festschreiben nicht fachlich."
+  },
+  {
+   "id": "BM-038-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Status E, entsperren und Verlassen stimmen, aber gescheiterte TA-Anlage als \"Ohne Treffer\"; Protokoll nur \"add_sy nicht belegt\"."
+  },
+  {
+   "id": "BM-038-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Die Status wird auf S gesetzt\", add \"nicht belegt\" – TA-Nummer und Erfolg im Protokoll nicht erkennbar."
+  },
+  {
+   "id": "BM-038-B09",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "\"Bei p_conf gleich abap_true wird der Block verlassen\" ist falsch – bei gewählter Sofortquittierung wird geprüft und quittiert, verlassen wird nur die Positionsschleife bei Nicht-Fixplatz."
+  },
+  {
+   "id": "BM-038-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "entsperren \"nicht belegt\" und DEQUEUE_EVVBLKE – Entsperren nur technisch."
+  },
+  {
+   "id": "BM-038-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "ta_drucken bei p_print, asynchroner Start von Z_WM_PRINT_TO – nicht quittierte TAs und max. fünf parallel fehlen."
+  },
+  {
+   "id": "BM-038-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"add von go_log … nicht belegt\"; Protokoll bei Startfehler und 120-Sekunden-Wartezeit fehlen."
+  },
+  {
+   "id": "BM-038-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus ltak/ltap selektiert\" – Druckfehler bei fehlendem Kopf fehlt."
+  },
+  {
+   "id": "BM-038-B14",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "\"Ohne Treffer wird die Unterprogramm auf ZWM_PICKLIST gesetzt\" – gesetzt wird das Formular, kein Unterprogramm; sofortige Ausgabe ohne Dialog fehlt."
+  },
+  {
+   "id": "BM-038-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "\"Die drukz in ltak wird geändert\" und COMMIT – Druckkennzeichen am TA-Kopf nur technisch."
+  },
+  {
+   "id": "BM-038-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Bei Treffer wird eine Zeile aufgenommen\", Spool in gt_spool – Empfang der Rückmeldung als \"Treffer\", Fehlerprotokoll nur \"nicht belegt\"."
+  },
+  {
+   "id": "BM-038-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "save \"nicht belegt\", BAL_DSP_LOG_DISPLAY und Zählerausgabe – Unterscheidung Dialog/Hintergrund fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

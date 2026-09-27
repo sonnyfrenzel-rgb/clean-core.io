@@ -1,0 +1,190 @@
+{
+ "id": "BM-176",
+ "urteile": [
+  {
+   "id": "BM-176-B01",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch"
+   ],
+   "kurz": "GET PARAMETER wird als Verarbeitung von LDB-Sätzen gedeutet; Vorbelegung der Portion fehlt."
+  },
+  {
+   "id": "BM-176-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus te420 und Meldung ohne Treffer; Abweisung einer unbekannten Portion nicht fachlich."
+  },
+  {
+   "id": "BM-176-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung bei Code-Bedingung; Abweisung großer Dialog-Echtläufe nicht fachlich."
+  },
+  {
+   "id": "BM-176-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu SET PARAMETER / SET HANDLER."
+  },
+  {
+   "id": "BM-176-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "„Sätze aus eanlh selektiert“ mit Feldliste; Portion und aktiver Vertrag fehlen."
+  },
+  {
+   "id": "BM-176-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Eine Meldung wird ausgegeben“; Abbruch ohne Anlagen fehlt."
+  },
+  {
+   "id": "BM-176-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur ENQUEUE-Aufruf; Übergehen gesperrter Anlagen mit Warnung fehlt."
+  },
+  {
+   "id": "BM-176-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "„Mit einer nicht leeren is_anl-abrsperr wird der Block verlassen“; Protokollierung fehlt."
+  },
+  {
+   "id": "BM-176-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Blockverlassen bei ablesung_vorhanden und „Zahl der Sätze wird ermittelt“; Turnusablesung/Ablesegrund 01 nicht fachlich."
+  },
+  {
+   "id": "BM-176-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Blockverlassen bei RLM oder abgeschalteter Schätzung; Sperre mit Grund 05 bzw. Warnung fehlt."
+  },
+  {
+   "id": "BM-176-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur der Testlauf-Ausstieg; das Schätzen selbst wird nicht gesagt."
+  },
+  {
+   "id": "BM-176-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf Z_ISU_ABLESUNG_SCHAETZEN mit Ergebnis lv_subrc; Protokoll bei Erfolg fehlt."
+  },
+  {
+   "id": "BM-176-B13",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Sperre mit Grund 06."
+  },
+  {
+   "id": "BM-176-B14",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur „Methode get_text von lx_anl – Verhalten nicht belegt“; Abbruch der Anlage, Fehlerprotokoll, Fortsetzung fehlen."
+  },
+  {
+   "id": "BM-176-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "„Die abrsperr in ever wird geändert“ und Testlauf-Ausstieg; Abrechnungssperre am Vertrag und Protokoll nicht fachlich."
+  },
+  {
+   "id": "BM-176-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Nur DEQUEUE-Aufruf; Freigabe der Anlagensperre nicht fachlich."
+  },
+  {
+   "id": "BM-176-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback im Test, Commit sonst erkannt; Paketgröße und Protokoll fehlen."
+  },
+  {
+   "id": "BM-176-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung bei Fehler im Hintergrund; Übernahme jeder Meldung ins Protokoll und Jobprotokoll nicht fachlich."
+  },
+  {
+   "id": "BM-176-B19",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Ohne Meldungen wird „Kein Protokoll vorhanden.“ ausgegeben – entspricht dem Sollsatz."
+  },
+  {
+   "id": "BM-176-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Feldausgabe im Hintergrund und ALV-Aufruf technisch; Filter auf Fehler/Warnungen und Dialog-ALV nicht erkannt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

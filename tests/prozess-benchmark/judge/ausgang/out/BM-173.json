@@ -1,0 +1,102 @@
+{
+ "id": "BM-173",
+ "urteile": [
+  {
+   "id": "BM-173-B01",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch"
+   ],
+   "kurz": "GET PARAMETER wird als Verarbeitung von Sätzen einer logischen Datenbank gedeutet – völlig falsch; Vorbelegung des Versorgungsbereichs fehlt."
+  },
+  {
+   "id": "BM-173-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "„Die Screenfolge wird beendet“; Auslöser Zurück/Beenden und Verlassen des Programms nicht benannt."
+  },
+  {
+   "id": "BM-173-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus pkps und Meldung ohne Treffer; Fehlermeldung „Behälter unbekannt“ und Stehenbleiben der Maske fehlen."
+  },
+  {
+   "id": "BM-173-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Lesen aus pkhd und Meldung bei abweichendem prvbe nur als Code-Ausdruck; Regelkreis/Versorgungsbereich nicht fachlich."
+  },
+  {
+   "id": "BM-173-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Berechtigungsprüfung Z_KANBAN und Meldung erkannt; Abweisung des Scans / Werk nicht gesagt."
+  },
+  {
+   "id": "BM-173-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "BAPI-Aufruf, Rollback mit Meldung und Commit technisch; Setzen auf „leer“ und Bedingung voll/in Benutzung fehlen."
+  },
+  {
+   "id": "BM-173-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "„übergibt 'Behaelter an POPUP_TO_CONFIRM“ (verstümmelt); Frage nach Eil-Nachschub nicht fachlich."
+  },
+  {
+   "id": "BM-173-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Bei Antwort 1 sonderkanban-Aufruf und Commit; Speichern der Eil-Anforderung und Einmal-je-Tag-Regel fehlen."
+  },
+  {
+   "id": "BM-173-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Eine Meldung wird ausgegeben“; Ablehnung der Leermeldung für andere Status fehlt."
+  },
+  {
+   "id": "BM-173-B10",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "„Die Screenfolge wird beendet“ an LEAVE TO SCREEN 200/100 ist falsch – dort wird zur Rückmelde- bzw. Scanmaske gewechselt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

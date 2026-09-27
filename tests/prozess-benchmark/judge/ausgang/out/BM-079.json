@@ -1,0 +1,188 @@
+{
+ "id": "BM-079",
+ "urteile": [
+  {
+   "id": "BM-079-B01",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Meldungsart und Priorität werden gelesen, bei fehlender Meldung, Art ungleich M2 oder Priorität ungleich 1 wird verlassen – fachlich dasselbe, technisch formuliert."
+  },
+  {
+   "id": "BM-079-B02",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "Nur 'Methode process ... Verhalten nicht belegt' – falsch, die Methode ist mitgeliefert; die Überführung in einen Auftrag wird nicht gesagt."
+  },
+  {
+   "id": "BM-079-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu TEMP_ERROR/ANY_ERROR."
+  },
+  {
+   "id": "BM-079-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen der Meldungsfelder nur als ABAP-Fragment; Abbruch bei fehlender oder falscher Meldung fehlt."
+  },
+  {
+   "id": "BM-079-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Mit einer nicht leeren ls_notif-aufnr wird der Block verlassen' – Rückmeldung 'hat bereits Auftrag' fehlt."
+  },
+  {
+   "id": "BM-079-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'ENQUEUE_EIQMEL wird aufgerufen'; Abbruch mit 'gesperrt' fehlt."
+  },
+  {
+   "id": "BM-079-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Prüfung auf Equipment und Lesen von abckz genannt; Kennzeichen A als kritisch fehlt; 'kleinere werden übersprungen, die Schleife läuft weiter' falsch (CHECK in Methode)."
+  },
+  {
+   "id": "BM-079-B08",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Bei lv_crit Priorität 1, sonst 2 – fachlich dasselbe; 'setzen die lv_priok' fehlerhaft."
+  },
+  {
+   "id": "BM-079-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'BAPI_ALM_ORDER_MAINTAIN wird aufgerufen'; Auftragsart PM01, Meldungsbezug und Vorgang fehlen."
+  },
+  {
+   "id": "BM-079-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "DEQUEUE, Rollback bei E/A und Commit genannt; Abbruch mit Fehler und Übernahme der Auftragsnummer fehlen."
+  },
+  {
+   "id": "BM-079-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'BAPI_ALM_ORDER_MAINTAIN wird aufgerufen'; Sofortfreigabe bei kritischer Anlage und Vermerk im Text fehlen."
+  },
+  {
+   "id": "BM-079-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Benachrichtigung eines entfernten Systems über die Destination erkannt; CMMS, synchron, Vormerkung in der Nachversand-Queue fehlen; 'Ohne Treffer wird COMMIT WORK ausgeführt' unverständlich."
+  },
+  {
+   "id": "BM-079-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'SAP_WAPI_CREATE_EVENT wird aufgerufen'; Ereignis ZBREAKDOWN nicht genannt."
+  },
+  {
+   "id": "BM-079-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'DEQUEUE_EIQMEL wird aufgerufen' – Aufheben der Meldungssperre nur über den Bausteinnamen."
+  },
+  {
+   "id": "BM-079-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus qmel mit Planungswerk und Hinweis 'Keine offenen Stoermeldungen ohne Auftrag' erkannt; M2, Priorität 1 und Zeitraum fehlen."
+  },
+  {
+   "id": "BM-079-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch"
+   ],
+   "kurz": "Ausgabe mit grüner/roter Ampel erkannt; 'process ... nicht belegt' ist falsch, 'Der Rückgabewert als Liste' holprig."
+  },
+  {
+   "id": "BM-079-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus aufk selektiert' ohne Art/Meldungsbezug/Werk; 'Bei p_teco ... zurückgekehrt; es wird nichts geschrieben' ist falsch, complete_confirmed hat vorher technisch abgeschlossen."
+  },
+  {
+   "id": "BM-079-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Statuslesungen, BAPI-Aufruf und Rollback/Commit genannt; Bedingung 'rückgemeldet, nicht abgeschlossen' und Zählung fehlen."
+  },
+  {
+   "id": "BM-079-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "Ausgabe 'Technisch abgeschlossen:' mit Rückgabewert erkannt, Anzahl nicht als solche benannt; 'es wird nichts geschrieben' ist falsch."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

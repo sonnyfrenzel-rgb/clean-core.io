@@ -1,0 +1,108 @@
+{
+ "id": "BM-033",
+ "urteile": [
+  {
+   "id": "BM-033-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Prüfung des Nachrichtentyps."
+  },
+  {
+   "id": "BM-033-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "\"Jede Zeile aus idoc_contrl wird einzeln verarbeitet\" – sinngemäß richtig, aber nur über den Tabellennamen."
+  },
+  {
+   "id": "BM-033-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Lesen der Segmente."
+  },
+  {
+   "id": "BM-033-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "Meldungstext \"Kopfsegment oder Positionen fehlen\" bei technischer Bedingung; dass das IDoc fehlerhaft wird, fehlt."
+  },
+  {
+   "id": "BM-033-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "ekko-Lesen und Verlassen bei sy-subrc/loekz technisch; Übernahme des Lieferanten fehlt."
+  },
+  {
+   "id": "BM-033-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "ekpo-Lesen und Bedingung sy-subrc/loekz/elikz technisch; offene Position und Fehlerfolge nicht fachlich."
+  },
+  {
+   "id": "BM-033-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"mblnr des Satzes wird gelesen\"; Dublettenprüfung und Ablehnung fehlen."
+  },
+  {
+   "id": "BM-033-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "gm_code 01, move_type 101 und BAPI_GOODSMVT_CREATE – Wareneingang zur Bestellung nur technisch."
+  },
+  {
+   "id": "BM-033-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback bei sy-subrc = 0 OR pv_mblnr IS INITIAL – Fehler/kein Materialbeleg nicht fachlich, Fehlertext fehlt."
+  },
+  {
+   "id": "BM-033-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "status_setzen \"nicht belegt\", wf_param Error_IDOCs, workflow_result 99999 – Status 51 und Fehlermeldung an den Workflow nicht fachlich."
+  },
+  {
+   "id": "BM-033-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur status_setzen und Processed_IDOCs; Registrierung in der Dublettentabelle und Status 53 fehlen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

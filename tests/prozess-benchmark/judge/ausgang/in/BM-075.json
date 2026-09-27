@@ -1,0 +1,173 @@
+{
+ "id": "BM-075",
+ "titel": "Rückmelde-BAdI: Ausschusstoleranz, Stornosperre und Tagesstatistik",
+ "prozess": "Die Implementierung hängt sich in die Rückmeldung von Fertigungsaufträgen. Beim Sichern prüft sie für Aufträge der Arten PP01 und PP02 mit rückgemeldetem Ausschuss die Ausschussquote gegen die Toleranz des Arbeitsplatzes, ersatzweise 5 %. Liegt die Quote darüber und fehlt ein Abweichungsgrund, lehnt sie das Sichern mit einer Fehlermeldung ab; mit Grund registriert sie eine Ausschussmeldung für die Verbuchung. In der Verbuchung legt diese einen Protokollsatz an und löst beim ersten Mal am Tag ein Workflow-Ereignis für die Qualitätssicherung aus; weitere Überschreitungen erhöhen nur die Menge. Beim Stornieren prüft sie, ob ein späterer Vorgang desselben Auftrags schon rückgemeldet ist, und lehnt den Storno dann ab. Außerdem schreibt sie in der Verbuchung für jede nicht stornierte Rückmeldung die Tagesstatistik je Werk und Arbeitsplatz fort.",
+ "verboten": [
+  "zcl_im_pp_conf_check.abap:51 — kein Fachsatz „Die QS wird beim Sichern sofort informiert“ (der Baustein ist nur für die Verbuchung registriert und läuft erst nach dem Commit; ohne Commit nie)",
+  "zcl_im_pp_conf_check.abap:92 — kein Fachsatz „Stornos mindern die Tagesstatistik“ (Stornosätze werden übersprungen, laut Kommentar eine Altlast)",
+  "zcl_im_pp_conf_check.abap:48 — kein Fachsatz „Eine Überschreitung der Toleranz blockiert immer“ (mit Abweichungsgrund wird gesichert)",
+  "gesamte Scheibe — kein Fachsatz „Es wird eine Qualitätsmeldung angelegt“ (es gibt nur einen Protokollsatz und ein Workflow-Ereignis)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-075-B01",
+   "soll": "Beim Sichern einer Rückmeldung wird nur für Fertigungsaufträge der Arten PP01 und PP02 geprüft.",
+   "zeilen": [
+    83,
+    85,
+    86
+   ],
+   "code": [
+    "83:     SELECT SINGLE auart FROM aufk INTO lv_auart",
+    "85:     IF lv_auart <> 'PP01' AND lv_auart <> 'PP02'.",
+    "86:       RETURN."
+   ],
+   "engine": [
+    "Auftragsart des Satzes wird gelesen.",
+    "Für lv_auart <> 'PP01' AND lv_auart <> 'PP02' wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-075-B02",
+   "soll": "Geprüft wird nur, wenn überhaupt Menge und Ausschuss rückgemeldet werden; die Ausschussquote ist Ausschuss geteilt durch Gutmenge plus Ausschuss in Prozent.",
+   "zeilen": [
+    89,
+    90,
+    92
+   ],
+   "code": [
+    "89:     lv_menge = is_confirmation-lmnga + is_confirmation-xmnga.",
+    "90:     CHECK lv_menge > 0 AND is_confirmation-xmnga > 0.",
+    "92:     lv_quote = is_confirmation-xmnga * 100 / lv_menge."
+   ],
+   "engine": [
+    "Nur lv_menge > 0 AND is_confirmation-xmnga > 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-075-B03",
+   "soll": "Die zulässige Quote kommt aus der Toleranztabelle je Werk und Arbeitsplatz; ist dort nichts gepflegt, gelten 5 %.",
+   "zeilen": [
+    93,
+    166,
+    170
+   ],
+   "code": [
+    "93:     lv_tol   = get_toleranz( iv_werks = is_confirmation-werks",
+    "166:     SELECT SINGLE toleranz FROM zpp_auss_tol INTO rv_tol",
+    "170:       rv_tol = c_default_tol."
+   ],
+   "engine": [
+    "toleranz des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-075-B04",
+   "soll": "Liegt die Quote über der Toleranz und fehlt ein Abweichungsgrund, wird das Sichern mit einer Fehlermeldung abgelehnt.",
+   "zeilen": [
+    96,
+    97,
+    98
+   ],
+   "code": [
+    "96:     IF lv_quote > lv_tol.",
+    "97:       IF is_confirmation-grund IS INITIAL.",
+    "98:         MESSAGE e120(zpp) WITH lv_quote lv_tol RAISING error_with_message."
+   ],
+   "engine": [
+    "Für lv_quote größer lv_tol wird Z_PP_AUSSCHUSS_MELDEN aufgerufen.",
+    "Ohne is_confirmation-grund wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-075-B05",
+   "soll": "Mit Abweichungsgrund wird eine Ausschussmeldung mit Auftrag, Vorgang, Werk, Menge, Quote und Grund für die Verbuchung registriert; sie läuft erst mit dem Festschreiben der Rückmeldung.",
+   "zeilen": [
+    101
+   ],
+   "code": [
+    "101:       CALL FUNCTION 'Z_PP_AUSSCHUSS_MELDEN' IN UPDATE TASK"
+   ],
+   "engine": [
+    "Für lv_quote größer lv_tol wird Z_PP_AUSSCHUSS_MELDEN aufgerufen.",
+    "Der Baustein Z_PP_AUSSCHUSS_MELDEN wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Ob ein COMMIT WORK ihn auf jedem Weg anstößt, ist im gelieferten Code nicht bestimmt."
+   ]
+  },
+  {
+   "id": "BM-075-B06",
+   "soll": "In der Verbuchung wird die Ausschussmeldung protokolliert; gibt es für Auftrag, Vorgang und Tag schon einen Eintrag, wird nur die Ausschussmenge erhöht und kein Workflow ausgelöst.",
+   "zeilen": [
+    27,
+    28,
+    30,
+    34
+   ],
+   "code": [
+    "27:   INSERT zpp_auss_log FROM ls_log.",
+    "28:   IF sy-subrc <> 0.",
+    "30:     UPDATE zpp_auss_log SET xmnga = xmnga + iv_xmnga",
+    "34:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Zeile geändert und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Es wird eine Zeile geändert und der Block verlassen.",
+    "Die xmnga in zpp_auss_log wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK."
+   ]
+  },
+  {
+   "id": "BM-075-B07",
+   "soll": "Bei der ersten Überschreitung am Tag wird das Workflow-Ereignis ZSCRAPEXCEEDED zum Fertigungsauftrag ausgelöst, um die Qualitätssicherung zu informieren.",
+   "zeilen": [
+    39
+   ],
+   "code": [
+    "39:   CALL FUNCTION 'SWE_EVENT_CREATE'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein SWE_EVENT_CREATE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-075-B08",
+   "soll": "Ein Storno wird abgelehnt, wenn für einen späteren Vorgang desselben Auftrags bereits eine nicht stornierte Rückmeldung existiert.",
+   "zeilen": [
+    119,
+    127,
+    128
+   ],
+   "code": [
+    "119:     SELECT SINGLE r~rueck",
+    "127:     IF sy-subrc = 0.",
+    "128:       MESSAGE e121(zpp) WITH is_confirmation-vornr RAISING error_with_message."
+   ],
+   "engine": [
+    "r~rueck INTO lv_rueck des Satzes wird gelesen.",
+    "Bei Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-075-B09",
+   "soll": "In der Verbuchung wird je Rückmeldung (ohne Stornosätze) die Tagesstatistik je Werk, Arbeitsplatz und Buchungsdatum um Gutmenge, Ausschuss und Anzahl fortgeschrieben; fehlt der Tagessatz, wird er neu angelegt.",
+   "zeilen": [
+    140,
+    142,
+    146,
+    160
+   ],
+   "code": [
+    "140:     LOOP AT it_confirmations INTO DATA(ls_conf).",
+    "142:       IF ls_conf-stokz = abap_true.",
+    "146:       SELECT SINGLE * FROM zpp_conf_stat INTO ls_stat",
+    "160:       MODIFY zpp_conf_stat FROM ls_stat."
+   ],
+   "engine": [
+    "Jede Zeile aus it_confirmations wird einzeln verarbeitet.",
+    "Es werden Sätze aus zpp_conf_stat selektiert.",
+    "Eine Zeile in zpp_conf_stat wird eingefügt oder überschrieben. Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK."
+   ]
+  }
+ ]
+}

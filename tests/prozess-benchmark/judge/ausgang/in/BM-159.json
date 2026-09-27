@@ -1,0 +1,287 @@
+{
+ "id": "BM-159",
+ "titel": "IDoc-Eingang Reisebuchungsportal: Reisen mit Belegen und Verpflegungspauschale anlegen",
+ "prozess": "Ein externes Reisebuchungsportal sendet abgeschlossene Reisen als IDocs vom Typ ZTRIP; andere Nachrichtentypen werden abgewiesen. Je IDoc werden Reisekopf und Belege übernommen; fehlt der Kopf, erhält das IDoc den Fehlerstatus. Ist die externe Reise-ID schon zugeordnet, wird das IDoc ohne Neuanlage als erfolgreich gemeldet. Sonst wird geprüft, ob die Datumsfolge stimmt, die Reise höchstens zwei Jahre zurückliegt und der Mitarbeiter bei Reisebeginn aktiv ist. Die Kopfdaten werden übertragen, Belege außerhalb des Reisezeitraums verworfen, Fremdwährungsbelege in Euro umgerechnet (ohne Kurs Abweisung) und die Verpflegungspauschale aus Dauer und Ländersatz berechnet. Nach Sperren des Mitarbeiters (bis zu drei Versuche) wird die Reise per BAPI angelegt; bei Fehler oder fehlender Reisenummer wird verworfen und entsperrt. Bei Erfolg wird die Zuordnung externe ID–Reisenummer in der Verbuchung gespeichert, alles festgeschrieben und das IDoc mit Reisenummer als erfolgreich gemeldet. Gibt es fehlerhafte IDocs, wird der Fehlerworkflow angestoßen.",
+ "verboten": [
+  "z_idoc_input_ztrip.abap:72 — kein Fachsatz „Dubletten werden als Fehler gemeldet“ (Status 53, Erfolg)",
+  "zcl_tv_trip_mapper.abap:125 — kein Fachsatz „An- und Abreisetag werden mit Teilsatz vergütet“ (nur volle Sätze je Kalendertagsdifferenz)",
+  "zcl_tv_trip_mapper.abap:83 — kein Fachsatz „Belege außerhalb des Zeitraums führen zum Fehlerstatus“ (sie werden stillschweigend verworfen)",
+  "z_idoc_input_ztrip.abap:60 — kein Fachsatz „ein unbekanntes Segment bricht die Verarbeitung des IDocs ab“ (CONTINUE setzt nur die Segmentschleife fort)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-159-B01",
+   "soll": "Ein IDoc-Paket eines anderen Nachrichtentyps als ZTRIP wird als falsch zugeordnet abgewiesen.",
+   "zeilen": [
+    60,
+    61
+   ],
+   "code": [
+    "60:   IF idoc_contrl-mestyp <> 'ZTRIP'.",
+    "61:     RAISE wrong_function_called."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-159-B02",
+   "soll": "Je IDoc werden aus den Segmenten der Reisekopf und die Belege übernommen; andere Segmente werden ignoriert.",
+   "zeilen": [
+    69,
+    72,
+    73
+   ],
+   "code": [
+    "69:   LOOP AT idoc_contrl.",
+    "72:     LOOP AT idoc_data WHERE docnum = idoc_contrl-docnum.",
+    "73:       CASE idoc_data-segnam."
+   ],
+   "engine": [
+    "Jede Zeile aus idoc_contrl wird einzeln verarbeitet.",
+    "Jede Zeile aus idoc_data wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-159-B03",
+   "soll": "Fehlt der Reisekopf, erhält das IDoc den Fehlerstatus.",
+   "zeilen": [
+    85,
+    86
+   ],
+   "code": [
+    "85:     IF ls_head IS INITIAL.",
+    "86:       PERFORM set_status USING idoc_contrl-docnum '51'"
+   ],
+   "engine": [
+    "Ohne ls_head wird set_status aufgerufen.",
+    "Das Unterprogramm set_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-159-B04",
+   "soll": "Wurde die externe Reise bereits übernommen, erhält das IDoc den Erfolgsstatus „bereits übernommen“ und es wird keine zweite Reise angelegt.",
+   "zeilen": [
+    92,
+    93,
+    328
+   ],
+   "code": [
+    "92:     IF lo_poster->exists( ls_head-ext_id ) = abap_true.",
+    "93:       PERFORM set_status USING idoc_contrl-docnum '53'",
+    "328:     SELECT SINGLE @abap_true FROM ztv_ext_trip"
+   ],
+   "engine": [
+    "Für lo_poster->exists( ls_head-ext_id ) = abap_true wird set_status aufgerufen.",
+    "Die Methode exists von lo_poster wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Das Unterprogramm set_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "abap_true des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-159-B05",
+   "soll": "Eine Reise mit Ende vor Beginn, eine mehr als zwei Jahre zurückliegende Reise oder eine Reise eines bei Reisebeginn nicht aktiven Mitarbeiters wird abgewiesen.",
+   "zeilen": [
+    188,
+    194,
+    199,
+    203
+   ],
+   "code": [
+    "188:     IF is_head-datb1 < is_head-datv1.",
+    "194:     IF is_head-datb1 < sy-datum - 730.",
+    "199:     SELECT SINGLE stat2 FROM pa0000 INTO @DATA(lv_stat2)",
+    "203:     IF sy-subrc <> 0 OR lv_stat2 <> '3'."
+   ],
+   "engine": [
+    "stat2 des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-159-B06",
+   "soll": "Kopfdaten werden auf die Reise übertragen, der Reisezweck auf eine Reiseaktivität abgebildet (Kunde, Messe, Schulung, sonst allgemein).",
+   "zeilen": [
+    222
+   ],
+   "code": [
+    "222:     rs_trip-header-trip_activity  = SWITCH #( is_head-zweck"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-159-B07",
+   "soll": "Belege außerhalb des Reisezeitraums werden stillschweigend verworfen; Belege in Fremdwährung werden zum Belegdatum in Euro umgerechnet, ohne Kurs wird die Reise abgewiesen.",
+   "zeilen": [
+    230,
+    236,
+    282,
+    293,
+    294
+   ],
+   "code": [
+    "230:       IF ls_rec-datum < is_head-datv1 OR ls_rec-datum > is_head-datb1.",
+    "236:       IF ls_rec-waers = 'EUR'.",
+    "282:     CALL FUNCTION 'CONVERT_TO_LOCAL_CURRENCY'",
+    "293:     IF sy-subrc <> 0.",
+    "294:       RAISE EXCEPTION TYPE zcx_tv_trip"
+   ],
+   "engine": [
+    "Der Code übergibt iv_date an CONVERT_TO_LOCAL_CURRENCY und übernimmt dessen Ausgabe nach rv_local.",
+    "Das konvertierte Ergebnis wird in rv_local übernommen."
+   ]
+  },
+  {
+   "id": "BM-159-B08",
+   "soll": "Die Verpflegungspauschale richtet sich nach der Abwesenheitsdauer und dem Satz des Reiselands, ersatzweise dem Inlandssatz: ab 24 Stunden volle Tagessätze je Kalendertag Differenz zwischen Beginn und Ende, ab 8 Stunden ein Teilsatz, darunter nichts.",
+   "zeilen": [
+    255,
+    258,
+    265,
+    271,
+    273
+   ],
+   "code": [
+    "255:     lv_hours = ( ( is_head-datb1 - is_head-datv1 ) * 86400",
+    "258:     SELECT SINGLE * FROM ztv_perdiem INTO ls_rate",
+    "265:       SELECT SINGLE * FROM ztv_perdiem INTO ls_rate",
+    "271:     IF lv_hours >= 24.",
+    "273:     ELSEIF lv_hours >= 8."
+   ],
+   "engine": [
+    "Es werden Sätze aus ztv_perdiem selektiert.",
+    "Es werden Sätze aus ztv_perdiem selektiert."
+   ]
+  },
+  {
+   "id": "BM-159-B09",
+   "soll": "Vor der Anlage wird der Mitarbeiter gesperrt; es gibt höchstens drei Sperrversuche, nach jedem gescheiterten wird zwei Sekunden gewartet, und nach dem dritten wird die Reise abgewiesen.",
+   "zeilen": [
+    344,
+    389,
+    390,
+    399,
+    401
+   ],
+   "code": [
+    "344:     lock( lv_pernr ).",
+    "389:     DO 3 TIMES.",
+    "390:       CALL FUNCTION 'HR_EMPLOYEE_ENQUEUE'",
+    "399:       WAIT UP TO 2 SECONDS.",
+    "401:     RAISE EXCEPTION TYPE zcx_tv_trip"
+   ],
+   "engine": [
+    "Der Code übergibt iv_pernr an HR_EMPLOYEE_ENQUEUE und übernimmt dessen Ausgabe nach ls_return.",
+    "Das konvertierte Ergebnis wird in ls_return übernommen."
+   ]
+  },
+  {
+   "id": "BM-159-B10",
+   "soll": "Die Reise wird mit Belegen und Pauschale angelegt; meldet die Anlage einen Fehler oder liefert sie keine Reisenummer, wird sie verworfen, die Sperre gelöst und die Reise abgewiesen.",
+   "zeilen": [
+    347,
+    357,
+    364,
+    379
+   ],
+   "code": [
+    "347:         CALL FUNCTION 'BAPI_TRIP_CREATE_FROM_DATA'",
+    "357:         LOOP AT lt_return INTO DATA(ls_ret) WHERE type CA 'EAX'.",
+    "364:         IF rv_reinr IS INITIAL.",
+    "379:       CLEANUP."
+   ],
+   "engine": [
+    "Der Code übergibt is_trip-header an BAPI_TRIP_CREATE_FROM_DATA und übernimmt dessen Ausgabe nach rv_reinr.",
+    "Das konvertierte Ergebnis wird in rv_reinr übernommen.",
+    "Jede Zeile aus lt_return wird einzeln verarbeitet.",
+    "Ohne rv_reinr wird BAPI_TRANSACTION_ROLLBACK aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-159-B11",
+   "soll": "Bei Erfolg wird die Zuordnung der externen Reise-ID zur Reisenummer zur Verbuchung vorgemerkt, beides gemeinsam festgeschrieben und die Sperre gelöst.",
+   "zeilen": [
+    370,
+    376,
+    383,
+    407
+   ],
+   "code": [
+    "370:         CALL FUNCTION 'Z_TV_EXT_TRIP_INSERT' IN UPDATE TASK",
+    "376:         CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "383:     unlock( lv_pernr ).",
+    "407:     CALL FUNCTION 'HR_EMPLOYEE_DEQUEUE'"
+   ],
+   "engine": [
+    "Der Baustein Z_TV_EXT_TRIP_INSERT wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 376.",
+    "Es wird Z_TV_EXT_TRIP_INSERT aufgerufen und BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Der Funktionsbaustein HR_EMPLOYEE_DEQUEUE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-159-B12",
+   "soll": "In der Verbuchung wird die Zuordnung gespeichert; existiert sie bereits, bricht die Verbuchung ab.",
+   "zeilen": [
+    143,
+    144,
+    145
+   ],
+   "code": [
+    "143:   INSERT ztv_ext_trip FROM ls_map.",
+    "144:   IF sy-subrc <> 0.",
+    "145:     MESSAGE a010(ztv) WITH iv_ext_id."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-159-B13",
+   "soll": "Eine angelegte Reise ergibt den Erfolgsstatus mit Reisenummer, jede Abweisung den Fehlerstatus mit Fehlertext.",
+   "zeilen": [
+    15,
+    20,
+    104,
+    107
+   ],
+   "code": [
+    "15:   idoc_status-msgty  = COND #( WHEN pv_status = '51' THEN 'E' ELSE 'S' ).",
+    "20:   APPEND idoc_status.",
+    "104:         PERFORM set_status USING idoc_contrl-docnum '53'",
+    "107:         PERFORM set_status USING idoc_contrl-docnum '51'"
+   ],
+   "engine": [
+    "Eine Zeile wird aufgenommen.",
+    "Das Unterprogramm set_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Das Unterprogramm set_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-159-B14",
+   "soll": "Hat mindestens ein IDoc den Fehlerstatus, wird der Fehlerworkflow mit allen fehlerhaften IDocs angestoßen, sonst Erfolg gemeldet.",
+   "zeilen": [
+    113,
+    117,
+    118,
+    119,
+    125
+   ],
+   "code": [
+    "113:   LOOP AT idoc_status TRANSPORTING NO FIELDS WHERE status = '51'.",
+    "117:   IF lv_error = abap_true.",
+    "118:     workflow_result = '99999'.",
+    "119:     LOOP AT idoc_status WHERE status = '51'.",
+    "125:     workflow_result = '0'."
+   ],
+   "engine": [
+    "Jede Zeile aus idoc_status wird einzeln verarbeitet.",
+    "Für lv_error mit dem Wert abap_true wird die workflow_result auf 99999 gesetzt.",
+    "Für lv_error mit dem Wert abap_true wird die workflow_result auf 99999 gesetzt, sonst die workflow_result auf 0 gesetzt.",
+    "lv_error mit dem Wert abap_true setzen die workflow_result auf 99999.",
+    "Jede Zeile aus idoc_status wird einzeln verarbeitet.",
+    "lv_error mit dem Wert abap_true setzen die return_variables-wf_param auf Error_IDOCs.",
+    "Für andere lv_error wird die workflow_result auf 0 gesetzt.",
+    "Andere lv_error setzen die workflow_result auf 0."
+   ]
+  }
+ ]
+}

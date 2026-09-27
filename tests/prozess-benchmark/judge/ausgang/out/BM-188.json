@@ -1,0 +1,88 @@
+{
+ "id": "BM-188",
+ "urteile": [
+  {
+   "id": "BM-188-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Vorbelegung Vortag."
+  },
+  {
+   "id": "BM-188-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "„Sätze aus t001w selektiert“; Filialen (Werkstyp A) nicht benannt."
+  },
+  {
+   "id": "BM-188-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Meldung ohne Treffer; Beenden (STOP) fehlt."
+  },
+  {
+   "id": "BM-188-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Zählung mit budat und Weiter nur bei sy-dbcnt > 0; „unverbuchte Kassendaten“ nicht fachlich."
+  },
+  {
+   "id": "BM-188-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "„übergibt gv_jobname an JOB_OPEN“; Anlegen des Filialjobs nicht fachlich."
+  },
+  {
+   "id": "BM-188-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Ausgabe „Job konnte nicht angelegt werden:“ mit Werk; Überspringen fehlt, „Bei Treffern“ widersprüchlich."
+  },
+  {
+   "id": "BM-188-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "„Kindprogramm zret_pos_verbuchen wird gestartet“; Einstellen in den Job mit Parametern fehlt."
+  },
+  {
+   "id": "BM-188-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur JOB_CLOSE-Aufruf; Sofortstart bzw. Vorgängerjob-Kette fehlt."
+  },
+  {
+   "id": "BM-188-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Ausgabe gv_anzahl „Filialjobs eingeplant“ – erkennbar, aber technisch."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

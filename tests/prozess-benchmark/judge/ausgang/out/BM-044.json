@@ -1,0 +1,43 @@
+{
+ "id": "BM-044",
+ "urteile": [
+  {
+   "id": "BM-044-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'waers des Satzes wird gelesen' – Hauswährung des Buchungskreises nicht erkennbar, Abbruch COMPANY_NOT_FOUND fehlt."
+  },
+  {
+   "id": "BM-044-B02",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Kurstyp M und Umrechnung in Hauswährung fehlen; 'das konvertierte Ergebnis wird in ev_kursf übernommen' widerspricht dem Code (Betrag geht nach ev_dmbtr, ev_kursf ist der Kurs)."
+  },
+  {
+   "id": "BM-044-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Abbruch mit NO_RATE."
+  },
+  {
+   "id": "BM-044-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "Rückgabe des Kurses nach ev_kursf ist technisch richtig, der Hauswährungsbetrag wird nicht genannt bzw. fälschlich ev_kursf zugeschrieben."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,244 @@
+{
+ "id": "BM-131",
+ "titel": "PS-Budgetausschöpfung je PSP-Element: Ist und Obligo gegen Jahresbudget mit Toleranzampel und Mail an die Projektleitung",
+ "prozess": "Der Controller startet den Report mit Projekten, Geschäftsjahr, Toleranzprofil und optionalem Mailversand. Schon auf dem Selektionsbild wird das Toleranzprofil gelesen; ist es unbekannt, erscheint eine Fehlermeldung und das Feld muss korrigiert werden. Der Report liest die nicht gelöschten PSP-Elemente der Projekte und die Istkosten des Geschäftsjahres. Je Element summiert er das Jahresbudget aus Ursprungsbudget, Nachträgen und Rückgaben, addiert die Istkosten der Perioden 1 bis 16 und summiert das Obligo über alle Jahre. Findet er keine Elemente, gibt er einen Warnhinweis aus und überspringt die Bewertung; die Liste wird trotzdem aufgebaut. Elemente ohne Budget werden als „ohne Budget“ gekennzeichnet. Für alle anderen berechnet er die Ausschöpfung als Ist plus Obligo in Prozent des Budgets und setzt die Ampel nach Fehler- und Warngrenze des Profils; die roten Elemente werden gezählt. Die Liste zeigt je Element die Werte mit Ampel, je Projekt eine Summenzeile und am Ende die Zahl der roten Elemente; jede Seite hat eine Überschrift. Ist Mailversand gewählt und gibt es rote Elemente, ruft er eine Mailroutine eines anderen Programms auf; fehlt sie, geschieht nichts. Es wird nichts gebucht oder gesperrt.",
+ "verboten": [
+  "zps_budget_avc.abap:55 — kein Fachsatz „die Projektleiter erhalten eine E-Mail“: die Routine liegt in einem anderen Programm, und wegen IF FOUND passiert ohne sie stillschweigend nichts",
+  "zps_budget_avc_f01.abap:48 — kein Fachsatz „das Obligo des Geschäftsjahres wird berücksichtigt“: summiert wird das Obligo aller Jahre",
+  "zps_budget_avc.abap:48 — kein Fachsatz „ohne Daten endet der Report ohne Liste“: RETURN beendet nur START-OF-SELECTION, END-OF-SELECTION gibt die leere Liste mit Zähler aus",
+  "gesamte Scheibe — kein Fachsatz „Buchungen werden gesperrt oder das Budget angepasst“: der Report liest und bewertet nur"
+ ],
+ "saetze": [
+  {
+   "id": "BM-131-B01",
+   "soll": "Auf dem Selektionsbild wird das eingegebene Toleranzprofil gelesen; ist es unbekannt, wird eine Fehlermeldung ausgegeben und die Eingabe erneut angefordert.",
+   "zeilen": [
+    33,
+    35,
+    36
+   ],
+   "code": [
+    "33:   SELECT SINGLE * FROM zps_avc_tol INTO gs_tol",
+    "35:   IF sy-subrc <> 0.",
+    "36:     MESSAGE e020(zps) WITH p_prof."
+   ],
+   "engine": [
+    "Es werden Sätze aus zps_avc_tol mit dem eingegebenen profil selektiert.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-131-B02",
+   "soll": "Jede Listenseite erhält eine Überschrift mit Geschäftsjahr und Toleranzprofil.",
+   "zeilen": [
+    40
+   ],
+   "code": [
+    "40:   WRITE: / 'Budgetausschöpfung Geschäftsjahr', p_gjahr,"
+   ],
+   "engine": [
+    "Budgetausschöpfung Geschäftsjahr, p_gjahr, Toleranzprofil und p_prof werden ausgegeben.",
+    "Budgetausschöpfung Geschäftsjahr wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "p_gjahr wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-131-B03",
+   "soll": "Es werden die nicht gelöschten PSP-Elemente der ausgewählten Projekte gelesen; ohne Treffer werden keine Werte ermittelt.",
+   "zeilen": [
+    74,
+    79
+   ],
+   "code": [
+    "74:   SELECT j~pspid p~posid p~objnr p~vernr",
+    "79:   CHECK gt_erg IS NOT INITIAL."
+   ],
+   "engine": [
+    "Es werden Sätze aus proj selektiert.",
+    "Nur Eine nicht leere gt_erg gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-131-B04",
+   "soll": "Die Istkosten des Geschäftsjahres in Version 0 werden für alle PSP-Elemente gelesen.",
+   "zeilen": [
+    82
+   ],
+   "code": [
+    "82:   SELECT * FROM cosp INTO TABLE lt_cosp"
+   ],
+   "engine": [
+    "Es werden Sätze aus cosp mit dem eingegebenen gjahr selektiert."
+   ]
+  },
+  {
+   "id": "BM-131-B05",
+   "soll": "Je PSP-Element wird das Jahresbudget aus Ursprungsbudget, Nachträgen und Rückgaben summiert.",
+   "zeilen": [
+    91
+   ],
+   "code": [
+    "91:     SELECT SUM( wtjhr ) FROM bpja INTO <ls_erg>-budget"
+   ],
+   "engine": [
+    "Es werden Sätze aus bpja mit dem eingegebenen gjahr selektiert."
+   ]
+  },
+  {
+   "id": "BM-131-B06",
+   "soll": "Die Istkosten des Elements werden über die Perioden 1 bis 16 aufsummiert.",
+   "zeilen": [
+    98,
+    99,
+    101
+   ],
+   "code": [
+    "98:     LOOP AT lt_cosp ASSIGNING <ls_cosp> WHERE objnr = <ls_erg>-objnr.",
+    "99:       DO 16 TIMES.",
+    "101:         ASSIGN COMPONENT lv_feld OF STRUCTURE <ls_cosp> TO <lv_wert>."
+   ],
+   "engine": [
+    "Jede Zeile aus lt_cosp wird einzeln verarbeitet.",
+    "Eine Komponente der Struktur wird an das Feldsymbol gebunden."
+   ]
+  },
+  {
+   "id": "BM-131-B07",
+   "soll": "Das Obligo des Elements wird über alle Jahre summiert.",
+   "zeilen": [
+    107
+   ],
+   "code": [
+    "107:     SELECT SUM( wkgbtr ) FROM cooi INTO <ls_erg>-obligo"
+   ],
+   "engine": [
+    "Es werden Sätze aus cooi selektiert."
+   ]
+  },
+  {
+   "id": "BM-131-B08",
+   "soll": "Werden keine PSP-Elemente gefunden, erscheint ein Warnhinweis und die Bewertung entfällt; die Listenausgabe läuft trotzdem.",
+   "zeilen": [
+    46,
+    47,
+    48
+   ],
+   "code": [
+    "46:   IF gt_erg IS INITIAL.",
+    "47:     MESSAGE s021(zps) DISPLAY LIKE 'W'.",
+    "48:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-131-B09",
+   "soll": "PSP-Elemente ohne Budget werden als „ohne Budget“ gekennzeichnet und nicht weiter bewertet.",
+   "zeilen": [
+    119,
+    120
+   ],
+   "code": [
+    "119:     IF <ls_erg>-budget = 0.",
+    "120:       <ls_erg>-ampel = 'OHNE'."
+   ],
+   "engine": [
+    "Für ls_erg>-budget mit dem Wert 0 wird die ls_erg>-ampel auf OHNE gesetzt.",
+    "ls_erg>-budget mit dem Wert 0 setzen die ls_erg>-ampel auf OHNE."
+   ]
+  },
+  {
+   "id": "BM-131-B10",
+   "soll": "Die Ausschöpfung ist die Summe aus Ist und Obligo in Prozent des Jahresbudgets.",
+   "zeilen": [
+    123
+   ],
+   "code": [
+    "123:     <ls_erg>-proz = ( <ls_erg>-ist + <ls_erg>-obligo ) * 100 / <ls_erg>-budget."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-131-B11",
+   "soll": "Ab der Fehlergrenze des Profils ist die Ampel rot, ab der Warngrenze gelb, sonst grün.",
+   "zeilen": [
+    124
+   ],
+   "code": [
+    "124:     <ls_erg>-ampel = COND #( WHEN <ls_erg>-proz >= gs_tol-proz_fehler THEN 'ROT'"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-131-B12",
+   "soll": "Die Anzahl der roten PSP-Elemente wird gezählt.",
+   "zeilen": [
+    128
+   ],
+   "code": [
+    "128:   gv_rot = REDUCE i( INIT n = 0"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-131-B13",
+   "soll": "Die Liste zeigt je PSP-Element Budget, Ist, Obligo, Ausschöpfung und Ampel, nach Projekt sortiert, mit einer Summenzeile je Projekt.",
+   "zeilen": [
+    141,
+    143,
+    145
+   ],
+   "code": [
+    "141:     WRITE: / ls_erg-posid, ls_erg-budget, ls_erg-ist, ls_erg-obligo,",
+    "143:     AT END OF pspid.",
+    "145:       WRITE: / 'Summe Projekt', ls_erg-pspid,"
+   ],
+   "engine": [
+    "Bei Treffern werden ls_erg-posid, ls_erg-budget, ls_erg-ist, ls_erg-obligo, ls_erg-proz und ls_erg-ampel als Liste ausgegeben.",
+    "ls_erg-posid wird ausgegeben.",
+    "ls_erg-budget wird ausgegeben.",
+    "ls_erg-ist wird ausgegeben.",
+    "ls_erg-obligo wird ausgegeben.",
+    "Bei Treffern werden Summe Projekt, ls_erg-pspid, ls_erg-budget, ls_erg-ist und ls_erg-obligo als Liste ausgegeben.",
+    "Summe Projekt wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "ls_erg-pspid wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-131-B14",
+   "soll": "Am Listenende steht die Anzahl der PSP-Elemente über der Fehlergrenze.",
+   "zeilen": [
+    150
+   ],
+   "code": [
+    "150:   WRITE: / gv_rot, 'PSP-Elemente über der Fehlergrenze'."
+   ],
+   "engine": [
+    "Bei Treffern werden gv_rot und PSP-Elemente über der Fehlergrenze als Liste ausgegeben.",
+    "gv_rot wird ausgegeben.",
+    "PSP-Elemente über der Fehlergrenze wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-131-B15",
+   "soll": "Ist der Mailversand gewählt und gibt es rote Elemente, wird die Projektleitung über eine Routine eines anderen Programms informiert, sofern diese existiert.",
+   "zeilen": [
+    54,
+    55
+   ],
+   "code": [
+    "54:   IF p_mail = 'X' AND gv_rot > 0.",
+    "55:     PERFORM mail_an_projektleitung IN PROGRAM zps_mail_util IF FOUND"
+   ],
+   "engine": [
+    "Für p_mail = 'X' AND gv_rot > 0 wird mail_an_projektleitung aufgerufen.",
+    "Das externe Unterprogramm mail_an_projektleitung wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

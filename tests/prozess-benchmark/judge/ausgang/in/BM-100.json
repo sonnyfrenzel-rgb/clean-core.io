@@ -1,0 +1,392 @@
+{
+ "id": "BM-100",
+ "titel": "Kundenstamm-Replikation an Alt-CRM über Änderungszeiger mit paralleler RFC-Verarbeitung",
+ "prozess": "Ein stündlicher Job repliziert geänderte Kunden an das Alt-CRM. Er liest die offenen Änderungszeiger des CRM-Nachrichtentyps und endet mit einer Meldung, wenn es keine gibt; sonst legt er ein Anwendungslog an. Aus den Zeigern übernimmt er den Objektschlüssel als Kundennummer, verdichtet mehrere Zeiger je Kunde und merkt sich alle Zeiger. Er liest Kundenstamm, Vertriebsdaten der gewählten Verkaufsorganisation, Standard-E-Mail-Adresse und – soweit vorhanden – die Geschäftspartnernummer. Kunden ohne Vertriebsdaten in der Verkaufsorganisation gelten ohne Übertragung als erledigt; alle anderen werden mit Aktion D (zum Löschen vorgemerkt) oder U zu Paketen der eingegebenen Größe gebündelt. Die Pakete gehen wahlweise parallel in einer RFC-Servergruppe – mit Warten und erneutem Versuch, solange kein Prozess frei ist, und seriell als Rückfall – oder nacheinander an den CRM-Adapter. Die Rückmeldungen vermerken erfolgreich übertragene Kunden als erledigt und protokollieren Fehler. Danach werden nur die Zeiger erledigter Kunden geschlossen, das Log gesichert und alles festgeschrieben; die übrigen Zeiger bleiben für den nächsten Lauf offen. Auf Wunsch werden verarbeitete Zeiger anschließend mit dem Standardreport reorganisiert.",
+ "verboten": [
+  "zsd_cust_repl_f01.abap:16 — kein Fachsatz „Adressänderungen werden an das CRM übertragen“ (Zeiger des Objekts ADRESSE tragen die Adressnummer, die als Kundennummer nicht gefunden wird; sie bleiben dauerhaft offen).",
+  "zsd_cust_repl_f02.abap:54 — kein Fachsatz „ein fehlgeschlagener Paketstart wird wiederholt“ (nur bei fehlenden Ressourcen wird erneut versucht).",
+  "zsd_cust_repl_f02.abap:104 — kein Fachsatz „im seriellen Modus werden Fehler einzelner Kunden protokolliert“ (nur gescheiterte Pakete).",
+  "zsd_cust_repl.abap:42 — kein Fachsatz „ohne offene Zeiger wird ein Anwendungslog geschrieben“ (das Log entsteht erst danach)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-100-B01",
+   "soll": "Es werden die offenen Änderungszeiger des Nachrichtentyps für das CRM gelesen; gibt es keine, endet der Lauf mit einer Meldung.",
+   "zeilen": [
+    25,
+    33,
+    34
+   ],
+   "code": [
+    "25:   CALL FUNCTION 'CHANGE_POINTERS_READ'",
+    "33:   IF gt_cp IS INITIAL.",
+    "34:     MESSAGE s000(zsd_crm) WITH 'Keine offenen Änderungszeiger'."
+   ],
+   "engine": [
+    "Der Funktionsbaustein CHANGE_POINTERS_READ wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-100-B02",
+   "soll": "Für den Lauf wird ein Anwendungslog angelegt, das nach 14 Tagen gelöscht werden darf.",
+   "zeilen": [
+    42
+   ],
+   "code": [
+    "42:   CALL FUNCTION 'BAL_LOG_CREATE'"
+   ],
+   "engine": [
+    "Der Code übergibt gs_logh an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_log.",
+    "Das konvertierte Ergebnis wird in gv_log übernommen.",
+    "Es wird BAL_LOG_CREATE aufgerufen, collect_customers aufgerufen, read_master_data aufgerufen und build_packages aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-100-B03",
+   "soll": "Der Objektschlüssel jedes Zeigers wird als Kundennummer übernommen; mehrere Zeiger desselben Kunden führen zu einer Übertragung, alle Zeiger des Kunden werden gemerkt.",
+   "zeilen": [
+    88,
+    89,
+    92
+   ],
+   "code": [
+    "88:   LOOP AT gt_cp INTO ls_cp.",
+    "89:     ls_cpmap-kunnr   = ls_cp-cdobjid.",
+    "92:     INSERT ls_cpmap-kunnr INTO TABLE gt_kunnr."
+   ],
+   "engine": [
+    "Jede Zeile aus gt_cp wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-100-B04",
+   "soll": "Zu diesen Kunden wird der Kundenstamm gelesen; wird keiner gefunden, werden keine weiteren Daten gelesen.",
+   "zeilen": [
+    100,
+    106
+   ],
+   "code": [
+    "100:   SELECT kunnr, name1, name2, land1, pstlz, ort01, stras, adrnr,",
+    "106:   IF gt_kna1 IS INITIAL."
+   ],
+   "engine": [
+    "Es werden Kunden selektiert.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-100-B05",
+   "soll": "Gelesen werden außerdem Kundengruppe, Bezirk und Verkaufsbüro in der gewählten Verkaufsorganisation sowie die Standard-E-Mail-Adresse.",
+   "zeilen": [
+    110,
+    117
+   ],
+   "code": [
+    "110:   SELECT kunnr, kdgrp, bzirk, vkbur",
+    "117:   SELECT addrnumber, smtp_addr"
+   ],
+   "engine": [
+    "Das Ergebnis enthält Kundennummer, kdgrp, bzirk und vkbur.",
+    "Es werden Kunden mit dem eingegebenen Verkaufsorganisation selektiert.",
+    "Das Ergebnis enthält addrnumber und smtp_addr.",
+    "Es werden Sätze aus adr6 selektiert."
+   ]
+  },
+  {
+   "id": "BM-100-B06",
+   "soll": "Ist der Kunde bereits mit einem Geschäftspartner verknüpft, wird dessen Geschäftspartnernummer ermittelt.",
+   "zeilen": [
+    125,
+    130,
+    134
+   ],
+   "code": [
+    "125:   SELECT customer, partner_guid",
+    "130:   IF gt_link IS INITIAL.",
+    "134:   SELECT partner, partner_guid"
+   ],
+   "engine": [
+    "Das Ergebnis enthält Kundennummer und partner_guid.",
+    "Es werden Sätze aus cvi_cust_link selektiert.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Das Ergebnis enthält partner und partner_guid.",
+    "Es werden Sätze aus but000 selektiert."
+   ]
+  },
+  {
+   "id": "BM-100-B07",
+   "soll": "Kunden ohne Vertriebsdaten in der gewählten Verkaufsorganisation werden nicht übertragen, gelten aber als erledigt.",
+   "zeilen": [
+    159,
+    160,
+    161
+   ],
+   "code": [
+    "159:     READ TABLE gt_knvv INTO ls_knvv WITH KEY kunnr = <ls_kna1>-kunnr.",
+    "160:     IF sy-subrc <> 0.",
+    "161:       INSERT <ls_kna1>-kunnr INTO TABLE gt_done."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-100-B08",
+   "soll": "Der Übertragungssatz enthält Name, Anschrift, Land, Kundengruppe, Bezirk, Verkaufsbüro, E-Mail-Adresse, Geschäftspartnernummer und ein Kennzeichen für eine Auftragssperre.",
+   "zeilen": [
+    167,
+    175,
+    184
+   ],
+   "code": [
+    "167:     ls_rec-name        = |{ <ls_kna1>-name1 } { <ls_kna1>-name2 }|.",
+    "175:     ls_rec-blocked     = xsdbool( <ls_kna1>-aufsd IS NOT INITIAL ).",
+    "184:     ls_rec-bpartner = ls_bp-partner."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-100-B09",
+   "soll": "Zum Löschen vorgemerkte Kunden werden mit Aktion D, alle anderen mit Aktion U übertragen.",
+   "zeilen": [
+    186,
+    187,
+    189
+   ],
+   "code": [
+    "186:     IF <ls_kna1>-loevm = 'X'.",
+    "187:       ls_rec-action = 'D'.",
+    "189:       ls_rec-action = 'U'."
+   ],
+   "engine": [
+    "Mit gesetztem ls_kna1>-loevm wird die ls_rec-action auf D gesetzt.",
+    "Mit gesetztem ls_kna1>-loevm wird die ls_rec-action auf D gesetzt, sonst die ls_rec-action auf U gesetzt.",
+    "ls_kna1>-loevm mit dem Wert X setzen die ls_rec-action auf D.",
+    "Für andere ls_kna1>-loevm wird die ls_rec-action auf U gesetzt.",
+    "Andere ls_kna1>-loevm setzen die ls_rec-action auf U."
+   ]
+  },
+  {
+   "id": "BM-100-B10",
+   "soll": "Die Sätze werden zu Paketen mit der eingegebenen Anzahl Kunden zusammengefasst; ein Restpaket wird ebenfalls übertragen.",
+   "zeilen": [
+    193,
+    196,
+    200
+   ],
+   "code": [
+    "193:     IF lines( gs_pack-recs ) >= p_pack.",
+    "196:       gs_pack-no = gs_pack-no + 1.",
+    "200:   IF gs_pack-recs IS NOT INITIAL."
+   ],
+   "engine": [
+    "Für lines( gs_pack-recs ) >= p_pack wird eine Zeile aufgenommen.",
+    "Mit einer nicht leeren gs_pack-recs wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-100-B11",
+   "soll": "Mit gewählter Parallelisierung wird die RFC-Servergruppe initialisiert; ist sie nicht nutzbar, wird eine Warnung protokolliert und seriell übertragen.",
+   "zeilen": [
+    54,
+    216,
+    230,
+    231,
+    232
+   ],
+   "code": [
+    "54:   IF p_par = 'X'.",
+    "216:   CALL FUNCTION 'SPBT_INITIALIZE'",
+    "230:   IF sy-subrc <> 0 AND sy-subrc <> 3.",
+    "231:     PERFORM log_add USING 'W' 'Servergruppe nicht verfügbar, seriell'.",
+    "232:     PERFORM send_serial."
+   ],
+   "engine": [
+    "Mit gesetztem p_par wird send_parallel aufgerufen.",
+    "Mit gesetztem p_par wird send_parallel aufgerufen, sonst send_serial aufgerufen.",
+    "Der Code übergibt p_group an SPBT_INITIALIZE und übernimmt dessen Ausgabe nach lv_max.",
+    "Das konvertierte Ergebnis wird in lv_max übernommen.",
+    "Für sy-subrc <> 0 AND sy-subrc <> 3 wird log_add aufgerufen, send_serial aufgerufen und der Block verlassen.",
+    "Das Unterprogramm log_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird log_add aufgerufen, send_serial aufgerufen und der Block verlassen.",
+    "Das Unterprogramm send_serial wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-100-B12",
+   "soll": "Jedes Paket wird asynchron in einem freien Prozess der Servergruppe an den CRM-Adapter übergeben.",
+   "zeilen": [
+    236,
+    239
+   ],
+   "code": [
+    "236:   LOOP AT gt_pack INTO gs_pack.",
+    "239:       CALL FUNCTION 'Z_CRM_CUSTOMER_UPSERT'"
+   ],
+   "engine": [
+    "Jede Zeile aus gt_pack wird einzeln verarbeitet.",
+    "Der Baustein Z_CRM_CUSTOMER_UPSERT wird asynchron in einer eigenen Task gestartet. Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor."
+   ]
+  },
+  {
+   "id": "BM-100-B13",
+   "soll": "Ist kein Prozess frei, wird bis zu fünf Sekunden auf Rückmeldungen gewartet und der Start wiederholt.",
+   "zeilen": [
+    249,
+    255
+   ],
+   "code": [
+    "249:       CASE sy-subrc.",
+    "255:           WAIT UNTIL gv_recv >= gv_sent UP TO 5 SECONDS."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-100-B14",
+   "soll": "Ein Kommunikations- oder Systemfehler beim Start wird protokolliert und das Paket nicht erneut versucht.",
+   "zeilen": [
+    257
+   ],
+   "code": [
+    "257:           PERFORM log_add USING 'E' gv_msg."
+   ],
+   "engine": [
+    "Das Unterprogramm log_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird log_add aufgerufen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-100-B15",
+   "soll": "Nach dem Start aller Pakete wird höchstens die eingegebene Wartezeit auf alle Rückmeldungen gewartet; fehlen welche, wird eine Warnung protokolliert.",
+   "zeilen": [
+    263,
+    264,
+    265
+   ],
+   "code": [
+    "263:   WAIT UNTIL gv_recv >= gv_sent UP TO p_wait SECONDS.",
+    "264:   IF gv_recv < gv_sent.",
+    "265:     PERFORM log_add USING 'W' 'Nicht alle Pakete zurückgemeldet'."
+   ],
+   "engine": [
+    "Für gv_recv kleiner gv_sent wird log_add aufgerufen.",
+    "Das Unterprogramm log_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-100-B16",
+   "soll": "Die Rückmeldung eines Pakets liefert je Kunde ein Ergebnis; ist das Paket gescheitert, wird der Fehler protokolliert.",
+   "zeilen": [
+    277,
+    284,
+    285
+   ],
+   "code": [
+    "277:   RECEIVE RESULTS FROM FUNCTION 'Z_CRM_CUSTOMER_UPSERT'",
+    "284:   IF sy-subrc <> 0.",
+    "285:     PERFORM log_add USING 'E' lv_msg."
+   ],
+   "engine": [
+    "Ohne Treffer wird log_add aufgerufen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Das Unterprogramm log_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird log_add aufgerufen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-100-B17",
+   "soll": "Erfolgreich übertragene Kunden werden als erledigt vermerkt, Fehler einzelner Kunden als Warnung protokolliert.",
+   "zeilen": [
+    290,
+    291,
+    293
+   ],
+   "code": [
+    "290:     IF ls_result-rc = 0.",
+    "291:       INSERT ls_result-kunnr INTO TABLE gt_done.",
+    "293:       PERFORM log_add USING 'W' ls_result-message."
+   ],
+   "engine": [
+    "Für andere ls_result-rc wird log_add aufgerufen.",
+    "Das Unterprogramm log_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-100-B18",
+   "soll": "Ohne Parallelisierung werden die Pakete nacheinander übertragen; ein gescheitertes Paket wird protokolliert, erfolgreiche Kunden werden als erledigt vermerkt.",
+   "zeilen": [
+    307,
+    315,
+    319
+   ],
+   "code": [
+    "307:     CALL FUNCTION 'Z_CRM_CUSTOMER_UPSERT'",
+    "315:       PERFORM log_add USING 'E' 'Paketübertragung fehlgeschlagen'.",
+    "319:       INSERT ls_result-kunnr INTO TABLE gt_done."
+   ],
+   "engine": [
+    "Der Code übergibt gs_pack-recs an Z_CRM_CUSTOMER_UPSERT und übernimmt dessen Ausgabe nach lt_result.",
+    "Das konvertierte Ergebnis wird in lt_result übernommen.",
+    "Ohne Treffer wird log_add aufgerufen.",
+    "Das Unterprogramm log_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-100-B19",
+   "soll": "Nur die Änderungszeiger erledigter Kunden werden als verarbeitet markiert; die übrigen bleiben für den nächsten Lauf offen.",
+   "zeilen": [
+    339,
+    341,
+    350
+   ],
+   "code": [
+    "339:     READ TABLE gt_done WITH TABLE KEY table_line = ls_cpmap-kunnr",
+    "341:     IF sy-subrc = 0.",
+    "350:   CALL FUNCTION 'CHANGE_POINTERS_STATUS_WRITE'"
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird eine Zeile aufgenommen.",
+    "Der Funktionsbaustein CHANGE_POINTERS_STATUS_WRITE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-100-B20",
+   "soll": "Das Anwendungslog wird gesichert und zusammen mit dem Zeigerstatus festgeschrieben.",
+   "zeilen": [
+    63,
+    68
+   ],
+   "code": [
+    "63:   CALL FUNCTION 'BAL_DB_SAVE'",
+    "68:   COMMIT WORK."
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Es wird BAL_DB_SAVE aufgerufen und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-100-B21",
+   "soll": "Auf Wunsch werden danach verarbeitete Änderungszeiger mit dem Standardreport reorganisiert.",
+   "zeilen": [
+    70,
+    72
+   ],
+   "code": [
+    "70:   IF p_reorg = 'X'.",
+    "72:     SUBMIT rbdcpclr WITH mestype = p_mestyp AND RETURN."
+   ],
+   "engine": [
+    "Das Kindprogramm rbdcpclr wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,63 @@
+{
+ "id": "BM-169",
+ "urteile": [
+  {
+   "id": "BM-169-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Sätze aus kona selektiert“; offene, bald auslaufende Bonusabsprachen nicht benannt."
+  },
+  {
+   "id": "BM-169-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "Meldung ohne Treffer richtig, aber „Screenfolge beendet“ statt Verlassen der Listverarbeitung; „vor der Datenbankoperation zurückgekehrt“ sinnfremd."
+  },
+  {
+   "id": "BM-169-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Start von zsd_bonus_umsatz erkannt, Ablage der Liste im Speicher fehlt."
+  },
+  {
+   "id": "BM-169-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur FB-Aufrufe und Tabellensuche; Übernahme des Betrags aus Zeile 4/Spalte 60 als Bonusumsatz fehlt."
+  },
+  {
+   "id": "BM-169-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Feldausgabe technisch, „HOTSPOT“ als Feldname verstanden, anklickbare Zeile nicht erkannt; „Zeile eingefügt oder überschrieben“ irreführend."
+  },
+  {
+   "id": "BM-169-B06",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "„Die Anlage wird über VBO3 angestoßen“ – VBO3 ist die Anzeige, nicht die Anlage; Klick-Auslöser fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

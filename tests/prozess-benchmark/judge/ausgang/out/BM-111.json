@@ -1,0 +1,115 @@
+{
+ "id": "BM-111",
+ "urteile": [
+  {
+   "id": "BM-111-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "Lesen des Platzes und 'Ohne Treffer eine Meldung' – Abweisung der Eingabe mit Fehler nicht benannt."
+  },
+  {
+   "id": "BM-111-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Nur der Platzart-Teil ('die Prädikat auf FLTYP IN S_FLTYP'); Werksteil und 'ohne Auswahl keine Einschränkung' fehlen; 'build_where Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-111-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur 'expand aufgerufen ... Wirkung nicht belegt' – rekursive Auflösung und Nicht-Anzeige des Einstiegsplatzes fehlen."
+  },
+  {
+   "id": "BM-111-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Hinweis '... weitere Ebenen unter' und Verlassen bei pv_level ab p_maxl genannt, aber verstümmelt ('AT /lv_indent') und technisch."
+  },
+  {
+   "id": "BM-111-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus iflo selektiert' – untergeordnete Plätze, Zusatzbedingung und Sortierung fehlen."
+  },
+  {
+   "id": "BM-111-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'stat des Satzes wird gelesen' – Auslassen inaktiver Plätze samt Teilbaum fehlt."
+  },
+  {
+   "id": "BM-111-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Ausgabe von 'AT /lv_indent ls_child-tplnr COLOR COL_KEY' und pltxt – Einrückung/Zählung nicht fachlich."
+  },
+  {
+   "id": "BM-111-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "p_equi/list_equi, Lesen aus equz und Ausgabe genannt; 'kleinere werden übersprungen, die Schleife läuft weiter' und 'Wirkung nicht belegt' falsch; 'ohne Unterequipments' fehlt."
+  },
+  {
+   "id": "BM-111-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur 'expand ... Wirkung nicht belegt' – rekursive Weiterauflösung nicht benannt, Routine steht im Code."
+  },
+  {
+   "id": "BM-111-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Labels mit gv_anz_pl/gv_anz_eq – Anzahlen nur als Variablen."
+  },
+  {
+   "id": "BM-111-B11",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Engine spricht von 'Anlage über IE03/IL03'; es sind Anzeigetransaktionen, aufgerufen per Doppelklick ohne Einstiegsbild."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

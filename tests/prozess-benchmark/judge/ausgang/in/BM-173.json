@@ -1,0 +1,201 @@
+{
+ "id": "BM-173",
+ "titel": "Automotive Kanban: Scanner-Dialog meldet Behälter leer, bei Doppelscan Eil-Nachschub",
+ "prozess": "Der Werker startet den Scanner auf dem MDE-Gerät; ist noch kein Versorgungsbereich gesetzt, wird er aus seinem Benutzerparameter vorbelegt. Nach dem Scan eines Behälters wird dieser gelesen und der Scan abgewiesen, wenn der Behälter unbekannt ist, sein Regelkreis zu einem anderen Versorgungsbereich gehört oder der Werker keine Berechtigung für das Werk hat; die Scanmaske bleibt dann mit Fehlermeldung stehen. Ist der Behälter voll oder in Benutzung, setzt ein BAPI den Status auf leer, was sofort festgeschrieben wird; lehnt das BAPI ab, wird zurückgerollt und der Scan abgewiesen. Ist der Behälter bereits leer, wird gefragt, ob ein Eil-Nachschub ausgelöst werden soll, und bei Zustimmung wird er in einer eigenen Tabelle gespeichert, höchstens einmal je Regelkreis und Tag. Behälter in anderen Status werden abgewiesen. Nach erfolgreicher Verarbeitung erscheint eine Rückmeldemaske, von der es zum nächsten Scan oder aus dem Programm geht. Mit Zurück oder Beenden verlässt der Werker den Scanner.",
+ "verboten": [
+  "mzkanbanf01.abap:21 — kein Fachsatz „jeder Scan wird gegen den Versorgungsbereich geprüft“: ist weder eingegeben noch als Benutzerparameter gepflegt, entfällt die Prüfung",
+  "mzkanbanf01.abap:18 — kein Fachsatz „fehlt der Regelkreis, wird der Scan abgewiesen“: der Lesezugriff wird nicht geprüft",
+  "mzkanbani01.abap:30 — kein Fachsatz „der Werker kann aus dem Scanner den Regelkreis anzeigen“: der Absprung per CALL TRANSACTION ist auskommentiert",
+  "gesamte Scheibe — kein Fachsatz „eine Bestellung oder ein Fertigungsauftrag für den Nachschub wird angelegt“: der Scanner setzt nur den Behälterstatus bzw. schreibt eine Eil-Anforderung in eine Z-Tabelle"
+ ],
+ "saetze": [
+  {
+   "id": "BM-173-B01",
+   "soll": "Ist kein Versorgungsbereich gesetzt, wird er aus dem Benutzerparameter vorbelegt.",
+   "zeilen": [
+    136,
+    137
+   ],
+   "code": [
+    "136:   IF gv_prvbe IS INITIAL.",
+    "137:     GET PARAMETER ID 'PVB' FIELD gv_prvbe."
+   ],
+   "engine": [
+    "Jeder von der logischen Datenbank gelieferte PARAMETER-Satz wird verarbeitet. Welche Sätze das sind, bestimmt die logische Datenbank mit ihrem Selektionsbild, nicht der Report."
+   ]
+  },
+  {
+   "id": "BM-173-B02",
+   "soll": "Mit Zurück oder Beenden verlässt der Werker den Scanner.",
+   "zeilen": [
+    149,
+    150
+   ],
+   "code": [
+    "149:     WHEN 'BACK' OR 'EXIT'.",
+    "150:       LEAVE PROGRAM."
+   ],
+   "engine": [
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-173-B03",
+   "soll": "Der gescannte Behälter wird gelesen; ist er unbekannt, bleibt die Scanmaske mit Fehlermeldung stehen.",
+   "zeilen": [
+    38,
+    40,
+    41
+   ],
+   "code": [
+    "38:   SELECT SINGLE * FROM pkps INTO gs_pkps",
+    "40:   IF sy-subrc <> 0.",
+    "41:     MESSAGE e001 WITH gv_pkkey.              \"Behaelter & unbekannt"
+   ],
+   "engine": [
+    "Es werden Sätze aus pkps selektiert.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-173-B04",
+   "soll": "Zum Behälter wird der Regelkreis gelesen; gehört er zu einem anderen als dem gesetzten Versorgungsbereich, wird der Scan abgewiesen.",
+   "zeilen": [
+    44,
+    47,
+    48
+   ],
+   "code": [
+    "44:   SELECT SINGLE * FROM pkhd INTO gs_pkhd",
+    "47:   IF gs_pkhd-prvbe <> gv_prvbe AND gv_prvbe IS NOT INITIAL.",
+    "48:     MESSAGE e002 WITH gs_pkhd-prvbe gv_prvbe. \"gehoert zu Versorgungsber. &"
+   ],
+   "engine": [
+    "Es werden Sätze aus pkhd selektiert.",
+    "Für gs_pkhd-prvbe <> gv_prvbe AND gv_prvbe IS NOT INITIAL wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-173-B05",
+   "soll": "Ohne Berechtigung für das Werk des Regelkreises wird der Scan abgewiesen.",
+   "zeilen": [
+    51,
+    54,
+    55
+   ],
+   "code": [
+    "51:   AUTHORITY-CHECK OBJECT 'Z_KANBAN'",
+    "54:   IF sy-subrc <> 0.",
+    "55:     MESSAGE e003 WITH gs_pkhd-werks.         \"keine Berechtigung Werk &"
+   ],
+   "engine": [
+    "Die Berechtigung auf Z_KANBAN wird geprüft.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-173-B06",
+   "soll": "Ein voller oder in Benutzung befindlicher Behälter wird per BAPI auf „leer“ gesetzt und sofort festgeschrieben; lehnt das BAPI ab, wird zurückgerollt und der Scan mit Fehlermeldung abgewiesen.",
+   "zeilen": [
+    66,
+    67,
+    73,
+    74,
+    77
+   ],
+   "code": [
+    "66:     WHEN gc_voll OR gc_inbenutz.",
+    "67:       CALL FUNCTION 'BAPI_KANBAN_CHANGESTATUS'",
+    "73:       IF ls_ret-type CA 'EA'.",
+    "74:         CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "77:       CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Der Code übergibt gs_pkps-pkkey an BAPI_KANBAN_CHANGESTATUS und übernimmt dessen Ausgabe nach ls_ret.",
+    "Das konvertierte Ergebnis wird in ls_ret übernommen.",
+    "Für ls_ret-type CA 'EA' wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Meldung ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Meldung ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen und die gv_msg auf Behaelter leer gemeldet gesetzt."
+   ]
+  },
+  {
+   "id": "BM-173-B07",
+   "soll": "Ist der Behälter bereits leer, wird der Werker gefragt, ob ein Eil-Nachschub ausgelöst werden soll.",
+   "zeilen": [
+    82,
+    84
+   ],
+   "code": [
+    "82:     WHEN gc_leer.",
+    "84:       CALL FUNCTION 'POPUP_TO_CONFIRM'"
+   ],
+   "engine": [
+    "Der Code übergibt 'Behaelter an POPUP_TO_CONFIRM und übernimmt dessen Ausgabe nach gv_answer.",
+    "Das konvertierte Ergebnis wird in gv_answer übernommen."
+   ]
+  },
+  {
+   "id": "BM-173-B08",
+   "soll": "Bei Zustimmung wird ein Eil-Nachschub mit Regelkreis, Material, Werk, Versorgungsbereich und Anforderer gespeichert – höchstens einer je Regelkreis und Tag; ein zweiter wird mit Fehlermeldung abgewiesen.",
+   "zeilen": [
+    91,
+    119,
+    120,
+    123
+   ],
+   "code": [
+    "91:       IF gv_answer = '1'.",
+    "119:   INSERT zkanban_eil FROM ls_eil.",
+    "120:   IF sy-subrc <> 0.",
+    "123:   COMMIT WORK."
+   ],
+   "engine": [
+    "Für gv_answer mit dem Wert 1 wird sonderkanban aufgerufen und die gv_msg auf Eil-Nachschub angefordert gesetzt.",
+    "Für gv_answer mit dem Wert 1 wird sonderkanban aufgerufen und die gv_msg auf Eil-Nachschub angefordert gesetzt, sonst die gv_msg auf Keine Aktion gesetzt.",
+    "gv_answer mit dem Wert 1 setzen die gv_msg auf Eil-Nachschub angefordert.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-173-B09",
+   "soll": "Behälter in jedem anderen Status können nicht leer gemeldet werden.",
+   "zeilen": [
+    98,
+    99
+   ],
+   "code": [
+    "98:     WHEN OTHERS.",
+    "99:       MESSAGE e011 WITH gs_pkps-pkbst.       \"Status & erlaubt keine Leermeldung"
+   ],
+   "engine": [
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-173-B10",
+   "soll": "Nach erfolgreicher Verarbeitung erscheint die Rückmeldemaske; von dort geht es zum nächsten Scan oder aus dem Programm.",
+   "zeilen": [
+    154,
+    178,
+    180
+   ],
+   "code": [
+    "154:       LEAVE TO SCREEN 200.",
+    "178:       LEAVE TO SCREEN 100.",
+    "180:       LEAVE PROGRAM."
+   ],
+   "engine": [
+    "Es wird behaelter_lesen aufgerufen, leermelden aufgerufen und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet.",
+    "Die Screenfolge wird beendet.",
+    "Die Screenfolge wird beendet."
+   ]
+  }
+ ]
+}

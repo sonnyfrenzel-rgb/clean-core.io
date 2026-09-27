@@ -1,0 +1,206 @@
+{
+ "id": "BM-017",
+ "urteile": [
+  {
+   "id": "BM-017-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus likp selektiert\" – Lieferart LF, Kommissionier- und Warenausgangsstatus fehlen."
+  },
+  {
+   "id": "BM-017-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "\"Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen\" – Hinweis und Ende; mehrfach."
+  },
+  {
+   "id": "BM-017-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Asynchroner Start des RFC-Bausteins genannt; Paket je Versandstelle und Servergruppe fehlen, paket_starten \"nicht belegt\"."
+  },
+  {
+   "id": "BM-017-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Warten auf freie Workprozesse."
+  },
+  {
+   "id": "BM-017-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Meldung und paket_lokal/synchroner Aufruf genannt; Auslöser Kommunikations-/Systemfehler fehlt."
+  },
+  {
+   "id": "BM-017-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Ohne Treffer wird eine Zeile aufgenommen, sonst eine Zeile aufgenommen\" – Übernahme der Paketergebnisse nicht erkennbar, fehlerhafte Rückmeldung als \"Ohne Treffer\"."
+  },
+  {
+   "id": "BM-017-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Für gv_running größer 0 wird eine Meldung ausgegeben\"; das 10-Minuten-Warten und die unvollständige Liste fehlen."
+  },
+  {
+   "id": "BM-017-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Spalten erkennbar, aber mit Spaltenpositionen (\"15 'Neue Lieferung'\", \"15 ls_res-vbeln_neu\"), neunfach zerlegt; Farbe fehlt."
+  },
+  {
+   "id": "BM-017-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "ENQUEUE_EVVBLKE und \"Ohne Treffer wird eine Zeile aufgenommen\" – Sperre und Überspringen bei Bearbeitung nicht fachlich."
+  },
+  {
+   "id": "BM-017-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus lips selektiert\" und DEQUEUE – Liefermenge/Bruttogewicht und Überspringen ohne Positionen nicht fachlich."
+  },
+  {
+   "id": "BM-017-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Umrechnung per UNIT_CONVERSION_SIMPLE nur technisch; kg und Überspringen bei Fehler fehlen."
+  },
+  {
+   "id": "BM-017-B12",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Gewichtsbeladung."
+  },
+  {
+   "id": "BM-017-B13",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Vormerken für den Split."
+  },
+  {
+   "id": "BM-017-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "Split-BAPI im Echtlauf erkennbar, aber technisch; der Sammelsatz nennt das COMMIT ohne die Erfolgsbedingung."
+  },
+  {
+   "id": "BM-017-B15",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "Rollback-Satz stimmt, aber der Sammelsatz behauptet für jeden Echtlauf-Split \"BAPI_TRANSACTION_COMMIT aufgerufen\" – widerspricht dem Verwerfen bei Fehler."
+  },
+  {
+   "id": "BM-017-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "COMMIT und remove_split_items \"nicht belegt\" – dass ausgelagerte Positionen nicht kommissioniert werden, fehlt."
+  },
+  {
+   "id": "BM-017-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"xchpf des Satzes wird gelesen\"; Chargenpflicht ohne Charge und Nichtkommissionierung fehlen."
+  },
+  {
+   "id": "BM-017-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rücksprung bei leerer lt_vbpok bzw. iv_test genannt; Text mit Anzahlen fehlt."
+  },
+  {
+   "id": "BM-017-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "WS_DELIVERY_UPDATE mit ls_vbkok/lv_error; Buchung der Kommissioniermenge nicht fachlich."
+  },
+  {
+   "id": "BM-017-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"die Text auf Kommissionierung fehlgeschlagen gesetzt\" bei technischer Bedingung; der Erfolgstext fehlt."
+  },
+  {
+   "id": "BM-017-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"Zeile aufgenommen\" je Zweig und DEQUEUE; Warnung/Erfolg und neue Lieferungsnummer nicht fachlich."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

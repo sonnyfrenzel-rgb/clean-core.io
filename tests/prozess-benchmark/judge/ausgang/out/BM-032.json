@@ -1,0 +1,128 @@
+{
+ "id": "BM-032",
+ "urteile": [
+  {
+   "id": "BM-032-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus ekbe mit dem eingegebenen k~ekorg\" – Wareneingänge zu Bestellungen, Zeitraum und Ausschluss der Stornos fehlen."
+  },
+  {
+   "id": "BM-032-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Hinweis und Verlassen ohne Treffer stimmen; dass die leere Liste trotzdem angezeigt wird, fehlt."
+  },
+  {
+   "id": "BM-032-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus eket selektiert\" – frühester Liefertermin und Ausschluss ohne Termin fehlen."
+  },
+  {
+   "id": "BM-032-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Punkte 100/80/50/0 an ls_acc-pkt_zeit, aber die Grenzen 3 und 7 Tage fehlen; \"setzen die\"."
+  },
+  {
+   "id": "BM-032-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus ekpo selektiert\"; Summierung und Beschränkung auf endgelieferte Positionen fehlen."
+  },
+  {
+   "id": "BM-032-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Mengenpunktberechnung."
+  },
+  {
+   "id": "BM-032-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen von qals/qave und \"vbewertung A → n_ok auf 1\" – Prüflose mit Verwendungsentscheid und Annahmezählung nur technisch."
+  },
+  {
+   "id": "BM-032-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Die lv_qual wird auf 100 gesetzt\"; Durchschnitte und Annahmequote fehlen."
+  },
+  {
+   "id": "BM-032-B09",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Gewichtung 40/30/30."
+  },
+  {
+   "id": "BM-032-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Note A ab 90, \"sonst B beziehungsweise C\" – die Grenze 70 fehlt, ls_score-note technisch."
+  },
+  {
+   "id": "BM-032-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Mit gesetztem p_upd wird speichern aufgerufen\" – Löschen und Ersetzen der Periodenbewertung fehlen."
+  },
+  {
+   "id": "BM-032-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "COMMIT mit Meldung, sonst ROLLBACK mit Meldung – Erfolg des Schreibens als \"Treffer\" bezeichnet, Abbruch mit Fehler nur \"eine Meldung\"."
+  },
+  {
+   "id": "BM-032-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "anzeigen/display \"nicht belegt\"; ALV mit Punkten und Note nicht benannt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

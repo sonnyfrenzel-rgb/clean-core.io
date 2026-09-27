@@ -1,0 +1,159 @@
+{
+ "id": "BM-087",
+ "titel": "Kreditorenversand per Änderungszeiger und MASTER_IDOC_DISTRIBUTE",
+ "prozess": "Ein Job versendet geänderte Kreditoren an ein Alt-Kreditorenbuchhaltungssystem. Er liest die offenen Änderungszeiger des Nachrichtentyps (Vorschlag ZCREMAS); gibt es keine, meldet er das und endet. Mehrere Zeiger desselben Kreditors verdichtet er zu einem Versand. Je Kreditor liest er den Stammsatz und überspringt fehlende oder zum Löschen vorgemerkte Kreditoren. Im Testmodus listet er den Kreditor nur auf. Im Echtlauf baut er ein Segment mit Name, Anschrift und USt-Id und erzeugt über die ALE-Verteilung ein IDoc ZVENDOR01 an den Empfänger; ein Fehler dabei wird ausgegeben. Nach der Schleife markiert er im Echtlauf alle gelesenen Zeiger als verarbeitet – auch die übersprungener oder fehlerhafter Kreditoren – und schreibt mit COMMIT WORK fest. Zum Schluss gibt er die Anzahl gesendeter Kreditoren aus.",
+ "verboten": [
+  "source.abap:92 — kein Fachsatz „Zeiger fehlerhaft gesendeter oder gelöschter Kreditoren bleiben offen“ (alle gelesenen Zeiger werden als verarbeitet markiert).",
+  "source.abap:72 — kein Fachsatz „nur geänderte Felder werden übertragen“ (es wird immer der vollständige Segmentinhalt gesendet).",
+  "source.abap:72 — kein Fachsatz „Alt-System hat die Daten erhalten“ (erzeugt wird nur das Ausgangs-IDoc; der Versand ist nicht Teil des Falls)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-087-B01",
+   "soll": "Es werden die noch nicht verarbeiteten Änderungszeiger des Nachrichtentyps gelesen.",
+   "zeilen": [
+    22
+   ],
+   "code": [
+    "22:   CALL FUNCTION 'CHANGE_POINTERS_READ'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein CHANGE_POINTERS_READ wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-087-B02",
+   "soll": "Gibt es keine, wird das gemeldet und der Lauf beendet.",
+   "zeilen": [
+    32,
+    33,
+    34
+   ],
+   "code": [
+    "32:   IF sy-subrc <> 0 OR lt_cp IS INITIAL.",
+    "33:     MESSAGE s000(zale) WITH 'Keine Änderungen für' p_mestyp.",
+    "34:     RETURN."
+   ],
+   "engine": [
+    "Für sy-subrc <> 0 OR lt_cp IS INITIAL wird eine Meldung ausgegeben und der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-087-B03",
+   "soll": "Mehrere Änderungszeiger desselben Kreditors werden zu einem Versand verdichtet.",
+   "zeilen": [
+    38,
+    40
+   ],
+   "code": [
+    "38:   LOOP AT lt_cp INTO ls_cp.",
+    "40:     INSERT lv_lifnr INTO TABLE lt_lifnr."
+   ],
+   "engine": [
+    "Jede Zeile aus lt_cp wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-087-B04",
+   "soll": "Je Kreditor wird der Stammsatz gelesen; fehlende oder zum Löschen vorgemerkte Kreditoren werden nicht gesendet.",
+   "zeilen": [
+    46,
+    47
+   ],
+   "code": [
+    "46:     SELECT SINGLE * FROM lfa1 INTO ls_lfa1 WHERE lifnr = lv_lifnr.",
+    "47:     IF sy-subrc <> 0 OR ls_lfa1-loevm = 'X'."
+   ],
+   "engine": [
+    "Es werden Sätze aus lfa1 selektiert."
+   ]
+  },
+  {
+   "id": "BM-087-B05",
+   "soll": "Im Testmodus wird der Kreditor nur aufgelistet und nichts gesendet.",
+   "zeilen": [
+    62,
+    63
+   ],
+   "code": [
+    "62:     IF p_test = 'X'.",
+    "63:       WRITE: / 'Test:', ls_lfa1-lifnr, ls_lfa1-name1."
+   ],
+   "engine": [
+    "Mit gesetztem p_test wird Test: ausgegeben, ls_lfa1-lifnr ausgegeben und Name ausgegeben.",
+    "Bei Treffern werden Test:, ls_lfa1-lifnr und Name als Liste ausgegeben.",
+    "Test: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "ls_lfa1-lifnr wird ausgegeben.",
+    "Name wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-087-B06",
+   "soll": "Im Echtlauf werden Name, Anschrift und USt-Id des Kreditors als IDoc ZVENDOR01 an das Alt-System adressiert.",
+   "zeilen": [
+    72
+   ],
+   "code": [
+    "72:     CALL FUNCTION 'MASTER_IDOC_DISTRIBUTE'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein MASTER_IDOC_DISTRIBUTE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-087-B07",
+   "soll": "Schlägt das Erzeugen fehl, wird ein Sendefehler mit Kreditornummer ausgegeben.",
+   "zeilen": [
+    84,
+    87
+   ],
+   "code": [
+    "84:     IF sy-subrc = 0.",
+    "87:       WRITE: / 'Fehler beim Senden', ls_lfa1-lifnr."
+   ],
+   "engine": [
+    "Für andere sy-subrc wird Fehler beim Senden ausgegeben und ls_lfa1-lifnr ausgegeben.",
+    "Bei Treffern werden Fehler beim Senden und ls_lfa1-lifnr als Liste ausgegeben.",
+    "Fehler beim Senden wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "ls_lfa1-lifnr wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-087-B08",
+   "soll": "Im Echtlauf werden danach alle gelesenen Änderungszeiger als verarbeitet markiert und festgeschrieben.",
+   "zeilen": [
+    91,
+    92,
+    97
+   ],
+   "code": [
+    "91:   IF p_test IS INITIAL.",
+    "92:     CALL FUNCTION 'CHANGE_POINTERS_STATUS_WRITE'",
+    "97:     COMMIT WORK."
+   ],
+   "engine": [
+    "Ohne p_test wird CHANGE_POINTERS_STATUS_WRITE aufgerufen und COMMIT WORK ausgeführt.",
+    "Der Funktionsbaustein CHANGE_POINTERS_STATUS_WRITE wird aufgerufen.",
+    "Es wird CHANGE_POINTERS_STATUS_WRITE aufgerufen und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-087-B09",
+   "soll": "Zum Schluss wird die Anzahl gesendeter Kreditoren ausgegeben.",
+   "zeilen": [
+    99
+   ],
+   "code": [
+    "99:   WRITE: / lv_sent, 'Kreditoren gesendet'."
+   ],
+   "engine": [
+    "lv_sent und Kreditoren gesendet werden ausgegeben.",
+    "lv_sent wird ausgegeben.",
+    "Kreditoren gesendet wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  }
+ ]
+}

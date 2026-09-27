@@ -1,0 +1,69 @@
+{
+ "id": "BM-105",
+ "titel": "Eingebaute Equipments am Technischen Platz: EQUZ/ILOA-Join mit Zeilenbegrenzung",
+ "prozess": "Beim Aufruf belegt der Report den Technischen Platz mit dem zuletzt im Benutzerkontext verwendeten Wert vor. Nach dem Start mit Platz und Höchstzahl liest er die im aktuell gültigen Zeitsegment an genau diesem Platz eingebauten Equipments samt übergeordnetem Equipment. Jedes Equipment wird gezählt und ausgegeben. Übersteigt die Zahl die eingegebene Höchstzahl, bricht die Lesung ohne Hinweis ab, sodass die Liste stillschweigend unvollständig ist. Ein unbekannter Platz wird nicht gemeldet, er ergibt eine leere Liste. Es wird nichts geschrieben.",
+ "verboten": [
+  "source.abap:21 — kein Fachsatz „die Liste weist auf weitere, nicht angezeigte Equipments hin“: EXIT beendet die Lesung ohne Meldung",
+  "gesamte Scheibe — kein Fachsatz „der Technische Platz wird geprüft“: ein unbekannter Platz ergibt nur eine leere Liste",
+  "gesamte Scheibe — kein Fachsatz „Equipments untergeordneter Plätze werden mitgelistet“: die Lesung filtert genau auf den eingegebenen Platz"
+ ],
+ "saetze": [
+  {
+   "id": "BM-105-B01",
+   "soll": "Beim Aufruf wird der Technische Platz aus dem zuletzt im Benutzerkontext verwendeten Platz vorbelegt.",
+   "zeilen": [
+    13
+   ],
+   "code": [
+    "13:   GET PARAMETER ID 'IFL' FIELD p_tplnr."
+   ],
+   "engine": [
+    "Jeder von der logischen Datenbank gelieferte PARAMETER-Satz wird verarbeitet. Welche Sätze das sind, bestimmt die logische Datenbank mit ihrem Selektionsbild, nicht der Report."
+   ]
+  },
+  {
+   "id": "BM-105-B02",
+   "soll": "Es werden die im aktuell gültigen Zeitsegment am eingegebenen Technischen Platz eingebauten Equipments mit ihrem übergeordneten Equipment gelesen.",
+   "zeilen": [
+    16
+   ],
+   "code": [
+    "16:   SELECT z~equnr z~heqnr INTO (gv_equnr, gv_heqnr)"
+   ],
+   "engine": [
+    "Das Ergebnis enthält z~equnr z~heqnr INTO (gv_equnr und gv_heqnr).",
+    "Es werden Sätze aus equz mit dem eingegebenen i~tplnr selektiert."
+   ]
+  },
+  {
+   "id": "BM-105-B03",
+   "soll": "Nach der eingegebenen Höchstzahl an Equipments bricht die Liste ohne Hinweis ab.",
+   "zeilen": [
+    21,
+    22
+   ],
+   "code": [
+    "21:     IF gv_count > p_max.",
+    "22:       EXIT."
+   ],
+   "engine": [
+    "Für Anzahlen größer p_max wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-105-B04",
+   "soll": "Jedes Equipment wird mit seinem übergeordneten Equipment ausgegeben.",
+   "zeilen": [
+    24
+   ],
+   "code": [
+    "24:     WRITE: / gv_equnr, gv_heqnr."
+   ],
+   "engine": [
+    "Bei Treffern werden gv_equnr und gv_heqnr als Liste ausgegeben.",
+    "gv_equnr wird ausgegeben.",
+    "gv_heqnr wird ausgegeben."
+   ]
+  }
+ ]
+}

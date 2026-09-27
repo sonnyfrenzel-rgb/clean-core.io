@@ -1,0 +1,122 @@
+{
+ "id": "BM-170",
+ "titel": "Transport: beladene Transporte per BAPI abfertigen, mit Wiederholung bei Sperre",
+ "prozess": "Ein Job startet den Report alle 30 Minuten mit Transportdispostellen, optional Transportarten und dem Kennzeichen „nur heute“. Aus diesen Eingaben wird eine dynamische Selektion gebaut, die Transporte mit beendeter Beladung und ohne Abfertigung liest, bei gesetztem Kennzeichen nur solche mit Ladeende heute. Findet er keine, gibt er einen Hinweis aus und überspringt die Verarbeitung, die Zählerzeile am Ende wird trotzdem gedruckt. Für jeden Transport setzt er den Status Abfertigung über das Änderungs-BAPI. Meldet das BAPI einen Fehler, wird zurückgerollt; ist der Transport gesperrt, wartet der Job zwei Sekunden und versucht es erneut, höchstens dreimal, bei anderen Fehlern gibt er sofort auf. Bleibt der Fehler, wird der Transport mit Fehlertext gelistet und gezählt, sonst wird die Abfertigung festgeschrieben. Zum Schluss werden die Zähler ausgegeben, und gab es Fehler, bricht der Job mit einer Fehlermeldung ab, damit das Monitoring anschlägt.",
+ "verboten": [
+  "source.abap:31 — kein Fachsatz „ohne Transporte endet der Job ohne weitere Ausgabe“: RETURN verlässt nur START-OF-SELECTION, die Zählerzeile aus END-OF-SELECTION wird trotzdem gedruckt",
+  "source.abap:60 — kein Fachsatz „jeder fehlerhafte Transport wird mit Fehlertext gelistet“: kommen nur Abbruchmeldungen (Typ A) zurück, scheitert der Zugriff auf die E-Meldung mit Laufzeitfehler",
+  "gesamte Scheibe — kein Fachsatz „Frachtkosten oder Warenausgang werden gebucht“: gesetzt wird nur der Transportstatus Abfertigung"
+ ],
+ "saetze": [
+  {
+   "id": "BM-170-B01",
+   "soll": "Es werden Transporte der gewählten Transportdispostellen und Transportarten gelesen, deren Beladung beendet, die aber noch nicht abgefertigt sind; mit dem Kennzeichen „heute“ nur solche mit Ladeende heute.",
+   "zeilen": [
+    23,
+    27
+   ],
+   "code": [
+    "23:   IF p_heute = 'X'.",
+    "27:   SELECT tknum FROM vttk INTO TABLE lt_tknum"
+   ],
+   "engine": [
+    "Mit gesetztem p_heute wird eine Zeile aufgenommen.",
+    "Es werden Sätze aus vttk selektiert. Welche Sätze das sind, entscheidet die Eingabe zur Laufzeit."
+   ]
+  },
+  {
+   "id": "BM-170-B02",
+   "soll": "Gibt es keine, wird dies ausgegeben und die Verarbeitung der Transporte übersprungen.",
+   "zeilen": [
+    29,
+    30,
+    31
+   ],
+   "code": [
+    "29:   IF lt_tknum IS INITIAL.",
+    "30:     WRITE: / 'Keine Transporte zum Abfertigen.'.",
+    "31:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird Keine Transporte zum Abfertigen. ausgegeben und der Block verlassen.",
+    "Es wird Keine Transporte zum Abfertigen. ausgegeben und der Block verlassen.",
+    "Keine Transporte zum Abfertigen. wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-170-B03",
+   "soll": "Für jeden Transport wird der Status „Abfertigung“ per Änderungs-BAPI gesetzt.",
+   "zeilen": [
+    41
+   ],
+   "code": [
+    "41:       CALL FUNCTION 'BAPI_SHIPMENT_CHANGE'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAPI_SHIPMENT_CHANGE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-170-B04",
+   "soll": "Schlägt die Änderung fehl, wird sie zurückgerollt; ist der Transport gesperrt, wird zwei Sekunden gewartet und höchstens dreimal insgesamt versucht, bei anderen Fehlern sofort aufgegeben.",
+   "zeilen": [
+    50,
+    52,
+    53
+   ],
+   "code": [
+    "50:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "52:       IF line_exists( lt_ret[ id = 'VW' number = '022' ] ).",
+    "53:         WAIT UP TO 2 SECONDS."
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-170-B05",
+   "soll": "Bleibt ein Fehler, wird der Transport mit Fehlertext gelistet und gezählt; sonst wird die Abfertigung festgeschrieben und gezählt.",
+   "zeilen": [
+    58,
+    60,
+    63
+   ],
+   "code": [
+    "58:     IF line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ).",
+    "60:       WRITE: / lv_tknum, 'Fehler:', lt_ret[ type = 'E' ]-message.",
+    "63:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Für line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ) wird lv_tknum ausgegeben, Fehler: ausgegeben und lt_ret[ type = 'E' ]-message ausgegeben.",
+    "Bei Treffern werden lv_tknum, Fehler: und lt_ret[ type = 'E' ]-message als Liste ausgegeben.",
+    "lv_tknum wird ausgegeben.",
+    "Fehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lt_ret[ type = 'E' ]-message wird ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-170-B06",
+   "soll": "Am Ende werden die Anzahl abgefertigter und fehlerhafter Transporte ausgegeben; gab es Fehler, bricht der Job mit einer Fehlermeldung ab.",
+   "zeilen": [
+    70,
+    71,
+    72
+   ],
+   "code": [
+    "70:   WRITE: / 'Abgefertigt:', lv_ok, 'Fehler:', lv_err.",
+    "71:   IF lv_err > 0.",
+    "72:     MESSAGE e004(zle) WITH lv_err.       \"Job abbrechen -> Monitoring"
+   ],
+   "engine": [
+    "Abgefertigt:, lv_ok, Fehler: und lv_err werden ausgegeben.",
+    "Abgefertigt: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_ok wird ausgegeben.",
+    "Fehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_err wird ausgegeben.",
+    "Für lv_err größer 0 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

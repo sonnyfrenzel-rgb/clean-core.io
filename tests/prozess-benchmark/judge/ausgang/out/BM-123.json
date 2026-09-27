@@ -1,0 +1,43 @@
+{
+ "id": "BM-123",
+ "urteile": [
+  {
+   "id": "BM-123-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus fmci selektiert\"; Finanzposition, Finanzkreis, Geschäftsjahr fehlen."
+  },
+  {
+   "id": "BM-123-B02",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Eine Meldung wird ausgegeben\" widerspricht MESSAGE ... RAISING: es wird die Ausnahme NOT_FOUND ausgelöst, keine Meldung angezeigt; die Ausnahme fehlt."
+  },
+  {
+   "id": "BM-123-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Prüfung des Positionstyps."
+  },
+  {
+   "id": "BM-123-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Rückgabe des Finanzvorgangs."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "satz": "Ohne Treffer wird eine Meldung ausgegeben.",
+   "begruendung": "Zieht den verbotenen Schluss zu Zeile 23: mit RAISING wird nur die Ausnahme ausgelöst, dem Anwender wird nichts angezeigt."
+  }
+ ],
+ "soll_zweifel": []
+}

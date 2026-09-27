@@ -1,0 +1,34 @@
+{
+ "id": "BM-021",
+ "urteile": [
+  {
+   "id": "BM-021-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus mkpf mit dem eingegebenen s~werks und s~bwart\" – Materialbelegpositionen/Wareneingang nicht fachlich, Buchungszeitraum fehlt."
+  },
+  {
+   "id": "BM-021-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "\"Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen\" – Hinweis und Ende; mehrfach."
+  },
+  {
+   "id": "BM-021-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Ausgabe nur als gs_we-budat, gs_we-mblnr … gs_we-ebeln, Einzelsätze wiederholen; Sortierung fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

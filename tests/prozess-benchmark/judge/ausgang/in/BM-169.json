@@ -1,0 +1,116 @@
+{
+ "id": "BM-169",
+ "titel": "Bonusabsprachen: auslaufende Absprachen mit Umsatz aus fremder Liste und Absprung in VBO3",
+ "prozess": "Der Report wird mit Verkaufsorganisationen, optional Absprachearten und einer Vorlaufzeit in Tagen gestartet. Er liest alle offenen Bonusabsprachen, deren Gültigkeit von heute bis zum Ende der Vorlaufzeit ausläuft; findet er keine, zeigt er einen Hinweis und verlässt die Listverarbeitung. Für jede Absprache startet er den eigenen Umsatzreport und lässt dessen Liste in den Speicher schreiben. Diese Liste wird in Text umgewandelt, und aus der vierten Zeile ab Spalte 60 wird der bisherige Bonusumsatz gelesen; fehlt die Liste oder die Zeile oder ist der Betrag nicht als Zahl lesbar, bleibt der Umsatz null. Jede Absprache erscheint mit Nummer, Art, Bonusempfänger, Ablaufdatum und Umsatz als anklickbare Zeile. Ein Klick belegt die Absprachenummer vor und springt direkt in die Anzeige der Bonusabsprache. Es wird nichts abgerechnet oder geändert.",
+ "verboten": [
+  "source.abap:60 — kein Fachsatz „der Bonusumsatz wird aus den Fakturen bzw. Bonusdaten berechnet“: er wird aus der Textliste eines anderen Reports an fester Position abgelesen; Beträge mit Tausenderpunkt scheitern und erscheinen als 0",
+  "source.abap:73 — kein Fachsatz „Klicks außerhalb einer Absprachezeile bleiben ohne Wirkung“: ohne HIDE-Information steht beim ersten Klick noch die letzte Absprache der Liste im Feld, sie wird geöffnet (erst nach einem Absprung ist das Feld geleert)",
+  "gesamte Scheibe — kein Fachsatz „Bonusabsprachen werden abgerechnet oder verlängert“: der Report liest und zeigt nur an"
+ ],
+ "saetze": [
+  {
+   "id": "BM-169-B01",
+   "soll": "Es werden offene Bonusabsprachen der gewählten Verkaufsorganisationen und Absprachearten gelesen, deren Gültigkeit innerhalb der vorgegebenen Tage ausläuft.",
+   "zeilen": [
+    27
+   ],
+   "code": [
+    "27:   SELECT knuma boart bonem datbi FROM kona"
+   ],
+   "engine": [
+    "Es werden Sätze aus kona selektiert."
+   ]
+  },
+  {
+   "id": "BM-169-B02",
+   "soll": "Gibt es keine, wird ein Hinweis gezeigt und die Listverarbeitung verlassen.",
+   "zeilen": [
+    33,
+    34,
+    35
+   ],
+   "code": [
+    "33:   IF sy-subrc <> 0.",
+    "34:     MESSAGE s001(zsd_bonus) DISPLAY LIKE 'W'.",
+    "35:     LEAVE LIST-PROCESSING."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-169-B03",
+   "soll": "Für jede Absprache wird der Umsatzreport ZSD_BONUS_UMSATZ gestartet und seine Liste im Speicher abgelegt statt angezeigt.",
+   "zeilen": [
+    39
+   ],
+   "code": [
+    "39:     SUBMIT zsd_bonus_umsatz WITH p_knuma = gs_abs-knuma"
+   ],
+   "engine": [
+    "Das Kindprogramm zsd_bonus_umsatz wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes."
+   ]
+  },
+  {
+   "id": "BM-169-B04",
+   "soll": "Aus der zurückgegebenen Liste wird der Betrag der vierten Listzeile ab Spalte 60 als bisheriger Bonusumsatz übernommen; ist er nicht als Zahl lesbar, bleibt der Umsatz null.",
+   "zeilen": [
+    42,
+    49,
+    57,
+    60
+   ],
+   "code": [
+    "42:     CALL FUNCTION 'LIST_FROM_MEMORY'",
+    "49:       CALL FUNCTION 'LIST_TO_ASCI'",
+    "57:       READ TABLE gt_ascii INTO DATA(lv_zeile) INDEX 4.",
+    "60:             gs_abs-umsatz = condense( lv_zeile+60(20) )."
+   ],
+   "engine": [
+    "Der Funktionsbaustein LIST_FROM_MEMORY wird aufgerufen.",
+    "Bei Treffer wird LIST_TO_ASCI aufgerufen und LIST_FREE_MEMORY aufgerufen.",
+    "Der Funktionsbaustein LIST_TO_ASCI wird aufgerufen.",
+    "Es wird LIST_TO_ASCI aufgerufen und LIST_FREE_MEMORY aufgerufen.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-169-B05",
+   "soll": "Jede Absprache wird mit Absprachenummer, Art, Bonusempfänger, Gültigkeitsende und Umsatz als anklickbare Zeile ausgegeben.",
+   "zeilen": [
+    67
+   ],
+   "code": [
+    "67:     WRITE: / gs_abs-knuma HOTSPOT, gs_abs-boart, gs_abs-bonem,"
+   ],
+   "engine": [
+    "Es wird eine Zeile eingefügt oder überschrieben, gs_abs-knuma HOTSPOT ausgegeben, gs_abs-boart ausgegeben, gs_abs-bonem ausgegeben, gs_abs-datbi ausgegeben und gs_abs-umsatz ausgegeben.",
+    "Bei Treffern werden gs_abs-knuma HOTSPOT, gs_abs-boart, gs_abs-bonem, gs_abs-datbi und gs_abs-umsatz als Liste ausgegeben.",
+    "gs_abs-knuma HOTSPOT wird ausgegeben.",
+    "gs_abs-boart wird ausgegeben.",
+    "gs_abs-bonem wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-169-B06",
+   "soll": "Ein Klick auf eine Zeile öffnet die Absprache direkt in der Anzeige der Bonusabsprache.",
+   "zeilen": [
+    72,
+    74,
+    75
+   ],
+   "code": [
+    "72: AT LINE-SELECTION.",
+    "74:   SET PARAMETER ID 'VBO' FIELD gs_abs-knuma.",
+    "75:   CALL TRANSACTION 'VBO3' AND SKIP FIRST SCREEN."
+   ],
+   "engine": [
+    "Die Anlage wird über die Transaktion VBO3 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ]
+  }
+ ]
+}

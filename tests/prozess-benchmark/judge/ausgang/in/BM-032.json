@@ -1,0 +1,237 @@
+{
+ "id": "BM-032",
+ "titel": "Lieferantenbewertung nach Termin-, Mengentreue und Qualität mit Periodenablage",
+ "prozess": "Der Einkauf startet den Report mit Einkaufsorganisation, Periode, Buchungszeitraum, optional Lieferanten und dem Speichern-Schalter. Er liest die Wareneingänge zu Bestellungen der Einkaufsorganisation im Zeitraum und lässt Stornobuchungen weg. Gibt es keine, meldet er das und überspringt die Bewertung, zeigt am Ende aber die leere Liste. Für die Termintreue misst er jeden Wareneingang am frühesten Liefertermin der Bestellposition und vergibt 100, 80, 50 oder 0 Punkte nach Verspätung. Für die Mengentreue summiert er die gelieferten Mengen je Position und bewertet nur endgelieferte Positionen mit 100 minus doppelter prozentualer Abweichung, mindestens 0. Für die Qualität zählt er die Wareneingangsprüflose mit Verwendungsentscheid und davon die angenommenen. Je Lieferant bildet er Durchschnittspunkte und Annahmequote (ohne Prüflose 100), gewichtet 40/30/30 zur Gesamtpunktzahl und vergibt die Note A (ab 90), B (ab 70) oder C. Ist Speichern gewählt, ersetzt er die Bewertung der Periode in der Z-Tabelle und schreibt fest, bei Fehler rollt er zurück und bricht ab. Zum Schluss zeigt er das Ergebnis als ALV.",
+ "verboten": [
+  "zmm_lief_bewertung.abap:49 — kein Fachsatz „Ohne Wareneingänge endet der Report ohne Anzeige“ (RETURN verlässt nur START-OF-SELECTION; END-OF-SELECTION zeigt die leere Liste)",
+  "zmm_lief_bewertung_f01.abap:25 — kein Fachsatz „Jeder Wareneingang wird gegen seine eigene Einteilung gemessen“ (immer gegen den frühesten Termin der Position)",
+  "zmm_lief_bewertung_f01.abap:110 — kein Fachsatz „Abgelehnte Lose sperren den Lieferanten“ (sie senken nur die Quote)",
+  "gesamte Scheibe — kein Fachsatz „Die Bewertung wird in den SAP-Standard der Lieferantenbeurteilung (ME61) übernommen“ (Ablage nur in der Z-Tabelle)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-032-B01",
+   "soll": "Es werden die Wareneingänge zu Bestellungen der eingegebenen Einkaufsorganisation und Lieferanten im Buchungszeitraum gelesen; Stornobuchungen werden nicht bewertet.",
+   "zeilen": [
+    67,
+    75
+   ],
+   "code": [
+    "67:   SELECT k~lifnr b~ebeln b~ebelp b~budat b~menge b~shkzg",
+    "75:   DELETE gt_we WHERE shkzg = 'H'."
+   ],
+   "engine": [
+    "Es werden Sätze aus ekbe mit dem eingegebenen k~ekorg selektiert."
+   ]
+  },
+  {
+   "id": "BM-032-B02",
+   "soll": "Gibt es keine, wird ein Hinweis ausgegeben und die Bewertung übersprungen; die (leere) Ergebnisliste wird trotzdem angezeigt.",
+   "zeilen": [
+    47,
+    48,
+    49,
+    60
+   ],
+   "code": [
+    "47:   IF gt_we IS INITIAL.",
+    "48:     MESSAGE s002(zmm) DISPLAY LIKE 'E'.",
+    "49:     RETURN.",
+    "60: END-OF-SELECTION."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-032-B03",
+   "soll": "Für jeden Wareneingang wird der früheste Liefertermin der Bestellposition gelesen; Positionen ohne Termin gehen nicht in die Termintreue ein.",
+   "zeilen": [
+    86,
+    89
+   ],
+   "code": [
+    "86:     SELECT MIN( eindt ) FROM eket INTO lv_eindt",
+    "89:     IF lv_eindt IS INITIAL."
+   ],
+   "engine": [
+    "Es werden Sätze aus eket selektiert."
+   ]
+  },
+  {
+   "id": "BM-032-B04",
+   "soll": "Die Verspätung in Tagen ergibt die Terminpunkte: pünktlich oder früh 100, bis 3 Tage 80, bis 7 Tage 50, darüber 0.",
+   "zeilen": [
+    92,
+    96
+   ],
+   "code": [
+    "92:     lv_tage = <ls_we>-budat - lv_eindt.",
+    "96:     IF lv_tage <= 0."
+   ],
+   "engine": [
+    "Für lv_tage bis einschließlich 0 wird die ls_acc-pkt_zeit auf 100 gesetzt.",
+    "Für lv_tage bis einschließlich 0 wird die ls_acc-pkt_zeit auf 100 gesetzt, sonst die ls_acc-pkt_zeit auf 80 gesetzt beziehungsweise die ls_acc-pkt_zeit auf 50 gesetzt beziehungsweise die ls_acc-pkt_zeit auf 0 gesetzt.",
+    "lv_tage bis einschließlich 0 setzen die ls_acc-pkt_zeit auf 100."
+   ]
+  },
+  {
+   "id": "BM-032-B05",
+   "soll": "Für die Mengentreue werden die Wareneingangsmengen je Bestellposition summiert und nur endgelieferte Positionen mit Bestellmenge bewertet.",
+   "zeilen": [
+    126,
+    130,
+    134
+   ],
+   "code": [
+    "126:     COLLECT ls_pos INTO lt_pos.",
+    "130:     SELECT SINGLE * FROM ekpo INTO ls_ekpo",
+    "134:     IF sy-subrc <> 0 OR ls_ekpo-elikz <> 'X' OR ls_ekpo-menge = 0."
+   ],
+   "engine": [
+    "Es werden Sätze aus ekpo selektiert."
+   ]
+  },
+  {
+   "id": "BM-032-B06",
+   "soll": "Die prozentuale Abweichung zwischen gelieferter und bestellter Menge ergibt die Mengenpunkte: 100 minus doppelte Abweichung, mindestens 0.",
+   "zeilen": [
+    137,
+    141
+   ],
+   "code": [
+    "137:     lv_abw = abs( ls_pos-menge - ls_ekpo-menge ) * 100 / ls_ekpo-menge.",
+    "141:     ls_acc-pkt_menge = nmax( val1 = 0 val2 = 100 - lv_abw * 2 )."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-032-B07",
+   "soll": "Für die Qualität werden die Wareneingangsprüflose der bewerteten Lieferanten im Zeitraum gelesen und nur Lose mit Verwendungsentscheid gezählt; angenommene Lose zählen als gut.",
+   "zeilen": [
+    156,
+    163,
+    165,
+    171
+   ],
+   "code": [
+    "156:   SELECT * FROM qals INTO TABLE lt_qals",
+    "163:     SELECT SINGLE * FROM qave INTO ls_qave",
+    "165:     IF sy-subrc <> 0.",
+    "171:     IF ls_qave-vbewertung = 'A'."
+   ],
+   "engine": [
+    "Es werden Sätze aus qals selektiert.",
+    "Es werden Sätze aus qave selektiert.",
+    "Für ls_qave-vbewertung mit dem Wert A wird die ls_acc-n_ok auf 1 gesetzt.",
+    "ls_qave-vbewertung mit dem Wert A setzen die ls_acc-n_ok auf 1."
+   ]
+  },
+  {
+   "id": "BM-032-B08",
+   "soll": "Je Lieferant werden die Durchschnittspunkte für Termin und Menge und die Annahmequote in Prozent gebildet; ohne Prüflose gilt die Qualität als 100.",
+   "zeilen": [
+    188,
+    195
+   ],
+   "code": [
+    "188:     lv_qual = 100.                    \"ohne Pruefloese keine Abwertung",
+    "195:     IF <ls_acc>-n_los > 0."
+   ],
+   "engine": [
+    "Die lv_qual wird auf 100 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-032-B09",
+   "soll": "Die Gesamtpunktzahl gewichtet Termintreue mit 40 %, Mengentreue und Qualität mit je 30 %.",
+   "zeilen": [
+    204
+   ],
+   "code": [
+    "204:     ls_score-gesamt = lv_zeit * '0.4' + lv_menge * '0.3' + lv_qual * '0.3'."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-032-B10",
+   "soll": "Ab 90 Punkten erhält der Lieferant die Note A, ab 70 die Note B, sonst C.",
+   "zeilen": [
+    205
+   ],
+   "code": [
+    "205:     IF ls_score-gesamt >= 90."
+   ],
+   "engine": [
+    "Für ls_score-gesamt ab 90 wird die ls_score-note auf A gesetzt.",
+    "Für ls_score-gesamt ab 90 wird die ls_score-note auf A gesetzt, sonst die ls_score-note auf B gesetzt beziehungsweise die ls_score-note auf C gesetzt.",
+    "ls_score-gesamt ab 90 setzen die ls_score-note auf A."
+   ]
+  },
+  {
+   "id": "BM-032-B11",
+   "soll": "Nur wenn Speichern gewählt ist, wird die bisherige Bewertung der Einkaufsorganisation und Periode gelöscht und durch die neue ersetzt.",
+   "zeilen": [
+    56,
+    218,
+    221
+   ],
+   "code": [
+    "56:   IF p_upd = 'X'.",
+    "218:   DELETE FROM zmm_lief_score",
+    "221:   INSERT zmm_lief_score FROM TABLE gt_score."
+   ],
+   "engine": [
+    "Mit gesetztem p_upd wird speichern aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-032-B12",
+   "soll": "Gelingt das Schreiben, wird festgeschrieben und die Anzahl gemeldet; sonst wird zurückgerollt und mit Fehler abgebrochen.",
+   "zeilen": [
+    222,
+    223,
+    224,
+    226,
+    227
+   ],
+   "code": [
+    "222:   IF sy-subrc = 0.",
+    "223:     COMMIT WORK.",
+    "224:     MESSAGE s003(zmm) WITH lines( gt_score ).",
+    "226:     ROLLBACK WORK.",
+    "227:     MESSAGE e004(zmm)."
+   ],
+   "engine": [
+    "Bei Treffer wird COMMIT WORK ausgeführt und eine Meldung ausgegeben.",
+    "Bei Treffer wird COMMIT WORK ausgeführt und eine Meldung ausgegeben, sonst ROLLBACK WORK ausgeführt und eine Meldung ausgegeben.",
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Es wird COMMIT WORK ausgeführt und eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Für andere sy-subrc wird ROLLBACK WORK ausgeführt und eine Meldung ausgegeben.",
+    "Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert.",
+    "Es wird ROLLBACK WORK ausgeführt und eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-032-B13",
+   "soll": "Zum Schluss wird die Bewertung je Lieferant mit Einzelpunkten, Gesamtpunkten und Note als ALV angezeigt.",
+   "zeilen": [
+    61,
+    237
+   ],
+   "code": [
+    "61:   PERFORM anzeigen.",
+    "237:       go_alv->display( )."
+   ],
+   "engine": [
+    "Das Unterprogramm anzeigen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Die Methode display von go_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

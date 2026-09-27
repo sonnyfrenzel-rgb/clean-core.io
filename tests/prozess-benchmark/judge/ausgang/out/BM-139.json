@@ -1,0 +1,202 @@
+{
+ "id": "BM-139",
+ "urteile": [
+  {
+   "id": "BM-139-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingungen trtyp/vbtyp und Prüfung der Auftragsart technisch erkannt; \"Schleife läuft weiter\"/\"kleinere\" ist falsch (Exit, keine Schleife); kreditrelevant nicht benannt."
+  },
+  {
+   "id": "BM-139-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Summe der Positionsnettowerte."
+  },
+  {
+   "id": "BM-139-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Entscheid OK bei nicht gesetztem lv_aktiv erkannt, nicht als \"Prüfung zentral abgeschaltet\"; \"die es_result-entscheid\"."
+  },
+  {
+   "id": "BM-139-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus zsd_cr_segm und Meldung ohne Treffer erkannt; Segment/RFC-Ziel/Ersatzregel und Ausnahme nicht benannt."
+  },
+  {
+   "id": "BM-139-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "RFC-Aufruf und Quelle FSCM bei Erfolg erkannt; \"nicht ableitbar\", Entscheidung und freies Limit fehlen."
+  },
+  {
+   "id": "BM-139-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Default ZCL_CREDIT_RULES/RULE_STANDARD und dynamischer Aufruf erkannt; Bedingung \"FSCM nicht erreichbar\" und gepflegte Ersatzregel fehlen."
+  },
+  {
+   "id": "BM-139-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Entscheid SPERRE erkannt; Bedingung (Regel nicht aufrufbar) fehlt."
+  },
+  {
+   "id": "BM-139-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen von credit_limit, exposure, stand erkannt; Differenz und Halbierung bei altem Replikat fehlen."
+  },
+  {
+   "id": "BM-139-B09",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Standardregel."
+  },
+  {
+   "id": "BM-139-B10",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur strengen Regel."
+  },
+  {
+   "id": "BM-139-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "OK bei Treffer (Akkreditiv) erkannt, Akkreditiv nicht benannt; Rückfall auf strenge Regel fehlt; \"die Ergebnis\"."
+  },
+  {
+   "id": "BM-139-B12",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Lösen der Liefersperre."
+  },
+  {
+   "id": "BM-139-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sperrkennzeichen auf Z1 gesetzt und eine Meldung ausgegeben\" trifft Sperre; freies Limit im Hinweis fehlt; \"die Sperrkennzeichen\"."
+  },
+  {
+   "id": "BM-139-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Eine Meldung wird ausgegeben\"; Verhindern des Sicherns fehlt."
+  },
+  {
+   "id": "BM-139-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Registrierung Z_SD_CREDIT_LOG_WRITE zur Verbuchung erkannt; Protokoll mit Belegnummer/Benutzer nicht benannt."
+  },
+  {
+   "id": "BM-139-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"credit_sgmnt des Satzes wird gelesen\"; Bedingung und Übernahme in den Auftragskopf fehlen."
+  },
+  {
+   "id": "BM-139-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufträge lesen und Meldung ohne Treffer erkannt; Liefersperre Z1, Zeitraum und Verkaufsorganisationen fehlen."
+  },
+  {
+   "id": "BM-139-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Erneuter Aufruf der Kreditprüfung und Ausgabe \"weiter gesperrt\" erkannt, nur technisch."
+  },
+  {
+   "id": "BM-139-B19",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "\"Für p_test = abap_true wird Belegnummer, Kundennummer, würde freigegeben ausgegeben\" entspricht dem reinen Listen im Testlauf."
+  },
+  {
+   "id": "BM-139-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "BAPI_SALESORDER_CHANGE mit Rollback/Commit und Ausgaben erkannt; Entfernen der Liefersperre nicht benannt."
+  },
+  {
+   "id": "BM-139-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Ausgabe von Beschriftungen und gv_frei/gv_gesp/gv_fehl erkannt, nicht als Anzahlen formuliert."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

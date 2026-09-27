@@ -1,0 +1,121 @@
+{
+ "id": "BM-054",
+ "urteile": [
+  {
+   "id": "BM-054-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'waers des Satzes mit dem eingegebenen Buchungskreis wird gelesen' – richtig, aber 'Hauswährung' wird nicht genannt."
+  },
+  {
+   "id": "BM-054-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf ENQUEUE_EZFI_FXVAL und Meldung genannt; Sperrzweck (kein Parallellauf) und Abbruch mit Sperrendem fehlen."
+  },
+  {
+   "id": "BM-054-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus bsik und bsak nur mit Buchungskreis; Fremdwährung, 'bis Stichtag gebucht' und 'am Stichtag offen' fehlen."
+  },
+  {
+   "id": "BM-054-B04",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Ausgabe 'Keine offenen Fremdwaehrungsposten zum Stichtag.' und Verlassen entspricht dem Soll."
+  },
+  {
+   "id": "BM-054-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Umrechnung über CONVERT_TO_LOCAL_CURRENCY zum Stichtag technisch genannt; Kurstyp und Vorzeichenbehandlung fehlen."
+  },
+  {
+   "id": "BM-054-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Summierung der Differenz je Währung."
+  },
+  {
+   "id": "BM-054-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Ausgabe 'Kein Kurs fuer ... - Waehrung nicht bewertet' je Währung erkannt; dass die Währung bei fehlendem Kurs von der Bewertung ausgeschlossen wird (Zeile 139), fehlt."
+  },
+  {
+   "id": "BM-054-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Ohne p_test wird post_differences aufgerufen' trifft den Echtlauf; ein Beleg je Währung und Überspringen bei Differenz null fehlen."
+  },
+  {
+   "id": "BM-054-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Aufruf BAPI_ACC_DOCUMENT_POST; Aufwand/Ertrag gegen Korrekturkonto je nach Vorzeichen fehlt ganz."
+  },
+  {
+   "id": "BM-054-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback und Ausgabe 'Buchung fehlgeschlagen' je Währung erkannt; die Bedingung (Fehlermeldung in der Rückmeldung) nur als 'passende Zeile'."
+  },
+  {
+   "id": "BM-054-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Commit und Ausgabe 'gebucht' mit gv_objkey genannt; Protokollsatz in zfi_fxval_log fehlt."
+  },
+  {
+   "id": "BM-054-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "DEQUEUE-Aufruf und Listenausgabe gs_sum-waers/gs_sum-diff nur technisch; 'Sperre freigegeben' und 'Differenzen je Währung' nicht fachlich."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

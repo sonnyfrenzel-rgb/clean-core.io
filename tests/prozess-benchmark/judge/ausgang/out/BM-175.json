@@ -1,0 +1,123 @@
+{
+ "id": "BM-175",
+ "urteile": [
+  {
+   "id": "BM-175-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "„absprachen_lesen – Wirkung nicht belegt“ und „Sätze aus kona selektiert“; Stichtag und Status offen/A fehlen."
+  },
+  {
+   "id": "BM-175-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "Ohne Absprachen Meldung und Verlassen – entspricht dem Sollsatz."
+  },
+  {
+   "id": "BM-175-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Schleife über gt_abs; das Sammeln je Absprachenart (AT NEW) fehlt."
+  },
+  {
+   "id": "BM-175-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Ausgabe „nicht vom Controlling freigegeben“ und Verlassen bei fehlender Freigabe erkannt, Bedingung aber nur als sy-subrc/lv_frg."
+  },
+  {
+   "id": "BM-175-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen von progname/formname, Aufruf „lv_form – Wirkung nicht belegt“, Ausgabe „Unterprogramm … negativ“; „sofern vorhanden“ und Ablehnung nicht fachlich."
+  },
+  {
+   "id": "BM-175-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "„Nur gv_ok mit dem Wert abap_true gehen weiter; kleinere werden übersprungen“ – Aufnahme in die Sammlung nicht gesagt."
+  },
+  {
+   "id": "BM-175-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "testliste bzw. job_einplanen je nach p_test, „Wirkung nicht belegt“; Testliste/Jobeinplanung je Art nicht fachlich."
+  },
+  {
+   "id": "BM-175-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "JOB_OPEN-Aufruf und Meldung „ohne Treffer“; Abbruch mit Fehlermeldung nicht erkannt."
+  },
+  {
+   "id": "BM-175-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Start von rv15c001 und JOB_CLOSE-Aufruf; Einplanung im Job und sofortige Freigabe nicht fachlich."
+  },
+  {
+   "id": "BM-175-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "„Ohne Treffer wird Job … nicht freigegeben ausgegeben und der Block verlassen“ – Inhalt erkennbar, aber technisch und mit unpassendem „Ohne Treffer“."
+  },
+  {
+   "id": "BM-175-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur die Listzeile; Protokollierung in zsd_bonus_lauf und Zählung fehlen."
+  },
+  {
+   "id": "BM-175-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Ausgabe „Eingeplante Jobs:“ mit gv_anz_job im Echtlauf – richtig, aber mit Variablenname."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

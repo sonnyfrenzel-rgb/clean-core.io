@@ -1,0 +1,407 @@
+{
+ "id": "BM-138",
+ "titel": "PSM-FM: Antrag auf Mittelvormerkung im Dynpro erfassen, prüfen, einreichen und im Vier-Augen-Prinzip genehmigen (Modulpool, Verbuchung, Workflow-Ereignisse)",
+ "prozess": "Ein Fachamt erfasst in der Transaktion ZFM_MVB einen Antrag auf Mittelvormerkung mit Finanzkreis, Jahr, Finanzstelle, Finanzposition, Betrag und Zweck. Ändert es die Finanzstelle, wird geprüft, ob sie zum Tagesdatum gültig ist, und eine frühere Verfügbarkeitsprüfung verfällt. Mit „Prüfen“ liest das Programm die verfügbaren Mittel; reichen sie nicht, erscheint ein Hinweis, reichen sie, gilt der Antrag als geprüft und Kontierung und Betrag werden gesperrt. Eingereicht werden kann nur ein geprüfter Antrag: Das Programm zieht eine Antragsnummer, speichert den Antrag als offen über die Verbuchung, löst das Workflow-Ereignis CREATED aus, schreibt fest, meldet die Nummer und verlässt die Transaktion. Der Budgetverantwortliche öffnet den Antrag aus dem Workflow in ZFM_MVB_OK; fehlt er, bricht die Transaktion ab. Entschieden werden kann nur über offene Anträge und nicht vom Antragsteller selbst; der Antrag wird gesperrt. Bei Genehmigung legt das Programm zuerst die Mittelvormerkung der Belegart ZV an; scheitert das, rollt es zurück und der Antrag bleibt offen. Eine Ablehnung muss bestätigt werden. Danach speichert es Status, Entscheider, Datum und ggf. Belegnummer, protokolliert den Statuswechsel, löst APPROVED oder REJECTED aus und schreibt fest. Abbrechen verwirft jederzeit alle Eingaben.",
+ "verboten": [
+  "mzfm_mvb_f01.abap:13 — kein Fachsatz „ohne Verfügbarkeitssatz gilt der Betrag als nicht gedeckt“: ohne Treffer bleibt der verfügbare Betrag der vorherigen Prüfung stehen",
+  "mzfm_mvb_f01.abap:73 — kein Fachsatz „nur berechtigte Budgetverantwortliche dürfen genehmigen“: geprüft wird nur, dass der Entscheider nicht der Antragsteller ist",
+  "mzfm_mvb_f01.abap:106 — kein Fachsatz „vor der Genehmigung wird die Verfügbarkeit erneut geprüft“: es wird ohne neue Prüfung angelegt",
+  "mzfm_mvb_f01.abap:136 — kein Fachsatz „nach abgebrochener Ablehnung bleibt der Antrag zur Entscheidung auf dem Bild“: das Modul verlässt die Transaktion danach trotzdem"
+ ],
+ "saetze": [
+  {
+   "id": "BM-138-B01",
+   "soll": "Nach erfolgreicher Verfügbarkeitsprüfung sind Kontierung und Betrag auf dem Erfassungsbild nicht mehr eingabebereit.",
+   "zeilen": [
+    308,
+    309,
+    310,
+    312
+   ],
+   "code": [
+    "308:   IF gv_geprueft = abap_true.",
+    "309:     LOOP AT SCREEN.",
+    "310:       IF screen-group1 = 'EIN'.",
+    "312:         MODIFY SCREEN."
+   ],
+   "engine": [
+    "Jede Zeile aus SCREEN wird einzeln verarbeitet.",
+    "Für screen-group1 mit dem Wert EIN wird die screen-input auf 0 gesetzt und eine Zeile eingefügt oder überschrieben.",
+    "screen-group1 mit dem Wert EIN setzen die screen-input auf 0.",
+    "Es wird die screen-input auf 0 gesetzt und eine Zeile eingefügt oder überschrieben.",
+    "Eine Zeile in SCREEN wird eingefügt oder überschrieben."
+   ]
+  },
+  {
+   "id": "BM-138-B02",
+   "soll": "Abbrechen oder Beenden verwirft alle Eingaben ohne Rückfrage und verlässt die Transaktion.",
+   "zeilen": [
+    226,
+    228
+   ],
+   "code": [
+    "226: MODULE exit_command INPUT.",
+    "228:   LEAVE TO SCREEN 0."
+   ],
+   "engine": [
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-138-B03",
+   "soll": "Wird die Finanzstelle geändert, wird geprüft, ob sie im Finanzkreis zum Tagesdatum gültig ist; sonst muss sie neu eingegeben werden.",
+   "zeilen": [
+    235,
+    239,
+    240
+   ],
+   "code": [
+    "235:   SELECT SINGLE fictr FROM fmfctr INTO @DATA(lv_fictr)",
+    "239:   IF sy-subrc <> 0.",
+    "240:     MESSAGE e021 WITH gs_kopf-fistl gs_kopf-fikrs."
+   ],
+   "engine": [
+    "fictr des Satzes wird gelesen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-138-B04",
+   "soll": "Nach einer Änderung der Finanzstelle gilt die bisherige Verfügbarkeitsprüfung als ungültig.",
+   "zeilen": [
+    244
+   ],
+   "code": [
+    "244:   CLEAR gv_geprueft."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-138-B05",
+   "soll": "Bei „Prüfen“ werden die verfügbaren Mittel für Finanzstelle, Finanzposition und Jahr gelesen.",
+   "zeilen": [
+    53,
+    258
+   ],
+   "code": [
+    "53:   SELECT SINGLE verfuegbar FROM zfm_v_verfuegbar INTO gv_verfuegbar",
+    "258:       PERFORM verfuegbarkeit_pruefen."
+   ],
+   "engine": [
+    "verfuegbar des Satzes wird gelesen.",
+    "Das Unterprogramm verfuegbarkeit_pruefen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-138-B06",
+   "soll": "Reichen sie für den beantragten Betrag nicht, erscheint ein Hinweis mit dem verfügbaren Betrag und der Antrag gilt als ungeprüft.",
+   "zeilen": [
+    59,
+    61
+   ],
+   "code": [
+    "59:   IF gv_verfuegbar < gs_kopf-betrag.",
+    "61:     MESSAGE s024 WITH gv_verfuegbar gs_kopf-waers DISPLAY LIKE 'E'."
+   ],
+   "engine": [
+    "Für gv_verfuegbar kleiner gs_kopf-betrag wird eine Meldung ausgegeben und der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-138-B07",
+   "soll": "Reichen sie, wird der Antrag als geprüft gekennzeichnet und der verfügbare Betrag gemeldet.",
+   "zeilen": [
+    65,
+    66
+   ],
+   "code": [
+    "65:   gv_geprueft = abap_true.",
+    "66:   MESSAGE s025 WITH gv_verfuegbar gs_kopf-waers."
+   ],
+   "engine": [
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-138-B08",
+   "soll": "Ein Antrag kann nur eingereicht werden, wenn er erfolgreich geprüft ist.",
+   "zeilen": [
+    260,
+    261
+   ],
+   "code": [
+    "260:       IF gv_geprueft = abap_false.",
+    "261:         MESSAGE e023."
+   ],
+   "engine": [
+    "Für gv_geprueft mit dem Wert abap_false wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-138-B09",
+   "soll": "Beim Einreichen wird eine Antragsnummer aus dem Nummernkreis gezogen; gelingt das nicht, wird nicht gesichert.",
+   "zeilen": [
+    73,
+    81,
+    82
+   ],
+   "code": [
+    "73:   CALL FUNCTION 'NUMBER_GET_NEXT'",
+    "81:   IF sy-subrc <> 0.",
+    "82:     MESSAGE e026."
+   ],
+   "engine": [
+    "Der Code übergibt '01' an NUMBER_GET_NEXT und übernimmt dessen Ausgabe nach gv_antrag.",
+    "Das konvertierte Ergebnis wird in gv_antrag übernommen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-138-B10",
+   "soll": "Der Antrag wird als offen mit Antragsteller und Datum gespeichert, das Workflow-Ereignis CREATED ausgelöst und beides gemeinsam festgeschrieben.",
+   "zeilen": [
+    90,
+    95,
+    96,
+    388
+   ],
+   "code": [
+    "90:   CALL FUNCTION 'Z_FM_MVB_VERBUCHEN' IN UPDATE TASK",
+    "95:   PERFORM workflow_ereignis USING gv_antrag 'CREATED'.",
+    "96:   COMMIT WORK.",
+    "388:       INSERT zfm_mvb_kopf FROM is_kopf."
+   ],
+   "engine": [
+    "Der Baustein Z_FM_MVB_VERBUCHEN wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 96.",
+    "Es wird Z_FM_MVB_VERBUCHEN aufgerufen, workflow_ereignis aufgerufen, COMMIT WORK ausgeführt und eine Meldung ausgegeben.",
+    "Das Unterprogramm workflow_ereignis wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-138-B11",
+   "soll": "Nach dem Einreichen wird die Antragsnummer gemeldet und die Transaktion verlassen.",
+   "zeilen": [
+    97,
+    264
+   ],
+   "code": [
+    "97:   MESSAGE s027 WITH gv_antrag.",
+    "264:       LEAVE TO SCREEN 0."
+   ],
+   "engine": [
+    "Es wird Z_FM_MVB_VERBUCHEN aufgerufen, workflow_ereignis aufgerufen, COMMIT WORK ausgeführt und eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird antrag_sichern aufgerufen und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-138-B12",
+   "soll": "Beim Aufruf zur Genehmigung wird die Antragsnummer aus dem Workflow übernommen und der Antrag gelesen; fehlt er, bricht die Transaktion ab.",
+   "zeilen": [
+    328,
+    329,
+    331,
+    332
+   ],
+   "code": [
+    "328:     GET PARAMETER ID 'ZMVB' FIELD gv_antrag.",
+    "329:     SELECT SINGLE * FROM zfm_mvb_kopf INTO gs_kopf",
+    "331:     IF sy-subrc <> 0.",
+    "332:       MESSAGE a020 WITH gv_antrag."
+   ],
+   "engine": [
+    "Jeder von der logischen Datenbank gelieferte PARAMETER-Satz wird verarbeitet. Welche Sätze das sind, bestimmt die logische Datenbank mit ihrem Selektionsbild, nicht der Report.",
+    "Es werden Sätze aus zfm_mvb_kopf selektiert.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-138-B13",
+   "soll": "Entschieden werden kann nur über offene Anträge, und nie vom Antragsteller selbst.",
+   "zeilen": [
+    120,
+    121,
+    124,
+    125
+   ],
+   "code": [
+    "120:   IF gs_kopf-status <> 'O'.",
+    "121:     MESSAGE e028 WITH gs_kopf-antrag gs_kopf-status.",
+    "124:   IF gs_kopf-ernam = sy-uname.",
+    "125:     MESSAGE e029."
+   ],
+   "engine": [
+    "Für Status ungleich O wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Für gs_kopf-ernam mit dem Wert sy-uname wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-138-B14",
+   "soll": "Der Antrag wird für die Entscheidung gesperrt; ist er bereits gesperrt, wird der sperrende Benutzer gemeldet.",
+   "zeilen": [
+    128,
+    135,
+    136
+   ],
+   "code": [
+    "128:   CALL FUNCTION 'ENQUEUE_EZFM_MVB'",
+    "135:   IF sy-subrc <> 0.",
+    "136:     MESSAGE e030 WITH sy-msgv1."
+   ],
+   "engine": [
+    "Der Funktionsbaustein ENQUEUE_EZFM_MVB wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-138-B15",
+   "soll": "Bei Genehmigung wird zuerst eine Mittelvormerkung der Belegart ZV über Betrag, Finanzstelle und Finanzposition des Antrags angelegt.",
+   "zeilen": [
+    139,
+    146
+   ],
+   "code": [
+    "139:   IF iv_entscheid = 'G'.",
+    "146:     CALL FUNCTION 'FMFR_CREATE_FROM_DATA'"
+   ],
+   "engine": [
+    "Für iv_entscheid mit dem Wert G wird FMFR_CREATE_FROM_DATA aufgerufen und die lv_event auf APPROVED gesetzt.",
+    "Für iv_entscheid mit dem Wert G wird FMFR_CREATE_FROM_DATA aufgerufen und die lv_event auf APPROVED gesetzt, sonst POPUP_TO_CONFIRM aufgerufen und die lv_event auf REJECTED gesetzt.",
+    "Der Code übergibt ls_kblk an FMFR_CREATE_FROM_DATA und übernimmt dessen Ausgabe nach lv_belnr.",
+    "Das konvertierte Ergebnis wird in lv_belnr übernommen.",
+    "iv_entscheid mit dem Wert G setzen die lv_event auf APPROVED."
+   ]
+  },
+  {
+   "id": "BM-138-B16",
+   "soll": "Scheitert die Anlage, wird zurückgerollt, ein Fehler gemeldet und der Antrag bleibt offen.",
+   "zeilen": [
+    156,
+    157,
+    158
+   ],
+   "code": [
+    "156:     IF sy-subrc <> 0.",
+    "157:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "158:       MESSAGE e034 WITH gs_kopf-antrag."
+   ],
+   "engine": [
+    "Ohne Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Meldung ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-138-B17",
+   "soll": "Eine Ablehnung muss in einer Rückfrage bestätigt werden; ohne Bestätigung wird nichts entschieden.",
+   "zeilen": [
+    164,
+    175,
+    176
+   ],
+   "code": [
+    "164:     CALL FUNCTION 'POPUP_TO_CONFIRM'",
+    "175:     IF lv_answer <> '1'.",
+    "176:       RETURN."
+   ],
+   "engine": [
+    "Für iv_entscheid mit dem Wert G wird FMFR_CREATE_FROM_DATA aufgerufen und die lv_event auf APPROVED gesetzt, sonst POPUP_TO_CONFIRM aufgerufen und die lv_event auf REJECTED gesetzt.",
+    "Für andere iv_entscheid wird POPUP_TO_CONFIRM aufgerufen und die lv_event auf REJECTED gesetzt.",
+    "Der Code übergibt 'Antrag an POPUP_TO_CONFIRM und übernimmt dessen Ausgabe nach lv_answer.",
+    "Das konvertierte Ergebnis wird in lv_answer übernommen.",
+    "Für lv_answer ungleich 1 wird der Block verlassen.",
+    "Bei lv_answer ungleich 1 wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-138-B18",
+   "soll": "Status, Entscheider, Entscheidungsdatum und bei Genehmigung die Belegnummer der Mittelvormerkung werden gespeichert, das Ereignis APPROVED bzw. REJECTED ausgelöst und alles festgeschrieben.",
+   "zeilen": [
+    185,
+    190,
+    191,
+    390
+   ],
+   "code": [
+    "185:   CALL FUNCTION 'Z_FM_MVB_VERBUCHEN' IN UPDATE TASK",
+    "190:   PERFORM workflow_ereignis USING gs_kopf-antrag lv_event.",
+    "191:   COMMIT WORK.",
+    "390:       UPDATE zfm_mvb_kopf FROM is_kopf."
+   ],
+   "engine": [
+    "Der Baustein Z_FM_MVB_VERBUCHEN wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 191.",
+    "Es wird Z_FM_MVB_VERBUCHEN aufgerufen, workflow_ereignis aufgerufen, COMMIT WORK ausgeführt und eine Meldung ausgegeben.",
+    "Das Unterprogramm workflow_ereignis wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt.",
+    "Eine Zeile in zfm_mvb_kopf wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ]
+  },
+  {
+   "id": "BM-138-B19",
+   "soll": "Jeder Statuswechsel wird in der Verbuchung protokolliert; scheitert das Schreiben des Antrags, wird die Verbuchung abgebrochen.",
+   "zeilen": [
+    392,
+    393,
+    396
+   ],
+   "code": [
+    "392:   IF sy-subrc <> 0.",
+    "393:     MESSAGE a033 WITH is_kopf-antrag iv_modus.",
+    "396:   INSERT zfm_mvb_log FROM @( VALUE zfm_mvb_log( antrag = is_kopf-antrag"
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-138-B20",
+   "soll": "Kann ein Workflow-Ereignis nicht ausgelöst werden, erscheint nur ein Hinweis; der Antrag wird trotzdem gespeichert.",
+   "zeilen": [
+    203,
+    211,
+    212
+   ],
+   "code": [
+    "203:   CALL FUNCTION 'SWE_EVENT_CREATE'",
+    "211:   IF sy-subrc <> 0.",
+    "212:     MESSAGE i032 WITH iv_event."
+   ],
+   "engine": [
+    "Der Funktionsbaustein SWE_EVENT_CREATE wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-138-B21",
+   "soll": "Nach Genehmigen oder Ablehnen wird die Transaktion verlassen, auch wenn die Ablehnung in der Rückfrage abgebrochen wurde.",
+   "zeilen": [
+    281,
+    284
+   ],
+   "code": [
+    "281:       LEAVE TO SCREEN 0.",
+    "284:       LEAVE TO SCREEN 0."
+   ],
+   "engine": [
+    "Es wird entscheiden aufgerufen und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet.",
+    "Es wird entscheiden aufgerufen und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ]
+  }
+ ]
+}

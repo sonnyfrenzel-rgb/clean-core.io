@@ -1,0 +1,199 @@
+{
+ "id": "BM-016",
+ "urteile": [
+  {
+   "id": "BM-016-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingung nur als p_appl/p_file(1) <> '/'; \"eine Meldung\" statt Fehler, der auf dem Selektionsbild hält; absoluter Pfad nicht fachlich."
+  },
+  {
+   "id": "BM-016-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Abbruch mit Meldung erkennbar, aber das nicht öffnbare Dataset heißt \"Ohne Treffer\"; zeilenweises Lesen fehlt."
+  },
+  {
+   "id": "BM-016-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Für andere p_appl wird GUI_UPLOAD aufgerufen\", gescheiterter Upload als \"Ohne Treffer\" – Hochladen der Arbeitsplatzdatei nur technisch."
+  },
+  {
+   "id": "BM-016-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Zerlegen der Zeilen."
+  },
+  {
+   "id": "BM-016-B05",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "\"Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen\" – bei leerer Datei Hinweis und Ende; mehrfach."
+  },
+  {
+   "id": "BM-016-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur BAL_LOG_CREATE mit ls_log/gv_log; Anwendungsprotokoll ZSD/MASSVA02 mit Dateiname nicht benannt."
+  },
+  {
+   "id": "BM-016-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Auftragslesen und \"Ohne Treffer wird zeile_fehler aufgerufen\" – Rotmarkierung nur über Unterprogrammnamen, Grundzustand grün fehlt."
+  },
+  {
+   "id": "BM-016-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "\"Berechtigung auf V_VBAK_VKO geprüft\", ohne Berechtigung zeile_fehler – Änderungsberechtigung für den Vertriebsbereich nur technisch."
+  },
+  {
+   "id": "BM-016-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Mit einer nicht leeren ls_up-posnr wird zeile_fehler aufgerufen\" – dass es um das Feld Liefersperre geht, fehlt."
+  },
+  {
+   "id": "BM-016-B10",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "\"Ohne Treffer wird zeile_fehler aufgerufen, sonst zeile_fehler aufgerufen\" behauptet einen Fehler auch bei gefundener Position – nur Status C ist ein Fehler."
+  },
+  {
+   "id": "BM-016-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"zeile_fehler wird aufgerufen … nicht belegt\"; nicht unterstützte Feldnamen nicht benannt."
+  },
+  {
+   "id": "BM-016-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur BAL_LOG_MSG_ADD; Rotfärbung und Fehlerzähler fehlen."
+  },
+  {
+   "id": "BM-016-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Jede Zeile aus gt_result wird einzeln verarbeitet\"; grüne Zeilen und Gelbmarkierung im Testlauf fehlen."
+  },
+  {
+   "id": "BM-016-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "ENQUEUE/DEQUEUE als Bausteinnamen, \"Ohne Treffer\" für gescheiterte Sperre; Probesperre nicht fachlich."
+  },
+  {
+   "id": "BM-016-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"bdc_aufbauen aufgerufen … nicht belegt\"; die VA02-Bildfolge je Feld fehlt."
+  },
+  {
+   "id": "BM-016-B16",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch"
+   ],
+   "kurz": "\"Die Anlage wird über die Transaktion VA02 angestoßen\" – VA02 ändert einen bestehenden Auftrag, legt nichts an."
+  },
+  {
+   "id": "BM-016-B17",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Bei Treffer wird eine Meldung ausgegeben\" – MESSAGE … INTO lv_text gibt nichts aus, sondern liefert den Text für die Rotmarkierung."
+  },
+  {
+   "id": "BM-016-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Für andere sy-subrc wird zeile_fehler aufgerufen\" – Sicherungsmeldung V1 311 und Zählung fehlen."
+  },
+  {
+   "id": "BM-016-B19",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "CHECK-Satz \"kleinere werden übersprungen, die Schleife läuft weiter\" – das Unterprogramm endet im Testlauf; Sichern und COMMIT selbst sind erwähnt."
+  },
+  {
+   "id": "BM-016-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Eine Meldung wird ausgegeben\", ALV-Methoden \"nicht belegt\", Rückgabewert fälschlich \"nach cl_salv_table\"; Summenmeldung und Ergebnisliste nicht fachlich."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

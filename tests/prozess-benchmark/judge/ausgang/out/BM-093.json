@@ -1,0 +1,142 @@
+{
+ "id": "BM-093",
+ "urteile": [
+  {
+   "id": "BM-093-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus zhr_ot_limit selektiert' – Überstundengrenzen je Personalbereich und Monatsgültigkeit nicht benannt."
+  },
+  {
+   "id": "BM-093-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Ende mit Meldung korrekt, Lesen der Mitarbeiter nur als 'Sätze aus pa0001'."
+  },
+  {
+   "id": "BM-093-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'HR_CHECK_AUTHORITY_INFTY wird aufgerufen'; Überspringen ohne Berechtigung fehlt."
+  },
+  {
+   "id": "BM-093-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Status E und Text 'Keine Sollarbeitszeit (IT0007)' genannt, Bedingung aber nur als Code ('sy-subrc <> 0 OR lt_p0007 IS INITIAL'); 'die Status', 'setzen die'."
+  },
+  {
+   "id": "BM-093-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur 'HR_READ_INFOTYPE wird aufgerufen'."
+  },
+  {
+   "id": "BM-093-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus pa2002/pa2005 genannt, Summierung zu Ist-Stunden und Sperrfilter fehlen."
+  },
+  {
+   "id": "BM-093-B07",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Soll-Berechnung."
+  },
+  {
+   "id": "BM-093-B08",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Überstundenformel."
+  },
+  {
+   "id": "BM-093-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'In der Tabelle wird nach einer passenden Zeile gesucht'; Grenze und Ersatzwert 20 fehlen."
+  },
+  {
+   "id": "BM-093-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Logik R/Y/G mit 0,8-Schwelle vollständig, aber nur als Feldzuweisungen ('die Status auf R')."
+  },
+  {
+   "id": "BM-093-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "falsch",
+    "unvollstaendig",
+    "technisch"
+   ],
+   "kurz": "Nur 'raise_alert ... Verhalten nicht belegt' – Methode steht im gelieferten Code; Bedingung rot + Alarmierung fehlt."
+  },
+  {
+   "id": "BM-093-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Bei Treffer wird vor der Datenbankoperation zurückgekehrt' – Mechanik stimmt, 'höchstens ein Alarm je Mitarbeiter/Monat' wird nicht gesagt."
+  },
+  {
+   "id": "BM-093-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'SWE_EVENT_CREATE wird aufgerufen'; Alarmprotokoll und Ereignis LIMITEXCEEDED fehlen."
+  },
+  {
+   "id": "BM-093-B14",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Für gv_alerts größer 0 wird COMMIT WORK ausgeführt' entspricht dem Soll."
+  },
+  {
+   "id": "BM-093-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Nur 'REUSE_ALV_GRID_DISPLAY wird aufgerufen'; Ampelliste nicht benannt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

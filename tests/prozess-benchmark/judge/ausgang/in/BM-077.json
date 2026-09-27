@@ -1,0 +1,435 @@
+{
+ "id": "BM-077",
+ "titel": "Werkerrückmelde-Terminal: Dynpro-Anwendung mit retrograder Entnahme, Wareneingang und Etikettendruck",
+ "prozess": "Der Werker startet am Terminal die Rückmeldetransaktion, scannt den Barcode mit Auftrag und Vorgang und gibt seine Personalnummer ein, die heute gültig sein muss. Das Programm liest Auftrag und Vorgang, prüft, dass der Auftrag freigegeben ist und der Vorgang existiert, berechnet die offene Menge und stellt fest, ob es der letzte Vorgang ist; bei ungültigem Scan bleibt das Scanbild mit Fehler stehen. Sonst liest es die retrograd zu entnehmenden Komponenten und zeigt das Mengenbild; das Endrückmeldekennzeichen ist nur im letzten Vorgang eingabebereit, zu Komponenten kann der Werker eine existierende Charge erfassen. Beim Prüfen der Mengen verlangt es Gutmenge oder Ausschuss, lässt bis 10 % Überlieferung mit Warnung zu, lehnt mehr ab und verlangt bei Ausschuss einen Grund. Mit „Buchen“ bucht es die Vorgangsrückmeldung zusammen mit anteiligen Komponentenverbräuchen und – im letzten Vorgang – einem Wareneingang für die Gutmenge; bei Fehler rollt es zurück und zeigt den Text, bei Erfolg schreibt es fest. Nach einer Endrückmeldung druckt es ein Palettenetikett, meldet die Rückmeldenummer und kehrt zum Scanbild zurück. „Zurück“ verwirft die Eingaben ohne Buchung.",
+ "verboten": [
+  "mzpp_werkerf01.abap:36 — kein Fachsatz „Technisch abgeschlossene Aufträge werden abgewiesen“ (der Kommentar nennt TABG, geprüft wird nur FREI)",
+  "mzpp_werkeri01.abap:59 — kein Fachsatz „Die Charge wird in der Reservierung gespeichert“ (MODIFY wirkt auf die interne Tabelle, nicht auf die Datenbank)",
+  "mzpp_werkerf01.abap:186 — kein Fachsatz „Das Etikett enthält die Charge“ (übergeben werden nur Auftrag, Material, Menge, Einheit; der Baustein selbst ist nicht geliefert)",
+  "mzpp_werkerf01.abap:140 — kein Fachsatz „Der Wareneingang wird nur bei Endrückmeldung gebucht“ (Bedingung ist der letzte Vorgang, nicht das Endrückmeldekennzeichen)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-077-B01",
+   "soll": "Der Werker scannt am Terminal einen Barcode aus Auftragsnummer und Vorgang und gibt seine Personalnummer ein; die Beenden-Funktion verlässt die Transaktion jederzeit.",
+   "zeilen": [
+    220,
+    328
+   ],
+   "code": [
+    "220:   LEAVE PROGRAM.",
+    "328: MODULE status_0100 OUTPUT."
+   ],
+   "engine": [
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-077-B02",
+   "soll": "Die Personalnummer muss einen heute gültigen Organisationssatz haben, sonst wird die Eingabe mit Fehler zurückgewiesen.",
+   "zeilen": [
+    229,
+    233,
+    234
+   ],
+   "code": [
+    "229:   SELECT SINGLE pernr FROM pa0001 INTO lv_pernr",
+    "233:   IF sy-subrc <> 0.",
+    "234:     MESSAGE e010 WITH gv_pernr."
+   ],
+   "engine": [
+    "pernr des Satzes wird gelesen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-077-B03",
+   "soll": "Der Barcode wird in Auftrag und Vorgang zerlegt und beide werden mit führenden Nullen aufgefüllt.",
+   "zeilen": [
+    33,
+    34
+   ],
+   "code": [
+    "33:   SPLIT gv_scan AT '/' INTO lv_aufnr lv_vornr.",
+    "34:   lv_aufnr = |{ lv_aufnr ALPHA = IN }|."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-077-B04",
+   "soll": "Zum Auftrag werden Arbeitsplan, Material, Auftragsmenge, Mengeneinheit, Werk, Lagerort und Objektnummer gelesen; fehlt der Auftrag, ist der Scan ungültig.",
+   "zeilen": [
+    37,
+    44
+   ],
+   "code": [
+    "37:   SELECT SINGLE k~aufpl p~matnr p~psmng p~amein p~pwerk p~lgort a~objnr",
+    "44:   IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Es werden Sätze aus afko selektiert.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-077-B05",
+   "soll": "Der Auftrag muss freigegeben sein, sonst ist der Scan ungültig.",
+   "zeilen": [
+    50,
+    58
+   ],
+   "code": [
+    "50:   CALL FUNCTION 'STATUS_CHECK'",
+    "58:   IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Der Funktionsbaustein STATUS_CHECK wird aufgerufen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-077-B06",
+   "soll": "Der gescannte Vorgang muss im Arbeitsplan existieren; seine offene Menge ist Vorgangsmenge minus bereits rückgemeldete Gutmenge.",
+   "zeilen": [
+    62,
+    68,
+    73
+   ],
+   "code": [
+    "62:   SELECT SINGLE c~aplzl c~arbid v~mgvrg v~lmnga",
+    "68:   IF sy-subrc <> 0.",
+    "73:   zpp_s_rm-offen = lv_mgvrg - lv_lmnga."
+   ],
+   "engine": [
+    "Das Ergebnis enthält c~aplzl c~arbid v~mgvrg v~lmnga INTO (gv_aplzl, lv_arbid, lv_mgvrg und lv_lmnga).",
+    "Es werden Sätze aus afvc selektiert.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-077-B07",
+   "soll": "Arbeitsplatz und Materialkurztext werden zur Anzeige gelesen.",
+   "zeilen": [
+    75,
+    78
+   ],
+   "code": [
+    "75:   SELECT SINGLE arbpl FROM crhd INTO zpp_s_rm-arbpl",
+    "78:   SELECT SINGLE maktx FROM makt INTO zpp_s_rm-maktx"
+   ],
+   "engine": [
+    "arbpl des Satzes wird gelesen.",
+    "maktx des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-077-B08",
+   "soll": "Der Vorgang gilt als letzter Vorgang, wenn er die höchste Vorgangsnummer im Arbeitsplan hat.",
+   "zeilen": [
+    83,
+    85
+   ],
+   "code": [
+    "83:   SELECT MAX( vornr ) FROM afvc INTO lv_maxvo",
+    "85:   gv_letzter = xsdbool( lv_maxvo = lv_vornr )."
+   ],
+   "engine": [
+    "Es werden Sätze aus afvc selektiert."
+   ]
+  },
+  {
+   "id": "BM-077-B09",
+   "soll": "Ist der Scan ungültig, wird er mit einer Fehlermeldung zurückgewiesen und das Scanbild bleibt stehen.",
+   "zeilen": [
+    248,
+    249
+   ],
+   "code": [
+    "248:       IF gv_ok = abap_false.",
+    "249:         MESSAGE e011 WITH gv_scan."
+   ],
+   "engine": [
+    "Für gv_ok mit dem Wert abap_false wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-077-B10",
+   "soll": "Bei gültigem Scan werden die nicht gelöschten, retrograd zu entnehmenden Komponenten des Vorgangs gelesen und das Mengenbild angezeigt.",
+   "zeilen": [
+    96,
+    251,
+    252
+   ],
+   "code": [
+    "96:   SELECT rsnum rspos matnr werks lgort charg bdmng meins",
+    "251:       PERFORM komponenten_lesen.",
+    "252:       LEAVE TO SCREEN 0200."
+   ],
+   "engine": [
+    "Es werden Sätze aus resb selektiert.",
+    "Das Unterprogramm komponenten_lesen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird komponenten_lesen aufgerufen und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-077-B11",
+   "soll": "Das Feld Endrückmeldung ist nur im letzten Vorgang eingabebereit.",
+   "zeilen": [
+    347,
+    348,
+    353
+   ],
+   "code": [
+    "347:     IF screen-name = 'ZPP_S_RM-ENDRM'.",
+    "348:       IF gv_letzter = abap_true.",
+    "353:       MODIFY SCREEN."
+   ],
+   "engine": [
+    "Für Namen mit dem Wert ZPP_S_RM-ENDRM wird eine Zeile eingefügt oder überschrieben.",
+    "Für gv_letzter mit dem Wert abap_true wird die screen-input auf 1 gesetzt.",
+    "Für gv_letzter mit dem Wert abap_true wird die screen-input auf 1 gesetzt, sonst die screen-input auf 0 gesetzt.",
+    "gv_letzter mit dem Wert abap_true setzen die screen-input auf 1.",
+    "Eine Zeile in SCREEN wird eingefügt oder überschrieben. Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK. sy-subrc wird danach nicht ausgewertet."
+   ]
+  },
+  {
+   "id": "BM-077-B12",
+   "soll": "Erfasst der Werker für eine Komponente eine Charge, muss diese für Material und Werk existieren; die Zeile wird in die Komponentenliste übernommen.",
+   "zeilen": [
+    261,
+    262,
+    267,
+    270
+   ],
+   "code": [
+    "261:   IF gs_komp-charg IS NOT INITIAL.",
+    "262:     SELECT SINGLE charg FROM mcha INTO gs_komp-charg",
+    "267:       MESSAGE e024 WITH gs_komp-charg gs_komp-matnr.",
+    "270:   MODIFY gt_komp FROM gs_komp INDEX tc_komp-current_line."
+   ],
+   "engine": [
+    "charg des Satzes wird gelesen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Eine Zeile in gt_komp wird eingefügt oder überschrieben. Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK. sy-subrc wird danach nicht ausgewertet."
+   ]
+  },
+  {
+   "id": "BM-077-B13",
+   "soll": "Mindestens Gutmenge oder Ausschuss muss erfasst sein.",
+   "zeilen": [
+    277,
+    278
+   ],
+   "code": [
+    "277:   IF zpp_s_rm-gutmenge <= 0 AND zpp_s_rm-ausschuss <= 0.",
+    "278:     MESSAGE e020."
+   ],
+   "engine": [
+    "Für zpp_s_rm-gutmenge <= 0 AND zpp_s_rm-ausschuss <= 0 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-077-B14",
+   "soll": "Eine Gutmenge über der offenen Menge wird bis 10 % Überlieferung mit Warnung zugelassen, darüber mit Fehler zurückgewiesen.",
+   "zeilen": [
+    281,
+    283,
+    284,
+    286
+   ],
+   "code": [
+    "281:   IF zpp_s_rm-gutmenge > zpp_s_rm-offen.",
+    "283:     IF zpp_s_rm-gutmenge > zpp_s_rm-offen * '1.1'.",
+    "284:       MESSAGE e021 WITH zpp_s_rm-offen.",
+    "286:       MESSAGE w022 WITH zpp_s_rm-offen."
+   ],
+   "engine": [
+    "Für zpp_s_rm-gutmenge > zpp_s_rm-offen * '1.1' wird eine Meldung ausgegeben.",
+    "Für zpp_s_rm-gutmenge > zpp_s_rm-offen * '1.1' wird eine Meldung ausgegeben, sonst eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Sonst wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-077-B15",
+   "soll": "Bei Ausschuss ist ein Abweichungsgrund Pflicht.",
+   "zeilen": [
+    290,
+    291
+   ],
+   "code": [
+    "290:   IF zpp_s_rm-ausschuss > 0 AND zpp_s_rm-grund IS INITIAL.",
+    "291:     MESSAGE e023."
+   ],
+   "engine": [
+    "Für zpp_s_rm-ausschuss > 0 AND zpp_s_rm-grund IS INITIAL wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-077-B16",
+   "soll": "Mit „Zurück“ wird ohne Buchung zum Scanbild zurückgekehrt.",
+   "zeilen": [
+    317
+   ],
+   "code": [
+    "317:       LEAVE TO SCREEN 0100."
+   ],
+   "engine": [
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-077-B17",
+   "soll": "Mit „Buchen“ wird eine Vorgangsrückmeldung mit Gutmenge, Ausschuss, Abweichungsgrund, Endrückmeldekennzeichen und Personalnummer aufgebaut.",
+   "zeilen": [
+    121,
+    304
+   ],
+   "code": [
+    "121:   ls_tt-orderid        = zpp_s_rm-aufnr.",
+    "304:       PERFORM rueckmelden."
+   ],
+   "engine": [
+    "Das Unterprogramm rueckmelden wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-077-B18",
+   "soll": "Für jede retrograde Komponente wird ein Verbrauch mit Bewegungsart 261 zum Auftrag erzeugt, dessen Menge der Bedarfsmenge anteilig zur rückgemeldeten Gut- plus Ausschussmenge im Verhältnis zur Auftragsmenge entspricht, mit der erfassten Charge.",
+   "zeilen": [
+    133,
+    139,
+    144
+   ],
+   "code": [
+    "133:   LOOP AT gt_komp INTO gs_komp.",
+    "139:     ls_gm-move_type  = '261'.",
+    "144:     ls_gm-entry_qnt  = gs_komp-bdmng"
+   ],
+   "engine": [
+    "Jede Zeile aus gt_komp wird einzeln verarbeitet.",
+    "Die ls_gm-move_type wird auf 261 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-077-B19",
+   "soll": "Im letzten Vorgang wird zusätzlich für die Gutmenge ein Wareneingang zum Auftrag mit Bewegungsart 101 in den Lagerort der Auftragsposition erzeugt.",
+   "zeilen": [
+    154,
+    159
+   ],
+   "code": [
+    "154:   IF gv_letzter = abap_true AND zpp_s_rm-gutmenge > 0.",
+    "159:     ls_gm-move_type = '101'."
+   ],
+   "engine": [
+    "Für gv_letzter = abap_true AND zpp_s_rm-gutmenge > 0 wird die ls_gm-move_type auf 101 gesetzt, die ls_gm-mvt_ind auf F gesetzt, eine Zeile aufgenommen und die ls_link-index_confirm auf 1 gesetzt.",
+    "gv_letzter = abap_true AND zpp_s_rm-gutmenge > 0 setzen die ls_gm-move_type auf 101.",
+    "Es wird die ls_gm-move_type auf 101 gesetzt und die ls_gm-mvt_ind auf F gesetzt.",
+    "gv_letzter = abap_true AND zpp_s_rm-gutmenge > 0 setzen die ls_gm-mvt_ind auf F.",
+    "gv_letzter = abap_true AND zpp_s_rm-gutmenge > 0 setzen die ls_link-index_confirm auf 1."
+   ]
+  },
+  {
+   "id": "BM-077-B20",
+   "soll": "Rückmeldung und Warenbewegungen werden gemeinsam gebucht und miteinander verknüpft.",
+   "zeilen": [
+    171
+   ],
+   "code": [
+    "171:   CALL FUNCTION 'BAPI_PRODORDCONF_CREATE_TT'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAPI_PRODORDCONF_CREATE_TT wird aufgerufen.",
+    "Das konvertierte Ergebnis wird in ls_return übernommen."
+   ]
+  },
+  {
+   "id": "BM-077-B21",
+   "soll": "Scheitert die Buchung, wird zurückgerollt, der Fehlertext als Popup gezeigt und das Mengenbild bleibt zur Korrektur stehen.",
+   "zeilen": [
+    181,
+    182,
+    183,
+    305,
+    307
+   ],
+   "code": [
+    "181:   IF ls_return-type CA 'EA' OR ls_detail-type CA 'EA'.",
+    "182:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "183:     MESSAGE COND string( WHEN ls_detail-message IS NOT INITIAL",
+    "305:       IF gv_ok = abap_false.",
+    "307:         RETURN."
+   ],
+   "engine": [
+    "Für ls_return-type CA 'EA' OR ls_detail-type CA 'EA' wird BAPI_TRANSACTION_ROLLBACK aufgerufen, eine Meldung ausgegeben und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen, eine Meldung ausgegeben und der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Für gv_ok mit dem Wert abap_false wird der Block verlassen.",
+    "Bei gv_ok gleich abap_false wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-077-B22",
+   "soll": "Gelingt sie, wird mit Warten auf die Verbuchung festgeschrieben und die Rückmeldenummer gemerkt.",
+   "zeilen": [
+    189,
+    192
+   ],
+   "code": [
+    "189:   CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "192:   gv_rueck = ls_detail-conf_no."
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-077-B23",
+   "soll": "Nach einer Endrückmeldung wird ein Palettenetikett gedruckt; scheitert der Druck, erscheint nur ein Hinweis.",
+   "zeilen": [
+    200,
+    209,
+    309
+   ],
+   "code": [
+    "200:   CALL FUNCTION 'Z_PP_ETIKETT_DRUCKEN'",
+    "209:     MESSAGE i040.",
+    "309:       IF zpp_s_rm-endrm = abap_true AND gv_druck = abap_true."
+   ],
+   "engine": [
+    "Der Funktionsbaustein Z_PP_ETIKETT_DRUCKEN wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Für zpp_s_rm-endrm = abap_true AND gv_druck = abap_true wird etikett_drucken aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-077-B24",
+   "soll": "Zum Schluss wird die Rückmeldenummer als Erfolgsmeldung angezeigt und das Scanbild für den nächsten Scan geöffnet.",
+   "zeilen": [
+    312,
+    314
+   ],
+   "code": [
+    "312:       MESSAGE s030 WITH gv_rueck.",
+    "314:       LEAVE TO SCREEN 0100."
+   ],
+   "engine": [
+    "Eine Meldung wird ausgegeben.",
+    "Die Screenfolge wird beendet."
+   ]
+  }
+ ]
+}

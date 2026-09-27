@@ -1,0 +1,40 @@
+{
+ "id": "BM-164",
+ "urteile": [
+  {
+   "id": "BM-164-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik"
+   ],
+   "kurz": "Selektion aus zsd_leergut „mit dem eingegebenen Kundennummer“; Stichtagsbedingung fehlt."
+  },
+  {
+   "id": "BM-164-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur MUELLERK-Sonderbehandlung."
+  },
+  {
+   "id": "BM-164-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Jede Zeile aus lt_bew wird einzeln verarbeitet“; die Saldobildung (A erhöht, Rest mindert) fehlt."
+  },
+  {
+   "id": "BM-164-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Bedingung Saldo ungleich 0 und Ausgabe korrekt, aber Material und Saldo nur als lv_lgmat/lv_saldo."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

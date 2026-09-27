@@ -1,0 +1,143 @@
+{
+ "id": "BM-090",
+ "titel": "Archivierung von Schnittstellenprotokollen: ADK-Schreibprogramm",
+ "prozess": "Das Schreibprogramm des Archivierungsobjekts ZIF_LOG läuft als Job der Datenarchivierung. Es prüft zuerst die Archivierungsberechtigung für das Objekt und bricht ohne sie ab. Dann liest es alle abgeschlossenen oder abgebrochenen Schnittstellenprotokolle der gewählten Schnittstellen, die älter als die Verweildauer (Vorschlag 180 Tage) sind; gibt es keine, meldet es das und endet. Es öffnet eine Archivierungssitzung, die nur im Echtlauf eine Datei erzeugt. Je Protokoll schreibt es Kopf und alle Positionen als ein Archivobjekt und sichert es; ein Dateifehler bricht den Lauf mit der Protokoll-ID ab. Am Ende schließt es die Datei und gibt Anzahl und Testkennzeichen aus. Gelöscht wird in diesem Programm nichts.",
+ "verboten": [
+  "gesamte Scheibe — kein Fachsatz „Protokolle werden aus der Datenbank gelöscht“ (das Schreibprogramm löscht nicht; das Löschprogramm ist nicht Teil des Falls).",
+  "gesamte Scheibe — kein write-Knoten (kein Datenbankschreiben; geschrieben wird nur in die Archivdatei).",
+  "source.abap:38 — kein Fachsatz „im Testmodus wird nichts gelesen“ (gelesen und gezählt wird auch im Test)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-090-B01",
+   "soll": "Der Lauf setzt die Berechtigung zum Archivieren des Objekts ZIF_LOG voraus; fehlt sie, bricht er ab.",
+   "zeilen": [
+    19,
+    23,
+    24
+   ],
+   "code": [
+    "19:   AUTHORITY-CHECK OBJECT 'S_ARCHIVE'",
+    "23:   IF sy-subrc <> 0.",
+    "24:     MESSAGE e010(zarch)."
+   ],
+   "engine": [
+    "Die Berechtigung auf S_ARCHIVE wird geprüft.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-090-B02",
+   "soll": "Es werden abgeschlossene oder abgebrochene Schnittstellenprotokolle der gewählten Schnittstellen gelesen, die älter als die Verweildauer sind.",
+   "zeilen": [
+    27,
+    29
+   ],
+   "code": [
+    "27:   lv_cutoff = sy-datum - p_days.",
+    "29:   SELECT * FROM zif_log_hdr INTO TABLE lt_hdr"
+   ],
+   "engine": [
+    "Es werden Sätze aus zif_log_hdr selektiert."
+   ]
+  },
+  {
+   "id": "BM-090-B03",
+   "soll": "Gibt es keine, wird das gemeldet und der Lauf beendet.",
+   "zeilen": [
+    33,
+    34,
+    35
+   ],
+   "code": [
+    "33:   IF lt_hdr IS INITIAL.",
+    "34:     MESSAGE s011(zarch).",
+    "35:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-090-B04",
+   "soll": "Eine Archivierungssitzung wird geöffnet; eine Archivdatei entsteht nur im Echtlauf.",
+   "zeilen": [
+    38,
+    39
+   ],
+   "code": [
+    "38:   lv_create = xsdbool( p_test IS INITIAL ).",
+    "39:   CALL FUNCTION 'ARCHIVE_OPEN_FOR_WRITE'"
+   ],
+   "engine": [
+    "Der Code übergibt lv_create an ARCHIVE_OPEN_FOR_WRITE und übernimmt dessen Ausgabe nach lv_handle.",
+    "Das konvertierte Ergebnis wird in lv_handle übernommen."
+   ]
+  },
+  {
+   "id": "BM-090-B05",
+   "soll": "Je Protokoll werden Kopf und alle Positionen als ein Archivobjekt geschrieben.",
+   "zeilen": [
+    48,
+    52,
+    57,
+    60
+   ],
+   "code": [
+    "48:     CALL FUNCTION 'ARCHIVE_NEW_OBJECT'",
+    "52:     CALL FUNCTION 'ARCHIVE_PUT_RECORD'",
+    "57:     SELECT * FROM zif_log_itm INTO TABLE lt_itm",
+    "60:       CALL FUNCTION 'ARCHIVE_PUT_RECORD'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein ARCHIVE_NEW_OBJECT wird aufgerufen.",
+    "Es wird ARCHIVE_NEW_OBJECT aufgerufen und ARCHIVE_PUT_RECORD aufgerufen.",
+    "Der Funktionsbaustein ARCHIVE_PUT_RECORD wird aufgerufen.",
+    "Es werden Sätze aus zif_log_itm selektiert.",
+    "Der Funktionsbaustein ARCHIVE_PUT_RECORD wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-090-B06",
+   "soll": "Kann ein Archivobjekt nicht gesichert werden, bricht der Lauf mit der Protokoll-ID ab.",
+   "zeilen": [
+    66,
+    72,
+    73
+   ],
+   "code": [
+    "66:     CALL FUNCTION 'ARCHIVE_SAVE_OBJECT'",
+    "72:     IF sy-subrc <> 0.",
+    "73:       MESSAGE e012(zarch) WITH ls_hdr-log_id."
+   ],
+   "engine": [
+    "Der Funktionsbaustein ARCHIVE_SAVE_OBJECT wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-090-B07",
+   "soll": "Zum Schluss wird die Archivdatei geschlossen und die Anzahl archivierter Protokolle mit dem Testkennzeichen ausgegeben.",
+   "zeilen": [
+    78,
+    81
+   ],
+   "code": [
+    "78:   CALL FUNCTION 'ARCHIVE_CLOSE_FILE'",
+    "81:   WRITE: / lv_count, 'Protokolle archiviert'."
+   ],
+   "engine": [
+    "Der Funktionsbaustein ARCHIVE_CLOSE_FILE wird aufgerufen.",
+    "Es wird ARCHIVE_CLOSE_FILE aufgerufen, Anzahl ausgegeben, Protokolle archiviert ausgegeben, Testmodus: ausgegeben und p_test ausgegeben.",
+    "Anzahl, Protokolle archiviert, Testmodus: und p_test werden ausgegeben.",
+    "Anzahl wird ausgegeben.",
+    "Protokolle archiviert wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  }
+ ]
+}

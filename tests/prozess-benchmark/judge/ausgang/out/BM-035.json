@@ -1,0 +1,120 @@
+{
+ "id": "BM-035",
+ "urteile": [
+  {
+   "id": "BM-035-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Berechtigung M_ISEG_WDB und \"eine Meldung\" – Inventurberechtigung im Werk und Zurückweisen der Eingabe nicht fachlich."
+  },
+  {
+   "id": "BM-035-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Feldliste c~matnr, d~dlinv, t~anzin und \"Sätze aus marc\" – Zykluskennzeichen, freier Bestand, Inventursperre fehlen."
+  },
+  {
+   "id": "BM-035-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Fälligkeitsformel nur als \"ls_cand-dlinv IS INITIAL OR sy-datum - ls_cand-dlinv >= 365 / ls_cand-anzin\"."
+  },
+  {
+   "id": "BM-035-B04",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "\"Ohne Treffer wird Keine faelligen Materialien ausgegeben und der Block verlassen\" – Meldung und Ende; vierfach."
+  },
+  {
+   "id": "BM-035-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Die ls_head-phys_inv_ref wird auf ZYKLUS gesetzt\" und BAPI-Aufruf – Anlage von Inventurbelegen und Aufteilung fehlen."
+  },
+  {
+   "id": "BM-035-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback bei Fehlerzeile, sonst COMMIT – technisch; Protokollierung von Fehler/Nummern fehlt."
+  },
+  {
+   "id": "BM-035-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus iseg\" und Schleife – gezählt/nicht gebucht/nicht gelöscht je Beleg fehlen."
+  },
+  {
+   "id": "BM-035-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"CASE vprsv WHEN 'S' THEN stprs ELSE verpr END AS preis und peinh des Satzes werden gelesen\" – SQL-Ausdruck statt Bewertungspreis; Überspringen mit Warnung fehlt."
+  },
+  {
+   "id": "BM-035-B09",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Differenzwert."
+  },
+  {
+   "id": "BM-035-B10",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Wertgrenze/Nachzählung."
+  },
+  {
+   "id": "BM-035-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"BAPI_MATPHYSINV_POSTDIFF wird aufgerufen\"; Buchung der Differenzen und Überspringen leerer Belege fehlen."
+  },
+  {
+   "id": "BM-035-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback bei Fehlerzeile, sonst COMMIT – Protokollierung fehlt, nur Bausteinnamen."
+  },
+  {
+   "id": "BM-035-B13",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "\"Bei Treffern werden Typ und Text als Liste ausgegeben\" – Protokollliste mit Typ und Text."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

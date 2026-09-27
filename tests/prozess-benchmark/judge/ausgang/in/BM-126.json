@@ -1,0 +1,135 @@
+{
+ "id": "BM-126",
+ "titel": "PS-Meilensteinfakturierung: Fakturasperre im Fakturierungsplan nach erreichtem Meilenstein lösen (MLST/FPLT, FAE ohne Leermengenschutz)",
+ "prozess": "Der Report wird mit einer Auswahl von PSP-Elementen und dem Testlaufschalter (vorbelegt) gestartet. Zuerst liest er aus der Variablentabelle den Sperrgrund, mit dem offene Meilensteintermine im Fakturierungsplan gesperrt werden; fehlt er, gilt Z1. Dann liest er alle Meilensteine der gewählten PSP-Elemente, die schon ein Ist-Datum haben, und dazu alle Termine der Fakturierungspläne, die noch mit diesem Sperrgrund gesperrt sind. Für jede gesperrte Planposition prüft er, ob ihr Meilenstein erreicht ist; wenn nicht, geht er weiter. Im Echtlauf entfernt er die Fakturasperre direkt in der Tabelle der Planungstermine; in beiden Läufen listet er die Position mit Fakturadatum, Betrag und Währung. Am Ende schreibt er im Echtlauf alle Änderungen fest und meldet die Anzahl, im Testlauf mit dem Zusatz „würden freigegeben“. Werden keine erreichten Meilensteine gefunden, liest der Report wegen der leeren Treibertabelle ohne jede Einschränkung alle Termine aller Fakturierungspläne, gibt aber keinen davon frei. Die Faktura selbst entsteht erst in einem späteren Fakturalauf.",
+ "verboten": [
+  "source.abap:41 — kein Fachsatz „ohne erreichte Meilensteine werden alle gesperrten Planpositionen freigegeben“: bei leerer Treibertabelle entfällt die gesamte WHERE-Bedingung und es werden alle Planungstermine gelesen, aber die Nachschlageprüfung überspringt jeden",
+  "source.abap:54 — kein Fachsatz „die Faktura wird erstellt“: es wird nur die Sperre am Planungstermin entfernt",
+  "source.abap:54 — kein Fachsatz „der Kundenauftrag wird gesperrt und geändert“: es gibt weder Sperre noch Änderung am Auftrag, nur ein direktes Tabellenupdate",
+  "source.abap:34 — kein Fachsatz „nur fakturierungsrelevante Meilensteine werden berücksichtigt“: gefiltert wird allein auf das Ist-Datum"
+ ],
+ "saetze": [
+  {
+   "id": "BM-126-B01",
+   "soll": "Der Sperrgrund, mit dem offene Meilensteintermine gesperrt sind, wird aus der Variablentabelle gelesen; ist er nicht gepflegt, gilt Z1.",
+   "zeilen": [
+    26,
+    29
+   ],
+   "code": [
+    "26:   SELECT SINGLE low FROM tvarvc INTO gv_sperre",
+    "29:   IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "low des Satzes wird gelesen.",
+    "Ohne Treffer wird die gv_sperre auf Z1 gesetzt.",
+    "sy-subrc ungleich 0 setzen die gv_sperre auf Z1."
+   ]
+  },
+  {
+   "id": "BM-126-B02",
+   "soll": "Es werden die Meilensteine der selektierten PSP-Elemente gelesen, die bereits ein Ist-Datum haben.",
+   "zeilen": [
+    34
+   ],
+   "code": [
+    "34:   SELECT m~mlst_zaehl m~pspnr m~lst_actdt"
+   ],
+   "engine": [
+    "Es werden Sätze aus mlst selektiert."
+   ]
+  },
+  {
+   "id": "BM-126-B03",
+   "soll": "Zu diesen Meilensteinen werden die Termine der Fakturierungspläne gelesen, die noch mit dem Sperrgrund gesperrt sind.",
+   "zeilen": [
+    41
+   ],
+   "code": [
+    "41:   SELECT * FROM fplt INTO TABLE gt_fplt"
+   ],
+   "engine": [
+    "Es werden Sätze aus fplt selektiert."
+   ]
+  },
+  {
+   "id": "BM-126-B04",
+   "soll": "Planpositionen, deren Meilenstein nicht unter den erreichten ist, werden übergangen.",
+   "zeilen": [
+    48,
+    50
+   ],
+   "code": [
+    "48:     READ TABLE gt_mlst WITH KEY mlst_zaehl = <gs_fplt>-mlstn",
+    "50:     IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-126-B05",
+   "soll": "Im Echtlauf wird die Fakturasperre des Planungstermins direkt entfernt, sodass er fakturiert werden kann.",
+   "zeilen": [
+    53,
+    54
+   ],
+   "code": [
+    "53:     IF p_test IS INITIAL.",
+    "54:       UPDATE fplt SET faksp = space"
+   ],
+   "engine": [
+    "Ohne p_test wird eine Zeile geändert.",
+    "Die faksp in fplt wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. sy-subrc wird danach nicht ausgewertet."
+   ]
+  },
+  {
+   "id": "BM-126-B06",
+   "soll": "Jede betroffene Planposition wird mit Plannummer, Termin, Fakturadatum, Betrag und Währung gelistet.",
+   "zeilen": [
+    59
+   ],
+   "code": [
+    "59:     WRITE: / <gs_fplt>-fplnr, <gs_fplt>-fpltr, <gs_fplt>-fkdat,"
+   ],
+   "engine": [
+    "Bei Treffern werden gs_fplt>-fplnr, gs_fplt>-fpltr, gs_fplt>-fkdat, gs_fplt>-fakwr und gs_fplt>-waers als Liste ausgegeben.",
+    "gs_fplt>-fplnr wird ausgegeben.",
+    "gs_fplt>-fpltr wird ausgegeben.",
+    "gs_fplt>-fkdat wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-126-B07",
+   "soll": "Im Echtlauf werden die Freigaben am Ende gemeinsam festgeschrieben.",
+   "zeilen": [
+    63,
+    64
+   ],
+   "code": [
+    "63:   IF p_test IS INITIAL.",
+    "64:     COMMIT WORK."
+   ],
+   "engine": [
+    "Ohne p_test wird COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-126-B08",
+   "soll": "Zum Schluss wird die Anzahl der Positionen gemeldet, im Testlauf als „würden freigegeben“.",
+   "zeilen": [
+    68
+   ],
+   "code": [
+    "68:   WRITE: / gv_cnt, 'Planpositionen', lv_txt."
+   ],
+   "engine": [
+    "gv_cnt, Planpositionen und lv_txt werden ausgegeben.",
+    "gv_cnt wird ausgegeben.",
+    "Planpositionen wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_txt wird ausgegeben."
+   ]
+  }
+ ]
+}

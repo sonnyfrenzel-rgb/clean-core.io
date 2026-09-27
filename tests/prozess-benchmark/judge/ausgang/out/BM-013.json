@@ -1,0 +1,126 @@
+{
+ "id": "BM-013",
+ "urteile": [
+  {
+   "id": "BM-013-B01",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Drei CHECK-Sätze mit \"kleinere werden übersprungen, die Schleife läuft weiter\" – keine Schleife, keine Größenprüfung; der Exit endet. Anlegen/Ändern mit Nettowertänderung nur technisch."
+  },
+  {
+   "id": "BM-013-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus knkk selektiert\" – Kreditlimit, Risikoklasse, Kreditsperre und Kreditkontrollbereich nicht benannt."
+  },
+  {
+   "id": "BM-013-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Für mv_found mit dem Wert abap_false wird der Block verlassen\" – dass der Auftrag ohne Kreditstammsatz als in Ordnung gilt, fehlt."
+  },
+  {
+   "id": "BM-013-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"ms_knkk-crblb … Block verlassen\"; das Ergebnis Ablehnen fehlt."
+  },
+  {
+   "id": "BM-013-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Drei Sätze \"Sätze aus s066/s067/bsid selektiert\"; Obligo aus offenen Aufträgen, Lieferungen, Fakturen und Posten nicht benannt."
+  },
+  {
+   "id": "BM-013-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu Soll/Haben."
+  },
+  {
+   "id": "BM-013-B07",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Wertänderung des Auftrags."
+  },
+  {
+   "id": "BM-013-B08",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Toleranz je Risikoklasse."
+  },
+  {
+   "id": "BM-013-B09",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Vergleich Obligo/Limit."
+  },
+  {
+   "id": "BM-013-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Frühe Rücksprünge ohne Schreiben und Registrierung von Z_SD_CREDIT_LOG_UPD zur Verbuchung erkennbar, aber technisch; Prüfergebnis mit Obligo/Limit/Benutzer nicht benannt."
+  },
+  {
+   "id": "BM-013-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Die Sperrkennzeichen wird auf Z1 gesetzt\", \"Eine Meldung\", notify_credit_manager \"nicht belegt\" – Liefersperre, Warnung mit Obligo/Limit und Benachrichtigung nur angedeutet, Bedingung Sperren fehlt."
+  },
+  {
+   "id": "BM-013-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Ohne Treffer wird eine Meldung ausgegeben\" – Meldung erkennbar, aber gescheitertes Ereignis irreführend als fehlender Treffer, Hinweischarakter fehlt."
+  },
+  {
+   "id": "BM-013-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Eine Meldung wird ausgegeben\"; Fehlermeldung und Abbruch des Sicherns fehlen."
+  },
+  {
+   "id": "BM-013-B14",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Aufheben der Sperre Z1."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

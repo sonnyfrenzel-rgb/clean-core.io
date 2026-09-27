@@ -1,0 +1,144 @@
+{
+ "id": "BM-011",
+ "urteile": [
+  {
+   "id": "BM-011-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus vbap selektiert\" ohne abgesagt/nicht voll beliefert und ohne Selektionskriterien."
+  },
+  {
+   "id": "BM-011-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen von vbep und Schleife genannt, Summierung der bestätigten Menge je Position fehlt."
+  },
+  {
+   "id": "BM-011-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Restmengenberechnung."
+  },
+  {
+   "id": "BM-011-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Rückstandsbedingung."
+  },
+  {
+   "id": "BM-011-B05",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Sortierung nach Lieferpriorität/Wunschtermin."
+  },
+  {
+   "id": "BM-011-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Hinweis und Verlassen ohne Treffer stimmen, dass das (leere) Protokoll trotzdem angezeigt wird, fehlt."
+  },
+  {
+   "id": "BM-011-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus mard selektiert\" – freier Bestand je Material/Werk über alle Lagerorte nicht benannt."
+  },
+  {
+   "id": "BM-011-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Für lv_frei bis einschließlich 0 wird eine Zeile aufgenommen\" – \"kein freier Bestand\" und Nichtbearbeitung fehlen."
+  },
+  {
+   "id": "BM-011-B09",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Zuteilung und Bestandsminderung."
+  },
+  {
+   "id": "BM-011-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Für p_test mit dem Wert abap_true wird eine Zeile aufgenommen\" – Testlauf und geplante Zuteilung nicht erkennbar."
+  },
+  {
+   "id": "BM-011-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Sperre nur als ENQUEUE_EVVBAKE, Überspringen als \"Block verlassen\"; der Fall \"Auftrag in Bearbeitung\" irreführend als \"Ohne Treffer\" bezeichnet, Fehlerprotokoll nur \"Zeile aufgenommen\"."
+  },
+  {
+   "id": "BM-011-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"die ls_hdrx-updateflag auf U gesetzt … BAPI_SALESORDER_CHANGE aufgerufen\" – Stichtag, volle Menge und Neubestätigung fehlen."
+  },
+  {
+   "id": "BM-011-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback bei Fehlerzeile technisch richtig, aber \"Änderung abgelehnt\" und fachliche Bedingung fehlen."
+  },
+  {
+   "id": "BM-011-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"sonst BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen\" – Festschreiben/\"Neu eingeplant\" nicht fachlich."
+  },
+  {
+   "id": "BM-011-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Nur \"DEQUEUE_EVVBAKE wird aufgerufen\", nicht das Lösen der Auftragssperre."
+  },
+  {
+   "id": "BM-011-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"REUSE_ALV_GRID_DISPLAY wird aufgerufen\"; Verteilprotokoll als Liste nicht benannt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

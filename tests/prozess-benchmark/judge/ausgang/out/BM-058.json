@@ -1,0 +1,262 @@
+{
+ "id": "BM-058",
+ "urteile": [
+  {
+   "id": "BM-058-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Prüfung auf F_BKPF_BUK und Meldung genannt, aber nur über den Objektnamen; Abbruch mit Fehlermeldung nicht gesagt."
+  },
+  {
+   "id": "BM-058-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Bildung des Meldezeitraums."
+  },
+  {
+   "id": "BM-058-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus zfi_ustva_prot mit Buchungskreis/gjahr/monat; Zweck (schon gemeldet, Status S) fehlt."
+  },
+  {
+   "id": "BM-058-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingung 'sy-subrc = 0 AND p_korr = abap_false AND p_test = abap_false' nur technisch; Abbruch wegen Doppelmeldung nicht gesagt."
+  },
+  {
+   "id": "BM-058-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Sätze aus zfi_ustva_prot selektiert'; Ermittlung der höchsten Nummer plus eins fehlt."
+  },
+  {
+   "id": "BM-058-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus bkpf mit dem eingegebenen Buchungskreis' – Meldemonat und leerer Belegstatus fehlen."
+  },
+  {
+   "id": "BM-058-B07",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben und die Screenfolge beendet' entspricht Hinweis und Rückkehr zum Selektionsbild; 'Screenfolge' ist Technikjargon."
+  },
+  {
+   "id": "BM-058-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Sätze aus bset selektiert'; Steuerzeilen und ihre Felder nicht fachlich."
+  },
+  {
+   "id": "BM-058-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Sätze aus zfi_ustva_map selektiert'; Kennzahlzuordnung für Deutschland nicht erkennbar."
+  },
+  {
+   "id": "BM-058-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Schleife über gt_bset und Tabellensuche genannt; dass die Kennzahlzuordnung des Steuerkennzeichens gesucht wird, nicht erkennbar."
+  },
+  {
+   "id": "BM-058-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "'Ohne Treffer wird die gs_meld-typ auf E gesetzt' – Fehler erkannt, aber nicht fachlich; Sperre der Meldung und Nichtberücksichtigung fehlen."
+  },
+  {
+   "id": "BM-058-B12",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Vorzeichenregel Soll/Haben."
+  },
+  {
+   "id": "BM-058-B13",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Zahllast und Sammlung je Konto."
+  },
+  {
+   "id": "BM-058-B14",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Vorzeichenumkehr."
+  },
+  {
+   "id": "BM-058-B15",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Kumulation auf Kennzahlen."
+  },
+  {
+   "id": "BM-058-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus bsis mit Buchungskreis/gjahr/monat; vorzeichengerechte Saldenbildung je Konto fehlt."
+  },
+  {
+   "id": "BM-058-B17",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Differenzbildung."
+  },
+  {
+   "id": "BM-058-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Warnung (typ W) bei Differenz über Toleranz technisch erkannt; dass die Meldung dadurch nicht gesperrt wird, fehlt; 'die gs_meld-typ' falscher Artikel."
+  },
+  {
+   "id": "BM-058-B19",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Sondervorauszahlung/Kennzahl 39."
+  },
+  {
+   "id": "BM-058-B20",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Abschneiden der Cent."
+  },
+  {
+   "id": "BM-058-B21",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Kennzahl 83."
+  },
+  {
+   "id": "BM-058-B22",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Für gv_fehler = abap_true wird eine Meldung ausgegeben, sonst datei_schreiben/protokoll_schreiben' – Logik richtig, Auslöser (nicht zugeordnete Steuerkennzeichen) nur als Variablenname."
+  },
+  {
+   "id": "BM-058-B23",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Für p_test mit dem Wert abap_false wird datei_schreiben ... aufgerufen' – Kern richtig, aber nur technisch; dass im Testlauf nur die Liste erscheint, fehlt."
+  },
+  {
+   "id": "BM-058-B24",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'stnr des Satzes wird gelesen', Rücksprung und Meldung genannt; Steuernummer und Abbruch mit Fehlermeldung nicht fachlich."
+  },
+  {
+   "id": "BM-058-B25",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Jede Zeile aus it_kz wird einzeln verarbeitet'; Dateiinhalt und Auslassen von Nullbeträgen fehlen."
+  },
+  {
+   "id": "BM-058-B26",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "Nur 'Rückgabewert der Methode schreiben ... nicht belegt' – falsch, METHOD schreiben ist mitgeliefert; zu OPEN/TRANSFER/CLOSE DATASET kein Satz."
+  },
+  {
+   "id": "BM-058-B27",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rücksprung ohne Treffer und Meldung bei lv_ok = abap_false genannt; nicht zu öffnende Datei und Abbruch nicht fachlich."
+  },
+  {
+   "id": "BM-058-B28",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur der COMMIT nach erfolgreichem Schritt; Anlage des Protokolleintrags mit seinen Inhalten fehlt."
+  },
+  {
+   "id": "BM-058-B29",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Ohne Treffer wird eine Meldung ausgegeben'; bereits vorhandener Eintrag, Hinweis und Fortbestand der Datei fehlen."
+  },
+  {
+   "id": "BM-058-B30",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'REUSE_ALV_GRID_DISPLAY wird aufgerufen'; Inhalt der Liste nicht genannt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,92 @@
+{
+ "id": "BM-087",
+ "urteile": [
+  {
+   "id": "BM-087-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur 'CHANGE_POINTERS_READ wird aufgerufen'; offene Zeiger des Nachrichtentyps nicht benannt."
+  },
+  {
+   "id": "BM-087-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "'Für sy-subrc <> 0 OR lt_cp IS INITIAL wird eine Meldung ausgegeben und der Block verlassen' – Logik da, aber nur als Code."
+  },
+  {
+   "id": "BM-087-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Schleife über lt_cp; Verdichtung je Kreditor fehlt."
+  },
+  {
+   "id": "BM-087-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus lfa1 selektiert'; das Überspringen fehlender/gelöschter Kreditoren fehlt."
+  },
+  {
+   "id": "BM-087-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Ausgabe im Testmodus erkannt ('Mit gesetztem p_test'), 'nichts gesendet' fehlt; 'Bei Treffern' ist falsch (Bedingung ist p_test)."
+  },
+  {
+   "id": "BM-087-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur 'MASTER_IDOC_DISTRIBUTE wird aufgerufen'; IDoc ZVENDOR01 mit Name/Anschrift/USt-Id fehlt."
+  },
+  {
+   "id": "BM-087-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "'Für andere sy-subrc wird Fehler beim Senden ... ausgegeben' – Sinn nur technisch; 'Bei Treffern' widerspricht dem Fehlerzweig."
+  },
+  {
+   "id": "BM-087-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "COMMIT und Testlauf-Bedingung da, 'Zeiger als verarbeitet markieren' nur als Bausteinname."
+  },
+  {
+   "id": "BM-087-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'lv_sent und Kreditoren gesendet werden ausgegeben' – Anzahl nur als Variablenname."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

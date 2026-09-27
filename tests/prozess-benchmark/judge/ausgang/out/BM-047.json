@@ -1,0 +1,74 @@
+{
+ "id": "BM-047",
+ "urteile": [
+  {
+   "id": "BM-047-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Prüfung auf F_BKPF_BUK und Rückkehr ohne Berechtigung genannt, aber nur über den Objektnamen; Fehlermeldung nur als 'eine Zeile aufgenommen', 'Ohne Treffer' passt nicht zu einer Berechtigungsprüfung."
+  },
+  {
+   "id": "BM-047-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Sätze aus zfi_accrual selektiert'; Periode und 'noch ohne Belegnummer' fehlen."
+  },
+  {
+   "id": "BM-047-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf RP_LAST_DAY_OF_MONTHS nur technisch; dass Beleg- und Buchungsdatum der letzte Monatstag ist, wird nicht fachlich gesagt."
+  },
+  {
+   "id": "BM-047-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Aufbau des zweizeiligen Sachkontenbelegs."
+  },
+  {
+   "id": "BM-047-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Verzweigung Test → BAPI_ACC_DOCUMENT_CHECK, sonst BAPI_ACC_DOCUMENT_POST ist korrekt, aber nur über BAPI-Namen; Rückgabe der Meldungen an den Aufrufer fehlt."
+  },
+  {
+   "id": "BM-047-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback bei Meldungstyp E/A technisch genannt; Fortsetzen mit der nächsten Abgrenzung fehlt."
+  },
+  {
+   "id": "BM-047-B07",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "'Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK' widerspricht dem Code (BAPI_TRANSACTION_COMMIT mit WAIT schreibt fest); Belegnummer/Stornodatum fehlen; 'kleinere werden übersprungen' ist unsinnig."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

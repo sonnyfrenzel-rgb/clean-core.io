@@ -1,0 +1,106 @@
+{
+ "id": "BM-129",
+ "titel": "FSCM Collections: gebrochene Zahlungszusagen listen und in die Belegansicht abspringen (UDM_P2P_ATTR, AT LINE-SELECTION)",
+ "prozess": "Der Collections-Spezialist startet den Report mit Buchungskreis und Karenztagen (Vorschlag 3). Der Report liest alle offenen Zahlungszusagen des Buchungskreises samt Fallnummer. Zusagen, deren Datum zuzüglich Karenz noch nicht überschritten ist, übergeht er. Für die übrigen prüft er, ob der zugesagte Posten beim Kunden noch offen ist; ist er ausgeglichen, gilt die Zusage als eingehalten. Noch offene Posten erscheinen als gebrochene Zusage mit Fall, Kunde, Beleg, Zusagedatum und Betrag in der Liste; jede Seite hat eine Spaltenüberschrift, am Ende steht die Anzahl. Per Doppelklick auf eine Zeile mit Beleg öffnet der Spezialist den Buchhaltungsbeleg direkt in der Belegansicht; Zeilen ohne Beleg lösen nichts aus. Es wird nichts geändert, auch der Status der Zusage nicht.",
+ "verboten": [
+  "source.abap:31 — kein Fachsatz „eine teilweise bezahlte Zusage gilt als eingehalten“: geprüft wird nur, ob der Posten noch offen ist, nicht der gezahlte Betrag",
+  "source.abap:43 — kein Fachsatz „die Zusage wird als gebrochen gekennzeichnet“: der Status im Collections Management wird nicht geändert",
+  "source.abap:57 — kein Fachsatz „der Beleg wird geändert oder gemahnt“: FB03 ist die Anzeige"
+ ],
+ "saetze": [
+  {
+   "id": "BM-129-B01",
+   "soll": "Es werden die offenen Zahlungszusagen des Buchungskreises mit der zugehörigen Fallnummer gelesen.",
+   "zeilen": [
+    20
+   ],
+   "code": [
+    "20:   SELECT p~case_guid, c~ext_key, p~bukrs, p~kunnr, p~belnr, p~gjahr,"
+   ],
+   "engine": [
+    "Es werden Sätze aus udm_p2p_attr mit dem eingegebenen Buchungskreis selektiert."
+   ]
+  },
+  {
+   "id": "BM-129-B02",
+   "soll": "Zusagen, deren Datum zuzüglich der Karenztage noch nicht überschritten ist, werden übergangen.",
+   "zeilen": [
+    29
+   ],
+   "code": [
+    "29:     CHECK ls_p2p-p2p_date + p_tol < sy-datum."
+   ],
+   "engine": [
+    "Nur ls_p2p-p2p_date + p_tol < sy-datum gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-129-B03",
+   "soll": "Für jede überfällige Zusage wird geprüft, ob der zugesagte Posten beim Kunden noch offen ist; ist er ausgeglichen, gilt die Zusage als eingehalten.",
+   "zeilen": [
+    31,
+    36
+   ],
+   "code": [
+    "31:     SELECT SINGLE wrbtr FROM bsid INTO @DATA(lv_offen)",
+    "36:     IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "wrbtr des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-129-B04",
+   "soll": "Jede gebrochene Zusage wird mit Fallnummer, Kunde, Beleg, Zusagedatum und zugesagtem Betrag gelistet.",
+   "zeilen": [
+    43
+   ],
+   "code": [
+    "43:     WRITE: / ls_p2p-ext_key, 20 ls_p2p-kunnr, 32 ls_p2p-belnr,"
+   ],
+   "engine": [
+    "Bei Treffern werden ls_p2p-ext_key, Kundennummer, 32 ls_p2p-belnr, 45 ls_p2p-p2p_date und 60 ls_p2p-p2p_amount CURRENCY ls_p2p-p2p_curr als Liste ausgegeben.",
+    "ls_p2p-ext_key wird ausgegeben.",
+    "Kundennummer wird ausgegeben.",
+    "32 ls_p2p-belnr wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-129-B05",
+   "soll": "Am Ende der Liste wird die Anzahl der gebrochenen Zusagen ausgegeben.",
+   "zeilen": [
+    50
+   ],
+   "code": [
+    "50:   WRITE: / gv_anz, 'gebrochene Zahlungszusagen'."
+   ],
+   "engine": [
+    "gv_anz und gebrochene Zahlungszusagen werden ausgegeben.",
+    "gv_anz wird ausgegeben.",
+    "gebrochene Zahlungszusagen wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-129-B06",
+   "soll": "Wählt der Spezialist eine Zeile mit Beleg, wird der Buchhaltungsbeleg direkt in der Belegansicht geöffnet.",
+   "zeilen": [
+    53,
+    54,
+    55,
+    56,
+    57
+   ],
+   "code": [
+    "53:   CHECK gv_belnr IS NOT INITIAL.",
+    "54:   SET PARAMETER ID 'BUK' FIELD gv_bukrs.",
+    "55:   SET PARAMETER ID 'BLN' FIELD gv_belnr.",
+    "56:   SET PARAMETER ID 'GJR' FIELD gv_gjahr.",
+    "57:   CALL TRANSACTION 'FB03' AND SKIP FIRST SCREEN."
+   ],
+   "engine": [
+    "Nur Eine nicht leere gv_belnr gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Die Anlage wird über die Transaktion FB03 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ]
+  }
+ ]
+}

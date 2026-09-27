@@ -1,0 +1,197 @@
+{
+ "id": "BM-080",
+ "urteile": [
+  {
+   "id": "BM-080-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus qals mit dem eingegebenen werk' – Charge, fehlender Verwendungsentscheid, Herkunft, Material und Datum fehlen."
+  },
+  {
+   "id": "BM-080-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung und Verlassen erkannt; dass die Ausgabe am Ende trotzdem mit leerem Protokoll läuft, fehlt."
+  },
+  {
+   "id": "BM-080-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "ENQUEUE und bei Sperrkonflikt Ampel 2 mit Protokollzeile erkannt; sperrender Benutzer fehlt, Ampel nur als Zahl."
+  },
+  {
+   "id": "BM-080-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus qamv/qamr und 'Keine Pruefmerkmale' ohne Treffer genannt; Toleranzen und 'Los bleibt offen' nicht fachlich; 'bewerten ... nicht belegt' ist falsch, die Methode ist mitgeliefert."
+  },
+  {
+   "id": "BM-080-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Verlassen bei fehlendem Ergebnis technisch; Unterscheidung Pflicht-/Kannmerkmal und 'bleibt offen' fehlen."
+  },
+  {
+   "id": "BM-080-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Für mbewertg mit dem Wert R wird der Block verlassen' – dass das Los zurückgewiesen wird, fehlt."
+  },
+  {
+   "id": "BM-080-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Verlassen bei lv_verletzt erkannt; Toleranzprüfung und Rückweisung nicht fachlich."
+  },
+  {
+   "id": "BM-080-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "'Die Text wird auf Alle Merkmale in Ordnung gesetzt' – Annahme des Loses wird nicht gesagt; falscher Artikel."
+  },
+  {
+   "id": "BM-080-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch"
+   ],
+   "kurz": "Ampel 2, Protokollzeile, entsperren und Verlassen erkannt, aber nur technisch; 'entsperren ... nicht belegt' ist falsch."
+  },
+  {
+   "id": "BM-080-B10",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu den Codes A1/R1."
+  },
+  {
+   "id": "BM-080-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch"
+   ],
+   "kurz": "Im Testlauf Ampel 3, Protokollzeile, entsperren und Verlassen erkannt; 'geplanter Entscheid' nicht fachlich; 'entsperren ... nicht belegt' falsch."
+  },
+  {
+   "id": "BM-080-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "BAPI-Aufruf, Rollback und bei Fehler Ampel 1/entsperren erkannt; Auswahlmenge ZCHARGE und Bestandsbuchung fehlen; 've_setzen ... nicht belegt' falsch."
+  },
+  {
+   "id": "BM-080-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'BAPI_TRANSACTION_COMMIT wird aufgerufen' – Festschreiben nur über den Bausteinnamen."
+  },
+  {
+   "id": "BM-080-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "GETDETAIL/CHANGE und neue Merkmalszeile genannt; FREI/GESPERRT, Datum und Erhalt der übrigen Werte fehlen; 'klassifizierung ... nicht belegt' falsch."
+  },
+  {
+   "id": "BM-080-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback bei Fehler erkannt; Vermerk im Protokolltext und Fortbestand des Verwendungsentscheids fehlen."
+  },
+  {
+   "id": "BM-080-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "charge_sperren bei Rückweisung und BAPI_BATCH_CHANGE genannt; 'nicht frei' nicht fachlich; 'charge_sperren ... nicht belegt' falsch."
+  },
+  {
+   "id": "BM-080-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "mail_senden bei p_mail und BCS-Aufrufe genannt; Bedingung Rückweisung, Mailinhalt und Nicht-Abbruch bei Fehler fehlen."
+  },
+  {
+   "id": "BM-080-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "protokoll_schreiben und entsperren genannt; Ampel rot/grün und GMP-Protokoll mit Benutzer/Zeit fehlen; 'Wirkung nicht belegt' falsch, beide FORMs sind mitgeliefert."
+  },
+  {
+   "id": "BM-080-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "REUSE_ALV_GRID_DISPLAY genannt; Listeninhalt fehlt; 'ausgabe ... nicht belegt' falsch."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

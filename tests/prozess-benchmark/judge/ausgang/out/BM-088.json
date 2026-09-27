@@ -1,0 +1,74 @@
+{
+ "id": "BM-088",
+ "urteile": [
+  {
+   "id": "BM-088-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Nur 'Ohne Treffer wird eine Meldung ausgegeben'; Öffnen der Datei und Abbruch fehlen, 'Ohne Treffer' passt nicht zu OPEN DATASET."
+  },
+  {
+   "id": "BM-088-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Fehlerdatei."
+  },
+  {
+   "id": "BM-088-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Zerlegen der Zeile."
+  },
+  {
+   "id": "BM-088-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Satzartprüfung."
+  },
+  {
+   "id": "BM-088-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'stat2 des Satzes wird gelesen' – Beschäftigungsstatus-Prüfung und Abweisung fehlen."
+  },
+  {
+   "id": "BM-088-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu INSERT/Dublette."
+  },
+  {
+   "id": "BM-088-B07",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'Mit COMMIT WORK wird die Änderung persistiert' entspricht dem Festschreiben."
+  },
+  {
+   "id": "BM-088-B08",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Löschen der Datei."
+  },
+  {
+   "id": "BM-088-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Labels 'Übernommen:'/'Fehler:' mit lv_ok/lv_err – Zähler nur als Variablennamen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

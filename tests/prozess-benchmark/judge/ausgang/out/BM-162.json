@@ -1,0 +1,29 @@
+{
+ "id": "BM-162",
+ "urteile": [
+  {
+   "id": "BM-162-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Temperaturprüfung."
+  },
+  {
+   "id": "BM-162-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus zoil_koeff und Meldung ohne Treffer erkannt, aber weder Ausdehnungskoeffizient noch Abbruch mit Ausnahme „kein Koeffizient“."
+  },
+  {
+   "id": "BM-162-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Mengenumrechnung."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

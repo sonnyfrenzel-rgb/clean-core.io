@@ -1,0 +1,216 @@
+{
+ "id": "BM-156",
+ "urteile": [
+  {
+   "id": "BM-156-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Vorschlag des Dateinamens."
+  },
+  {
+   "id": "BM-156-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Bedingung \"p_file NS '/interface/hr/bav/'\" mit Meldung erkannt, nicht als Abweisung fremder Pfade formuliert."
+  },
+  {
+   "id": "BM-156-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "log_create/BAL_LOG_CREATE erkannt (\"Wirkung nicht belegt\"), nicht als Eröffnen des Protokolls."
+  },
+  {
+   "id": "BM-156-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus t569v und Meldungen bei Bedingungen erkannt; Status \"Ende der Abrechnung\" und Abbruch nicht benannt."
+  },
+  {
+   "id": "BM-156-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingung mit Meldung erkannt; \"bereits gemeldet\" und Abbruch nicht benannt."
+  },
+  {
+   "id": "BM-156-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus zpy_bav_lgart und Meldung ohne Treffer erkannt; Abbruch und AG/AN-Einteilung nicht benannt."
+  },
+  {
+   "id": "BM-156-B07",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Bildung des Programmnamens."
+  },
+  {
+   "id": "BM-156-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Meldung bei Fehlschlag; Anlegen der Datei und Kopfsatz fehlen."
+  },
+  {
+   "id": "BM-156-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "LDB-Verarbeitung, HR_READ_INFOTYPE, Suche und Verlassen erkannt; bAV-Vertrag beim Träger nicht benannt."
+  },
+  {
+   "id": "BM-156-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "CU_READ_RGDIR und log_add mit Verlassen ohne Treffer erkannt; Warnung \"kein Abrechnungsergebnis\" nicht benannt."
+  },
+  {
+   "id": "BM-156-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Schleife, read_result und log_add bei Fehlschlag erkannt; aktuelle Ergebnisse der Periode und Fehlerprotokoll nicht benannt."
+  },
+  {
+   "id": "BM-156-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "Schleife, Suche und \"nur sy-subrc = 0\" erkannt; \"kleinere werden übersprungen\" sinnlos; AG/AN-Summierung fehlt."
+  },
+  {
+   "id": "BM-156-B13",
+   "urteil": "fehlt",
+   "mangel": [
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"Jede Zeile aus is_result-inter-crt wird verarbeitet\"; Jahreswert nicht ausgesagt."
+  },
+  {
+   "id": "BM-156-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Satzart L bei fpper = inper und write_record erkannt; \"auch bei null\" nicht benannt."
+  },
+  {
+   "id": "BM-156-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Satzart R, Suche, read_result und collect_amounts erkannt; Differenzbildung nicht ausgesagt."
+  },
+  {
+   "id": "BM-156-B16",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Entfall von Differenzsätzen ohne Änderung."
+  },
+  {
+   "id": "BM-156-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur externer Aufruf format_record \"Wirkung nicht belegt\"; Schreiben in die Datei und Fortschreibung fehlen."
+  },
+  {
+   "id": "BM-156-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "write_trailer und CHECK gv_file_open erkannt; CHECK als Schleife mit \"kleinere\" beschrieben; Summensatz nicht benannt."
+  },
+  {
+   "id": "BM-156-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Verlassen im Testlauf mit log_add erkannt; Löschen der Datei fehlt."
+  },
+  {
+   "id": "BM-156-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Verlassen bei gv_count_rec = 0 erkannt; \"Periode nicht vermerkt\" nicht benannt."
+  },
+  {
+   "id": "BM-156-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "COMMIT erkannt; Vermerk der gemeldeten Periode (EXPORT) fehlt."
+  },
+  {
+   "id": "BM-156-B22",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "BAL_DB_SAVE und Anzeige ohne sy-batch erkannt, nur technisch."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

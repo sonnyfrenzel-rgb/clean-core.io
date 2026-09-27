@@ -1,0 +1,70 @@
+{
+ "id": "BM-121",
+ "titel": "PSP-Elemente ohne Verantwortlichen je Projekt (PROJ/PRPS, Gruppenwechsel und CHECK in der Schleife)",
+ "prozess": "Der Report wird mit einer Projektselektion (Pflicht) gestartet. Er liest alle PSP-Elemente der gewählten Projekte, die nicht zur Löschung vorgemerkt sind, und sortiert sie nach Projekt und PSP-Nummer. Beim Wechsel auf ein neues Projekt schreibt er eine Kopfzeile mit dem Projekt. Hat ein PSP-Element einen Verantwortlichen, wird es übergangen. Elemente ohne Verantwortlichen werden mit Nummer und Bezeichnung gelistet. Da die Kopfzeile vor der Prüfung ausgegeben wird, erscheinen auch Projekte ohne einen einzigen Treffer in der Liste. Es wird nichts geändert.",
+ "verboten": [
+  "source.abap:25 — kein Fachsatz „es werden nur Projekte mit fehlendem Verantwortlichen ausgegeben“: die Projektkopfzeile erscheint vor dem CHECK für jedes Projekt",
+  "source.abap:28 — kein Fachsatz „der Verantwortliche wird nachgepflegt oder vorgeschlagen“: der Report liest und listet nur",
+  "source.abap:18 — kein Fachsatz „nur freigegebene PSP-Elemente werden geprüft“: es wird kein Systemstatus gelesen, nur das Löschkennzeichen"
+ ],
+ "saetze": [
+  {
+   "id": "BM-121-B01",
+   "soll": "Es werden alle nicht zur Löschung vorgemerkten PSP-Elemente der ausgewählten Projekte gelesen.",
+   "zeilen": [
+    18
+   ],
+   "code": [
+    "18:   SELECT p~psphi p~posid p~post1 p~vernr"
+   ],
+   "engine": [
+    "Es werden Sätze aus prps selektiert."
+   ]
+  },
+  {
+   "id": "BM-121-B02",
+   "soll": "Zu Beginn jedes Projekts wird eine Kopfzeile mit dem Projekt ausgegeben, auch wenn danach kein Element dieses Projekts gelistet wird.",
+   "zeilen": [
+    25,
+    26
+   ],
+   "code": [
+    "25:     AT NEW psphi.",
+    "26:       WRITE: / 'Projekt', gs_psp-psphi."
+   ],
+   "engine": [
+    "Bei Treffern werden Projekt und gs_psp-psphi als Liste ausgegeben.",
+    "Projekt wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gs_psp-psphi wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-121-B03",
+   "soll": "PSP-Elemente, für die ein Verantwortlicher gepflegt ist, werden übergangen.",
+   "zeilen": [
+    28
+   ],
+   "code": [
+    "28:     CHECK gs_psp-vernr IS INITIAL."
+   ],
+   "engine": [
+    "Nur Eine leere gs_psp-vernr gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-121-B04",
+   "soll": "Jedes PSP-Element ohne Verantwortlichen wird mit Nummer und Bezeichnung gelistet.",
+   "zeilen": [
+    29
+   ],
+   "code": [
+    "29:     WRITE: / gs_psp-posid, gs_psp-post1."
+   ],
+   "engine": [
+    "Bei Treffern werden gs_psp-posid und gs_psp-post1 als Liste ausgegeben.",
+    "gs_psp-posid wird ausgegeben.",
+    "gs_psp-post1 wird ausgegeben."
+   ]
+  }
+ ]
+}

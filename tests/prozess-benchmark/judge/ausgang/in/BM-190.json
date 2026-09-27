@@ -1,0 +1,144 @@
+{
+ "id": "BM-190",
+ "titel": "Containerterminal: Stellplatz reservieren mit Sperrversuchen und Wartepause",
+ "prozess": "Beim Gate-In ruft die Terminaltransaktion den Baustein mit Yard, Stellplatz, Container und Reservierungsdauer (Standard 24 Stunden) auf. Der Baustein versucht bis zu fünfmal, den Stellplatz exklusiv zu sperren. Gelingt die Sperre, geht er weiter; ist der Platz von einem anderen Gate-Rechner gesperrt, wartet er zwei Sekunden und versucht es erneut; bei einem technischen Sperrfehler bricht er mit SPERRFEHLER ab. Die nach der Schleife folgende Prüfung auf eine fehlgeschlagene Sperre wertet das Ergebnis der Wartepause aus, das immer erfolgreich ist; nach fünf erfolglosen Versuchen läuft die Reservierung deshalb ohne Sperre weiter, und PLATZ_GESPERRT wird nie ausgelöst. Dann liest er den Stellplatz. Gibt es ihn nicht oder ist er nicht frei (Status F), hebt er die Sperre auf und lehnt mit PLATZ_BELEGT ab. Sonst berechnet er das Reservierungsende, setzt den Platz auf Status R mit Container und Bearbeiter, schreibt ihn zurück und hebt die Sperre auf. Festgeschrieben wird erst durch den Aufrufer.",
+ "verboten": [
+  "source.abap:41 — kein Fachsatz „nach fünf erfolglosen Sperrversuchen wird die Reservierung mit PLATZ_GESPERRT abgelehnt“: nach der letzten Wartepause ist sy-subrc 0, die Ausnahme wird so nie ausgelöst und die Reservierung läuft ohne Sperre weiter",
+  "source.abap:60 — kein Fachsatz „die Reservierung ist festgeschrieben, solange der Platz gesperrt ist“: der Baustein setzt kein COMMIT ab und hebt die Sperre direkt nach dem UPDATE auf",
+  "gesamte Scheibe — kein Fachsatz „der Container wird eingelagert bzw. der Gate-In gebucht“: reserviert wird nur der Stellplatz"
+ ],
+ "saetze": [
+  {
+   "id": "BM-190-B01",
+   "soll": "Der Stellplatz wird bis zu fünfmal exklusiv zu sperren versucht.",
+   "zeilen": [
+    20,
+    21
+   ],
+   "code": [
+    "20:   DO 5 TIMES.",
+    "21:     CALL FUNCTION 'ENQUEUE_EZYARD_PLATZ'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein ENQUEUE_EZYARD_PLATZ wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-190-B02",
+   "soll": "Ist der Platz von einem anderen Gate-Rechner gesperrt, wird zwei Sekunden gewartet und erneut versucht.",
+   "zeilen": [
+    34,
+    35
+   ],
+   "code": [
+    "34:       WHEN 1.",
+    "35:         WAIT UP TO 2 SECONDS."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-190-B03",
+   "soll": "Bei einem technischen Sperrfehler wird die Reservierung mit der Ausnahme SPERRFEHLER abgebrochen.",
+   "zeilen": [
+    36,
+    37
+   ],
+   "code": [
+    "36:       WHEN OTHERS.",
+    "37:         MESSAGE e100(zyard) RAISING sperrfehler."
+   ],
+   "engine": [
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-190-B04",
+   "soll": "Nach fünf erfolglosen Versuchen läuft die Reservierung ohne Sperre weiter, weil die anschließende Prüfung das Ergebnis der Wartepause statt des Sperrversuchs auswertet.",
+   "zeilen": [
+    35,
+    40
+   ],
+   "code": [
+    "35:         WAIT UP TO 2 SECONDS.",
+    "40:   IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-190-B05",
+   "soll": "Der Stellplatz wird gelesen.",
+   "zeilen": [
+    44
+   ],
+   "code": [
+    "44:   SELECT SINGLE * FROM zyard_platz INTO ls_platz"
+   ],
+   "engine": [
+    "Es werden Sätze aus zyard_platz selektiert."
+   ]
+  },
+  {
+   "id": "BM-190-B06",
+   "soll": "Existiert der Platz nicht oder ist er nicht frei, wird die Sperre aufgehoben und die Reservierung mit PLATZ_BELEGT abgelehnt.",
+   "zeilen": [
+    47,
+    48,
+    52
+   ],
+   "code": [
+    "47:   IF sy-subrc <> 0 OR ls_platz-status <> 'F'.",
+    "48:     CALL FUNCTION 'DEQUEUE_EZYARD_PLATZ'",
+    "52:     MESSAGE e102(zyard) WITH iv_platz RAISING platz_belegt."
+   ],
+   "engine": [
+    "Für sy-subrc <> 0 OR ls_platz-status <> 'F' wird DEQUEUE_EZYARD_PLATZ aufgerufen und eine Meldung ausgegeben.",
+    "Der Funktionsbaustein DEQUEUE_EZYARD_PLATZ wird aufgerufen.",
+    "Es wird DEQUEUE_EZYARD_PLATZ aufgerufen und eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-190-B07",
+   "soll": "Das Reservierungsende wird aus dem aktuellen Zeitpunkt plus der angegebenen Stundenzahl (Standard 24) berechnet.",
+   "zeilen": [
+    58
+   ],
+   "code": [
+    "58:   ls_platz-res_bis   = cl_abap_tstmp=>add( tstmp = lv_ts secs = iv_stunden * 3600 )."
+   ],
+   "engine": [
+    "Die Methode add von cl_abap_tstmp wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-190-B08",
+   "soll": "Der Platz wird mit Status R für den Container reserviert und gespeichert.",
+   "zeilen": [
+    60
+   ],
+   "code": [
+    "60:   UPDATE zyard_platz FROM ls_platz."
+   ],
+   "engine": [
+    "Es wird eine Zeile geändert und DEQUEUE_EZYARD_PLATZ aufgerufen.",
+    "Eine Zeile in zyard_platz wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK. sy-subrc wird danach nicht ausgewertet."
+   ]
+  },
+  {
+   "id": "BM-190-B09",
+   "soll": "Danach wird die Sperre des Stellplatzes aufgehoben.",
+   "zeilen": [
+    62
+   ],
+   "code": [
+    "62:   CALL FUNCTION 'DEQUEUE_EZYARD_PLATZ'"
+   ],
+   "engine": [
+    "Es wird eine Zeile geändert und DEQUEUE_EZYARD_PLATZ aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EZYARD_PLATZ wird aufgerufen."
+   ]
+  }
+ ]
+}

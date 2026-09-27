@@ -1,0 +1,39 @@
+{
+ "id": "BM-124",
+ "urteile": [
+  {
+   "id": "BM-124-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Gelesene Felder nur als credit_limit/xblocked/limit_valid_date, zweimal; Geschäftspartner und Kreditsegment fehlen."
+  },
+  {
+   "id": "BM-124-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Ausnahme \"kein Segment\"."
+  },
+  {
+   "id": "BM-124-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Block wird verlassen bei xblocked = abap_true\" doppelt; dass der Auftrag damit abgelehnt wird, fehlt."
+  },
+  {
+   "id": "BM-124-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Freigabeentscheidung (Limitgültigkeit, Obligo + Auftragswert)."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

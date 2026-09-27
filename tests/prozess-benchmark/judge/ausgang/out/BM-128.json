@@ -1,0 +1,93 @@
+{
+ "id": "BM-128",
+ "urteile": [
+  {
+   "id": "BM-128-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"Sätze aus zfm_antrag ... entscheidet die Eingabe zur Laufzeit\"; freigegebene Anträge, Finanzkreis/Geschäftsjahr/optionale Finanzstelle fehlen."
+  },
+  {
+   "id": "BM-128-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung bei leerem Ergebnis erkannt, der Abbruch (E-Meldung) fehlt."
+  },
+  {
+   "id": "BM-128-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Lesen der Positionen erkannt, nur als Tabellenname zfm_antrag_pos."
+  },
+  {
+   "id": "BM-128-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"verfuegbar des Satzes wird gelesen\"; Finanzstelle/Finanzposition und Bezug zur Position fehlen."
+  },
+  {
+   "id": "BM-128-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Abbruch bei gv_verf < Betrag und Ausgabe \"zurückgestellt\" erkannt, aber technisch; dass der Antrag unverändert freigegeben bleibt, fehlt."
+  },
+  {
+   "id": "BM-128-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf FMFR_CREATE_FROM_DATA nur technisch (\"konvertierte Ergebnis\"); Anlage der Mittelvorbindung Belegart ZV nicht genannt."
+  },
+  {
+   "id": "BM-128-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Rollback und Ausgabe von sy-msgid/sy-msgno erkannt, aber nur technisch, achtfach; \"Ohne Treffer\" statt Fehlschlag der Anlage."
+  },
+  {
+   "id": "BM-128-B08",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "\"Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK\" widerspricht dem BAPI_TRANSACTION_COMMIT in Zeile 79; Belegnummer am Antrag fehlt; \"Die Status\"."
+  },
+  {
+   "id": "BM-128-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Ausgabe \"Mittelvorbindung\" plus Rückgabefeld des Bausteins kommt nahe, nennt aber nicht die Belegnummer; fünffach."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

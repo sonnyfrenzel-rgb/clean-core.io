@@ -1,0 +1,164 @@
+{
+ "id": "BM-158",
+ "urteile": [
+  {
+   "id": "BM-158-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Prüfung PLOG und Meldung erkannt; Abbruch nicht benannt, \"Ohne Treffer\" unpassend."
+  },
+  {
+   "id": "BM-158-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldungen bei Hintergrund und leerer/unlesbarer Datei erkannt; \"gui_upload ... nach cl_gui_frontend_services übernommen\" falsch; Abbruch nicht benannt."
+  },
+  {
+   "id": "BM-158-B03",
+   "urteil": "fehlt",
+   "mangel": [
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"Jede Zeile aus gt_raw wird einzeln verarbeitet\"; Zerlegen und Kopfzeile nicht ausgesagt."
+  },
+  {
+   "id": "BM-158-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur prot_add-Aufruf; unbekannte Aktion und Fehlerkennzeichen nicht benannt."
+  },
+  {
+   "id": "BM-158-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Zählung und prot_add bei 0 erkannt; \"entscheidet die Eingabe zur Laufzeit\" falsch (WHERE wird im Code je Aktion gebildet); Bedingungen fehlen."
+  },
+  {
+   "id": "BM-158-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Strenger Modus bei Fehlern mit prot_add, sonst execute_lines technisch erkannt; Zählung fehlt."
+  },
+  {
+   "id": "BM-158-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "Schleife und dynamischer Aufruf erkannt; \"externe Unterprogramm\" falsch (IN PROGRAM sy-repid); Bildung aus der Aktion nicht benannt."
+  },
+  {
+   "id": "BM-158-B08",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Commit/Rollback je Ergebnis erkannt, aber \"Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert\" widerspricht dem Code: die PA40-Maßnahmen sind bereits eigenständig verbucht."
+  },
+  {
+   "id": "BM-158-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "RH_OBJECT_CREATE, Verlassen bei Fehler und RH_RELATION_MAINTAIN erkannt; neue Einheit und Unterstellung nicht benannt."
+  },
+  {
+   "id": "BM-158-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen, RH_CUT_INFTY und RH_RELATION_MAINTAIN erkannt; Abgrenzen und Neuzuordnung nicht benannt."
+  },
+  {
+   "id": "BM-158-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Inhaber lesen, pa_org_reassign, prot_add bei Fehlschlag, PA40 erkannt; Maßnahme \"Organisatorische Änderung\" und \"nur Warnung\" nicht benannt."
+  },
+  {
+   "id": "BM-158-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Modus A für OMADMIN1 und zwei Suchen erkannt; Fehler/Abbruchmeldung als Kriterium nicht benannt."
+  },
+  {
+   "id": "BM-158-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen, Verlassen ohne Treffer, RH_UPDATE_INFTY erkannt; Textänderung nicht benannt."
+  },
+  {
+   "id": "BM-158-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Zählung, Verlassen bei lv_sub > 0, RH_CUT_INFTY erkannt; \"keine Unterstellten\" und Abgrenzung zum Vortag nicht benannt."
+  },
+  {
+   "id": "BM-158-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "ALV-Anzeige und Ersatzliste erkannt; \"nach cl_salv_table übernommen\" falsch; Fehlerzahl fehlt."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "satz": "Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert.",
+   "begruendung": "An Zeile f01:93 (Rollback im Testlauf) verbotener Schluss \"im Testlauf wird nichts verändert\": die Personalmaßnahmen über CALL TRANSACTION PA40 sind bereits verbucht."
+  }
+ ],
+ "soll_zweifel": []
+}

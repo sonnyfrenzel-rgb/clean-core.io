@@ -1,0 +1,64 @@
+{
+ "id": "BM-006",
+ "urteile": [
+  {
+   "id": "BM-006-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "unvollstaendig"
+   ],
+   "kurz": "\"Es werden Aufträge selektiert\" ohne die Selektion nach Verkaufsorganisation, Auftragsdatum und Kunde."
+  },
+  {
+   "id": "BM-006-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "\"Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen\" entspricht Hinweis und Ende; vierfach in Varianten wiederholt."
+  },
+  {
+   "id": "BM-006-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus konv selektiert\" – Tabellenname statt Belegkonditionen, Einschränkung auf aktive Zu-/Abschläge fehlt."
+  },
+  {
+   "id": "BM-006-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Rabattsumme aus Z-Konditionen und K007."
+  },
+  {
+   "id": "BM-006-B05",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Berechnung der Rabattquote."
+  },
+  {
+   "id": "BM-006-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Bedingung stimmt, aber nur gs_out-ampel auf @0A@/@08@ – rot/grün ist nicht erkennbar; fünffach, \"setzen die gs_out-ampel\"."
+  },
+  {
+   "id": "BM-006-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur Methodenaufrufe mit \"fachliches Verhalten nicht belegt\"; die ALV-Anzeige wird nicht benannt, und der Rückgabewert geht an go_alv, nicht \"nach cl_salv_table\"."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

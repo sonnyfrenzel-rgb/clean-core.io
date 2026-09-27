@@ -1,0 +1,193 @@
+{
+ "id": "BM-091",
+ "titel": "CVI-Vorprüfung: Kundenstamm vor der Geschäftspartner-Umstellung prüfen und bereinigen",
+ "prozess": "Im Vorprojekt einer S/4-Conversion prüft der Report den Kundenstamm, bevor Kunden zu Geschäftspartnern synchronisiert werden. Er liest die nicht zum Löschen vorgemerkten Kunden der gewählten Nummern und Kontengruppen und endet mit einer Meldung, wenn es keine gibt. Kunden mit bereits verknüpftem Geschäftspartner überspringt er. Für alle anderen prüft er anhand der Ländertabelle, ob das Land bekannt ist, ob die Postleitzahl die vorgeschriebene Länge hat und ob in EU-Ländern die Umsatzsteuer-Id gefüllt ist. Danach prüft er, ob eine Adresse in der zentralen Adressverwaltung existiert, und ob der letzte Verkaufsbeleg jünger als die eingegebene Zahl von Jahren ist; Kunden ohne Beleg gelten als inaktiv. Jeder Befund wird als Fehler, Warnung oder Inaktivität vermerkt. Mit gesetzter Bereinigungsoption setzt der Report für alle inaktiven Kunden direkt in KNA1 die Löschvormerkung mit Änderungsdatum und -benutzer und schreibt fest. Zum Schluss zeigt er alle Befunde als ALV-Liste.",
+ "verboten": [
+  "zcvi_precheck_f01.abap:79 — kein Fachsatz „fehlerhafte Postleitzahlen oder Umsatzsteuer-Ids werden korrigiert“ (bereinigt wird nur die Löschvormerkung inaktiver Kunden).",
+  "zcvi_precheck_f01.abap:79 — kein Fachsatz „Kunden werden gelöscht“ (nur Löschvormerkung).",
+  "gesamte Scheibe — kein Fachsatz „Geschäftspartner werden angelegt oder synchronisiert“ (der Report prüft nur vor der Synchronisation).",
+  "zcvi_precheck_f01.abap:53 — kein Fachsatz „Kunden ohne Verkaufsbeleg werden übersprungen“ (ohne Beleg ist das Maximum leer und der Kunde gilt als inaktiv)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-091-B01",
+   "soll": "Es werden die nicht zum Löschen vorgemerkten Kunden der gewählten Nummern und Kontengruppen gelesen.",
+   "zeilen": [
+    51
+   ],
+   "code": [
+    "51:   SELECT kunnr, name1, land1, pstlz, stceg, adrnr, ktokd"
+   ],
+   "engine": [
+    "Es werden Kunden selektiert."
+   ]
+  },
+  {
+   "id": "BM-091-B02",
+   "soll": "Gibt es keine, wird das gemeldet und der Lauf beendet.",
+   "zeilen": [
+    57,
+    58,
+    59
+   ],
+   "code": [
+    "57:   IF gt_kna1 IS INITIAL.",
+    "58:     MESSAGE s001(zcvi).",
+    "59:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-091-B03",
+   "soll": "Kunden, zu denen bereits ein Geschäftspartner verknüpft ist, werden nicht geprüft.",
+   "zeilen": [
+    63,
+    69,
+    71
+   ],
+   "code": [
+    "63:   SELECT customer FROM cvi_cust_link",
+    "69:     READ TABLE gt_link WITH TABLE KEY table_line = <gs_kna1>-kunnr",
+    "71:     IF sy-subrc = 0."
+   ],
+   "engine": [
+    "Es werden Sätze aus cvi_cust_link selektiert.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-091-B04",
+   "soll": "Ist der Länderschlüssel des Kunden unbekannt, wird ein Fehler vermerkt und die Länderprüfung für diesen Kunden beendet.",
+   "zeilen": [
+    94,
+    98,
+    99
+   ],
+   "code": [
+    "94:   SELECT SINGLE lnplz, xegld",
+    "98:   IF sy-subrc <> 0.",
+    "99:     PERFORM add_issue USING ps_kna1-kunnr 'E' 'Länderschlüssel unbekannt'."
+   ],
+   "engine": [
+    "Das Ergebnis enthält lnplz und xegld.",
+    "lnplz und xegld des Satzes werden gelesen.",
+    "Ohne Treffer wird add_issue aufgerufen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Das Unterprogramm add_issue wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird add_issue aufgerufen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-091-B05",
+   "soll": "Weicht die Länge der Postleitzahl von der für das Land vorgeschriebenen Länge ab, wird ein Fehler vermerkt.",
+   "zeilen": [
+    104,
+    105
+   ],
+   "code": [
+    "104:   IF ls_t005-lnplz > 0 AND lv_len <> ls_t005-lnplz.",
+    "105:     PERFORM add_issue USING ps_kna1-kunnr 'E' 'Postleitzahl hat falsche Länge'."
+   ],
+   "engine": [
+    "Für ls_t005-lnplz > 0 AND lv_len <> ls_t005-lnplz wird add_issue aufgerufen.",
+    "Das Unterprogramm add_issue wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-091-B06",
+   "soll": "Fehlt bei einem Kunden in einem EU-Land die Umsatzsteuer-Id, wird eine Warnung vermerkt.",
+   "zeilen": [
+    109,
+    110
+   ],
+   "code": [
+    "109:   IF ls_t005-xegld = 'X' AND ps_kna1-stceg IS INITIAL.",
+    "110:     PERFORM add_issue USING ps_kna1-kunnr 'W' 'USt-Id fehlt (EU)'."
+   ],
+   "engine": [
+    "Für ls_t005-xegld = 'X' AND ps_kna1-stceg IS INITIAL wird add_issue aufgerufen.",
+    "Das Unterprogramm add_issue wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-091-B07",
+   "soll": "Hat der Kunde keine Adresse in der zentralen Adressverwaltung, wird ein Fehler vermerkt.",
+   "zeilen": [
+    120,
+    122,
+    123
+   ],
+   "code": [
+    "120:   SELECT SINGLE addrnumber FROM adrc INTO lv_addrnumber",
+    "122:   IF sy-subrc <> 0.",
+    "123:     PERFORM add_issue USING ps_kna1-kunnr 'E' 'Keine ZAV-Adresse (ADRC)'."
+   ],
+   "engine": [
+    "addrnumber des Satzes wird gelesen.",
+    "Ohne Treffer wird add_issue aufgerufen.",
+    "Das Unterprogramm add_issue wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-091-B08",
+   "soll": "Liegt der letzte Verkaufsbeleg des Kunden vor der Grenze von eingegebenen Jahren – oder gibt es keinen –, wird der Kunde als inaktiv vermerkt.",
+   "zeilen": [
+    49,
+    133,
+    136,
+    137
+   ],
+   "code": [
+    "49:   gv_limit = sy-datum - p_years * 365.",
+    "133:   SELECT MAX( erdat ) FROM vbak INTO lv_last",
+    "136:   IF lv_last < gv_limit.",
+    "137:     PERFORM add_issue USING ps_kna1-kunnr 'I' 'Kein Verkaufsbeleg im Zeitraum'."
+   ],
+   "engine": [
+    "Es werden Aufträge selektiert.",
+    "Für lv_last kleiner gv_limit wird add_issue aufgerufen.",
+    "Das Unterprogramm add_issue wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-091-B09",
+   "soll": "Nur mit gesetzter Bereinigungsoption werden alle inaktiven Kunden direkt im Kundenstamm zum Löschen vorgemerkt und festgeschrieben.",
+   "zeilen": [
+    79,
+    162,
+    167
+   ],
+   "code": [
+    "79:   IF p_upd = 'X'.",
+    "162:     UPDATE kna1 SET loevm = 'X'",
+    "167:   COMMIT WORK."
+   ],
+   "engine": [
+    "Mit gesetztem p_upd wird apply_fixes aufgerufen.",
+    "Die loevm des Kunden wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. sy-subrc wird danach nicht ausgewertet.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-091-B10",
+   "soll": "Zum Schluss werden alle Befunde als ALV-Liste angezeigt.",
+   "zeilen": [
+    178,
+    187
+   ],
+   "code": [
+    "178:       CALL METHOD cl_salv_table=>factory",
+    "187:   lo_alv->display( )."
+   ],
+   "engine": [
+    "Das Ergebnis der gewählten Methode wird ermittelt.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

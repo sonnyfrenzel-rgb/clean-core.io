@@ -1,0 +1,244 @@
+{
+ "id": "BM-052",
+ "titel": "Kontoauszugsdatei einlesen und Zahlungseingänge per Posting Interface gegen Debitorenposten ausgleichen",
+ "prozess": "Die Debitorenbuchhaltung startet den Report mit dem Pfad der Kontoauszugsdatei, Buchungskreis, Bankverrechnungskonto, Belegart und Testlauf-Schalter. Die Datei wird zeilenweise gelesen, die Kopfzeile übersprungen und nur Gutschriften übernommen; ist die Datei nicht lesbar, bricht der Report ab, enthält sie keine Gutschriften, endet er mit Hinweis. Die Ausgleichstoleranz kommt aus der Variablentabelle. Für jede Gutschrift wird im Verwendungszweck eine Rechnungsnummer gesucht, die offenen Posten mit dieser Referenz gelesen und ihr Saldo mit dem Gutschriftbetrag verglichen. Innerhalb der Toleranz gilt der Umsatz als zugeordnet, sonst bleibt er offen. Nur im Echtlauf wird für zugeordnete Umsätze über die Buchungsschnittstelle ein Zahlungseingang mit Ausgleich gebucht und das Ergebnis am Umsatz vermerkt. Am Ende werden alle Umsätze mit Status als ALV-Liste angezeigt.",
+ "verboten": [
+  "zfi_bankstmt_f01.abap:76 — kein Fachsatz „Teilzahlungen werden als Restposten gebucht“ (abweichende Beträge bleiben nur zur manuellen Klärung offen)",
+  "zfi_bankstmt_f01.abap:59 — kein Fachsatz „Währung der Gutschrift wird mit den Posten abgeglichen“ (verglichen werden nur Beträge)",
+  "zfi_bankstmt.abap:56 — kein Fachsatz „ein Fehler beim Öffnen der Schnittstelle bricht den Lauf ab“ (sy-subrc wird nicht ausgewertet)",
+  "zfi_bankstmt_f01.abap:34 — kein Fachsatz „Lastschriften werden gebucht“ (sie werden verworfen)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-052-B01",
+   "soll": "Die Kontoauszugsdatei der Hausbank wird vom Applikationsserver gelesen; ist sie nicht lesbar, bricht der Report mit Fehlermeldung ab.",
+   "zeilen": [
+    101,
+    102,
+    103
+   ],
+   "code": [
+    "101:   OPEN DATASET p_file FOR INPUT IN TEXT MODE ENCODING DEFAULT.",
+    "102:   IF sy-subrc <> 0.",
+    "103:     MESSAGE e398(00) WITH 'Datei nicht lesbar:' p_file."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-052-B02",
+   "soll": "Die Kopfzeile der Datei wird übersprungen; jede weitere Zeile liefert Valutadatum, Betrag, Währung, Verwendungszweck und Auftraggeber.",
+   "zeilen": [
+    112,
+    117
+   ],
+   "code": [
+    "112:     IF sy-index = 1.",
+    "117:     SPLIT lv_line AT ';' INTO ls_stmt-valut lv_betrag ls_stmt-waers"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-052-B03",
+   "soll": "Nur Gutschriften mit positivem Betrag werden übernommen; Lastschriften werden ignoriert.",
+   "zeilen": [
+    122
+   ],
+   "code": [
+    "122:     IF ls_stmt-wrbtr > 0."
+   ],
+   "engine": [
+    "Für ls_stmt-wrbtr größer 0 wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-052-B04",
+   "soll": "Enthält die Datei keine Gutschriften, erhält der Anwender einen Hinweis und der Report endet.",
+   "zeilen": [
+    45,
+    46,
+    47
+   ],
+   "code": [
+    "45:   IF gt_stmt IS INITIAL.",
+    "46:     MESSAGE 'Datei enthaelt keine Gutschriften' TYPE 'S'.",
+    "47:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-052-B05",
+   "soll": "Die zulässige Ausgleichsdifferenz wird aus der Variablentabelle gelesen; ohne Eintrag gilt 1,00.",
+   "zeilen": [
+    51
+   ],
+   "code": [
+    "51:   SELECT SINGLE low FROM tvarvc INTO gv_tol"
+   ],
+   "engine": [
+    "low des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-052-B06",
+   "soll": "Im Echtlauf wird vor der Verarbeitung die Buchungsschnittstelle im Hintergrundmodus mit synchroner Verbuchung geöffnet und danach wieder geschlossen.",
+   "zeilen": [
+    55,
+    56,
+    79,
+    80
+   ],
+   "code": [
+    "55:   IF p_test IS INITIAL.",
+    "56:     CALL FUNCTION 'POSTING_INTERFACE_START'",
+    "79:   IF p_test IS INITIAL.",
+    "80:     CALL FUNCTION 'POSTING_INTERFACE_END'"
+   ],
+   "engine": [
+    "Ohne p_test wird POSTING_INTERFACE_START aufgerufen.",
+    "Der Funktionsbaustein POSTING_INTERFACE_START wird aufgerufen.",
+    "Ohne p_test wird POSTING_INTERFACE_END aufgerufen.",
+    "Der Funktionsbaustein POSTING_INTERFACE_END wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-052-B07",
+   "soll": "Je Gutschrift wird im Verwendungszweck eine Rechnungsnummer der Form RE plus acht Ziffern gesucht; fehlt sie, bleibt der Umsatz mit Hinweis offen.",
+   "zeilen": [
+    137,
+    139,
+    142
+   ],
+   "code": [
+    "137:   FIND FIRST OCCURRENCE OF REGEX 'RE[0-9]{8}' IN <gs_stmt>-zweck",
+    "139:   IF sy-subrc <> 0.",
+    "142:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird die Status auf U gesetzt, die Text auf Keine Rechnungsnummer im Verwendungszweck gesetzt und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die Status auf U.",
+    "Es wird die Status auf U gesetzt, die Text auf Keine Rechnungsnummer im Verwendungszweck gesetzt und der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die Text auf Keine Rechnungsnummer im Verwendungszweck."
+   ]
+  },
+  {
+   "id": "BM-052-B08",
+   "soll": "Zur gefundenen Rechnungsnummer werden die offenen Debitorenposten des Buchungskreises mit dieser Referenz gelesen; gibt es keine, bleibt der Umsatz offen.",
+   "zeilen": [
+    147,
+    151,
+    154
+   ],
+   "code": [
+    "147:   SELECT kunnr belnr gjahr buzei shkzg wrbtr",
+    "151:   IF sy-subrc <> 0.",
+    "154:     RETURN."
+   ],
+   "engine": [
+    "Es werden Sätze aus bsid mit dem eingegebenen Buchungskreis selektiert.",
+    "Ohne Treffer wird die Status auf U gesetzt, die Text auf Kein offener Posten zur Rechnungsnummer gesetzt und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die Status auf U.",
+    "Es wird die Status auf U gesetzt, die Text auf Kein offener Posten zur Rechnungsnummer gesetzt und der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die Text auf Kein offener Posten zur Rechnungsnummer."
+   ]
+  },
+  {
+   "id": "BM-052-B09",
+   "soll": "Der Saldo der gefundenen Posten wird vorzeichengerecht gebildet (Soll positiv, Haben negativ).",
+   "zeilen": [
+    159
+   ],
+   "code": [
+    "159:   lv_sum = REDUCE wrbtr( INIT s = 0"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-052-B10",
+   "soll": "Liegt die Differenz zwischen Saldo und Gutschrift innerhalb der Toleranz, gilt der Umsatz als zugeordnet; sonst bleibt er als Teilzahlung zur manuellen Klärung offen.",
+   "zeilen": [
+    164,
+    165,
+    167
+   ],
+   "code": [
+    "164:   IF abs( lv_sum - <gs_stmt>-wrbtr ) <= gv_tol.",
+    "165:     <gs_stmt>-status = 'M'.",
+    "167:     <gs_stmt>-status = 'U'."
+   ],
+   "engine": [
+    "Für abs( lv_sum - <gs_stmt>-wrbtr ) <= gv_tol wird die Status auf M gesetzt.",
+    "Für abs( lv_sum - <gs_stmt>-wrbtr ) <= gv_tol wird die Status auf M gesetzt, sonst die Status auf U gesetzt und die Text auf Betrag weicht ab - Teilzahlung manuell klaeren gesetzt.",
+    "abs( lv_sum - <gs_stmt>-wrbtr ) <= gv_tol setzen die Status auf M.",
+    "Sonst wird die Status auf U gesetzt und die Text auf Betrag weicht ab - Teilzahlung manuell klaeren gesetzt.",
+    "Sonst setzen die Status auf U.",
+    "Es wird die Status auf U gesetzt und die Text auf Betrag weicht ab - Teilzahlung manuell klaeren gesetzt."
+   ]
+  },
+  {
+   "id": "BM-052-B11",
+   "soll": "Zugeordnete Umsätze werden nur im Echtlauf gebucht: Zahlungseingang auf das Bankverrechnungskonto mit Ausgleich aller gefundenen Posten über die Ausgleichstransaktion.",
+   "zeilen": [
+    74,
+    191,
+    202,
+    210
+   ],
+   "code": [
+    "74:     IF <gs_stmt>-status = 'M' AND p_test IS INITIAL.",
+    "191:   lt_ftpost = VALUE #(",
+    "202:   lt_ftclear = VALUE #( FOR ls_op IN gt_op",
+    "210:   CALL FUNCTION 'POSTING_INTERFACE_CLEARING'"
+   ],
+   "engine": [
+    "Für <gs_stmt>-status = 'M' AND p_test IS INITIAL wird post_clearing aufgerufen.",
+    "Der Code übergibt 'EINGZAHL' an POSTING_INTERFACE_CLEARING und übernimmt dessen Ausgabe nach lv_msgid.",
+    "Das konvertierte Ergebnis wird in lv_msgid übernommen."
+   ]
+  },
+  {
+   "id": "BM-052-B12",
+   "soll": "War der Ausgleich erfolgreich, wird der Umsatz mit der Ausgleichsbelegnummer als gebucht markiert, sonst mit der Fehlermeldung als fehlerhaft.",
+   "zeilen": [
+    237,
+    238,
+    242
+   ],
+   "code": [
+    "237:   IF sy-subrc = 0 AND lv_subrc = 0.",
+    "238:     <gs_stmt>-status = 'P'.",
+    "242:     <gs_stmt>-status = 'E'."
+   ],
+   "engine": [
+    "Für sy-subrc = 0 AND lv_subrc = 0 wird die Status auf P gesetzt.",
+    "Für sy-subrc = 0 AND lv_subrc = 0 wird die Status auf P gesetzt, sonst die Status auf E gesetzt und eine Meldung ausgegeben.",
+    "sy-subrc = 0 AND lv_subrc = 0 setzen die Status auf P.",
+    "Sonst wird die Status auf E gesetzt und eine Meldung ausgegeben.",
+    "Sonst setzen die Status auf E.",
+    "Es wird die Status auf E gesetzt und eine Meldung ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-052-B13",
+   "soll": "Zum Schluss werden alle Umsätze mit Zuordnung, Status, Ausgleichsbeleg und Hinweis als ALV-Liste angezeigt.",
+   "zeilen": [
+    263
+   ],
+   "code": [
+    "263:   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ]
+  }
+ ]
+}

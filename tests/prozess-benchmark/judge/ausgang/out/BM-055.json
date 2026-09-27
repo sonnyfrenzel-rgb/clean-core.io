@@ -1,0 +1,106 @@
+{
+ "id": "BM-055",
+ "urteile": [
+  {
+   "id": "BM-055-B01",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "Nur 'Rückgabewert der Methode run ... nicht belegt'; kein Inhalt des Sollsatzes (Verrechnung je Periode, Testlauf-Vorgabe); 'Verhalten nicht belegt' ist falsch, METHOD run ist mitgeliefert."
+  },
+  {
+   "id": "BM-055-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus zco_timesheet und Verlassen ohne Sätze genannt; Einschränkung auf freigegebene Sätze (Status F) und Info-Eintrag nicht fachlich."
+  },
+  {
+   "id": "BM-055-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesungen kostl/lstar und 'Zeile aufgenommen' ohne Treffer; Gültigkeit, Sperre für sekundäre Kosten und 'nicht verrechnet' fehlen."
+  },
+  {
+   "id": "BM-055-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Verdichtung."
+  },
+  {
+   "id": "BM-055-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "ENQUEUE-Aufruf und Rückkehr ohne Treffer genannt; Periodensperre gegen Parallelverrechnung und Fehlereintrag nicht fachlich."
+  },
+  {
+   "id": "BM-055-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Verzweigung CHECK- vs. POST-BAPI richtig; Aufbau der Verrechnung Sender → Empfänger nur als 'Zeile in lt_items aufgenommen'."
+  },
+  {
+   "id": "BM-055-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback, Status E und COMMIT im Echtlauf erkannt; Auslöser (Fehlermeldung) nur als 'Treffer', 'die Status' falscher Artikel."
+  },
+  {
+   "id": "BM-055-B08",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Im Testlauf wird Status T mit Text 'Pruefung ohne Fehler' gesetzt – fachlich dasselbe; 'die Status/die Text' grammatisch falsch."
+  },
+  {
+   "id": "BM-055-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Status V, Änderung von zco_timesheet und Commit im Echtlauf erkannt; die CO-Belegnummer fehlt."
+  },
+  {
+   "id": "BM-055-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "DEQUEUE-Aufruf und Protokollausgabe nur als Variablennamen; Freigabe der Periodensperre nicht fachlich."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

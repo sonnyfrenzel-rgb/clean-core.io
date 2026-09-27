@@ -1,0 +1,85 @@
+{
+ "id": "BM-046",
+ "urteile": [
+  {
+   "id": "BM-046-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Sätze aus bsid selektiert'; Einschränkung auf Buchungskreise/Kunden und 'ohne Mahnsperre' fehlt, Tabellenname statt offene Posten."
+  },
+  {
+   "id": "BM-046-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen' entspricht Hinweis und Ende; mehrfach formuliert."
+  },
+  {
+   "id": "BM-046-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Sätze aus zfi_klaerfall selektiert'; offene Klärungsfälle (Status O) zu den Belegen nicht erkennbar."
+  },
+  {
+   "id": "BM-046-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "'In der Tabelle wird nach einer passenden Zeile gesucht' – die Folge (Posten ohne Klärungsfall übersprungen) fehlt."
+  },
+  {
+   "id": "BM-046-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Ausgabe 'wuerde gesperrt (Testlauf)' bei p_test ist erkannt, aber nur mit Variablennamen; dass nichts geändert wird, fehlt."
+  },
+  {
+   "id": "BM-046-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf FI_ITEMS_MASS_CHANGE nur technisch; dass die gewählte Mahnsperre am Posten gesetzt wird, fehlt; 'das konvertierte Ergebnis' ist eine inhaltsleere Floskel."
+  },
+  {
+   "id": "BM-046-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Verzweigung Erfolg/Fehler mit den Ausgabetexten ist erkannt, aber Status S am Klärungsfall ('Die Status in zfi_klaerfall') nur technisch und der Fehlerzähler fehlt; 'Die Status' ist falscher Artikel."
+  },
+  {
+   "id": "BM-046-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "COMMIT WORK ohne p_test ist richtig; die Zähler erscheinen nur als lv_cnt_ok/lv_cnt_err mit Leerfloskeln."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

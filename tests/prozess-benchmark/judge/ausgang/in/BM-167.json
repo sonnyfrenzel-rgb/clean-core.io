@@ -1,0 +1,132 @@
+{
+ "id": "BM-167",
+ "titel": "Automotive: JIT-Sequenzabrufe des OEM per IDoc in die Abruftabelle übernehmen",
+ "prozess": "Die IDoc-Eingangsverarbeitung ruft den Baustein mit einem Paket von JIT-Sequenzabrufen des Automobilherstellers. Ist der Nachrichtentyp nicht ZDELJIT, bricht er mit der Ausnahme „falscher Baustein“ ab. Für jedes IDoc liest er das Kopfsegment mit Kunde und Abrufnummer und je Positionssegment die Kundenmaterialnummer, Menge, Sequenz und Liefertermin. Das eigene Material wird über die Kunden-Material-Info ermittelt; ist es unbekannt oder ist die Menge nicht numerisch, bricht die Segmentauswertung dieses IDocs ab. Fehlerfreie IDocs werden in die eigene Abruftabelle geschrieben, wobei bereits vorhandene Positionen stillschweigend übergangen werden, und erhalten Status 53. Fehlerhafte IDocs erhalten Status 51 mit dem Grund, und das Workflow-Ergebnis zeigt einen Fehler. Nur wenn das gesamte Paket fehlerfrei war, werden alle IDocs als verarbeitet zurückgemeldet. Festgeschrieben wird durch die aufrufende IDoc-Verarbeitung.",
+ "verboten": [
+  "source.abap:76 — kein Fachsatz „geänderte Abrufe überschreiben den bisherigen Stand“: vorhandene Schlüssel werden wegen ACCEPTING DUPLICATE KEYS übergangen, das IDoc bekommt trotzdem Status 53",
+  "source.abap:91 — kein Fachsatz „erfolgreich verbuchte IDocs werden immer als verarbeitet gemeldet“: schon ein fehlerhaftes IDoc im Paket unterdrückt die Rückmeldung für alle",
+  "source.abap:37 — kein Fachsatz „fehlt das Kopfsegment, wird das IDoc abgelehnt“: der Kopf wird zwischen IDocs nicht zurückgesetzt, der Kunde des vorigen IDocs wirkt weiter",
+  "gesamte Scheibe — kein Fachsatz „Lieferungen oder JIT-Abrufe des Standards werden angelegt“: geschrieben wird nur die Abruftabelle, ein COMMIT setzt erst die IDoc-Verarbeitung"
+ ],
+ "saetze": [
+  {
+   "id": "BM-167-B01",
+   "soll": "Der Baustein verarbeitet nur Nachrichten vom Typ ZDELJIT und bricht sonst mit der Ausnahme „falscher Baustein“ ab.",
+   "zeilen": [
+    31,
+    32
+   ],
+   "code": [
+    "31:   IF idoc_contrl-mestyp <> 'ZDELJIT'.",
+    "32:     RAISE wrong_function_called."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-167-B02",
+   "soll": "Je IDoc werden Kopfsegment (Kunde, Abrufnummer) und Positionssegmente des Sequenzabrufs ausgewertet; andere Segmente werden ignoriert.",
+   "zeilen": [
+    37,
+    38
+   ],
+   "code": [
+    "37:     LOOP AT idoc_data WHERE docnum = idoc_contrl-docnum.",
+    "38:       CASE idoc_data-segnam."
+   ],
+   "engine": [
+    "Jede Zeile aus idoc_data wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-167-B03",
+   "soll": "Zu jeder Abrufposition wird über die Kunden-Material-Info das eigene Material zur Kundenmaterialnummer ermittelt.",
+   "zeilen": [
+    44
+   ],
+   "code": [
+    "44:           SELECT SINGLE matnr FROM knmt INTO ls_abruf-matnr"
+   ],
+   "engine": [
+    "matnr des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-167-B04",
+   "soll": "Ist das Kundenmaterial unbekannt oder die Menge nicht numerisch, wird die Segmentauswertung des IDocs abgebrochen und ein Fehlergrund gemerkt.",
+   "zeilen": [
+    47,
+    52,
+    55
+   ],
+   "code": [
+    "47:           IF sy-subrc <> 0.",
+    "52:           CATCH SYSTEM-EXCEPTIONS conversion_errors = 1.",
+    "55:           IF sy-subrc = 1."
+   ],
+   "engine": [
+    "Ohne Treffer wird die lv_msgno auf 110 gesetzt und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "sy-subrc ungleich 0 setzen die lv_msgno auf 110.",
+    "Für sy-subrc mit dem Wert 1 wird die lv_msgno auf 111 gesetzt und der Block verlassen.",
+    "Bei sy-subrc gleich 1 wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "sy-subrc mit dem Wert 1 setzen die lv_msgno auf 111."
+   ]
+  },
+  {
+   "id": "BM-167-B05",
+   "soll": "Fehlerfreie Abrufe werden mit Sequenznummer, Liefertermin und Lieferzeit in die Abruftabelle eingefügt; bereits vorhandene Abrufpositionen werden stillschweigend übergangen.",
+   "zeilen": [
+    75,
+    76
+   ],
+   "code": [
+    "75:     IF lv_msgno IS INITIAL.",
+    "76:       INSERT zjit_abruf FROM TABLE lt_abruf ACCEPTING DUPLICATE KEYS."
+   ],
+   "engine": [
+    "Ohne lv_msgno wird die Status auf 53 gesetzt, die idoc_status-msgty auf S gesetzt und die idoc_status-msgno auf 100 gesetzt.",
+    "Ohne lv_msgno wird die Status auf 53 gesetzt, die idoc_status-msgty auf S gesetzt und die idoc_status-msgno auf 100 gesetzt, sonst die Status auf 51 gesetzt, die idoc_status-msgty auf E gesetzt und die workflow_result auf 99999 gesetzt.",
+    "Eine leere lv_msgno setzen die Status auf 53.",
+    "Eine leere lv_msgno setzen die idoc_status-msgty auf S.",
+    "Eine leere lv_msgno setzen die idoc_status-msgno auf 100."
+   ]
+  },
+  {
+   "id": "BM-167-B06",
+   "soll": "Das IDoc erhält Status 53 mit der Abrufnummer, im Fehlerfall Status 51 mit dem Fehlergrund, und das Workflow-Ergebnis wird auf Fehler gesetzt.",
+   "zeilen": [
+    77,
+    82
+   ],
+   "code": [
+    "77:       idoc_status-status = '53'.",
+    "82:       idoc_status-status = '51'."
+   ],
+   "engine": [
+    "Ohne lv_msgno wird die Status auf 53 gesetzt, die idoc_status-msgty auf S gesetzt und die idoc_status-msgno auf 100 gesetzt.",
+    "Ohne lv_msgno wird die Status auf 53 gesetzt, die idoc_status-msgty auf S gesetzt und die idoc_status-msgno auf 100 gesetzt, sonst die Status auf 51 gesetzt, die idoc_status-msgty auf E gesetzt und die workflow_result auf 99999 gesetzt.",
+    "Eine leere lv_msgno setzen die Status auf 53.",
+    "Es wird die Status auf 53 gesetzt, die idoc_status-msgty auf S gesetzt und die idoc_status-msgno auf 100 gesetzt.",
+    "Sonst wird die Status auf 51 gesetzt, die idoc_status-msgty auf E gesetzt und die workflow_result auf 99999 gesetzt.",
+    "Sonst setzen die Status auf 51.",
+    "Es wird die Status auf 51 gesetzt und die idoc_status-msgty auf E gesetzt."
+   ]
+  },
+  {
+   "id": "BM-167-B07",
+   "soll": "Nur wenn kein IDoc des Pakets fehlerhaft war, werden alle IDocs als verarbeitet zurückgemeldet.",
+   "zeilen": [
+    91,
+    94
+   ],
+   "code": [
+    "91:   IF workflow_result IS INITIAL.",
+    "94:       return_variables-doc_number = idoc_contrl-docnum."
+   ],
+   "engine": [
+    "Ohne workflow_result wird die return_variables-wf_param auf Processed_IDOCs gesetzt.",
+    "Eine leere workflow_result setzen die return_variables-wf_param auf Processed_IDOCs."
+   ]
+  }
+ ]
+}

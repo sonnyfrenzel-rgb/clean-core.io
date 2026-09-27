@@ -1,0 +1,167 @@
+{
+ "id": "BM-019",
+ "urteile": [
+  {
+   "id": "BM-019-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "\"Bei Treffer wird die Status auf D gesetzt … der Block verlassen\" – Rückgabe mit D erkennbar, dass die Shopbestellung schon übernommen ist, nur als \"vbeln kunnr des Satzes wird gelesen\"."
+  },
+  {
+   "id": "BM-019-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Eine leere it_items erhalten E\" – Ablehnung erkennbar, aber technisch und ohne Fehler 901."
+  },
+  {
+   "id": "BM-019-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Kundennummer aus dem Shopkonto."
+  },
+  {
+   "id": "BM-019-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"Es werden Kunden selektiert\"; Suche über den Mailsuchbegriff, Kontengruppe ZWEB, Löschvormerkung und erster Treffer fehlen."
+  },
+  {
+   "id": "BM-019-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"aufsd des Kunden wird gelesen\"; Existenz des Vertriebsbereichs 1000/30/00 und Ablehnung fehlen."
+  },
+  {
+   "id": "BM-019-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Es werden Kunden selektiert\" (dreifach) und SD_CUSTOMER_MAINTAIN_ALL – Neukundenanlage nach Vorlagekunde nicht fachlich."
+  },
+  {
+   "id": "BM-019-B07",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Ablehnung bei fehlender Vorlage/gescheiterter Anlage."
+  },
+  {
+   "id": "BM-019-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "BAPI mit ls_item-werks/lv_avail – Verfügbarkeitsprüfung je Position und Ablehnung bei Fehler fehlen."
+  },
+  {
+   "id": "BM-019-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Für lv_avail kleiner ls_item-quantity wird eine Zeile aufgenommen\" – Ablehnung vs. Warnung bei Teillieferung fehlt."
+  },
+  {
+   "id": "BM-019-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Nur Simulations-BAPI mit ls_hdr/ls_ret; Simulation mit SAP-Preisfindung nicht fachlich."
+  },
+  {
+   "id": "BM-019-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingung als abs(net_value1 - shop_net) > c_tol; gescheiterter Preisabgleich und Summierung fehlen."
+  },
+  {
+   "id": "BM-019-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "Status P, Protokollbaustein, COMMIT und Verlassen bei check_prices = abap_false richtig, aber nur technisch; \"erhalten P\", Preismeldungen fehlen."
+  },
+  {
+   "id": "BM-019-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "create \"nicht belegt\" und BAPI_SALESORDER_CREATEFROMDAT2 – Anlage eines Auftrags ZWEB mit Shopbestellnummer nicht fachlich."
+  },
+  {
+   "id": "BM-019-B14",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Ablehnung ohne Auftragsnummer."
+  },
+  {
+   "id": "BM-019-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Status E, ROLLBACK WORK \"Änderung verworfen\" stimmt; die auslösenden Ablehnungen und der Ausnahmetext fehlen, \"die Status\"."
+  },
+  {
+   "id": "BM-019-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Schreiben in zsd_webshop_log über die Verbuchung – Protokoll mit Auftrag, Kunde, Nettowert, Status S nicht fachlich."
+  },
+  {
+   "id": "BM-019-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "\"Für Nettowerte ab 25000 wird SWE_EVENT_CREATE aufgerufen\" – Schwelle stimmt, Workflow-Ereignis ZWEBBIG nicht benannt."
+  },
+  {
+   "id": "BM-019-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur COMMIT stößt Verbuchung an; gemeinsames Festschreiben und Rückgabe an den Shop fehlen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,139 @@
+{
+ "id": "BM-192",
+ "urteile": [
+  {
+   "id": "BM-192-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Entitätsmengen-Prüfung."
+  },
+  {
+   "id": "BM-192-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "„read_entry_data – Verhalten nicht belegt“; Übernahme von Kopf und Zählwerksständen nicht gesagt."
+  },
+  {
+   "id": "BM-192-B03",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur „get_message_container – nicht belegt“; Ablehnung ohne Zählwerksstände fehlt."
+  },
+  {
+   "id": "BM-192-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Berechtigungsprüfung Z_MR_MOBIL erkannt; Ablehnung fehlt."
+  },
+  {
+   "id": "BM-192-B05",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Lasttest-Benutzer."
+  },
+  {
+   "id": "BM-192-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Sätze aus equi selektiert“; Eindeutigkeit/Unplausibilität fehlt."
+  },
+  {
+   "id": "BM-192-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "„Für is_head-readdate größer sy-datum wird eine Zeile aufgenommen“; Unplausibilität nicht fachlich."
+  },
+  {
+   "id": "BM-192-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Lesen von stanzvor/stanznac und „Zeile aufgenommen“ ohne Treffer; Einbauprüfung nicht fachlich."
+  },
+  {
+   "id": "BM-192-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Selektion aus eabl; Vergleich und Erstablesung fehlen."
+  },
+  {
+   "id": "BM-192-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "„… wird eine Zeile aufgenommen, sonst eine Zeile aufgenommen“; Zählerüberlauf/Warnung vs. Fehler nicht erkennbar."
+  },
+  {
+   "id": "BM-192-B11",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur „get_message_container – nicht belegt“; Ablehnung mit Prüfmeldungen fehlt."
+  },
+  {
+   "id": "BM-192-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur BAPI_MTRREADDOC_UPLOAD-Aufruf; Anlage der Ableseergebnisse mit Kopfdaten nicht fachlich."
+  },
+  {
+   "id": "BM-192-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback bei E/A erkannt; Ablehnung mit Bausteinmeldungen fehlt."
+  },
+  {
+   "id": "BM-192-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Nur BAPI_TRANSACTION_COMMIT-Aufruf; synchrones Festschreiben nicht fachlich."
+  },
+  {
+   "id": "BM-192-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "„ablbelnr des Satzes wird gelesen“, „Die Status wird auf POSTED gesetzt“; Rückgabe an die App fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

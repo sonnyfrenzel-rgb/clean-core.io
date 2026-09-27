@@ -1,0 +1,46 @@
+{
+ "id": "BM-121",
+ "urteile": [
+  {
+   "id": "BM-121-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus prps selektiert\"; weder Projektauswahl noch Ausschluss der Löschvormerkung genannt."
+  },
+  {
+   "id": "BM-121-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Ausgabe von Projekt/gs_psp-psphi erkannt, aber nicht \"je neuem Projekt\" und nicht \"auch ohne Treffer\"; \"Bei Treffern\" passt nicht zum Gruppenwechsel."
+  },
+  {
+   "id": "BM-121-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Kern \"nur leere vernr geht weiter\" ist technisch erkennbar, aber \"kleinere werden übersprungen\" ist falsch (kein Größenvergleich) und der Satz ist grammatisch fehlerhaft."
+  },
+  {
+   "id": "BM-121-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Ausgabe erkannt, aber nur mit Feldnamen statt Nummer/Bezeichnung des PSP-Elements, dreifach wiederholt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

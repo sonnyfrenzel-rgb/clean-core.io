@@ -1,0 +1,193 @@
+{
+ "id": "BM-039",
+ "urteile": [
+  {
+   "id": "BM-039-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Berechtigung S_TCODE und \"eine Meldung\" – Transaktion ZME55 und Abbruch nicht benannt."
+  },
+  {
+   "id": "BM-039-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus zmm_frg_user\", codes_lesen/banf_lesen bei gv_loaded – gültige Freigabecodes mit Wertgrenze und Ende mit Fehler nicht fachlich."
+  },
+  {
+   "id": "BM-039-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus eban selektiert\"; gesperrt/nicht gelöscht/nicht erledigt fehlen."
+  },
+  {
+   "id": "BM-039-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Sätze aus t16fs\" und Tabellensuche – Strategie und nächster fälliger Code nicht erklärt."
+  },
+  {
+   "id": "BM-039-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"Ohne Treffer wird eine Meldung ausgegeben\"; Wertberechnung und Sortierung fehlen."
+  },
+  {
+   "id": "BM-039-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Die Screenfolge wird beendet\" – Verlassen des Programms per Zurück/Beenden/Abbrechen nur ungefähr."
+  },
+  {
+   "id": "BM-039-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Schleife über gt_line, Tabellensuche, markierte_freigeben \"nicht belegt\" – markierte Positionen mit Code der Freigabegruppe nicht fachlich."
+  },
+  {
+   "id": "BM-039-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Für lv_limit > 0 AND gs_line-wert > lv_limit wird eine Meldung ausgegeben\" – dass nicht freigegeben wird, fehlt."
+  },
+  {
+   "id": "BM-039-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Für gs_line-ernam mit dem Wert sy-uname wird eine Meldung ausgegeben\" – Verbot der Eigenfreigabe nicht fachlich."
+  },
+  {
+   "id": "BM-039-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "ENQUEUE_EMEBANE und \"Ohne Treffer wird eine Meldung\" – Fremdsperre als \"Ohne Treffer\", Überspringen fehlt."
+  },
+  {
+   "id": "BM-039-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "BAPI_REQUISITION_RELEASE, COMMIT/ROLLBACK, DEQUEUE vorhanden, aber nur Bausteinnamen; Erfolg des BAPI als \"Treffer\"."
+  },
+  {
+   "id": "BM-039-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"Eine Meldung wird ausgegeben\"; Zähler und Neulesen fehlen."
+  },
+  {
+   "id": "BM-039-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Meldung ohne Markierung, Popup-Dynpro 0200 und Meldung ohne gv_grund – inhaltlich da, aber technisch."
+  },
+  {
+   "id": "BM-039-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus zmm_reject_txt\" und F4-Baustein – Wertehilfe mit Vorgabetexten nicht fachlich."
+  },
+  {
+   "id": "BM-039-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife, \"Ohne Treffer\" (gescheiterte Sperre) und \"Die banpr in eban wird geändert\" – Status 08 und Protokoll des Grundes fehlen."
+  },
+  {
+   "id": "BM-039-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "SAP_WAPI_CREATE_EVENT mit 'BUS2105' und Meldung bei lv_rc <> 0 – Ereignis ZREJECTED an den Anforderer nicht fachlich."
+  },
+  {
+   "id": "BM-039-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "COMMIT und DEQUEUE je Position, Screenfolge beendet – korrekt, aber technisch."
+  },
+  {
+   "id": "BM-039-B18",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "Hinweis ohne Auswahl stimmt, aber \"Die Anlage wird über die Transaktion ME53N angestoßen\" – ME53N zeigt die Banf nur an."
+  },
+  {
+   "id": "BM-039-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Für lv_anz mit dem Wert 0 wird eine Meldung ausgegeben, sonst eine Meldung\" – Anzahl/Summe und Auffrischen fehlen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

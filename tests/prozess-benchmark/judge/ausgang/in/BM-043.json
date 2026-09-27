@@ -1,0 +1,66 @@
+{
+ "id": "BM-043",
+ "titel": "Validierungs-Exit: Kontierung auf gesperrte oder ungültige Kostenstelle ablehnen",
+ "prozess": "Die FI-Validierung ruft den Exit U920 für jede Kontierungszeile auf. Das Ergebnis wird zunächst auf gültig gesetzt; ist keine Kostenstelle kontiert, endet der Exit damit. Sonst wird die Kostenstelle gelesen, die am Buchungsdatum im Kostenrechnungskreis gültig ist. Fehlt sie, oder ist sie für Ist-Primärkosten gesperrt, meldet der Exit ungültig zurück. Welche Meldung der Anwender sieht und ob die Buchung abgebrochen wird, entscheidet die im Customizing gepflegte Validierung, nicht dieser Code.",
+ "verboten": [
+  "source.abap:20 — kein Fachsatz „Fehlermeldung wird ausgegeben“ (der Exit setzt nur B_RESULT; Meldung und Meldungstyp stehen in der Validierung, nicht im Code)",
+  "source.abap:22 — kein Fachsatz „Kostenstelle wird gesperrt“ (das Sperrkennzeichen wird nur gelesen)",
+  "source.abap:11 — kein Fachsatz „Buchungen ohne Kostenstelle werden abgelehnt“ (sie gelten als gültig)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-043-B01",
+   "soll": "Jede Kontierungszeile gilt zunächst als gültig; ohne Kostenstelle bleibt es dabei.",
+   "zeilen": [
+    10,
+    11
+   ],
+   "code": [
+    "10:   b_result = b_true.",
+    "11:   CHECK cobl-kostl IS NOT INITIAL."
+   ],
+   "engine": [
+    "Nur Eine nicht leere cobl-kostl gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-043-B02",
+   "soll": "Zur kontierten Kostenstelle wird der Stammsatz gelesen, der am Buchungsdatum im Kostenrechnungskreis gültig ist.",
+   "zeilen": [
+    13
+   ],
+   "code": [
+    "13:   SELECT SINGLE bkzkp FROM csks INTO lv_bkzkp"
+   ],
+   "engine": [
+    "bkzkp des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-043-B03",
+   "soll": "Gibt es zum Buchungsdatum keine gültige Kostenstelle, schlägt die Validierung fehl.",
+   "zeilen": [
+    18,
+    20
+   ],
+   "code": [
+    "18:   IF sy-subrc <> 0.",
+    "20:     b_result = b_false."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-043-B04",
+   "soll": "Ist die Kostenstelle für Ist-Primärkosten gesperrt, schlägt die Validierung ebenfalls fehl.",
+   "zeilen": [
+    18,
+    22
+   ],
+   "code": [
+    "18:   IF sy-subrc <> 0.",
+    "22:     b_result = b_false."
+   ],
+   "engine": []
+  }
+ ]
+}

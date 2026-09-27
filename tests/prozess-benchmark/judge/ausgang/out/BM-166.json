@@ -1,0 +1,79 @@
+{
+ "id": "BM-166",
+ "urteile": [
+  {
+   "id": "BM-166-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus t001w und Meldung ohne Treffer; Verteilzentrumsprüfung und Abweisung der Eingabe nicht fachlich."
+  },
+  {
+   "id": "BM-166-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Selektion aus zrt_quote mit Filiale/Quote je VZ technisch; Einschränkung auf Werke vom Typ Filiale fehlt."
+  },
+  {
+   "id": "BM-166-B03",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "Ohne Quoten Meldung und Verlassen ohne Schreiben – deckt den Sollsatz ab (Anzeige als Fehler fehlt als Detail)."
+  },
+  {
+   "id": "BM-166-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Quotensumme."
+  },
+  {
+   "id": "BM-166-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "grammatik"
+   ],
+   "kurz": "Nur Filter Quote > 0 erkannt; der abgeschnittene Anteil der Aktionsmenge fehlt."
+  },
+  {
+   "id": "BM-166-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „nach passender Zeile gesucht“ (Lesen der ersten Zuteilung); das Zuschlagen des Rests an die größte Zuteilung fehlt."
+  },
+  {
+   "id": "BM-166-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig",
+    "falsch"
+   ],
+   "kurz": "Nur im Nicht-Testlauf Schreiben in zrt_aufteil und COMMIT erkannt, aber „eine Zeile“ statt aller Filialzeilen, Inhalt fehlt."
+  },
+  {
+   "id": "BM-166-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "„Methode display von lo_alv“ und „Verhalten nicht belegt“; Listanzeige der Zuteilung nicht erkannt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

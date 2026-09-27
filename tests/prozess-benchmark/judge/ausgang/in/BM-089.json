@@ -1,0 +1,177 @@
+{
+ "id": "BM-089",
+ "titel": "PLM-Brücke: freigegebene Teile per RFC holen und als Material anlegen oder ändern",
+ "prozess": "Ein Nachtjob koppelt das PLM-System an den Materialstamm. Er holt per RFC alle seit dem Stichtag freigegebenen Teile; bei einem Kommunikationsfehler gibt er die Meldung aus und endet. Für jedes Teil prüft er, ob die Teilenummer bereits als Material existiert: neue Teile werden als Halbfabrikat der Branche Maschinenbau angelegt, bestehende nur in den Grunddaten geändert. Übernommen werden Basismengeneinheit, Nettogewicht in Kilogramm, PLM-Nummer als alte Materialnummer und deutscher Kurztext. Meldet die Materialpflege einen Fehler, verwirft er die Änderung und gibt die Meldung mit Teilenummer aus. Im Testmodus verwirft er auch erfolgreiche Pflegen. Im Echtlauf schreibt er fest und meldet die Übernahme per RFC an das PLM zurück, ohne das Ergebnis dieser Rückmeldung zu prüfen. Am Ende gibt er die Zähler aus.",
+ "verboten": [
+  "source.abap:82 — kein Fachsatz „scheitert die Rückmeldung, wird das gemeldet oder wiederholt“ (sy-subrc wird nicht ausgewertet).",
+  "source.abap:94 — kein Fachsatz „im Testmodus wird nichts gezählt“ (auch simulierte Teile zählen als verarbeitet).",
+  "source.abap:38 — kein Fachsatz „Teilenummer wird ins Materialnummernformat konvertiert“ (direkte Zuweisung ohne Konvertierungsexit).",
+  "source.abap:60 — kein Fachsatz über Werks- oder Buchhaltungsdaten (nur Mandantenebene und Kurztext)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-089-B01",
+   "soll": "Aus dem PLM-System werden per RFC alle seit dem Stichtag freigegebenen Teile abgeholt.",
+   "zeilen": [
+    20
+   ],
+   "code": [
+    "20:   CALL FUNCTION 'Z_PLM_GET_RELEASED_PARTS'"
+   ],
+   "engine": [
+    "Ein entferntes System wird über die eingegebene Destination benachrichtigt. Welches System und was dort geschieht, ist aus dem gelieferten Code nicht ableitbar."
+   ]
+  },
+  {
+   "id": "BM-089-B02",
+   "soll": "Bei einem Kommunikations- oder Systemfehler wird die Fehlermeldung ausgegeben und der Lauf beendet.",
+   "zeilen": [
+    30,
+    31,
+    32
+   ],
+   "code": [
+    "30:   IF sy-subrc <> 0.",
+    "31:     WRITE: / 'RFC-Fehler PLM:', lv_msg.",
+    "32:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird RFC-Fehler PLM: ausgegeben, lv_msg ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird RFC-Fehler PLM: ausgegeben und der Block verlassen.",
+    "RFC-Fehler PLM: und lv_msg werden ausgegeben.",
+    "Es wird RFC-Fehler PLM: ausgegeben, lv_msg ausgegeben und der Block verlassen.",
+    "RFC-Fehler PLM: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_msg wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-089-B03",
+   "soll": "Je Teil wird geprüft, ob die Teilenummer bereits als Material existiert.",
+   "zeilen": [
+    39
+   ],
+   "code": [
+    "39:     SELECT SINGLE matnr FROM mara INTO ls_head-material"
+   ],
+   "engine": [
+    "matnr des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-089-B04",
+   "soll": "Neue Teile werden als Halbfabrikat der Branche Maschinenbau angelegt, bestehende nur in den Grunddaten geändert.",
+   "zeilen": [
+    41,
+    42,
+    46
+   ],
+   "code": [
+    "41:     IF sy-subrc <> 0.",
+    "42:       ls_head-ind_sector = 'M'.",
+    "46:       ls_head-basic_view = 'X'."
+   ],
+   "engine": [
+    "Ohne Treffer wird die ls_head-ind_sector auf M gesetzt, die ls_head-matl_type auf HALB gesetzt und die ls_head-basic_view auf X gesetzt.",
+    "Ohne Treffer wird die ls_head-ind_sector auf M gesetzt, die ls_head-matl_type auf HALB gesetzt und die ls_head-basic_view auf X gesetzt, sonst die ls_head-basic_view auf X gesetzt.",
+    "sy-subrc ungleich 0 setzen die ls_head-ind_sector auf M.",
+    "Es wird die ls_head-ind_sector auf M gesetzt, die ls_head-matl_type auf HALB gesetzt und die ls_head-basic_view auf X gesetzt.",
+    "sy-subrc ungleich 0 setzen die ls_head-matl_type auf HALB.",
+    "sy-subrc ungleich 0 setzen die ls_head-basic_view auf X.",
+    "Für andere sy-subrc wird die ls_head-basic_view auf X gesetzt.",
+    "Andere sy-subrc setzen die ls_head-basic_view auf X."
+   ]
+  },
+  {
+   "id": "BM-089-B05",
+   "soll": "Übernommen werden Basismengeneinheit, Nettogewicht in Kilogramm, die PLM-Nummer als alte Materialnummer und der deutsche Kurztext.",
+   "zeilen": [
+    48,
+    60
+   ],
+   "code": [
+    "48:     ls_clientdata-base_uom   = ls_plm-uom.",
+    "60:     CALL FUNCTION 'BAPI_MATERIAL_SAVEDATA'"
+   ],
+   "engine": [
+    "Es wird eine Zeile aufgenommen und BAPI_MATERIAL_SAVEDATA aufgerufen.",
+    "Der Code übergibt ls_head an BAPI_MATERIAL_SAVEDATA und übernimmt dessen Ausgabe nach ls_return.",
+    "Das konvertierte Ergebnis wird in ls_return übernommen."
+   ]
+  },
+  {
+   "id": "BM-089-B06",
+   "soll": "Meldet die Materialpflege einen Fehler oder Abbruch, wird verworfen und die Meldung mit Teilenummer ausgegeben.",
+   "zeilen": [
+    69,
+    70,
+    71
+   ],
+   "code": [
+    "69:     IF ls_return-type CA 'EA'.",
+    "70:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "71:       WRITE: / ls_plm-partno, ls_return-message."
+   ],
+   "engine": [
+    "Für ls_return-type CA 'EA' wird BAPI_TRANSACTION_ROLLBACK aufgerufen, ls_plm-partno ausgegeben und ls_return-message ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen, ls_plm-partno ausgegeben und ls_return-message ausgegeben.",
+    "Bei Treffern werden ls_plm-partno und ls_return-message als Liste ausgegeben.",
+    "ls_plm-partno wird ausgegeben.",
+    "ls_return-message wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-089-B07",
+   "soll": "Im Testmodus wird auch eine erfolgreiche Pflege wieder verworfen.",
+   "zeilen": [
+    76,
+    77
+   ],
+   "code": [
+    "76:     IF p_test = 'X'.",
+    "77:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "engine": [
+    "Mit gesetztem p_test wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Mit gesetztem p_test wird BAPI_TRANSACTION_ROLLBACK aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen und Z_PLM_CONFIRM_TRANSFER aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-089-B08",
+   "soll": "Im Echtlauf wird die Pflege festgeschrieben und die Übernahme mit Materialnummer an das PLM zurückgemeldet.",
+   "zeilen": [
+    79,
+    82
+   ],
+   "code": [
+    "79:       CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "82:       CALL FUNCTION 'Z_PLM_CONFIRM_TRANSFER'"
+   ],
+   "engine": [
+    "Mit gesetztem p_test wird BAPI_TRANSACTION_ROLLBACK aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen und Z_PLM_CONFIRM_TRANSFER aufgerufen.",
+    "Für andere p_test wird BAPI_TRANSACTION_COMMIT aufgerufen und Z_PLM_CONFIRM_TRANSFER aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen und Z_PLM_CONFIRM_TRANSFER aufgerufen.",
+    "Ein entferntes System wird über die eingegebene Destination benachrichtigt. Welches System und was dort geschieht, ist aus dem gelieferten Code nicht ableitbar."
+   ]
+  },
+  {
+   "id": "BM-089-B09",
+   "soll": "Zum Schluss werden die Anzahl verarbeiteter und fehlerhafter Teile ausgegeben.",
+   "zeilen": [
+    94
+   ],
+   "code": [
+    "94:   WRITE: / 'Verarbeitet:', lv_ok, 'Fehler:', lv_err."
+   ],
+   "engine": [
+    "Verarbeitet:, lv_ok, Fehler: und lv_err werden ausgegeben.",
+    "Verarbeitet: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_ok wird ausgegeben.",
+    "Fehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_err wird ausgegeben."
+   ]
+  }
+ ]
+}

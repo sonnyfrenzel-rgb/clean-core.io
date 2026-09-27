@@ -1,0 +1,135 @@
+{
+ "id": "BM-009",
+ "titel": "Nachrichtenprogramm Auftragsbestätigung per E-Mail: Rückgabecode nach Versandfehler hängt am Protokollaufruf",
+ "prozess": "Die Routine wird von der Nachrichtensteuerung für die Nachrichtenart ZBAM eines Kundenauftrags aufgerufen, sofort oder über RSNAST00. Sie liest den Auftrag zur Nachricht; fehlt er, protokolliert sie Fehler 010 und meldet die Nachricht als fehlerhaft. Dann sucht sie die Standard-E-Mail-Adresse des Nachrichtenpartners; fehlt diese, protokolliert sie Fehler 011 und meldet ebenfalls fehlerhaft. Sie baut einen kurzen Mailtext mit Kundenbestellnummer, Nettowert und Währung. Bei der Probeausgabe aus der Anzeige zeigt sie nur die Empfängeradresse und versendet nichts. Sonst übergibt sie die Mail an den Versand, ohne selbst zu committen. Schlägt die Übergabe fehl, protokolliert sie Fehler 013; weil der Rückgabecode danach aus dem Protokollaufruf stammt, gilt die Nachricht trotzdem als erfolgreich, solange das Protokoll geschrieben werden konnte.",
+ "verboten": [
+  "source.abap:63 — kein Fachsatz „ein Versandfehler markiert die Nachricht als fehlerhaft“: sy-subrc stammt aus dem Protokollaufruf, nicht aus dem Versand",
+  "source.abap:52 — kein Fachsatz „die Mail ist verschickt“: commit_work = space, der Versand hängt am COMMIT der Nachrichtensteuerung",
+  "gesamte Scheibe — kein Fachsatz „die Auftragsbestätigung wird als PDF angehängt“: es wird nur ein Mailtext mit drei Zeilen erzeugt"
+ ],
+ "saetze": [
+  {
+   "id": "BM-009-B01",
+   "soll": "Zur Nachricht wird der zugehörige Kundenauftrag gelesen; fehlt er, wird Fehler 010 protokolliert und die Nachricht als fehlerhaft beendet.",
+   "zeilen": [
+    23,
+    24,
+    25,
+    27
+   ],
+   "code": [
+    "23:   SELECT SINGLE * FROM vbak INTO gs_vbak WHERE vbeln = nast-objky(10).",
+    "24:   IF sy-subrc <> 0.",
+    "25:     PERFORM protokoll USING '010' nast-objky.",
+    "27:     RETURN."
+   ],
+   "engine": [
+    "Es werden Aufträge selektiert.",
+    "Ohne Treffer wird protokoll aufgerufen, die return_code auf 1 gesetzt und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Das Unterprogramm protokoll wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird protokoll aufgerufen, die return_code auf 1 gesetzt und der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die return_code auf 1."
+   ]
+  },
+  {
+   "id": "BM-009-B02",
+   "soll": "Empfänger ist die Standard-E-Mail-Adresse des Nachrichtenpartners aus dem Kundenstamm; fehlt sie, wird Fehler 011 protokolliert und die Nachricht als fehlerhaft beendet.",
+   "zeilen": [
+    30,
+    35,
+    36,
+    38
+   ],
+   "code": [
+    "30:   SELECT SINGLE a~smtp_addr FROM adr6 AS a",
+    "35:   IF gv_email IS INITIAL.",
+    "36:     PERFORM protokoll USING '011' nast-parnr.",
+    "38:     RETURN."
+   ],
+   "engine": [
+    "a~smtp_addr des Satzes wird gelesen.",
+    "Ohne gv_email wird protokoll aufgerufen, die return_code auf 1 gesetzt und der Block verlassen.",
+    "Ohne gv_email wird der Block verlassen.",
+    "Das Unterprogramm protokoll wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird protokoll aufgerufen, die return_code auf 1 gesetzt und der Block verlassen.",
+    "Eine leere gv_email setzen die return_code auf 1."
+   ]
+  },
+  {
+   "id": "BM-009-B03",
+   "soll": "Die Mail nennt Bestellnummer des Kunden, Nettowert und Währung des Auftrags.",
+   "zeilen": [
+    41
+   ],
+   "code": [
+    "41:   gs_docdata-obj_descr = |Auftragsbestätigung { gs_vbak-vbeln ALPHA = OUT }|."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-009-B04",
+   "soll": "Bei der Probeausgabe am Bildschirm wird nur die Empfängeradresse angezeigt und nichts versendet.",
+   "zeilen": [
+    47,
+    48,
+    49
+   ],
+   "code": [
+    "47:   IF us_screen = abap_true.            \"Probeausgabe: nur anzeigen",
+    "48:     MESSAGE i012(zsd) WITH gv_email.",
+    "49:     RETURN."
+   ],
+   "engine": [
+    "Für us_screen mit dem Wert abap_true wird eine Meldung ausgegeben und der Block verlassen.",
+    "Bei us_screen gleich abap_true wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-009-B05",
+   "soll": "Andernfalls wird die Auftragsbestätigung als E-Mail an den Kunden versendet.",
+   "zeilen": [
+    52
+   ],
+   "code": [
+    "52:   CALL FUNCTION 'SO_NEW_DOCUMENT_SEND_API1'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein SO_NEW_DOCUMENT_SEND_API1 wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-009-B06",
+   "soll": "Scheitert der Versand, wird Fehler 013 protokolliert; der Rückgabecode übernimmt aber das Ergebnis des Protokollaufrufs und ist bei erfolgreichem Protokoll null.",
+   "zeilen": [
+    61,
+    62,
+    63
+   ],
+   "code": [
+    "61:   IF sy-subrc <> 0.",
+    "62:     PERFORM protokoll USING '013' gv_email.",
+    "63:     return_code = sy-subrc."
+   ],
+   "engine": [
+    "Ohne Treffer wird protokoll aufgerufen.",
+    "Das Unterprogramm protokoll wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-009-B07",
+   "soll": "Fehlermeldungen werden über den Standard ins Verarbeitungsprotokoll der Nachricht geschrieben.",
+   "zeilen": [
+    72
+   ],
+   "code": [
+    "72:   CALL FUNCTION 'NAST_PROTOCOL_UPDATE'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein NAST_PROTOCOL_UPDATE wird aufgerufen."
+   ]
+  }
+ ]
+}

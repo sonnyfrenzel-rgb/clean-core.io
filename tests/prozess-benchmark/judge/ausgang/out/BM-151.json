@@ -1,0 +1,111 @@
+{
+ "id": "BM-151",
+ "urteile": [
+  {
+   "id": "BM-151-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Vorbelegung 1000/1200//101//559 bei leerer Auswahl technisch vollständig, aber ohne Fachbegriffe; \"Eine leere s_lgart[] setzen\"."
+  },
+  {
+   "id": "BM-151-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Prüfung P_PCLX und Meldung erkannt; Abbruch und Cluster-Leseberechtigung nicht benannt, \"Ohne Treffer\" unpassend."
+  },
+  {
+   "id": "BM-151-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Verzeichnis lesen und Verlassen ohne Treffer bzw. bei molga ungleich 01 erkannt; \"kleinere werden übersprungen\" sinnlos, deutsche Abrechnung nicht benannt."
+  },
+  {
+   "id": "BM-151-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife und fpper ungleich inper technisch erkannt; \"kleinere\" sinnlos; aktuelle Ergebnisse und In-Periode nicht benannt."
+  },
+  {
+   "id": "BM-151-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"In der Tabelle wird nach einer passenden Zeile gesucht\"; vorheriges Ergebnis und Wegfall bei Erstabrechnung fehlen."
+  },
+  {
+   "id": "BM-151-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "read_result/PYXX_READ_PAYROLL_RESULT erkannt (\"Wirkung nicht belegt\"); Überspringen und Zählen der Lesefehler fehlen."
+  },
+  {
+   "id": "BM-151-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Schleife und Suche; Vergleichsbetrag und \"fehlend = null\" fehlen."
+  },
+  {
+   "id": "BM-151-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Zeile wird in gt_diff aufgenommen\"; Mindestgrenze und Inhalte fehlen."
+  },
+  {
+   "id": "BM-151-B09",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "\"Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen\" trifft Meldung und Ende ohne Liste."
+  },
+  {
+   "id": "BM-151-B10",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Verdichtung je Mitarbeiter."
+  },
+  {
+   "id": "BM-151-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur ALV-Bausteinaufrufe; Titel mit Gesamtdifferenz und Fehlerzahl fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

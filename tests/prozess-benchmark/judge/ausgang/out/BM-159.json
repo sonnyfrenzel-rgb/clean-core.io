@@ -1,0 +1,134 @@
+{
+ "id": "BM-159",
+ "urteile": [
+  {
+   "id": "BM-159-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Abweisung anderer Nachrichtentypen."
+  },
+  {
+   "id": "BM-159-B02",
+   "urteil": "fehlt",
+   "mangel": [
+    "zu_allgemein"
+   ],
+   "kurz": "Nur zwei Schleifen \"Jede Zeile wird verarbeitet\"; Übernahme von Kopf und Belegen nicht ausgesagt."
+  },
+  {
+   "id": "BM-159-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Ohne ls_head wird set_status aufgerufen\" erkannt; Fehlerstatus nicht benannt."
+  },
+  {
+   "id": "BM-159-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingung exists und set_status erkannt; Erfolgsstatus und keine Neuanlage nicht benannt."
+  },
+  {
+   "id": "BM-159-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"stat2 des Satzes wird gelesen\"; Datumsfolge, Zwei-Jahres-Grenze und Abweisung fehlen."
+  },
+  {
+   "id": "BM-159-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Übertragung der Kopfdaten und Zweckabbildung."
+  },
+  {
+   "id": "BM-159-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur CONVERT_TO_LOCAL_CURRENCY; Verwerfen außerhalb des Zeitraums und Abweisung ohne Kurs fehlen."
+  },
+  {
+   "id": "BM-159-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus ztv_perdiem selektiert\" (zweifach); Berechnung der Pauschale fehlt."
+  },
+  {
+   "id": "BM-159-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur HR_EMPLOYEE_ENQUEUE; drei Versuche, Wartezeit und Abweisung fehlen."
+  },
+  {
+   "id": "BM-159-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "BAPI_TRIP_CREATE_FROM_DATA und Rollback ohne Reisenummer erkannt; Fehlerfall und Entsperren nicht benannt."
+  },
+  {
+   "id": "BM-159-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Verbuchungsregistrierung, Commit und DEQUEUE technisch erkannt; Zuordnung externe ID - Reisenummer nicht benannt."
+  },
+  {
+   "id": "BM-159-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Ohne Treffer wird eine Meldung ausgegeben\"; Speichern und Abbruch der Verbuchung (A-Meldung) nicht benannt."
+  },
+  {
+   "id": "BM-159-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Zeile wird aufgenommen\" und set_status \"Wirkung nicht belegt\"; Status 53/51 mit Text fehlen."
+  },
+  {
+   "id": "BM-159-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "workflow_result 99999 bei Fehler, sonst 0, und Error_IDOCs technisch vollständig, fachlich nicht formuliert."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

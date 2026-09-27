@@ -1,0 +1,325 @@
+{
+ "id": "BM-040",
+ "titel": "Filialnachschub per Umlagerungsbestellung: S032-Bestand, POS-Abverkauf per RFC, UB, Auslieferung und Warenausgang",
+ "prozess": "Täglich früh startet ein Job den Filialnachschub für die gewählten Filialen und einen Belieferungstag (Vorschlag: morgen), mit RFC-Ziel des Kassensystems, Sofort-WA- und Testlauf-Schalter. Er legt ein Anwendungsprotokoll an und liest für den Wochentag die aktiven Belieferungen aus dem Belieferungsplan; ohne Belieferung protokolliert er eine Warnung und endet. Je Filiale liest er die nachschubrelevanten Materialien, holt per RFC die heutigen Kassenabverkäufe (bei Ausfall ohne sie) und berechnet je Material den verfügbaren Bestand aus S032-Bestand, offenen Umlagerungsbestellungen und Abverkauf. Unter dem Meldebestand wird bis zum Höchstbestand aufgefüllt und auf den Rundungswert aufgerundet. Für Filialen mit Bedarf legt eine Hilfsklasse eine Umlagerungsbestellung mit dem liefernden Werk an (im Testlauf nur Simulation), im Echtlauf danach eine Auslieferung und – bei Sofort-WA-Filialen – den Warenausgang; jeder Fehler führt zu Rollback und Protokolleintrag, die Filiale gilt dann als fertig. Nach allen Filialen wird das Protokoll gesichert und im Echtlauf das Ergebnis der Filialen mit Lieferung für den Avis-Folgejob im INDX abgelegt. Zum Schluss wird eine Ergebnisliste mit Zählern ausgegeben, die im Echtlauf wegen der Übergabe nur noch die Filialen mit Lieferung enthält.",
+ "verboten": [
+  "zmm_sto_nachschub_f02.abap:62 — kein Fachsatz „Die Ergebnisliste zeigt im Echtlauf auch die Filialen, bei denen UB oder Lieferung scheiterten“ (sie werden vor END-OF-SELECTION aus dem Ergebnis gelöscht; nur Filialen mit WA-Fehler bleiben, mit Erfolgstext)",
+  "zmm_sto_nachschub_f01.abap:72 — kein Fachsatz „Bereits teilgelieferte Mengen werden abgezogen“ (es wird die volle Bestellmenge offener Positionen gezählt)",
+  "zmm_sto_nachschub_f01.abap:60 — kein Fachsatz „Ohne Kassendaten wird die Filiale nicht beliefert“ (es wird ohne Abverkäufe weitergerechnet)",
+  "zcl_mm_sto_creator.abap:124 — kein Fachsatz „Der Wareneingang in der Filiale wird gebucht“ (nur der Warenausgang im liefernden Werk)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-040-B01",
+   "soll": "Als Belieferungstag wird morgen vorgeschlagen.",
+   "zeilen": [
+    21
+   ],
+   "code": [
+    "21:   p_date = sy-datum + 1."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-040-B02",
+   "soll": "Für den Wochentag des Belieferungstags werden die aktiven Belieferungen der gewählten Filialen aus dem Belieferungsplan gelesen (Filiale, lieferndes Werk, Lagerort, Bestellart, Einkaufsorganisation, Versandstelle, Sofort-WA-Kennzeichen).",
+   "zeilen": [
+    210,
+    216
+   ],
+   "code": [
+    "210:   CALL FUNCTION 'DAY_IN_WEEK'",
+    "216:   SELECT * FROM zmm_sto_route INTO TABLE gt_route"
+   ],
+   "engine": [
+    "Der Code übergibt p_date an DAY_IN_WEEK und übernimmt dessen Ausgabe nach lv_wotag.",
+    "Das konvertierte Ergebnis wird in lv_wotag übernommen.",
+    "Es werden Sätze aus zmm_sto_route selektiert."
+   ]
+  },
+  {
+   "id": "BM-040-B03",
+   "soll": "Ist für den Tag keine Belieferung geplant, wird eine Warnung protokolliert und der Lauf beendet.",
+   "zeilen": [
+    26,
+    27,
+    29
+   ],
+   "code": [
+    "26:   IF gt_route IS INITIAL.",
+    "27:     PERFORM log_meldung USING 'W' 'Kein Belieferungsplan fuer den Tag' gs_route-werks.",
+    "29:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird log_meldung aufgerufen, log_sichern aufgerufen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Das Unterprogramm log_meldung wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird log_meldung aufgerufen, log_sichern aufgerufen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-040-B04",
+   "soll": "Je Filiale werden die nicht gelöschten, nicht gesperrten Materialien mit Dispositionsmerkmal ZN samt Meldebestand, Höchstbestand, Rundungswert und Ausgabeeinheit gelesen.",
+   "zeilen": [
+    240
+   ],
+   "code": [
+    "240:   SELECT matnr, minbe, mabst, bstrf, ausme"
+   ],
+   "engine": [
+    "Das Ergebnis enthält matnr, minbe, mabst, bstrf und ausme.",
+    "Es werden Sätze aus marc selektiert."
+   ]
+  },
+  {
+   "id": "BM-040-B05",
+   "soll": "Die heutigen, noch nicht gebuchten Abverkäufe der Filiale werden per RFC aus dem Kassensystem geholt; ist es nicht erreichbar, wird ohne Abverkäufe weitergerechnet und eine Warnung protokolliert.",
+   "zeilen": [
+    252,
+    262,
+    265
+   ],
+   "code": [
+    "252:   CALL FUNCTION 'Z_POS_TODAY_SALES'",
+    "262:   IF sy-subrc <> 0.",
+    "265:     PERFORM log_meldung USING 'W' lv_text ps_route-werks."
+   ],
+   "engine": [
+    "Ein entferntes System wird über die eingegebene Destination benachrichtigt. Welches System und was dort geschieht, ist aus dem gelieferten Code nicht ableitbar.",
+    "Ohne Treffer wird log_meldung aufgerufen.",
+    "Das Unterprogramm log_meldung wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-040-B06",
+   "soll": "Der verfügbare Bestand je Material ist der Filialbestand aus der Infostruktur S032 plus die offenen Umlagerungsbestellungen aus dem liefernden Werk minus der heutige Abverkauf.",
+   "zeilen": [
+    270,
+    274,
+    284,
+    288
+   ],
+   "code": [
+    "270:     SELECT SUM( mbwbest ) FROM s032 INTO lv_best",
+    "274:     SELECT SUM( p~menge ) FROM ekpo AS p",
+    "284:     READ TABLE lt_sales INTO DATA(ls_sale) WITH KEY matnr = ls_marc-matnr.",
+    "288:     lv_verf = lv_best + lv_offen - ls_sale-menge."
+   ],
+   "engine": [
+    "Es werden Sätze aus s032 selektiert.",
+    "Es werden Sätze aus ekpo selektiert.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-040-B07",
+   "soll": "Liegt er unter dem Meldebestand, wird bis zum Höchstbestand aufgefüllt und die Menge auf den Rundungswert aufgerundet; nur positive Mengen werden Bedarf.",
+   "zeilen": [
+    290,
+    294,
+    296,
+    298
+   ],
+   "code": [
+    "290:     IF lv_verf >= ls_marc-minbe.",
+    "294:     lv_menge = ls_marc-mabst - lv_verf.",
+    "296:       lv_menge = ceil( lv_menge / ls_marc-bstrf ) * ls_marc-bstrf.",
+    "298:     IF lv_menge <= 0."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-040-B08",
+   "soll": "Filialen ohne Bedarf werden übersprungen.",
+   "zeilen": [
+    36
+   ],
+   "code": [
+    "36:     IF gt_need IS INITIAL."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-040-B09",
+   "soll": "Für jede Filiale mit Bedarf wird eine Umlagerungsbestellung mit dem liefernden Werk und je Material einer Position zum Lagerort der Filiale angelegt, im Testlauf nur simuliert.",
+   "zeilen": [
+    90,
+    107,
+    314
+   ],
+   "code": [
+    "90:     ls_head = VALUE #( doc_type   = is_route-bsart",
+    "107:     CALL FUNCTION 'BAPI_PO_CREATE1'",
+    "314:   ls_res-ebeln = go_creator->create_sto( is_route = ps_route it_need = pt_need )."
+   ],
+   "engine": [
+    "Der Code übergibt ls_head an BAPI_PO_CREATE1 und übernimmt dessen Ausgabe nach rv_ebeln.",
+    "Das konvertierte Ergebnis wird in rv_ebeln übernommen.",
+    "Die Methode create_sto von go_creator wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-040-B10",
+   "soll": "Meldet die Anlage einen Fehler oder Abbruch, wird zurückgerollt, der Fehler protokolliert und die nächste Filiale bearbeitet.",
+   "zeilen": [
+    119,
+    120,
+    195,
+    315,
+    317
+   ],
+   "code": [
+    "119:     IF first_error( lt_return ) = abap_true.",
+    "120:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "195:     LOOP AT it_return INTO DATA(ls_ret) WHERE type CA 'EA'.",
+    "315:   IF ls_res-ebeln IS INITIAL.",
+    "317:     PERFORM log_meldung USING 'E' ls_res-text ps_route-werks."
+   ],
+   "engine": [
+    "Für first_error( lt_return ) = abap_true wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Jede Zeile aus it_return wird einzeln verarbeitet.",
+    "Ohne ls_res-ebeln wird log_meldung aufgerufen, eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne ls_res-ebeln wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Das Unterprogramm log_meldung wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird log_meldung aufgerufen, eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-040-B11",
+   "soll": "Im Testlauf endet die Verarbeitung der Filiale nach der Simulation.",
+   "zeilen": [
+    124,
+    322,
+    325
+   ],
+   "code": [
+    "124:     IF mv_test = abap_true.",
+    "322:   IF p_test = abap_true.",
+    "325:     RETURN."
+   ],
+   "engine": [
+    "Für mv_test mit dem Wert abap_true wird die rv_ebeln auf TEST gesetzt und der Block verlassen.",
+    "Bei mv_test gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "mv_test mit dem Wert abap_true erhalten TEST.",
+    "Für p_test mit dem Wert abap_true wird die Text auf Testlauf: UB simuliert gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "Bei p_test gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "p_test mit dem Wert abap_true setzen die Text auf Testlauf: UB simuliert.",
+    "Es wird die Text auf Testlauf: UB simuliert gesetzt, eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-040-B12",
+   "soll": "Im Echtlauf wird die Umlagerungsbestellung festgeschrieben und zu allen ihren Positionen eine Auslieferung an der Versandstelle angelegt; bei Fehler wird zurückgerollt und protokolliert.",
+   "zeilen": [
+    128,
+    137,
+    142,
+    151,
+    330
+   ],
+   "code": [
+    "128:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "137:     SELECT ebelp FROM ekpo INTO TABLE @DATA(lt_ebelp)",
+    "142:     CALL FUNCTION 'BAPI_OUTB_DELIVERY_CREATE_STO'",
+    "151:     IF first_error( lt_return ) = abap_true OR rv_vbeln IS INITIAL.",
+    "330:   IF ls_res-vbeln IS INITIAL."
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es werden Sätze aus ekpo selektiert.",
+    "Der Code übergibt iv_vstel an BAPI_OUTB_DELIVERY_CREATE_STO und übernimmt dessen Ausgabe nach rv_vbeln.",
+    "Das konvertierte Ergebnis wird in rv_vbeln übernommen.",
+    "Für first_error( lt_return ) = abap_true OR rv_vbeln IS INITIAL wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Block verlassen.",
+    "Ohne Belegnummer wird log_meldung aufgerufen, eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Belegnummer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-040-B13",
+   "soll": "Ist Sofort-Warenausgang gewählt und die Filiale dafür gekennzeichnet, wird der Warenausgang zur Lieferung mit Tagesdatum gebucht; ein Fehler wird mit Meldungstext protokolliert.",
+   "zeilen": [
+    170,
+    179,
+    338,
+    340
+   ],
+   "code": [
+    "170:     CALL FUNCTION 'WS_DELIVERY_UPDATE'",
+    "179:     IF lv_error = abap_true.",
+    "338:   IF p_wa = abap_true AND ps_route-sofort_wa = abap_true.",
+    "340:     IF ls_res-wa = abap_false."
+   ],
+   "engine": [
+    "Der Code übergibt ls_vbkok an WS_DELIVERY_UPDATE und übernimmt dessen Ausgabe nach lv_error.",
+    "Das konvertierte Ergebnis wird in lv_error übernommen.",
+    "Für lv_error mit dem Wert abap_true wird eine Meldung ausgegeben.",
+    "Für ls_res-wa mit dem Wert abap_false wird log_meldung aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-040-B14",
+   "soll": "Jede Filiale mit angelegter Lieferung wird – auch nach gescheitertem Warenausgang – mit Umlagerungsbestellung und Lieferung als Erfolg protokolliert und ins Ergebnis übernommen.",
+   "zeilen": [
+    347,
+    348
+   ],
+   "code": [
+    "347:   PERFORM log_meldung USING 'S' ls_res-text ps_route-werks.",
+    "348:   APPEND ls_res TO gt_result."
+   ],
+   "engine": [
+    "Das Unterprogramm log_meldung wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird log_meldung aufgerufen und eine Zeile aufgenommen.",
+    "Eine Zeile wird in gt_result aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-040-B15",
+   "soll": "Im Echtlauf werden nur Filialen mit Lieferung für den Avis-Folgejob unter dem Schlüssel ZSTO plus Datum abgelegt; im Testlauf wird nichts übergeben.",
+   "zeilen": [
+    408,
+    411,
+    413,
+    414
+   ],
+   "code": [
+    "408:   IF p_test = abap_true.",
+    "411:   DELETE gt_result WHERE vbeln IS INITIAL.",
+    "413:   EXPORT result = gt_result TO DATABASE indx(zs) ID lv_id.",
+    "414:   COMMIT WORK."
+   ],
+   "engine": [
+    "Für p_test mit dem Wert abap_true wird der Block verlassen.",
+    "Bei p_test gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-040-B16",
+   "soll": "Die Ergebnisliste zeigt je Filiale lieferndes Werk, Positionsanzahl, Umlagerungsbestellung, Lieferung, WA-Kennzeichen und Text, Fehler rot, sowie die Zähler.",
+   "zeilen": [
+    430,
+    437,
+    442
+   ],
+   "code": [
+    "430:     IF ls_res-ebeln IS INITIAL OR ( p_test = abap_false AND ls_res-vbeln IS INITIAL ).",
+    "437:     WRITE: / ls_res-werks, ls_res-reswk, ls_res-anz, ls_res-ebeln,",
+    "442:   WRITE: / 'Filialen ok:', lv_ok, 'mit Fehler:', lv_err."
+   ],
+   "engine": [
+    "Bei Treffern werden ls_res-werks, ls_res-reswk, ls_res-anz, ls_res-ebeln, Belegnummer, ls_res-wa und Text als Liste ausgegeben.",
+    "ls_res-werks wird ausgegeben.",
+    "ls_res-reswk wird ausgegeben.",
+    "ls_res-anz wird ausgegeben.",
+    "ls_res-ebeln wird ausgegeben.",
+    "Bei Treffern werden Filialen ok:, lv_ok, mit Fehler: und lv_err als Liste ausgegeben.",
+    "Filialen ok: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_ok wird ausgegeben.",
+    "mit Fehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_err wird ausgegeben."
+   ]
+  }
+ ]
+}

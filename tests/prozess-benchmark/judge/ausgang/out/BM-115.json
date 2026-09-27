@@ -1,0 +1,118 @@
+{
+ "id": "BM-115",
+ "urteile": [
+  {
+   "id": "BM-115-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Bedingung (Anlegen, M2/S2, Equipment) nur als Code; 'kleinere werden übersprungen, die Schleife läuft weiter' ist falsch (CHECK im Exit)."
+  },
+  {
+   "id": "BM-115-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Für lv_skip mit dem Wert abap_true wird der Block verlassen' – Anforderung des Massenuploads und Sichern ohne Prüfung nicht benannt."
+  },
+  {
+   "id": "BM-115-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "Aufruf Z_PM_WARRANTY_CHECK und 'Ohne Treffer Block verlassen' – gültige Garantie am Meldungsdatum nicht benannt; 'konvertiert' falsch."
+  },
+  {
+   "id": "BM-115-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "'gaart mganr gwldt gwlen des Satzes wird gelesen' + 'Bei Treffer Block verlassen' – Garantie am Equipment nur technisch."
+  },
+  {
+   "id": "BM-115-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'heqnr gelesen' und Abbruchbedingung – Vererbung über bis zu fünf Stufen fehlt."
+  },
+  {
+   "id": "BM-115-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu RAISE no_warranty."
+  },
+  {
+   "id": "BM-115-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'elief des Satzes wird gelesen' – Lieferant des gemeldeten Equipments nur als Feldname."
+  },
+  {
+   "id": "BM-115-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "'Ohne sy-batch wird eine Meldung ausgegeben' – Kundengarantie und Garantieende fehlen."
+  },
+  {
+   "id": "BM-115-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "'low gelesen' und dynamischer Bausteinaufruf; der Baustein kommt aus der Variablenpflege, nicht 'aus der Eingabe'; Regressnummer nur als 'lv_regnr'."
+  },
+  {
+   "id": "BM-115-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Nur 'Ohne Treffer wird eine Meldung ausgegeben'; Vormerken des Regresses und Verhindern des Sicherns fehlen."
+  },
+  {
+   "id": "BM-115-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Nur 'Ohne sy-batch wird eine Meldung ausgegeben'; Ablage der Regressnummer im Memory fehlt."
+  },
+  {
+   "id": "BM-115-B12",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu WHEN OTHERS."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

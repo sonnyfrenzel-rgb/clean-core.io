@@ -1,0 +1,297 @@
+{
+ "id": "BM-059",
+ "urteile": [
+  {
+   "id": "BM-059-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'für gv_locked = abap_false wird eine Zeile aufgenommen, sonst eine Zeile aufgenommen' und GUI-Status gesetzt; welche Funktionen ausgeblendet werden, fehlt."
+  },
+  {
+   "id": "BM-059-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Die Screenfolge wird beendet' – Verlassen erkannt; ohne Rückfrage und Verlust ungesicherter Freigaben fehlen."
+  },
+  {
+   "id": "BM-059-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "ENQUEUE_EZFI_PAYREL-Aufruf genannt; exklusive Sperre des eingegebenen Zahllaufs nicht fachlich; 'lock_run ... Wirkung nicht belegt' ist falsch, FORM lock_run ist mitgeliefert."
+  },
+  {
+   "id": "BM-059-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Ohne Treffer wird eine Meldung ausgegeben'; Sperrinhaber und 'keine Zahlung angezeigt' fehlen."
+  },
+  {
+   "id": "BM-059-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "'Für andere sy-subrc wird read_proposal aufgerufen' trifft den Ablauf technisch; 'Wirkung nicht belegt' ist falsch, FORM read_proposal ist mitgeliefert."
+  },
+  {
+   "id": "BM-059-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'ernam des Satzes wird gelesen' – Ersteller des Vorschlags aus dem Protokoll nicht erkennbar."
+  },
+  {
+   "id": "BM-059-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Sätze aus reguh selektiert'; Einschränkung auf Zahlungen mit Belegnummer fehlt."
+  },
+  {
+   "id": "BM-059-B08",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen' entspricht Meldung und Ende des Lesens."
+  },
+  {
+   "id": "BM-059-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Sätze aus regup selektiert'; Anzahl der bezahlten Posten je Zahlung fehlt."
+  },
+  {
+   "id": "BM-059-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Sätze aus zfi_payrel selektiert'; Übernahme von Status, Freigebern und Grund fehlt."
+  },
+  {
+   "id": "BM-059-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Meldung und Abbruch bei 'gv_creator mit dem Wert sy-uname' – Logik richtig, Vier-Augen-Prinzip (Ersteller darf nicht freigeben) nur über Variablennamen."
+  },
+  {
+   "id": "BM-059-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig",
+    "falsch"
+   ],
+   "kurz": "'Jede Zeile aus gt_pay wird einzeln verarbeitet' – Einschränkung auf markierte, offene Zahlungen fehlt. 'Jede Zeile ... wird einzeln verarbeitet' ist falsch, die Schleife hat eine WHERE-Einschränkung."
+  },
+  {
+   "id": "BM-059-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Die Berechtigung auf Z_PAYREL wird geprüft' – Buchungskreis und Überspringen/Zählen fehlen."
+  },
+  {
+   "id": "BM-059-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'maxbt des Satzes wird gelesen' – Betragsgrenze je Buchungskreis/Währung und Vorgabe null nicht erkennbar."
+  },
+  {
+   "id": "BM-059-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung bei rel1_user = sy-uname genannt; endgültige Zweitfreigabe sonst fehlt."
+  },
+  {
+   "id": "BM-059-B16",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Erstfreigabe über der Grenze."
+  },
+  {
+   "id": "BM-059-B17",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur endgültigen Freigabe bis zur Grenze."
+  },
+  {
+   "id": "BM-059-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Eine Meldung wird ausgegeben'; Inhalt (freigegeben/übersprungen) fehlt."
+  },
+  {
+   "id": "BM-059-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Popup mit Pflichtfeld REASON technisch beschrieben; dass bei Abbruch oder leerem Grund nichts abgelehnt wird, fehlt; 'die ls_field-tabname' falscher Artikel."
+  },
+  {
+   "id": "BM-059-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig",
+    "falsch"
+   ],
+   "kurz": "'Jede Zeile aus gt_pay wird einzeln verarbeitet' – Kennzeichnung als abgelehnt mit Grund und Benutzer fehlt. 'Jede Zeile ... wird einzeln verarbeitet' ist falsch, die Schleife hat eine WHERE-Einschränkung."
+  },
+  {
+   "id": "BM-059-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Prüfung auf Änderungen und Sicherheitsabfrage technisch erkannt; 'kleinere werden übersprungen, die Schleife läuft weiter' ist falsch (CHECK in FORM)."
+  },
+  {
+   "id": "BM-059-B22",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'Z_FI_PAYREL_UPDATE wird zur Verbuchung registriert ... angestoßen erst mit COMMIT WORK' – fachlich dasselbe (Vormerkung im Verbucher), Freigabetabelle nur über den Bausteinnamen."
+  },
+  {
+   "id": "BM-059-B23",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Vormerkung von SWE_EVENT_CREATE im Verbucher erkannt; Ereignis SECONDRELEASEREQUIRED und Auslöser (Zahlung wartet auf Zweitfreigabe) fehlen."
+  },
+  {
+   "id": "BM-059-B24",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Vormerkung von SWE_EVENT_CREATE erkannt; Ereignis RELEASED und Auslöser (endgültig freigegebene Zahlung) fehlen."
+  },
+  {
+   "id": "BM-059-B25",
+   "urteil": "gleich",
+   "mangel": [],
+   "kurz": "'Mit COMMIT WORK wird die Verbuchung ... angestoßen. Ohne AND WAIT wartet der Code das Ergebnis nicht ab' plus Meldung – fachlich dasselbe."
+  },
+  {
+   "id": "BM-059-B26",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingung Status F → anderer Status technisch mit 'Meldung' genannt; dass die gesamte Verbuchung abbricht (Typ A), fehlt."
+  },
+  {
+   "id": "BM-059-B27",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Schreiben in zfi_payrel genannt; Historientabelle fehlt."
+  },
+  {
+   "id": "BM-059-B28",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Für lv_open größer 0 wird eine Meldung ausgegeben und der Block verlassen' – Bedingung 'nicht alle endgültig freigegeben' nur technisch."
+  },
+  {
+   "id": "BM-059-B29",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Sicherheitsabfrage und Start von F110 erkannt, aber als 'Anlage' statt Einplanung des Zahllaufs; Batch-Input und Laufparameter nicht genannt."
+  },
+  {
+   "id": "BM-059-B30",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Ohne Treffer wird eine Meldung ausgegeben, sonst eine Meldung' – Fehler/Bestätigung der Einplanung nicht unterscheidbar."
+  },
+  {
+   "id": "BM-059-B31",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "Rückfrage bei gv_changed und unlock_run/Verlassen bei Bestätigung erkannt; 'unlock_run ... Wirkung nicht belegt' ist falsch (FORM mitgeliefert), 'vor der Datenbankoperation zurückgekehrt' unpassend."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

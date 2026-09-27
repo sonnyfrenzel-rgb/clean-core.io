@@ -1,0 +1,36 @@
+{
+ "id": "BM-005",
+ "urteile": [
+  {
+   "id": "BM-005-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Bedingung nur technisch (vbak-auart/vbkd-bstkd IS INITIAL), \"eine Meldung\" statt Fehlermeldung, die das Sichern verhindert."
+  },
+  {
+   "id": "BM-005-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Schleife und Bedingung >9999 da, aber technisch; Warnung, Positionsnummer/Menge und Ausschluss gelöschter Positionen fehlen."
+  },
+  {
+   "id": "BM-005-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "Engine sagt nur \"eine Meldung wird ausgegeben\"; dass die Warnung das Sichern nicht aufhält, fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

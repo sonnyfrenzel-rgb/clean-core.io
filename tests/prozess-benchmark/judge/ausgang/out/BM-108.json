@@ -1,0 +1,85 @@
+{
+ "id": "BM-108",
+ "urteile": [
+  {
+   "id": "BM-108-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "'Es werden Aufträge selektiert' – Kontrakte, Kündigungsfilter und Laufzeitfenster fehlen."
+  },
+  {
+   "id": "BM-108-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen' entspricht dem Soll."
+  },
+  {
+   "id": "BM-108-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'Sätze aus zcs_verl_regel selektiert' – Verlängerungsregeln nur als Tabellenname."
+  },
+  {
+   "id": "BM-108-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Jede Zeile aus gt_ctr/GROUP wird einzeln verarbeitet' – Gruppierung je Kunde nicht ausgesprochen."
+  },
+  {
+   "id": "BM-108-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'In der Tabelle wird nach einer passenden Zeile gesucht'; Überspringen ohne Regel fehlt."
+  },
+  {
+   "id": "BM-108-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Berechnung des neuen Laufzeitendes."
+  },
+  {
+   "id": "BM-108-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "grammatik"
+   ],
+   "kurz": "'Ohne p_test ... BAPI_CUSTOMERCONTRACT_CHANGE aufgerufen' – dass das Laufzeitende geändert wird, fehlt; Commit ohne Fehlerbedingung; 'Eine leere p_test setzen'."
+  },
+  {
+   "id": "BM-108-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "Rollback + 'Verlängerung fehlgeschlagen' bei E-Meldung und Commit-Baustein genannt, nur technisch; 'Bei Treffern' passt nicht."
+  },
+  {
+   "id": "BM-108-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Ausgabe von Belegnummer, ls_m-venddat, lv_neu, gv_anz – altes/neues Ende und Summenzeile nur als Variablen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

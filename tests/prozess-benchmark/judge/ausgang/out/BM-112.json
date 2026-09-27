@@ -1,0 +1,104 @@
+{
+ "id": "BM-112",
+ "urteile": [
+  {
+   "id": "BM-112-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Schleifen über idoc_contrl/idoc_data; Segmentinhalte und Ignorieren unbekannter Segmente fehlen."
+  },
+  {
+   "id": "BM-112-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Pflichtangabenprüfung."
+  },
+  {
+   "id": "BM-112-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "'i~tplnr INTO lv_tplnr des Satzes wird gelesen' – verstümmelt; Vergleich mit dem Platz und Ablehnung fehlen."
+  },
+  {
+   "id": "BM-112-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Gleicher verstümmelter Lesesatz; 'nirgends eingebaut, sonst Ablehnung' fehlt."
+  },
+  {
+   "id": "BM-112-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "BAPI_EQUI_DISMANTLE-Aufruf genannt; Ausbau zum Zeitpunkt und Ablehnung bei Fehler fehlen; 'konvertiert'/'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-112-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Zählerlesung, 'Ohne Treffer Block verlassen', Messbeleg-Baustein und Bedingung ls_out-zaehler – Logik da, aber nur technisch."
+  },
+  {
+   "id": "BM-112-B07",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben' – der Code formatiert die Meldung nur INTO und löst eine Ausnahme aus; ausgegeben wird nichts, die Ablehnung fehlt."
+  },
+  {
+   "id": "BM-112-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "BAPI_EQUI_INSTALL-Aufruf genannt; Einbau zum selben Zeitpunkt und Ablehnung fehlen; 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-112-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "ROLLBACK, set_status und workflow_result 99999 genannt; Status 51 mit Fehlertext fehlt, 'set_status Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-112-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "COMMIT und set_status genannt; Status 53 'Equipmenttausch gebucht' fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,64 @@
+{
+ "id": "BM-170",
+ "urteile": [
+  {
+   "id": "BM-170-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "„Mit gesetztem p_heute wird eine Zeile aufgenommen“ und dynamische Selektion aus vttk; Beladungs-/Abfertigungsstatus fehlen."
+  },
+  {
+   "id": "BM-170-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Ohne Transporte wird der Hinweistext ausgegeben und der Block verlassen – entspricht dem Sollsatz."
+  },
+  {
+   "id": "BM-170-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur BAPI_SHIPMENT_CHANGE-Aufruf; Setzen des Status Abfertigung fehlt."
+  },
+  {
+   "id": "BM-170-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Rollback-Aufruf; Wartezeit und Wiederholung bei Sperre fehlen."
+  },
+  {
+   "id": "BM-170-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Fehlerausgabe technisch erkannt, Commit nur als FB-Aufruf; Zählen fehlt."
+  },
+  {
+   "id": "BM-170-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Zählerausgabe erkannt, aber „eine Meldung wird ausgegeben“ statt Jobabbruch mit Fehlermeldung."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

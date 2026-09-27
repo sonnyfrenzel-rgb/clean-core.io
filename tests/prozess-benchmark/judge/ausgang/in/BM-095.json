@@ -1,0 +1,224 @@
+{
+ "id": "BM-095",
+ "titel": "Bestandsabgleich mit Fremd-WMS über EXEC SQL und Differenzbuchung",
+ "prozess": "Ein nächtlicher Job gleicht den Lagerortbestand mit einem externen Lagerverwaltungssystem ab. Er baut per Native SQL eine Verbindung zu dessen Datenbank auf und bricht ab, wenn sie scheitert. Er holt die über alle Lagerplätze summierten WMS-Bestände je Artikel für Werk und Lagerort und trennt die Verbindung wieder. Danach liest er die SAP-Lagerortbestände desselben Werks und Lagerorts. Je WMS-Artikel wandelt er die Artikelnummer ins Materialnummernformat, schlägt den frei verwendbaren SAP-Bestand nach (fehlend gilt als null) und berechnet Differenz und prozentuale Toleranz. Differenzen innerhalb der Toleranz ignoriert er; alle anderen nimmt er in die Differenzliste auf und merkt sie als Zugang Z11 oder Abgang Z12 vor. Mit gesetzter Buchungsoption bucht er Zugänge und Abgänge je als eigenen Materialbeleg, verwirft ihn bei Fehler und gibt Fehler oder Belegnummer aus. Zum Schluss gibt er die Differenzliste aus. SAP-Bestände ohne WMS-Gegenstück werden nicht betrachtet.",
+ "verboten": [
+  "gesamte Scheibe — kein Fachsatz „SAP-Bestände ohne WMS-Gegenstück werden als Differenz erkannt“ (die Schleife läuft nur über WMS-Artikel).",
+  "zmm_wms_recon.abap:44 — kein Fachsatz „das WMS wird korrigiert“ (auf das WMS wird nur lesend zugegriffen).",
+  "zmm_wms_recon_f01.abap:47 — kein Fachsatz „Inventurbeleg wird angelegt“ (gebucht wird eine Warenbewegung mit kundeneigener Bewegungsart).",
+  "zmm_wms_recon.abap:84 — kein Fehlerpfad bei nicht wandelbarer Artikelnummer (sy-subrc wird nicht geprüft)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-095-B01",
+   "soll": "Über die Datenbankverbindung zum Lagerverwaltungssystem wird eine Verbindung aufgebaut; scheitert sie, bricht der Lauf mit dem Verbindungsnamen ab.",
+   "zeilen": [
+    44,
+    47,
+    48
+   ],
+   "code": [
+    "44:   EXEC SQL.",
+    "47:   IF sy-subrc <> 0.",
+    "48:     MESSAGE e020(zmm) WITH p_con."
+   ],
+   "engine": [
+    "Ein Native-SQL-Block wird ausgeführt. Native SQL hat keinen automatischen Mandantenfilter.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-095-B02",
+   "soll": "Aus dem Lagerverwaltungssystem werden die Bestände je Artikel für Werk und Lagerort, über alle Lagerplätze summiert, abgeholt und die Verbindung danach getrennt.",
+   "zeilen": [
+    55,
+    64,
+    75
+   ],
+   "code": [
+    "55:   EXEC SQL.",
+    "64:     EXEC SQL.",
+    "75:   EXEC SQL."
+   ],
+   "engine": [
+    "Ein Native-SQL-Block wird ausgeführt. Native SQL hat keinen automatischen Mandantenfilter.",
+    "Ein Native-SQL-Block wird ausgeführt. Native SQL hat keinen automatischen Mandantenfilter.",
+    "Ein Native-SQL-Block wird ausgeführt. Native SQL hat keinen automatischen Mandantenfilter."
+   ]
+  },
+  {
+   "id": "BM-095-B03",
+   "soll": "Es werden die SAP-Lagerortbestände desselben Werks und Lagerorts gelesen.",
+   "zeilen": [
+    79
+   ],
+   "code": [
+    "79:   SELECT * FROM mard INTO TABLE gt_mard"
+   ],
+   "engine": [
+    "Es werden Sätze aus mard mit dem eingegebenen werks und dem eingegebenen lgort selektiert."
+   ]
+  },
+  {
+   "id": "BM-095-B04",
+   "soll": "Je WMS-Artikel wird die Artikelnummer ins Materialnummernformat gewandelt und der frei verwendbare SAP-Bestand nachgeschlagen; fehlt er, gilt er als null.",
+   "zeilen": [
+    84,
+    92,
+    93
+   ],
+   "code": [
+    "84:     CALL FUNCTION 'CONVERSION_EXIT_MATN1_INPUT'",
+    "92:     READ TABLE gt_mard INTO gs_mard WITH TABLE KEY matnr = gv_matnr.",
+    "93:     IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Der Code übergibt gs_wms-item an CONVERSION_EXIT_MATN1_INPUT und übernimmt dessen Ausgabe nach gv_matnr.",
+    "Das konvertierte Ergebnis wird in gv_matnr übernommen.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-095-B05",
+   "soll": "Die Differenz ist WMS-Bestand minus SAP-Bestand; die Toleranz ist der eingegebene Prozentsatz des SAP-Bestands.",
+   "zeilen": [
+    96,
+    97
+   ],
+   "code": [
+    "96:     gv_diff = gs_wms-qty - gs_mard-labst.",
+    "97:     gv_tol  = gs_mard-labst * p_tolp / 100."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-095-B06",
+   "soll": "Differenzen innerhalb der Toleranz werden ignoriert, alle anderen in die Differenzliste aufgenommen.",
+   "zeilen": [
+    98
+   ],
+   "code": [
+    "98:     IF abs( gv_diff ) <= gv_tol."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-095-B07",
+   "soll": "Ein höherer WMS-Bestand wird als Zugang mit Bewegungsart Z11, ein niedrigerer als Abgang mit Bewegungsart Z12 über den Betrag der Differenz vorgemerkt.",
+   "zeilen": [
+    106,
+    131,
+    132,
+    136
+   ],
+   "code": [
+    "106:     PERFORM add_item USING gv_matnr gv_diff.",
+    "131:   IF pv_diff > 0.",
+    "132:     ls_item-move_type = 'Z11'.",
+    "136:     ls_item-move_type = 'Z12'."
+   ],
+   "engine": [
+    "Es wird eine Zeile aufgenommen und add_item aufgerufen.",
+    "Das Unterprogramm add_item wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Für pv_diff größer 0 wird die ls_item-move_type auf Z11 gesetzt und eine Zeile aufgenommen.",
+    "Für pv_diff größer 0 wird die ls_item-move_type auf Z11 gesetzt und eine Zeile aufgenommen, sonst die ls_item-move_type auf Z12 gesetzt und eine Zeile aufgenommen.",
+    "pv_diff größer 0 setzen die ls_item-move_type auf Z11.",
+    "Für kleinere oder gleiche pv_diff wird die ls_item-move_type auf Z12 gesetzt und eine Zeile aufgenommen.",
+    "Kleinere oder gleiche pv_diff setzen die ls_item-move_type auf Z12."
+   ]
+  },
+  {
+   "id": "BM-095-B08",
+   "soll": "Nur mit gesetzter Buchungsoption werden die Zugänge und die Abgänge jeweils als eigener Materialbeleg mit heutigem Buchungsdatum gebucht.",
+   "zeilen": [
+    109,
+    110,
+    111,
+    163
+   ],
+   "code": [
+    "109:   IF p_post = 'X'.",
+    "110:     PERFORM post_group USING '05' gt_in.",
+    "111:     PERFORM post_group USING '03' gt_out.",
+    "163:   CALL FUNCTION 'BAPI_GOODSMVT_CREATE'"
+   ],
+   "engine": [
+    "Mit gesetztem p_post wird post_group aufgerufen.",
+    "Das Unterprogramm post_group wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird post_group aufgerufen.",
+    "Das Unterprogramm post_group wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Code übergibt ls_head an BAPI_GOODSMVT_CREATE und übernimmt dessen Ausgabe nach lv_mblnr.",
+    "Das konvertierte Ergebnis wird in lv_mblnr übernommen."
+   ]
+  },
+  {
+   "id": "BM-095-B09",
+   "soll": "Eine Gruppe ohne Positionen wird nicht gebucht.",
+   "zeilen": [
+    154,
+    155
+   ],
+   "code": [
+    "154:   IF pt_items IS INITIAL.",
+    "155:     RETURN."
+   ],
+   "engine": [
+    "Ohne pt_items wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-095-B10",
+   "soll": "Meldet die Buchung einen Fehler, wird sie verworfen und die Fehlermeldung ausgegeben; sonst wird sie festgeschrieben und die Materialbelegnummer ausgegeben.",
+   "zeilen": [
+    173,
+    175,
+    176,
+    178,
+    181
+   ],
+   "code": [
+    "173:   READ TABLE lt_return INTO ls_return WITH KEY type = 'E'.",
+    "175:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "176:     WRITE: / 'Buchung fehlgeschlagen:', ls_return-message.",
+    "178:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "181:     WRITE: / 'Materialbeleg', lv_mblnr, lv_mjahr, 'gebucht'."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen, Buchung fehlgeschlagen: ausgegeben und ls_return-message ausgegeben.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen, Buchung fehlgeschlagen: ausgegeben und ls_return-message ausgegeben, sonst BAPI_TRANSACTION_COMMIT aufgerufen, Materialbeleg ausgegeben, Das vom Funktionsbaustein zurückgegebene Feld ausgegeben, lv_mjahr ausgegeben und gebucht ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen, Buchung fehlgeschlagen: ausgegeben und ls_return-message ausgegeben.",
+    "Buchung fehlgeschlagen: und ls_return-message werden ausgegeben.",
+    "Buchung fehlgeschlagen: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "ls_return-message wird ausgegeben.",
+    "Für andere sy-subrc wird BAPI_TRANSACTION_COMMIT aufgerufen, Materialbeleg ausgegeben, Das vom Funktionsbaustein zurückgegebene Feld ausgegeben, lv_mjahr ausgegeben und gebucht ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen, Materialbeleg ausgegeben, Das vom Funktionsbaustein zurückgegebene Feld ausgegeben, lv_mjahr ausgegeben und gebucht ausgegeben.",
+    "Materialbeleg, Das vom Funktionsbaustein zurückgegebene Feld, lv_mjahr und gebucht werden ausgegeben.",
+    "Materialbeleg wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Das vom Funktionsbaustein zurückgegebene Feld wird ausgegeben.",
+    "lv_mjahr wird ausgegeben.",
+    "gebucht wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-095-B11",
+   "soll": "Zum Schluss wird die Differenzliste mit Material, WMS-Bestand, SAP-Bestand und Differenz ausgegeben.",
+   "zeilen": [
+    115
+   ],
+   "code": [
+    "115:     WRITE: / gs_rep-matnr, gs_rep-wms, gs_rep-sap, gs_rep-diff."
+   ],
+   "engine": [
+    "Bei Treffern werden gs_rep-matnr, gs_rep-wms, gs_rep-sap und gs_rep-diff als Liste ausgegeben.",
+    "gs_rep-matnr wird ausgegeben.",
+    "gs_rep-wms wird ausgegeben.",
+    "gs_rep-sap wird ausgegeben.",
+    "gs_rep-diff wird ausgegeben."
+   ]
+  }
+ ]
+}

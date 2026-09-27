@@ -1,0 +1,259 @@
+{
+ "id": "BM-200",
+ "urteile": [
+  {
+   "id": "BM-200-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Sätze aus vicncn selektiert“; Indexvereinbarung, Fälligkeit, Grundmiete fehlen."
+  },
+  {
+   "id": "BM-200-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "Ohne Treffer Meldung und Verlassen ohne Schreiben – entspricht dem Sollsatz."
+  },
+  {
+   "id": "BM-200-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Indexmonat."
+  },
+  {
+   "id": "BM-200-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur send/receive „nicht belegt“; VPI-Abfrage beim Indexdienst nicht erkannt."
+  },
+  {
+   "id": "BM-200-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Eine Meldung wird ausgegeben“; Abbruch bei Fehler nicht gesagt."
+  },
+  {
+   "id": "BM-200-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Tabellensuche; endgültiger Indexwert und Abbruch fehlen."
+  },
+  {
+   "id": "BM-200-B07",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Indexveränderung."
+  },
+  {
+   "id": "BM-200-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "„Mit einer nicht leeren lv_msgno wird eine Zeile aufgenommen“; Ausschlussgründe fehlen."
+  },
+  {
+   "id": "BM-200-B09",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Kappung."
+  },
+  {
+   "id": "BM-200-B10",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur neuen Grundmiete."
+  },
+  {
+   "id": "BM-200-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "„Ohne Treffer wird eine Zeile aufgenommen“; Protokollvermerk nicht fachlich."
+  },
+  {
+   "id": "BM-200-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "„Für p_test … wird eine Zeile aufgenommen“; nur Zahl protokolliert, nichts geändert nicht gesagt."
+  },
+  {
+   "id": "BM-200-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Paketbedingung technisch („kleinere werden übersprungen“) und asynchroner Start von Z_RE_INDEX_TASK; Servergruppe nicht genannt."
+  },
+  {
+   "id": "BM-200-B14",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu Ressourcenengpass/Startfehlern."
+  },
+  {
+   "id": "BM-200-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "„Für gv_done kleiner gv_started wird eine Zeile aufgenommen“; Wartezeit 30 Minuten und Fehlerprotokoll nicht fachlich."
+  },
+  {
+   "id": "BM-200-B16",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu RECEIVE RESULTS."
+  },
+  {
+   "id": "BM-200-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "ENQUEUE und „die Status auf LOCKED“ ohne Treffer – Inhalt erkennbar, technisch."
+  },
+  {
+   "id": "BM-200-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Selektion aus vicdcond und „die Status auf NOCOND“; Grundmietkondition nicht fachlich."
+  },
+  {
+   "id": "BM-200-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "„Die condvalidto in vicdcond wird geändert“; Anlage der neuen Grundmiete ab Stichtag fehlt."
+  },
+  {
+   "id": "BM-200-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Rollback und „die Status auf ERROR“ ohne Treffer – Inhalt erkennbar, technisch."
+  },
+  {
+   "id": "BM-200-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "CHANGEDOCUMENT-Aufrufe mit ZRE_INDEX; Änderungsbeleg zur neuen Grundmiete nicht fachlich."
+  },
+  {
+   "id": "BM-200-B22",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "„Die base_vpi in zre_idxagr wird geändert“; Basismonat, Anpassungsdatum, nächste Prüfung fehlen."
+  },
+  {
+   "id": "BM-200-B23",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "COMMIT und DEQUEUE erkannt; Rückmeldung mit Änderungsnummer und „in jedem Fall“ nicht gesagt."
+  },
+  {
+   "id": "BM-200-B24",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "FP-Aufrufe, „die Länderschlüssel auf DE“; Mieteranschreiben als PDF und Fehlerprotokoll nicht fachlich."
+  },
+  {
+   "id": "BM-200-B25",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "partner-Lesen und „Zeile aufgenommen“ ohne Treffer; Hauptmieter und Überspringen nicht gesagt."
+  },
+  {
+   "id": "BM-200-B26",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "send_mail bei p_mail und BCS-Aufrufe „nicht belegt“; PDF-Mail an den Mieter nicht erkannt."
+  },
+  {
+   "id": "BM-200-B27",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "„wird eine Zeile aufgenommen und der Block verlassen“; Warnung „per Post versenden“ fehlt."
+  },
+  {
+   "id": "BM-200-B28",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "BAL-Aufrufe und Summenliste technisch („Bei Treffern“)."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

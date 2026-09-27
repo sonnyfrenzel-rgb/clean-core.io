@@ -1,0 +1,317 @@
+{
+ "id": "BM-158",
+ "titel": "Reorganisation per Upload: Organisationseinheiten anlegen, Planstellen umhängen, Personalmaßnahme per Batch-Input",
+ "prozess": "Bei einer Reorganisation lädt ein OM-Verantwortlicher im Dialog eine CSV-Datei mit Aktionen hoch; ohne OM-Pflegeberechtigung, im Hintergrund oder bei leerer Datei bricht der Lauf ab. Jede Zeile außer einer Kopfzeile wird zerlegt und geprüft: unbekannte Aktionen und fehlende Bezugsobjekte werden als Fehler markiert. Im strengen Modus wird bei einem Fehler nichts geändert, sonst wird jede fehlerfreie Zeile über eine dynamisch bestimmte Aktionsroutine ausgeführt und einzeln festgeschrieben oder – im Testlauf oder bei Misserfolg – verworfen. NEWO legt eine Organisationseinheit an und unterstellt sie, MOVS grenzt die bisherige Zuordnung einer Planstelle ab, ordnet sie neu zu und löst für jeden Inhaber per Batch-Input eine organisatorische Maßnahme im Personalstamm aus, RENA ändert die Texte, DELO grenzt eine leere Einheit ab. Gescheiterte Personalmaßnahmen erzeugen nur eine Warnung. Da die Maßnahmen eigenständig verbuchen, wirken sie auch im Testlauf. Am Ende wird das Protokoll angezeigt.",
+ "verboten": [
+  "zom_reorg_upload_f01.abap:93 — kein Fachsatz „im Testlauf wird nichts verändert“ (die Personalmaßnahmen über CALL TRANSACTION PA40 verbuchen eigenständig und werden vom ROLLBACK nicht erfasst)",
+  "zom_reorg_upload_f02.abap:147 — kein Schluss „ACT_DELO wird nie aufgerufen“ (erreichbar über den dynamischen PERFORM mit Aktion DELO)",
+  "zom_reorg_upload_f01.abap:68 — kein Fachsatz „bei MOVS wird geprüft, ob die Planstelle existiert“ (geprüft wird nur die übergeordnete Einheit)",
+  "zom_reorg_upload_f02.abap:111 — kein Fachsatz „scheitert die Personalmaßnahme, wird das Umhängen zurückgenommen“ (nur Warnung)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-158-B01",
+   "soll": "Ohne Berechtigung zur Pflege von Organisationsbeziehungen bricht der Lauf ab.",
+   "zeilen": [
+    21,
+    28,
+    29
+   ],
+   "code": [
+    "21:   AUTHORITY-CHECK OBJECT 'PLOG'",
+    "28:   IF sy-subrc <> 0.",
+    "29:     MESSAGE e398(00) WITH 'Keine Berechtigung fuer OM-Pflege'."
+   ],
+   "engine": [
+    "Die Berechtigung auf PLOG wird geprüft.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-158-B02",
+   "soll": "Die Reorganisationsdatei wird vom Arbeitsplatz geladen; im Hintergrund ist das nicht möglich, und eine unlesbare oder leere Datei bricht den Lauf ab.",
+   "zeilen": [
+    49,
+    53,
+    61
+   ],
+   "code": [
+    "49:   IF sy-batch = abap_true.",
+    "53:   cl_gui_frontend_services=>gui_upload(",
+    "61:   IF sy-subrc <> 0 OR gt_raw IS INITIAL."
+   ],
+   "engine": [
+    "Für sy-batch mit dem Wert abap_true wird eine Meldung ausgegeben.",
+    "Der Rückgabewert der Methode gui_upload von cl_gui_frontend_services wird nach cl_gui_frontend_services übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Für sy-subrc <> 0 OR gt_raw IS INITIAL wird eine Meldung ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-158-B03",
+   "soll": "Jede Zeile außer einer Excel-Kopfzeile wird in Aktion, Objekt-ID, übergeordnete Einheit, Kurz- und Langtext zerlegt.",
+   "zeilen": [
+    72,
+    74,
+    79
+   ],
+   "code": [
+    "72:   LOOP AT gt_raw INTO DATA(lv_raw).",
+    "74:     IF sy-tabix = 1 AND lv_raw CS 'Aktion'.",
+    "79:     SPLIT lv_raw AT ';' INTO ls_line-action lv_objid lv_par"
+   ],
+   "engine": [
+    "Jede Zeile aus gt_raw wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-158-B04",
+   "soll": "Zeilen mit unbekannter Aktion werden als fehlerhaft protokolliert.",
+   "zeilen": [
+    95,
+    106,
+    107
+   ],
+   "code": [
+    "95:     CASE <ls_line>-action.",
+    "106:         <ls_line>-error = abap_true.",
+    "107:         PERFORM prot_add USING <ls_line>-lineno 'E' 'Unbekannte Aktion'."
+   ],
+   "engine": [
+    "Das Unterprogramm prot_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-158-B05",
+   "soll": "Für Anlage und Umhängen muss die übergeordnete Einheit aktiv und zum Stichtag gültig sein, für Umbenennen und Abgrenzen die Einheit selbst zum Stichtag existieren; sonst wird die Zeile als fehlerhaft protokolliert.",
+   "zeilen": [
+    111,
+    112,
+    113
+   ],
+   "code": [
+    "111:     SELECT COUNT(*) FROM hrp1000 INTO lv_count WHERE (lv_where).",
+    "112:     IF lv_count = 0.",
+    "113:       <ls_line>-error = abap_true."
+   ],
+   "engine": [
+    "Die Zahl der Sätze wird ermittelt. Welche Sätze das sind, entscheidet die Eingabe zur Laufzeit.",
+    "Für Anzahlen mit dem Wert 0 wird prot_add aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-158-B06",
+   "soll": "Die fehlerhaften Zeilen werden gezählt; im strengen Modus wird bei auch nur einem Fehler nichts geändert.",
+   "zeilen": [
+    36,
+    37,
+    118
+   ],
+   "code": [
+    "36:   IF gv_errors > 0 AND p_strict = abap_true.",
+    "37:     PERFORM prot_add USING 0 'E' 'Strenger Modus: Fehler, keine Aenderung'.",
+    "118:   gv_errors = REDUCE i( INIT n = 0 FOR l IN gt_lines"
+   ],
+   "engine": [
+    "Für gv_errors > 0 AND p_strict = abap_true wird prot_add aufgerufen.",
+    "Für gv_errors > 0 AND p_strict = abap_true wird prot_add aufgerufen, sonst execute_lines aufgerufen.",
+    "Das Unterprogramm prot_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-158-B07",
+   "soll": "Sonst wird jede fehlerfreie Zeile über die zur Aktion gehörende Routine ausgeführt, deren Name aus der Aktion gebildet wird.",
+   "zeilen": [
+    127,
+    128,
+    130
+   ],
+   "code": [
+    "127:   LOOP AT gt_lines INTO DATA(ls_line) WHERE error = abap_false.",
+    "128:     lv_form = |ACT_{ ls_line-action }|.",
+    "130:     PERFORM (lv_form) IN PROGRAM (sy-repid)"
+   ],
+   "engine": [
+    "Jede Zeile aus gt_lines wird einzeln verarbeitet.",
+    "Das externe Unterprogramm lv_form wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-158-B08",
+   "soll": "Eine erfolgreiche Zeile wird im Echtlauf sofort festgeschrieben; im Testlauf oder bei Misserfolg werden ihre OM-Änderungen verworfen und das protokolliert.",
+   "zeilen": [
+    132,
+    133,
+    136
+   ],
+   "code": [
+    "132:     IF lv_ok = abap_true AND p_test = abap_false.",
+    "133:       COMMIT WORK AND WAIT.",
+    "136:       ROLLBACK WORK."
+   ],
+   "engine": [
+    "Für lv_ok = abap_true AND p_test = abap_false wird COMMIT WORK ausgeführt und prot_add aufgerufen.",
+    "Für lv_ok = abap_true AND p_test = abap_false wird COMMIT WORK ausgeführt und prot_add aufgerufen, sonst ROLLBACK WORK ausgeführt und prot_add aufgerufen.",
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Es wird COMMIT WORK ausgeführt und prot_add aufgerufen.",
+    "Sonst wird ROLLBACK WORK ausgeführt und prot_add aufgerufen.",
+    "Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert.",
+    "Es wird ROLLBACK WORK ausgeführt und prot_add aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-158-B09",
+   "soll": "Bei NEWO wird eine neue Organisationseinheit ab Stichtag unbefristet angelegt und der übergeordneten Einheit unterstellt.",
+   "zeilen": [
+    175,
+    190,
+    196
+   ],
+   "code": [
+    "175:   CALL FUNCTION 'RH_OBJECT_CREATE'",
+    "190:   IF sy-subrc <> 0.",
+    "196:   CALL FUNCTION 'RH_RELATION_MAINTAIN'"
+   ],
+   "engine": [
+    "Der Code übergibt gc_plvar an RH_OBJECT_CREATE und übernimmt dessen Ausgabe nach lv_new.",
+    "Das konvertierte Ergebnis wird in lv_new übernommen.",
+    "Ohne Treffer wird prot_add aufgerufen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Der Funktionsbaustein RH_RELATION_MAINTAIN wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-158-B10",
+   "soll": "Bei MOVS wird die bisherige Zuordnung der Planstelle zum Vortag abgegrenzt und die Planstelle ab Stichtag der neuen Einheit zugeordnet; scheitert ein Schritt, ist die Zeile nicht erfolgreich.",
+   "zeilen": [
+    225,
+    231,
+    246,
+    266
+   ],
+   "code": [
+    "225:   SELECT SINGLE * FROM hrp1001 INTO CORRESPONDING FIELDS OF ls_old",
+    "231:     CALL FUNCTION 'RH_CUT_INFTY'",
+    "246:   CALL FUNCTION 'RH_RELATION_MAINTAIN'",
+    "266:   cv_ok = abap_true."
+   ],
+   "engine": [
+    "Es werden Sätze aus hrp1001 selektiert.",
+    "Bei Treffer wird eine Zeile aufgenommen und RH_CUT_INFTY aufgerufen.",
+    "Es wird eine Zeile aufgenommen und RH_CUT_INFTY aufgerufen.",
+    "Der Funktionsbaustein RH_CUT_INFTY wird aufgerufen.",
+    "Der Funktionsbaustein RH_RELATION_MAINTAIN wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-158-B11",
+   "soll": "Für jeden Inhaber der umgehängten Planstelle wird im Personalstamm eine Maßnahme „Organisatorische Änderung“ mit der Planstelle ausgeführt; scheitert sie, wird nur eine Warnung protokolliert und die OM-Änderung bleibt gültig.",
+   "zeilen": [
+    269,
+    275,
+    277,
+    381
+   ],
+   "code": [
+    "269:   SELECT * FROM hrp1001 INTO TABLE lt_holders",
+    "275:     PERFORM pa_org_reassign USING lv_pernr is_line-objid",
+    "277:     IF lv_pa_ok = abap_false.",
+    "381:   CALL TRANSACTION 'PA40' USING gt_bdc"
+   ],
+   "engine": [
+    "Es werden Sätze aus hrp1001 selektiert.",
+    "Das Unterprogramm pa_org_reassign wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Für lv_pa_ok mit dem Wert abap_false wird prot_add aufgerufen.",
+    "Die Anlage wird über die Transaktion PA40 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ]
+  },
+  {
+   "id": "BM-158-B12",
+   "soll": "Die Personalmaßnahme gilt als gescheitert, wenn die Transaktion eine Fehler- oder Abbruchmeldung liefert; für den Benutzer OMADMIN1 läuft sie sichtbar ab.",
+   "zeilen": [
+    377,
+    386,
+    390,
+    394
+   ],
+   "code": [
+    "377:   IF sy-uname = 'OMADMIN1'.",
+    "386:   READ TABLE lt_msg TRANSPORTING NO FIELDS WITH KEY msgtyp = 'E'.",
+    "390:   READ TABLE lt_msg TRANSPORTING NO FIELDS WITH KEY msgtyp = 'A'.",
+    "394:   cv_ok = abap_true."
+   ],
+   "engine": [
+    "Für sy-uname mit dem Wert OMADMIN1 wird die lv_mode auf A gesetzt.",
+    "sy-uname mit dem Wert OMADMIN1 setzen die lv_mode auf A.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-158-B13",
+   "soll": "Bei RENA werden Kurz- und Langtext der Einheit in der Anmeldesprache ersetzt; ist der Satz nicht vorhanden, ist die Zeile nicht erfolgreich.",
+   "zeilen": [
+    291,
+    295,
+    301
+   ],
+   "code": [
+    "291:   SELECT SINGLE * FROM hrp1000 INTO CORRESPONDING FIELDS OF ls_1000",
+    "295:   IF sy-subrc <> 0.",
+    "301:   CALL FUNCTION 'RH_UPDATE_INFTY'"
+   ],
+   "engine": [
+    "Es werden Sätze aus hrp1000 selektiert.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Es wird eine Zeile aufgenommen und RH_UPDATE_INFTY aufgerufen.",
+    "Der Funktionsbaustein RH_UPDATE_INFTY wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-158-B14",
+   "soll": "Bei DELO wird eine Einheit nur abgegrenzt, wenn ihr keine Einheiten oder Planstellen mehr unterstellt sind; dann endet sie zum Vortag des Stichtags.",
+   "zeilen": [
+    320,
+    324,
+    329,
+    333
+   ],
+   "code": [
+    "320:   SELECT COUNT(*) FROM hrp1001 INTO lv_sub",
+    "324:   IF lv_sub > 0.",
+    "329:   SELECT SINGLE * FROM hrp1000 INTO CORRESPONDING FIELDS OF ls_1000",
+    "333:   CALL FUNCTION 'RH_CUT_INFTY'"
+   ],
+   "engine": [
+    "Die Zahl der Sätze wird ermittelt.",
+    "Für lv_sub größer 0 wird prot_add aufgerufen und der Block verlassen.",
+    "Es werden Sätze aus hrp1000 selektiert.",
+    "Es wird eine Zeile aufgenommen und RH_CUT_INFTY aufgerufen.",
+    "Der Funktionsbaustein RH_CUT_INFTY wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-158-B15",
+   "soll": "Zum Schluss wird das Protokoll mit der Zahl fehlerhafter Zeilen angezeigt, ersatzweise als einfache Liste.",
+   "zeilen": [
+    156,
+    160,
+    163
+   ],
+   "code": [
+    "156:       cl_salv_table=>factory( IMPORTING r_salv_table = DATA(lo_alv)",
+    "160:       lo_alv->display( ).",
+    "163:         WRITE: / ls_prot-lineno, ls_prot-type, ls_prot-text."
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode factory von cl_salv_table wird nach cl_salv_table übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Bei Treffern werden ls_prot-lineno, Typ und Text als Liste ausgegeben.",
+    "ls_prot-lineno wird ausgegeben.",
+    "Typ wird ausgegeben.",
+    "Text wird ausgegeben."
+   ]
+  }
+ ]
+}

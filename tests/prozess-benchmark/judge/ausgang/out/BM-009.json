@@ -1,0 +1,73 @@
+{
+ "id": "BM-009",
+ "urteile": [
+  {
+   "id": "BM-009-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "Lesen und Abbruch ohne Treffer erkennbar, aber \"protokoll aufgerufen, die return_code auf 1\" statt Fehler 010 und \"Nachricht fehlerhaft\"; Unterprogramm \"Wirkung nicht belegt\"."
+  },
+  {
+   "id": "BM-009-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "\"a~smtp_addr des Satzes wird gelesen\" statt E-Mail-Adresse des Nachrichtenpartners; Abbruch nur als return_code 1, \"Eine leere gv_email setzen\"."
+  },
+  {
+   "id": "BM-009-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Mailinhalt (Bestellnummer, Nettowert, Währung)."
+  },
+  {
+   "id": "BM-009-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingung nur als us_screen = abap_true; dass es die Probeausgabe ist und nichts versendet wird, sagt kein Satz fachlich."
+  },
+  {
+   "id": "BM-009-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Nur \"SO_NEW_DOCUMENT_SEND_API1 wird aufgerufen\" – der Versand der Auftragsbestätigung an den Kunden ist nicht fachlich benannt."
+  },
+  {
+   "id": "BM-009-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Ohne Treffer wird protokoll aufgerufen\" – nur das Protokollieren, irreführend als fehlender Treffer statt gescheiterter Versand bezeichnet; Fehler 013 und die Rückgabecode-Falle fehlen."
+  },
+  {
+   "id": "BM-009-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Nur der Bausteinname NAST_PROTOCOL_UPDATE, nicht das Schreiben ins Verarbeitungsprotokoll der Nachricht."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": [
+  "B05: \"wird als E-Mail versendet\" ist zu stark – commit_work = space, die Mail wird nur an den Versand übergeben (vgl. verbotener Schluss zu Zeile 52)."
+ ]
+}

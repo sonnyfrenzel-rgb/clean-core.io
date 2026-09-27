@@ -1,0 +1,60 @@
+{
+ "id": "BM-005",
+ "titel": "Sichern-Exit: Streckenauftrag ohne Bestellnummer abweisen, Großmengen melden",
+ "prozess": "Der Exit läuft im Standard-Kundenauftrag unmittelbar vor dem Sichern. Hat ein Streckenauftrag (Auftragsart ZTAS) keine Kundenbestellnummer, gibt er eine Fehlermeldung aus; das Sichern wird abgebrochen und der Erfasser bleibt im Beleg. Andernfalls durchläuft er alle Positionen, die nicht zum Löschen markiert sind. Für jede Position mit einer Auftragsmenge über 9999 erscheint eine Warnung mit Positionsnummer und Menge, die das Sichern nicht verhindert. Danach setzt der Standard das Sichern fort.",
+ "verboten": [
+  "source.abap:13 — kein Fachsatz „die Disposition wird informiert“: es gibt nur eine Warnung an den Erfasser, keine Nachricht an Dritte",
+  "source.abap:6 — kein Fachsatz „jeder Auftrag braucht eine Bestellnummer“: die Pflicht gilt nur für Auftragsart ZTAS"
+ ],
+ "saetze": [
+  {
+   "id": "BM-005-B01",
+   "soll": "Ein Streckenauftrag (Auftragsart ZTAS) ohne Kundenbestellnummer wird mit einer Fehlermeldung am Sichern gehindert.",
+   "zeilen": [
+    6,
+    7
+   ],
+   "code": [
+    "6:   IF vbak-auart = 'ZTAS' AND vbkd-bstkd IS INITIAL.",
+    "7:     MESSAGE e104(zsd) WITH vbak-vbeln."
+   ],
+   "engine": [
+    "Für vbak-auart = 'ZTAS' AND vbkd-bstkd IS INITIAL wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-005-B02",
+   "soll": "Für jede nicht gelöschte Position mit einer Auftragsmenge über 9999 erhält der Erfasser eine Warnung mit Positionsnummer und Menge.",
+   "zeilen": [
+    11,
+    12,
+    13
+   ],
+   "code": [
+    "11:   LOOP AT xvbap WHERE updkz <> 'D'.",
+    "12:     IF xvbap-kwmeng > 9999.",
+    "13:       MESSAGE w105(zsd) WITH xvbap-posnr xvbap-kwmeng."
+   ],
+   "engine": [
+    "Jede Zeile aus xvbap wird einzeln verarbeitet.",
+    "Für xvbap-kwmeng größer 9999 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-005-B03",
+   "soll": "Die Großmengenwarnung hält das Sichern nicht auf.",
+   "zeilen": [
+    13
+   ],
+   "code": [
+    "13:       MESSAGE w105(zsd) WITH xvbap-posnr xvbap-kwmeng."
+   ],
+   "engine": [
+    "Für xvbap-kwmeng größer 9999 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

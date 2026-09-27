@@ -1,0 +1,51 @@
+{
+ "id": "BM-181",
+ "urteile": [
+  {
+   "id": "BM-181-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Sätze aus likp selektiert“; Auslieferungskopf zur Nachrichtenobjektnummer nicht fachlich."
+  },
+  {
+   "id": "BM-181-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "„Ohne Treffer wird die return_code auf 1 gesetzt und der Block verlassen“ – inhaltlich richtig, aber technisch; fehlerhafte Nachricht nicht benannt."
+  },
+  {
+   "id": "BM-181-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Übergabe ZLE_LIEFERSCHEIN_SF an SSF_FUNCTION_MODULE_NAME nach lv_fm; Ermittlung des Formularbausteins nur technisch."
+  },
+  {
+   "id": "BM-181-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "„FB lv_fm wird aufgerufen, entscheidet die Eingabe zur Laufzeit“; Ausgabe ohne Druckdialog/Vorschau fehlt."
+  },
+  {
+   "id": "BM-181-B05",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Rückgabe von sy-subrc."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

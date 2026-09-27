@@ -1,0 +1,77 @@
+{
+ "id": "BM-086",
+ "urteile": [
+  {
+   "id": "BM-086-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Nachrichtentyp-Prüfung."
+  },
+  {
+   "id": "BM-086-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'jede Zeile aus idoc_data wird einzeln verarbeitet'; Kopfsegment/Kundennummer fehlt."
+  },
+  {
+   "id": "BM-086-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus knkk selektiert' – Kreditstammsatz je Kunde/Kreditkontrollbereich nicht fachlich benannt."
+  },
+  {
+   "id": "BM-086-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch"
+   ],
+   "kurz": "Beide Fehlerbedingungen erkannt, aber nur als 'die lv_error auf X gesetzt'; 'zurückgekehrt; es wird nichts geschrieben' ist falsch (nur die Segmentschleife endet, frühere Updates bleiben)."
+  },
+  {
+   "id": "BM-086-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Eine Zeile in knkk wird geändert' – neues Limit, Prüfdatum, Änderer fehlen."
+  },
+  {
+   "id": "BM-086-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "'Ohne lv_error wird die Status auf 53 gesetzt' – Status 53 erkennbar, sonst nur Feldzuweisungen; 'die Status', 'setzen die'."
+  },
+  {
+   "id": "BM-086-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Status 51 und workflow_result 99999 als Zuweisungen genannt; Kundennummer in der Meldung (msgv1) fehlt, Fehlerbedeutung nicht fachlich."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "satz": "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+   "begruendung": "Legt nahe, dass bei einem Fehler im IDoc kein Limit geändert wird; tatsächlich endet nur die Segmentschleife, bereits geschriebene Limits (UPDATE Zeile 64) bleiben bestehen."
+  }
+ ],
+ "soll_zweifel": []
+}

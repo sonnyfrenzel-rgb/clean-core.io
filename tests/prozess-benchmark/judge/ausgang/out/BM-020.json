@@ -1,0 +1,178 @@
+{
+ "id": "BM-020",
+ "urteile": [
+  {
+   "id": "BM-020-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Vorschlagswert Vorjahr."
+  },
+  {
+   "id": "BM-020-B02",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"Ein Native-SQL-Block wird ausgeführt\" (zweifach) – über Umsatz, Regulierer, Rechnungsarten oder Stornos sagt kein Satz etwas."
+  },
+  {
+   "id": "BM-020-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "\"Für ls_ums-kunrg IN s_kunrg wird eine Zeile aufgenommen\" – Einschränkung auf selektierte Regulierer nur technisch."
+  },
+  {
+   "id": "BM-020-B04",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "\"Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen\" – Hinweis und Ende ohne Umsätze; mehrfach."
+  },
+  {
+   "id": "BM-020-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Sätze aus zsd_bonus_staffel selektiert\" und \"Eine Meldung wird ausgegeben\" – fehlende Staffel und Abbruch nicht verbunden."
+  },
+  {
+   "id": "BM-020-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Jede Zeile aus mt_staffel wird einzeln verarbeitet\"; absteigende Sortierung/höchste Stufe fehlt."
+  },
+  {
+   "id": "BM-020-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Für lv_bokre ungleich abap_true wird der Block verlassen\" – Bonusrelevanz und \"kein Bonus\" nicht fachlich."
+  },
+  {
+   "id": "BM-020-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Kundennummer des Satzes wird gelesen\", bei Treffer Rücksprung – dass schon ein Bonusbeleg existiert, fehlt."
+  },
+  {
+   "id": "BM-020-B09",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "Umrechnungsaufruf richtig, aber \"Bei iv_waerk ungleich c_eur wird vor der Datenbankoperation zurückgekehrt\" ist falsch – bei Fremdwährung wird umgerechnet, zurückgekehrt nur ohne Kurs."
+  },
+  {
+   "id": "BM-020-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Für lv_ums_eur kleiner c_min_umsatz wird der Block verlassen\" – 10.000 EUR und \"kein Bonus\" nicht benannt."
+  },
+  {
+   "id": "BM-020-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Schleife über mt_staffel; Prozentsatz der erreichten Stufe fehlt."
+  },
+  {
+   "id": "BM-020-B12",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Bonusberechnung."
+  },
+  {
+   "id": "BM-020-B13",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Kappung."
+  },
+  {
+   "id": "BM-020-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "Bonus ≤ 0 → Status I und Verlassen; Ausweis mit Begründung nicht fachlich, \"setzen die Status\"."
+  },
+  {
+   "id": "BM-020-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "Testlauf → Status T und Verlassen ohne Schreiben; \"würde angelegt\" nicht erkennbar."
+  },
+  {
+   "id": "BM-020-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur BAPI-Aufruf mit ls_hdr/cv_vbeln; Gutschriftsanforderung ZG2 mit Kondition ZBON nicht fachlich."
+  },
+  {
+   "id": "BM-020-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Verbuchungsregistrierung, Rollback ohne Belegnummer (Status E) und COMMIT sonst korrekt, aber nur technisch; Bonusbeleg mit Umsatz/Prozent/Bonus nicht benannt."
+  },
+  {
+   "id": "BM-020-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Ohne Treffer wird eine Meldung ausgegeben\" – ein doppelter Beleg ist kein fehlender Treffer, der Abbruch der Verbuchung (Typ A) fehlt."
+  },
+  {
+   "id": "BM-020-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"REUSE_ALV_GRID_DISPLAY wird aufgerufen\"; Ergebnisliste mit Summen je Währung nicht fachlich."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

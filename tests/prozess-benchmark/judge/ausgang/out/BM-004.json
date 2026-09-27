@@ -1,0 +1,32 @@
+{
+ "id": "BM-004",
+ "urteile": [
+  {
+   "id": "BM-004-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik"
+   ],
+   "kurz": "\"aufsd lifsd faksd des Kunden wird gelesen\" – Feldnamen statt Auftrags-/Liefer-/Fakturasperre, \"wird\" bei drei Feldern, \"zentral\" fehlt."
+  },
+  {
+   "id": "BM-004-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Ausnahme CUSTOMER_NOT_FOUND."
+  },
+  {
+   "id": "BM-004-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "grammatik"
+   ],
+   "kurz": "Nur das Lesen der Sperrfelder, ohne die Bedingung \"nur wenn zentral keine Sperre\" und ohne Vertriebsbereich – der fachliche Kern fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

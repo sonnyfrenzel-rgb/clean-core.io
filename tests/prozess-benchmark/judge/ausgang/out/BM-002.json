@@ -1,0 +1,47 @@
+{
+ "id": "BM-002",
+ "urteile": [
+  {
+   "id": "BM-002-B01",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Kern \"nur H geht weiter\" stimmt, aber \"kleinere werden übersprungen, die Schleife läuft weiter\" ist falsch: Gleichheitsprüfung, keine Schleife, der Exit endet."
+  },
+  {
+   "id": "BM-002-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"kdgrp des Kunden wird gelesen\" – Feldname statt Kundengruppe, Vertriebsbereich fehlt."
+  },
+  {
+   "id": "BM-002-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Bedingung und Zuweisungen stimmen, aber nur als sy-subrc/lv_kdgrp/vbak-vsbed/vbak-zzkeyacc; Express und Key-Account-Kennzeichen erkennt ein Fachanwender nicht; fünffach wiederholt, \"die vbak-vsbed\", \"setzen die\"."
+  },
+  {
+   "id": "BM-002-B04",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Ein Satz stimmt (\"Auftragsarten ZFD ... vbak-augru auf Z01\"), der Sammelsatz behauptet aber \"sonst die vbak-augru auf Z01\" ohne ZFD-Bedingung – also für jeden Nicht-Key-Account."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

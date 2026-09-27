@@ -1,0 +1,137 @@
+{
+ "id": "BM-068",
+ "titel": "Chargenbewertung über Klassifizierungsmerkmale Reinheit und Verfallsdatum",
+ "prozess": "Ein aufrufendes Programm übergibt Material, Charge und optional einen Mindestwert für die Reinheit. Der Baustein bildet den Objektschlüssel der Charge und sucht deren Klassifizierung in Klassenart 023; ohne Klassifizierung endet er mit einer Ausnahme. Er löst die Merkmale Reinheit und Verfallsdatum auf und liest alle Merkmalwerte der Charge. Fehlt der Reinheitswert, gibt er den Status P zur manuellen Prüfung zurück. Sonst übernimmt er Reinheit und gegebenenfalls Verfallsdatum. Eine verfallene Charge wird mit S (sperren) bewertet; andernfalls entscheidet die Reinheit: ab dem Grenzwert F (freigeben), darunter S. Der Baustein ändert keine Daten; die Konsequenz zieht der Aufrufer.",
+ "verboten": [
+  "gesamte Scheibe — kein Fachsatz „Die Charge wird im System gesperrt oder freigegeben“ (der Baustein liefert nur einen Status zurück, er ändert weder Chargenzustand noch Bestand)",
+  "source.abap:49 — kein Fachsatz „Nur Originalwerte werden gelesen“ (die MAFID-Bedingung ist auskommentiert)",
+  "source.abap:67 — kein Fachsatz „Chargen ohne Verfallsdatum werden gesperrt“ (ohne Verfallsdatum entscheidet allein die Reinheit)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-068-B01",
+   "soll": "Aus Material und Charge wird der Objektschlüssel der Chargenklassifizierung gebildet und das Klassifizierungsobjekt der Klassenart 023 gesucht.",
+   "zeilen": [
+    32,
+    35
+   ],
+   "code": [
+    "32:   lv_objek     = iv_matnr.",
+    "35:   SELECT SINGLE cuobj FROM inob INTO lv_cuobj"
+   ],
+   "engine": [
+    "cuobj des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-068-B02",
+   "soll": "Ist die Charge nicht klassifiziert, endet der Baustein mit der Ausnahme KEINE_KLASSIFIZIERUNG.",
+   "zeilen": [
+    39,
+    40
+   ],
+   "code": [
+    "39:   IF sy-subrc <> 0.",
+    "40:     RAISE keine_klassifizierung."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-068-B03",
+   "soll": "Die Merkmale Reinheit (Z_REINHEIT) und Verfallsdatum werden auf ihre internen Merkmalsnummern aufgelöst und die Merkmalwerte der Charge gelesen.",
+   "zeilen": [
+    44,
+    46,
+    49
+   ],
+   "code": [
+    "44:   SELECT SINGLE atinn FROM cabn INTO lv_atinn",
+    "46:   SELECT SINGLE atinn FROM cabn INTO lv_atinn_vf",
+    "49:   SELECT * FROM ausp INTO TABLE lt_ausp"
+   ],
+   "engine": [
+    "atinn des Satzes wird gelesen.",
+    "atinn des Satzes wird gelesen.",
+    "Es werden Sätze aus ausp selektiert."
+   ]
+  },
+  {
+   "id": "BM-068-B04",
+   "soll": "Fehlt ein Reinheitswert, wird der Status P (manuell prüfen) zurückgegeben.",
+   "zeilen": [
+    54,
+    55,
+    56,
+    57
+   ],
+   "code": [
+    "54:   READ TABLE lt_ausp INTO ls_ausp WITH KEY atinn = lv_atinn.",
+    "55:   IF sy-subrc <> 0.",
+    "56:     ev_status = 'P'.",
+    "57:     RETURN."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird die Status auf P gesetzt und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "sy-subrc ungleich 0 erhalten P.",
+    "Es wird die Status auf P gesetzt und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-068-B05",
+   "soll": "Der Reinheitswert wird zurückgegeben; ein vorhandenes Verfallsdatum wird aus dem Merkmalwert übernommen.",
+   "zeilen": [
+    59,
+    61,
+    62
+   ],
+   "code": [
+    "59:   ev_reinheit = ls_ausp-atflv.",
+    "61:   READ TABLE lt_ausp INTO ls_ausp WITH KEY atinn = lv_atinn_vf.",
+    "62:   IF sy-subrc = 0."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-068-B06",
+   "soll": "Eine verfallene Charge erhält den Status S (sperren), unabhängig von der Reinheit.",
+   "zeilen": [
+    67,
+    68
+   ],
+   "code": [
+    "67:   IF lv_vfdat IS NOT INITIAL AND lv_vfdat < sy-datum.",
+    "68:     ev_status = 'S'."
+   ],
+   "engine": [
+    "Für lv_vfdat IS NOT INITIAL AND lv_vfdat < sy-datum wird die Status auf S gesetzt.",
+    "Für lv_vfdat IS NOT INITIAL AND lv_vfdat < sy-datum wird die Status auf S gesetzt, sonst die Status auf F gesetzt beziehungsweise die Status auf S gesetzt.",
+    "lv_vfdat IS NOT INITIAL AND lv_vfdat < sy-datum erhalten S."
+   ]
+  },
+  {
+   "id": "BM-068-B07",
+   "soll": "Sonst wird die Charge mit Status F freigegeben, wenn die Reinheit mindestens den übergebenen Grenzwert (Vorschlag 99,5) erreicht, andernfalls mit Status S gesperrt.",
+   "zeilen": [
+    69,
+    70,
+    72
+   ],
+   "code": [
+    "69:   ELSEIF ev_reinheit >= iv_min_reinheit.",
+    "70:     ev_status = 'F'.",
+    "72:     ev_status = 'S'."
+   ],
+   "engine": [
+    "Für lv_vfdat IS NOT INITIAL AND lv_vfdat < sy-datum wird die Status auf S gesetzt, sonst die Status auf F gesetzt beziehungsweise die Status auf S gesetzt.",
+    "Für ev_reinheit ab iv_min_reinheit wird die Status auf F gesetzt.",
+    "ev_reinheit ab iv_min_reinheit erhalten F.",
+    "Für kleinere oder gleiche ev_reinheit wird die Status auf S gesetzt.",
+    "Kleinere oder gleiche ev_reinheit erhalten S."
+   ]
+  }
+ ]
+}

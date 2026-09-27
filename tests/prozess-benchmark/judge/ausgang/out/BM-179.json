@@ -1,0 +1,206 @@
+{
+ "id": "BM-179",
+ "urteile": [
+  {
+   "id": "BM-179-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Eine Zeile wird aufgenommen“; Vorbelegung der letzten sieben Tage fehlt."
+  },
+  {
+   "id": "BM-179-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife, lifnr-Lesen, Meldung ohne Treffer; Abweisung unbekannter Einzelspediteure nicht fachlich."
+  },
+  {
+   "id": "BM-179-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "„Sätze aus vttk selektiert“; abgefertigt, Spediteure, Zeitraum fehlen."
+  },
+  {
+   "id": "BM-179-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Sätze aus vfkp selektiert“; Entfernen bereits belegter Transporte fehlt."
+  },
+  {
+   "id": "BM-179-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Meldung ohne Treffer; Beenden der Verarbeitung (STOP) fehlt."
+  },
+  {
+   "id": "BM-179-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Selektionen aus vttp und vekp; Summierung der Bruttogewichte in kg fehlt."
+  },
+  {
+   "id": "BM-179-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "„Für negative lv_kg wird der Block verlassen“; Fehler am Transport wegen Gewichtseinheit fehlt."
+  },
+  {
+   "id": "BM-179-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Fehler „Kein HU-Gewicht ermittelbar“ bei Gewicht ≤ 0 erkannt, aber nur als cs_tr-Felder."
+  },
+  {
+   "id": "BM-179-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "zone-Lesen und Ausstieg ohne Treffer; Fehler am Transport und Route/Tarifzone nicht fachlich."
+  },
+  {
+   "id": "BM-179-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Selektion aus zle_tarif, Tabellensuche, Ausstieg; Staffel-/Preislogik und Fehler fehlen."
+  },
+  {
+   "id": "BM-179-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Rechenfehler-Zweig; Frachtformel und Mindestfracht fehlen."
+  },
+  {
+   "id": "BM-179-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „low des Satzes wird gelesen“; Dieselzuschlag fehlt."
+  },
+  {
+   "id": "BM-179-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik"
+   ],
+   "kurz": "„Nur Eine leere gs_tr>-fehler gehen weiter“ (verstümmelt) und kostenbeleg_anlegen im Echtlauf; Inhalt nur technisch erkennbar."
+  },
+  {
+   "id": "BM-179-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Bei Protokolltreffer „Bereits abgerechnet (Protokoll)“ und Ausstieg; Übernahme des vorhandenen Belegs fehlt."
+  },
+  {
+   "id": "BM-179-B15",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu EXPORT/FREE MEMORY."
+  },
+  {
+   "id": "BM-179-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "unvollstaendig"
+   ],
+   "kurz": "„Die Anlage wird über VI01 angestoßen“; Batch-Input, Frachtkostenart und synchrones Verbuchen fehlen."
+  },
+  {
+   "id": "BM-179-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Fehler „VI01 mit Fehler beendet“ bei E/A-Meldung erkannt, aber als Code-Ausdruck."
+  },
+  {
+   "id": "BM-179-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Tabellensuche; Belegnummer-Übernahme und Protokoll fehlen."
+  },
+  {
+   "id": "BM-179-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Gruppenkopf, Zeilen und Summe nur als Feldliste („3 ls_tr-tknum“, „COLOR COL_GROUP“ als Feld)."
+  },
+  {
+   "id": "BM-179-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Feldliste des Kopfes; „jede Seite“ (TOP-OF-PAGE) nicht erkannt."
+  },
+  {
+   "id": "BM-179-B21",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "technisch",
+    "grammatik"
+   ],
+   "kurz": "„Die Anlage wird über VI03 angestoßen“ – VI03 zeigt an; „kleinere werden übersprungen, die Schleife läuft weiter“ sinnwidrig."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

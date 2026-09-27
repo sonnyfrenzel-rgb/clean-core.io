@@ -1,0 +1,60 @@
+{
+ "id": "BM-187",
+ "urteile": [
+  {
+   "id": "BM-187-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "„retrieve – Verhalten nicht belegt“ und Schleife über lt_root; Vorgänge nicht fachlich."
+  },
+  {
+   "id": "BM-187-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Datumsprüfung."
+  },
+  {
+   "id": "BM-187-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "„aufsd und lifsd des Kunden werden gelesen“; Auftrags-/Liefersperre nur als Feldnamen."
+  },
+  {
+   "id": "BM-187-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Ablehnung mit Meldung 002."
+  },
+  {
+   "id": "BM-187-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein"
+   ],
+   "kurz": "Nur „Die Zahl der Sätze wird ermittelt“; ausgeliehene Geräte des Kunden nicht genannt."
+  },
+  {
+   "id": "BM-187-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Höchstzahl drei."
+  },
+  {
+   "id": "BM-187-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „add_message – Verhalten nicht belegt“; Eintrag als fehlgeschlagen fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

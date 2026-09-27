@@ -1,0 +1,98 @@
+{
+ "id": "BM-075",
+ "urteile": [
+  {
+   "id": "BM-075-B01",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Auftragsart wird gelesen und bei anderer Art als PP01/PP02 verlassen – fachlich dasselbe, Bedingung technisch formuliert."
+  },
+  {
+   "id": "BM-075-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "CHECK auf Menge und Ausschuss technisch genannt; Quotenberechnung fehlt; 'kleinere werden übersprungen, die Schleife läuft weiter' ist falsch (CHECK in Methode)."
+  },
+  {
+   "id": "BM-075-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'toleranz des Satzes wird gelesen' – Toleranz je Werk/Arbeitsplatz und Vorgabe 5 % fehlen."
+  },
+  {
+   "id": "BM-075-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Ohne is_confirmation-grund wird eine Meldung ausgegeben' – Ablehnung des Sicherns nicht gesagt; 'Für lv_quote größer lv_tol wird Z_PP_AUSSCHUSS_MELDEN aufgerufen' ist falsch, der Aufruf erfolgt nur mit Grund."
+  },
+  {
+   "id": "BM-075-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Registrierung von Z_PP_AUSSCHUSS_MELDEN zur Verbuchung erkannt; die Bedingung 'mit Abweichungsgrund' fehlt und die übergebenen Daten auch."
+  },
+  {
+   "id": "BM-075-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Erhöhung von xmnga bei vorhandenem Eintrag erkannt; Protokollanlage fehlt; 'vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben' ist falsch (UPDATE steht davor), 'nicht persistiert' verkennt die Verbuchung."
+  },
+  {
+   "id": "BM-075-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'SWE_EVENT_CREATE wird aufgerufen'; Ereignis ZSCRAPEXCEEDED, erste Überschreitung und QS-Information fehlen."
+  },
+  {
+   "id": "BM-075-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "'r~rueck INTO lv_rueck des Satzes wird gelesen' und Meldung bei Treffer; Ablehnung des Stornos wegen späterer Rückmeldung nicht fachlich."
+  },
+  {
+   "id": "BM-075-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife, Lesen und MODIFY zpp_conf_stat genannt; Stornoausschluss und Fortschreibung der Mengen fehlen; 'nicht persistiert, kein COMMIT' verkennt, dass der Baustein in der Verbuchung läuft."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

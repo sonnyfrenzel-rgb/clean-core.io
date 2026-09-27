@@ -1,0 +1,72 @@
+{
+ "id": "BM-167",
+ "urteile": [
+  {
+   "id": "BM-167-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Nachrichtentyp-Prüfung."
+  },
+  {
+   "id": "BM-167-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Schleife über idoc_data; Auswertung von Kopf- und Positionssegment fehlt."
+  },
+  {
+   "id": "BM-167-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „matnr des Satzes wird gelesen“; Ermittlung des eigenen Materials über Kunden-Material-Info fehlt."
+  },
+  {
+   "id": "BM-167-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Fehlercodes 110/111 und Abbruch erkannt, aber nur als lv_msgno/sy-subrc; Kundenmaterial unbekannt bzw. Menge nicht numerisch nicht fachlich."
+  },
+  {
+   "id": "BM-167-B05",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Engine-Sätze betreffen nur den Status; das Einfügen in die Abruftabelle und das Übergehen vorhandener Positionen fehlt."
+  },
+  {
+   "id": "BM-167-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Status 53 bzw. 51 erkannt, aber „die Status“, workflow_result 99999 technisch; Abrufnummer/Fehlergrund fehlen."
+  },
+  {
+   "id": "BM-167-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Nur wf_param-Zuweisung bei leerem workflow_result; Rückmeldung aller IDocs nur bei fehlerfreiem Paket nicht fachlich."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

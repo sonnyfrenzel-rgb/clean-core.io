@@ -1,0 +1,62 @@
+{
+ "id": "BM-007",
+ "urteile": [
+  {
+   "id": "BM-007-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Feldliste p~posnr … u~lfsta und \"Sätze aus vbap\" – technisch; Einschränkung auf nicht abgesagte Positionen fehlt."
+  },
+  {
+   "id": "BM-007-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Ausnahme ohne Positionen."
+  },
+  {
+   "id": "BM-007-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Überspringen voll belieferter Positionen."
+  },
+  {
+   "id": "BM-007-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "BAPI-Aufruf nur mit Werk und Rückgabe in ls_return; Verfügbarkeitsprüfung des Materials und Prüfregel A fehlen."
+  },
+  {
+   "id": "BM-007-B05",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Abbruch bei BAPI-Fehler."
+  },
+  {
+   "id": "BM-007-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Jede Zeile aus lt_wmdvex wird einzeln verarbeitet\"; Datumsgrenze und Summierung bestätigter Mengen fehlen."
+  },
+  {
+   "id": "BM-007-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Für lv_avail kleiner ls_item-kwmeng wird eine Zeile aufgenommen\" – Bedingung technisch, dass es eine Fehlmengenposition mit Bedarf/verfügbar/Fehlmenge ist, fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,287 @@
+{
+ "id": "BM-071",
+ "titel": "RFC-Eingangsschnittstelle MES: Vorgangsrückmeldung mit Idempotenz und Sperre",
+ "prozess": "Das MES ruft den Baustein per RFC für jede Arbeitsgangrückmeldung auf. Zuerst prüft SAP die Berechtigung des technischen Benutzers und weist ohne Berechtigung mit Status E ab. Danach prüft es anhand der MES-ID im Schnittstellenprotokoll, ob dieselbe Nachricht bereits erfolgreich gebucht wurde; dann antwortet es mit Status D und bucht nicht erneut. Anschließend sperrt es den Fertigungsauftrag. Ist er gesperrt, protokolliert es den Konflikt und antwortet mit Status L, damit das MES später wiederholt. Mit Sperre prüft es, ob es sich um einen freigegebenen, nicht technisch abgeschlossenen Fertigungsauftrag handelt und ob der Vorgang existiert. Scheitert eine Prüfung, hebt es die Sperre auf, protokolliert den Grund und antwortet mit Status E. Sonst bucht es die Vorgangsrückmeldung mit Gut- und Ausschussmenge und der MES-ID im Text; bei Fehler rollt es zurück, bei Erfolg schreibt es fest und übernimmt Rückmeldenummer und -zähler. Zum Schluss hebt es die Sperre auf, schreibt das Ergebnis mit eigenem Commit ins Protokoll und gibt Status, Rückmeldenummer und Meldungen an das MES zurück.",
+ "verboten": [
+  "z_mes_rueckmeldung.abap:69 — kein Fachsatz „Bei Sperrkonflikt wird die Rückmeldung später automatisch nachgebucht“ (SAP bucht nichts nach; nur Status L geht an das MES zurück)",
+  "z_mes_rueckmeldung.abap:40 — kein Fachsatz „Jede bereits empfangene MES-ID wird abgewiesen“ (nur erfolgreich gebuchte, Status S; fehlerhafte Nachrichten können erneut gebucht werden)",
+  "lzmes_rmf01.abap:107 — kein Fachsatz „Alle Detailmeldungen der Rückmeldung werden ausgewertet“ (nur die erste Zeile von DETAIL_RETURN)",
+  "gesamte Scheibe — kein Fachsatz „Komponentenverbrauch oder Wareneingang werden gebucht“ (es werden keine Warenbewegungen übergeben)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-071-B01",
+   "soll": "Das MES übergibt je Aufruf eine Vorgangsrückmeldung mit eigener Nachrichten-ID, Auftrag, Vorgang, Gut- und Ausschussmenge, Endrückmeldekennzeichen und Buchungsdatum.",
+   "zeilen": [
+    162
+   ],
+   "code": [
+    "162: FUNCTION z_mes_rueckmeldung."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-071-B02",
+   "soll": "Fehlt dem aufrufenden Benutzer die Berechtigung für die MES-Schnittstelle, wird Status E mit „Keine Berechtigung fuer MES-Rueckmeldung“ zurückgegeben, ohne zu protokollieren.",
+   "zeilen": [
+    191,
+    193,
+    197
+   ],
+   "code": [
+    "191:   AUTHORITY-CHECK OBJECT 'Z_MES_IF'",
+    "193:   IF sy-subrc <> 0.",
+    "197:     RETURN."
+   ],
+   "engine": [
+    "Die Berechtigung auf Z_MES_IF wird geprüft.",
+    "Ohne Treffer wird eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Berechtigung auf Z_MES_IF wird der Block verlassen.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-071-B03",
+   "soll": "Wurde dieselbe MES-ID bereits erfolgreich gebucht, wird Status D mit dem Hinweis „MES-ID bereits gebucht“ zurückgegeben und nichts erneut gebucht.",
+   "zeilen": [
+    201,
+    204,
+    207
+   ],
+   "code": [
+    "201:   SELECT SINGLE mes_id FROM zmes_rm_log INTO lv_dummy",
+    "204:   IF sy-subrc = 0.",
+    "207:     RETURN."
+   ],
+   "engine": [
+    "mes_id des Satzes wird gelesen.",
+    "Bei Treffer wird eine Zeile aufgenommen und der Block verlassen.",
+    "Bei Treffer wird der Block verlassen.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-071-B04",
+   "soll": "Der Fertigungsauftrag wird gesperrt; ist er bereits gesperrt, wird der Sperrkonflikt protokolliert und Status L zurückgegeben, damit das MES später wiederholt.",
+   "zeilen": [
+    217,
+    224,
+    229,
+    230
+   ],
+   "code": [
+    "217:   CALL FUNCTION 'ENQUEUE_ESORDER'",
+    "224:   IF sy-subrc <> 0.",
+    "229:     PERFORM schreibe_log.",
+    "230:     RETURN."
+   ],
+   "engine": [
+    "Der Funktionsbaustein ENQUEUE_ESORDER wird aufgerufen.",
+    "Ohne Treffer wird die Text auf Auftrag gesperrt - MES wiederholt spaeter gesetzt, eine Zeile aufgenommen, schreibe_log aufgerufen und der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die Text auf Auftrag gesperrt - MES wiederholt spaeter.",
+    "Es wird die Text auf Auftrag gesperrt - MES wiederholt spaeter gesetzt, eine Zeile aufgenommen, schreibe_log aufgerufen und der Block verlassen.",
+    "Das Unterprogramm schreibe_log wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-071-B05",
+   "soll": "Es wird geprüft, ob der Auftrag existiert und ein Fertigungsauftrag ist; sonst lautet das Ergebnis „Kein Fertigungsauftrag“.",
+   "zeilen": [
+    40,
+    42
+   ],
+   "code": [
+    "40:   SELECT SINGLE objnr autyp FROM aufk INTO (lv_objnr, lv_autyp)",
+    "42:   IF sy-subrc <> 0 OR lv_autyp <> '10'."
+   ],
+   "engine": [
+    "objnr autyp des Satzes wird gelesen.",
+    "Für sy-subrc <> 0 OR lv_autyp <> '10' wird die Text auf Kein Fertigungsauftrag gesetzt und der Block verlassen.",
+    "sy-subrc <> 0 OR lv_autyp <> '10' setzen die Text auf Kein Fertigungsauftrag."
+   ]
+  },
+  {
+   "id": "BM-071-B06",
+   "soll": "Der Auftrag muss freigegeben sein, sonst lautet das Ergebnis „Auftrag nicht freigegeben“.",
+   "zeilen": [
+    49,
+    57
+   ],
+   "code": [
+    "49:   CALL FUNCTION 'STATUS_CHECK'",
+    "57:   IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Der Funktionsbaustein STATUS_CHECK wird aufgerufen.",
+    "Ohne Treffer wird die Text auf Auftrag nicht freigegeben gesetzt und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "sy-subrc ungleich 0 setzen die Text auf Auftrag nicht freigegeben."
+   ]
+  },
+  {
+   "id": "BM-071-B07",
+   "soll": "Ein technisch abgeschlossener Auftrag wird mit „Auftrag technisch abgeschlossen“ abgelehnt.",
+   "zeilen": [
+    64,
+    72
+   ],
+   "code": [
+    "64:   CALL FUNCTION 'STATUS_CHECK'",
+    "72:   IF sy-subrc = 0."
+   ],
+   "engine": [
+    "Der Funktionsbaustein STATUS_CHECK wird aufgerufen.",
+    "Bei Treffer wird die Text auf Auftrag technisch abgeschlossen gesetzt und der Block verlassen.",
+    "Bei Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "sy-subrc mit dem Wert 0 setzen die Text auf Auftrag technisch abgeschlossen."
+   ]
+  },
+  {
+   "id": "BM-071-B08",
+   "soll": "Der rückgemeldete Vorgang muss im Arbeitsplan des Auftrags vorhanden sein, sonst lautet das Ergebnis „Vorgang im Auftrag nicht vorhanden“.",
+   "zeilen": [
+    78,
+    80,
+    83
+   ],
+   "code": [
+    "78:   SELECT SINGLE aufpl FROM afko INTO lv_aufpl",
+    "80:   SELECT SINGLE vornr FROM afvc INTO lv_vornr",
+    "83:   IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "aufpl des Satzes wird gelesen.",
+    "vornr des Satzes wird gelesen.",
+    "Ohne Treffer wird die Text auf Vorgang im Auftrag nicht vorhanden gesetzt und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "sy-subrc ungleich 0 setzen die Text auf Vorgang im Auftrag nicht vorhanden."
+   ]
+  },
+  {
+   "id": "BM-071-B09",
+   "soll": "Scheitert die Prüfung, wird die Auftragssperre aufgehoben, der Prüffehler protokolliert und Status E mit dem Prüftext zurückgegeben.",
+   "zeilen": [
+    234,
+    235,
+    240,
+    241
+   ],
+   "code": [
+    "234:   IF lv_ok = abap_false.",
+    "235:     CALL FUNCTION 'DEQUEUE_ESORDER'",
+    "240:     PERFORM schreibe_log.",
+    "241:     RETURN."
+   ],
+   "engine": [
+    "Für lv_ok mit dem Wert abap_false wird DEQUEUE_ESORDER aufgerufen, eine Zeile aufgenommen, schreibe_log aufgerufen und der Block verlassen.",
+    "Bei lv_ok gleich abap_false wird der Block verlassen.",
+    "Der Funktionsbaustein DEQUEUE_ESORDER wird aufgerufen.",
+    "Es wird eine Zeile aufgenommen, schreibe_log aufgerufen und der Block verlassen.",
+    "Das Unterprogramm schreibe_log wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-071-B10",
+   "soll": "Bei bestandener Prüfung wird die Vorgangsrückmeldung mit Buchungsdatum, Gutmenge, Ausschuss, Mengeneinheit und Endrückmeldekennzeichen gebucht; die MES-ID steht im Rückmeldetext.",
+   "zeilen": [
+    117,
+    120,
+    244
+   ],
+   "code": [
+    "117:   ls_tt-conf_text      = |MES { gs_ctx-mes_id }|.",
+    "120:   CALL FUNCTION 'BAPI_PRODORDCONF_CREATE_TT'",
+    "244:   PERFORM buche_rueckmeldung USING    lv_aufnr iv_vornr iv_gut iv_aus"
+   ],
+   "engine": [
+    "Es wird eine Zeile aufgenommen und BAPI_PRODORDCONF_CREATE_TT aufgerufen.",
+    "Der Funktionsbaustein BAPI_PRODORDCONF_CREATE_TT wird aufgerufen.",
+    "Das konvertierte Ergebnis wird in ls_return übernommen.",
+    "Das Unterprogramm buche_rueckmeldung wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird buche_rueckmeldung aufgerufen und DEQUEUE_ESORDER aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-071-B11",
+   "soll": "Meldet die Buchung einen Fehler, wird zurückgerollt und Status E mit dem Fehlertext gesetzt.",
+   "zeilen": [
+    128,
+    129
+   ],
+   "code": [
+    "128:   IF ls_return-type CA 'EA' OR ls_detail-type CA 'EA'.",
+    "129:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "engine": [
+    "Für ls_return-type CA 'EA' OR ls_detail-type CA 'EA' wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Für ls_return-type CA 'EA' OR ls_detail-type CA 'EA' wird BAPI_TRANSACTION_ROLLBACK aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-071-B12",
+   "soll": "Sonst wird mit Warten auf die Verbuchung festgeschrieben, Rückmeldenummer und -zähler werden übernommen und Status S gesetzt.",
+   "zeilen": [
+    135,
+    138
+   ],
+   "code": [
+    "135:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "138:     cv_rueck      = ls_detail-conf_no."
+   ],
+   "engine": [
+    "Für ls_return-type CA 'EA' OR ls_detail-type CA 'EA' wird BAPI_TRANSACTION_ROLLBACK aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-071-B13",
+   "soll": "Danach wird die Auftragssperre aufgehoben und das Ergebnis protokolliert.",
+   "zeilen": [
+    248,
+    254
+   ],
+   "code": [
+    "248:   CALL FUNCTION 'DEQUEUE_ESORDER'",
+    "254:   PERFORM schreibe_log."
+   ],
+   "engine": [
+    "Es wird buche_rueckmeldung aufgerufen und DEQUEUE_ESORDER aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_ESORDER wird aufgerufen.",
+    "Es wird eine Zeile aufgenommen und schreibe_log aufgerufen.",
+    "Das Unterprogramm schreibe_log wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-071-B14",
+   "soll": "Jeder Protokolleintrag hält MES-ID, Auftrag, Vorgang, Status, Text sowie Datum, Uhrzeit und Benutzer fest und wird sofort festgeschrieben.",
+   "zeilen": [
+    159,
+    160
+   ],
+   "code": [
+    "159:   MODIFY zmes_rm_log FROM ls_log.",
+    "160:   COMMIT WORK."
+   ],
+   "engine": [
+    "Eine Zeile in zmes_rm_log wird eingefügt oder überschrieben.",
+    "Es wird eine Zeile eingefügt oder überschrieben und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-071-B15",
+   "soll": "Das MES erhält Status, Rückmeldenummer, Rückmeldezähler und die Meldungstabelle zurück.",
+   "zeilen": [
+    252,
+    256
+   ],
+   "code": [
+    "252:   ev_status = gs_ctx-status.",
+    "256: ENDFUNCTION."
+   ],
+   "engine": []
+  }
+ ]
+}

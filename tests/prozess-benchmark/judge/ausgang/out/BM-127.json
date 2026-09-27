@@ -1,0 +1,88 @@
+{
+ "id": "BM-127",
+ "urteile": [
+  {
+   "id": "BM-127-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus zre_umsatz mit Buchungskreis und \"u~gjahr\" erkannt; Monatsumsätze/Mietverträge nur als Feldnamen."
+  },
+  {
+   "id": "BM-127-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "\"Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen\" trifft Hinweis und Ende des Laufs; viermal in Varianten."
+  },
+  {
+   "id": "BM-127-B03",
+   "urteil": "fehlt",
+   "mangel": [
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"Jede Zeile aus lt_ums wird einzeln verarbeitet\"; keine Summierung je Vertrag und Währung."
+  },
+  {
+   "id": "BM-127-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"unitprice des Satzes wird gelesen\"; Mindestmiete, Kondition Z100 und Ausschluss ohne Kondition fehlen."
+  },
+  {
+   "id": "BM-127-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus zre_ums_staffel selektiert\"; höchster erreichter Staffelsatz fehlt."
+  },
+  {
+   "id": "BM-127-B06",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"Eine Zeile wird in gt_abr aufgenommen\"; weder Maximum aus Umsatzanteil und Mindestmieten noch Nachforderung."
+  },
+  {
+   "id": "BM-127-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Die lv_quote wird auf 999 gesetzt\" ohne Bedingung (Umsatz null) und ohne die Quotenformel."
+  },
+  {
+   "id": "BM-127-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Speichern und Festschreiben bei gesetztem p_upd erkannt, aber nur technisch und als \"eine Zeile\" statt aller Abrechnungsergebnisse."
+  },
+  {
+   "id": "BM-127-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "ALV-Aufruf erkannt, aber als \"fachliches Verhalten nicht belegt\" statt Anzeige der Abrechnungsliste."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

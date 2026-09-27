@@ -1,0 +1,207 @@
+{
+ "id": "BM-097",
+ "urteile": [
+  {
+   "id": "BM-097-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Dateinamensvorschlag."
+  },
+  {
+   "id": "BM-097-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "ENQUEUE_EZHR_EXPORT + 'Ohne Treffer wird eine Meldung ausgegeben' – Exklusivität und Abbruch nicht benannt, 'Ohne Treffer' passt nicht zur Sperre."
+  },
+  {
+   "id": "BM-097-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Ohne p_full wird get_last_run aufgerufen' + Lesen von zhr_export_log – Stichtag des letzten erfolgreichen Laufs nicht fachlich."
+  },
+  {
+   "id": "BM-097-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus pa0001 selektiert' – Filter Buchungskreis/Mitarbeitergruppe/heute fehlen."
+  },
+  {
+   "id": "BM-097-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Ohne gv_last_run wird der Block verlassen' – dass dann alle Mitarbeiter übernommen werden, fehlt."
+  },
+  {
+   "id": "BM-097-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur vier 'Sätze aus pa000x selektiert'; Änderung seit Stichtag und Einschränkung auf diese Mitarbeiter fehlen."
+  },
+  {
+   "id": "BM-097-B07",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen' entspricht dem Soll."
+  },
+  {
+   "id": "BM-097-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Text 'Keine Berechtigung Infotyp 0002' und Überspringen erkennbar, aber 'Ohne Treffer' passt nicht zur Berechtigungsprüfung; 'die Text'."
+  },
+  {
+   "id": "BM-097-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "Nur 'HR_READ_INFOTYPE wird aufgerufen'; welche Infotypen gelesen werden, fehlt."
+  },
+  {
+   "id": "BM-097-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Satzart D bei stat2 = 0, sonst U – 'ausgetreten' wird nicht gesagt."
+  },
+  {
+   "id": "BM-097-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Text 'Keine ständige Anschrift' und Überspringen erkennbar, Bedingung nur als Code (sy-subrc/satzart)."
+  },
+  {
+   "id": "BM-097-B12",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Inhalt des Exportsatzes."
+  },
+  {
+   "id": "BM-097-B13",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Zeitsatz."
+  },
+  {
+   "id": "BM-097-B14",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Mit gesetztem p_test wird display_preview aufgerufen ... es wird nichts geschrieben' entspricht dem Soll."
+  },
+  {
+   "id": "BM-097-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Nur 'Ohne Treffer wird eine Zeile aufgenommen' – Schreiben der Datei fehlt, 'Ohne Treffer' passt nicht zu OPEN DATASET."
+  },
+  {
+   "id": "BM-097-B16",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Engine behauptet eine Listenausgabe; WRITE ... TO formatiert nur in eine Variable."
+  },
+  {
+   "id": "BM-097-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "falsch",
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Entferntes System wird benachrichtigt' + 'Ohne Treffer wird eine Zeile aufgenommen' – Übertragung der Zeitsätze und Fehlertext nicht fachlich; 'Ohne Treffer' falsch."
+  },
+  {
+   "id": "BM-097-B18",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Laufprotokoll."
+  },
+  {
+   "id": "BM-097-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Status S bei gv_file_ok und gv_rfc_ok, sonst E – nur als Code."
+  },
+  {
+   "id": "BM-097-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "send_error_mail/SO_NEW_DOCUMENT_SEND_API1 genannt; Verteiler und Fehleranzahl fehlen, 'Ohne Treffer ... Meldung' statt Warnung bei Sendefehler."
+  },
+  {
+   "id": "BM-097-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "COMMIT und DEQUEUE_EZHR_EXPORT genannt, Freigabe der Laufsperre nur als Bausteinname."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "satz": "Bei Treffern werden ls_rec-gbdat TO lv_gbdat DD/MM/YYYY als Liste ausgegeben.",
+   "begruendung": "Output-Knoten an zhr_emp_export_f02.abap:42 (WRITE ... TO formatiert nur in eine Variable) – ausdrücklich verboten."
+  }
+ ],
+ "soll_zweifel": []
+}

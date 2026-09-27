@@ -1,0 +1,64 @@
+{
+ "id": "BM-042",
+ "titel": "Substitutions-Exit: Zuordnung aus Referenz oder Belegkopftext bei Zahlungsbelegen",
+ "prozess": "Der Exit U910 wird von der FI-Substitution beim Buchen für jede Belegzeile aufgerufen. Er wirkt nur bei Zahlungsbelegen der Belegarten DZ und DA. Hat eine Debitorenzeile noch keine Zuordnung, wird die Referenznummer des Belegs dort eingetragen. Bei Sachkontenzeilen wird im Sachkontenstamm geprüft, ob das Konto offene Posten führt; nur dann wird der gekürzte Belegkopftext als Zuordnung gesetzt. Alle anderen Zeilen und Belegarten bleiben unverändert; der Exit bucht nichts und erzeugt keine Meldung.",
+ "verboten": [
+  "source.abap:10 — kein Fachsatz „Beleg wird gebucht oder abgelehnt“ (Substitution ändert nur Felder, sie bucht und meldet nichts)",
+  "source.abap:14 — kein Fachsatz „Kreditorenzeilen erhalten eine Zuordnung“ (KOART 'K' fällt in den Sonst-Zweig)",
+  "source.abap:22 — kein Fachsatz „vollständiger Belegkopftext wird übernommen“ (nur die ersten 18 Zeichen)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-042-B01",
+   "soll": "Der Exit greift nur bei Zahlungsbelegen der Belegarten DZ und DA; bei allen anderen Belegarten bleibt die Belegzeile unverändert.",
+   "zeilen": [
+    12
+   ],
+   "code": [
+    "12:   CHECK bkpf-blart = 'DZ' OR bkpf-blart = 'DA'."
+   ],
+   "engine": [
+    "Nur bkpf-blart = 'DZ' OR bkpf-blart = 'DA' gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-042-B02",
+   "soll": "Bei Debitorenzeilen ohne Zuordnung wird die Referenznummer des Belegkopfs als Zuordnung übernommen.",
+   "zeilen": [
+    14,
+    15
+   ],
+   "code": [
+    "14:   IF bseg-koart = 'D' AND bseg-zuonr IS INITIAL.",
+    "15:     bseg-zuonr = bkpf-xblnr."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-042-B03",
+   "soll": "Bei Sachkontenzeilen wird im Sachkontenstamm des Buchungskreises nachgesehen, ob das Konto offene Posten führt.",
+   "zeilen": [
+    17
+   ],
+   "code": [
+    "17:     SELECT SINGLE xopvw FROM skb1 INTO lv_xopvw"
+   ],
+   "engine": [
+    "xopvw des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-042-B04",
+   "soll": "Nur bei OP-geführten Sachkonten werden die ersten 18 Zeichen des Belegkopftexts als Zuordnung gesetzt.",
+   "zeilen": [
+    20,
+    22
+   ],
+   "code": [
+    "20:     IF sy-subrc = 0 AND lv_xopvw = 'X'.",
+    "22:       bseg-zuonr = bkpf-bktxt(18)."
+   ],
+   "engine": []
+  }
+ ]
+}

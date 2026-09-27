@@ -1,0 +1,69 @@
+{
+ "id": "BM-129",
+ "urteile": [
+  {
+   "id": "BM-129-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus udm_p2p_attr mit Buchungskreis; \"offen\" und Fallnummer fehlen."
+  },
+  {
+   "id": "BM-129-B02",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "technisch",
+    "grammatik"
+   ],
+   "kurz": "\"kleinere werden übersprungen\" kehrt die Bedingung um: gerade Zusagen mit kleinerem Datum+Karenz gehen weiter."
+  },
+  {
+   "id": "BM-129-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"wrbtr des Satzes wird gelesen\"; Prüfung, ob der Posten offen ist, und die Folge \"eingehalten\" fehlen."
+  },
+  {
+   "id": "BM-129-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Liste erkannt (\"Kundennummer\" fachlich), sonst Feldnamen mit Spaltenpositionen (\"32 ls_p2p-belnr\")."
+  },
+  {
+   "id": "BM-129-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Ausgabe gv_anz mit Text erkannt, nicht als Anzahl der gebrochenen Zusagen formuliert."
+  },
+  {
+   "id": "BM-129-B06",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "technisch",
+    "grammatik"
+   ],
+   "kurz": "\"Die Anlage wird über FB03 angestoßen\" ist falsch (FB03 ist Anzeige); \"die Schleife läuft weiter\" gibt es bei AT LINE-SELECTION nicht."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "satz": "Die Anlage wird über die Transaktion FB03 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion.",
+   "begruendung": "Unterstellt eine Anlage/Änderung am Beleg; FB03 ist reine Belegansicht (verbotener Schluss zu Zeile 57)."
+  }
+ ],
+ "soll_zweifel": []
+}

@@ -1,0 +1,43 @@
+{
+ "id": "BM-161",
+ "urteile": [
+  {
+   "id": "BM-161-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Sätze aus eabl selektiert“; Zählerauswahl, Zeitraum und Sortierung je Zähler fehlen."
+  },
+  {
+   "id": "BM-161-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz an AT NEW equnr."
+  },
+  {
+   "id": "BM-161-B03",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "„kleinere werden übersprungen“ ist falsch: jeder Status außer 1 (auch größere) wird übergangen; Fachbegriff Ablesestatus fehlt."
+  },
+  {
+   "id": "BM-161-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig",
+    "grammatik"
+   ],
+   "kurz": "Ausgabe der Felder bei vorhandener Vorablesung nur als Variablennamen; die Verbrauchsberechnung als Differenz fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

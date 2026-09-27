@@ -1,0 +1,34 @@
+{
+ "id": "BM-082",
+ "urteile": [
+  {
+   "id": "BM-082-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Berechtigung auf Z_HR_OVT wird geprüft'; Personalbereich, Löschrecht und Abbruch mit NO_AUTHORITY fehlen."
+  },
+  {
+   "id": "BM-082-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum DELETE an Zeile 21."
+  },
+  {
+   "id": "BM-082-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu NOT_FOUND."
+  },
+  {
+   "id": "BM-082-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Rückgabe der Anzahl."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

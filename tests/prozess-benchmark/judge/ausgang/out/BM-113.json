@@ -1,0 +1,129 @@
+{
+ "id": "BM-113",
+ "urteile": [
+  {
+   "id": "BM-113-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "BAL_LOG_CREATE und 'Ohne Treffer eine Meldung' – Abbruch (Typ A) fehlt, 'Ohne Treffer'/'konvertiert'/'nicht belegt' falsch."
+  },
+  {
+   "id": "BM-113-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus aufk selektiert' – TECO bis Stichtag, DIP-Profil, noch nicht fakturiert fehlen."
+  },
+  {
+   "id": "BM-113-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird der Block verlassen' stimmt; 'es wird nichts geschrieben' ist falsch, das Log wird am Ende dennoch gesichert und angezeigt."
+  },
+  {
+   "id": "BM-113-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Mit gesetztem ls_ord-zzgarant wird log_msg aufgerufen' – Garantieauftrag/Warnung/keine Fakturierung nicht fachlich."
+  },
+  {
+   "id": "BM-113-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "check_costs und Lesen aus coep – Summierung und Markierung ohne Istkosten fehlen."
+  },
+  {
+   "id": "BM-113-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Für gv_skip mit dem Wert abap_true wird log_msg aufgerufen' – Warnung 'Keine Istkosten' und Nichtfakturierung fehlen."
+  },
+  {
+   "id": "BM-113-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "'Anlage über DP90 angestoßen' – Dialogmodus, Vorbelegung des Auftrags und Überspringen des Einstiegsbilds fehlen."
+  },
+  {
+   "id": "BM-113-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "'Für andere p_dial wird bill_bdc aufgerufen' + DP90 – Batch-Input mit Auftrag/DIP-Profil/Stichtag nicht benannt."
+  },
+  {
+   "id": "BM-113-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "'Bei Treffer wird COMMIT WORK ausgeführt und log_msg aufgerufen' – Speichern der Belegnummer im Fakturaprotokoll fehlt."
+  },
+  {
+   "id": "BM-113-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "Schleife über gt_msg und log_msg; 'eine Meldung wird ausgegeben' ist falsch (MESSAGE ... INTO)."
+  },
+  {
+   "id": "BM-113-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur 'BAL_LOG_MSG_ADD wird aufgerufen'."
+  },
+  {
+   "id": "BM-113-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "BAL_DB_SAVE und BAL_DSP_LOG_DISPLAY – Sichern/Anzeigen nur über Bausteinnamen; 'log_show Wirkung nicht belegt' falsch."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

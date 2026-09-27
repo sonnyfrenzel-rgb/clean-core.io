@@ -1,0 +1,223 @@
+{
+ "id": "BM-076",
+ "urteile": [
+  {
+   "id": "BM-076-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Für p_paket < 1 OR p_paket > 500 wird eine Meldung ausgegeben' – Bedingung richtig, Zurückweisung als Fehler im Selektionsbild nicht gesagt."
+  },
+  {
+   "id": "BM-076-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Prüfung auf C_AFKO_AWK und Meldung genannt; Werk/Auftragsart und Verbleib im Selektionsbild nicht fachlich."
+  },
+  {
+   "id": "BM-076-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus aufk mit dem eingegebenen a~werks und dem eingegebenen Auftragsart' – Fertigungssteuerer, Aufträge und Horizont fehlen; falscher Artikel."
+  },
+  {
+   "id": "BM-076-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "STATUS_READ und Aufnahme bei lv_erof/nicht lv_lvm erkannt; Sortierung nach Eckstart fehlt, Bedingung nur technisch."
+  },
+  {
+   "id": "BM-076-B05",
+   "urteil": "abweichend",
+   "mangel": [
+    "redundant",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung und Verlassen stimmen, aber 'es wird nichts geschrieben' widerspricht dem Soll und dem Code: END-OF-SELECTION schreibt trotzdem das (leere) Log."
+  },
+  {
+   "id": "BM-076-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife und Aufnahme bei Erreichen der Paketgröße bzw. für den Rest technisch; Paketbildung nicht fachlich benannt."
+  },
+  {
+   "id": "BM-076-B07",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "'Für p_para = abap_true wird verteilen aufgerufen, sonst seriell' – fachlich dasselbe; 'verteilen/seriell ... Wirkung nicht belegt' ist falsch, beide FORMs sind mitgeliefert."
+  },
+  {
+   "id": "BM-076-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "SPBT_INITIALIZE mit p_group und bei Fehler Meldung plus seriell erkannt; Servergruppe nicht fachlich; 'seriell ... nicht belegt' falsch."
+  },
+  {
+   "id": "BM-076-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Asynchroner Start von Z_PP_RELEASE_PACKAGE je Paket erkannt; Abholung per Rückruf fehlt."
+  },
+  {
+   "id": "BM-076-B10",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Warten und Wiederholen bei fehlenden Prozessen."
+  },
+  {
+   "id": "BM-076-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf paket_fehler und Schleife über die Paketaufträge genannt; Vermerk 'nicht gestartet' mit Fehlerstatus fehlt; 'paket_fehler ... nicht belegt' falsch."
+  },
+  {
+   "id": "BM-076-B12",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Warten auf alle Pakete."
+  },
+  {
+   "id": "BM-076-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Ohne Treffer wird eine Zeile aufgenommen und der Block verlassen'; Übernahme der Ergebnisse und Fehlervermerk mit Taskname fehlen."
+  },
+  {
+   "id": "BM-076-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Schleife über gt_pakete und synchroner Aufruf von Z_PP_RELEASE_PACKAGE erkannt; 'Freigabe' nicht fachlich benannt."
+  },
+  {
+   "id": "BM-076-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "ENQUEUE und Status L bei Sperrkonflikt erkannt; sperrender Benutzer und Überspringen fehlen; 'die Status' falscher Artikel."
+  },
+  {
+   "id": "BM-076-B16",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Im Testlauf Status T mit 'Testlauf - nicht freigegeben' und DEQUEUE – fachlich dasselbe."
+  },
+  {
+   "id": "BM-076-B17",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Freigabe per BAPI, bei Fehler Rollback und Status E, sonst Commit und Status S 'freigegeben' – fachlich dasselbe; Meldungstext bei E nicht erwähnt."
+  },
+  {
+   "id": "BM-076-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'DEQUEUE_ESORDER wird aufgerufen' – Aufheben der Sperre nur über den Bausteinnamen."
+  },
+  {
+   "id": "BM-076-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "BAL_LOG_CREATE, MSG_ADD, DB_SAVE, COMMIT genannt; Objekt ZPP/MASSREL, 90 Tage und Meldungstyp nach Status fehlen."
+  },
+  {
+   "id": "BM-076-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Ohne Treffer wird der Block verlassen' – dass ohne Log weitergearbeitet wird, nicht gesagt."
+  },
+  {
+   "id": "BM-076-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Jede Zeile aus gt_result wird einzeln verarbeitet'; Zählung nach Status fehlt."
+  },
+  {
+   "id": "BM-076-B22",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Spoolausgabe der Zähler im Hintergrund erkannt (nur Variablennamen); ALV im Dialog nur als factory/display 'nicht belegt'."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "satz": "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+   "zeile": "zpp_mass_release.abap:36",
+   "begruendung": "Entspricht dem verbotenen Schluss 'Ohne Aufträge endet der Report ohne Protokoll': RETURN verlässt nur START-OF-SELECTION, END-OF-SELECTION schreibt Log und Ausgabe trotzdem."
+  }
+ ],
+ "soll_zweifel": []
+}

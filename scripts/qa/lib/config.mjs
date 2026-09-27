@@ -221,6 +221,9 @@ export const IGNORED_PATHS = [
   // reviewable; only the fixtures and the hash lists are data.
   /^tests\/prozess-benchmark\/cases\//,
   /^tests\/prozess-benchmark\/frozen-\d{3}-\d{3}\.json$/,
+  // The judges' verdicts on the business statements, one file per case and run
+  // (`judge/<lauf>/in|out/`): model output about data, not code.
+  /^tests\/prozess-benchmark\/judge\/[^/]+\/(in|out)\//,
   /^public\//,
   /^docs\//,
   /^scratch\//,

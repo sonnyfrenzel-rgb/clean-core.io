@@ -1,0 +1,541 @@
+{
+ "id": "BM-056",
+ "titel": "Intercompany-Abrechnung als Hintergrundjob mit lokaler Ausgangsbuchung und synchroner Partnerbuchung per RFC",
+ "prozess": "Der Report ZFI_IC_SETTLE läuft als Hintergrundjob je Buchungskreis, Geschäftsjahr und Periode; im Dialog ist nur ein Testlauf erlaubt. Er legt ein Anwendungsprotokoll an, liest die offenen und fehlerhaften Intercompany-Leistungen aus ZFI_IC_SERV sowie die Hauswährung und beendet sich mit einem Hinweis, wenn nichts abzurechnen ist. Je Partnergesellschaft wird eine exklusive Sperre gesetzt und aus dem Customizing die RFC-Destination mit Aufschlagsatz, IC-Debitor und Erlöskonto gelesen; ist der Partner gesperrt oder fehlt das Customizing, wird er mit Protokollmeldung übersprungen. Für jede Leistung wird der Verrechnungspreis mit Aufschlag berechnet. Hat die Leistung noch keinen lokalen Beleg, wird der Preis bei Fremdwährung mit Kurstyp M in Hauswährung umgerechnet; fehlt der Kurs, bleibt die Leistung im Status E. Sonst wird die Ausgangsrechnung IC-Debitor an IC-Erlös über BAPI_ACC_DOCUMENT_POST gebildet und erst mit BAPI_TRANSACTION_COMMIT festgeschrieben, bei Fehlern zurückgerollt; im Testlauf wird nur geprüft. Leistungen mit vorhandenem lokalem Beleg werden lokal nicht erneut gebucht. Danach wird beim Partner synchron per RFC der Baustein Z_FI_IC_POST_PARTNER gerufen, der Doppelbuchungen über einen Eingangsvermerk erkennt, die Kontenfindung prüft und Aufwand an IC-Kreditor bucht, wobei Beleg und Eingangsvermerk gemeinsam festgeschrieben werden. Kommunikations- und Systemfehler des RFC werden protokolliert und die Verbindung geschlossen. Nur bei erfolgreicher Partnerbuchung erhält die Leistung den Status P; scheitert die Partnerseite, bleibt der lokale Beleg bestehen und die Leistung im Status E, sodass ein späterer Lauf nur die Partnerseite wiederholt. Im Echtlauf werden Status und Belegnummern fortgeschrieben und festgeschrieben, danach wird die Partnersperre gelöst. Am Ende werden alle Meldungen im Anwendungsprotokoll gespeichert und eine Ergebnisliste mit Status, Belegnummern und Summenzeilen ausgegeben.",
+ "verboten": [
+  "zfi_ic_settle_f02.abap:75 — kein Fachsatz „auch Abbruchmeldungen (Typ A) der Buchungsschnittstelle verhindern die lokale Buchung“ (gesucht wird nur Typ E)",
+  "zfi_ic_settle_f02.abap:125 — kein Fachsatz „die Partnerbuchung läuft asynchron bzw. entkoppelt über eine Warteschlange“ (synchroner RFC; die asynchrone Variante ist auskommentiert)",
+  "zfi_ic_settle_f01.abap:167 — kein Fachsatz „scheitert die Partnerbuchung, wird der lokale Beleg storniert“ (der lokale Beleg ist bereits festgeschrieben und bleibt stehen; nur der Status bleibt E)",
+  "zfi_ic_settle_f01.abap:44 — kein Fachsatz „offene Posten der IC-Debitoren (BSID) werden abgerechnet“ (der BSID-Zugriff ist auskommentiert, Quelle ist ZFI_IC_SERV)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-056-B01",
+   "soll": "Ein Echtlauf ist nur als Hintergrundjob zulässig; wird er im Dialog ohne Testlauf-Kennzeichen gestartet, bricht die Verarbeitung mit einer Fehlermeldung ab.",
+   "zeilen": [
+    28,
+    29
+   ],
+   "code": [
+    "28:   IF sy-batch IS INITIAL AND p_test IS INITIAL.",
+    "29:     MESSAGE e010."
+   ],
+   "engine": [
+    "Für sy-batch IS INITIAL AND p_test IS INITIAL wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-056-B02",
+   "soll": "Zu Beginn wird ein Anwendungsprotokoll mit Buchungskreis, Geschäftsjahr und Periode als externer Nummer angelegt; gelingt das nicht, wird der Lauf abgebrochen.",
+   "zeilen": [
+    201,
+    209,
+    211
+   ],
+   "code": [
+    "201:   CALL FUNCTION 'BAL_LOG_CREATE'",
+    "209:   IF sy-subrc <> 0.",
+    "211:     MESSAGE a012."
+   ],
+   "engine": [
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_log_handle.",
+    "Das konvertierte Ergebnis wird in gv_log_handle übernommen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-056-B03",
+   "soll": "Es werden die offenen und die fehlerhaften Intercompany-Leistungen des Buchungskreises für Geschäftsjahr und Periode zu den selektierten Partnergesellschaften gelesen.",
+   "zeilen": [
+    222
+   ],
+   "code": [
+    "222:   SELECT * FROM zfi_ic_serv INTO TABLE gt_serv"
+   ],
+   "engine": [
+    "Es werden Sätze aus zfi_ic_serv mit dem eingegebenen Buchungskreis, dem eingegebenen gjahr und dem eingegebenen monat selektiert."
+   ]
+  },
+  {
+   "id": "BM-056-B04",
+   "soll": "Die Hauswährung des leistenden Buchungskreises wird ermittelt.",
+   "zeilen": [
+    236
+   ],
+   "code": [
+    "236:   SELECT SINGLE waers FROM t001 INTO gv_waers_l"
+   ],
+   "engine": [
+    "waers des Satzes mit dem eingegebenen Buchungskreis wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-056-B05",
+   "soll": "Gibt es keine abzurechnenden Leistungen, wird ein Hinweis ausgegeben und der Lauf ohne Verarbeitung beendet.",
+   "zeilen": [
+    35,
+    36,
+    37
+   ],
+   "code": [
+    "35:   IF gt_serv IS INITIAL.",
+    "36:     MESSAGE s011 WITH p_bukrs p_gjahr p_monat.",
+    "37:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-056-B06",
+   "soll": "Die Leistungen werden je Partnergesellschaft abgerechnet.",
+   "zeilen": [
+    41,
+    42
+   ],
+   "code": [
+    "41:   LOOP AT gt_partner INTO gs_partner.",
+    "42:     PERFORM process_partner USING gs_partner."
+   ],
+   "engine": [
+    "Jede Zeile aus gt_partner wird einzeln verarbeitet.",
+    "Das Unterprogramm process_partner wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-056-B07",
+   "soll": "Vor der Abrechnung eines Partners wird eine exklusive Sperre auf Buchungskreis und Partnergesellschaft gesetzt; ist der Partner bereits gesperrt, wird er mit einer Warnung im Protokoll übersprungen.",
+   "zeilen": [
+    261,
+    270
+   ],
+   "code": [
+    "261:   CALL FUNCTION 'ENQUEUE_EZFI_IC_PART'",
+    "270:   IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Der Funktionsbaustein ENQUEUE_EZFI_IC_PART wird aufgerufen.",
+    "Ohne Treffer wird eine Zeile aufgenommen.",
+    "Ohne Treffer wird eine Zeile aufgenommen, sonst DEQUEUE_EZFI_IC_PART aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-056-B08",
+   "soll": "Aus dem Customizing werden RFC-Destination, Aufschlagsatz, IC-Debitor und Erlöskonto des Partners gelesen; fehlt der Eintrag oder die Destination, werden die Leistungen dieses Partners nicht verarbeitet und ein Fehler protokolliert.",
+   "zeilen": [
+    276,
+    279
+   ],
+   "code": [
+    "276:     SELECT SINGLE * FROM zfi_ic_dest INTO gs_dest",
+    "279:     IF sy-subrc <> 0 OR gs_dest-rfcdest IS INITIAL."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Zeile aufgenommen, sonst DEQUEUE_EZFI_IC_PART aufgerufen.",
+    "Für andere sy-subrc wird DEQUEUE_EZFI_IC_PART aufgerufen.",
+    "Es werden Sätze aus zfi_ic_dest selektiert.",
+    "Für sy-subrc <> 0 OR gs_dest-rfcdest IS INITIAL wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-056-B09",
+   "soll": "Der Verrechnungspreis jeder Leistung ergibt sich aus dem Leistungswert zuzüglich des prozentualen Aufschlags aus dem Customizing.",
+   "zeilen": [
+    291
+   ],
+   "code": [
+    "291:         lv_amount_f = gs_serv-wrbtr * ( 100 + gs_dest-aufschlag ) / 100."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-056-B10",
+   "soll": "Hat eine Leistung bereits einen lokalen Beleg aus einem früheren Lauf, wird lokal nicht erneut gebucht, sondern nur die Partnerbuchung wiederholt.",
+   "zeilen": [
+    294
+   ],
+   "code": [
+    "294:         IF gs_serv-belnr_l IS INITIAL."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-056-B11",
+   "soll": "Weicht die Leistungswährung von der Hauswährung ab, wird der Verrechnungspreis zum Buchungsdatum mit Kurstyp M in Hauswährung umgerechnet.",
+   "zeilen": [
+    295,
+    296
+   ],
+   "code": [
+    "295:           IF gs_serv-waers <> gv_waers_l.",
+    "296:             CALL FUNCTION 'CONVERT_TO_LOCAL_CURRENCY'"
+   ],
+   "engine": [
+    "Für gs_serv-waers ungleich gv_waers_l wird CONVERT_TO_LOCAL_CURRENCY aufgerufen.",
+    "Der Code übergibt p_budat an CONVERT_TO_LOCAL_CURRENCY und übernimmt dessen Ausgabe nach lv_amount_l.",
+    "Das konvertierte Ergebnis wird in lv_amount_l übernommen."
+   ]
+  },
+  {
+   "id": "BM-056-B12",
+   "soll": "Fehlt ein Umrechnungskurs, wird die Leistung weder lokal noch beim Partner gebucht und bleibt im Fehlerstatus.",
+   "zeilen": [
+    312,
+    324
+   ],
+   "code": [
+    "312:             IF sy-subrc <> 0.",
+    "324:           IF lv_ok = abap_true."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Zeile aufgenommen.",
+    "Für lv_ok mit dem Wert abap_true wird post_local aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-056-B13",
+   "soll": "Lokal wird eine Ausgangsrechnung an den IC-Debitor gegen das IC-Erlöskonto mit der Partnergesellschaft als Partner in Beleg- und Hauswährung gebildet; im Testlauf wird sie nur geprüft.",
+   "zeilen": [
+    468,
+    469,
+    478
+   ],
+   "code": [
+    "468:   IF p_test = abap_true.",
+    "469:     CALL FUNCTION 'BAPI_ACC_DOCUMENT_CHECK'",
+    "478:     CALL FUNCTION 'BAPI_ACC_DOCUMENT_POST'"
+   ],
+   "engine": [
+    "Für p_test mit dem Wert abap_true wird BAPI_ACC_DOCUMENT_CHECK aufgerufen.",
+    "Für p_test mit dem Wert abap_true wird BAPI_ACC_DOCUMENT_CHECK aufgerufen, sonst BAPI_ACC_DOCUMENT_POST aufgerufen.",
+    "Der Funktionsbaustein BAPI_ACC_DOCUMENT_CHECK wird aufgerufen.",
+    "Für andere p_test wird BAPI_ACC_DOCUMENT_POST aufgerufen.",
+    "Der Code übergibt ls_header an BAPI_ACC_DOCUMENT_POST und übernimmt dessen Ausgabe nach lv_objkey.",
+    "Das konvertierte Ergebnis wird in lv_objkey übernommen."
+   ]
+  },
+  {
+   "id": "BM-056-B14",
+   "soll": "Meldet die Buchungsschnittstelle einen Fehler, gilt die lokale Buchung als gescheitert und wird im Echtlauf zurückgerollt.",
+   "zeilen": [
+    490,
+    491,
+    497,
+    498
+   ],
+   "code": [
+    "490:   READ TABLE lt_return INTO ls_return WITH KEY type = 'E'.",
+    "491:   IF sy-subrc = 0.",
+    "497:     IF p_test IS INITIAL.",
+    "498:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird eine Zeile aufgenommen.",
+    "Bei Treffer wird eine Zeile aufgenommen, sonst BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen.",
+    "Ohne p_test wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-056-B15",
+   "soll": "Erst der anschließende Commit schreibt den lokalen Beleg fort; seine Belegnummer wird dem Partner als Referenz mitgegeben.",
+   "zeilen": [
+    502
+   ],
+   "code": [
+    "502:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Bei Treffer wird eine Zeile aufgenommen, sonst BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen.",
+    "Ohne p_test wird BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-056-B16",
+   "soll": "Nur wenn die lokale Seite gebucht oder im Testlauf buchbar ist, wird die Gegenbuchung synchron per RFC über die Destination des Partners in dessen System angestoßen.",
+   "zeilen": [
+    335,
+    540
+   ],
+   "code": [
+    "335:         IF lv_ok = abap_true.",
+    "540:   CALL FUNCTION 'Z_FI_IC_POST_PARTNER'"
+   ],
+   "engine": [
+    "Für lv_ok mit dem Wert abap_true wird post_partner aufgerufen.",
+    "Ein entferntes System wird über die eingegebene Destination benachrichtigt. Welches System und was dort geschieht, ist aus dem gelieferten Code nicht ableitbar.",
+    "Das konvertierte Ergebnis wird in cv_belnr_p übernommen."
+   ]
+  },
+  {
+   "id": "BM-056-B17",
+   "soll": "Im Partnersystem wird zuerst geprüft, ob die Leistung dort schon eingegangen ist; dann wird die vorhandene Belegnummer zurückgegeben, ohne erneut zu buchen.",
+   "zeilen": [
+    83,
+    87,
+    96
+   ],
+   "code": [
+    "83:   SELECT SINGLE * FROM zfi_ic_inbox INTO ls_inbox",
+    "87:   IF sy-subrc = 0.",
+    "96:     RETURN."
+   ],
+   "engine": [
+    "Es werden Sätze aus zfi_ic_inbox selektiert.",
+    "Bei Treffer wird die Typ auf S gesetzt, die Fall auf ZFI_IC gesetzt, die et_return-number auf 040 gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "sy-subrc mit dem Wert 0 setzen die Typ auf S.",
+    "sy-subrc mit dem Wert 0 setzen die Fall auf ZFI_IC.",
+    "sy-subrc mit dem Wert 0 setzen die et_return-number auf 040.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-056-B18",
+   "soll": "Fehlt im Partnersystem die IC-Kontenfindung für die sendende Gesellschaft, wird ein Fehler zurückgemeldet.",
+   "zeilen": [
+    100,
+    103,
+    110
+   ],
+   "code": [
+    "100:   SELECT SINGLE * FROM zfi_ic_accmap INTO ls_map",
+    "103:   IF sy-subrc <> 0.",
+    "110:     RETURN."
+   ],
+   "engine": [
+    "Es werden Sätze aus zfi_ic_accmap selektiert.",
+    "Ohne Treffer wird die Typ auf E gesetzt, die Fall auf ZFI_IC gesetzt, die et_return-number auf 041 gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die Typ auf E.",
+    "sy-subrc ungleich 0 setzen die Fall auf ZFI_IC.",
+    "sy-subrc ungleich 0 setzen die et_return-number auf 041.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-056-B19",
+   "soll": "Im Testlauf prüft das Partnersystem den Eingangsbeleg nur.",
+   "zeilen": [
+    135,
+    136
+   ],
+   "code": [
+    "135:   IF iv_test = abap_true.",
+    "136:     CALL FUNCTION 'BAPI_ACC_DOCUMENT_CHECK'"
+   ],
+   "engine": [
+    "Für iv_test mit dem Wert abap_true wird BAPI_ACC_DOCUMENT_CHECK aufgerufen.",
+    "Für iv_test mit dem Wert abap_true wird BAPI_ACC_DOCUMENT_CHECK aufgerufen, sonst BAPI_ACC_DOCUMENT_POST aufgerufen.",
+    "Der Funktionsbaustein BAPI_ACC_DOCUMENT_CHECK wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-056-B20",
+   "soll": "Im Echtlauf bucht das Partnersystem IC-Aufwand auf Kostenstelle an den IC-Kreditor mit der lokalen Belegnummer als Referenz.",
+   "zeilen": [
+    145
+   ],
+   "code": [
+    "145:     CALL FUNCTION 'BAPI_ACC_DOCUMENT_POST'"
+   ],
+   "engine": [
+    "Für iv_test mit dem Wert abap_true wird BAPI_ACC_DOCUMENT_CHECK aufgerufen, sonst BAPI_ACC_DOCUMENT_POST aufgerufen.",
+    "Für andere iv_test wird BAPI_ACC_DOCUMENT_POST aufgerufen.",
+    "Der Code übergibt ls_header an BAPI_ACC_DOCUMENT_POST und übernimmt dessen Ausgabe nach lv_objkey.",
+    "Das konvertierte Ergebnis wird in lv_objkey übernommen."
+   ]
+  },
+  {
+   "id": "BM-056-B21",
+   "soll": "Meldet die Buchung im Partnersystem einen Fehler, wird sie dort zurückgerollt; sonst werden Eingangsvermerk und Beleg gemeinsam festgeschrieben.",
+   "zeilen": [
+    156,
+    157,
+    158,
+    171,
+    172
+   ],
+   "code": [
+    "156:     READ TABLE et_return WITH KEY type = 'E' TRANSPORTING NO FIELDS.",
+    "157:     IF sy-subrc = 0.",
+    "158:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "171:       INSERT zfi_ic_inbox FROM ls_inbox.",
+    "172:       CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Für iv_test mit dem Wert abap_true wird BAPI_ACC_DOCUMENT_CHECK aufgerufen, sonst BAPI_ACC_DOCUMENT_POST aufgerufen.",
+    "Für andere iv_test wird BAPI_ACC_DOCUMENT_POST aufgerufen.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Für andere sy-subrc wird BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-056-B22",
+   "soll": "Bricht die RFC-Verbindung ab oder tritt im Partnersystem ein Systemfehler auf, wird der Fehler protokolliert und die Verbindung geschlossen.",
+   "zeilen": [
+    561,
+    578
+   ],
+   "code": [
+    "561:   CASE sy-subrc.",
+    "578:       CALL FUNCTION 'RFC_CONNECTION_CLOSE'"
+   ],
+   "engine": [
+    "Es wird eine Zeile aufgenommen und RFC_CONNECTION_CLOSE aufgerufen.",
+    "Ein entferntes System wird über die eingegebene Destination benachrichtigt. Welches System und was dort geschieht, ist aus dem gelieferten Code nicht ableitbar."
+   ]
+  },
+  {
+   "id": "BM-056-B23",
+   "soll": "Meldet der Partner einen Fehler zurück, gilt die Partnerbuchung als gescheitert und der Fehler wird protokolliert.",
+   "zeilen": [
+    563,
+    564
+   ],
+   "code": [
+    "563:       READ TABLE lt_return INTO ls_return WITH KEY type = 'E'.",
+    "564:       IF sy-subrc = 0."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-056-B24",
+   "soll": "Nur wenn auch die Partnerbuchung gelingt, erhält die Leistung den Status P; sonst bleibt sie im Status E, wobei ein bereits gebuchter lokaler Beleg bestehen bleibt.",
+   "zeilen": [
+    338,
+    339,
+    345
+   ],
+   "code": [
+    "338:           IF lv_ok = abap_true.",
+    "339:             lv_status = gc_stat_posted.",
+    "345:         PERFORM update_status USING gs_serv lv_status lv_belnr_l lv_belnr_p."
+   ],
+   "engine": [
+    "Das Unterprogramm update_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird update_status aufgerufen und eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-056-B25",
+   "soll": "Im Echtlauf werden Status, lokale und Partner-Belegnummer an der Leistung fortgeschrieben und festgeschrieben; der Testlauf schreibt nichts fort.",
+   "zeilen": [
+    600,
+    602,
+    611,
+    612
+   ],
+   "code": [
+    "600:   CHECK p_test IS INITIAL.",
+    "602:   UPDATE zfi_ic_serv",
+    "611:   IF sy-subrc = 0.",
+    "612:     COMMIT WORK."
+   ],
+   "engine": [
+    "Nur Eine leere p_test gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Die Status in zfi_ic_serv wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht.",
+    "Bei Treffer wird COMMIT WORK ausgeführt.",
+    "Bei Treffer wird COMMIT WORK ausgeführt, sonst ROLLBACK WORK ausgeführt und eine Zeile aufgenommen.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-056-B26",
+   "soll": "Scheitert die Statusfortschreibung, wird sie zurückgerollt und ein Fehler protokolliert.",
+   "zeilen": [
+    614
+   ],
+   "code": [
+    "614:     ROLLBACK WORK."
+   ],
+   "engine": [
+    "Bei Treffer wird COMMIT WORK ausgeführt, sonst ROLLBACK WORK ausgeführt und eine Zeile aufgenommen.",
+    "Für andere sy-subrc wird ROLLBACK WORK ausgeführt und eine Zeile aufgenommen.",
+    "Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert.",
+    "Es wird ROLLBACK WORK ausgeführt und eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-056-B27",
+   "soll": "Nach der Verarbeitung eines Partners wird seine Sperre wieder freigegeben.",
+   "zeilen": [
+    354
+   ],
+   "code": [
+    "354:     CALL FUNCTION 'DEQUEUE_EZFI_IC_PART'"
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Zeile aufgenommen, sonst DEQUEUE_EZFI_IC_PART aufgerufen.",
+    "Für andere sy-subrc wird DEQUEUE_EZFI_IC_PART aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EZFI_IC_PART wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-056-B28",
+   "soll": "Alle gesammelten Meldungen werden ins Anwendungsprotokoll übernommen und dieses gespeichert; scheitert das Speichern, erscheint eine Warnung.",
+   "zeilen": [
+    370,
+    371,
+    384,
+    392,
+    393
+   ],
+   "code": [
+    "370:   LOOP AT gt_msg INTO gs_msg.",
+    "371:     CALL FUNCTION 'BAL_LOG_MSG_ADD'",
+    "384:   CALL FUNCTION 'BAL_DB_SAVE'",
+    "392:   IF sy-subrc <> 0.",
+    "393:     MESSAGE w013."
+   ],
+   "engine": [
+    "Jede Zeile aus gt_msg wird einzeln verarbeitet.",
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD wird aufgerufen.",
+    "Es wird eine Zeile aufgenommen und BAL_DB_SAVE aufgerufen.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-056-B29",
+   "soll": "Zum Schluss wird eine Liste mit Status und Belegnummern je Leistung sowie der Zahl beidseitig gebuchter und nicht abgeschlossener Leistungen ausgegeben.",
+   "zeilen": [
+    405,
+    409,
+    413
+   ],
+   "code": [
+    "405:   WRITE: / 'Intercompany-Abrechnung'(h01), p_bukrs, p_gjahr, p_monat,",
+    "409:     WRITE: / gs_prot-pbukrs, gs_prot-servid, gs_prot-status,",
+    "413:   WRITE: / 'Beidseitig gebucht:'(h03), gv_cnt_ok,"
+   ],
+   "engine": [
+    "'Intercompany-Abrechnung'(h01), Buchungskreis, p_gjahr, p_monat, 'Testlauf:'(h02) und p_test werden ausgegeben.",
+    "'Intercompany-Abrechnung'(h01) wird ausgegeben.",
+    "Buchungskreis wird ausgegeben.",
+    "p_gjahr wird ausgegeben.",
+    "p_monat wird ausgegeben.",
+    "Bei Treffern werden gs_prot-pbukrs, gs_prot-servid, Status, gs_prot-belnr_l, gs_prot-belnr_p und Text als Liste ausgegeben.",
+    "gs_prot-pbukrs wird ausgegeben.",
+    "gs_prot-servid wird ausgegeben.",
+    "Status wird ausgegeben.",
+    "'Beidseitig gebucht:'(h03), gv_cnt_ok, 'Nicht abgeschlossen:'(h04) und gv_cnt_err werden ausgegeben.",
+    "'Beidseitig gebucht:'(h03) wird ausgegeben.",
+    "gv_cnt_ok wird ausgegeben."
+   ]
+  }
+ ]
+}

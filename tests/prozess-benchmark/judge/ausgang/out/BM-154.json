@@ -1,0 +1,139 @@
+{
+ "id": "BM-154",
+ "urteile": [
+  {
+   "id": "BM-154-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Selektionen aus ptrv_perio/ptrv_srec mit SUM(rec_amount) technisch erkannt; \"eingereicht\" nicht benannt."
+  },
+  {
+   "id": "BM-154-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Zeile wird in gt_work aufgenommen\"; Wartetage und Betrag null ohne Beleg fehlen."
+  },
+  {
+   "id": "BM-154-B03",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Ohne Treffer wird Keine Reisen in Genehmigung. ausgegeben und der Block verlassen\" trifft Hinweis und Ende."
+  },
+  {
+   "id": "BM-154-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "grammatik"
+   ],
+   "kurz": "KEIN_ORG ohne Org-Zuordnung und Leiterermittlung technisch erkannt; Genehmiger = Leiter nicht benannt."
+  },
+  {
+   "id": "BM-154-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Platzhalter 99999999 bei approver = pernr technisch vollständig, \"Reisender ist selbst Leiter\" nicht benannt."
+  },
+  {
+   "id": "BM-154-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Gruppenschleife und nur leere action erkannt; \"kleinere werden übersprungen\" sinnlos; \"je Genehmiger\" nicht benannt."
+  },
+  {
+   "id": "BM-154-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Bedingung Betrag/Frist und auto_approve technisch vollständig, fachlich nicht benannt."
+  },
+  {
+   "id": "BM-154-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Testlauf AUTO(TEST), sonst BAPI_TRIP_APPROVE mit Rollback/FEHLER bzw. Commit/AUTO technisch vollständig."
+  },
+  {
+   "id": "BM-154-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "ESKALATION ab p_desc und ERINNERUNG ab p_drem technisch vollständig, Fristen nicht benannt."
+  },
+  {
+   "id": "BM-154-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Bedingung und send_mail erkannt (\"Wirkung nicht belegt\"); Sammelmail nicht benannt."
+  },
+  {
+   "id": "BM-154-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife, HR_READ_INFOTYPE, get_leader, send_mail erkannt; Vorgesetzter und Entfallbedingung fehlen."
+  },
+  {
+   "id": "BM-154-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "Adresse lesen, send, COMMIT, Meldung erkannt; CHECK p_test als Schleife mit \"kleinere\" beschrieben."
+  },
+  {
+   "id": "BM-154-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "show_result/factory/display erkannt, \"nach cl_salv_table übernommen\" falsch; Inhalte der Liste fehlen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

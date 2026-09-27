@@ -1,0 +1,126 @@
+{
+ "id": "BM-031",
+ "urteile": [
+  {
+   "id": "BM-031-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "\"Für s_rbkp_new-xrech <> 'X' OR s_rbkp_new-tbtkz = 'X' wird der Block verlassen\" – richtig, aber Gutschrift/nachträgliche Belastung nicht fachlich."
+  },
+  {
+   "id": "BM-031-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Zweimal \"Sätze aus zmm_iv_tol selektiert\"; Reihenfolge kreditorspezifisch → Default → 5 % fehlt."
+  },
+  {
+   "id": "BM-031-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "\"Mit gesetztem ls_tol-inaktiv wird der Block verlassen\" – abgeschaltete Prüfung nur technisch."
+  },
+  {
+   "id": "BM-031-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Jede Zeile aus ti_rseg_new wird einzeln verarbeitet\"; Einschränkung auf Bestellbezug fehlt."
+  },
+  {
+   "id": "BM-031-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Lesen der ekpo und Verlassen bei sy-subrc <> 0 OR peinh = 0 OR menge = 0 stimmen, aber nur technisch."
+  },
+  {
+   "id": "BM-031-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Preisabweichung."
+  },
+  {
+   "id": "BM-031-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Zweimal \"Sätze aus ekbe selektiert\"; WE-bezogene Mengenprüfung und Überhang fehlen."
+  },
+  {
+   "id": "BM-031-B08",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Einzelsätze zu P und M stimmen technisch, aber \"sonst die ls_log-reason auf M gesetzt\" unterschlägt die Mengenbedingung – jede nicht preisauffällige Position wäre danach mengenauffällig."
+  },
+  {
+   "id": "BM-031-B09",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Summierung und Protokollzeile."
+  },
+  {
+   "id": "BM-031-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "\"Für lv_block mit dem Wert abap_false wird der Block verlassen\" – normales Sichern ohne Auffälligkeit nur technisch."
+  },
+  {
+   "id": "BM-031-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingung harte Grenze technisch, nur \"eine Meldung\"; dass das Sichern verhindert wird, fehlt."
+  },
+  {
+   "id": "BM-031-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Status O, Schreiben in zmm_iv_log und Verbuchungsregistrierung genannt, aber technisch; \"Angekündigt, nicht persistiert\" verkennt, dass das MODIFY im Verbuchungsbaustein läuft; offene Fälle für die Kreditorenbuchhaltung nicht benannt."
+  },
+  {
+   "id": "BM-031-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Ohne Treffer wird eine Meldung ausgegeben\" – gescheitertes Schreiben ist kein fehlender Treffer; Abbruch der Verbuchung fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

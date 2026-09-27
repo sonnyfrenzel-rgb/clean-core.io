@@ -1,0 +1,443 @@
+{
+ "id": "BM-199",
+ "titel": "Pharma-Serialisierung: Seriennummern für Arzneimittelpackungen kommissionieren (Shared-Objects-GTIN-Cache, Zielmarkt-BAdI EU-FMD/US-DSCSA, EPCIS)",
+ "prozess": "Die Verpackungslinie ruft den Funktionsbaustein Z_SER_COMMISSION mit Material, Charge, Verfallsdatum, Zielmarkt, Linie und Packungszahl auf. Mengen außerhalb von 1 bis 5000 werden abgewiesen. Die GTIN-Stammdaten kommen aus einem Shared-Objects-Cache; ist dort keine aktive Version, baut der erste Leser den Cache einmal aus ZSER_GTIN auf (bzw. wartet eine Sekunde, wenn ein anderer Prozess gerade aufbaut) und liest per RETRY erneut, sonst endet der Aufruf mit CACHE_ERROR; ohne GTIN endet er mit GTIN_NOT_FOUND. Über den BAdI ZSER_MARKET_RULES mit dem Zielmarkt als Filter werden die Marktregeln ermittelt: für die EU muss das Produkt FMD-pflichtig sein (Intervall 01, Meldung an EMVS), für die USA müssen NDC und Verfallsdatum vorhanden sein (Intervall 02, Meldung an Handelspartner); fehlt eine Implementierung oder ist eine Regel verletzt, endet der Aufruf mit MARKET_NOT_SUPPORTED bzw. MARKET_RULE_VIOLATED. Dann wird die Charge exklusiv gesperrt, bei Fremdsperre bis zu fünfmal mit zwei Sekunden Pause; gelingt es nicht, endet der Aufruf mit LOCK_FAILED. Solange Seriennummern fehlen, zieht der Baustein Nummernblöcke aus dem Nummernkreisobjekt ZSER_SNR und lässt jede Nummer von der Marktimplementierung formatieren: in der EU als aus der Laufnummer berechnete 12-stellige Zeichenfolge zur Basis 34, in den USA als 12-stellige Laufnummer. Bereits vorhandene Seriennummern werden übersprungen und durch weitere Nummern ersetzt; scheitert die Nummernvergabe, wird entsperrt und mit NUMBER_RANGE_ERROR abgebrochen. Anschließend entsteht eine EPCIS-Kommissionierungsmeldung mit allen SGTIN-Kennungen; scheitert die Transformation, wird entsperrt und mit EPCIS_ERROR abgebrochen, bevor etwas gespeichert ist. Die Seriennummern werden mit Status kommissioniert gespeichert, bei einem Schlüsselkonflikt wird zurückgerollt und DB_ERROR gemeldet; die EPCIS-Meldung wird als neue Ausgangsmeldung abgelegt, nicht versendet. Je Seriennummer wird ein Änderungsbeleg in der Verbuchung angestoßen; der Baustein schreibt standardmäßig synchron fest, hebt die Sperre auf und gibt Seriennummern und EPCIS-Meldung zurück. Die Aggregation auf Bündel und Karton ist ein toter Zweig.",
+ "verboten": [
+  "z_ser_commission.abap:243 — kein Fachsatz „die Packungen werden zu Bündeln und Kartons aggregiert“: der Zweig ist mit IF 1 = 2 nie erreichbar",
+  "zcl_ser_market_eu.abap:45 — kein Fachsatz „EU-Seriennummern werden zufällig erzeugt“: sie werden deterministisch aus der fortlaufenden Nummer berechnet; die Zufallsvariante ist auskommentiert",
+  "z_ser_commission.abap:79 — kein Fachsatz „für andere Zielmärkte gelten Standardregeln“: gibt es zum Filterwert keine Implementierung, endet der Aufruf mit MARKET_NOT_SUPPORTED; im Fall existieren nur Regeln für EU und US",
+  "z_ser_commission.abap:227 — kein Fachsatz „die EPCIS-Meldung wird an EMVS-Hub bzw. Handelspartner gesendet“: sie wird nur mit Status N in ZSER_EPCIS_OUT abgelegt, der Versand liegt außerhalb des Falls"
+ ],
+ "saetze": [
+  {
+   "id": "BM-199-B01",
+   "soll": "Je Aufruf werden nur 1 bis 5000 Packungen kommissioniert; eine andere Menge wird mit der Ausnahme INVALID_QUANTITY abgewiesen.",
+   "zeilen": [
+    63,
+    64
+   ],
+   "code": [
+    "63:   IF iv_quantity <= 0 OR iv_quantity > lc_max_qty.",
+    "64:     MESSAGE e001(zser) WITH iv_quantity lc_max_qty RAISING invalid_quantity."
+   ],
+   "engine": [
+    "Für iv_quantity <= 0 OR iv_quantity > lc_max_qty wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-199-B02",
+   "soll": "Die GTIN-Stammdaten des Materials werden aus einem systemweiten Speicher-Cache gelesen; ist der Cache nicht nutzbar, endet der Aufruf mit CACHE_ERROR.",
+   "zeilen": [
+    69,
+    71,
+    293,
+    306
+   ],
+   "code": [
+    "69:       DATA(ls_gtin) = zcl_ser_gtin_cache=>get_gtin( iv_matnr ).",
+    "71:       MESSAGE e009(zser) WITH iv_matnr RAISING cache_error.",
+    "293:         lo_area = zcl_ser_gtin_area=>attach_for_read( ).",
+    "306:         RAISE EXCEPTION TYPE zcx_ser_cache"
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode get_gtin von zcl_ser_gtin_cache wird nach ls_gtin übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Eine Meldung wird ausgegeben.",
+    "Der Rückgabewert der Methode attach_for_read von zcl_ser_gtin_area wird nach lo_area übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-199-B03",
+   "soll": "Ist der Cache nach Systemstart oder Invalidierung leer, wird er einmal aus allen nicht zur Löschung vorgemerkten GTIN-Stammsätzen aufgebaut und danach erneut gelesen; ist er dann immer noch leer, wird ein Cache-Fehler gemeldet.",
+   "zeilen": [
+    297,
+    298,
+    303,
+    374
+   ],
+   "code": [
+    "297:         IF lv_tries >= 1.",
+    "298:           RAISE EXCEPTION TYPE zcx_ser_cache",
+    "303:         build_area( ).",
+    "374:     SELECT * FROM zser_gtin"
+   ],
+   "engine": [
+    "Es werden Sätze aus zser_gtin selektiert."
+   ]
+  },
+  {
+   "id": "BM-199-B04",
+   "soll": "Baut gerade ein anderer Prozess den Cache auf, wird eine Sekunde gewartet und dann erneut gelesen.",
+   "zeilen": [
+    329,
+    330
+   ],
+   "code": [
+    "329:         WAIT UP TO 1 SECONDS.",
+    "330:         RETURN."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-199-B05",
+   "soll": "Der neu aufgebaute Cache wird mit Ladezeitpunkt als aktive Version für alle Prozesse freigegeben.",
+   "zeilen": [
+    337,
+    339,
+    340
+   ],
+   "code": [
+    "337:     CREATE OBJECT lo_root AREA HANDLE lo_area.",
+    "339:     lo_area->set_root( lo_root ).",
+    "340:     lo_area->detach_commit( )."
+   ],
+   "engine": [
+    "Die Methode set_root von lo_area wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode detach_commit von lo_area wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-199-B06",
+   "soll": "Hat das Material keine GTIN im Cache, endet der Aufruf mit GTIN_NOT_FOUND; in der Datenbank wird nicht nachgelesen.",
+   "zeilen": [
+    73,
+    74,
+    311
+   ],
+   "code": [
+    "73:   IF ls_gtin-gtin IS INITIAL.",
+    "74:     MESSAGE e002(zser) WITH iv_matnr RAISING gtin_not_found.",
+    "311:     READ TABLE lo_area->root->mt_gtin INTO rs_gtin"
+   ],
+   "engine": [
+    "Ohne ls_gtin-gtin wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-199-B07",
+   "soll": "Zum Zielmarkt wird die zuständige Regelimplementierung ermittelt; gibt es für den Markt keine, endet der Aufruf mit MARKET_NOT_SUPPORTED.",
+   "zeilen": [
+    79,
+    83
+   ],
+   "code": [
+    "79:       GET BADI lo_badi",
+    "83:       MESSAGE e005(zser) WITH iv_market RAISING market_not_supported."
+   ],
+   "engine": [
+    "Die konfigurierte BAdI-Implementierung wird angefordert.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-199-B08",
+   "soll": "Für den EU-Markt muss das Produkt als FMD-pflichtig gekennzeichnet sein; die Seriennummern kommen aus Intervall 01, sind 12-stellig und werden an den EMVS-Hub gemeldet.",
+   "zeilen": [
+    407,
+    414,
+    416
+   ],
+   "code": [
+    "407:     IF is_gtin-fmd_relevant <> abap_true.",
+    "414:     es_rules-nr_interval = '01'.",
+    "416:     es_rules-report_to   = 'EMVS'."
+   ],
+   "engine": [
+    "Es wird die es_rules-nr_interval auf 01 gesetzt, die es_rules-serial_len auf 12 gesetzt und die es_rules-report_to auf EMVS gesetzt.",
+    "Die es_rules-nr_interval wird auf 01 gesetzt.",
+    "Die es_rules-report_to wird auf EMVS gesetzt."
+   ]
+  },
+  {
+   "id": "BM-199-B09",
+   "soll": "Für den US-Markt müssen NDC und Verfallsdatum vorhanden sein; die Seriennummern kommen aus Intervall 02, sind 12-stellig und werden an den Handelspartner gemeldet.",
+   "zeilen": [
+    458,
+    465,
+    467
+   ],
+   "code": [
+    "458:     IF is_gtin-ndc IS INITIAL OR iv_expiry IS INITIAL.",
+    "465:     es_rules-nr_interval = '02'.",
+    "467:     es_rules-report_to   = 'PARTNER'."
+   ],
+   "engine": [
+    "Es wird die es_rules-nr_interval auf 02 gesetzt, die es_rules-serial_len auf 12 gesetzt und die es_rules-report_to auf PARTNER gesetzt.",
+    "Die es_rules-nr_interval wird auf 02 gesetzt.",
+    "Die es_rules-report_to wird auf PARTNER gesetzt."
+   ]
+  },
+  {
+   "id": "BM-199-B10",
+   "soll": "Verletzt das Produkt die Regeln des Zielmarkts, endet der Aufruf mit MARKET_RULE_VIOLATED.",
+   "zeilen": [
+    94,
+    408,
+    459
+   ],
+   "code": [
+    "94:       MESSAGE e006(zser) WITH iv_market ls_gtin-gtin RAISING market_rule_violated.",
+    "408:       RAISE EXCEPTION TYPE zcx_ser_rule",
+    "459:       RAISE EXCEPTION TYPE zcx_ser_rule"
+   ],
+   "engine": [
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-199-B11",
+   "soll": "Material und Charge werden exklusiv gesperrt; hält eine andere Linie die Sperre, wird bis zu fünfmal mit je zwei Sekunden Wartezeit erneut versucht.",
+   "zeilen": [
+    98,
+    99,
+    109,
+    114
+   ],
+   "code": [
+    "98:   DO lc_lock_tries TIMES.",
+    "99:     CALL FUNCTION 'ENQUEUE_EZSER_BATCH'",
+    "109:     CASE sy-subrc.",
+    "114:         WAIT UP TO 2 SECONDS."
+   ],
+   "engine": [
+    "Der Funktionsbaustein ENQUEUE_EZSER_BATCH wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-199-B12",
+   "soll": "Bei einem Systemfehler der Sperrverwaltung sofort, oder wenn die Charge nach fünf Versuchen noch gesperrt ist, endet der Aufruf mit LOCK_FAILED; im zweiten Fall nennt die Meldung den sperrenden Benutzer.",
+   "zeilen": [
+    116,
+    119,
+    120
+   ],
+   "code": [
+    "116:         MESSAGE e004(zser) WITH iv_matnr iv_charg RAISING lock_failed.",
+    "119:   IF lv_locked = abap_false.",
+    "120:     MESSAGE e003(zser) WITH iv_matnr iv_charg sy-msgv1 RAISING lock_failed."
+   ],
+   "engine": [
+    "Eine Meldung wird ausgegeben.",
+    "Für lv_locked mit dem Wert abap_false wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-199-B13",
+   "soll": "Die Nummern werden blockweise aus dem Nummernkreisobjekt ZSER_SNR im Intervall des Zielmarkts gezogen, bis die angeforderte Zahl neuer Seriennummern erreicht ist.",
+   "zeilen": [
+    125,
+    127
+   ],
+   "code": [
+    "125:   WHILE lv_remaining > 0.",
+    "127:     CALL FUNCTION 'NUMBER_GET_NEXT'"
+   ],
+   "engine": [
+    "Der Code übergibt ls_rules-nr_interval an NUMBER_GET_NEXT und übernimmt dessen Ausgabe nach lv_number.",
+    "Das konvertierte Ergebnis wird in lv_number übernommen."
+   ]
+  },
+  {
+   "id": "BM-199-B14",
+   "soll": "Scheitert die Nummernvergabe, wird die Chargensperre aufgehoben und der Aufruf endet mit NUMBER_RANGE_ERROR.",
+   "zeilen": [
+    145,
+    146,
+    152
+   ],
+   "code": [
+    "145:     IF sy-subrc <> 0.",
+    "146:       CALL FUNCTION 'DEQUEUE_EZSER_BATCH'",
+    "152:       MESSAGE e007(zser) WITH ls_rules-nr_interval RAISING number_range_error."
+   ],
+   "engine": [
+    "Ohne Treffer wird DEQUEUE_EZSER_BATCH aufgerufen und eine Meldung ausgegeben.",
+    "Der Funktionsbaustein DEQUEUE_EZSER_BATCH wird aufgerufen.",
+    "Es wird DEQUEUE_EZSER_BATCH aufgerufen und eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-199-B15",
+   "soll": "Jede gezogene Nummer wird nach der Regel des Zielmarkts in eine Seriennummer umgesetzt.",
+   "zeilen": [
+    159
+   ],
+   "code": [
+    "159:       CALL BADI lo_badi->format_serial"
+   ],
+   "engine": [
+    "Der Betrag wird der Methode format_serial übergeben und ein Routentext übernommen. Dieser Aufruf ist nicht selbst ein menschlicher Freigabeprozess."
+   ]
+  },
+  {
+   "id": "BM-199-B16",
+   "soll": "Für die EU wird die Laufnummer mit einer Primzahl multipliziert, modulo 34 hoch 12 genommen und 12-stellig zur Basis 34 ohne die Buchstaben I und O dargestellt; die Seriennummer ist damit eindeutig, aber aus der Laufnummer berechnet.",
+   "zeilen": [
+    427,
+    428,
+    430
+   ],
+   "code": [
+    "427:     lv_val = ( iv_number * gc_prime ) MOD gc_modulus.",
+    "428:     DO is_rules-serial_len TIMES.",
+    "430:       ev_serial = substring( val = gc_alphabet off = lv_idx len = 1 ) && ev_serial."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-199-B17",
+   "soll": "Für die USA ist die Seriennummer die 12-stellige Laufnummer mit führenden Nullen.",
+   "zeilen": [
+    474
+   ],
+   "code": [
+    "474:     ev_serial = iv_number."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-199-B18",
+   "soll": "Ist die Seriennummer zur GTIN bereits vergeben, etwa aus einem Lohnhersteller-Import, wird sie übersprungen und dafür eine weitere Nummer gezogen.",
+   "zeilen": [
+    169,
+    172
+   ],
+   "code": [
+    "169:       SELECT SINGLE serial_no FROM zser_serial INTO lv_exists",
+    "172:       IF sy-subrc = 0."
+   ],
+   "engine": [
+    "serial_no des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-199-B19",
+   "soll": "Jede neue Seriennummer wird mit GTIN, Material, Charge, Verfallsdatum, Zielmarkt, Linie und dem Status kommissioniert vorgemerkt.",
+   "zeilen": [
+    182
+   ],
+   "code": [
+    "182:       ls_serial-status     = lc_status_com."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-199-B20",
+   "soll": "Über alle neuen Seriennummern wird eine EPCIS-Meldung zum Geschäftsschritt Kommissionierung (Disposition aktiv) mit Linie, Charge, Verfallsdatum und den SGTIN-Kennungen erzeugt.",
+   "zeilen": [
+    199,
+    202
+   ],
+   "code": [
+    "199:   ls_event-epc_list    = VALUE #( FOR ls_s IN lt_serial",
+    "202:       CALL TRANSFORMATION zser_epcis_commission"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-199-B21",
+   "soll": "Scheitert die EPCIS-Erzeugung, wird die Chargensperre aufgehoben und der Aufruf endet mit EPCIS_ERROR, bevor etwas gespeichert ist.",
+   "zeilen": [
+    206,
+    212
+   ],
+   "code": [
+    "206:       CALL FUNCTION 'DEQUEUE_EZSER_BATCH'",
+    "212:       MESSAGE e008(zser) RAISING epcis_error."
+   ],
+   "engine": [
+    "Der Funktionsbaustein DEQUEUE_EZSER_BATCH wird aufgerufen.",
+    "Es wird DEQUEUE_EZSER_BATCH aufgerufen und eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-199-B22",
+   "soll": "Die Seriennummern werden gespeichert; ist eine davon bereits vorhanden, wird die Arbeit zurückgerollt und der Aufruf endet mit DB_ERROR.",
+   "zeilen": [
+    216,
+    217,
+    218,
+    219
+   ],
+   "code": [
+    "216:   INSERT zser_serial FROM TABLE lt_serial ACCEPTING DUPLICATE KEYS.",
+    "217:   IF sy-subrc <> 0.",
+    "218:     ROLLBACK WORK.",
+    "219:     MESSAGE e010(zser) WITH iv_matnr iv_charg RAISING db_error."
+   ],
+   "engine": [
+    "Ohne Treffer wird ROLLBACK WORK ausgeführt und eine Meldung ausgegeben.",
+    "Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert.",
+    "Es wird ROLLBACK WORK ausgeführt und eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-199-B23",
+   "soll": "Die EPCIS-Meldung wird als neue Ausgangsmeldung für den Meldeempfänger des Zielmarkts abgelegt; versendet wird sie hier nicht.",
+   "zeilen": [
+    226,
+    227
+   ],
+   "code": [
+    "226:   ls_epcis_out-status   = 'N'.                   \" neu, Versand durch ZSER_EPCIS_SEND",
+    "227:   INSERT zser_epcis_out FROM ls_epcis_out."
+   ],
+   "engine": [
+    "Die Status wird auf N gesetzt."
+   ]
+  },
+  {
+   "id": "BM-199-B24",
+   "soll": "Für jede Seriennummer wird ein Änderungsbeleg zur Neuanlage mit dem Status kommissioniert verbucht.",
+   "zeilen": [
+    230,
+    231
+   ],
+   "code": [
+    "230:   LOOP AT lt_serial INTO ls_serial.",
+    "231:     CALL FUNCTION 'ZSER_SERIAL_WRITE_DOCUMENT' IN UPDATE TASK"
+   ],
+   "engine": [
+    "Jede Zeile aus lt_serial wird einzeln verarbeitet.",
+    "Der Baustein ZSER_SERIAL_WRITE_DOCUMENT wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 251. Ob ein COMMIT WORK ihn auf jedem Weg anstößt, ist im gelieferten Code nicht bestimmt."
+   ]
+  },
+  {
+   "id": "BM-199-B25",
+   "soll": "Ist es verlangt (Standard), wird sofort synchron festgeschrieben; sonst bleibt das Festschreiben dem Aufrufer überlassen.",
+   "zeilen": [
+    250,
+    251
+   ],
+   "code": [
+    "250:   IF iv_commit = abap_true.",
+    "251:     COMMIT WORK AND WAIT."
+   ],
+   "engine": [
+    "Für iv_commit mit dem Wert abap_true wird COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Mit AND WAIT wird auf die Verbuchung gewartet; sy-subrc wird danach aber nicht ausgewertet."
+   ]
+  },
+  {
+   "id": "BM-199-B26",
+   "soll": "Zum Schluss wird die Chargensperre aufgehoben, und die neuen Seriennummern und die EPCIS-Meldung gehen an den Aufrufer zurück.",
+   "zeilen": [
+    254,
+    261
+   ],
+   "code": [
+    "254:   CALL FUNCTION 'DEQUEUE_EZSER_BATCH'",
+    "261:   et_serial = lt_serial."
+   ],
+   "engine": [
+    "Der Funktionsbaustein DEQUEUE_EZSER_BATCH wird aufgerufen."
+   ]
+  }
+ ]
+}

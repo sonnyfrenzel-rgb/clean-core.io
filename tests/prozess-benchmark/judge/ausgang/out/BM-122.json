@@ -1,0 +1,39 @@
+{
+ "id": "BM-122",
+ "urteile": [
+  {
+   "id": "BM-122-B01",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch"
+   ],
+   "kurz": "GET PARAMETER ID liest einen Benutzerparameter; die Engine deutet es als Satzverarbeitung einer logischen Datenbank."
+  },
+  {
+   "id": "BM-122-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus vicncn mit Buchungskreis erkannt; das Zeitfenster für das erste Vertragsende fehlt, Felder nur technisch."
+  },
+  {
+   "id": "BM-122-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Ampelbestimmung."
+  },
+  {
+   "id": "BM-122-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Liste erkannt, aber nur Feldnamen (ls_cn-recnnr, lv_ampel), vierfach wiederholt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

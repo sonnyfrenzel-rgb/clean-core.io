@@ -1,0 +1,192 @@
+{
+ "id": "BM-098",
+ "urteile": [
+  {
+   "id": "BM-098-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus cdhdr selektiert' – jüngster Änderungsbeleg und 'ohne Beleg kein Workflow' fehlen."
+  },
+  {
+   "id": "BM-098-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'uname des Satzes wird gelesen' – Ausnahmeliste und Folge 'kein Workflow' fehlen."
+  },
+  {
+   "id": "BM-098-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "'Die Zahl der Sätze wird ermittelt' – Bezug zu Bankverbindungs-Positionen und Folge fehlen."
+  },
+  {
+   "id": "BM-098-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Workflow-Objekt."
+  },
+  {
+   "id": "BM-098-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'zahls des Satzes wird gelesen' – Fehlerende bei fehlendem Buchungskreissegment fehlt."
+  },
+  {
+   "id": "BM-098-B06",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Bei lv_zahls gleich B wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben' entspricht dem Soll."
+  },
+  {
+   "id": "BM-098-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Die zahls in lfb1 wird geändert' – Wert B und Protokoll der alten Sperre fehlen."
+  },
+  {
+   "id": "BM-098-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Freigeber-Selektion und Ausschluss des Antragstellers nur technisch; 'kleinere werden übersprungen' ist falsch (Bedingung ist Ungleichheit)."
+  },
+  {
+   "id": "BM-098-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "pernr-Lesen und RH_GET_LEADER genannt, Ersatzfreigeber 'Leiter der Org-Einheit' und 'niemand gefunden' fehlen; 'konvertiertes Ergebnis' falsch."
+  },
+  {
+   "id": "BM-098-B10",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Verbot der Selbstfreigabe."
+  },
+  {
+   "id": "BM-098-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen von zwf_bank_hist und 'zahls in lfb1 geändert' – Rücksetzen auf den Vorwert und Protokoll nicht benannt."
+  },
+  {
+   "id": "BM-098-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Sätze aus cdpos selektiert'; das Zurückdrehen der Bankdaten fehlt."
+  },
+  {
+   "id": "BM-098-B13",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Löschen neu angelegter Bankverbindungen."
+  },
+  {
+   "id": "BM-098-B14",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Abbruch bei gelöschter Bankverbindung."
+  },
+  {
+   "id": "BM-098-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Lesen lfbk, Feldsymbol, MODIFY genannt; 'alter Wert wird zurückgeschrieben' fehlt."
+  },
+  {
+   "id": "BM-098-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Die sperr in lfa1 wird geändert' – zentrale Buchungssperre und Protokoll mit Grund nicht benannt."
+  },
+  {
+   "id": "BM-098-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Mailversand per SO_NEW_DOCUMENT_SEND_API1; Nachricht an den Antragsteller über das Ergebnis fehlt."
+  },
+  {
+   "id": "BM-098-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Zwei Lesezugriffe auf zwf_bank_hist; 'bereits entschieden = nichts zu tun' fehlt."
+  },
+  {
+   "id": "BM-098-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Für gv_age ab p_esc wird remind aufgerufen' + SAP_WAPI_FORWARD_WORKITEM – Weiterleitung an den Leiter nur technisch; 'remind Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-098-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "'Für gv_age ab p_days wird remind aufgerufen' + Z_WF_SEND_REMINDER – Erinnerung nur über Namen; 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-098-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Labels mit gv_rem/gv_esc – Anzahlen nur als Variablen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

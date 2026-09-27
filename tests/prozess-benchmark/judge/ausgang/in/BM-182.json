@@ -1,0 +1,77 @@
+{
+ "id": "BM-182",
+ "titel": "Garantieantrag anlegen: Garantieprüfung, Antragsnummer aus Nummernkreis, Prüfstatus ab 5.000",
+ "prozess": "Ein Händlerportal ruft den Baustein mit Equipmentnummer, Schadenscode und beantragtem Betrag auf. Der Baustein liest zum Gerät das Ende der Kundengarantie (Garantieart 1). Gibt es keine solche Garantie oder liegt ihr Ende vor dem heutigen Tag, bricht er mit der Ausnahme GARANTIE_ABGELAUFEN und einer Fehlermeldung ab. Sonst zieht er eine neue Antragsnummer aus dem Nummernkreisobjekt ZWTY_ANTR, Intervall 01; ein Fehler dabei ist nicht abgefangen und führt zum Laufzeitfehler. Der Antrag erhält den Status P (zu prüfen), wenn der Betrag 5.000 übersteigt, sonst F. Er wird mit Gerät, Schadenscode, Betrag, Status, Datum und Benutzer in die kundeneigene Antragstabelle geschrieben, und die Antragsnummer geht an den Aufrufer zurück. Festgeschrieben wird erst durch das COMMIT des Aufrufers.",
+ "verboten": [
+  "source.abap:24 — kein Fachsatz „ist keine Nummer verfügbar, wird der Antrag mit einer Ausnahme abgelehnt“: der Aufruf hat keinen EXCEPTIONS-Zusatz, eine Ausnahme des Nummernkreises führt zum Laufzeitfehler",
+  "source.abap:38 — kein Fachsatz „der Antrag wird festgeschrieben/verbucht“: der Baustein setzt kein COMMIT WORK ab und prüft das Ergebnis des INSERT nicht; festgeschrieben wird erst durch den Aufrufer",
+  "gesamte Scheibe — kein Fachsatz „der Garantieantrag wird genehmigt oder erstattet“: Status P/F ist nur eine Einstufung, eine Genehmigung oder Gutschrift findet nicht statt"
+ ],
+ "saetze": [
+  {
+   "id": "BM-182-B01",
+   "soll": "Zum Gerät wird das Ende der Kundengarantie (Garantieart 1) gelesen.",
+   "zeilen": [
+    17
+   ],
+   "code": [
+    "17:   SELECT SINGLE gwlen FROM bgmkobj INTO @DATA(lv_gwlen)"
+   ],
+   "engine": [
+    "gwlen des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-182-B02",
+   "soll": "Hat das Gerät keine Kundengarantie oder ist sie abgelaufen, wird der Antrag mit der Ausnahme GARANTIE_ABGELAUFEN abgelehnt.",
+   "zeilen": [
+    20,
+    21
+   ],
+   "code": [
+    "20:   IF sy-subrc <> 0 OR lv_gwlen < sy-datum.",
+    "21:     MESSAGE e001(zwty) WITH iv_equnr RAISING garantie_abgelaufen."
+   ],
+   "engine": [
+    "Für sy-subrc <> 0 OR lv_gwlen < sy-datum wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-182-B03",
+   "soll": "Die Antragsnummer wird aus dem Nummernkreis ZWTY_ANTR, Intervall 01, gezogen.",
+   "zeilen": [
+    24
+   ],
+   "code": [
+    "24:   CALL FUNCTION 'NUMBER_GET_NEXT'"
+   ],
+   "engine": [
+    "Der Code übergibt '01' an NUMBER_GET_NEXT und übernimmt dessen Ausgabe nach ev_antrag.",
+    "Das konvertierte Ergebnis wird in ev_antrag übernommen."
+   ]
+  },
+  {
+   "id": "BM-182-B04",
+   "soll": "Anträge über 5.000 erhalten den Status P (zu prüfen), alle anderen den Status F.",
+   "zeilen": [
+    31
+   ],
+   "code": [
+    "31:   ls_antrag = VALUE #( antrag  = ev_antrag"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-182-B05",
+   "soll": "Der Garantieantrag wird mit Gerät, Schadenscode, Betrag, Status, Anlagedatum und Anleger gespeichert.",
+   "zeilen": [
+    38
+   ],
+   "code": [
+    "38:   INSERT zwty_antrag FROM ls_antrag."
+   ],
+   "engine": []
+  }
+ ]
+}

@@ -1,0 +1,148 @@
+{
+ "id": "BM-094",
+ "urteile": [
+  {
+   "id": "BM-094-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus zif_routing selektiert' – aktive Routen nicht benannt."
+  },
+  {
+   "id": "BM-094-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Ende mit Meldung korrekt; Lesen nur als 'Sätze aus zif_inbox', Anzahl/Status/Reihenfolge fehlen."
+  },
+  {
+   "id": "BM-094-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Bausteinaufruf BAL_LOG_CREATE; 'konvertiertes Ergebnis' trifft nicht zu, Löschfrist fehlt."
+  },
+  {
+   "id": "BM-094-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'ENQUEUE_EZIF_INBOX wird aufgerufen'; Überspringen gesperrter Nachrichten fehlt."
+  },
+  {
+   "id": "BM-094-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "'Ohne Treffer wird die pv_rc auf 8 gesetzt' – Fehler nur als Returncode, 'keine aktive Route' nicht benannt."
+  },
+  {
+   "id": "BM-094-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Dynamischer Aufruf erkannt, aber Baustein kommt aus der Routing-Konfiguration, nicht 'aus der Eingabe'; 'Ohne Treffer' passt nicht zur Ausnahme; 'konvertiert' falsch."
+  },
+  {
+   "id": "BM-094-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Externer FORM-Aufruf erkannt, die Bedingung 'sofern vorhanden' (IF FOUND) fehlt."
+  },
+  {
+   "id": "BM-094-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Kindprogramm wird gestartet' und 'pv_rc auf 0' – Übergabe der Nachrichten-Id und Erfolgsannahme nur technisch."
+  },
+  {
+   "id": "BM-094-B09",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur unbekannten Routingart."
+  },
+  {
+   "id": "BM-094-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Zeilenänderung + COMMIT bei pv_rc 0 genannt, Status S nicht; 'Bei pv_rc gleich 0 wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben' widerspricht dem Code."
+  },
+  {
+   "id": "BM-094-B11",
+   "urteil": "gleich",
+   "mangel": [],
+   "kurz": "'Mit ROLLBACK WORK wird die Änderung verworfen' entspricht dem Soll."
+  },
+  {
+   "id": "BM-094-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "'Für ps_inbox-retry + 1 < p_retry wird eine Zeile geändert' – Status R, Zähler, Fehlertext fehlen."
+  },
+  {
+   "id": "BM-094-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sonst Zeile geändert und log_error aufgerufen' + BAL_LOG_MSG_ADD; Status E nicht genannt, 'log_error Wirkung nicht belegt' ist falsch."
+  },
+  {
+   "id": "BM-094-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Nur 'DEQUEUE_EZIF_INBOX wird aufgerufen'."
+  },
+  {
+   "id": "BM-094-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'BAL_DB_SAVE aufgerufen und COMMIT WORK' – Sichern des Anwendungslogs nur als Bausteinname."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,255 @@
+{
+ "id": "BM-116",
+ "urteile": [
+  {
+   "id": "BM-116-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "SPBT_INITIALIZE und 'Meldung' bei sy-subrc <> 0 AND <> 3 – Abweisung der Eingabe nur technisch; 'konvertiertes Ergebnis' falsch."
+  },
+  {
+   "id": "BM-116-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch"
+   ],
+   "kurz": "Nur Übergabe an BAL_LOG_CREATE; 'konvertiertes Ergebnis' trifft nicht zu."
+  },
+  {
+   "id": "BM-116-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus mpla selektiert' – leistungsabhängige, aktive Pläne nicht benannt; 'select_plans Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-116-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben' – Sprung zum Abschluss (STOP) fehlt."
+  },
+  {
+   "id": "BM-116-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'jede Zeile aus gt_plan wird einzeln verarbeitet'; Bündelung je Planungswerk fehlt."
+  },
+  {
+   "id": "BM-116-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "'Ohne p_para wird Z_PM_MPLAN_CALC aufgerufen und eine Zeile aufgenommen' – Sinn nur technisch; 'konvertiert' falsch."
+  },
+  {
+   "id": "BM-116-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Z_PM_MPLAN_CALC wird asynchron in einer eigenen Task gestartet' – Servergruppe fehlt."
+  },
+  {
+   "id": "BM-116-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'log_add aufgerufen und Block verlassen'; Warten/Wiederholen bei fehlenden Ressourcen fehlt."
+  },
+  {
+   "id": "BM-116-B09",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Warten auf alle Pakete."
+  },
+  {
+   "id": "BM-116-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "technisch",
+    "zu_allgemein",
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird log_add aufgerufen' – Zählen und Übernahme der Ergebnisse fehlen, 'Ohne Treffer' passt nicht zu RECEIVE."
+  },
+  {
+   "id": "BM-116-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Nur 'BAL_LOG_MSG_ADD_FREE_TEXT wird aufgerufen'."
+  },
+  {
+   "id": "BM-116-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "'Nur Eine nicht leere it_warpl gehen weiter; kleinere ...' falsch formuliert; Zyklenlesung nur 'Sätze aus mmpt'."
+  },
+  {
+   "id": "BM-116-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "ENQUEUE und Status L 'Wartungsplan gesperrt' genannt; 'Ohne Treffer' passt nicht zum Sperrkonflikt; 'die Status'."
+  },
+  {
+   "id": "BM-116-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Nur 'DEQUEUE_EZPM_MPLA wird aufgerufen'."
+  },
+  {
+   "id": "BM-116-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "'due_date ... Verhalten nicht belegt' – Klasse steht im gelieferten Code; Status F mit Grund fehlt."
+  },
+  {
+   "id": "BM-116-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus imrg selektiert' – 365 Tage und Mindestanzahl zwei fehlen."
+  },
+  {
+   "id": "BM-116-B17",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Tagesleistung."
+  },
+  {
+   "id": "BM-116-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus zpm_mplan_run selektiert' – Ausgangspunkt und Rückfall auf älteste Ablesung fehlen."
+  },
+  {
+   "id": "BM-116-B19",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Fälligkeitsberechnung."
+  },
+  {
+   "id": "BM-116-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Status N 'noch nicht fällig' genannt, Horizont aber nur als 'lc_horizon' (30 Tage fehlen)."
+  },
+  {
+   "id": "BM-116-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Status O 'offener Auftrag vorhanden' bei Treffer erkennbar; Kriterien des offenen Auftrags fehlen."
+  },
+  {
+   "id": "BM-116-B22",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "'Für pv_test ... Status auf T, Text fällig (Testlauf) ... es wird nichts geschrieben' entspricht dem Soll."
+  },
+  {
+   "id": "BM-116-B23",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'BAPI_ALM_ORDER_MAINTAIN wird aufgerufen'; Auftragsanlage mit Starttermin nicht benannt."
+  },
+  {
+   "id": "BM-116-B24",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Rollback und Status F bei E/A-Meldung – vollständig, aber nur als Code."
+  },
+  {
+   "id": "BM-116-B25",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig",
+    "grammatik"
+   ],
+   "kurz": "COMMIT und Status A 'Auftrag angelegt' genannt; Abrufprotokoll (INSERT zpm_mplan_run) fehlt."
+  },
+  {
+   "id": "BM-116-B26",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "BAL_DB_SAVE und display – Sichern/Liste nur über Namen; 'display Wirkung nicht belegt' falsch."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

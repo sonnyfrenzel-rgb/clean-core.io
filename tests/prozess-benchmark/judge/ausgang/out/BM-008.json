@@ -1,0 +1,77 @@
+{
+ "id": "BM-008",
+ "urteile": [
+  {
+   "id": "BM-008-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "unvollstaendig",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Ende bei nicht gefundenem Auftrag ist erkennbar, aber \"eine Zeile aufgenommen\" statt Fehlermeldung 301."
+  },
+  {
+   "id": "BM-008-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "grammatik",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Abbruch bei gesetzter Sperre erkennbar, Meldung nur als \"Zeile aufgenommen\"; \"einer nicht leeren Sperrkennzeichen\"."
+  },
+  {
+   "id": "BM-008-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Bedingung nur als lv_cmgst = 'B' OR 'C', Kreditstatus nicht benannt, Meldung nur \"Zeile aufgenommen\"."
+  },
+  {
+   "id": "BM-008-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "\"Sätze aus vbap selektiert\" ohne abgesagte Positionen/volle Menge; Warnung nur als \"Zeile aufgenommen\"."
+  },
+  {
+   "id": "BM-008-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "BAPI-Name mit iv_vstel und ev_delivery; dass eine Auslieferung angelegt wird, sagt kein Satz fachlich."
+  },
+  {
+   "id": "BM-008-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Rollback-Aufruf richtig, aber Bedingung als \"sy-subrc = 0 OR iv_testrun\" – Fehlermeldung/Testlauf nicht fachlich; fehlende Lieferungsnummer nicht erwähnt."
+  },
+  {
+   "id": "BM-008-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "\"sonst BAPI_TRANSACTION_COMMIT aufgerufen\" – Festschreiben und Rückgabe der Lieferungsnummer nicht fachlich benannt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

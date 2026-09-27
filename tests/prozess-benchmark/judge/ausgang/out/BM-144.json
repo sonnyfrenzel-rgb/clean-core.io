@@ -1,0 +1,40 @@
+{
+ "id": "BM-144",
+ "urteile": [
+  {
+   "id": "BM-144-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Bedingung p_days < 1 oder > 365 mit Meldung erkannt, nicht als Abweisung der Tagesgrenze formuliert."
+  },
+  {
+   "id": "BM-144-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Lesen aus ptrv_head mit Feldnamen; genehmigt/abzurechnen und Altersgrenze fehlen."
+  },
+  {
+   "id": "BM-144-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Altersberechnung und Einstufung."
+  },
+  {
+   "id": "BM-144-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Liste erkannt, nur Feldnamen, sechsfach."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

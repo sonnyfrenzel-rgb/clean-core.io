@@ -1,0 +1,121 @@
+{
+ "id": "BM-006",
+ "titel": "Rabattanalyse: Rabattkonditionen aus KONV je Auftrag summieren und mit Ampel anzeigen",
+ "prozess": "Der Report wird vom Vertriebscontrolling mit Verkaufsorganisationen, optionalem Auftragsdatum und Kunden sowie einem Rabattgrenzwert gestartet. Er liest die passenden Kundenaufträge; ohne Treffer meldet er das und endet. Zu allen gefundenen Aufträgen liest er die aktiven Zu- und Abschlagskonditionen aus den Belegkonditionen. Je Auftrag summiert er die Werte der kundeneigenen Konditionsarten und der K007; Standardrabatte wie K004 und K005 bleiben außen vor. Aus Rabattsumme und Nettowert errechnet er eine Rabattquote bezogen auf den Wert vor Rabatt; ist der Nettowert null, bleibt die Quote null. Liegt die Quote über dem Grenzwert, erhält der Auftrag eine rote Ampel, sonst eine grüne. Die Liste wird als ALV angezeigt; scheitert der Aufbau der ALV, bricht der Report mit einer Fehlermeldung ab. Es werden keine Belege verändert.",
+ "verboten": [
+  "source.abap:55 — kein Fachsatz „alle Rabatte des Auftrags werden summiert“: K004/K005 und andere Standardrabatte werden bewusst nicht gezählt",
+  "source.abap:63 — kein Fachsatz „Aufträge über dem Grenzwert werden gesperrt oder gemeldet“: es wird nur eine Ampel in der Liste gesetzt",
+  "source.abap:60 — kein Fachsatz „Quote bezogen auf den Nettowert“: der Nenner ist Nettowert plus Rabattbetrag"
+ ],
+ "saetze": [
+  {
+   "id": "BM-006-B01",
+   "soll": "Es werden die Kundenaufträge der eingegebenen Verkaufsorganisationen, Auftragsdaten und Kunden gelesen.",
+   "zeilen": [
+    34
+   ],
+   "code": [
+    "34:   SELECT * FROM vbak INTO TABLE gt_vbak"
+   ],
+   "engine": [
+    "Es werden Aufträge selektiert."
+   ]
+  },
+  {
+   "id": "BM-006-B02",
+   "soll": "Ohne Treffer erscheint ein Hinweis und der Report endet ohne Liste.",
+   "zeilen": [
+    38,
+    39,
+    40
+   ],
+   "code": [
+    "38:   IF gt_vbak IS INITIAL.",
+    "39:     MESSAGE 'Keine Aufträge zur Selektion' TYPE 'S' DISPLAY LIKE 'W'.",
+    "40:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-006-B03",
+   "soll": "Zu den Aufträgen werden nur aktive Zu- und Abschlagskonditionen gelesen.",
+   "zeilen": [
+    44
+   ],
+   "code": [
+    "44:   SELECT * FROM konv INTO TABLE gt_konv"
+   ],
+   "engine": [
+    "Es werden Sätze aus konv selektiert."
+   ]
+  },
+  {
+   "id": "BM-006-B04",
+   "soll": "Als Rabatt zählen nur kundeneigene Konditionsarten (Z…) und K007; ihre Werte werden je Auftrag summiert.",
+   "zeilen": [
+    55,
+    56
+   ],
+   "code": [
+    "55:       IF gs_konv-kschl(1) = 'Z' OR gs_konv-kschl = 'K007'.",
+    "56:         gs_out-rabatt = gs_out-rabatt + gs_konv-kwert."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-006-B05",
+   "soll": "Die Rabattquote ist der Rabattbetrag im Verhältnis zu Nettowert plus Rabatt, in Prozent; bei Nettowert null bleibt sie null.",
+   "zeilen": [
+    59,
+    60
+   ],
+   "code": [
+    "59:     IF gs_vbak-netwr <> 0.",
+    "60:       gs_out-quote = abs( gs_out-rabatt ) * 100"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-006-B06",
+   "soll": "Aufträge mit einer Rabattquote über dem eingegebenen Grenzwert (Vorschlag 15 %) werden rot, alle anderen grün markiert.",
+   "zeilen": [
+    63,
+    64,
+    66
+   ],
+   "code": [
+    "63:     IF gs_out-quote > p_grenz.",
+    "64:       gs_out-ampel = '@0A@'.   \"rot",
+    "66:       gs_out-ampel = '@08@'.   \"grün"
+   ],
+   "engine": [
+    "Für gs_out-quote größer p_grenz wird die gs_out-ampel auf @0A@ gesetzt.",
+    "Für gs_out-quote größer p_grenz wird die gs_out-ampel auf @0A@ gesetzt, sonst die gs_out-ampel auf @08@ gesetzt.",
+    "gs_out-quote größer p_grenz setzen die gs_out-ampel auf @0A@.",
+    "Für kleinere oder gleiche gs_out-quote wird die gs_out-ampel auf @08@ gesetzt.",
+    "Kleinere oder gleiche gs_out-quote setzen die gs_out-ampel auf @08@."
+   ]
+  },
+  {
+   "id": "BM-006-B07",
+   "soll": "Das Ergebnis wird als ALV-Liste mit allen Standardfunktionen angezeigt.",
+   "zeilen": [
+    72,
+    78
+   ],
+   "code": [
+    "72:       cl_salv_table=>factory( IMPORTING r_salv_table = go_alv",
+    "78:   go_alv->display( )."
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode factory von cl_salv_table wird nach cl_salv_table übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode display von go_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,102 @@
+{
+ "id": "BM-092",
+ "urteile": [
+  {
+   "id": "BM-092-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Ende mit Meldung korrekt, das Lesen aber nur als 'Sätze aus zsd_web_cust'; neu/Zeitraum fehlen."
+  },
+  {
+   "id": "BM-092-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "'Kundennummer des Kunden wird gelesen' – Dublettenkriterien Name/PLZ/Land fehlen."
+  },
+  {
+   "id": "BM-092-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Gleicher Satz wie B02; Suche per E-Mail und die Bedingung fehlen."
+  },
+  {
+   "id": "BM-092-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "'Mit einer nicht leeren Kundennummer wird eine Zeile geändert' – Dublettenstatus D und Nichtanlage fehlen; 'Die Status ... wird'."
+  },
+  {
+   "id": "BM-092-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "falsch",
+    "technisch"
+   ],
+   "kurz": "Nur 'build_bdc ... Wirkung nicht belegt'; die Mappe steht im gelieferten Code, ihr Inhalt wird nicht genannt."
+  },
+  {
+   "id": "BM-092-B06",
+   "urteil": "gleich",
+   "mangel": [],
+   "kurz": "'Die Anlage wird über die Transaktion XD01 angestoßen' entspricht dem Soll."
+  },
+  {
+   "id": "BM-092-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "'Bei Treffer wird eine Zeile geändert' – Erfolg der Transaktion ist kein Treffer; Kundennummer und Status 'angelegt' fehlen."
+  },
+  {
+   "id": "BM-092-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch",
+    "redundant"
+   ],
+   "kurz": "get_error_text/FORMAT_MESSAGE und Zeilenänderung genannt; Fehlerstatus und Textermittlung fehlen fachlich, 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-092-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "'Mit COMMIT WORK wird die Änderung persistiert' – das einzelne Festschreiben je Registrierung fehlt."
+  },
+  {
+   "id": "BM-092-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Labels mit gv_ok/gv_dup/gv_err – Zähler nur als Variablennamen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,78 @@
+{
+ "id": "BM-130",
+ "urteile": [
+  {
+   "id": "BM-130-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus ztrm_fx_deal selektiert\"; Buchungskreis, Handelstag, \"neu/ungeprüft\" fehlen."
+  },
+  {
+   "id": "BM-130-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Ausnahme \"nichts zu tun\"."
+  },
+  {
+   "id": "BM-130-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu den Toleranzen je Geschäftsart."
+  },
+  {
+   "id": "BM-130-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf READ_EXCHANGE_RATE mit Handelstag erkannt, aber weder Mittelkurs noch Währungspaar genannt."
+  },
+  {
+   "id": "BM-130-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Status K bei fehlendem Treffer erkannt, Bedeutung \"manuelle Prüfung\" fehlt; \"die Status\", \"setzen\"."
+  },
+  {
+   "id": "BM-130-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Status A bei Überschreiten der Toleranz erkannt; Abweichungsberechnung, Bedeutung \"auffällig\" und Ereignis an die Überwachung fehlen."
+  },
+  {
+   "id": "BM-130-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Status P im Sonst-Fall erkannt, aber nicht als \"marktgerecht\"."
+  },
+  {
+   "id": "BM-130-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Speichern in ztrm_fx_deal erkannt (korrekt ohne COMMIT); als \"eine Zeile\" statt aller Geschäfte, Rückgabe der Anzahl fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

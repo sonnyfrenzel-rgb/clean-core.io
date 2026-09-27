@@ -1,0 +1,369 @@
+{
+ "id": "BM-118",
+ "titel": "Zählerabrechnung Serviceverträge: Verbrauch je Equipment aus Messbelegen, Freimenge, Preis ZCPK, Lastschriftanforderung aus der Liste",
+ "prozess": "Der Sachbearbeiter startet die Zählerabrechnung mit Verkaufsorganisationen, optional Verträgen und Kunden sowie der Abrechnungsperiode. Das Programm liest die Kontraktpositionen mit Abrechnungsart Z, deren Laufzeit die Periode überlappt; ohne Treffer endet es mit einem Hinweis. Zu den Positionen liest es die Equipments der Objektliste und für jedes Equipment den aktiven Abrechnungszähler; fehlt er, wird das gemeldet. Der Periodenverbrauch ist der Stand der letzten gültigen Ablesung bis Periodenende minus dem der letzten Ablesung vor Periodenbeginn; fehlt eine Ablesung oder ist der Verbrauch negativ ohne gepflegten Überlauf, wird das Equipment gemeldet und geht mit null ein, bei gepflegtem Überlauf wird dieser addiert. Danach liest es die Preise der Kondition ZCPK, summiert je Position den Verbrauch aller Equipments und rechnet nur die Menge über der Freimenge ab; Positionen ohne Preis oder mit Rechenfehler werden gemeldet und übergangen. Die Liste zeigt je Position Verbrauch, Freimenge, abzurechnende Menge und Betrag. Mit der Funktion Fakturieren werden alle Positionen mit positivem Betrag bearbeitet: Wurde die Periode schon abgerechnet, wird das gemeldet; sonst entsteht eine Lastschriftanforderung ZL2 mit Bezug zur Vertragsposition über die abzurechnende Menge, bei Fehler wird zurückgerollt und gelistet, bei Erfolg die Abrechnung protokolliert, festgeschrieben und gelistet. Am Ende wird die Anzahl der Anforderungen gemeldet.",
+ "verboten": [
+  "zcs_zaehler_faktura_f01.abap:186 — kein Fachsatz „der in der Liste berechnete Betrag wird in Rechnung gestellt“: übergeben wird nur die abzurechnende Menge, der Preis der Anforderung entsteht in deren eigener Preisfindung",
+  "zcs_zaehler_faktura_f01.abap:155 — kein Fachsatz „nur die in der Liste gewählte Position wird fakturiert“: FAKT bearbeitet alle Zeilen mit positivem Betrag",
+  "zcs_zaehler_faktura_f01.abap:70 — kein Fachsatz „Positionen mit Zählerfehler werden nicht abgerechnet“: das betroffene Equipment geht mit Verbrauch null ein, die Position wird mit den übrigen Equipments abgerechnet",
+  "zcl_cs_meter_period.abap:62 — kein Fachsatz „ohne Ablesung in der Periode wird der Verbrauch geschätzt“: es gilt die letzte Ablesung bis zum Stichtag, auch aus früheren Perioden; ohne neue Ablesung ist der Verbrauch null"
+ ],
+ "saetze": [
+  {
+   "id": "BM-118-B01",
+   "soll": "Es werden die Kontraktpositionen mit Zählerabrechnung (Abrechnungsart Z) der Selektion gelesen, deren Vertragslaufzeit die Abrechnungsperiode überlappt.",
+   "zeilen": [
+    26,
+    142
+   ],
+   "code": [
+    "26:   PERFORM vertraege_lesen.",
+    "142:   SELECT k~vbeln p~posnr k~kunnr k~vkorg k~vtweg k~spart k~knumv"
+   ],
+   "engine": [
+    "Das Unterprogramm vertraege_lesen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es werden Aufträge selektiert."
+   ]
+  },
+  {
+   "id": "BM-118-B02",
+   "soll": "Ohne solche Positionen endet der Lauf mit einem Hinweis.",
+   "zeilen": [
+    27,
+    28,
+    29
+   ],
+   "code": [
+    "27:   IF gt_ctr IS INITIAL.",
+    "28:     MESSAGE s701(zcs).",
+    "29:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-118-B03",
+   "soll": "Zu den Positionen werden die zugeordneten Equipments aus der Objektliste des Vertrags gelesen.",
+   "zeilen": [
+    32,
+    163
+   ],
+   "code": [
+    "32:   PERFORM objekte_lesen.",
+    "163:   SELECT s~sdaufnr AS vbeln s~posnr o~equnr"
+   ],
+   "engine": [
+    "Das Unterprogramm objekte_lesen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird objekte_lesen aufgerufen, verbrauch_ermitteln aufgerufen, preise_lesen aufgerufen, abrechnung_berechnen aufgerufen und liste_ausgeben aufgerufen.",
+    "Es werden Sätze aus ser02 selektiert."
+   ]
+  },
+  {
+   "id": "BM-118-B04",
+   "soll": "Je Equipment wird der aktive Abrechnungszähler gesucht; ohne ihn wird das Equipment gemeldet und nicht berücksichtigt.",
+   "zeilen": [
+    33,
+    183,
+    190,
+    191
+   ],
+   "code": [
+    "33:   PERFORM verbrauch_ermitteln.",
+    "183:     SELECT SINGLE p~point FROM imptt AS p",
+    "190:     IF sy-subrc <> 0.",
+    "191:       WRITE: / 'Equipment', <ls_obj>-equnr, 'ohne Abrechnungszähler'."
+   ],
+   "engine": [
+    "Es wird objekte_lesen aufgerufen, verbrauch_ermitteln aufgerufen, preise_lesen aufgerufen, abrechnung_berechnen aufgerufen und liste_ausgeben aufgerufen.",
+    "Das Unterprogramm verbrauch_ermitteln wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "p~point des Satzes wird gelesen.",
+    "Ohne Treffer wird Equipment ausgegeben, ls_obj>-equnr ausgegeben und ohne Abrechnungszähler ausgegeben.",
+    "Bei Treffern werden Equipment, ls_obj>-equnr und ohne Abrechnungszähler als Liste ausgegeben.",
+    "Equipment wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "ls_obj>-equnr wird ausgegeben.",
+    "ohne Abrechnungszähler wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-118-B05",
+   "soll": "Der Verbrauch in der Periode ist der Zählerstand der letzten gültigen Ablesung bis Periodenende minus dem der letzten Ablesung vor Periodenbeginn.",
+   "zeilen": [
+    91,
+    93,
+    114,
+    196
+   ],
+   "code": [
+    "91:     DATA(lv_start) = reading_at( iv_point = iv_point",
+    "93:     DATA(lv_end)   = reading_at( iv_point = iv_point",
+    "114:     SELECT readg FROM imrg",
+    "196:         <ls_obj>-menge = zcl_cs_meter_period=>usage( iv_point = lv_point"
+   ],
+   "engine": [
+    "Es werden Sätze aus imrg selektiert.",
+    "Die Methode usage von zcl_cs_meter_period wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-118-B06",
+   "soll": "Fehlt eine solche Ablesung, wird das Equipment mit Fehlertext gemeldet und geht mit Verbrauch null ein.",
+   "zeilen": [
+    121,
+    122,
+    201
+   ],
+   "code": [
+    "121:     IF lt_read IS INITIAL.",
+    "122:       RAISE EXCEPTION TYPE zcx_cs_meter",
+    "201:         WRITE: / 'Equipment', <ls_obj>-equnr, lv_text."
+   ],
+   "engine": [
+    "Bei Treffern werden Equipment, ls_obj>-equnr und Der Rückgabewert als Liste ausgegeben.",
+    "Equipment wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "ls_obj>-equnr wird ausgegeben.",
+    "Der Rückgabewert wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-118-B07",
+   "soll": "Ein negativer Verbrauch gilt als Zählerüberlauf und wird um den Überlaufwert des Zählers erhöht; ist keiner gepflegt, wird das Equipment als fehlerhaft gemeldet.",
+   "zeilen": [
+    97,
+    99,
+    102,
+    103,
+    108
+   ],
+   "code": [
+    "97:     IF rv_menge < 0.",
+    "99:       SELECT SINGLE cjump FROM imptt",
+    "102:       IF lv_cjump IS INITIAL.",
+    "103:         RAISE EXCEPTION TYPE zcx_cs_meter",
+    "108:       rv_menge = rv_menge + lv_cjump."
+   ],
+   "engine": [
+    "cjump des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-118-B08",
+   "soll": "Die Preise der Kondition ZCPK der Verträge werden gelesen.",
+   "zeilen": [
+    34,
+    212
+   ],
+   "code": [
+    "34:   PERFORM preise_lesen.",
+    "212:   SELECT * FROM konv INTO TABLE gt_konv"
+   ],
+   "engine": [
+    "Es wird objekte_lesen aufgerufen, verbrauch_ermitteln aufgerufen, preise_lesen aufgerufen, abrechnung_berechnen aufgerufen und liste_ausgeben aufgerufen.",
+    "Das Unterprogramm preise_lesen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es werden Sätze aus konv selektiert."
+   ]
+  },
+  {
+   "id": "BM-118-B09",
+   "soll": "Je Vertragsposition wird der Verbrauch aller ihrer Equipments summiert; abgerechnet wird nur der Verbrauch über der Freimenge der Position.",
+   "zeilen": [
+    35,
+    229,
+    234
+   ],
+   "code": [
+    "35:   PERFORM abrechnung_berechnen.",
+    "229:     ls_bill-menge  = REDUCE f( INIT lv_sum = CONV f( 0 )",
+    "234:     ls_bill-abrech = COND #( WHEN ls_bill-menge > ls_bill-frei"
+   ],
+   "engine": [
+    "Es wird objekte_lesen aufgerufen, verbrauch_ermitteln aufgerufen, preise_lesen aufgerufen, abrechnung_berechnen aufgerufen und liste_ausgeben aufgerufen.",
+    "Das Unterprogramm abrechnung_berechnen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-118-B10",
+   "soll": "Positionen ohne ZCPK-Preis werden gemeldet und nicht in die Abrechnungsliste übernommen.",
+   "zeilen": [
+    238,
+    241,
+    242
+   ],
+   "code": [
+    "238:     READ TABLE gt_konv INTO DATA(ls_konv)",
+    "241:     IF sy-subrc <> 0.",
+    "242:       WRITE: / 'Vertrag', ls_ctr-vbeln, ls_ctr-posnr, 'ohne Preis ZCPK'."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird Vertrag ausgegeben, Belegnummer ausgegeben, ls_ctr-posnr ausgegeben und ohne Preis ZCPK ausgegeben.",
+    "Bei Treffern werden Vertrag, Belegnummer, ls_ctr-posnr und ohne Preis ZCPK als Liste ausgegeben.",
+    "Vertrag wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Belegnummer wird ausgegeben.",
+    "ls_ctr-posnr wird ausgegeben.",
+    "ohne Preis ZCPK wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-118-B11",
+   "soll": "Der Betrag ist abzurechnende Menge mal Konditionsbetrag je Preiseinheit; ist er nicht berechenbar, wird die Position gemeldet und übergangen.",
+   "zeilen": [
+    247,
+    250,
+    251
+   ],
+   "code": [
+    "247:       ls_bill-preis  = ls_konv-kbetr / ls_konv-kpein.",
+    "250:     IF sy-subrc = 4.",
+    "251:       WRITE: / 'Vertrag', ls_ctr-vbeln, ls_ctr-posnr, 'Preis nicht berechenbar'."
+   ],
+   "engine": [
+    "Für sy-subrc mit dem Wert 4 wird Vertrag ausgegeben, Belegnummer ausgegeben, ls_ctr-posnr ausgegeben und Preis nicht berechenbar ausgegeben.",
+    "Vertrag, Belegnummer, ls_ctr-posnr und Preis nicht berechenbar werden ausgegeben.",
+    "Vertrag wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Belegnummer wird ausgegeben.",
+    "ls_ctr-posnr wird ausgegeben.",
+    "Preis nicht berechenbar wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-118-B12",
+   "soll": "Die Abrechnungsliste zeigt je Position Verbrauch, Freimenge, abzurechnende Menge und Betrag mit Periodenkopf und bietet die Funktion Fakturieren.",
+   "zeilen": [
+    36,
+    40,
+    264,
+    266
+   ],
+   "code": [
+    "36:   PERFORM liste_ausgeben.",
+    "40:   WRITE: / 'Zählerabrechnung Serviceverträge', p_von, '-', p_bis.",
+    "264:   SET PF-STATUS 'LISTE'.",
+    "266:     WRITE: / gs_bill-vbeln, gs_bill-posnr, gs_bill-kunnr,"
+   ],
+   "engine": [
+    "Es wird objekte_lesen aufgerufen, verbrauch_ermitteln aufgerufen, preise_lesen aufgerufen, abrechnung_berechnen aufgerufen und liste_ausgeben aufgerufen.",
+    "Das Unterprogramm liste_ausgeben wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Zählerabrechnung Serviceverträge, p_von, -, p_bis, Vertrag Pos. Kunde Verbrauch Freimenge und  Abrechnung Betrag werden ausgegeben.",
+    "Zählerabrechnung Serviceverträge wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "p_von wird ausgegeben.",
+    "- wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "p_bis wird ausgegeben.",
+    "Der GUI-Status LISTE wird gesetzt.",
+    "Bei Treffern werden Belegnummer, gs_bill-posnr, Kundennummer, gs_bill-menge, gs_bill-frei, gs_bill-abrech, gs_bill-betrag CURRENCY gs_bill-waerk und gs_bill-waerk als Liste ausgegeben.",
+    "Belegnummer wird ausgegeben.",
+    "gs_bill-posnr wird ausgegeben.",
+    "Kundennummer wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-118-B13",
+   "soll": "Mit Fakturieren werden alle Positionen der Liste mit positivem Betrag bearbeitet; jede andere Funktion wird mit Hinweis abgewiesen.",
+   "zeilen": [
+    47,
+    49,
+    51,
+    287
+   ],
+   "code": [
+    "47:   CASE sy-ucomm.",
+    "49:       PERFORM fakturieren.",
+    "51:       MESSAGE s702(zcs) WITH sy-ucomm.",
+    "287:     CHECK ls_bill-betrag > 0."
+   ],
+   "engine": [
+    "Das Unterprogramm fakturieren wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Eine Meldung wird ausgegeben.",
+    "Nur Beträge größer 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-118-B14",
+   "soll": "Ist die Position für den Periodenbeginn schon abgerechnet, wird sie mit der vorhandenen Lastschriftanforderung gemeldet und übersprungen.",
+   "zeilen": [
+    290,
+    295,
+    296
+   ],
+   "code": [
+    "290:     SELECT SINGLE vbeln_lr FROM zcs_zf_log",
+    "295:     IF sy-subrc = 0.",
+    "296:       WRITE: / ls_bill-vbeln, ls_bill-posnr, 'bereits abgerechnet mit', lv_done."
+   ],
+   "engine": [
+    "vbeln_lr des Satzes mit dem eingegebenen von wird gelesen.",
+    "Bei Treffer wird Belegnummer ausgegeben, ls_bill-posnr ausgegeben, bereits abgerechnet mit ausgegeben und lv_done ausgegeben.",
+    "Bei Treffern werden Belegnummer, ls_bill-posnr, bereits abgerechnet mit und lv_done als Liste ausgegeben.",
+    "Belegnummer wird ausgegeben.",
+    "ls_bill-posnr wird ausgegeben.",
+    "bereits abgerechnet mit wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_done wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-118-B15",
+   "soll": "Sonst wird eine Lastschriftanforderung ZL2 mit Bezug zur Vertragsposition über die abzurechnende Menge für den Kunden angelegt.",
+   "zeilen": [
+    317
+   ],
+   "code": [
+    "317:     CALL FUNCTION 'BAPI_SALESORDER_CREATEFROMDAT2'"
+   ],
+   "engine": [
+    "Der Code übergibt ls_hdr an BAPI_SALESORDER_CREATEFROMDAT2 und übernimmt dessen Ausgabe nach lv_vbeln.",
+    "Das konvertierte Ergebnis wird in lv_vbeln übernommen."
+   ]
+  },
+  {
+   "id": "BM-118-B16",
+   "soll": "Entsteht keine Anforderung, wird zurückgerollt und der Fehler zur Position gelistet.",
+   "zeilen": [
+    327,
+    328,
+    330
+   ],
+   "code": [
+    "327:     IF lv_vbeln IS INITIAL.",
+    "328:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "330:       WRITE: / ls_bill-vbeln, ls_bill-posnr, 'Fehler:', lv_msg."
+   ],
+   "engine": [
+    "Ohne Belegnummer wird BAPI_TRANSACTION_ROLLBACK aufgerufen, Belegnummer ausgegeben, ls_bill-posnr ausgegeben, Fehler: ausgegeben und lv_msg ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Bei Treffern werden Belegnummer, ls_bill-posnr, Fehler: und lv_msg als Liste ausgegeben.",
+    "Belegnummer wird ausgegeben.",
+    "ls_bill-posnr wird ausgegeben.",
+    "Fehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_msg wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-118-B17",
+   "soll": "Sonst wird die Abrechnung der Periode mit Menge und Anforderungsnummer protokolliert, festgeschrieben und gelistet; am Ende wird die Anzahl der Anforderungen gemeldet.",
+   "zeilen": [
+    334,
+    341,
+    345,
+    348
+   ],
+   "code": [
+    "334:     INSERT zcs_zf_log FROM @( VALUE #( vbeln    = ls_bill-vbeln",
+    "341:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "345:     WRITE: / ls_bill-vbeln, ls_bill-posnr, 'Lastschriftanforderung', lv_vbeln.",
+    "348:   MESSAGE s703(zcs) WITH lv_anz."
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Bei Treffern werden Belegnummer, ls_bill-posnr, Lastschriftanforderung und Das vom Funktionsbaustein zurückgegebene Feld als Liste ausgegeben.",
+    "Belegnummer wird ausgegeben.",
+    "ls_bill-posnr wird ausgegeben.",
+    "Lastschriftanforderung wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Das vom Funktionsbaustein zurückgegebene Feld wird ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

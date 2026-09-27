@@ -1,0 +1,114 @@
+{
+ "id": "BM-134",
+ "urteile": [
+  {
+   "id": "BM-134-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus zdsp_grund selektiert\"; Zuordnung Kundengrund zu Klärungsgrund nicht benannt."
+  },
+  {
+   "id": "BM-134-B02",
+   "urteil": "fehlt",
+   "mangel": [
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"Jede Zeile aus idoc_data wird einzeln verarbeitet\"; Übernahme von Kopf- und Kürzungssegmenten nicht ausgesagt."
+  },
+  {
+   "id": "BM-134-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen des Kunden und Verlassen ohne Treffer erkannt; dass das Avis damit fehlerhaft ist, fehlt."
+  },
+  {
+   "id": "BM-134-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Für sy-subrc = 1 wird der Block verlassen\"; Umwandlung des Betrags und Fehlerabbruch des Avis fehlen."
+  },
+  {
+   "id": "BM-134-B05",
+   "urteil": "gleich",
+   "mangel": [],
+   "kurz": "\"Nur Beträge größer 0 gehen weiter; kleinere werden übersprungen\" entspricht dem Übergehen von Kürzungen bis null."
+  },
+  {
+   "id": "BM-134-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus bsid und Verlassen ohne Treffer erkannt; Rechnungsreferenz, offene Posten des Kunden und Fehler des Avis fehlen."
+  },
+  {
+   "id": "BM-134-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Fall des Satzes wird gelesen\"; Weitergehen zum nächsten Posten bei bestehendem Fall fehlt."
+  },
+  {
+   "id": "BM-134-B08",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Ableitung des Klärungsgrunds (Default 99)."
+  },
+  {
+   "id": "BM-134-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf dispute_anlegen/Z_FSCM_DISPUTE_CREATE erkannt, aber \"Wirkung nicht belegt\"; Betrag, Grund und Speichern der Zuordnung fehlen."
+  },
+  {
+   "id": "BM-134-B10",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Eine Meldung wird ausgegeben\" widerspricht MESSAGE ... INTO cv_msg (Zeile 105): die Meldung wird nur vermerkt; Weitermachen mit nächster Kürzung nicht genannt."
+  },
+  {
+   "id": "BM-134-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Verzweigung ok/Rollback mit status_setzen erkannt; die Status 53/51 und der Fehlertext fehlen, \"Wirkung nicht belegt\"."
+  },
+  {
+   "id": "BM-134-B12",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Workflow-Rückmeldung."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

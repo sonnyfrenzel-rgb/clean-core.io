@@ -1,0 +1,146 @@
+{
+ "id": "BM-152",
+ "urteile": [
+  {
+   "id": "BM-152-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "ENQUEUE und Meldung erkannt; exklusive Sperre und harter Abbruch (A-Meldung) nicht benannt."
+  },
+  {
+   "id": "BM-152-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "log_create/BAL_LOG_CREATE erkannt (\"konvertierte Ergebnis\"), nicht als Eröffnen des Anwendungsprotokolls."
+  },
+  {
+   "id": "BM-152-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "log_add und Verlassen bei Fehlschlag erkannt; Öffnen der Datei und \"nicht lesbar\" nicht benannt."
+  },
+  {
+   "id": "BM-152-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Lesen und Zerlegen der Zeilen."
+  },
+  {
+   "id": "BM-152-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "log_add bei sy-subrc = 1 oder leerem Datum erkannt; Fehlerprotokoll/Übergehen und fehlende Prüfung ungültiger Werte nicht benannt."
+  },
+  {
+   "id": "BM-152-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "log_add ohne Treffer, sonst map/post erkannt; \"keine Buchungen, nichts gebucht\" nicht benannt."
+  },
+  {
+   "id": "BM-152-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Selektion aus pa0050 und teven; heute gültig und sieben Tage fehlen."
+  },
+  {
+   "id": "BM-152-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Suche und log_add ohne Treffer erkannt; unbekannter Ausweis und Verwerfen nicht benannt."
+  },
+  {
+   "id": "BM-152-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur log_add-Aufruf; Abbildung auf P10/P20/P15/P25 fehlt."
+  },
+  {
+   "id": "BM-152-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife und Vergleich Datum/Uhrzeit erkannt; Dublette und Übergehen fehlen."
+  },
+  {
+   "id": "BM-152-B11",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Vormerken der Ereignisse."
+  },
+  {
+   "id": "BM-152-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Bedingung leer oder Testlauf mit log_add und Verlassen erkannt; \"nur Anzahl protokolliert\" nicht benannt."
+  },
+  {
+   "id": "BM-152-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Upload, Rollback mit Protokoll bei Fehler, sonst Commit technisch erkannt, nicht fachlich formuliert."
+  },
+  {
+   "id": "BM-152-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "archive_file bei erfolgreichem Upload und Verlassen bei Fehler erkannt; Archivdatei und Löschen des Originals fehlen."
+  },
+  {
+   "id": "BM-152-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Sichern (BAL_DB_SAVE), Anzeige ohne sy-batch und DEQUEUE erkannt, nur technisch."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

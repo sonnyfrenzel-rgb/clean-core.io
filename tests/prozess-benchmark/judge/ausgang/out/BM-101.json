@@ -1,0 +1,52 @@
+{
+ "id": "BM-101",
+ "urteile": [
+  {
+   "id": "BM-101-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'objnr des Satzes mit dem eingegebenen equnr wird gelesen' – inhaltlich richtig, aber nur mit Feldnamen."
+  },
+  {
+   "id": "BM-101-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus imptt selektiert' – aktive Messpunkte des Equipments nicht benannt."
+  },
+  {
+   "id": "BM-101-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus imrg selektiert' – Messbelege ab Datum und Sortierung fehlen."
+  },
+  {
+   "id": "BM-101-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "falsch"
+   ],
+   "kurz": "'Nur Eine leere ls_imrg-cancl gehen weiter' trifft den Kern technisch; 'kleinere werden übersprungen' ist falsch, Artikel/Numerus fehlerhaft."
+  },
+  {
+   "id": "BM-101-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Ausgabe nur als Feldliste ls_imrg-point, -mdocm, ...; Fachbegriffe fehlen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

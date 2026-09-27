@@ -1,0 +1,148 @@
+{
+ "id": "BM-027",
+ "titel": "Sammelfreigabe von Bestellungen für den nächsten Freigabecode (BAPI_PO_RELEASE)",
+ "prozess": "Ein Freigeber startet den Report mit Freigabegruppe, eigenem Freigabecode und optional Bestell- und Einkaufsorganisationsbereichen. Zuerst prüft der Report die Berechtigung M_EINK_FRG für Gruppe und Code und bricht ohne sie ab. Dann liest er alle nicht gelöschten, zur Freigabe gesperrten Bestellungen der Gruppe. Für jede liest er die Freigabestrategie, überspringt Bestellungen ohne Strategie und ermittelt, an welcher Stelle der eigene Code steht. Nur wenn der Code vorkommt und nach dem bisherigen Freigabestand genau als nächster an der Reihe ist, gibt er die Bestellung über BAPI_PO_RELEASE frei; der BAPI schreibt selbst fest. Jede Freigabe wird mit neuem Status oder mit Fehlergrund protokolliert, am Ende stehen die Zähler für Erfolge und Fehler.",
+ "verboten": [
+  "source.abap:59 — kein Fachsatz „Die Bestellung wird an den Lieferanten übermittelt“ (nur Freigabe; Nachrichtenausgabe ist nicht Teil des Codes)",
+  "source.abap:32 — kein Fachsatz „Nur Bestellungen über einer Wertgrenze“ (es gibt keine Wertselektion)",
+  "source.abap:54 — kein Fachsatz „Bereits vollständig freigegebene Bestellungen werden zurückgesetzt“ (sie werden nur übersprungen)",
+  "gesamte Scheibe — kein Fachsatz „Die Freigabe erfolgt ohne Commit“ (BAPI_PO_RELEASE schreibt selbst fest, solange NO_COMMIT nicht gesetzt ist; der Aufruf übergibt NO_COMMIT nicht)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-027-B01",
+   "soll": "Zu Beginn wird geprüft, ob der Anwender für die angegebene Freigabegruppe mit dem angegebenen Freigabecode freigeben darf; sonst bricht der Report mit Fehlermeldung ab.",
+   "zeilen": [
+    25,
+    28,
+    29
+   ],
+   "code": [
+    "25:   AUTHORITY-CHECK OBJECT 'M_EINK_FRG'",
+    "28:   IF sy-subrc <> 0.",
+    "29:     MESSAGE e010(zmm) WITH p_frgco."
+   ],
+   "engine": [
+    "Die Berechtigung auf M_EINK_FRG wird geprüft.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-027-B02",
+   "soll": "Es werden die nicht gelöschten, zur Freigabe gesperrten Bestellungen der Freigabegruppe in der Bestell- und Einkaufsorganisationsauswahl gelesen.",
+   "zeilen": [
+    32
+   ],
+   "code": [
+    "32:   SELECT * FROM ekko INTO TABLE gt_ekko"
+   ],
+   "engine": [
+    "Es werden Sätze aus ekko mit dem eingegebenen frggr selektiert."
+   ]
+  },
+  {
+   "id": "BM-027-B03",
+   "soll": "Für jede Bestellung wird ihre Freigabestrategie gelesen; Bestellungen ohne gepflegte Strategie werden übersprungen.",
+   "zeilen": [
+    41,
+    44
+   ],
+   "code": [
+    "41:     SELECT SINGLE * FROM t16fs INTO gs_t16fs",
+    "44:     CHECK sy-subrc = 0."
+   ],
+   "engine": [
+    "Es werden Sätze aus t16fs selektiert.",
+    "Nur sy-subrc mit dem Wert 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-027-B04",
+   "soll": "Es wird bestimmt, an welcher Stelle der Strategie der eigene Freigabecode steht.",
+   "zeilen": [
+    46,
+    48,
+    49
+   ],
+   "code": [
+    "46:     DO 8 TIMES.",
+    "48:       IF <lv_code> = p_frgco.",
+    "49:         gv_pos = sy-index."
+   ],
+   "engine": [
+    "Für lv_code mit dem Wert p_frgco wird der Block verlassen.",
+    "Bei lv_code gleich p_frgco wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-027-B05",
+   "soll": "Kommt der eigene Code in der Strategie nicht vor oder ist er nach dem bisherigen Freigabestand nicht als nächster an der Reihe, wird die Bestellung übersprungen.",
+   "zeilen": [
+    54
+   ],
+   "code": [
+    "54:     IF gv_pos = 0 OR strlen( gs_ekko-frgzu ) <> gv_pos - 1."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-027-B06",
+   "soll": "Sonst wird die Bestellung mit dem eigenen Code über das Standard-BAPI freigegeben.",
+   "zeilen": [
+    59
+   ],
+   "code": [
+    "59:     CALL FUNCTION 'BAPI_PO_RELEASE'"
+   ],
+   "engine": [
+    "Der Code übergibt gs_ekko-ebeln an BAPI_PO_RELEASE und übernimmt dessen Ausgabe nach gv_rel.",
+    "Das konvertierte Ergebnis wird in gv_rel übernommen."
+   ]
+  },
+  {
+   "id": "BM-027-B07",
+   "soll": "Eine erfolgreiche Freigabe wird mit dem neuen Freigabestatus protokolliert, eine gescheiterte mit ihrem Grund.",
+   "zeilen": [
+    75,
+    77,
+    80
+   ],
+   "code": [
+    "75:     IF sy-subrc = 0.",
+    "77:       WRITE: / gs_ekko-ebeln, 'freigegeben, neuer Status', gv_rel.",
+    "80:       WRITE: / gs_ekko-ebeln, 'nicht freigegeben, Grund', sy-subrc."
+   ],
+   "engine": [
+    "Bei Treffer wird gs_ekko-ebeln ausgegeben, freigegeben, neuer Status ausgegeben und Das vom Funktionsbaustein zurückgegebene Feld ausgegeben.",
+    "Bei Treffer wird gs_ekko-ebeln ausgegeben, freigegeben, neuer Status ausgegeben und Das vom Funktionsbaustein zurückgegebene Feld ausgegeben, sonst gs_ekko-ebeln ausgegeben, nicht freigegeben, Grund ausgegeben und sy-subrc ausgegeben.",
+    "Bei Treffern werden gs_ekko-ebeln, freigegeben, neuer Status und Das vom Funktionsbaustein zurückgegebene Feld als Liste ausgegeben.",
+    "gs_ekko-ebeln wird ausgegeben.",
+    "freigegeben, neuer Status wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Das vom Funktionsbaustein zurückgegebene Feld wird ausgegeben.",
+    "Für andere sy-subrc wird gs_ekko-ebeln ausgegeben, nicht freigegeben, Grund ausgegeben und sy-subrc ausgegeben.",
+    "Bei Treffern werden gs_ekko-ebeln, nicht freigegeben, Grund und sy-subrc als Liste ausgegeben.",
+    "gs_ekko-ebeln wird ausgegeben.",
+    "nicht freigegeben, Grund wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "sy-subrc wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-027-B08",
+   "soll": "Am Ende werden die Anzahl der freigegebenen und der gescheiterten Bestellungen ausgegeben.",
+   "zeilen": [
+    85
+   ],
+   "code": [
+    "85:   WRITE: / 'Freigegeben:', gv_ok, 'Fehler:', gv_err."
+   ],
+   "engine": [
+    "Freigegeben:, gv_ok, Fehler: und gv_err werden ausgegeben.",
+    "Freigegeben: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_ok wird ausgegeben.",
+    "Fehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_err wird ausgegeben."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,48 @@
+{
+ "id": "BM-081",
+ "urteile": [
+  {
+   "id": "BM-081-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Engine zählt nur 'Sätze mit dem eingegebenen mestype'; dass es um noch unverarbeitete Änderungszeiger geht (process = space), fehlt."
+  },
+  {
+   "id": "BM-081-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "'Für Anzahlen mit dem Wert 0 wird Keine offenen Änderungszeiger für ausgegeben ... und der Block verlassen' trifft den Sinn; 'Bei Treffern' ist falsch (Zweig gilt gerade ohne Zeiger), Aussage mehrfach wiederholt."
+  },
+  {
+   "id": "BM-081-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig",
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Nur 'eine Meldung wird ausgegeben'; dass es eine Fehlermeldung 'Rückstau' ist, die den Job abbricht, fehlt."
+  },
+  {
+   "id": "BM-081-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Ausgabe von p_mestyp/Anzahl wird genannt, aber technisch und ohne den Sonst-Bezug zur Schwelle."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,78 @@
+{
+ "id": "BM-090",
+ "urteile": [
+  {
+   "id": "BM-090-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "'Berechtigung auf S_ARCHIVE wird geprüft' + 'Ohne Treffer wird eine Meldung ausgegeben' – Objekt ZIF_LOG und Abbruch fehlen, 'Ohne Treffer' passt nicht."
+  },
+  {
+   "id": "BM-090-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus zif_log_hdr selektiert' – Status- und Altersfilter fehlen."
+  },
+  {
+   "id": "BM-090-B03",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen' entspricht dem Soll."
+  },
+  {
+   "id": "BM-090-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "falsch"
+   ],
+   "kurz": "Nur Übergabe von lv_create an ARCHIVE_OPEN_FOR_WRITE; 'Datei nur im Echtlauf' fehlt; 'konvertiertes Ergebnis' trifft nicht zu."
+  },
+  {
+   "id": "BM-090-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur Bausteinaufrufe ARCHIVE_NEW_OBJECT/PUT_RECORD und Lesen von zif_log_itm; 'Kopf und Positionen als ein Archivobjekt' fehlt fachlich."
+  },
+  {
+   "id": "BM-090-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Aufruf ARCHIVE_SAVE_OBJECT und 'Ohne Treffer ... Meldung'; Abbruch mit Protokoll-ID fehlt, 'Ohne Treffer' falsch."
+  },
+  {
+   "id": "BM-090-B07",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Datei schließen, Anzahl, 'Protokolle archiviert' und Testmodus-Ausgabe sind alle genannt, wenn auch technisch."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

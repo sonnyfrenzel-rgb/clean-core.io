@@ -1,0 +1,292 @@
+{
+ "id": "BM-036",
+ "titel": "Bestell-BAdI ME_PROCESS_PO_CUST: Lieferantensperre, Infosatzpreis, Gefahrgut, Kostenstelle, Budget und Workflow",
+ "prozess": "Beim Anlegen und Ändern von Bestellungen (ME21N/ME22N) ruft der Einkauf die BAdI-Implementierung an mehreren Stellen. Bei der Kopfverarbeitung werden nur Bestellarten NB und ZNB betrachtet: Ist der Lieferant in der Einkaufsorganisation oder zentral für den Einkauf gesperrt, wird eine Fehlermeldung erzwungen und der Kopf ungültig gesetzt; fehlt die Zahlungsbedingung, wird sie aus den Einkaufsdaten des Lieferanten vorgeschlagen. Bei jeder aktiven Materialposition wird der Preis mit dem gültigen Infosatz verglichen: über 25 % Abweichung ist ein Fehler, über 10 % eine Warnung; ohne Infosatz wird nicht geprüft. Gefahrgutmaterialien erhalten die Versandvorschrift Z1. Kontierungen auf Kostenstelle werden auf eine heute gültige, nicht für Primärkosten gesperrte Kostenstelle geprüft. Beim Prüfen und Sichern wird der Bedarf je Kostenstelle und Jahr aus den Kostenstellenpositionen gebildet und gegen das gepflegte Budget abzüglich Verbrauch gestellt; eine Überschreitung verhindert das Sichern, Kostenstellen ohne Budget werden nicht geprüft. Beim Buchen wird der Bedarf in der Verbuchung als Verbrauch fortgeschrieben und historisiert, bei Fehler bricht die Verbuchung ab; ab 50.000 Gesamtwert wird zusätzlich ein Workflow-Ereignis ausgelöst. Bei Änderungen wird der volle Bedarf erneut addiert.",
+ "verboten": [
+  "zcl_im_me_process_po_cust.abap:155 — kein Fachsatz „Die Bestellung wird ab 50.000 zur Freigabe gesperrt“ (es wird nur ein Ereignis ausgelöst; eine Freigabesperre setzt der Code nicht)",
+  "zcl_im_me_process_po_cust.abap:124 — kein Fachsatz „Ohne Budget darf nicht bestellt werden“ (ohne Budgetsatz wird gar nicht geprüft)",
+  "zcl_mm_po_rules.abap:79 — kein Fachsatz „Der Preis wird aus dem Infosatz übernommen“ (nur verglichen, nicht gesetzt)",
+  "z_mm_po_budget_update.abap:25 — kein Fachsatz „Bei Bestelländerung wird nur die Differenz gebucht“ (der volle Bedarf wird erneut addiert)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-036-B01",
+   "soll": "Die Kopfprüfungen gelten nur für die Bestellarten NB und ZNB; andere Bestellarten bleiben ungeprüft.",
+   "zeilen": [
+    81
+   ],
+   "code": [
+    "81:     IF ls_header-bsart <> gc_bsart_normal AND ls_header-bsart <> gc_bsart_zusatz."
+   ],
+   "engine": [
+    "Für ls_header-bsart <> gc_bsart_normal AND ls_header-bsart <> gc_bsart_zusatz wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-036-B02",
+   "soll": "Ein Lieferant gilt als gesperrt, wenn er in der Einkaufsorganisation oder zentral für den Einkauf gesperrt ist.",
+   "zeilen": [
+    279,
+    282,
+    286
+   ],
+   "code": [
+    "279:     SELECT SINGLE sperm FROM lfm1 INTO lv_sperm",
+    "282:     IF lv_sperm = 'X'.",
+    "286:     SELECT SINGLE sperm FROM lfa1 INTO lv_zentr"
+   ],
+   "engine": [
+    "sperm des Satzes wird gelesen.",
+    "Mit gesetztem lv_sperm wird der Block verlassen.",
+    "Mit gesetztem lv_sperm wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "sperm des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-036-B03",
+   "soll": "Bei gesperrtem Lieferanten wird eine Fehlermeldung erzwungen, der Bestellkopf ungültig gesetzt und nicht weiter geprüft.",
+   "zeilen": [
+    87,
+    88,
+    89,
+    395
+   ],
+   "code": [
+    "87:     IF lv_blocked = abap_true.",
+    "88:       mac_po_error '101' ls_header-lifnr ls_header-ekorg im_header.",
+    "89:       RETURN.",
+    "395:   &4->invalidate( )."
+   ],
+   "engine": [
+    "Für lv_blocked mit dem Wert abap_true wird der Block verlassen.",
+    "Bei lv_blocked gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Die Methode invalidate von 4 wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-036-B04",
+   "soll": "Ist im Bestellkopf keine Zahlungsbedingung gepflegt, wird die Zahlungsbedingung aus den Einkaufsdaten des Lieferanten übernommen, sofern dort eine steht.",
+   "zeilen": [
+    93,
+    96,
+    98,
+    292
+   ],
+   "code": [
+    "93:     IF ls_header-zterm IS INITIAL.",
+    "96:       IF lv_zterm IS NOT INITIAL.",
+    "98:         im_header->set_data( ls_header ).",
+    "292:     SELECT SINGLE zterm FROM lfm1 INTO rv_zterm"
+   ],
+   "engine": [
+    "Die Methode set_data von im_header wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "zterm des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-036-B05",
+   "soll": "Gelöschte Positionen und Positionen ohne Material werden nicht geprüft.",
+   "zeilen": [
+    111
+   ],
+   "code": [
+    "111:     IF ls_item-loekz IS NOT INITIAL OR ls_item-matnr IS INITIAL."
+   ],
+   "engine": [
+    "Für ls_item-loekz IS NOT INITIAL OR ls_item-matnr IS INITIAL wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-036-B06",
+   "soll": "Der Nettopreis je Preiseinheit wird mit dem Preis des gültigen Normal-Infosatzes für Lieferant, Material und Einkaufsorganisation verglichen, bevorzugt dem werksbezogenen; ohne verwendbaren Infosatz gilt die Abweichung als null.",
+   "zeilen": [
+    301,
+    314,
+    320
+   ],
+   "code": [
+    "301:     SELECT e~netpr, e~peinh, e~werks",
+    "314:     IF sy-subrc <> 0 OR ls_info-peinh = 0 OR ls_info-netpr = 0 OR iv_peinh = 0.",
+    "320:     rv_pct = ( lv_order - lv_info ) * 100 / lv_info."
+   ],
+   "engine": [
+    "Das Ergebnis enthält e~netpr, e~peinh und e~werks.",
+    "Es werden Sätze aus eina selektiert.",
+    "Für sy-subrc <> 0 OR ls_info-peinh = 0 OR ls_info-netpr = 0 OR iv_peinh = 0 wird die rv_pct auf 0 gesetzt und der Block verlassen.",
+    "sy-subrc <> 0 OR ls_info-peinh = 0 OR ls_info-netpr = 0 OR iv_peinh = 0 erhalten 0."
+   ]
+  },
+  {
+   "id": "BM-036-B07",
+   "soll": "Liegt der Bestellpreis mehr als 25 % über dem Infosatzpreis, wird die Position mit Fehler ungültig gesetzt; bei mehr als 10 % gibt es eine Warnung.",
+   "zeilen": [
+    123,
+    124,
+    126
+   ],
+   "code": [
+    "123:     IF lv_dev > gc_err_pct.",
+    "124:       mac_po_error '110' ls_item-ebelp lv_dev space im_item.",
+    "126:       mac_po_warning '111' ls_item-ebelp lv_dev space."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-036-B08",
+   "soll": "Ist das Material Gefahrgut (Gefahrgutprofil gepflegt) und die Versandvorschrift nicht Z1, wird Z1 in der Position gesetzt.",
+   "zeilen": [
+    131,
+    133,
+    329
+   ],
+   "code": [
+    "131:     IF lv_haz = abap_true AND ls_item-evers <> 'Z1'.",
+    "133:       im_item->set_data( ls_item ).",
+    "329:     SELECT SINGLE profl FROM mara INTO @DATA(lv_profl)"
+   ],
+   "engine": [
+    "Für lv_haz = abap_true AND ls_item-evers <> 'Z1' wird die ls_item-evers auf Z1 gesetzt.",
+    "lv_haz = abap_true AND ls_item-evers <> 'Z1' setzen die ls_item-evers auf Z1.",
+    "Die Methode set_data von im_item wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "profl des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-036-B09",
+   "soll": "Bei Kontierung auf Kostenstelle muss die Kostenstelle heute gültig und nicht für Primärkosten gesperrt sein; sonst wird die Kontierung mit Fehler ungültig gesetzt.",
+   "zeilen": [
+    147,
+    153,
+    154,
+    336,
+    341
+   ],
+   "code": [
+    "147:     IF ls_item-knttp <> gc_knttp_kostl OR ls_acc-kostl IS INITIAL.",
+    "153:     IF lv_valid = abap_false.",
+    "154:       mac_po_error '120' ls_acc-kostl ls_item-ebelp space im_account.",
+    "336:     SELECT SINGLE bkzkp FROM csks INTO @DATA(lv_bkzkp)",
+    "341:     IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Für ls_item-knttp <> gc_knttp_kostl OR ls_acc-kostl IS INITIAL wird der Block verlassen.",
+    "bkzkp des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-036-B10",
+   "soll": "Beim Prüfen und Sichern wird der Budgetbedarf je Kostenstelle und Jahr des Bestelldatums aus allen nicht gelöschten Kostenstellenpositionen ermittelt, bei prozentualer Aufteilung anteilig, sonst mit dem vollen Positionswert.",
+   "zeilen": [
+    163,
+    358,
+    368,
+    373
+   ],
+   "code": [
+    "163:     lt_need = mo_rules->budget_need( im_header ).",
+    "358:       IF ls_item-loekz IS NOT INITIAL OR ls_item-knttp <> 'K'.",
+    "368:         IF ls_acc-vproz > 0.",
+    "373:         COLLECT ls_need INTO rt_need."
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode budget_need von mo_rules wird nach lt_need übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-036-B11",
+   "soll": "Für jede Kostenstelle mit gepflegtem Budget gilt: übersteigen bisheriger Verbrauch plus Bestellbedarf das Budget, wird eine Fehlermeldung ausgegeben und das Sichern verhindert; Kostenstellen ohne Budgetsatz werden nicht geprüft.",
+   "zeilen": [
+    167,
+    170,
+    171,
+    172,
+    379
+   ],
+   "code": [
+    "167:       IF ls_avail IS INITIAL.",
+    "170:       IF ls_avail-verbraucht + ls_need-netwr > ls_avail-budget.",
+    "171:         mac_po_error '130' ls_need-kostl ls_avail-budget ls_need-netwr im_header.",
+    "172:         ch_failed = abap_true.",
+    "379:     SELECT SINGLE * FROM zmm_po_budget INTO rs_budget"
+   ],
+   "engine": [
+    "Es werden Sätze aus zmm_po_budget selektiert."
+   ]
+  },
+  {
+   "id": "BM-036-B12",
+   "soll": "Beim Buchen wird der Budgetbedarf erneut ermittelt und, falls vorhanden, in der Verbuchung als Verbrauch fortgeschrieben.",
+   "zeilen": [
+    184,
+    185,
+    186
+   ],
+   "code": [
+    "184:     lt_need = mo_rules->budget_need( im_header ).",
+    "185:     IF lt_need IS NOT INITIAL.",
+    "186:       CALL FUNCTION 'Z_MM_PO_BUDGET_UPDATE' IN UPDATE TASK"
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode budget_need von mo_rules wird nach lt_need übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Bei Treffern wird Z_MM_PO_BUDGET_UPDATE aufgerufen.",
+    "Der Baustein Z_MM_PO_BUDGET_UPDATE wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Ob ein COMMIT WORK ihn auf jedem Weg anstößt, ist im gelieferten Code nicht bestimmt."
+   ]
+  },
+  {
+   "id": "BM-036-B13",
+   "soll": "Die Verbuchung liest je Kostenstelle den Budgetsatz sperrend, überspringt Kostenstellen ohne Budget und erhöht den Verbrauch um den vollen Bedarf, auch bei Änderung einer bereits gebuchten Bestellung.",
+   "zeilen": [
+    17,
+    21,
+    25,
+    28
+   ],
+   "code": [
+    "17:     SELECT SINGLE * FROM zmm_po_budget INTO ls_budget",
+    "21:     IF sy-subrc <> 0.",
+    "25:     ls_budget-verbraucht = ls_budget-verbraucht + ls_need-netwr.",
+    "28:     UPDATE zmm_po_budget FROM ls_budget."
+   ],
+   "engine": [
+    "Es werden Sätze aus zmm_po_budget selektiert.",
+    "Eine Zeile in zmm_po_budget wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK."
+   ]
+  },
+  {
+   "id": "BM-036-B14",
+   "soll": "Scheitert das Fortschreiben, bricht die Verbuchung ab; sonst wird eine Historienzeile mit Kostenstelle, Jahr, Bestellung, Wert und Zeitpunkt geschrieben.",
+   "zeilen": [
+    29,
+    30,
+    40
+   ],
+   "code": [
+    "29:     IF sy-subrc <> 0.",
+    "30:       MESSAGE a131(zmm) WITH ls_need-kostl.",
+    "40:     INSERT zmm_po_budget_h FROM ls_hist."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-036-B15",
+   "soll": "Erreicht der Gesamtwert der Kostenstellenbedarfe 50.000, wird mit der Verbuchung das Workflow-Ereignis HIGHVALUE zur Bestellung ausgelöst.",
+   "zeilen": [
+    194,
+    196,
+    198
+   ],
+   "code": [
+    "194:       lv_total = lv_total + ls_need-netwr.",
+    "196:     IF lv_total >= gc_wf_limit.",
+    "198:       CALL FUNCTION 'SWE_EVENT_CREATE_IN_UPD_TASK' IN UPDATE TASK"
+   ],
+   "engine": [
+    "Für Summen ab gc_wf_limit wird SWE_EVENT_CREATE_IN_UPD_TASK aufgerufen.",
+    "Der Baustein SWE_EVENT_CREATE_IN_UPD_TASK wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Ob ein COMMIT WORK ihn auf jedem Weg anstößt, ist im gelieferten Code nicht bestimmt."
+   ]
+  }
+ ]
+}

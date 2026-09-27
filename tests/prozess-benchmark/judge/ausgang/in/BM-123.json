@@ -1,0 +1,65 @@
+{
+ "id": "BM-123",
+ "titel": "PSM/FM: Finanzposition vor Haushaltsübernahme prüfen (FMCI, MESSAGE … RAISING)",
+ "prozess": "Der Funktionsbaustein wird vor der Übernahme von Haushaltsansätzen je Finanzposition aufgerufen, mit Finanzkreis, Geschäftsjahr und Finanzposition. Er liest die Finanzposition für dieses Jahr. Gibt es sie nicht, endet er mit der Ausnahme NOT_FOUND; die Fehlermeldung mit Position und Finanzkreis steht dem Aufrufer zur Verfügung. Ist die Position keine Ausgabeposition (Positionstyp 3), endet er mit der Ausnahme NO_EXPENDITURE, weil Einnahmepositionen nicht beplant werden dürfen. Andernfalls gibt er den Finanzvorgang der Position zurück. Er ändert nichts.",
+ "verboten": [
+  "source.abap:23 — kein Fachsatz „dem Anwender wird eine Fehlermeldung angezeigt“: mit RAISING wird bei behandelter Ausnahme nur die Ausnahme ausgelöst und die Meldung in sy-msg bereitgestellt",
+  "gesamte Scheibe — kein Fachsatz „der Haushaltsansatz wird übernommen oder gebucht“: der Baustein prüft nur Stammdaten",
+  "source.abap:18 — kein Fachsatz „die Gültigkeit der Finanzstelle wird geprüft“: es wird nur die Finanzposition gelesen"
+ ],
+ "saetze": [
+  {
+   "id": "BM-123-B01",
+   "soll": "Es wird geprüft, ob die Finanzposition im angegebenen Finanzkreis und Geschäftsjahr angelegt ist.",
+   "zeilen": [
+    18
+   ],
+   "code": [
+    "18:   SELECT SINGLE * FROM fmci INTO ls_fmci"
+   ],
+   "engine": [
+    "Es werden Sätze aus fmci selektiert."
+   ]
+  },
+  {
+   "id": "BM-123-B02",
+   "soll": "Fehlt sie, endet die Prüfung mit der Ausnahme NOT_FOUND und einer Fehlermeldung zu Position und Finanzkreis.",
+   "zeilen": [
+    22,
+    23
+   ],
+   "code": [
+    "22:   IF sy-subrc <> 0.",
+    "23:     MESSAGE e001(zfm) WITH iv_fipex iv_fikrs RAISING not_found."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-123-B03",
+   "soll": "Ist die Position keine Ausgabeposition (Positionstyp 3), endet die Prüfung mit der Ausnahme NO_EXPENDITURE.",
+   "zeilen": [
+    27,
+    28
+   ],
+   "code": [
+    "27:   IF ls_fmci-potyp <> '3'.",
+    "28:     RAISE no_expenditure."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-123-B04",
+   "soll": "Sonst wird der Finanzvorgang der Position an den Aufrufer zurückgegeben.",
+   "zeilen": [
+    31
+   ],
+   "code": [
+    "31:   ev_fivor = ls_fmci-fivor."
+   ],
+   "engine": []
+  }
+ ]
+}

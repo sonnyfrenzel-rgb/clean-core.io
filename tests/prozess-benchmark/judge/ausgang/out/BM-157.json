@@ -1,0 +1,177 @@
+{
+ "id": "BM-157",
+ "urteile": [
+  {
+   "id": "BM-157-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Vorschlag des Vormonats."
+  },
+  {
+   "id": "BM-157-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Bedingung beide Auswahlen leer mit Meldung erkannt, nicht als Abweisung formuliert."
+  },
+  {
+   "id": "BM-157-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Monatsletzter und Selektionen aus pa0001/zpt_ot_limit technisch erkannt; Stichtag und Kappungsgrenzen nicht benannt."
+  },
+  {
+   "id": "BM-157-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife und HR_TIME_RESULTS_GET erkannt; Zählen und Übergehen nicht lesbarer Ergebnisse fehlen."
+  },
+  {
+   "id": "BM-157-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Nur lv_hours größer 0 gehen weiter\" trifft den Entfall; Summierung der ungenehmigten Überstunden nicht ausgesagt."
+  },
+  {
+   "id": "BM-157-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"In der Tabelle wird nach einer passenden Zeile gesucht\"; Grenze null ohne Pflege fehlt."
+  },
+  {
+   "id": "BM-157-B07",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu Grenzvergleich und Überschuss."
+  },
+  {
+   "id": "BM-157-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen des Status zur Periode erkannt; Vorbelegung \"offen\" fehlt."
+  },
+  {
+   "id": "BM-157-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Meldung und \"Screenfolge beendet\" erkannt; LEAVE LIST-PROCESSING nur ungenau, \"ohne Liste\" nicht benannt."
+  },
+  {
+   "id": "BM-157-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "ALV-Aufrufe und GUI-Status erkannt; Inhalte und Titel fehlen."
+  },
+  {
+   "id": "BM-157-B11",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch"
+   ],
+   "kurz": "\"Die Anlage wird über die Transaktion PA20 angestoßen\": PA20 ist die Personalstammdaten-Anzeige."
+  },
+  {
+   "id": "BM-157-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Prüfung Z_PT_OT und Meldung erkannt; Abbruch der Freigabe nicht benannt."
+  },
+  {
+   "id": "BM-157-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife, HR_EMPLOYEE_ENQUEUE und Meldung bei Typ E erkannt; nur offene/markierte Zeilen und Überspringen fehlen."
+  },
+  {
+   "id": "BM-157-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "HR_INFOTYPE_OPERATION 2012, DEQUEUE und Meldung bei Fehler erkannt; Zeitumbuchungsvorgabe zur Auszahlung nicht benannt."
+  },
+  {
+   "id": "BM-157-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "MODIFY zpt_ot_decision, notify_employee, SWE_EVENT_CREATE erkannt; Inhalte des Vermerks und \"nur Hinweis\" nicht benannt."
+  },
+  {
+   "id": "BM-157-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "\"Für lv_ok größer 0 wird COMMIT WORK ausgeführt und eine Meldung ausgegeben\" kommt nahe; Anzahl in der Meldung nicht benannt."
+  },
+  {
+   "id": "BM-157-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife, Vermerk in zpt_ot_decision, Meldung bei 0, COMMIT erkannt; \"abgelehnt\" und \"nur offene markierte\" nicht benannt."
+  },
+  {
+   "id": "BM-157-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Meldungen ohne Markierung/Jobfehler, JOB_OPEN, SUBMIT rptime00, JOB_CLOSE erkannt, nicht als Einplanen der Zeitauswertung formuliert."
+  },
+  {
+   "id": "BM-157-B19",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Auffrischen der Liste."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

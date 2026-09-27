@@ -1,0 +1,72 @@
+{
+ "id": "BM-143",
+ "titel": "OM-Datenqualität: Organisationseinheiten ohne Leiterplanstelle",
+ "prozess": "Ein Prüfreport des Organisationsmanagements liest die aktiven Organisationseinheiten der gewählten Planvariante, die am Stichtag gültig sind. Dazu liest er die am Stichtag gültigen Beziehungen „wird geleitet von“ (B012) zu Planstellen; die Abfrage hat keinen Schutz gegen eine leere Einheitenmenge und liest in diesem Fall alle solchen Beziehungen, was die Ausgabe aber nicht ändert. Für jede Einheit wird nachgeschlagen, ob eine Leitungsbeziehung existiert. Einheiten ohne Leitungsbeziehung werden mit Objekt-ID und Kurztext ausgegeben. Ob die Leiterplanstelle besetzt ist, prüft der Report nicht, und er ändert keine Daten.",
+ "verboten": [
+  "source.abap:19 — kein Fachsatz „bei leerer Auswahl werden alle Organisationseinheiten als ohne Leiter gelistet“ (die Liste stammt aus lt_org und bleibt leer)",
+  "source.abap:28 — kein Fachsatz „es wird geprüft, ob die Leiterplanstelle besetzt ist“ (geprüft wird nur die Beziehung O–S, nicht die Besetzung durch eine Person)",
+  "gesamte Scheibe — kein Fachsatz „fehlende Leiter werden zugeordnet“ (kein Schreibzugriff)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-143-B01",
+   "soll": "Es werden die aktiven Organisationseinheiten der Planvariante gelesen, die am Stichtag gültig sind und in die Auswahl fallen.",
+   "zeilen": [
+    15
+   ],
+   "code": [
+    "15:   SELECT * FROM hrp1000 INTO TABLE lt_org"
+   ],
+   "engine": [
+    "Es werden Sätze aus hrp1000 mit dem eingegebenen plvar selektiert."
+   ]
+  },
+  {
+   "id": "BM-143-B02",
+   "soll": "Zu diesen Organisationseinheiten werden die am Stichtag gültigen Beziehungen „wird geleitet von“ zu einer Planstelle gelesen; wurde keine Organisationseinheit gefunden, liest die Abfrage alle solchen Beziehungen der Planvariante, ohne dass sich die Ausgabe dadurch ändert.",
+   "zeilen": [
+    19
+   ],
+   "code": [
+    "19:   SELECT objid FROM hrp1001 INTO TABLE lt_rel"
+   ],
+   "engine": [
+    "Es werden Sätze aus hrp1001 mit dem eingegebenen plvar selektiert."
+   ]
+  },
+  {
+   "id": "BM-143-B03",
+   "soll": "Für jede Organisationseinheit wird nachgeschlagen, ob eine Leitungsbeziehung besteht; nur Einheiten ohne Leitung werden weiterverarbeitet.",
+   "zeilen": [
+    25,
+    26,
+    28
+   ],
+   "code": [
+    "25:   LOOP AT lt_org INTO ls_org.",
+    "26:     READ TABLE lt_rel WITH KEY objid = ls_org-objid BINARY SEARCH",
+    "28:     CHECK sy-subrc <> 0."
+   ],
+   "engine": [
+    "Jede Zeile aus lt_org wird einzeln verarbeitet.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Nur sy-subrc ungleich 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-143-B04",
+   "soll": "Organisationseinheiten ohne leitende Planstelle werden mit Objekt-ID und Kurztext ausgegeben.",
+   "zeilen": [
+    29
+   ],
+   "code": [
+    "29:     WRITE: / ls_org-objid, ls_org-stext."
+   ],
+   "engine": [
+    "Bei Treffern werden ls_org-objid und ls_org-stext als Liste ausgegeben.",
+    "ls_org-objid wird ausgegeben.",
+    "ls_org-stext wird ausgegeben."
+   ]
+  }
+ ]
+}

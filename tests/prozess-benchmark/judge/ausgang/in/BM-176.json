@@ -1,0 +1,359 @@
+{
+ "id": "BM-176",
+ "titel": "IS-U Abrechnungsvorbereitung: fehlende Turnusablesungen einer Portion schätzen oder Abrechnung sperren",
+ "prozess": "Der Job wird mit Portion, Soll-Ablesedatum, Paketgröße und Kennzeichen für Schätzen, Sperren und Testlauf gestartet; die Portion ist aus dem Benutzerparameter vorbelegt, unbekannte Portionen und große Echtläufe im Dialog werden abgewiesen. Der Lauf liest alle Anlagen, deren Ableseeinheit zur Portion gehört und die zum Solldatum einen aktiven Vertrag haben; gibt es keine, bricht er mit Meldung ab. Jede Anlage wird gesperrt, bereits gesperrte werden mit Warnung übergangen. Hat der Vertrag schon eine Abrechnungssperre oder liegt die Turnusablesung zum Solldatum vor, ist nichts zu tun. Bei RLM-Kunden oder abgeschalteter Schätzung wird, wenn erlaubt, die Abrechnung mit Grund 05 direkt am Vertrag gesperrt, sonst nur gewarnt. Alle anderen fehlenden Ablesungen werden über einen eigenen Baustein geschätzt; fehlt eine Vorperiode, wird mit Grund 06 gesperrt, andere Schätzfehler werden als Fehler der Anlage protokolliert. Nach jeder Anlage wird deren Sperre freigegeben, nach jedem vollen Paket und am Ende festgeschrieben, im Testlauf stattdessen zurückgerollt. Alle Meldungen landen über ein Ereignis im Protokoll, Fehler im Hintergrund zusätzlich im Jobprotokoll. Am Ende zeigt der Dialog das Protokoll als ALV, der Hintergrundlauf listet nur Fehler und Warnungen.",
+ "verboten": [
+  "zisu_abrvorb_cls.abap:114 — kein Fachsatz „bei einem Schätzfehler gibt der CLEANUP-Block die Anlagensperre frei“: die Ausnahme wird im selben TRY abgefangen, CLEANUP läuft nur bei Ausnahmen, die den Block verlassen; freigegeben wird nach ENDTRY",
+  "zisu_abrvorb_f01.abap:42 — kein Fachsatz „das Abrechnungsteam wird per Mail über Sperren informiert“: das FORM wird nirgends gerufen",
+  "zisu_abrvorb_cls.abap:171 — kein Fachsatz „Sperrgrund 05 wird nur bei RLM-Kunden gesetzt“: er wird auch gesetzt, wenn die Schätzung abgeschaltet ist",
+  "gesamte Scheibe — kein Fachsatz „die Abrechnung wird ausgeführt oder Abrechnungsbelege werden erzeugt“: der Lauf bereitet nur vor (schätzen/sperren)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-176-B01",
+   "soll": "Die Portion wird aus dem Benutzerparameter vorbelegt, das Soll-Ablesedatum mit dem Tagesdatum.",
+   "zeilen": [
+    24
+   ],
+   "code": [
+    "24:   GET PARAMETER ID 'ZPORT' FIELD p_port."
+   ],
+   "engine": [
+    "Jeder von der logischen Datenbank gelieferte PARAMETER-Satz wird verarbeitet. Welche Sätze das sind, bestimmt die logische Datenbank mit ihrem Selektionsbild, nicht der Report."
+   ]
+  },
+  {
+   "id": "BM-176-B02",
+   "soll": "Eine nicht vorhandene Portion wird im Selektionsbild mit Fehlermeldung abgewiesen.",
+   "zeilen": [
+    28,
+    30,
+    31
+   ],
+   "code": [
+    "28:   SELECT SINGLE termschl FROM te420 INTO @DATA(lv_termschl)",
+    "30:   IF sy-subrc <> 0.",
+    "31:     MESSAGE e050 WITH p_port.              \"Portion & nicht vorhanden"
+   ],
+   "engine": [
+    "termschl des Satzes mit dem eingegebenen termschl wird gelesen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-176-B03",
+   "soll": "Ein Echtlauf im Dialog mit einer Paketgröße über 2000 wird abgewiesen; solche Läufe sind nur im Hintergrund erlaubt.",
+   "zeilen": [
+    35,
+    36
+   ],
+   "code": [
+    "35:   IF p_test = abap_false AND sy-batch = abap_false AND p_paket > 2000.",
+    "36:     MESSAGE e051.                          \"grosse Echtlaeufe nur im Job"
+   ],
+   "engine": [
+    "Für p_test = abap_false AND sy-batch = abap_false AND p_paket > 2000 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-176-B04",
+   "soll": "Die Portion wird als Benutzerparameter gemerkt, und alle Meldungen des Laufs werden in einem Protokoll gesammelt.",
+   "zeilen": [
+    40,
+    46
+   ],
+   "code": [
+    "40:   SET PARAMETER ID 'ZPORT' FIELD p_port.",
+    "46:   SET HANDLER lo_prot->on_meldung FOR go_lauf."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-176-B05",
+   "soll": "Es werden alle Anlagen der Portion gelesen, deren Ableseeinheit zur Portion gehört und die zum Soll-Ablesedatum einen aktiven Vertrag haben.",
+   "zeilen": [
+    190
+   ],
+   "code": [
+    "190:     SELECT h~anlage, v~vertrag, v~abrsperr, a~sparte, h~aklasse, v~einzdat"
+   ],
+   "engine": [
+    "Das Ergebnis enthält h~anlage, v~vertrag, v~abrsperr, a~sparte, h~aklasse und v~einzdat.",
+    "Es werden Sätze aus eanlh selektiert."
+   ]
+  },
+  {
+   "id": "BM-176-B06",
+   "soll": "Gibt es keine solche Anlage, bricht der Lauf mit einer als Fehler angezeigten Meldung ab.",
+   "zeilen": [
+    51,
+    201,
+    202
+   ],
+   "code": [
+    "51:       MESSAGE lx_abbruch->get_text( ) TYPE 'S' DISPLAY LIKE 'E'.",
+    "201:     IF mt_anl IS INITIAL.",
+    "202:       RAISE EXCEPTION TYPE lcx_abbruch"
+   ],
+   "engine": [
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-176-B07",
+   "soll": "Jede Anlage wird für die Bearbeitung gesperrt; ist sie bereits gesperrt, wird sie mit Warnung übergangen.",
+   "zeilen": [
+    147,
+    154,
+    155
+   ],
+   "code": [
+    "147:       CALL FUNCTION 'ENQUEUE_EZISU_ANLAGE'",
+    "154:       IF sy-subrc <> 0.",
+    "155:         RAISE EVENT meldung"
+   ],
+   "engine": [
+    "Der Funktionsbaustein ENQUEUE_EZISU_ANLAGE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-176-B08",
+   "soll": "Hat der Vertrag bereits eine Abrechnungssperre, wird die Anlage nur protokolliert.",
+   "zeilen": [
+    212,
+    213
+   ],
+   "code": [
+    "212:     IF is_anl-abrsperr IS NOT INITIAL.",
+    "213:       RAISE EVENT meldung"
+   ],
+   "engine": [
+    "Mit einer nicht leeren is_anl-abrsperr wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-176-B09",
+   "soll": "Liegt für das Soll-Ablesedatum bereits eine Turnusablesung (Ablesegrund 01) mit einem Status ungleich 0 vor, ist nichts zu tun.",
+   "zeilen": [
+    220,
+    241
+   ],
+   "code": [
+    "220:     IF ablesung_vorhanden( is_anl-anlage ) = abap_true.",
+    "241:     SELECT COUNT(*) FROM eablg AS g"
+   ],
+   "engine": [
+    "Für ablesung_vorhanden( is_anl-anlage ) = abap_true wird der Block verlassen.",
+    "Die Zahl der Sätze wird ermittelt."
+   ]
+  },
+  {
+   "id": "BM-176-B10",
+   "soll": "Bei leistungsgemessenen Kunden (Abrechnungsklasse RLM) oder ausgeschalteter Schätzung wird nicht geschätzt: ist das Sperren erlaubt, wird die Abrechnung mit Grund 05 gesperrt, sonst nur gewarnt.",
+   "zeilen": [
+    225,
+    226,
+    227,
+    229
+   ],
+   "code": [
+    "225:     IF is_anl-aklasse = 'RLM' OR p_schae = abap_false.",
+    "226:       IF p_sperr = abap_true.",
+    "227:         sperren( is_anl = is_anl iv_grund = gc_sperr_rlm ).",
+    "229:         RAISE EVENT meldung"
+   ],
+   "engine": [
+    "Für is_anl-aklasse = 'RLM' OR p_schae = abap_false wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-176-B11",
+   "soll": "Alle anderen Anlagen ohne Turnusablesung werden geschätzt; im Testlauf wird das nur protokolliert.",
+   "zeilen": [
+    237,
+    254,
+    255
+   ],
+   "code": [
+    "237:     schaetzen( is_anl ).",
+    "254:     IF mv_test = abap_true.",
+    "255:       RAISE EVENT meldung"
+   ],
+   "engine": [
+    "Für mv_test mit dem Wert abap_true wird der Block verlassen.",
+    "Bei mv_test gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-176-B12",
+   "soll": "Die Schätzung übernimmt ein eigener Baustein; gelingt sie, wird das protokolliert.",
+   "zeilen": [
+    262,
+    270,
+    272
+   ],
+   "code": [
+    "262:     CALL FUNCTION 'Z_ISU_ABLESUNG_SCHAETZEN'",
+    "270:     CASE lv_subrc.",
+    "272:         RAISE EVENT meldung"
+   ],
+   "engine": [
+    "Der Code übergibt is_anl-anlage an Z_ISU_ABLESUNG_SCHAETZEN und übernimmt dessen Ausgabe nach lv_subrc.",
+    "Das konvertierte Ergebnis wird in lv_subrc übernommen."
+   ]
+  },
+  {
+   "id": "BM-176-B13",
+   "soll": "Fehlt eine Vorperiode zum Schätzen, wird die Abrechnung mit Grund 06 gesperrt.",
+   "zeilen": [
+    276,
+    278
+   ],
+   "code": [
+    "276:       WHEN 4.",
+    "278:         sperren( is_anl = is_anl iv_grund = gc_sperr_keinvp )."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-176-B14",
+   "soll": "Jeder andere Schätzfehler bricht die Bearbeitung der Anlage ab und wird als Fehler protokolliert; der Lauf geht mit der nächsten Anlage weiter.",
+   "zeilen": [
+    164,
+    165,
+    280
+   ],
+   "code": [
+    "164:         CATCH lcx_abbruch INTO DATA(lx_anl).",
+    "165:           RAISE EVENT meldung",
+    "280:         RAISE EXCEPTION TYPE lcx_abbruch"
+   ],
+   "engine": [
+    "Die Methode get_text von lx_anl wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-176-B15",
+   "soll": "Die Abrechnungssperre wird direkt am Vertrag gesetzt und protokolliert; im Testlauf wird sie nur protokolliert.",
+   "zeilen": [
+    286,
+    287,
+    294,
+    296,
+    297
+   ],
+   "code": [
+    "286:     IF mv_test = abap_true.",
+    "287:       RAISE EVENT meldung",
+    "294:     UPDATE ever SET abrsperr = @iv_grund",
+    "296:     IF sy-subrc = 0.",
+    "297:       RAISE EVENT meldung"
+   ],
+   "engine": [
+    "Für mv_test mit dem Wert abap_true wird der Block verlassen.",
+    "Bei mv_test gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Die abrsperr in ever wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ]
+  },
+  {
+   "id": "BM-176-B16",
+   "soll": "Nach jeder Anlage wird die Sperre der Anlage freigegeben.",
+   "zeilen": [
+    175
+   ],
+   "code": [
+    "175:       CALL FUNCTION 'DEQUEUE_EZISU_ANLAGE'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein DEQUEUE_EZISU_ANLAGE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-176-B17",
+   "soll": "Nach jeweils so vielen Anlagen wie die Paketgröße und am Ende wird festgeschrieben und protokolliert; im Testlauf wird stattdessen zurückgerollt.",
+   "zeilen": [
+    180,
+    305,
+    306,
+    309,
+    310
+   ],
+   "code": [
+    "180:       IF mv_zaehler MOD p_paket = 0.",
+    "305:     IF mv_test = abap_true.",
+    "306:       ROLLBACK WORK.",
+    "309:     COMMIT WORK.",
+    "310:     RAISE EVENT meldung"
+   ],
+   "engine": [
+    "Für mv_test mit dem Wert abap_true wird ROLLBACK WORK ausgeführt und der Block verlassen.",
+    "Bei mv_test gleich abap_true wird der Block verlassen.",
+    "Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert.",
+    "Es wird ROLLBACK WORK ausgeführt und der Block verlassen.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-176-B18",
+   "soll": "Jede Meldung des Laufs wird ins Protokoll übernommen; Fehler erscheinen im Hintergrund zusätzlich im Jobprotokoll.",
+   "zeilen": [
+    320,
+    325,
+    326
+   ],
+   "code": [
+    "320:   METHOD on_meldung.",
+    "325:     IF ev_typ = 'E' AND sy-batch = abap_true.",
+    "326:       MESSAGE ev_text TYPE 'I'."
+   ],
+   "engine": [
+    "Für ev_typ = 'E' AND sy-batch = abap_true wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-176-B19",
+   "soll": "Ohne Meldungen wird „Kein Protokoll vorhanden“ ausgegeben.",
+   "zeilen": [
+    343,
+    344
+   ],
+   "code": [
+    "343:   IF gt_prot IS INITIAL.",
+    "344:     WRITE: / 'Kein Protokoll vorhanden.'."
+   ],
+   "engine": [
+    "Ohne Treffer wird Kein Protokoll vorhanden. ausgegeben und der Block verlassen.",
+    "Es wird Kein Protokoll vorhanden. ausgegeben und der Block verlassen.",
+    "Kein Protokoll vorhanden. wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-176-B20",
+   "soll": "Im Hintergrund werden nur Fehler und Warnungen als Liste ausgegeben, im Dialog das gesamte Protokoll als ALV.",
+   "zeilen": [
+    348,
+    349,
+    350,
+    359
+   ],
+   "code": [
+    "348:   IF sy-batch = abap_true.",
+    "349:     LOOP AT gt_prot INTO DATA(ls_prot) WHERE typ CA 'EW'.",
+    "350:       WRITE: / ls_prot-anlage, ls_prot-typ, ls_prot-text.",
+    "359:       lo_alv->display( )."
+   ],
+   "engine": [
+    "Für sy-batch mit dem Wert abap_true wird der Block verlassen.",
+    "Jede Zeile aus gt_prot wird einzeln verarbeitet.",
+    "Bei Treffern werden ls_prot-anlage, ls_prot-typ und Text als Liste ausgegeben.",
+    "ls_prot-anlage wird ausgegeben.",
+    "ls_prot-typ wird ausgegeben.",
+    "Text wird ausgegeben.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

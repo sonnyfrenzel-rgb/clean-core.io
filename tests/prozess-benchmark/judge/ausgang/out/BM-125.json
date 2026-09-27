@@ -1,0 +1,37 @@
+{
+ "id": "BM-125",
+ "urteile": [
+  {
+   "id": "BM-125-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Buchungskreis erkannt, Stichtag nur als \"delfz\", Produktart 51A fehlt."
+  },
+  {
+   "id": "BM-125-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "Hinweisausgabe erkannt (mehrfach, grammatisch schief), das Beenden des Laufs (STOP) fehlt; \"belegt nur das Erreichen dieser Stelle\" ist inhaltsleer."
+  },
+  {
+   "id": "BM-125-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Liste erkannt, aber nur Feldnamen (rfha, kontrh, wgschft1), vierfach."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,79 @@
+{
+ "id": "BM-110",
+ "urteile": [
+  {
+   "id": "BM-110-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "'Für gs_kal-sollwert mit dem Wert 0 wird eine Meldung ausgegeben' – Prüfen-Funktion und Abbruch mit Fehler nicht benannt."
+  },
+  {
+   "id": "BM-110-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Abweichungsberechnung."
+  },
+  {
+   "id": "BM-110-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Bewertung i.O./n.i.O."
+  },
+  {
+   "id": "BM-110-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "'Ohne gs_kal-ergebnis wird eine Meldung ausgegeben' – Sichern-Kontext und Abbruch fehlen."
+  },
+  {
+   "id": "BM-110-B05",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum INSERT des Ergebnisses."
+  },
+  {
+   "id": "BM-110-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "'Für gs_kal-ergebnis mit dem Wert NIO wird STATUS_CHANGE_EXTERN aufgerufen' – Anwenderstatus E0003 nicht genannt."
+  },
+  {
+   "id": "BM-110-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "Kurztext 'Kalibrierung nicht in Ordnung', Übergabe 'M2' an BAPI_ALM_NOTIF_CREATE und SAVE – nur über Bausteine; 'konvertiertes Ergebnis' falsch."
+  },
+  {
+   "id": "BM-110-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "COMMIT und Meldung genannt; 'Die Screenfolge wird beendet' ist falsch – LEAVE TO SCREEN 0100 kehrt zum Bild zurück (Leeren für das nächste Prüfmittel)."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

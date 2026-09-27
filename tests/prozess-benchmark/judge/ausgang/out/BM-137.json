@@ -1,0 +1,208 @@
+{
+ "id": "BM-137",
+ "urteile": [
+  {
+   "id": "BM-137-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Bedingung \"p_ab+6(2) ungleich 01\" mit Meldung erkannt, aber nicht als \"kein Monatserster wird abgewiesen\"."
+  },
+  {
+   "id": "BM-137-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus vicncn mit Buchungskreis\"; laufende Verträge, Wertsicherungsklausel und Zusatzdaten fehlen."
+  },
+  {
+   "id": "BM-137-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "\"Sätze aus zre_index_wert mit dem eingegebenen monat\" trifft den Inhalt, aber nur mit Tabellenname."
+  },
+  {
+   "id": "BM-137-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung ohne Verträge erkannt; STOP und Wegfall der Liste fehlen; CHECK gt_erg wird als Schleife mit \"kleinere werden übersprungen\" beschrieben."
+  },
+  {
+   "id": "BM-137-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Status S und Ergebniszeile bei fehlendem Indexwert erkannt; \"übersprungen\" nur als Statuskürzel; \"die Status\", \"setzen\"."
+  },
+  {
+   "id": "BM-137-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Schwellenprüfung mit Status S und Text \"Schwelle nicht erreicht\" erkannt; die Prozentberechnung gegen den Basiswert fehlt."
+  },
+  {
+   "id": "BM-137-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Bedingung technisch wiedergegeben, \"kleinere werden übersprungen\" ist schief (übersprungen werden jüngere Anpassungen); dass kein Eintrag entsteht, fehlt."
+  },
+  {
+   "id": "BM-137-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Lesen von unitprice und Status S ohne Treffer erkannt; Mietkondition und Wirksamkeitsdatum nicht benannt."
+  },
+  {
+   "id": "BM-137-B09",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Berechnung der neuen Miete."
+  },
+  {
+   "id": "BM-137-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "ENQUEUE und Status G bei Fehlschlag erkannt; sperrender Benutzer und fachliche Bedeutung fehlen."
+  },
+  {
+   "id": "BM-137-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"BAPI_RE_CN_CHANGE wird aufgerufen\"; neue Konditionszeile ab Wirksamkeitsdatum fehlt."
+  },
+  {
+   "id": "BM-137-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Rollback und Status F bei E/A-Meldung erkannt; Vermerk der Fehlermeldung nicht benannt."
+  },
+  {
+   "id": "BM-137-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Commit, Status A und Änderung von basis_wert erkannt; Indexmonat und Datum der letzten Anpassung nicht benannt."
+  },
+  {
+   "id": "BM-137-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Nur \"DEQUEUE_EZRE_INDEX wird aufgerufen\", nicht als Aufheben der Vertragssperre formuliert."
+  },
+  {
+   "id": "BM-137-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Bedingung p_brief und lv_aktiv erkannt; CHECK im FORM als Schleife mit \"kleinere werden übersprungen\" beschrieben; zentraler Schalter nicht benannt."
+  },
+  {
+   "id": "BM-137-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung und Verlassen, wenn SSF_FUNCTION_MODULE_NAME scheitert, erkannt; fehlendes Formular nicht benannt."
+  },
+  {
+   "id": "BM-137-B17",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu Drucker LOCL bzw. Vorschau unter AKR_TEST."
+  },
+  {
+   "id": "BM-137-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Status D bei Druckfehler erkannt; \"Welcher Baustein ... entscheidet die Eingabe zur Laufzeit\" ist falsch (bestimmt durch das Formular); Anpassungsschreiben nicht benannt."
+  },
+  {
+   "id": "BM-137-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Mailadresse lesen und send erkannt (\"Wirkung nicht belegt\"); Auswahl der Fehlerverträge und Empfänger Objektbetreuung fehlen."
+  },
+  {
+   "id": "BM-137-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldungen bei fehlender Adresse/Fehler erkannt; dass es nur ein Hinweis ist und was fehlt, bleibt offen."
+  },
+  {
+   "id": "BM-137-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Aufruf von REUSE_ALV_GRID_DISPLAY; Inhalt der Ergebnisliste fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

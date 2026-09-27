@@ -1,0 +1,130 @@
+{
+ "id": "BM-130",
+ "titel": "Treasury Devisenhandel: Marktgerechtigkeitsprüfung importierter Devisengeschäfte gegen den Mittelkurs (SWITCH, RAISE EVENT, REDUCE)",
+ "prozess": "Die Methode wird täglich mit Buchungskreis und Handelstag aufgerufen. Sie liest alle neu importierten, noch ungeprüften Devisengeschäfte dieses Tages; gibt es keine, endet sie mit einer Ausnahme „nichts zu tun“. Für jedes Geschäft legt sie die zulässige Abweichung nach Geschäftsart fest: 0,5 % für Kasse, 1,5 % für Termin, 0,25 % für alle anderen. Sie ermittelt den Mittelkurs des Handelstags für das Währungspaar; fehlt er, kennzeichnet sie das Geschäft zur manuellen Prüfung und geht weiter. Andernfalls berechnet sie die prozentuale Abweichung des Geschäftskurses vom Mittelkurs. Liegt sie über der Toleranz, wird das Geschäft als auffällig gekennzeichnet und ein Ereignis mit Geschäftsnummer und Abweichung ausgelöst; sonst gilt es als marktgerecht. Zum Schluss speichert sie den Status aller Geschäfte und gibt die Anzahl auffälliger Geschäfte zurück. Festgeschrieben wird erst durch den Aufrufer.",
+ "verboten": [
+  "source.abap:59 — kein Fachsatz „die Überwachung erhält eine E-Mail“: ob und wie gemeldet wird, hängt vom registrierten Handler ab, der nicht im Fall ist",
+  "source.abap:67 — kein Fachsatz „die Prüfergebnisse werden festgeschrieben“: die Methode setzt kein COMMIT WORK, das übernimmt der Aufrufer",
+  "source.abap:58 — kein Fachsatz „auffällige Geschäfte werden storniert oder gesperrt“: es wird nur ein Status gesetzt"
+ ],
+ "saetze": [
+  {
+   "id": "BM-130-B01",
+   "soll": "Es werden die neu importierten, noch ungeprüften Devisengeschäfte des Buchungskreises vom Handelstag gelesen.",
+   "zeilen": [
+    24
+   ],
+   "code": [
+    "24:     SELECT * FROM ztrm_fx_deal"
+   ],
+   "engine": [
+    "Es werden Sätze aus ztrm_fx_deal selektiert."
+   ]
+  },
+  {
+   "id": "BM-130-B02",
+   "soll": "Gibt es keine, endet die Prüfung mit der Ausnahme „nichts zu tun“.",
+   "zeilen": [
+    29,
+    30
+   ],
+   "code": [
+    "29:     IF lt_deal IS INITIAL.",
+    "30:       RAISE EXCEPTION TYPE zcx_trm_check"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-130-B03",
+   "soll": "Die zulässige Abweichung beträgt für Kassageschäfte 0,5 %, für Termingeschäfte 1,5 % und für alle anderen Geschäftsarten 0,25 %.",
+   "zeilen": [
+    36
+   ],
+   "code": [
+    "36:       DATA(lv_tol) = SWITCH decfloat16( <ls_deal>-sfhaart"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-130-B04",
+   "soll": "Für jedes Geschäft wird der Mittelkurs (Kurstyp M) des Handelstags für das Währungspaar ermittelt.",
+   "zeilen": [
+    40
+   ],
+   "code": [
+    "40:       CALL FUNCTION 'READ_EXCHANGE_RATE'"
+   ],
+   "engine": [
+    "Der Code übergibt ls_deal>-handelstag an READ_EXCHANGE_RATE und übernimmt dessen Ausgabe nach lv_mkurs.",
+    "Das konvertierte Ergebnis wird in lv_mkurs übernommen."
+   ]
+  },
+  {
+   "id": "BM-130-B05",
+   "soll": "Ist kein Mittelkurs vorhanden, wird das Geschäft zur manuellen Prüfung gekennzeichnet.",
+   "zeilen": [
+    51,
+    52
+   ],
+   "code": [
+    "51:       IF sy-subrc <> 0.",
+    "52:         <ls_deal>-status = 'K'.        \"kein Marktkurs - manuell prüfen"
+   ],
+   "engine": [
+    "Ohne Treffer wird die Status auf K gesetzt.",
+    "sy-subrc ungleich 0 setzen die Status auf K."
+   ]
+  },
+  {
+   "id": "BM-130-B06",
+   "soll": "Liegt die prozentuale Abweichung des Geschäftskurses vom Mittelkurs über der Toleranz, wird das Geschäft als auffällig gekennzeichnet und an die Überwachung gemeldet.",
+   "zeilen": [
+    56,
+    57,
+    58,
+    59
+   ],
+   "code": [
+    "56:       lv_abw = abs( <ls_deal>-kurs - lv_mkurs ) / lv_mkurs * 100.",
+    "57:       IF lv_abw > lv_tol.",
+    "58:         <ls_deal>-status = 'A'.        \"auffällig",
+    "59:         RAISE EVENT rate_deviation"
+   ],
+   "engine": [
+    "Für lv_abw größer lv_tol wird die Status auf A gesetzt.",
+    "Für lv_abw größer lv_tol wird die Status auf A gesetzt, sonst die Status auf P gesetzt.",
+    "lv_abw größer lv_tol setzen die Status auf A."
+   ]
+  },
+  {
+   "id": "BM-130-B07",
+   "soll": "Sonst gilt das Geschäft als marktgerecht geprüft.",
+   "zeilen": [
+    63
+   ],
+   "code": [
+    "63:         <ls_deal>-status = 'P'.        \"geprüft, marktgerecht"
+   ],
+   "engine": [
+    "Für lv_abw größer lv_tol wird die Status auf A gesetzt, sonst die Status auf P gesetzt.",
+    "Für kleinere oder gleiche lv_abw wird die Status auf P gesetzt.",
+    "Kleinere oder gleiche lv_abw setzen die Status auf P."
+   ]
+  },
+  {
+   "id": "BM-130-B08",
+   "soll": "Der Prüfstatus aller Geschäfte wird gespeichert und die Anzahl auffälliger Geschäfte zurückgegeben.",
+   "zeilen": [
+    67,
+    68
+   ],
+   "code": [
+    "67:     MODIFY ztrm_fx_deal FROM TABLE lt_deal.",
+    "68:     rv_count = REDUCE i( INIT n = 0"
+   ],
+   "engine": [
+    "Eine Zeile in ztrm_fx_deal wird eingefügt oder überschrieben. Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK. sy-subrc wird danach nicht ausgewertet."
+   ]
+  }
+ ]
+}

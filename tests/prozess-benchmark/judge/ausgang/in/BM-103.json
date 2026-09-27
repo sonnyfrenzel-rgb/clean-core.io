@@ -1,0 +1,65 @@
+{
+ "id": "BM-103",
+ "titel": "Servicemeldung beim Sichern: Priorität aus Kundenklasse ableiten (BAdI NOTIF_EVENT_SAVE)",
+ "prozess": "Beim Sichern einer Meldung ruft das System den BAdI mit den Meldungskopfdaten auf. Nur Servicemeldungen der Arten S1 und S3 werden behandelt; alle anderen verlassen die Methode unverändert. Sichert der Benutzer TWEBER, endet die Methode ebenfalls ohne Änderung, eine im Produktivcode verbliebene Testhintertür. Für alle anderen wird die Kundenklassifizierung des Meldungskunden aus dem Debitorenstamm gelesen. Kunden der Klasse 01 erhalten Priorität 1, Kunden der Klasse 02 Priorität 2, bei allen übrigen, auch ohne Kunden, bleibt die erfasste Priorität erhalten. Die geänderte Priorität wird mit der Meldung gesichert.",
+ "verboten": [
+  "source.abap:18 — kein Fachsatz „alle übrigen Kunden erhalten Priorität 3“: die Standardzuweisung ist auskommentiert, der ELSE-Zweig lässt die erfasste Priorität stehen",
+  "source.abap:13 — kein Fachsatz „Meldungen ohne Kunden werden abgewiesen“: ohne Treffer ist die Klasse leer und die Priorität bleibt unverändert",
+  "gesamte Scheibe — kein Fachsatz „die Meldung wird eskaliert oder ein Termin gesetzt“: geändert wird nur das Prioritätsfeld"
+ ],
+ "saetze": [
+  {
+   "id": "BM-103-B01",
+   "soll": "Die Regel greift nur für Servicemeldungen der Arten S1 und S3; alle anderen Meldungen werden unverändert gesichert.",
+   "zeilen": [
+    7
+   ],
+   "code": [
+    "7:   CHECK cs_viqmel-qmart = 'S1' OR cs_viqmel-qmart = 'S3'."
+   ],
+   "engine": [
+    "Nur cs_viqmel-qmart = 'S1' OR cs_viqmel-qmart = 'S3' gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-103-B02",
+   "soll": "Meldungen, die der Benutzer TWEBER sichert, bleiben ohne Prioritätsableitung.",
+   "zeilen": [
+    9,
+    10
+   ],
+   "code": [
+    "9:   IF sy-uname = 'TWEBER'.            \"Test Hotline - später entfernen",
+    "10:     RETURN."
+   ],
+   "engine": [
+    "Für sy-uname mit dem Wert TWEBER wird der Block verlassen.",
+    "Bei sy-uname gleich TWEBER wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-103-B03",
+   "soll": "Zum Kunden der Meldung wird die Kundenklassifizierung gelesen.",
+   "zeilen": [
+    13
+   ],
+   "code": [
+    "13:   SELECT SINGLE kukla FROM kna1"
+   ],
+   "engine": [
+    "kukla des Kunden wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-103-B04",
+   "soll": "Kunden der Klasse 01 erhalten Priorität 1, Kunden der Klasse 02 Priorität 2; bei allen anderen bleibt die erfasste Priorität stehen.",
+   "zeilen": [
+    18
+   ],
+   "code": [
+    "18:   cs_viqmel-priok = SWITCH #( lv_kukla"
+   ],
+   "engine": []
+  }
+ ]
+}

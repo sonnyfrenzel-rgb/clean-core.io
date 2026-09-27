@@ -1,0 +1,39 @@
+{
+ "id": "BM-001",
+ "urteile": [
+  {
+   "id": "BM-001-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "unvollstaendig"
+   ],
+   "kurz": "\"Es werden Aufträge selektiert\" trifft den Kern, aber Belegtyp C und die Einschränkung auf Verkaufsorganisation/Erfassungsdatum fehlen."
+  },
+  {
+   "id": "BM-001-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"gbstk des Satzes wird gelesen\" – Feldname statt Gesamtbearbeitungsstatus, Bezug je Auftrag fehlt."
+  },
+  {
+   "id": "BM-001-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Überspringung erledigter Aufträge an Zeile 22."
+  },
+  {
+   "id": "BM-001-B04",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Liste mit Belegnummer, Kundennummer, Nettowert wird fachlich benannt; Währung und Status nur als gs_auftr-waerk/gv_gbstk, Einzelsätze wiederholen die Ausgabe."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

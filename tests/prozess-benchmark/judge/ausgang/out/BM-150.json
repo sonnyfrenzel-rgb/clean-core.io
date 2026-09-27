@@ -1,0 +1,69 @@
+{
+ "id": "BM-150",
+ "urteile": [
+  {
+   "id": "BM-150-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"werks und btrtl des Satzes werden gelesen\"; Personalbereich/-teilbereich zum Antragsbeginn nicht benannt."
+  },
+  {
+   "id": "BM-150-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Die Zahl der Sätze wird ermittelt\"; Urlaubssperre und Abweisung fehlen."
+  },
+  {
+   "id": "BM-150-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"abap_true des Satzes wird gelesen\"; Überschneidung und Abweisung fehlen."
+  },
+  {
+   "id": "BM-150-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Dauer in Kalendertagen."
+  },
+  {
+   "id": "BM-150-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Lesen aus pa2006 (anzhl, kverb); Restanspruch und Abweisung fehlen."
+  },
+  {
+   "id": "BM-150-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Abweisung von Krankheitsarten."
+  },
+  {
+   "id": "BM-150-B07",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu anderen Abwesenheitsarten."
+  },
+  {
+   "id": "BM-150-B08",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Hinweiskennzeichen über zehn Tage."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

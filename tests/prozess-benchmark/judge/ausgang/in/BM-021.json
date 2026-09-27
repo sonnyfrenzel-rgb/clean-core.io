@@ -1,0 +1,64 @@
+{
+ "id": "BM-021",
+ "titel": "Wareneingangsliste je Werk aus MKPF/MSEG",
+ "prozess": "Ein Sachbearbeiter im Einkauf oder Wareneingang startet den Report mit einem Werk, einer Bewegungsart (Vorschlag 101) und einem Buchungszeitraum. Der Report liest dazu die Kopf- und Positionsdaten der Materialbelege. Findet er nichts, meldet er, dass im Zeitraum keine Wareneingänge vorliegen, und endet. Sonst sortiert er die Treffer nach Buchungsdatum und Belegnummer und gibt je Position Datum, Beleg, Material, Menge mit Einheit, Lieferant und Bestellung als Liste aus. Stornobewegungen werden nicht gegengerechnet; es wird nichts gebucht.",
+ "verboten": [
+  "source.abap:21 — kein Fachsatz „Stornierte Wareneingänge werden herausgerechnet“ (gelesen wird nur die eine eingegebene Bewegungsart; Stornobewegungen wie 102 werden nicht gegengerechnet)",
+  "source.abap:35 — kein Fachsatz „Summen je Lieferant werden gebildet“ (es wird nur zeilenweise ausgegeben)",
+  "gesamte Scheibe — kein Fachsatz „Bestand wird gebucht oder verändert“ (reiner Lesereport)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-021-B01",
+   "soll": "Es werden die Materialbelegpositionen des eingegebenen Werks mit der gewählten Bewegungsart (Vorschlag 101, Wareneingang zur Bestellung) im Buchungszeitraum selektiert.",
+   "zeilen": [
+    21
+   ],
+   "code": [
+    "21:   SELECT k~mblnr k~budat s~matnr s~menge s~meins s~lifnr s~ebeln"
+   ],
+   "engine": [
+    "Es werden Sätze aus mkpf mit dem eingegebenen s~werks und dem eingegebenen s~bwart selektiert."
+   ]
+  },
+  {
+   "id": "BM-021-B02",
+   "soll": "Gibt es keine solchen Belege, erscheint der Hinweis, dass im Zeitraum keine Wareneingänge vorliegen, und der Report endet.",
+   "zeilen": [
+    28,
+    29,
+    30
+   ],
+   "code": [
+    "28:   IF sy-subrc <> 0.",
+    "29:     MESSAGE 'Keine Wareneingänge im Zeitraum' TYPE 'S' DISPLAY LIKE 'W'.",
+    "30:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-021-B03",
+   "soll": "Sonst wird je Wareneingang eine Zeile mit Buchungsdatum, Materialbeleg, Material, Menge mit Einheit, Lieferant und Bestellung ausgegeben, sortiert nach Buchungsdatum.",
+   "zeilen": [
+    34,
+    35
+   ],
+   "code": [
+    "34:   LOOP AT gt_we INTO gs_we.",
+    "35:     WRITE: / gs_we-budat, gs_we-mblnr, gs_we-matnr,"
+   ],
+   "engine": [
+    "Jede Zeile aus gt_we wird einzeln verarbeitet.",
+    "Bei Treffern werden gs_we-budat, gs_we-mblnr, gs_we-matnr, gs_we-menge UNIT gs_we-meins, gs_we-meins, gs_we-lifnr und gs_we-ebeln als Liste ausgegeben.",
+    "gs_we-budat wird ausgegeben.",
+    "gs_we-mblnr wird ausgegeben.",
+    "gs_we-matnr wird ausgegeben."
+   ]
+  }
+ ]
+}

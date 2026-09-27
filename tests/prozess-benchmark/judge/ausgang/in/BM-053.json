@@ -1,0 +1,219 @@
+{
+ "id": "BM-053",
+ "titel": "CO-PA-Merkmalsableitung im Kundenexit: Vertriebsregion, Segment und Key-Account-Manager",
+ "prozess": "Die CO-PA-Ableitung ruft den Kundenexit bei jeder Übergabe eines Belegs in die Ergebnisrechnung für die als Benutzerexit angelegten Schritte auf. Der Exit gibt den Ergebnisposten zunächst unverändert zurück und wird nur für den Ergebnisbereich ZGO1 aktiv. Im Schritt U-REG wird die Vertriebsregion aus Land und Region des Kunden über eine datumsabhängige Zuordnungstabelle bestimmt, mit Puffer je Kunde und Auffangregion SONST; ohne Kunde bleibt sie leer, bei unbekanntem Kunden scheitert die Ableitung. Im Schritt U-SEG wird das Ergebnissegment aus Kundengruppe und Sparte oder ersatzweise aus der Materialgruppe bestimmt; ohne Treffer scheitert die Ableitung. Im Schritt U-KAM wird der Key-Account-Manager aus der Partnerrolle ZM übernommen, sein Fehlen ist kein Fehler. Gescheiterte Schritte werden als Fehler gemeldet, der Ergebnisposten mit den abgeleiteten Merkmalen wird immer zurückgegeben.",
+ "verboten": [
+  "zxkkeu11.abap:40 — kein Fachsatz „die Buchung wird abgelehnt“ (der Exit meldet nur E_FAILED; was daraus folgt, regelt die Ableitungsstrategie)",
+  "zxkkeu11.abap:24 — kein Fachsatz „fehlender Key-Account-Manager führt zu einem Fehler“ (lv_ok wird immer auf wahr gesetzt)",
+  "zcl_co_pa_derive.abap:76 — kein Fachsatz „die vollständige Materialnummer wird verwendet“ (Kürzung auf 18 Zeichen)",
+  "zcl_co_pa_derive.abap:64 — kein Fachsatz „die Region wird im Kundenstamm gespeichert“ (nur Ergebnisposten und Sitzungspuffer)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-053-B01",
+   "soll": "Der Ergebnisposten wird zunächst unverändert zurückgegeben; nur für den Ergebnisbereich ZGO1 wird der Exit aktiv.",
+   "zeilen": [
+    133,
+    134,
+    135
+   ],
+   "code": [
+    "133: e_copa_item = i_copa_item.",
+    "134: CHECK i_operating_concern = 'ZGO1'.",
+    "135: e_exit_is_active = 'X'."
+   ],
+   "engine": [
+    "Nur i_operating_concern mit dem Wert ZGO1 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Die e_exit_is_active wird auf X gesetzt."
+   ]
+  },
+  {
+   "id": "BM-053-B02",
+   "soll": "Welche Merkmale abgeleitet werden, hängt vom Ableitungsschritt ab: Vertriebsregion (U-REG), Ergebnissegment (U-SEG) oder Key-Account-Manager (U-KAM); andere Schritte ändern nichts.",
+   "zeilen": [
+    138
+   ],
+   "code": [
+    "138: CASE i_step_id."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-053-B03",
+   "soll": "Ohne Kunde im Ergebnisposten, etwa bei Sachkontenbuchungen, bleibt die Vertriebsregion leer, ohne dass die Ableitung scheitert.",
+   "zeilen": [
+    51,
+    54
+   ],
+   "code": [
+    "51:     IF cs_item-kndnr IS INITIAL.",
+    "54:       RETURN."
+   ],
+   "engine": [
+    "Ohne cs_item-kndnr wird der Block verlassen.",
+    "Ohne cs_item-kndnr wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-053-B04",
+   "soll": "Wurde die Region eines Kunden in derselben Sitzung schon ermittelt, wird sie aus dem Puffer übernommen.",
+   "zeilen": [
+    57,
+    58,
+    61
+   ],
+   "code": [
+    "57:     READ TABLE gt_regbuf INTO ls_buf WITH TABLE KEY kunnr = cs_item-kndnr.",
+    "58:     IF sy-subrc = 0.",
+    "61:       RETURN."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird der Block verlassen.",
+    "Bei Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-053-B05",
+   "soll": "Sonst werden Land und Region aus dem Kundenstamm gelesen; existiert der Kunde nicht, scheitert die Ableitung.",
+   "zeilen": [
+    64,
+    66,
+    67
+   ],
+   "code": [
+    "64:     SELECT SINGLE land1 regio FROM kna1 INTO (lv_land1, lv_regio)",
+    "66:     IF sy-subrc <> 0.",
+    "67:       RETURN."
+   ],
+   "engine": [
+    "land1 regio des Kunden wird gelesen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-053-B06",
+   "soll": "Aus der kundeneigenen Regionszuordnung wird der zum Ableitungsdatum gültige Eintrag gesucht, wobei ein Eintrag für die genaue Region vor dem landesweiten Eintrag '*' und der jüngste Gültigkeitsbeginn zuerst gilt.",
+   "zeilen": [
+    71,
+    79
+   ],
+   "code": [
+    "71:     SELECT regio datab wwreg FROM zco_region_map INTO TABLE lt_map",
+    "79:       lv_wwreg = lt_map[ 1 ]-wwreg."
+   ],
+   "engine": [
+    "Es werden Sätze aus zco_region_map selektiert."
+   ]
+  },
+  {
+   "id": "BM-053-B07",
+   "soll": "Ist keine Zuordnung gepflegt, wird die Auffangregion SONST gesetzt; die ermittelte Region wird in den Ergebnisposten geschrieben und für den Kunden gepuffert.",
+   "zeilen": [
+    76,
+    77,
+    82
+   ],
+   "code": [
+    "76:     IF sy-subrc <> 0.",
+    "77:       lv_wwreg = 'SONST'.",
+    "82:     cs_item-wwreg = lv_wwreg."
+   ],
+   "engine": [
+    "Ohne Treffer wird die lv_wwreg auf SONST gesetzt.",
+    "sy-subrc ungleich 0 setzen die lv_wwreg auf SONST."
+   ]
+  },
+  {
+   "id": "BM-053-B08",
+   "soll": "Für das Segment werden Sparte und Materialgruppe des Materials gelesen; die Materialnummer wird dabei auf 18 Stellen gekürzt.",
+   "zeilen": [
+    94,
+    95,
+    96
+   ],
+   "code": [
+    "94:     lv_matnr = cs_item-artnr.",
+    "95:     IF lv_matnr IS NOT INITIAL.",
+    "96:       SELECT SINGLE spart matkl FROM mara INTO (lv_spart, lv_matkl)"
+   ],
+   "engine": [
+    "spart matkl des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-053-B09",
+   "soll": "Liefert das Material keine Sparte, gilt die Sparte des Ergebnispostens.",
+   "zeilen": [
+    99,
+    100
+   ],
+   "code": [
+    "99:     IF lv_spart IS INITIAL.",
+    "100:       lv_spart = cs_item-spart."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-053-B10",
+   "soll": "Das Segment wird zuerst über Kundengruppe des Vertriebsbereichs und Sparte bestimmt, ersatzweise über die Materialgruppe; findet sich keine Zuordnung, scheitert die Ableitung.",
+   "zeilen": [
+    103,
+    110,
+    113,
+    114,
+    117,
+    118
+   ],
+   "code": [
+    "103:     SELECT SINGLE kdgrp FROM knvv INTO lv_kdgrp",
+    "110:     SELECT SINGLE wwseg FROM zco_segmap INTO cs_item-wwseg",
+    "113:     IF sy-subrc <> 0.",
+    "114:       SELECT SINGLE wwseg FROM zco_segmap INTO cs_item-wwseg",
+    "117:       IF sy-subrc <> 0.",
+    "118:         rv_ok = abap_false."
+   ],
+   "engine": [
+    "kdgrp des Kunden wird gelesen.",
+    "wwseg des Satzes wird gelesen.",
+    "wwseg des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-053-B11",
+   "soll": "Als Key-Account-Manager wird der Partner mit der Rolle ZM im Vertriebsbereich des Kunden übernommen; fehlt er, bleibt das Merkmal leer, ohne Fehler.",
+   "zeilen": [
+    147,
+    153,
+    154
+   ],
+   "code": [
+    "147:     SELECT SINGLE pernr FROM knvp INTO lv_pernr",
+    "153:     IF sy-subrc = 0.",
+    "154:       ls_ce1-wwkam = lv_pernr."
+   ],
+   "engine": [
+    "pernr des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-053-B12",
+   "soll": "Ist ein Ableitungsschritt gescheitert, wird das der Ableitungsstrategie als Fehler gemeldet; der Ergebnisposten mit den abgeleiteten Merkmalen wird in jedem Fall zurückgegeben.",
+   "zeilen": [
+    162,
+    163,
+    165
+   ],
+   "code": [
+    "162: IF lv_ok = abap_false.",
+    "163:   e_failed = 'X'.",
+    "165: e_copa_item = ls_ce1."
+   ],
+   "engine": [
+    "Für lv_ok mit dem Wert abap_false wird die e_failed auf X gesetzt.",
+    "lv_ok mit dem Wert abap_false setzen die e_failed auf X."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,75 @@
+{
+ "id": "BM-163",
+ "titel": "Handling Units: Packinhalt einer Auslieferung aus VEKP/VEPO listen",
+ "prozess": "Der Report wird mit einer Auslieferungsnummer gestartet. Er liest die Handling Units, deren Packobjekt diese Auslieferung ist, und danach deren Packpositionen. Ist die Lieferung nicht gepackt, liest der zweite Zugriff wegen der leeren Treibertabelle alle Packpositionen des Systems, die Liste bleibt trotzdem leer. Ein früherer Abbruch mit Meldung für ungepackte Lieferungen ist auskommentiert. Für jede Handling Unit wird eine Kopfzeile mit HU-Nummer, Packmittel und Bruttogewicht gedruckt. Darunter folgen nur die Materialpositionen dieser Handling Unit mit Material, Charge und Menge; geschachtelte Handling Units werden nicht als Inhalt gezeigt. Es wird nichts verändert.",
+ "verboten": [
+  "source.abap:12 — kein Fachsatz „ist die Lieferung ungepackt, wird eine Meldung ausgegeben und abgebrochen“: der Abbruchzweig ist auskommentiert",
+  "source.abap:20 — kein Fachsatz „es werden nur Packpositionen der Lieferung gelesen“: bei leerer HU-Tabelle entfällt die WHERE-Bedingung von FOR ALL ENTRIES",
+  "gesamte Scheibe — kein Fachsatz „Handling Units werden gepackt, umgepackt oder gebucht“: der Report liest und listet nur"
+ ],
+ "saetze": [
+  {
+   "id": "BM-163-B01",
+   "soll": "Es werden die Handling Units gelesen, die der eingegebenen Auslieferung zugeordnet sind.",
+   "zeilen": [
+    12
+   ],
+   "code": [
+    "12:   SELECT * FROM vekp INTO TABLE lt_vekp"
+   ],
+   "engine": [
+    "Es werden Sätze aus vekp mit dem eingegebenen vpobjkey selektiert."
+   ]
+  },
+  {
+   "id": "BM-163-B02",
+   "soll": "Zu diesen Handling Units werden die Packpositionen gelesen; hat die Lieferung keine Handling Unit, liest der Zugriff sämtliche Packpositionen des Systems.",
+   "zeilen": [
+    20
+   ],
+   "code": [
+    "20:   SELECT * FROM vepo INTO TABLE lt_vepo"
+   ],
+   "engine": [
+    "Es werden Sätze aus vepo selektiert."
+   ]
+  },
+  {
+   "id": "BM-163-B03",
+   "soll": "Je Handling Unit werden externe HU-Nummer, Packmittel und Bruttogewicht ausgegeben.",
+   "zeilen": [
+    25
+   ],
+   "code": [
+    "25:     WRITE: / ls_vekp-exidv, ls_vekp-vhilm, ls_vekp-brgew, ls_vekp-gewei."
+   ],
+   "engine": [
+    "Bei Treffern werden ls_vekp-exidv, ls_vekp-vhilm, ls_vekp-brgew und ls_vekp-gewei als Liste ausgegeben.",
+    "ls_vekp-exidv wird ausgegeben.",
+    "ls_vekp-vhilm wird ausgegeben.",
+    "ls_vekp-brgew wird ausgegeben.",
+    "ls_vekp-gewei wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-163-B04",
+   "soll": "Darunter werden nur die Materialpositionen der Handling Unit mit Material, Charge und verpackter Menge gelistet; untergeordnete Handling Units erscheinen nicht als Inhalt.",
+   "zeilen": [
+    26,
+    28
+   ],
+   "code": [
+    "26:     LOOP AT lt_vepo INTO ls_vepo WHERE venum = ls_vekp-venum",
+    "28:       WRITE: /5 ls_vepo-matnr, ls_vepo-charg, ls_vepo-vemng, ls_vepo-vemeh."
+   ],
+   "engine": [
+    "Jede Zeile aus lt_vepo wird einzeln verarbeitet.",
+    "Bei Treffern werden 5 ls_vepo-matnr, ls_vepo-charg, ls_vepo-vemng und ls_vepo-vemeh als Liste ausgegeben.",
+    "5 ls_vepo-matnr wird ausgegeben.",
+    "ls_vepo-charg wird ausgegeben.",
+    "ls_vepo-vemng wird ausgegeben.",
+    "ls_vepo-vemeh wird ausgegeben."
+   ]
+  }
+ ]
+}

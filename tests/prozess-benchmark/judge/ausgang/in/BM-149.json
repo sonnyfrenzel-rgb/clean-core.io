@@ -1,0 +1,176 @@
+{
+ "id": "BM-149",
+ "titel": "Reisekosten-Monatslauf: genehmigte Reisen freigeben und Reiseabrechnung als Job einplanen",
+ "prozess": "Die Reisestelle startet monatlich für einen Buchungskreis einen Freigabelauf, standardmäßig als Testlauf. Er liest die genehmigten, noch offenen Reisen der Mitarbeiter, die aktuell dem Buchungskreis angehören; gibt es keine, endet er mit Hinweis. Zu den Reisen werden die Belege gelesen; Reisen ohne Beleg werden nur gelistet und nicht freigegeben. Im Echtlauf setzt der Lauf jede Reise mit Beleg direkt in der Reisetabelle auf „abzurechnen“ und merkt den Mitarbeiter vor. Im Testlauf oder ohne Freigaben endet er ohne Job. Sonst schreibt er die Statusänderungen fest, legt einen Hintergrundjob an, stellt die Standard-Reiseabrechnung mit der Variante ZMONAT für die vorgemerkten Mitarbeiter hinein und gibt den Job zum Sofortstart frei. Scheitert das Anlegen des Jobs, bricht der Lauf ab, die Freigaben bleiben aber bestehen. Ob der Job freigegeben wurde, wird nicht geprüft.",
+ "verboten": [
+  "source.abap:68 — kein Fachsatz „bei Jobfehler werden die Freigaben zurückgenommen“ (COMMIT ist vorher erfolgt)",
+  "source.abap:71 — kein Fachsatz „die Abrechnung läuft nur für die freigegebenen Reisen“ (übergeben werden nur Personalnummern; welche Reisen RPRTEC00 abrechnet, bestimmt Variante und Status)",
+  "source.abap:77 — kein Fachsatz „der Report prüft, ob der Job eingeplant wurde“ (Rückgabe von JOB_CLOSE wird nicht ausgewertet)",
+  "source.abap:48 — kein Fachsatz „die Reise wird abgerechnet oder gebucht“ (nur Status gesetzt)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-149-B01",
+   "soll": "Es werden die genehmigten, noch nicht zur Abrechnung freigegebenen Reisen der Mitarbeiter gelesen, die aktuell dem eingegebenen Buchungskreis angehören.",
+   "zeilen": [
+    16
+   ],
+   "code": [
+    "16:   SELECT p~pernr, p~reinr"
+   ],
+   "engine": [
+    "Das Ergebnis enthält p~pernr und p~reinr.",
+    "Es werden Sätze aus ptrv_perio mit dem eingegebenen Buchungskreis selektiert."
+   ]
+  },
+  {
+   "id": "BM-149-B02",
+   "soll": "Gibt es keine solche Reise, endet der Lauf mit einem Hinweis.",
+   "zeilen": [
+    25,
+    26,
+    27
+   ],
+   "code": [
+    "25:   IF lt_trips IS INITIAL.",
+    "26:     MESSAGE s398(00) WITH 'Keine genehmigten offenen Reisen'.",
+    "27:     LEAVE LIST-PROCESSING."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-149-B03",
+   "soll": "Zu den Reisen werden die erfassten Belege gelesen.",
+   "zeilen": [
+    30
+   ],
+   "code": [
+    "30:   SELECT pernr, reinr"
+   ],
+   "engine": [
+    "Das Ergebnis enthält pernr und reinr.",
+    "Es werden Sätze aus ptrv_srec selektiert."
+   ]
+  },
+  {
+   "id": "BM-149-B04",
+   "soll": "Reisen ohne Beleg werden nicht freigegeben, sondern in der Liste als „ohne Belege“ ausgewiesen.",
+   "zeilen": [
+    39,
+    42,
+    43,
+    44
+   ],
+   "code": [
+    "39:     READ TABLE lt_srec WITH KEY pernr = ls_trip-pernr",
+    "42:     IF sy-subrc <> 0.",
+    "43:       WRITE: / ls_trip-pernr, ls_trip-reinr, 'ohne Belege - nicht freigegeben'.",
+    "44:       CONTINUE."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird ls_trip-pernr ausgegeben, ls_trip-reinr ausgegeben und ohne Belege - nicht freigegeben ausgegeben.",
+    "Bei Treffern werden ls_trip-pernr, ls_trip-reinr und ohne Belege - nicht freigegeben als Liste ausgegeben.",
+    "ls_trip-pernr wird ausgegeben.",
+    "ls_trip-reinr wird ausgegeben.",
+    "ohne Belege - nicht freigegeben wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-149-B05",
+   "soll": "Im Echtlauf wird jede Reise mit Beleg direkt in der Reisetabelle auf „abzurechnen“ gesetzt, und ihr Mitarbeiter wird für die Abrechnung vorgemerkt.",
+   "zeilen": [
+    47,
+    48
+   ],
+   "code": [
+    "47:     IF p_test IS INITIAL.",
+    "48:       UPDATE ptrv_perio SET abrec = '1'"
+   ],
+   "engine": [
+    "Ohne p_test wird eine Zeile geändert.",
+    "Die abrec in ptrv_perio wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ]
+  },
+  {
+   "id": "BM-149-B06",
+   "soll": "Im Testlauf oder wenn keine Reise freigegeben wurde, endet der Lauf ohne Job.",
+   "zeilen": [
+    54,
+    56
+   ],
+   "code": [
+    "54:   IF p_test = abap_true OR lr_pernr IS INITIAL.",
+    "56:     RETURN."
+   ],
+   "engine": [
+    "Für p_test = abap_true OR lr_pernr IS INITIAL wird Testlauf oder nichts freizugeben - kein Job eingeplant ausgegeben und der Block verlassen.",
+    "Es wird Testlauf oder nichts freizugeben - kein Job eingeplant ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-149-B07",
+   "soll": "Sonst werden die Statusänderungen festgeschrieben und ein Hintergrundjob angelegt; scheitert das, bricht der Lauf mit Fehlermeldung ab, während die Freigaben bestehen bleiben.",
+   "zeilen": [
+    58,
+    60,
+    67,
+    68
+   ],
+   "code": [
+    "58:   COMMIT WORK.",
+    "60:   CALL FUNCTION 'JOB_OPEN'",
+    "67:   IF sy-subrc <> 0.",
+    "68:     MESSAGE e398(00) WITH 'Job konnte nicht angelegt werden'."
+   ],
+   "engine": [
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Es wird COMMIT WORK ausgeführt und JOB_OPEN aufgerufen.",
+    "Der Code übergibt lv_jobname an JOB_OPEN und übernimmt dessen Ausgabe nach lv_jobcount.",
+    "Das konvertierte Ergebnis wird in lv_jobcount übernommen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-149-B08",
+   "soll": "In den Job wird die Standard-Reiseabrechnung mit der Variante ZMONAT für alle vorgemerkten Mitarbeiter eingestellt und der Job zum Sofortstart freigegeben.",
+   "zeilen": [
+    71,
+    77
+   ],
+   "code": [
+    "71:   SUBMIT rprtec00",
+    "77:   CALL FUNCTION 'JOB_CLOSE'"
+   ],
+   "engine": [
+    "Das Kindprogramm rprtec00 wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes.",
+    "Der Funktionsbaustein JOB_CLOSE wird aufgerufen.",
+    "Es wird JOB_CLOSE aufgerufen, Reiseabrechnung eingeplant, Job ausgegeben, lv_jobname ausgegeben und Das vom Funktionsbaustein zurückgegebene Feld ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-149-B09",
+   "soll": "Zum Schluss werden Jobname und Jobnummer ausgegeben.",
+   "zeilen": [
+    84
+   ],
+   "code": [
+    "84:   WRITE: / 'Reiseabrechnung eingeplant, Job', lv_jobname, lv_jobcount."
+   ],
+   "engine": [
+    "Es wird JOB_CLOSE aufgerufen, Reiseabrechnung eingeplant, Job ausgegeben, lv_jobname ausgegeben und Das vom Funktionsbaustein zurückgegebene Feld ausgegeben.",
+    "Reiseabrechnung eingeplant, Job, lv_jobname und Das vom Funktionsbaustein zurückgegebene Feld werden ausgegeben.",
+    "Reiseabrechnung eingeplant, Job wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_jobname wird ausgegeben.",
+    "Das vom Funktionsbaustein zurückgegebene Feld wird ausgegeben."
+   ]
+  }
+ ]
+}

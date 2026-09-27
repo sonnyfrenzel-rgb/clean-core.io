@@ -1,0 +1,72 @@
+{
+ "id": "BM-044",
+ "titel": "Funktionsbaustein: Fremdwährungsbetrag in Hauswährung des Buchungskreises umrechnen",
+ "prozess": "Ein aufrufendes Programm übergibt Buchungskreis, Fremdwährung, Betrag und Datum. Der Baustein ermittelt die Hauswährung des Buchungskreises und bricht mit COMPANY_NOT_FOUND ab, wenn es ihn nicht gibt. Danach wird der Betrag mit dem Durchschnittskurs M zum Datum über einen Standardbaustein umgerechnet. Schlägt das fehl, endet der Baustein mit NO_RATE. Sonst gibt er Hauswährungsbetrag und Kurs zurück; gebucht oder gespeichert wird nichts.",
+ "verboten": [
+  "source.abap:22 — kein Fachsatz „der Betrag wird gebucht“ (reine Berechnung, keine Buchung)",
+  "source.abap:22 — kein Fachsatz „Kurs wird aus dem Buchungsbeleg übernommen“ (Kurstyp M zum übergebenen Datum)",
+  "source.abap:38 — kein Fachsatz „Umrechnung erfolgt mit Kurs 1“ (es gibt keinen Rückfallwert, nur die Ausnahme)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-044-B01",
+   "soll": "Zum übergebenen Buchungskreis wird die Hauswährung ermittelt; existiert der Buchungskreis nicht, bricht der Baustein mit COMPANY_NOT_FOUND ab.",
+   "zeilen": [
+    15,
+    17,
+    18
+   ],
+   "code": [
+    "15:   SELECT SINGLE waers FROM t001 INTO lv_hwaer",
+    "17:   IF sy-subrc <> 0.",
+    "18:     RAISE company_not_found."
+   ],
+   "engine": [
+    "waers des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-044-B02",
+   "soll": "Der Fremdwährungsbetrag wird zum übergebenen Datum mit dem Durchschnittskurs (Kurstyp M) in die Hauswährung umgerechnet.",
+   "zeilen": [
+    22
+   ],
+   "code": [
+    "22:   CALL FUNCTION 'CONVERT_TO_LOCAL_CURRENCY'"
+   ],
+   "engine": [
+    "Der Code übergibt iv_datum an CONVERT_TO_LOCAL_CURRENCY und übernimmt dessen Ausgabe nach ev_kursf.",
+    "Das konvertierte Ergebnis wird in ev_kursf übernommen."
+   ]
+  },
+  {
+   "id": "BM-044-B03",
+   "soll": "Scheitert die Umrechnung, etwa weil kein Kurs gepflegt ist, bricht der Baustein mit NO_RATE ab.",
+   "zeilen": [
+    37,
+    38
+   ],
+   "code": [
+    "37:   IF sy-subrc <> 0.",
+    "38:     RAISE no_rate."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-044-B04",
+   "soll": "Bei Erfolg liefert der Baustein den Hauswährungsbetrag und den verwendeten Kurs zurück.",
+   "zeilen": [
+    22,
+    40
+   ],
+   "code": [
+    "22:   CALL FUNCTION 'CONVERT_TO_LOCAL_CURRENCY'",
+    "40: ENDFUNCTION."
+   ],
+   "engine": [
+    "Der Code übergibt iv_datum an CONVERT_TO_LOCAL_CURRENCY und übernimmt dessen Ausgabe nach ev_kursf.",
+    "Das konvertierte Ergebnis wird in ev_kursf übernommen."
+   ]
+  }
+ ]
+}

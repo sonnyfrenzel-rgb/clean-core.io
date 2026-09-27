@@ -1,0 +1,18 @@
+{"id":"BM-114","urteile":[
+{"id":"BM-114-B01","urteil":"teilweise","mangel":["unvollstaendig","technisch","zu_allgemein","redundant"],"kurz":"Die Berechtigungsprüfung und der Rücksprung ohne Schreiben sind richtig, aber die Fehlerrückgabe an das Portal (es_return Typ E) fehlt; 'Ohne Treffer wird der Block verlassen' ist nichtssagend."},
+{"id":"BM-114-B02","urteil":"fehlt","mangel":[],"kurz":"An den Zeilen 86-87 gibt es keinen Engine-Satz."},
+{"id":"BM-114-B03","urteil":"fehlt","mangel":["technisch","zu_allgemein","grammatik"],"kurz":"'abap_true des Satzes wird gelesen' sagt nichts über die Prüfung auf aktive Beschäftigung am Unfalltag oder die Ablehnung."},
+{"id":"BM-114-B04","urteil":"fehlt","mangel":[],"kurz":"An Zeile 29 (SET HANDLER) gibt es keinen Engine-Satz."},
+{"id":"BM-114-B05","urteil":"teilweise","mangel":["technisch","unvollstaendig","redundant"],"kurz":"Das Ziehen der Nummer steht nur als 'übergibt 01 an NUMBER_GET_NEXT ... nach rv_unfallnr'; Nummernkreis ZEHS_UNF und die Ablehnung, wenn keine Nummer kommt, fehlen."},
+{"id":"BM-114-B06","urteil":"fehlt","mangel":[],"kurz":"Zu Statusfindung T/M/E, Speichern und Ablehnung bei Fehler gibt es keinen Engine-Satz."},
+{"id":"BM-114-B07","urteil":"fehlt","mangel":[],"kurz":"Zur Meldepflicht-Regel (tödlich oder mehr als drei Ausfalltage) gibt es keinen Engine-Satz."},
+{"id":"BM-114-B08","urteil":"teilweise","mangel":["technisch","unvollstaendig"],"kurz":"Nur 'bg_mitglnr des Satzes wird gelesen'; die Bedingung Meldepflicht und die Ablehnung der ganzen Meldung bei fehlender Zuordnung fehlen."},
+{"id":"BM-114-B09","urteil":"fehlt","mangel":[],"kurz":"Zum Vormerken der BG-Anzeige als offen mit Frist gibt es keinen Engine-Satz."},
+{"id":"BM-114-B10","urteil":"fehlt","mangel":[],"kurz":"Zu RAISE EVENT gemeldet gibt es keinen Engine-Satz."},
+{"id":"BM-114-B11","urteil":"teilweise","mangel":["technisch","unvollstaendig"],"kurz":"Nur 'SAP_WAPI_CREATE_EVENT wird aufgerufen'; Workflow-Ereignis für das Unfallobjekt und die Wahl MELDEPFLICHTIG/ERFASST fehlen."},
+{"id":"BM-114-B12","urteil":"teilweise","mangel":["technisch","zu_allgemein","unvollstaendig"],"kurz":"Nur 'Methode send von lo_send wird aufgerufen ... nicht belegt'; die Mail an die SiFa bei Meldepflicht, der Fristhinweis und dass ein Versandfehler folgenlos bleibt, fehlen."},
+{"id":"BM-114-B13","urteil":"teilweise","mangel":["unvollstaendig"],"kurz":"Das Festschreiben ist genannt; die Rückgabe der Unfallnummer mit Erfolgsmeldung fehlt."},
+{"id":"BM-114-B14","urteil":"teilweise","mangel":["unvollstaendig"],"kurz":"Das Verwerfen ist genannt; dass es jede Ablehnung betrifft und dass der Fehlertext zurückgegeben wird, fehlt."}
+],
+"verboten_verletzt":[],
+"soll_zweifel":[]}

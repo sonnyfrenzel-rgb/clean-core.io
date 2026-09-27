@@ -1,0 +1,291 @@
+{
+ "id": "BM-056",
+ "urteile": [
+  {
+   "id": "BM-056-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Für sy-batch IS INITIAL AND p_test IS INITIAL wird eine Meldung ausgegeben' – Bedingung nur technisch, Abbruch und Sinn (Echtlauf nur im Hintergrund) fehlen."
+  },
+  {
+   "id": "BM-056-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "BAL_LOG_CREATE und Meldung bei Fehlschlag technisch genannt; Anwendungsprotokoll mit externer Nummer und Abbruch des Laufs nicht fachlich."
+  },
+  {
+   "id": "BM-056-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus zfi_ic_serv mit Buchungskreis/gjahr/monat; Einschränkung auf offene und fehlerhafte Leistungen und Partner fehlt."
+  },
+  {
+   "id": "BM-056-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'waers des Satzes mit dem eingegebenen Buchungskreis wird gelesen' – richtig, aber 'Hauswährung' nicht genannt."
+  },
+  {
+   "id": "BM-056-B05",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen' entspricht Hinweis und Ende."
+  },
+  {
+   "id": "BM-056-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "'Jede Zeile aus gt_partner wird einzeln verarbeitet' trifft die Verarbeitung je Partner nur technisch; 'Wirkung im gelieferten Code nicht belegt' ist falsch, FORM process_partner ist mitgeliefert."
+  },
+  {
+   "id": "BM-056-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "ENQUEUE-Aufruf und 'Zeile aufgenommen' ohne Treffer; exklusive Partnersperre und Überspringen mit Warnung nicht fachlich."
+  },
+  {
+   "id": "BM-056-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus zfi_ic_dest und Protokollzeile bei fehlendem Eintrag/Destination technisch; die gelesenen Customizing-Werte und 'Partner nicht verarbeitet' fehlen."
+  },
+  {
+   "id": "BM-056-B09",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Preisberechnung mit Aufschlag."
+  },
+  {
+   "id": "BM-056-B10",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Wiederholung nur der Partnerseite."
+  },
+  {
+   "id": "BM-056-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Umrechnung bei abweichender Währung zum Buchungsdatum über CONVERT_TO_LOCAL_CURRENCY erkannt; Kurstyp M fehlt, nur technische Namen."
+  },
+  {
+   "id": "BM-056-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "'Ohne Treffer wird eine Zeile aufgenommen' und 'für lv_ok ... post_local' – dass die Leistung bei fehlendem Kurs gar nicht gebucht wird und im Fehlerstatus bleibt, wird nicht gesagt."
+  },
+  {
+   "id": "BM-056-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Verzweigung CHECK- vs. POST-BAPI im Testlauf richtig; Ausgangsrechnung IC-Debitor an IC-Erlös fehlt."
+  },
+  {
+   "id": "BM-056-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback ohne p_test genannt; Auslöser (Fehlermeldung der Schnittstelle) nur als 'passende Zeile'."
+  },
+  {
+   "id": "BM-056-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf BAPI_TRANSACTION_COMMIT genannt; dass erst er den Beleg festschreibt und die Belegnummer dem Partner als Referenz dient, fehlt."
+  },
+  {
+   "id": "BM-056-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf post_partner bei lv_ok richtig; 'über die eingegebene Destination' ist falsch (Destination aus Customizing) und 'was dort geschieht, ist nicht ableitbar' falsch, Z_FI_IC_POST_PARTNER ist mitgeliefert; 'synchron' fehlt."
+  },
+  {
+   "id": "BM-056-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus zfi_ic_inbox und Rückkehr mit Meldung 040 bei Treffer; Dubletten-Erkennung und Rückgabe der vorhandenen Belegnummer nicht fachlich; 'die Fall', 'die Typ' grammatisch falsch."
+  },
+  {
+   "id": "BM-056-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Rückmeldung Typ E, Nummer 041 ohne Eintrag in zfi_ic_accmap erkannt; fehlende IC-Kontenfindung nicht fachlich benannt; 'die Typ/die Fall' falsch."
+  },
+  {
+   "id": "BM-056-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Für iv_test mit dem Wert abap_true wird BAPI_ACC_DOCUMENT_CHECK aufgerufen' – im Kern richtig, aber nur über BAPI-Namen."
+  },
+  {
+   "id": "BM-056-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf BAPI_ACC_DOCUMENT_POST im Echtlauf; IC-Aufwand an IC-Kreditor und Referenz auf lokale Belegnummer fehlen."
+  },
+  {
+   "id": "BM-056-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback bei Treffer, sonst Commit erkannt; Auslöser Fehlermeldung nur als 'Treffer' und der Eingangsvermerk fehlt."
+  },
+  {
+   "id": "BM-056-B22",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Protokollzeile und RFC_CONNECTION_CLOSE genannt; Kommunikations-/Systemfehler als Auslöser fehlen."
+  },
+  {
+   "id": "BM-056-B23",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'passende Zeile gesucht' und 'Zeile aufgenommen'; Fehler des Partners und Scheitern der Partnerbuchung nicht erkennbar."
+  },
+  {
+   "id": "BM-056-B24",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "Nur Aufruf update_status; Status P/E und Fortbestand des lokalen Belegs fehlen; 'Wirkung nicht belegt' ist falsch, FORM update_status ist mitgeliefert."
+  },
+  {
+   "id": "BM-056-B25",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Änderung von zfi_ic_serv und COMMIT nur im Echtlauf erkannt; Belegnummern fehlen, 'kleinere werden übersprungen, die Schleife läuft weiter' falsch (CHECK in FORM), 'Nur Eine leere p_test gehen' fehlerhaft."
+  },
+  {
+   "id": "BM-056-B26",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "'Für andere sy-subrc wird ROLLBACK WORK ausgeführt und eine Zeile aufgenommen' – Sinn (Statusfortschreibung gescheitert, Fehler protokolliert) nur technisch."
+  },
+  {
+   "id": "BM-056-B27",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Der Funktionsbaustein DEQUEUE_EZFI_IC_PART wird aufgerufen' – Freigabe der Partnersperre nur über den Bausteinnamen."
+  },
+  {
+   "id": "BM-056-B28",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "BAL_LOG_MSG_ADD/BAL_DB_SAVE und Meldung genannt; Speichern des Anwendungsprotokolls und Warnung bei Fehlschlag nicht fachlich."
+  },
+  {
+   "id": "BM-056-B29",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Kopf-, Positions- und Zählerzeilen erkannt, aber zerstückelt in Variablennamen (gs_prot-servid, gv_cnt_ok)."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

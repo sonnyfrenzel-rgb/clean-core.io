@@ -1,0 +1,160 @@
+{
+ "id": "BM-066",
+ "titel": "Massenrückmeldung von Fertigungsaufträgen aus einer MES-Datei",
+ "prozess": "Der Report liest eine vom MES auf dem Applikationsserver abgelegte, semikolongetrennte Rückmeldedatei. Kann die Datei nicht geöffnet werden, meldet er das und bricht ab. Er liest alle Zeilen ein und schließt die Datei. Für jede Zeile bildet er eine Vorgangsrückmeldung mit Gutmenge und Ausschuss – je nach Kennzeichen als End- oder Teilrückmeldung – und übergibt sie einzeln an die Rückmelde-BAPI, im Testlauf nur zur Simulation. Meldet die BAPI einen Fehler, wird die Zeile zurückgerollt und als FEHLER mit Meldungstext protokolliert. Fehlerfreie Zeilen werden im Echtlauf sofort festgeschrieben und als OK protokolliert. Zum Schluss gibt der Report die Zahl der erfolgreichen und fehlerhaften Zeilen aus. Eine Dublettenprüfung oder ein Archivieren der Datei findet nicht statt.",
+ "verboten": [
+  "gesamte Scheibe — kein Fachsatz „Bereits verarbeitete Dateien bzw. doppelte Rückmeldungen werden erkannt“ (es gibt keine Dublettenprüfung, die Datei wird auch nicht verschoben oder gelöscht)",
+  "source.abap:66 — kein Fachsatz „Alle Zeilen werden gemeinsam gebucht oder gemeinsam verworfen“ (jede Zeile hat eine eigene LUW)",
+  "source.abap:62 — kein Fachsatz „Der Auftrag wird technisch abgeschlossen“ (das Endrückmeldekennzeichen betrifft die Vorgangsrückmeldung, kein TECO)",
+  "gesamte Scheibe — kein Fachsatz „Warenbewegungen (Komponentenverbrauch, Wareneingang) werden explizit übergeben“ (es werden keine GOODSMOVEMENTS übergeben; ob das System retrograd entnimmt, ist Customizing und nicht im Code)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-066-B01",
+   "soll": "Die vom MES bereitgestellte Rückmeldedatei wird auf dem Applikationsserver geöffnet; gelingt das nicht, wird „Datei kann nicht geoeffnet werden“ gemeldet und abgebrochen.",
+   "zeilen": [
+    33,
+    34,
+    35,
+    36
+   ],
+   "code": [
+    "33:   OPEN DATASET p_file FOR INPUT IN TEXT MODE ENCODING DEFAULT.",
+    "34:   IF sy-subrc <> 0.",
+    "35:     MESSAGE 'Datei kann nicht geoeffnet werden' TYPE 'S' DISPLAY LIKE 'E'.",
+    "36:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-066-B02",
+   "soll": "Die Datei wird bis zum Ende zeilenweise gelesen; jede Zeile liefert Auftrag, Vorgang, Gutmenge, Ausschuss, Mengeneinheit und Endrückmeldekennzeichen, die Auftragsnummer wird mit führenden Nullen aufgefüllt.",
+   "zeilen": [
+    39,
+    40,
+    45,
+    47
+   ],
+   "code": [
+    "39:   DO.",
+    "40:     READ DATASET p_file INTO gv_line.",
+    "45:     SPLIT gv_line AT ';' INTO gs_zeile-aufnr gs_zeile-vornr gs_zeile-gut",
+    "47:     gs_zeile-aufnr = |{ gs_zeile-aufnr ALPHA = IN }|."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-066-B03",
+   "soll": "Nach dem Einlesen wird die Datei geschlossen.",
+   "zeilen": [
+    50
+   ],
+   "code": [
+    "50:   CLOSE DATASET p_file."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-066-B04",
+   "soll": "Je Zeile wird eine Vorgangsrückmeldung mit Gutmenge und Ausschuss gebildet; ist das Kennzeichen gesetzt, als Endrückmeldung, sonst als Teilrückmeldung.",
+   "zeilen": [
+    52,
+    59
+   ],
+   "code": [
+    "52:   LOOP AT gt_zeilen INTO gs_zeile.",
+    "59:     IF gs_zeile-endrm = 'X'."
+   ],
+   "engine": [
+    "Jede Zeile aus gt_zeilen wird einzeln verarbeitet.",
+    "Mit gesetztem gs_zeile-endrm wird die gs_tt-fin_conf auf X gesetzt.",
+    "gs_zeile-endrm mit dem Wert X setzen die gs_tt-fin_conf auf X."
+   ]
+  },
+  {
+   "id": "BM-066-B05",
+   "soll": "Die Rückmeldung wird einzeln an die Rückmelde-BAPI übergeben, im Testlauf nur simuliert.",
+   "zeilen": [
+    66
+   ],
+   "code": [
+    "66:     CALL FUNCTION 'BAPI_PRODORDCONF_CREATE_TT'"
+   ],
+   "engine": [
+    "Es wird eine Zeile aufgenommen und BAPI_PRODORDCONF_CREATE_TT aufgerufen.",
+    "Der Code übergibt p_test an BAPI_PRODORDCONF_CREATE_TT und übernimmt dessen Ausgabe nach gs_return.",
+    "Das konvertierte Ergebnis wird in gs_return übernommen."
+   ]
+  },
+  {
+   "id": "BM-066-B06",
+   "soll": "Meldet die BAPI einen Fehler, wird die Zeile zurückgerollt und mit „FEHLER“ und Meldungstext protokolliert.",
+   "zeilen": [
+    76,
+    77,
+    79
+   ],
+   "code": [
+    "76:     IF sy-subrc = 0 OR gs_return-type CA 'EA'.",
+    "77:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "79:       WRITE: / gs_zeile-aufnr, gs_zeile-vornr, 'FEHLER', gs_detail-message."
+   ],
+   "engine": [
+    "Für sy-subrc = 0 OR gs_return-type CA 'EA' wird BAPI_TRANSACTION_ROLLBACK aufgerufen, gs_zeile-aufnr ausgegeben, gs_zeile-vornr ausgegeben, FEHLER ausgegeben und gs_detail-message ausgegeben.",
+    "Für sy-subrc = 0 OR gs_return-type CA 'EA' wird BAPI_TRANSACTION_ROLLBACK aufgerufen, gs_zeile-aufnr ausgegeben, gs_zeile-vornr ausgegeben, FEHLER ausgegeben und gs_detail-message ausgegeben, sonst gs_zeile-aufnr ausgegeben, gs_zeile-vornr ausgegeben und OK ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Bei Treffern werden gs_zeile-aufnr, gs_zeile-vornr, FEHLER und gs_detail-message als Liste ausgegeben.",
+    "gs_zeile-aufnr wird ausgegeben.",
+    "gs_zeile-vornr wird ausgegeben.",
+    "FEHLER wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gs_detail-message wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-066-B07",
+   "soll": "Fehlerfreie Zeilen werden im Echtlauf mit Warten auf die Verbuchung festgeschrieben und mit „OK“ protokolliert; im Testlauf wird nur „OK“ protokolliert.",
+   "zeilen": [
+    81,
+    82,
+    87
+   ],
+   "code": [
+    "81:       IF p_test IS INITIAL.",
+    "82:         CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "87:       WRITE: / gs_zeile-aufnr, gs_zeile-vornr, 'OK'."
+   ],
+   "engine": [
+    "Für sy-subrc = 0 OR gs_return-type CA 'EA' wird BAPI_TRANSACTION_ROLLBACK aufgerufen, gs_zeile-aufnr ausgegeben, gs_zeile-vornr ausgegeben, FEHLER ausgegeben und gs_detail-message ausgegeben, sonst gs_zeile-aufnr ausgegeben, gs_zeile-vornr ausgegeben und OK ausgegeben.",
+    "Sonst wird gs_zeile-aufnr ausgegeben, gs_zeile-vornr ausgegeben und OK ausgegeben.",
+    "Ohne p_test wird BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Bei Treffern werden gs_zeile-aufnr, gs_zeile-vornr und OK als Liste ausgegeben.",
+    "gs_zeile-aufnr wird ausgegeben.",
+    "gs_zeile-vornr wird ausgegeben.",
+    "OK wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-066-B08",
+   "soll": "Am Ende werden die Anzahl erfolgreicher und fehlerhafter Zeilen ausgegeben.",
+   "zeilen": [
+    92
+   ],
+   "code": [
+    "92:   WRITE: / 'Erfolgreich:', gv_ok, 'Fehlerhaft:', gv_err."
+   ],
+   "engine": [
+    "Erfolgreich:, gv_ok, Fehlerhaft: und gv_err werden ausgegeben.",
+    "Erfolgreich: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_ok wird ausgegeben.",
+    "Fehlerhaft: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_err wird ausgegeben."
+   ]
+  }
+ ]
+}

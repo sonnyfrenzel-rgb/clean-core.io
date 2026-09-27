@@ -1,0 +1,175 @@
+{
+ "id": "BM-194",
+ "urteile": [
+  {
+   "id": "BM-194-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Sätze aus t001w selektiert“; Werke der Selektion für Integrationsmodelle nicht fachlich."
+  },
+  {
+   "id": "BM-194-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu Protokolleintrag und STOP."
+  },
+  {
+   "id": "BM-194-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Kindprogramm rimodgen wird gestartet“; Modellname, Variante, APO-Ziel, PPDS und Werk fehlen."
+  },
+  {
+   "id": "BM-194-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur LIST_FROM_MEMORY-Aufruf; Fehlerprotokoll und Überspringen fehlen."
+  },
+  {
+   "id": "BM-194-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Umwandlung, Schleife und Ausstieg bei „Fehler“/„Error“ technisch erkannt; Zweck (Fehlersuche im Generierungsprotokoll) nicht fachlich."
+  },
+  {
+   "id": "BM-194-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur fehlerhaften Generierung."
+  },
+  {
+   "id": "BM-194-B07",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Testlauf."
+  },
+  {
+   "id": "BM-194-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Kindprogramm rimodac2 wird gestartet“; Aktivierung und Protokoll ohne Auswertung fehlen."
+  },
+  {
+   "id": "BM-194-B09",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "„kleinere werden übersprungen, die Schleife läuft weiter“ ist falsch (CHECK außerhalb der Schleife beendet das Ereignis); check_queues „nicht belegt“, Wartezeit fehlt."
+  },
+  {
+   "id": "BM-194-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "rfcdest-Lesen und Selektion aus trfcqout; Fehlerstatus der CIF-Queues nicht genannt."
+  },
+  {
+   "id": "BM-194-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Blockverlassen ohne Treffer; Protokolleintrag „CIF-Queues ohne Fehler“ fehlt."
+  },
+  {
+   "id": "BM-194-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Schleife über gt_queue; Fehlerzeile mit LUW-Anzahl fehlt."
+  },
+  {
+   "id": "BM-194-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "BAL-Bausteinaufrufe; Anwendungsprotokoll mit 30 Tagen Aufbewahrung nicht fachlich."
+  },
+  {
+   "id": "BM-194-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "„Ohne sy-batch wird BAL_DSP_LOG_DISPLAY aufgerufen“ – Inhalt erkennbar, aber technisch."
+  },
+  {
+   "id": "BM-194-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Blockverlassen für CIF_ADMIN; dass dann nicht gefiltert wird, nur implizit."
+  },
+  {
+   "id": "BM-194-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "„Ohne ct_cif_matloc[] wird der Block verlassen“ – richtig, aber technisch."
+  },
+  {
+   "id": "BM-194-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Selektionen aus zapo_cif_excl und marc; Ausschlussmerkmale/Werksdaten nicht fachlich."
+  },
+  {
+   "id": "BM-194-B18",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "„kleinere werden übersprungen“ falsch (nicht gefundene Werksdaten, sy-subrc 4, werden übersprungen); unveränderte Übertragung nicht gesagt."
+  },
+  {
+   "id": "BM-194-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Tabellensuche; Entfernen der Material-Werks-Zeile fehlt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

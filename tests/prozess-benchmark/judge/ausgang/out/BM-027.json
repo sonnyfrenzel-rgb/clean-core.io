@@ -1,0 +1,82 @@
+{
+ "id": "BM-027",
+ "urteile": [
+  {
+   "id": "BM-027-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Berechtigungsprüfung M_EINK_FRG und \"eine Meldung\"; Freigabegruppe/-code und Abbruch fehlen."
+  },
+  {
+   "id": "BM-027-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus ekko mit frggr\" – nicht gelöscht, zur Freigabe gesperrt und Bereiche fehlen."
+  },
+  {
+   "id": "BM-027-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "\"Sätze aus t16fs\" und \"Nur sy-subrc mit dem Wert 0 gehen weiter; kleinere werden übersprungen\" – Überspringen stimmt, \"kleinere\" ist falsch, Freigabestrategie nicht benannt."
+  },
+  {
+   "id": "BM-027-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Für lv_code mit dem Wert p_frgco wird der Block verlassen\" – dass die Position des eigenen Codes bestimmt wird, fehlt."
+  },
+  {
+   "id": "BM-027-B05",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Prüfung \"als nächster an der Reihe\"."
+  },
+  {
+   "id": "BM-027-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "BAPI_PO_RELEASE mit gs_ekko-ebeln/gv_rel; Freigabe mit eigenem Code nicht fachlich."
+  },
+  {
+   "id": "BM-027-B07",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Beide Zweige technisch vorhanden, aber \"Bei Treffern werden gs_ekko-ebeln, nicht freigegeben, Grund und sy-subrc als Liste ausgegeben\" widerspricht dem Code (Ausgabe nur bei Misserfolg); zwölf Teilsätze."
+  },
+  {
+   "id": "BM-027-B08",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Freigegeben:, gv_ok, Fehler: und gv_err werden ausgegeben\" – Zähler für Erfolge und Fehler erkennbar, mit Variablennamen, fünffach."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

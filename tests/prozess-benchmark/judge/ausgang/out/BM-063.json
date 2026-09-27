@@ -1,0 +1,47 @@
+{
+ "id": "BM-063",
+ "urteile": [
+  {
+   "id": "BM-063-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Übergabe von 'M2' an BAPI_ALM_NOTIF_CREATE; Störmeldung zum Equipment mit Kurztext und Priorität nicht fachlich; 'das konvertierte Ergebnis' inhaltsleer."
+  },
+  {
+   "id": "BM-063-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Meldung und Ende bei 'line_exists( lt_return[ type = E ] )' – Logik richtig, aber Fehlerfall nur als Ausdruck, Meldungstext fehlt."
+  },
+  {
+   "id": "BM-063-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufrufe BAPI_ALM_NOTIF_SAVE und BAPI_TRANSACTION_COMMIT genannt; Sichern der Meldung und Warten auf die Verbuchung nicht fachlich."
+  },
+  {
+   "id": "BM-063-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "'Meldung angelegt: und ls_export-notif_no werden ausgegeben' – Meldungsnummer nur als Feldname, mehrfach und mit Leerfloskel."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

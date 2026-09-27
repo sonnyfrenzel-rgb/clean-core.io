@@ -1,0 +1,119 @@
+{
+ "id": "BM-053",
+ "urteile": [
+  {
+   "id": "BM-053-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Einschränkung auf ZGO1 und Aktiv-Kennzeichen technisch genannt; unveränderte Rückgabe fehlt, 'kleinere werden übersprungen, die Schleife läuft weiter' ist falsch (keine Schleife)."
+  },
+  {
+   "id": "BM-053-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Verzweigung nach Ableitungsschritt."
+  },
+  {
+   "id": "BM-053-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Ohne cs_item-kndnr wird der Block verlassen' trifft den Ablauf; dass die Region leer bleibt und die Ableitung nicht scheitert, fehlt."
+  },
+  {
+   "id": "BM-053-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Suche in einer Tabelle und Verlassen bei Treffer genannt; dass die Region aus dem Sitzungspuffer übernommen wird, fehlt."
+  },
+  {
+   "id": "BM-053-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'land1 regio des Kunden wird gelesen' und Verlassen ohne Treffer; dass die Ableitung dann scheitert, fehlt."
+  },
+  {
+   "id": "BM-053-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'Sätze aus zco_region_map selektiert'; Gültigkeit zum Datum und Vorrang Region vor '*' fehlen."
+  },
+  {
+   "id": "BM-053-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Auffangwert SONST erkannt (als lv_wwreg), Übernahme in den Ergebnisposten und Pufferung fehlen; 'die lv_wwreg' falscher Artikel."
+  },
+  {
+   "id": "BM-053-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'spart matkl des Satzes wird gelesen' – Material, Sparte/Materialgruppe und Kürzung auf 18 Stellen nicht erkennbar."
+  },
+  {
+   "id": "BM-053-B09",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Ersatzsparte."
+  },
+  {
+   "id": "BM-053-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Feldlesungen kdgrp/wwseg; Reihenfolge Kundengruppe/Sparte vor Materialgruppe und Scheitern ohne Treffer fehlen."
+  },
+  {
+   "id": "BM-053-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'pernr des Satzes wird gelesen' – Partnerrolle ZM, Key-Account-Manager und 'kein Fehler bei Fehlen' fehlen."
+  },
+  {
+   "id": "BM-053-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "'Für lv_ok = abap_false wird e_failed auf X gesetzt' nur technisch; Rückgabe des Ergebnispostens fehlt, 'die e_failed' falscher Artikel."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

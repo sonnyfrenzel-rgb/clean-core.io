@@ -1,0 +1,132 @@
+{
+ "id": "BM-047",
+ "titel": "Periodische Aufwandsabgrenzungen aus Z-Tabelle per BAPI buchen",
+ "prozess": "Ein Abschlussprogramm ruft die Methode mit Buchungskreis, Geschäftsjahr, Periode und Testkennzeichen auf. Nach der Berechtigungsprüfung werden die noch ungebuchten Abgrenzungen der Periode gelesen und das Buchungsdatum als letzter Kalendertag des Monats bestimmt. Je Abgrenzung wird ein zweizeiliger Sachkontenbeleg (Aufwand an Abgrenzung) aufgebaut. Im Testlauf wird er nur geprüft, im Echtlauf zur Buchung übergeben. Bei Fehlern wird zurückgerollt und die nächste Abgrenzung bearbeitet. Im Echtlauf werden Belegnummer und Stornodatum in die Z-Tabelle geschrieben und mit der Buchung gemeinsam festgeschrieben. Alle BAPI-Meldungen gehen an den Aufrufer zurück.",
+ "verboten": [
+  "zcl_fi_accrual.abap:73 — kein Fachsatz „Beleg ist gebucht“ an dieser Stelle (erst BAPI_TRANSACTION_COMMIT schreibt fest)",
+  "zcl_fi_accrual.abap:94 — kein Fachsatz „die Abgrenzung wird zum Folgetag storniert“ (es wird nur ein Datum gespeichert, kein Storno ausgeführt)",
+  "zcl_fi_accrual.abap:44 — kein Fachsatz „Buchungsdatum ist das Periodenende laut Geschäftsjahresvariante“ (Kalendermonat, keine Variantenlogik)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-047-B01",
+   "soll": "Vor dem Buchen wird geprüft, ob der Anwender im Buchungskreis Belege anlegen darf; ohne Berechtigung endet die Methode mit einer Fehlermeldung.",
+   "zeilen": [
+    28,
+    31,
+    34
+   ],
+   "code": [
+    "28:     AUTHORITY-CHECK OBJECT 'F_BKPF_BUK'",
+    "31:     IF sy-subrc <> 0.",
+    "34:       RETURN."
+   ],
+   "engine": [
+    "Die Berechtigung auf F_BKPF_BUK wird geprüft.",
+    "Ohne Treffer wird eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Berechtigung auf F_BKPF_BUK wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-047-B02",
+   "soll": "Es werden die Abgrenzungen des Buchungskreises für Geschäftsjahr und Periode gelesen, die noch keine Belegnummer haben.",
+   "zeilen": [
+    38
+   ],
+   "code": [
+    "38:     SELECT * FROM zfi_accrual INTO TABLE lt_accr"
+   ],
+   "engine": [
+    "Es werden Sätze aus zfi_accrual selektiert."
+   ]
+  },
+  {
+   "id": "BM-047-B03",
+   "soll": "Als Beleg- und Buchungsdatum dient der letzte Kalendertag des Periodenmonats; Geschäftsjahr und Kalenderjahr werden dabei gleichgesetzt.",
+   "zeilen": [
+    44,
+    105
+   ],
+   "code": [
+    "44:     lv_budat = last_day( iv_gjahr = iv_gjahr iv_monat = iv_monat ).",
+    "105:     CALL FUNCTION 'RP_LAST_DAY_OF_MONTHS'"
+   ],
+   "engine": [
+    "Der Code übergibt lv_first an RP_LAST_DAY_OF_MONTHS und übernimmt dessen Ausgabe nach rv_date.",
+    "Das konvertierte Ergebnis wird in rv_date übernommen."
+   ]
+  },
+  {
+   "id": "BM-047-B04",
+   "soll": "Je Abgrenzung wird ein Sachkontenbeleg der Belegart SA gebildet: Soll auf das Aufwandskonto mit Kostenstelle, Haben auf das Abgrenzungskonto, jeweils mit dem Abgrenzungsbetrag.",
+   "zeilen": [
+    55,
+    59
+   ],
+   "code": [
+    "55:       lt_gl = VALUE #( ( itemno_acc = 1 gl_account = <ls_accr>-hkont_aufw",
+    "59:       lt_amt = VALUE #( ( itemno_acc = 1 currency = <ls_accr>-waers"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-047-B05",
+   "soll": "Im Testlauf wird der Beleg nur geprüft, im Echtlauf zur Buchung übergeben; alle Rückmeldungen gehen an den Aufrufer.",
+   "zeilen": [
+    64,
+    65,
+    73
+   ],
+   "code": [
+    "64:       IF iv_test = abap_true.",
+    "65:         CALL FUNCTION 'BAPI_ACC_DOCUMENT_CHECK'",
+    "73:         CALL FUNCTION 'BAPI_ACC_DOCUMENT_POST'"
+   ],
+   "engine": [
+    "Für iv_test mit dem Wert abap_true wird BAPI_ACC_DOCUMENT_CHECK aufgerufen.",
+    "Für iv_test mit dem Wert abap_true wird BAPI_ACC_DOCUMENT_CHECK aufgerufen, sonst BAPI_ACC_DOCUMENT_POST aufgerufen.",
+    "Der Funktionsbaustein BAPI_ACC_DOCUMENT_CHECK wird aufgerufen.",
+    "Für andere iv_test wird BAPI_ACC_DOCUMENT_POST aufgerufen.",
+    "Der Code übergibt ls_header an BAPI_ACC_DOCUMENT_POST und übernimmt dessen Ausgabe nach lv_objkey.",
+    "Das konvertierte Ergebnis wird in lv_objkey übernommen."
+   ]
+  },
+  {
+   "id": "BM-047-B06",
+   "soll": "Liefert die Prüfung oder Buchung eine Fehler- oder Abbruchmeldung, wird zurückgerollt und mit der nächsten Abgrenzung fortgefahren.",
+   "zeilen": [
+    85,
+    86
+   ],
+   "code": [
+    "85:       IF line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ).",
+    "86:         CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "engine": [
+    "Für line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-047-B07",
+   "soll": "Im Echtlauf werden Belegnummer und ein Stornodatum zum Folgetag in die Abgrenzung zurückgeschrieben und zusammen mit der Buchung per Commit mit Warten festgeschrieben.",
+   "zeilen": [
+    90,
+    94,
+    95
+   ],
+   "code": [
+    "90:       CHECK iv_test = abap_false.",
+    "94:       UPDATE zfi_accrual FROM <ls_accr>.",
+    "95:       CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Nur iv_test mit dem Wert abap_false gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Es wird eine Zeile geändert und BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Eine Zeile in zfi_accrual wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK. sy-subrc wird danach nicht ausgewertet.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  }
+ ]
+}

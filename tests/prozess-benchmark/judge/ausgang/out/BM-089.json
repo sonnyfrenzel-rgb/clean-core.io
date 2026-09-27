@@ -1,0 +1,94 @@
+{
+ "id": "BM-089",
+ "urteile": [
+  {
+   "id": "BM-089-B01",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "Engine sagt, ein entferntes System werde 'benachrichtigt' und nichts sei ableitbar; der Aufruf holt die freigegebenen Teile ab (Datenrichtung umgekehrt)."
+  },
+  {
+   "id": "BM-089-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "Meldung 'RFC-Fehler PLM' und Ende erkannt, aber Bedingung 'Ohne Treffer' ist falsch (Kommunikationsfehler)."
+  },
+  {
+   "id": "BM-089-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'matnr des Satzes wird gelesen' – Existenzprüfung der Teilenummer als Material nicht fachlich ausgedrückt."
+  },
+  {
+   "id": "BM-089-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Nur Feldzuweisungen ind_sector=M, matl_type=HALB, basic_view=X; 'anlegen vs. ändern' fehlt fachlich; 'sy-subrc ungleich 0 setzen die ...'."
+  },
+  {
+   "id": "BM-089-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "falsch"
+   ],
+   "kurz": "Nur 'BAPI_MATERIAL_SAVEDATA aufgerufen'; übernommene Felder fehlen; 'konvertiertes Ergebnis' trifft nicht zu."
+  },
+  {
+   "id": "BM-089-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "Rollback und Ausgabe von Teilenummer/Meldung bei ls_return-type CA 'EA' – nur technisch; 'Bei Treffern' passt nicht."
+  },
+  {
+   "id": "BM-089-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "'Mit gesetztem p_test wird BAPI_TRANSACTION_ROLLBACK aufgerufen' – Sinn nur über Bausteinnamen."
+  },
+  {
+   "id": "BM-089-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "COMMIT- und Z_PLM_CONFIRM_TRANSFER-Aufruf genannt; Rückmeldung der Materialnummer ans PLM fachlich nicht benannt."
+  },
+  {
+   "id": "BM-089-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Labels 'Verarbeitet:'/'Fehler:' mit lv_ok/lv_err – Zähler nur als Variablen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

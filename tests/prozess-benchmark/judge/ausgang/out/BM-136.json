@@ -1,0 +1,196 @@
+{
+ "id": "BM-136",
+ "urteile": [
+  {
+   "id": "BM-136-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus proj/jest selektiert\" und \"Suche in einer Tabelle\"; Filter auf Status freigegeben fehlt."
+  },
+  {
+   "id": "BM-136-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "Meldung ohne Treffer erkannt; LEAVE PROGRAM beendet das Programm, nicht nur \"die Screenfolge\"."
+  },
+  {
+   "id": "BM-136-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Asynchroner Start je Projekt erkannt; Servergruppe und Begrenzung auf die Höchstzahl fehlen."
+  },
+  {
+   "id": "BM-136-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Lokale Verarbeitung und Aufruf erkannt (\"Wirkung nicht belegt\"); Bedingung \"keine freien Prozesse\" und Fehlerzeile bei anderen Startfehlern fehlen."
+  },
+  {
+   "id": "BM-136-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Fehlerzeile bei sy-subrc <> 0 angedeutet (\"Ohne Treffer\" unpassend); Rücklieferung der Ergebniszeilen fehlt."
+  },
+  {
+   "id": "BM-136-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Eine Meldung wird ausgegeben\"; 30-Minuten-Wartezeit und Inhalt des Hinweises fehlen."
+  },
+  {
+   "id": "BM-136-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Lesen aus aufk und Ergebniszeile ohne Treffer erkannt; Netzpläne des Projekts nicht fachlich benannt."
+  },
+  {
+   "id": "BM-136-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "STATUS_CHECK nur für Benutzer ungleich PSC_BATCH erkannt; \"technisch abgeschlossen\" und Überspringen fehlen."
+  },
+  {
+   "id": "BM-136-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Aufruf BAPI_BUS2002_SCHEDULE erkannt, nicht als Neuterminierung des Netzplans formuliert."
+  },
+  {
+   "id": "BM-136-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Rollback + Ergebniszeile bei E/A erkannt; \"fehlerhaft mit erster Meldung\" nicht fachlich."
+  },
+  {
+   "id": "BM-136-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Testlauf Rollback (Status T) / Echtlauf Commit (Status O) technisch vollständig, nicht fachlich; \"die Status\", \"setzen\"."
+  },
+  {
+   "id": "BM-136-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Lesen von gltrp und basis_ende und Anhängen einer Zeile; Vergleich und Verzugsberechnung fehlen."
+  },
+  {
+   "id": "BM-136-B13",
+   "urteil": "fehlt",
+   "mangel": [
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"Jede Zeile aus gt_erg wird einzeln verarbeitet\"; keine Ampellogik."
+  },
+  {
+   "id": "BM-136-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingung (F oder S) und BAL_LOG_CREATE erkannt; Anwendungslog und 90 Tage Aufbewahrung nicht benannt."
+  },
+  {
+   "id": "BM-136-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife und BAL_LOG_MSG_ADD erkannt; Fehler/Warnung und Inhalte fehlen."
+  },
+  {
+   "id": "BM-136-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "BAL_DB_SAVE und COMMIT erkannt, nicht als Sichern des Logs formuliert."
+  },
+  {
+   "id": "BM-136-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "display/factory und Meldung erkannt, aber \"fachliches Verhalten nicht belegt\" und \"nach cl_salv_table übernommen\" (tatsächlich go_alv) falsch."
+  },
+  {
+   "id": "BM-136-B18",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "technisch"
+   ],
+   "kurz": "\"Die Anlage wird über die Transaktion CN23 angestoßen\": CN23 ist die Netzplananzeige, keine Anlage."
+  },
+  {
+   "id": "BM-136-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"Eine Meldung wird ausgegeben\"; Anzeige der vollständigen Meldung als Popup nicht benannt."
+  },
+  {
+   "id": "BM-136-B20",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch"
+   ],
+   "kurz": "\"Die Anlage wird über die Transaktion CJ20N angestoßen\": es wird das bestehende Projekt im Projektbuilder geöffnet, nichts angelegt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

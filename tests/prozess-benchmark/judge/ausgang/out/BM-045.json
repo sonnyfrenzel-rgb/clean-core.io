@@ -1,0 +1,41 @@
+{
+ "id": "BM-045",
+ "urteile": [
+  {
+   "id": "BM-045-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Bildung der Objektnummer."
+  },
+  {
+   "id": "BM-045-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus cosp mit dem eingegebenen gjahr' – Kostenstelle, Ist-Werttyp 04 und Version 000 fehlen, Tabellenname statt Fachbegriff."
+  },
+  {
+   "id": "BM-045-B03",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen' entspricht Hinweis und Ende; mehrfach wiederholt, Inhalt der Meldung nicht genannt."
+  },
+  {
+   "id": "BM-045-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Listenausgabe mit ls_cosp-kstar/beknz/lv_jahr erkannt, aber die Summenbildung über Perioden 1–12 fehlt; nur Variablennamen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

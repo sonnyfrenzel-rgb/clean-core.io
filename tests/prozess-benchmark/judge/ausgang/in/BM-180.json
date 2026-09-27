@@ -1,0 +1,346 @@
+{
+ "id": "BM-180",
+ "titel": "Außenhandel Präferenz: Warenursprung von Fertigerzeugnissen aus Stückliste und Lieferantenerklärungen kalkulieren",
+ "prozess": "Die Zollabteilung startet die Kalkulation mit Werk, Stichtag, optionaler Materialauswahl und Fortschreibungskennzeichen. Ist die Kalkulation über den Schalter gesperrt, endet das Programm mit Hinweis, außer für den Benutzer ZOLL_ADMIN. Gelesen werden die Fertigerzeugnisse des Werks mit Warennummer und ihr bisheriges Ursprungsergebnis; ohne Erzeugnisse endet die Kalkulation. Jedes Erzeugnis wird rekursiv bewertet: Zukaufteile haben Ursprung nur, wenn gültige Lieferantenerklärungen vorliegen und alle Ursprung erklären; Eigenfertigungsteile werden über ihre Stückliste aufgelöst, der Wert jeder Lagerposition geht in den Baugruppenwert ein und bei fehlendem Ursprung in den Wert ohne Ursprung. Der Baugruppenwert ist mindestens der Standardpreis; Ursprung liegt vor, wenn der Anteil ohne Ursprung den Höchstanteil der Listenregel des Kapitels (sonst 40 %) nicht übersteigt. Ohne Stückliste gibt es keinen Ursprung, zyklische oder zu tiefe Stücklisten führen zum Ergebnis „zyklische Stückliste“, wobei danach die Pfadprüfung verfälscht bleibt. Jedes Ergebnis wird mit dem bisherigen verglichen; mit Fortschreibungskennzeichen werden die Ergebnisse gespeichert und für jedes Erzeugnis mit verlorenem Ursprung ein Workflow-Ereignis an den Zoll ausgelöst und festgeschrieben. Die Liste zeigt die Ergebnisse nach Warennummer mit hervorgehobenen Verlusten und die Zahl der Erzeugnisse mit Ursprung.",
+ "verboten": [
+  "zft_praeferenz_c01.abap:63 — kein Fachsatz „nach einer zyklischen Stückliste rechnet die Kalkulation mit sauberem Zustand weiter“: die Ausnahme verlässt die Rekursion, ohne den Auflösungspfad zu bereinigen; spätere Erzeugnisse mit denselben Baugruppen gelten fälschlich als zyklisch",
+  "zft_praeferenz_f02.abap:29 — kein Fachsatz „diagonale Kumulierung (Pan-Euro-Med) wird berücksichtigt“: das FORM wird nie gerufen",
+  "zft_praeferenz_c01.abap:94 — kein Fachsatz „alle Stücklistenpositionen gehen in die Wertrechnung ein“: nur Lagerpositionen zählen",
+  "gesamte Scheibe — kein Fachsatz „Lieferantenerklärungen oder Ursprungszeugnisse werden erstellt oder versendet“: der Report kalkuliert, speichert und löst bei Verlust ein Workflow-Ereignis aus"
+ ],
+ "saetze": [
+  {
+   "id": "BM-180-B01",
+   "soll": "Ist die Kalkulation über den Schalter ZFT_PRAEF_AKTIV gesperrt, endet das Programm mit Hinweis – außer für den Benutzer ZOLL_ADMIN.",
+   "zeilen": [
+    29,
+    332,
+    336,
+    338
+   ],
+   "code": [
+    "29:   PERFORM schalter_pruefen.",
+    "332:   SELECT SINGLE low FROM tvarvc INTO @DATA(lv_aktiv)",
+    "336:   IF lv_aktiv <> 'X' AND sy-uname <> 'ZOLL_ADMIN'.",
+    "338:     LEAVE PROGRAM."
+   ],
+   "engine": [
+    "Das Unterprogramm schalter_pruefen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird schalter_pruefen aufgerufen und materialien_lesen aufgerufen.",
+    "low des Satzes wird gelesen.",
+    "Für lv_aktiv <> 'X' AND sy-uname <> 'ZOLL_ADMIN' wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Es wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-180-B02",
+   "soll": "Es werden die Fertigerzeugnisse des Werks in der Auswahl mit ihrer Warennummer gelesen, dazu das bisherige Ursprungsergebnis.",
+   "zeilen": [
+    243,
+    252
+   ],
+   "code": [
+    "243:   SELECT m~matnr, m~stawn, a~mtart",
+    "252:   SELECT matnr, ursprung FROM zft_praef_erg"
+   ],
+   "engine": [
+    "Das Ergebnis enthält m~matnr, m~stawn und a~mtart.",
+    "Es werden Sätze aus marc mit dem eingegebenen m~werks selektiert.",
+    "Das Ergebnis enthält matnr und ursprung.",
+    "Es werden Sätze aus zft_praef_erg mit dem eingegebenen werks selektiert."
+   ]
+  },
+  {
+   "id": "BM-180-B03",
+   "soll": "Ohne Fertigerzeugnisse endet die Kalkulation mit Hinweis; die (leere) Ergebnisliste wird trotzdem ausgegeben.",
+   "zeilen": [
+    31,
+    32,
+    33
+   ],
+   "code": [
+    "31:   IF gt_mat IS INITIAL.",
+    "32:     MESSAGE s001.                          \"keine Fertigerzeugnisse",
+    "33:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-180-B04",
+   "soll": "Jedes Fertigerzeugnis wird bewertet; bereits bewertete Baugruppen werden aus dem Zwischenspeicher übernommen.",
+   "zeilen": [
+    41,
+    121,
+    122
+   ],
+   "code": [
+    "41:         DATA(ls_bew) = go_kalk->bewerten( ls_mat-matnr ).",
+    "121:     READ TABLE mt_cache INTO rs_bew WITH TABLE KEY matnr = iv_matnr.",
+    "122:     IF sy-subrc = 0."
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode bewerten von go_kalk wird nach ls_bew übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird der Block verlassen.",
+    "Bei Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-180-B05",
+   "soll": "Taucht ein Material erneut im eigenen Auflösungspfad auf oder ist die Stückliste tiefer als 20 Ebenen, gilt das Fertigerzeugnis als nicht ursprungsbegünstigt mit dem Grund „zyklische Stückliste“.",
+   "zeilen": [
+    42,
+    43,
+    127,
+    128
+   ],
+   "code": [
+    "42:       CATCH lcx_zyklus.",
+    "43:         ls_bew = VALUE #( matnr    = ls_mat-matnr",
+    "127:     IF line_exists( mt_pfad[ table_line = iv_matnr ] ) OR iv_ebene > 20.",
+    "128:       RAISE EXCEPTION TYPE lcx_zyklus."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-180-B06",
+   "soll": "Fremdbeschaffte Materialien haben Ursprung nur, wenn gültige Lieferantenerklärungen vorliegen und alle davon Präferenzursprung erklären; ihr Wert ist der Standardpreis je Einheit.",
+   "zeilen": [
+    137,
+    138,
+    201,
+    207,
+    214
+   ],
+   "code": [
+    "137:     IF lv_beskz = 'F'.",
+    "138:       rs_bew = zukaufteil( iv_matnr ).",
+    "201:     SELECT lifnr, gueltig_bis, praef_ursprung",
+    "207:     IF lt_le IS INITIAL.",
+    "214:     IF line_exists( lt_le[ praef_ursprung = abap_false ] )."
+   ],
+   "engine": [
+    "Das Ergebnis enthält lifnr, gueltig_bis und praef_ursprung.",
+    "Es werden Sätze aus zft_le selektiert.",
+    "Ohne Treffer wird die rs_bew-grund auf Keine gueltige Lieferantenerklaerung gesetzt und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine leere lt_le setzen die rs_bew-grund auf Keine gueltige Lieferantenerklaerung.",
+    "Für line_exists( lt_le[ praef_ursprung = abap_false ] ) wird die rs_bew-grund auf Lieferant ohne Ursprungserklaerung gesetzt.",
+    "line_exists( lt_le[ praef_ursprung = abap_false ] ) setzen die rs_bew-grund auf Lieferant ohne Ursprungserklaerung."
+   ]
+  },
+  {
+   "id": "BM-180-B07",
+   "soll": "Eigengefertigte Materialien werden über ihre Stückliste zum Stichtag einstufig aufgelöst; ohne Stückliste haben sie keinen Ursprung.",
+   "zeilen": [
+    140,
+    155
+   ],
+   "code": [
+    "140:       CALL FUNCTION 'CS_BOM_EXPL_MAT_V2'",
+    "155:       IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Für andere lv_beskz wird CS_BOM_EXPL_MAT_V2 aufgerufen.",
+    "Der Funktionsbaustein CS_BOM_EXPL_MAT_V2 wird aufgerufen.",
+    "Ohne Treffer wird die rs_bew-grund auf Keine Stueckliste zum Stichtag gesetzt.",
+    "sy-subrc ungleich 0 setzen die rs_bew-grund auf Keine Stueckliste zum Stichtag."
+   ]
+  },
+  {
+   "id": "BM-180-B08",
+   "soll": "Jede Lagerposition der Stückliste wird ihrerseits bewertet; ihr Wert mal Komponentenmenge geht in den Baugruppenwert ein, bei fehlendem Ursprung zusätzlich in den Wert ohne Ursprung.",
+   "zeilen": [
+    159,
+    160,
+    162,
+    164,
+    165
+   ],
+   "code": [
+    "159:         LOOP AT lt_stb INTO DATA(ls_stb) WHERE postp = 'L'.",
+    "160:           DATA(ls_komp) = bewerten( iv_matnr = ls_stb-idnrk",
+    "162:           DATA(lv_kwert) = ls_komp-wert * ls_stb-mngko.",
+    "164:           IF ls_komp-ursprung = abap_false.",
+    "165:             rs_bew-nu_wert = rs_bew-nu_wert + lv_kwert."
+   ],
+   "engine": [
+    "Jede Zeile aus lt_stb wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-180-B09",
+   "soll": "Der Wert der Baugruppe ist ihr Standardpreis, mindestens aber die Summe ihres Vormaterials.",
+   "zeilen": [
+    170,
+    171,
+    223
+   ],
+   "code": [
+    "170:         DATA(lv_preis) = preis( iv_matnr ).",
+    "171:         IF lv_preis > rs_bew-wert.",
+    "223:     SELECT SINGLE stprs, peinh FROM mbew INTO @DATA(ls_mbew)"
+   ],
+   "engine": [
+    "Das Ergebnis enthält stprs und peinh.",
+    "stprs und peinh des Satzes werden gelesen."
+   ]
+  },
+  {
+   "id": "BM-180-B10",
+   "soll": "Der zulässige Höchstanteil an Vormaterial ohne Ursprung kommt aus der Listenregel zum Kapitel der Warennummer, ohne Regel gelten 40 %.",
+   "zeilen": [
+    176,
+    180,
+    182,
+    183
+   ],
+   "code": [
+    "176:         SELECT SINGLE stawn FROM marc INTO @DATA(lv_stawn)",
+    "180:         SELECT SINGLE max_anteil FROM zft_regel INTO @DATA(lv_max)",
+    "182:         IF sy-subrc <> 0.",
+    "183:           lv_max = 40."
+   ],
+   "engine": [
+    "stawn des Satzes wird gelesen.",
+    "max_anteil des Satzes wird gelesen.",
+    "Ohne Treffer wird die lv_max auf 40 gesetzt.",
+    "sy-subrc ungleich 0 setzen die lv_max auf 40."
+   ]
+  },
+  {
+   "id": "BM-180-B11",
+   "soll": "Die Baugruppe hat Ursprung, wenn ihr Wert positiv ist und der Anteil ohne Ursprung den Höchstanteil nicht übersteigt; sonst wird der überschrittene Anteil als Grund vermerkt.",
+   "zeilen": [
+    185,
+    187,
+    188
+   ],
+   "code": [
+    "185:         rs_bew-ursprung = xsdbool( rs_bew-wert > 0 AND",
+    "187:         IF rs_bew-ursprung = abap_false.",
+    "188:           rs_bew-grund = |Anteil ohne Ursprung ueber { lv_max } %|."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-180-B12",
+   "soll": "Jedes Ergebnis wird mit Anteil ohne Ursprung, Grund und dem bisherigen Ergebnis festgehalten; war das Erzeugnis bisher ursprungsbegünstigt und ist es nicht mehr, gilt der Ursprung als verloren.",
+   "zeilen": [
+    48,
+    49
+   ],
+   "code": [
+    "48:     DATA(lv_alt) = VALUE #( gt_alt[ matnr = ls_mat-matnr ]-ursprung OPTIONAL ).",
+    "49:     APPEND VALUE #( stawn    = ls_mat-stawn"
+   ],
+   "engine": [
+    "Eine Zeile wird in gt_erg aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-180-B13",
+   "soll": "Nur mit Fortschreibungskennzeichen werden die Ergebnisse je Material und Werk gespeichert.",
+   "zeilen": [
+    60,
+    276
+   ],
+   "code": [
+    "60:   IF p_upd = abap_true.",
+    "276:   MODIFY zft_praef_erg FROM TABLE lt_db."
+   ],
+   "engine": [
+    "Für p_upd mit dem Wert abap_true wird ergebnisse_sichern aufgerufen.",
+    "Eine Zeile in zft_praef_erg wird eingefügt oder überschrieben."
+   ]
+  },
+  {
+   "id": "BM-180-B14",
+   "soll": "Für jedes Erzeugnis mit verlorenem Ursprung wird ein Workflow-Ereignis an die Zollabteilung ausgelöst; scheitert das, erscheint eine Information.",
+   "zeilen": [
+    278,
+    280,
+    289
+   ],
+   "code": [
+    "278:   LOOP AT gt_erg INTO DATA(ls_erg) WHERE verloren = abap_true.",
+    "280:     CALL FUNCTION 'SWE_EVENT_CREATE'",
+    "289:       MESSAGE i010 WITH ls_erg-matnr.      \"Ereignis nicht erzeugt"
+   ],
+   "engine": [
+    "Jede Zeile aus gt_erg wird einzeln verarbeitet.",
+    "Der Funktionsbaustein SWE_EVENT_CREATE wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-180-B15",
+   "soll": "Ergebnisse und Ereignisse werden gemeinsam festgeschrieben.",
+   "zeilen": [
+    293
+   ],
+   "code": [
+    "293:   COMMIT WORK."
+   ],
+   "engine": [
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-180-B16",
+   "soll": "Die Liste zeigt die Erzeugnisse gruppiert nach Warennummer mit Ursprung, bisherigem Ursprung, Anteil und Grund und hebt verlorene Präferenzen hervor.",
+   "zeilen": [
+    304,
+    306,
+    308,
+    310,
+    311
+   ],
+   "code": [
+    "304:     AT NEW stawn.",
+    "306:       WRITE: / 'Warennummer', ls_erg-stawn COLOR COL_GROUP.",
+    "308:     WRITE: /3 ls_erg-matnr, ls_erg-ursprung, ls_erg-alt,",
+    "310:     IF ls_erg-verloren = abap_true.",
+    "311:       WRITE: 'PRAEFERENZ VERLOREN' COLOR COL_NEGATIVE."
+   ],
+   "engine": [
+    "Bei Treffern werden Warennummer und ls_erg-stawn COLOR COL_GROUP als Liste ausgegeben.",
+    "Warennummer wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "ls_erg-stawn COLOR COL_GROUP wird ausgegeben.",
+    "Bei Treffern werden 3 ls_erg-matnr, ls_erg-ursprung, ls_erg-alt, ls_erg-anteil und ls_erg-grund als Liste ausgegeben.",
+    "3 ls_erg-matnr wird ausgegeben.",
+    "ls_erg-ursprung wird ausgegeben.",
+    "ls_erg-alt wird ausgegeben.",
+    "Für ls_erg-verloren mit dem Wert abap_true wird 'PRAEFERENZ VERLOREN' COLOR COL_NEGATIVE ausgegeben.",
+    "Bei Treffern werden 'PRAEFERENZ VERLOREN' COLOR COL_NEGATIVE als Liste ausgegeben.",
+    "'PRAEFERENZ VERLOREN' COLOR COL_NEGATIVE wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-180-B17",
+   "soll": "Am Ende wird die Zahl der Erzeugnisse mit Präferenzursprung ausgegeben.",
+   "zeilen": [
+    315,
+    319
+   ],
+   "code": [
+    "315:   DATA(lv_anz) = REDUCE i( INIT n = 0",
+    "319:   WRITE: / lv_anz, 'von', lines( gt_erg ), 'Materialien mit Praeferenzursprung'."
+   ],
+   "engine": [
+    "lv_anz, von, lines( gt_erg ) und Materialien mit Praeferenzursprung werden ausgegeben.",
+    "lv_anz wird ausgegeben.",
+    "von wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lines( gt_erg ) wird ausgegeben.",
+    "Materialien mit Praeferenzursprung wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  }
+ ]
+}

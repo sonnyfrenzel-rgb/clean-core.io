@@ -1,0 +1,224 @@
+{
+ "id": "BM-151",
+ "titel": "Rückrechnungsdifferenzen je Lohnart: neues gegen vorheriges Abrechnungsergebnis",
+ "prozess": "Nach einer rückwirkenden Änderung wertet die Entgeltabrechnung aus, welche Lohnarten sich durch die Rückrechnung in einer In-Periode geändert haben. Sind keine Lohnarten gewählt, schlägt der Report Grundentgelt, Tarifzulage, Gesamtbrutto und Auszahlung vor. Ohne Leseberechtigung für den Abrechnungscluster RD bricht er ab. Für jeden selektierten Mitarbeiter liest er das Abrechnungsverzeichnis und übergeht Mitarbeiter ohne Verzeichnis oder ohne deutsche Abrechnung. Er betrachtet die aktuellen Ergebnisse, die in der gewählten In-Periode für frühere Perioden entstanden sind, und sucht jeweils das vorherige Ergebnis; erstmals abgerechnete Perioden entfallen. Beide Ergebnisse werden aus dem Cluster gelesen, nicht lesbare werden gezählt und übersprungen. Für jede gewählte Lohnart des neuen Ergebnisses wird der Betrag im alten Ergebnis gesucht (fehlend = null); Differenzen ab der Mindestgrenze werden festgehalten. Gibt es keine, endet der Report mit einer Meldung. Sonst werden die Differenzen je Mitarbeiter summiert und als ALV-Liste mit Gesamtsumme und Fehlerzahl im Titel angezeigt. Lohnarten, die nur im alten Ergebnis stehen, werden nicht erkannt; die alte Einzelliste wird nie aufgerufen.",
+ "verboten": [
+  "zpy_retro_diff_f01.abap:70 — kein Fachsatz „weggefallene Lohnarten werden als negative Differenz ausgewiesen“ (verglichen wird nur, was im neuen Ergebnis steht)",
+  "zpy_retro_diff_f01.abap:71 — kein Fachsatz „mehrere RT-Zeilen einer Lohnart werden summiert“ (es wird nur die erste gelesen)",
+  "zpy_retro_diff_f01.abap:169 — kein Fachsatz „die Differenzen werden als Einzelliste gedruckt“ (FORM write_list wird nie aufgerufen)",
+  "gesamte Scheibe — kein Fachsatz „Nachzahlungen werden angewiesen oder Rückrechnungen ausgelöst“ (reine Auswertung, kein Schreibzugriff)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-151-B01",
+   "soll": "Sind beim Aufruf keine Lohnarten gewählt, werden Grundentgelt, Tarifzulage, Gesamtbrutto und Auszahlung als Auswahl vorgeschlagen.",
+   "zeilen": [
+    15,
+    44
+   ],
+   "code": [
+    "15:   PERFORM init_lgart_defaults.",
+    "44:   IF s_lgart[] IS INITIAL."
+   ],
+   "engine": [
+    "Das Unterprogramm init_lgart_defaults wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Ohne s_lgart[] wird die s_lgart-sign auf I gesetzt, die s_lgart-option auf EQ gesetzt, die s_lgart-low auf 1000 gesetzt, eine Zeile aufgenommen, die s_lgart-low auf 1200 gesetzt, die s_lgart-low auf /101 gesetzt und die s_lgart-low auf /559 gesetzt.",
+    "Eine leere s_lgart[] setzen die s_lgart-sign auf I.",
+    "Eine leere s_lgart[] setzen die s_lgart-option auf EQ.",
+    "Eine leere s_lgart[] setzen die s_lgart-low auf 1000.",
+    "Eine leere s_lgart[] setzen die s_lgart-low auf 1200.",
+    "Eine leere s_lgart[] setzen die s_lgart-low auf /101.",
+    "Eine leere s_lgart[] setzen die s_lgart-low auf /559."
+   ]
+  },
+  {
+   "id": "BM-151-B02",
+   "soll": "Ohne Leseberechtigung für den deutschen Abrechnungscluster bricht die Auswertung mit einer Fehlermeldung ab.",
+   "zeilen": [
+    18,
+    21,
+    22
+   ],
+   "code": [
+    "18:   AUTHORITY-CHECK OBJECT 'P_PCLX'",
+    "21:   IF sy-subrc <> 0.",
+    "22:     MESSAGE e010."
+   ],
+   "engine": [
+    "Die Berechtigung auf P_PCLX wird geprüft.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-151-B03",
+   "soll": "Für jeden selektierten Mitarbeiter wird das Abrechnungsverzeichnis gelesen; Mitarbeiter ohne Verzeichnis oder ohne deutsche Abrechnung werden übergangen.",
+   "zeilen": [
+    26,
+    28,
+    58,
+    68,
+    72
+   ],
+   "code": [
+    "26: GET peras.",
+    "28:   CHECK gv_ok = abap_true.",
+    "58:   CALL FUNCTION 'CU_READ_RGDIR'",
+    "68:   IF sy-subrc <> 0.",
+    "72:   IF gv_molga <> '01'."
+   ],
+   "engine": [
+    "Jeder von der logischen Datenbank gelieferte peras-Satz wird verarbeitet. Welche Sätze das sind, bestimmt die logische Datenbank mit ihrem Selektionsbild, nicht der Report.",
+    "Nur gv_ok mit dem Wert abap_true gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Der Code übergibt pv_pernr an CU_READ_RGDIR und übernimmt dessen Ausgabe nach gv_molga.",
+    "Das konvertierte Ergebnis wird in gv_molga übernommen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Für gv_molga ungleich 01 wird der Block verlassen.",
+    "Bei gv_molga ungleich 01 wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-151-B04",
+   "soll": "Betrachtet werden die aktuellen Ergebnisse, die in der gewählten In-Periode für eine frühere Für-Periode rückgerechnet wurden.",
+   "zeilen": [
+    89,
+    92
+   ],
+   "code": [
+    "89:   LOOP AT gt_rgdir INTO ls_new WHERE srtza = 'A'",
+    "92:     CHECK ls_new-fpper <> ls_new-inper."
+   ],
+   "engine": [
+    "Jede Zeile aus gt_rgdir wird einzeln verarbeitet.",
+    "Nur ls_new-fpper ungleich ls_new-inper gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-151-B05",
+   "soll": "Zu jeder solchen Periode wird das vorherige Ergebnis gesucht; wurde die Periode erstmals abgerechnet, entfällt der Vergleich.",
+   "zeilen": [
+    93,
+    95,
+    97
+   ],
+   "code": [
+    "93:     READ TABLE gt_rgdir INTO ls_old WITH KEY fpper = ls_new-fpper",
+    "95:     IF sy-subrc <> 0.",
+    "97:       CONTINUE."
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-151-B06",
+   "soll": "Neues und vorheriges Ergebnis werden aus dem Cluster gelesen; ist eines nicht lesbar, wird die Periode übersprungen und der Lesefehler gezählt.",
+   "zeilen": [
+    100,
+    103,
+    130,
+    146,
+    147
+   ],
+   "code": [
+    "100:     PERFORM read_result USING pv_pernr ls_new-seqnr",
+    "103:     PERFORM read_result USING pv_pernr ls_old-seqnr",
+    "130:   CALL FUNCTION 'PYXX_READ_PAYROLL_RESULT'",
+    "146:   IF sy-subrc <> 0.",
+    "147:     gv_errors = gv_errors + 1."
+   ],
+   "engine": [
+    "Das Unterprogramm read_result wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Das Unterprogramm read_result wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Funktionsbaustein PYXX_READ_PAYROLL_RESULT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-151-B07",
+   "soll": "Für jede gewählte Lohnart des neuen Ergebnisses wird der Betrag der gleichen Lohnart im vorherigen Ergebnis gesucht, fehlt sie dort, gilt null.",
+   "zeilen": [
+    107,
+    108,
+    110
+   ],
+   "code": [
+    "107:     LOOP AT ls_res_new-inter-rt INTO ls_rt WHERE lgart IN s_lgart.",
+    "108:       READ TABLE ls_res_old-inter-rt INTO ls_rt_old",
+    "110:       lv_old = COND #( WHEN sy-subrc = 0 THEN ls_rt_old-betrg ELSE 0 )."
+   ],
+   "engine": [
+    "Jede Zeile aus ls_res_new-inter-rt wird einzeln verarbeitet.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-151-B08",
+   "soll": "Differenzen unter der Mindestgrenze werden ignoriert, alle anderen mit Mitarbeiter, Periode, Lohnart, altem und neuem Betrag festgehalten.",
+   "zeilen": [
+    111,
+    114
+   ],
+   "code": [
+    "111:       IF abs( ls_rt-betrg - lv_old ) < p_min.",
+    "114:       APPEND VALUE ty_diff( pernr = pv_pernr"
+   ],
+   "engine": [
+    "Eine Zeile wird in gt_diff aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-151-B09",
+   "soll": "Gibt es keine Differenz, meldet die Auswertung das und endet ohne Liste.",
+   "zeilen": [
+    32,
+    33,
+    34
+   ],
+   "code": [
+    "32:   IF gt_diff IS INITIAL.",
+    "33:     MESSAGE s011 WITH gv_inper.",
+    "34:     RETURN."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-151-B10",
+   "soll": "Die Differenzen werden je Mitarbeiter zu Summe und Anzahl verdichtet und die Gesamtdifferenz gebildet.",
+   "zeilen": [
+    161,
+    167,
+    170,
+    171
+   ],
+   "code": [
+    "161:     AT NEW pernr.",
+    "167:     AT END OF pernr.",
+    "170:     AT LAST.",
+    "171:       SUM."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-151-B11",
+   "soll": "Die Summen je Mitarbeiter werden als ALV-Liste angezeigt, im Titel mit In-Periode, Gesamtdifferenz und Anzahl nicht lesbarer Ergebnisse.",
+   "zeilen": [
+    183,
+    192
+   ],
+   "code": [
+    "183:   CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'",
+    "192:   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein REUSE_ALV_FIELDCATALOG_MERGE wird aufgerufen.",
+    "Es wird REUSE_ALV_FIELDCATALOG_MERGE aufgerufen und REUSE_ALV_GRID_DISPLAY aufgerufen.",
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ]
+  }
+ ]
+}

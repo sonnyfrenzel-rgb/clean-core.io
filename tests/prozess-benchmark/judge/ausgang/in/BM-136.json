@@ -1,0 +1,374 @@
+{
+ "id": "BM-136",
+ "titel": "PS-Netzpläne je Projekt parallel neu terminieren, Verzug gegen Basistermine bewerten, Anwendungslog und ALV mit Absprung (aRFC, RECEIVE RESULTS, SET HANDLER)",
+ "prozess": "Der Projektcontroller plant den Report monatlich mit einer Projektauswahl, einer RFC-Servergruppe, der Höchstzahl paralleler Aufgaben und dem Testlaufschalter ein. Der Report liest die Projektdefinitionen und behält nur freigegebene Projekte; gibt es keine, erscheint ein Warnhinweis und das Programm endet. Jedes Projekt startet er als parallele Aufgabe in der Servergruppe, wobei er wartet, solange die Höchstzahl erreicht ist; fehlen freie Prozesse, verarbeitet er das Projekt selbst, andere Startfehler landen als Fehlerzeile im Ergebnis. Jede Aufgabe liest die Netzpläne des Projekts und meldet, wenn es keine gibt. Technisch abgeschlossene Netzpläne überspringt sie, außer unter dem Benutzer PSC_BATCH, für den die Prüfung entfällt. Die übrigen Netzpläne terminiert sie neu; bei Fehler rollt sie zurück und meldet die erste Meldung, sonst verwirft sie im Testlauf und sichert im Echtlauf. Danach vergleicht sie das Netzplanende mit dem eingefrorenen Basistermin und meldet die Verzugstage. Der Report sammelt die Rückmeldungen und wartet höchstens 30 Minuten auf alle; bei Zeitüberschreitung meldet er die Zahlen. Neu terminierte Netzpläne erhalten eine Ampel nach Verzug. Fehler und Übersprungene schreibt er in ein Anwendungslog mit 90 Tagen Aufbewahrung. Zum Schluss zeigt er die Ergebnisliste; ein Doppelklick öffnet je nach Spalte den Netzplan, die volle Meldung oder das Projekt.",
+ "verboten": [
+  "z_ps_resched_project.abap:42 — kein Fachsatz „technisch abgeschlossene Netzpläne werden nie neu terminiert“: unter dem Benutzer PSC_BATCH entfällt die Statusprüfung",
+  "z_ps_resched_project.abap:87 — kein Fachsatz „der Testlauf zeigt den Verzug nach der Neuterminierung“: im Testlauf wird vorher zurückgerollt, gelesen wird das alte Netzplanende",
+  "z_ps_resched_project.abap:72 — kein Fachsatz „Fehler der Vorabprüfung verhindern das Sichern“: die Rückmeldungen der Vorabprüfung werden nicht ausgewertet",
+  "zps_netz_resched_f01.abap:39 — kein Fachsatz „die Zahl paralleler Aufgaben wird auf einen gültigen Bereich begrenzt“: die Eingabe wird nicht geprüft; bei 0 ist die Bedingung nie erfüllt, WAIT kehrt dann jeweils erst nach Ende aller offenen Aufgaben (sy-subrc 8) zurück, und die Projekte laufen nacheinander"
+ ],
+ "saetze": [
+  {
+   "id": "BM-136-B01",
+   "soll": "Es werden die Projektdefinitionen der Selektion gelesen und nur die mit aktivem Systemstatus „freigegeben“ behalten.",
+   "zeilen": [
+    167,
+    173,
+    180,
+    184
+   ],
+   "code": [
+    "167:   SELECT pspnr pspid objnr post1 FROM proj",
+    "173:   SELECT * FROM jest INTO TABLE lt_jest",
+    "180:     READ TABLE lt_jest WITH TABLE KEY objnr = gs_proj-objnr",
+    "184:       DELETE gt_proj."
+   ],
+   "engine": [
+    "Es werden Sätze aus proj selektiert.",
+    "Es werden Sätze aus jest selektiert.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-136-B02",
+   "soll": "Gibt es kein freigegebenes Projekt, erscheint ein Warnhinweis und das Programm endet ohne Auswertung.",
+   "zeilen": [
+    19,
+    20,
+    21
+   ],
+   "code": [
+    "19:   IF gt_proj IS INITIAL.",
+    "20:     MESSAGE s102 DISPLAY LIKE 'W'.",
+    "21:     LEAVE PROGRAM."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-136-B03",
+   "soll": "Jedes Projekt wird als eigene parallele Aufgabe in der angegebenen Servergruppe neu terminiert, wobei nie mehr als die eingegebene Höchstzahl Aufgaben gleichzeitig läuft.",
+   "zeilen": [
+    195,
+    198
+   ],
+   "code": [
+    "195:     WAIT UNTIL gv_active < p_maxt.",
+    "198:     CALL FUNCTION 'Z_PS_RESCHED_PROJECT'"
+   ],
+   "engine": [
+    "Der Baustein Z_PS_RESCHED_PROJECT wird asynchron in einer eigenen Task gestartet. Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor."
+   ]
+  },
+  {
+   "id": "BM-136-B04",
+   "soll": "Stehen keine freien Prozesse zur Verfügung, wird das Projekt im eigenen Prozess verarbeitet; bei anderen Startfehlern wird es mit Fehlermeldung ins Ergebnis übernommen.",
+   "zeilen": [
+    210,
+    216,
+    257
+   ],
+   "code": [
+    "210:     CASE sy-subrc.",
+    "216:         PERFORM lokal_verarbeiten USING gs_proj.",
+    "257:   CALL FUNCTION 'Z_PS_RESCHED_PROJECT'"
+   ],
+   "engine": [
+    "Das Unterprogramm lokal_verarbeiten wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Funktionsbaustein Z_PS_RESCHED_PROJECT wird aufgerufen.",
+    "Es wird Z_PS_RESCHED_PROJECT aufgerufen und eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-136-B05",
+   "soll": "Jede beendete Aufgabe liefert ihre Ergebniszeilen zurück; bei Kommunikations- oder Systemfehlern wird stattdessen eine Fehlerzeile mit dem Aufgabennamen übernommen.",
+   "zeilen": [
+    236,
+    244
+   ],
+   "code": [
+    "236:   RECEIVE RESULTS FROM FUNCTION 'Z_PS_RESCHED_PROJECT'",
+    "244:   IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-136-B06",
+   "soll": "Nach dem Start aller Projekte wird höchstens 30 Minuten auf alle Rückmeldungen gewartet; bei Zeitüberschreitung erscheint ein Hinweis mit gestarteten und empfangenen Aufgaben.",
+   "zeilen": [
+    224,
+    225,
+    226
+   ],
+   "code": [
+    "224:   WAIT UNTIL gv_recv >= gv_sent UP TO 1800 SECONDS.",
+    "225:   IF sy-subrc <> 0.",
+    "226:     MESSAGE i103 WITH gv_sent gv_recv."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-136-B07",
+   "soll": "Je Projekt werden die Netzpläne gelesen; hat es keine, wird das als Ergebnis gemeldet.",
+   "zeilen": [
+    55,
+    61,
+    64
+   ],
+   "code": [
+    "55:   SELECT a~aufnr, a~objnr, k~gltrp",
+    "61:   IF lt_netz IS INITIAL.",
+    "64:     RETURN."
+   ],
+   "engine": [
+    "Das Ergebnis enthält a~aufnr, a~objnr und k~gltrp.",
+    "Es werden Sätze aus aufk selektiert.",
+    "Ohne Treffer wird eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-136-B08",
+   "soll": "Technisch abgeschlossene Netzpläne werden übersprungen und als übersprungen gemeldet – außer der Lauf erfolgt unter dem Benutzer PSC_BATCH, dann entfällt diese Prüfung.",
+   "zeilen": [
+    72,
+    73,
+    81
+   ],
+   "code": [
+    "72:     IF sy-uname <> 'PSC_BATCH'.",
+    "73:       CALL FUNCTION 'STATUS_CHECK'",
+    "81:       IF sy-subrc = 0."
+   ],
+   "engine": [
+    "Für sy-uname ungleich PSC_BATCH wird STATUS_CHECK aufgerufen.",
+    "Der Funktionsbaustein STATUS_CHECK wird aufgerufen.",
+    "Bei Treffer wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-136-B09",
+   "soll": "Jeder übrige Netzplan wird über die Projektsystem-Schnittstelle neu terminiert.",
+   "zeilen": [
+    88,
+    89
+   ],
+   "code": [
+    "88:     CALL FUNCTION 'BAPI_PS_INITIALIZATION'.",
+    "89:     CALL FUNCTION 'BAPI_BUS2002_SCHEDULE'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAPI_PS_INITIALIZATION wird aufgerufen.",
+    "Es wird BAPI_PS_INITIALIZATION aufgerufen und BAPI_BUS2002_SCHEDULE aufgerufen.",
+    "Der Funktionsbaustein BAPI_BUS2002_SCHEDULE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-136-B10",
+   "soll": "Meldet die Terminierung einen Fehler oder Abbruch, wird zurückgerollt und der Netzplan mit der ersten Meldung als fehlerhaft gemeldet.",
+   "zeilen": [
+    95,
+    96
+   ],
+   "code": [
+    "95:     IF line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ).",
+    "96:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "engine": [
+    "Für line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-136-B11",
+   "soll": "Nach der Vorabprüfung wird die Terminierung im Testlauf verworfen und im Echtlauf gesichert.",
+   "zeilen": [
+    102,
+    106,
+    107,
+    110
+   ],
+   "code": [
+    "102:     CALL FUNCTION 'BAPI_PS_PRECOMMIT'",
+    "106:     IF iv_test = abap_true.",
+    "107:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "110:       CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAPI_PS_PRECOMMIT wird aufgerufen.",
+    "Für iv_test mit dem Wert abap_true wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf T gesetzt.",
+    "Für iv_test mit dem Wert abap_true wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf T gesetzt, sonst BAPI_TRANSACTION_COMMIT aufgerufen und die Status auf O gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf T gesetzt.",
+    "iv_test mit dem Wert abap_true setzen die Status auf T.",
+    "Für andere iv_test wird BAPI_TRANSACTION_COMMIT aufgerufen und die Status auf O gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen und die Status auf O gesetzt."
+   ]
+  },
+  {
+   "id": "BM-136-B12",
+   "soll": "Das Netzplanende wird gegen den eingefrorenen Basistermin verglichen; liegt es später, ist der Verzug die Differenz in Tagen, sonst oder ohne Basistermin null.",
+   "zeilen": [
+    117,
+    119,
+    122
+   ],
+   "code": [
+    "117:     SELECT SINGLE gltrp FROM afko INTO @DATA(lv_neu)",
+    "119:     SELECT SINGLE basis_ende FROM zps_mlst_basis INTO @DATA(lv_basis)",
+    "122:     APPEND VALUE #( pspid       = lv_pspid"
+   ],
+   "engine": [
+    "gltrp des Satzes wird gelesen.",
+    "basis_ende des Satzes wird gelesen.",
+    "Eine Zeile wird in et_result aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-136-B13",
+   "soll": "Für neu terminierte Netzpläne wird eine Ampel gesetzt: mehr als 10 Tage Verzug rot, mehr als 0 Tage gelb, sonst grün.",
+   "zeilen": [
+    272,
+    273
+   ],
+   "code": [
+    "272:   LOOP AT gt_erg ASSIGNING <ls_erg> WHERE status = 'O'.",
+    "273:     <ls_erg>-ampel = COND #( WHEN <ls_erg>-verzug_tage > 10 THEN '1'"
+   ],
+   "engine": [
+    "Jede Zeile aus gt_erg wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-136-B14",
+   "soll": "Gibt es fehlerhafte oder übersprungene Netzpläne, wird ein Anwendungslog mit 90 Tagen Aufbewahrung angelegt.",
+   "zeilen": [
+    310,
+    321
+   ],
+   "code": [
+    "310:   IF NOT line_exists( gt_erg[ status = 'F' ] )",
+    "321:   CALL FUNCTION 'BAL_LOG_CREATE'"
+   ],
+   "engine": [
+    "Für NOT line_exists( gt_erg[ status = 'F' ] ) AND NOT line_exists( gt_erg[ status = 'S' ] ) wird der Block verlassen.",
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach lv_handle.",
+    "Das konvertierte Ergebnis wird in lv_handle übernommen."
+   ]
+  },
+  {
+   "id": "BM-136-B15",
+   "soll": "Jeder Fehler wird als Fehlermeldung und jeder übersprungene Netzplan als Warnung mit Projekt, Netzplan und Text ins Log geschrieben.",
+   "zeilen": [
+    329,
+    336
+   ],
+   "code": [
+    "329:   LOOP AT gt_erg INTO DATA(ls_erg) WHERE status = 'F' OR status = 'S'.",
+    "336:     CALL FUNCTION 'BAL_LOG_MSG_ADD'"
+   ],
+   "engine": [
+    "Jede Zeile aus gt_erg wird einzeln verarbeitet.",
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-136-B16",
+   "soll": "Das Log wird gesichert und festgeschrieben.",
+   "zeilen": [
+    345,
+    350
+   ],
+   "code": [
+    "345:   CALL FUNCTION 'BAL_DB_SAVE'",
+    "350:   COMMIT WORK."
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Es wird BAL_DB_SAVE aufgerufen und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-136-B17",
+   "soll": "Die Ergebnisse werden als Liste mit Ampelspalte angezeigt; kann die Liste nicht erzeugt werden, erscheint ein Hinweis.",
+   "zeilen": [
+    284,
+    287,
+    297
+   ],
+   "code": [
+    "284:       cl_salv_table=>factory( IMPORTING r_salv_table = go_alv",
+    "287:       MESSAGE lx_salv TYPE 'I' DISPLAY LIKE 'E'.",
+    "297:   go_alv->display( )."
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode factory von cl_salv_table wird nach cl_salv_table übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen.",
+    "Die Methode display von go_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-136-B18",
+   "soll": "Ein Doppelklick auf die Netzplannummer öffnet die Netzplananzeige direkt mit diesem Netzplan.",
+   "zeilen": [
+    144,
+    145,
+    295
+   ],
+   "code": [
+    "144:         SET PARAMETER ID 'NET' FIELD ls_erg-aufnr.",
+    "145:         CALL TRANSACTION 'CN23' AND SKIP FIRST SCREEN.",
+    "295:   SET HANDLER go_handler->on_double_click FOR go_alv->get_event( )."
+   ],
+   "engine": [
+    "Die Anlage wird über die Transaktion CN23 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion.",
+    "Die Methode get_event von go_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-136-B19",
+   "soll": "Ein Doppelklick auf die Meldung zeigt sie vollständig als Popup.",
+   "zeilen": [
+    148
+   ],
+   "code": [
+    "148:         MESSAGE ls_erg-meldung TYPE 'I'."
+   ],
+   "engine": [
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-136-B20",
+   "soll": "Ein Doppelklick auf eine andere Spalte öffnet das Projekt im Projektbuilder.",
+   "zeilen": [
+    151,
+    152
+   ],
+   "code": [
+    "151:         SET PARAMETER ID 'PSP' FIELD ls_erg-pspid.",
+    "152:         CALL TRANSACTION 'CJ20N'."
+   ],
+   "engine": [
+    "Die Anlage wird über die Transaktion CJ20N angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ]
+  }
+ ]
+}

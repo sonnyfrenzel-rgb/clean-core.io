@@ -1,0 +1,70 @@
+{
+ "id": "BM-165",
+ "titel": "Außenhandel: Sanktionslistenprüfung des Warenempfängers beim Sichern des Kundenauftrags",
+ "prozess": "Der Exit läuft beim Sichern jedes Kundenauftrags kurz vor der Verbuchung. Zuerst liest er den Aktivierungsschalter ZSD_SANKTION_AKTIV aus der Variablentabelle und endet ohne Prüfung, wenn er nicht auf X steht. Sonst sucht er unter den Belegpartnern den Warenempfänger auf Kopfebene. Anschließend zählt er die Einträge der eigenen Sanktionsliste, deren Land oder Name exakt mit dem Warenempfänger übereinstimmt. Gibt es einen Treffer, bricht er das Sichern mit einer Fehlermeldung zu Kunde und Land ab, und der Anwender bleibt im Auftrag. Ohne Treffer wird normal gesichert. Die frühere Prüfung, ob überhaupt ein Warenempfänger gefunden wurde, ist auskommentiert.",
+ "verboten": [
+  "source.abap:15 — kein Fachsatz „ohne Warenempfänger wird die Prüfung übersprungen“: die Erfolgsprüfung ist auskommentiert, ohne Treffer prüft der Exit mit dem zuletzt in der Kopfzeile stehenden Partner",
+  "source.abap:19 — kein Fachsatz „ähnliche Namen werden erkannt“: verglichen wird nur auf exakte Gleichheit von Name bzw. Land",
+  "source.abap:23 — kein Fachsatz „der Auftrag wird mit Liefersperre gesichert“: der Exit setzt keine Sperre, er verhindert das Sichern"
+ ],
+ "saetze": [
+  {
+   "id": "BM-165-B01",
+   "soll": "Die Prüfung läuft nur, wenn der Schalter ZSD_SANKTION_AKTIV in der Variablentabelle auf X steht.",
+   "zeilen": [
+    9,
+    13
+   ],
+   "code": [
+    "9:   SELECT SINGLE low FROM tvarvc INTO lv_aktiv",
+    "13:   CHECK lv_aktiv = 'X'."
+   ],
+   "engine": [
+    "low des Satzes wird gelesen.",
+    "Nur lv_aktiv mit dem Wert X gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-165-B02",
+   "soll": "Der Warenempfänger des Auftragskopfs wird aus den Partnern des Belegs ermittelt.",
+   "zeilen": [
+    15
+   ],
+   "code": [
+    "15:   READ TABLE xvbpa WITH KEY posnr = '000000'"
+   ],
+   "engine": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-165-B03",
+   "soll": "Es wird geprüft, ob das Land oder der Name des Warenempfängers exakt auf der Sanktionsliste steht.",
+   "zeilen": [
+    19
+   ],
+   "code": [
+    "19:   SELECT COUNT(*) FROM zgts_sanktion"
+   ],
+   "engine": [
+    "Die Zahl der Sätze wird ermittelt."
+   ]
+  },
+  {
+   "id": "BM-165-B04",
+   "soll": "Bei einem Treffer wird das Sichern des Auftrags mit einer Fehlermeldung zu Kunde und Land verhindert.",
+   "zeilen": [
+    22,
+    23
+   ],
+   "code": [
+    "22:   IF sy-dbcnt > 0.",
+    "23:     MESSAGE e101(zgts) WITH xvbpa-kunnr xvbpa-land1."
+   ],
+   "engine": [
+    "Für sy-dbcnt größer 0 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

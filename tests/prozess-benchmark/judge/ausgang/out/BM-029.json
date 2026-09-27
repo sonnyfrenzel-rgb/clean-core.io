@@ -1,0 +1,72 @@
+{
+ "id": "BM-029",
+ "urteile": [
+  {
+   "id": "BM-029-B01",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Stichtag."
+  },
+  {
+   "id": "BM-029-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Sätze aus mchb selektiert\" – freier Bestand, Verfallsdatum und Stichtag fehlen."
+  },
+  {
+   "id": "BM-029-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "unvollstaendig",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Ohne Treffer wird Keine Chargen mit Verfall ausgegeben\" – Ausgabe stimmt, das Beenden des Laufs (STOP) fehlt."
+  },
+  {
+   "id": "BM-029-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Mit gesetztem p_post wird umbuchen aufgerufen\", \"Die ls_item-move_type wird auf 344 gesetzt\" – Umbuchung des freien Chargenbestands in den Sperrbestand nicht fachlich."
+  },
+  {
+   "id": "BM-029-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Ohne ls_out>-mblnr wird ROLLBACK WORK ausgeführt\" – Vermerk der ersten Rückmeldung fehlt."
+  },
+  {
+   "id": "BM-029-B06",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "\"Sonst wird die Text auf in Sperrbestand umgebucht gesetzt und COMMIT WORK ausgeführt\" – Markierung und sofortiges Festschreiben."
+  },
+  {
+   "id": "BM-029-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"REUSE_ALV_GRID_DISPLAY wird aufgerufen\"."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

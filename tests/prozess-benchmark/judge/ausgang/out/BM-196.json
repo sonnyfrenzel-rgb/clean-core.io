@@ -1,0 +1,274 @@
+{
+ "id": "BM-196",
+ "urteile": [
+  {
+   "id": "BM-196-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Sätze aus vttk selektiert“; Transportkopf zur Nachricht nicht fachlich."
+  },
+  {
+   "id": "BM-196-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "„Ohne Treffer wird die gv_retcode auf 1 gesetzt“; Protokolleintrag und fehlerhafte Nachricht nicht fachlich."
+  },
+  {
+   "id": "BM-196-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Selektion aus vttp und retcode 1 ohne Treffer; Protokolleintrag „keine Lieferung“ fehlt."
+  },
+  {
+   "id": "BM-196-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Selektionen aus likp und lips; Zweck (Frachtbrief/Gefahrgut) nicht fachlich."
+  },
+  {
+   "id": "BM-196-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Sätze aus lfa1 selektiert“; „kein Fehler ohne Spediteur“ fehlt."
+  },
+  {
+   "id": "BM-196-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "gefahrgut_ermitteln „nicht belegt“ und Aufruf Z_LE_GEFAHRGUT_DATEN; Freistellung nach 1000-Punkte-Regel fehlt."
+  },
+  {
+   "id": "BM-196-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Ohne Treffer wird eine Meldung ausgegeben“; Ausnahme und fehlerhafte Nachricht fehlen."
+  },
+  {
+   "id": "BM-196-B08",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Aussortieren von Nullmengen/Leergut."
+  },
+  {
+   "id": "BM-196-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Sätze aus zle_gg_stamm selektiert“; Gültigkeit am Tagesdatum nicht genannt."
+  },
+  {
+   "id": "BM-196-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Meldung ohne Treffer; „gilt als gefahrgutfrei/freigestellt“ fehlt."
+  },
+  {
+   "id": "BM-196-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "Schleife und „kleinere werden übersprungen“; Bildung der Gefahrgutzeile fehlt."
+  },
+  {
+   "id": "BM-196-B12",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu Nicht-KG-Gewichten."
+  },
+  {
+   "id": "BM-196-B13",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Punkteberechnung."
+  },
+  {
+   "id": "BM-196-B14",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Freistellungsregel."
+  },
+  {
+   "id": "BM-196-B15",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Protokollhinweis Kennzeichnungspflicht."
+  },
+  {
+   "id": "BM-196-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "SSF_FUNCTION_MODULE_NAME und retcode 1 ohne Treffer; Protokolleintrag nicht fachlich."
+  },
+  {
+   "id": "BM-196-B17",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zu Druckparametern."
+  },
+  {
+   "id": "BM-196-B18",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Kopienzahl."
+  },
+  {
+   "id": "BM-196-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch"
+   ],
+   "kurz": "„die Funktionsbaustein auf DARA gesetzt“ (Feld function als FB missverstanden), sap_object VTTK; Archivablage nicht fachlich."
+  },
+  {
+   "id": "BM-196-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "„übergibt gs_toa_dara an gv_fm_name … entscheidet die Eingabe“; Frachtbriefausgabe mit Inhalten fehlt."
+  },
+  {
+   "id": "BM-196-B21",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "retcode 1 und Verlassen ohne Treffer; Fehlerprotokoll nicht gesagt."
+  },
+  {
+   "id": "BM-196-B22",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "„Für gv_retcode ungleich 0 wird die return_code auf 1 gesetzt, sonst auf 0“ – Inhalt stimmt, technisch."
+  },
+  {
+   "id": "BM-196-B23",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "grammatik"
+   ],
+   "kurz": "empfaenger_ermitteln „nicht belegt“, retcode 1 ohne lifnr; Mailadresse/Protokoll nicht fachlich."
+  },
+  {
+   "id": "BM-196-B24",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "smtp_addr-Lesen und retcode 1 ohne Adresse; Standard-Mailadresse und Protokoll nicht fachlich."
+  },
+  {
+   "id": "BM-196-B25",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "„Für sy-uname KRAUSE_M wird die gv_smtp auf frachtbrief-test@… gesetzt“ – Inhalt erkennbar, technisch."
+  },
+  {
+   "id": "BM-196-B26",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "„kleinere werden übersprungen, die Schleife läuft weiter“ falsch (CHECK in FORM ohne Schleife); PDF-Umwandlung nur als CONVERT_OTF → lv_size."
+  },
+  {
+   "id": "BM-196-B27",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Fünf BCS-Methodenaufrufe „nicht belegt“; Mail mit PDF-Anhang an Spediteur nicht erkannt."
+  },
+  {
+   "id": "BM-196-B28",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "retcode 1 bei nicht ok; CATCH cx_bcs und Protokolleinträge fehlen."
+  },
+  {
+   "id": "BM-196-B29",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "„Für lv_ok mit dem Wert abap_true wird COMMIT WORK ausgeführt“ – richtig, aber technisch."
+  },
+  {
+   "id": "BM-196-B30",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Rückgabecode der Mail-Nachricht."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

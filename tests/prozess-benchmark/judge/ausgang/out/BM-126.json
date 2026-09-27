@@ -1,0 +1,84 @@
+{
+ "id": "BM-126",
+ "urteile": [
+  {
+   "id": "BM-126-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Vorbelegung Z1 bei fehlendem Treffer erkannt, aber \"low des Satzes\"/\"gv_sperre\" statt Sperrgrund aus Variablentabelle; \"die gv_sperre\", \"sy-subrc ungleich 0 setzen\" grammatisch falsch."
+  },
+  {
+   "id": "BM-126-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus mlst selektiert\"; PSP-Auswahl und Ist-Datum fehlen."
+  },
+  {
+   "id": "BM-126-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus fplt selektiert\"; Bezug zu Meilensteinen und Sperrgrund fehlt."
+  },
+  {
+   "id": "BM-126-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Suche in einer Tabelle erkannt, aber weder welche noch dass nicht erreichte Meilensteine übergangen werden."
+  },
+  {
+   "id": "BM-126-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Änderung von faksp in fplt im Nicht-Testlauf erkannt, aber nicht als Entfernen der Fakturasperre; \"Die faksp\" mit Artikel vor Feldnamen."
+  },
+  {
+   "id": "BM-126-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Liste erkannt, nur verstümmelte Feldnamen (gs_fplt>-fplnr), mehrfach wiederholt."
+  },
+  {
+   "id": "BM-126-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Festschreiben im Nicht-Testlauf ist inhaltlich da, aber nur als \"Ohne p_test ... COMMIT WORK\"."
+  },
+  {
+   "id": "BM-126-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Ausgabe von gv_cnt/lv_txt erkannt, aber nicht als Anzahl und nicht die Testlauf-Variante; \"belegt nur das Erreichen\" inhaltsleer."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

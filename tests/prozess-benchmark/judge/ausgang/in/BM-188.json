@@ -1,0 +1,146 @@
+{
+ "id": "BM-188",
+ "titel": "Jobkette POS-Abverkaufsverbuchung: ein Job je Filiale mit Kassendaten, nacheinander über Vorgängerjob",
+ "prozess": "Der Report wird nachts mit Filialbereich, Buchungstag und Testkennzeichen gestartet; als Buchungstag ist der Vortag vorgeschlagen. Er liest die Filialen (Werkstyp A) der Selektion; gibt es keine, meldet er das und beendet die Verarbeitung. Für jede Filiale zählt er die noch unverbuchten Kassendaten des Buchungstags und überspringt Filialen ohne solche Daten. Für die übrigen legt er einen Hintergrundjob mit Filiale und Datum im Namen an; scheitert das, meldet er die Filiale im Protokoll und geht zur nächsten. In den Job stellt er den Verbuchungsreport für Filiale, Buchungstag und Testkennzeichen ein. Der erste Job wird zum Sofortstart freigegeben, jeder weitere so, dass er erst nach erfolgreichem Ende des vorher eingeplanten Jobs startet. Ob die Freigabe gelungen ist, wird nicht geprüft; ein nicht freigegebener Job hält daher die restliche Kette an. Am Ende gibt der Report die Zahl der eingeplanten Filialjobs aus. Die Verbuchung selbst geschieht in den Jobs.",
+ "verboten": [
+  "source.abap:64 — kein Fachsatz „scheitert die Freigabe, wird die Filiale gemeldet und die Kette ohne sie fortgesetzt“: das Ergebnis von JOB_CLOSE wird nicht geprüft (auskommentiert); der nicht freigegebene Job wird trotzdem Vorgänger des nächsten, sodass alle folgenden Filialjobs nicht starten",
+  "source.abap:56 — kein Fachsatz „die Kassendaten werden verbucht bzw. der Bestand fortgeschrieben“: der Steuerreport plant die Verbuchung nur ein, die Verbuchungslogik liegt in ZRET_POS_VERBUCHEN außerhalb des Falls",
+  "source.abap:81 — kein Fachsatz „die Anzahl erfolgreich verarbeiteter Filialen wird ausgegeben“: gezählt werden eingeplante Jobs, auch solche, deren Freigabe gescheitert ist"
+ ],
+ "saetze": [
+  {
+   "id": "BM-188-B01",
+   "soll": "Als Buchungstag wird der Vortag vorgeschlagen.",
+   "zeilen": [
+    21
+   ],
+   "code": [
+    "21:   p_budat = sy-datum - 1."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-188-B02",
+   "soll": "Es werden die Filialen (Werkstyp A) der Selektion gelesen.",
+   "zeilen": [
+    24
+   ],
+   "code": [
+    "24:   SELECT werks, name1 FROM t001w"
+   ],
+   "engine": [
+    "Das Ergebnis enthält werks und Name.",
+    "Es werden Sätze aus t001w selektiert."
+   ]
+  },
+  {
+   "id": "BM-188-B03",
+   "soll": "Ohne Filialen wird ein Hinweis ausgegeben und die Verarbeitung beendet.",
+   "zeilen": [
+    28,
+    29,
+    30
+   ],
+   "code": [
+    "28:   IF lt_filialen IS INITIAL.",
+    "29:     MESSAGE 'Keine Filialen selektiert' TYPE 'S' DISPLAY LIKE 'E'.",
+    "30:     STOP."
+   ],
+   "engine": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-188-B04",
+   "soll": "Je Filiale wird geprüft, ob unverbuchte Kassendaten des Buchungstags vorliegen; Filialen ohne solche Daten werden übersprungen.",
+   "zeilen": [
+    34,
+    38
+   ],
+   "code": [
+    "34:     SELECT COUNT(*) FROM zret_pos_ein",
+    "38:     CHECK sy-dbcnt > 0."
+   ],
+   "engine": [
+    "Die Zahl der Sätze mit dem eingegebenen budat wird ermittelt.",
+    "Nur sy-dbcnt größer 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-188-B05",
+   "soll": "Für die Filiale wird ein Hintergrundjob mit Filiale und Datum im Namen angelegt.",
+   "zeilen": [
+    41
+   ],
+   "code": [
+    "41:     CALL FUNCTION 'JOB_OPEN'"
+   ],
+   "engine": [
+    "Der Code übergibt gv_jobname an JOB_OPEN und übernimmt dessen Ausgabe nach gv_jobcount.",
+    "Das konvertierte Ergebnis wird in gv_jobcount übernommen."
+   ]
+  },
+  {
+   "id": "BM-188-B06",
+   "soll": "Kann der Job nicht angelegt werden, wird die Filiale im Protokoll gemeldet und übersprungen.",
+   "zeilen": [
+    51,
+    52
+   ],
+   "code": [
+    "51:     IF sy-subrc <> 0.",
+    "52:       WRITE: / 'Job konnte nicht angelegt werden:', ls_fil-werks."
+   ],
+   "engine": [
+    "Ohne Treffer wird Job konnte nicht angelegt werden: ausgegeben und ls_fil-werks ausgegeben.",
+    "Bei Treffern werden Job konnte nicht angelegt werden: und ls_fil-werks als Liste ausgegeben.",
+    "Job konnte nicht angelegt werden: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "ls_fil-werks wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-188-B07",
+   "soll": "In den Job wird die POS-Verbuchung für Filiale, Buchungstag und Testkennzeichen eingestellt.",
+   "zeilen": [
+    56
+   ],
+   "code": [
+    "56:     SUBMIT zret_pos_verbuchen"
+   ],
+   "engine": [
+    "Das Kindprogramm zret_pos_verbuchen wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes."
+   ]
+  },
+  {
+   "id": "BM-188-B08",
+   "soll": "Der erste Job startet sofort, jeder weitere erst nach erfolgreichem Ende des vorher eingeplanten Jobs.",
+   "zeilen": [
+    63,
+    64
+   ],
+   "code": [
+    "63:     DATA(lv_sofort) = xsdbool( gv_prev_name IS INITIAL ).",
+    "64:     CALL FUNCTION 'JOB_CLOSE'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein JOB_CLOSE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-188-B09",
+   "soll": "Am Ende wird die Anzahl der eingeplanten Filialjobs ausgegeben.",
+   "zeilen": [
+    81
+   ],
+   "code": [
+    "81:   WRITE: / gv_anzahl, 'Filialjobs eingeplant'."
+   ],
+   "engine": [
+    "Bei Treffern werden gv_anzahl und Filialjobs eingeplant als Liste ausgegeben.",
+    "gv_anzahl wird ausgegeben.",
+    "Filialjobs eingeplant wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  }
+ ]
+}

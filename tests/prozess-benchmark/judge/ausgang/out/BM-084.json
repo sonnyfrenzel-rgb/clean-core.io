@@ -1,0 +1,44 @@
+{
+ "id": "BM-084",
+ "urteile": [
+  {
+   "id": "BM-084-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'Sätze aus lfbk selektiert' – dass es die gespeicherten Bankverbindungen des Kreditors sind, erkennt nur ein Techniker."
+  },
+  {
+   "id": "BM-084-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Für lines( lt_lfbk_old ) = 0 wird der Block verlassen' – Bedingung technisch, Folge 'kein Workflow' fehlt."
+  },
+  {
+   "id": "BM-084-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur 'SWE_EVENT_CREATE wird aufgerufen'; Ereignis BANKCHANGED für den Kreditor wird nicht genannt."
+  },
+  {
+   "id": "BM-084-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "falsch",
+    "zu_allgemein",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben' – Bedingung ist das Scheitern der Ereigniserzeugung, keine Trefferfrage; Warnung/Weiterlaufen und Kreditornummer fehlen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

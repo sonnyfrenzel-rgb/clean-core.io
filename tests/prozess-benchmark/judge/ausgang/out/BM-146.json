@@ -1,0 +1,88 @@
+{
+ "id": "BM-146",
+ "urteile": [
+  {
+   "id": "BM-146-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf CU_READ_RGDIR erkannt (\"konvertierte Ergebnis in gv_molga\"); Überspringen ohne Verzeichnis (REJECT) fehlt."
+  },
+  {
+   "id": "BM-146-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Schleife und \"nur srtza = A\" erkannt; \"kleinere werden übersprungen\" sinnlos, Reihenfolge rückwärts und \"aktuell\" nicht benannt."
+  },
+  {
+   "id": "BM-146-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"PYXX_READ_PAYROLL_RESULT wird aufgerufen\"; Überspringen nicht lesbarer Ergebnisse fehlt."
+  },
+  {
+   "id": "BM-146-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Summe der Lohnart /559 der gewählten Periode."
+  },
+  {
+   "id": "BM-146-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Für fpper kleiner gv_fpper wird der Block verlassen\" trifft das Ende der Suche; Ermittlung des Vorperiodenbetrags fehlt."
+  },
+  {
+   "id": "BM-146-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "\"Nur gv_prev ungleich 0 gehen weiter\" trifft den Kern; \"kleinere werden übersprungen, die Schleife läuft weiter\" passt nicht (CHECK außerhalb der Schleife)."
+  },
+  {
+   "id": "BM-146-B07",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Abweichungsberechnung."
+  },
+  {
+   "id": "BM-146-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Bedingung gv_dev > p_pct mit Ausgabe erkannt, nur Variablennamen."
+  },
+  {
+   "id": "BM-146-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung bei gv_hits = 0 erkannt; Inhalt \"keine Abweichung\" nicht benannt."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

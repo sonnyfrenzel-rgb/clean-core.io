@@ -1,0 +1,192 @@
+{
+ "id": "BM-037",
+ "urteile": [
+  {
+   "id": "BM-037-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Die p_stich+4(4 wird auf 1231 gesetzt\" – verstümmelt; der Vorjahresabzug und die Bedeutung Stichtag-Vorschlag fehlen."
+  },
+  {
+   "id": "BM-037-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Berechtigung K_ML_VA und \"eine Meldung\" – Ändern der Materialbewertung und Zurückweisen der Eingabe nicht fachlich."
+  },
+  {
+   "id": "BM-037-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Werke per t001w zum Buchungskreis gelesen, ohne Treffer \"eine Meldung\" – Abbruch mit Fehler fehlt."
+  },
+  {
+   "id": "BM-037-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus mbew selektiert\"; Materialarten, positiver Bestand, Wert fehlen."
+  },
+  {
+   "id": "BM-037-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "mbew-Lesen, Schleife und \"verpr des Satzes wird gelesen\" – Buchpreis nach Preissteuerung nicht fachlich."
+  },
+  {
+   "id": "BM-037-B06",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "\"Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen\" – Hinweis und Überspringen; vierfach."
+  },
+  {
+   "id": "BM-037-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Sätze aus ekpo selektiert\"; jüngster Bestellpreis der letzten 183 Tage und Buchpreis-Ersatz fehlen."
+  },
+  {
+   "id": "BM-037-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Bewegungsarten 261/201/601 nur als Befüllung von r_bwart_verbr, mseg-Selektion; Summe und Jahreszeitraum fehlen."
+  },
+  {
+   "id": "BM-037-B09",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Abschlag ohne Verbrauch."
+  },
+  {
+   "id": "BM-037-B10",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Reichweite."
+  },
+  {
+   "id": "BM-037-B11",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum neuen Preis."
+  },
+  {
+   "id": "BM-037-B12",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Abwertungsberechnung."
+  },
+  {
+   "id": "BM-037-B13",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Kandidatenbedingung."
+  },
+  {
+   "id": "BM-037-B14",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "\"Für p_test mit dem Wert abap_false wird preise_aendern aufgerufen und historie_schreiben aufgerufen\" – Preisänderung und Historie nur im Echtlauf."
+  },
+  {
+   "id": "BM-037-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Vermerk \"V-Preis: manuelle Abwertung erforderlich\" erkennbar, dass nicht gebucht wird, fehlt; \"ls_bew>-vprsv\", \"setzen die\"."
+  },
+  {
+   "id": "BM-037-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "redundant"
+   ],
+   "kurz": "ENQUEUE/DEQUEUE und \"Ohne Treffer wird die ls_bew>-meldung auf Material gesperrt gesetzt\" – gesperrte Bewertung als \"Ohne Treffer\"; Überspringen und Probesperre nicht fachlich."
+  },
+  {
+   "id": "BM-037-B17",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch"
+   ],
+   "kurz": "\"Die Anlage wird über die Transaktion MR21 angestoßen\" – MR21 ändert den Preis, es wird nichts angelegt."
+  },
+  {
+   "id": "BM-037-B18",
+   "urteil": "abweichend",
+   "mangel": [
+    "falsch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "\"Bei Treffer wird eine Meldung ausgegeben\" – MESSAGE … INTO <ls_bew>-meldung gibt nichts aus, sondern vermerkt den Text am Material; \"Preis geaendert\" sonst stimmt."
+  },
+  {
+   "id": "BM-037-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "\"Eine Zeile in zmm_nsw_hist wird eingefügt oder überschrieben\" und COMMIT – alle Kandidaten mit Buchungskennzeichen nicht benannt."
+  },
+  {
+   "id": "BM-037-B20",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Im Hintergrund protokoll_batch und Verlassen; Ausgabe von Buchungskreis, Stichtag, Materialien, Kandidaten, geänderten Preisen und Abwertungsbetrag – inhaltlich das Summenprotokoll."
+  },
+  {
+   "id": "BM-037-B21",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "ALV-Bausteine genannt, Sortierung fehlt; \"Die Anlage wird über die Transaktion MM03 angestoßen\" ist falsch – MM03 zeigt den Materialstamm nur an."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

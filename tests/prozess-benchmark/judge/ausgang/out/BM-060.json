@@ -1,0 +1,271 @@
+{
+ "id": "BM-060",
+ "urteile": [
+  {
+   "id": "BM-060-B01",
+   "urteil": "gleich",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "'Jede Zeile aus idoc_contrl wird einzeln verarbeitet' – fachlich dasselbe (IDoc für IDoc), nur mit technischem Tabellennamen."
+  },
+  {
+   "id": "BM-060-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Abbruch mit WRONG_FUNCTION_CALLED."
+  },
+  {
+   "id": "BM-060-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Übernahme des Kopfsegments."
+  },
+  {
+   "id": "BM-060-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Übernahme des Wertsegments."
+  },
+  {
+   "id": "BM-060-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen des Buchungskreises und Setzen von Meldung ZFIAA/001 ohne Treffer genannt; dass das IDoc damit fehlerhaft ist, fehlt; 'setzen die gs_err-msgid' fehlerhaft."
+  },
+  {
+   "id": "BM-060-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Methodenaufruf und zwei Lesungen von anlkl genannt; Ermittlung aus Investitionskategorie mit Rückfall auf generischen Eintrag fehlt; 'get_asset_class ... nicht belegt' ist falsch, die Methode ist mitgeliefert."
+  },
+  {
+   "id": "BM-060-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen von anlkl und Meldung 002 ohne Treffer; dass die Anlagenklasse angelegt sein muss und das IDoc sonst fehlerhaft ist, nicht fachlich."
+  },
+  {
+   "id": "BM-060-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung 003 bei lv_valid = abap_false und Lesungen kokrs/kostl genannt; Gültigkeit zum Aktivierungsdatum und Entfallen ohne Kostenstelle fehlen; 'check_cost_center ... nicht belegt' ist falsch."
+  },
+  {
+   "id": "BM-060-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingung 'gs_val-anbtr bis einschließlich 0' mit Meldung 004 technisch richtig; dass das IDoc fehlerhaft wird, fehlt."
+  },
+  {
+   "id": "BM-060-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf fill_status bei gv_error erkannt; Status 51 und Weiter mit nächstem IDoc fehlen; 'fill_status ... Wirkung nicht belegt' ist falsch, die FORM ist mitgeliefert."
+  },
+  {
+   "id": "BM-060-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus zfiaa_extref erkannt; Dublettenprüfung nicht fachlich; 'kleinere werden übersprungen, die Schleife läuft weiter' und 'check_duplicate ... nicht belegt' sind falsch."
+  },
+  {
+   "id": "BM-060-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf fill_status bei lv_dup erkannt; Status 51, Hinweis auf vorhandene Anlage und 'nichts gebucht' fehlen; 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-060-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Dynamischer Aufruf bei gepflegtem Exit und FUNCTION_EXISTS genannt; Änderung von Kopf-/Wertdaten fehlt; 'get_exit_fb ... nicht belegt' und 'Schleife läuft weiter' sind falsch, 'Eingabe' statt Customizing ungenau."
+  },
+  {
+   "id": "BM-060-B14",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Verwerfen eines nicht vorhandenen Exit-Bausteins."
+  },
+  {
+   "id": "BM-060-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung 020 und fill_status bei Fehler nach dem Exit genannt; Status 51 nicht fachlich; 'fill_status ... nicht belegt' falsch."
+  },
+  {
+   "id": "BM-060-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Aufruf Z_FI_AA_CREATE_AND_POST mit Übergabe; gemeinsame LUW für Anlage, Zugang und Referenz fehlt."
+  },
+  {
+   "id": "BM-060-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Aufruf BAPI_FIXEDASSET_CREATE1; Anlage mit Klasse, Bezeichnung, Datum, Kostenstelle nicht fachlich."
+  },
+  {
+   "id": "BM-060-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Rollback, Fehlerzeile und ev_subrc = 4 bei Meldungstyp E/A erkannt, aber nur technisch; 'ls_return-type CA EA erhalten 4' unverständlich."
+  },
+  {
+   "id": "BM-060-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Aufruf BAPI_ASSET_ACQUISITION_POST und Mengeneinheit ST; Bewegungsart 100, ohne Kreditor, Beträge/Daten fehlen."
+  },
+  {
+   "id": "BM-060-B20",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback und ev_subrc = 8 erkannt; dass die eben angelegte Anlage mit zurückgerollt wird, fehlt."
+  },
+  {
+   "id": "BM-060-B21",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Festhalten der Referenz."
+  },
+  {
+   "id": "BM-060-B22",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback mit Meldung 005 und ev_subrc = 12 erkannt; Anlass (Referenz existiert inzwischen) fehlt; 'die Typ/die Fall' falsch."
+  },
+  {
+   "id": "BM-060-B23",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'BAPI_TRANSACTION_COMMIT wird aufgerufen'; gemeinsames Festschreiben von Anlage, Zugang, Referenz nicht gesagt."
+  },
+  {
+   "id": "BM-060-B24",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Aufruf fill_status bei lv_subrc ungleich 0 erkannt; Status 51 mit letzter Meldung fehlt; 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-060-B25",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "falsch"
+   ],
+   "kurz": "Nur 'fill_status wird aufgerufen, Wirkung nicht belegt' – Status 53 mit Anlage/Beleg fehlt, die Behauptung 'nicht belegt' ist falsch."
+  },
+  {
+   "id": "BM-060-B26",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Statuszeile in ct_status und wf_param Error_IDOCs/Processed_IDOCs erkannt, aber nur technisch; 'setzen die ct_retvar-wf_param' fehlerhaft."
+  },
+  {
+   "id": "BM-060-B27",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "Die Engine-Sätze betreffen nur den Workflow-Parameter je IDoc; zum Gesamtergebnis workflow_result (Zeilen 472–475) kein Satz."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,146 @@
+{
+ "id": "BM-191",
+ "urteile": [
+  {
+   "id": "BM-191-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "„Sätze aus hrp1000 mit dem eingegebenen plvar“; aktive Veranstaltungen und Endezeitraum fehlen."
+  },
+  {
+   "id": "BM-191-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Meldung ohne Treffer; Beenden ohne Druck (STOP) fehlt."
+  },
+  {
+   "id": "BM-191-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Selektion aus hrp1026; das Entfernen abgesagter Veranstaltungen fehlt."
+  },
+  {
+   "id": "BM-191-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Selektion aus hrp1001; Teilnahmebeziehungen zu den verbleibenden Veranstaltungen nicht fachlich."
+  },
+  {
+   "id": "BM-191-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "FP_JOB_OPEN-Aufruf und Meldung „ohne Treffer“; gemeinsamer Druckauftrag ohne Dialog und Abbruch nicht fachlich."
+  },
+  {
+   "id": "BM-191-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Übergabe gc_form an FP_FUNCTION_MODULE_NAME und Meldung; Abbruch bei unbrauchbarem Formular nicht gesagt."
+  },
+  {
+   "id": "BM-191-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen von vorna/nachn/anred; Mitarbeitername aus Personaldaten, Stichtag und Ersatz Personalnummer fehlen."
+  },
+  {
+   "id": "BM-191-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch"
+   ],
+   "kurz": "„stext des Satzes mit dem eingegebenen plvar wird gelesen“; Name der externen Person nicht fachlich."
+  },
+  {
+   "id": "BM-191-B09",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Überspringen anderer Teilnehmerarten."
+  },
+  {
+   "id": "BM-191-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "grammatik"
+   ],
+   "kurz": "„abap_true des Satzes wird gelesen“ und „kleinere werden übersprungen“ (sinnlos bei OR-Bedingung); Wiederholungsdruck nur als Code-Bedingung."
+  },
+  {
+   "id": "BM-191-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "grammatik"
+   ],
+   "kurz": "„die Länderschlüssel auf DE gesetzt und gv_fm_name aufgerufen“; Ausgabe der Bestätigung über das Adobe-Formular nicht erkannt."
+  },
+  {
+   "id": "BM-191-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Fehlerzeile „Ausgabe fehlgeschlagen“ technisch; Zählen und Nicht-Protokollieren fehlen, „Bei Treffern“ widersprüchlich."
+  },
+  {
+   "id": "BM-191-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "„Zeile in zpe_tb_log eingefügt oder überschrieben“ außerhalb Vorschau; Druckprotokoll mit Datum/Benutzer nicht fachlich."
+  },
+  {
+   "id": "BM-191-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Feldausgabe „bei Treffern“; Summenzeile am Ende der Veranstaltung nicht erkannt."
+  },
+  {
+   "id": "BM-191-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "FP_JOB_CLOSE-Aufruf und Ausgabe der Zähler mit Textsymbolen; Schließen des Druckauftrags nicht fachlich."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

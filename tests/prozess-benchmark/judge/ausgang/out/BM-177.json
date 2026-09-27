@@ -1,0 +1,192 @@
+{
+ "id": "BM-177",
+ "urteile": [
+  {
+   "id": "BM-177-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus lfa1 und Meldung ohne Treffer; Abweisung unbekannter/gesperrter Lieferanten nicht fachlich."
+  },
+  {
+   "id": "BM-177-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Zwei Selektionen aus zrt_katmap und Meldung; Lieferanten- vs. Standardzuordnung und Abbruch nicht fachlich."
+  },
+  {
+   "id": "BM-177-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Ohne Treffer wird eine Meldung ausgegeben“; Lesen der Datei und Abbruch fehlen."
+  },
+  {
+   "id": "BM-177-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "redundant",
+    "zu_allgemein",
+    "unvollstaendig",
+    "falsch"
+   ],
+   "kurz": "Meldungen und „Screenfolge beendet“ (statt Verlassen der Listverarbeitung); Transformation nicht erwähnt."
+  },
+  {
+   "id": "BM-177-B05",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "„vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben“ ist falsch – vor dem RETURN wird der INDX-Wiederaufsetzpunkt gelöscht; Löschung nicht erwähnt."
+  },
+  {
+   "id": "BM-177-B06",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zum Wiederaufsetzen."
+  },
+  {
+   "id": "BM-177-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Aufrufe artikel_pflegen/auslauf_setzen „Wirkung nicht belegt“; Statusverteilung N/A/D und Fehler für andere fehlen."
+  },
+  {
+   "id": "BM-177-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "matnr-Lesen und Blockverlassen bei unbekannter EAN mit Status A; Fehlerprotokoll fehlt."
+  },
+  {
+   "id": "BM-177-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Testlauf-Ausstieg ohne Schreiben; dass die Pflege protokolliert und als erfolgreich gewertet wird, fehlt."
+  },
+  {
+   "id": "BM-177-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Ohne cv_matnr BAPI_MATERIAL_GETINTNUMBERRET; interne Nummer der Artikelart HAWA nicht fachlich."
+  },
+  {
+   "id": "BM-177-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "grammatik"
+   ],
+   "kurz": "Schleife über mt_map, CHECK sy-subrc, „abbilden – Verhalten nicht belegt“; Feldübertragung nicht fachlich."
+  },
+  {
+   "id": "BM-177-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur „Das Ergebnis der gewählten Methode wird ermittelt“; dynamischer Aufruf und Rohwert-Übernahme fehlen."
+  },
+  {
+   "id": "BM-177-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Übergabe ls_head an BAPI_MATERIAL_MAINTAINDATA_RT; Anlage/Änderung des Artikels mit Daten nicht fachlich."
+  },
+  {
+   "id": "BM-177-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Rollback bei Fehler, Commit-Aufruf; Protokollierung fehlt."
+  },
+  {
+   "id": "BM-177-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Bedingung und Aufruf Z_RT_LISTUNG_ANLEGEN mit Commit; Listung in VKORG/Vertriebsweg und asynchron nicht gesagt."
+  },
+  {
+   "id": "BM-177-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "EAN-Suche, Ausstieg ohne Treffer, „mstae in mara wird geändert“ im Echtlauf; Auslaufstatus AU nicht genannt."
+  },
+  {
+   "id": "BM-177-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur COMMIT alle 100 Zeilen im Echtlauf; Sichern des Wiederaufsetzpunkts fehlt."
+  },
+  {
+   "id": "BM-177-B18",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur COMMIT im Echtlauf; Löschen des Wiederaufsetzpunkts fehlt."
+  },
+  {
+   "id": "BM-177-B19",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "zu_allgemein"
+   ],
+   "kurz": "Meldung bei Fehlern > 0 und ALV-display „nicht belegt“; Fehlerzahl und Protokollanzeige nicht fachlich."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

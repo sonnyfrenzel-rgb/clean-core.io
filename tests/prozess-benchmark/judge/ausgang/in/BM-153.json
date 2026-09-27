@@ -1,0 +1,163 @@
+{
+ "id": "BM-153",
+ "titel": "MSS-Teamkalender: Abwesenheiten der direkt Unterstellten mit P_ORGIN-Prüfung",
+ "prozess": "Der MSS-Teamkalender ruft per RFC einen Baustein, der zu einer Führungskraft die Abwesenheiten ihres Teams in einem Zeitraum liefert. Wird er für einen fremden Benutzer aufgerufen, braucht der Aufrufer eine Vertretungsberechtigung, sonst wird abgewiesen. Zum Benutzer wird die Personalnummer über den Kommunikationssatz ermittelt; fehlt sie, wird abgewiesen. Über den Auswertungsweg der Leiterplanstelle werden die geführten Personen ohne die Führungskraft selbst gelesen; ist die Struktur leer, wird die Liste verworfen und mit „keine Führungskraft“ abgewiesen. Für jedes Teammitglied wird die organisatorische Zuordnung am Periodenende gelesen; ohne Leseberechtigung des aufrufenden Benutzers auf Abwesenheiten wird es ausgeblendet und gezählt. Für die übrigen werden die Abwesenheitstage der in den Zeitraum ragenden Sätze summiert und als FREI, NORMAL oder HOCH (über zehn Tage) eingestuft. Die Übersicht geht absteigend nach Tagen sortiert mit der Zahl ausgeblendeter Mitarbeiter zurück.",
+ "verboten": [
+  "zcl_mss_team_reader.abap:126 — kein Fachsatz „es werden nur die Abwesenheitstage innerhalb des Zeitraums gezählt“ (summiert werden die Tage ganzer Sätze, die in den Zeitraum ragen)",
+  "zcl_mss_team_reader.abap:143 — kein Fachsatz „die Berechtigung wird für die angefragte Führungskraft geprüft“ (geprüft wird der aufrufende Benutzer sy-uname)",
+  "zcl_mss_team_reader.abap:70 — kein Fachsatz „auch indirekt Unterstellte werden geliefert“ (Kundenweg ZMSS_DIR, lt. Kommentar nur direkt)",
+  "gesamte Scheibe — kein write-Knoten (es werden keine Abwesenheiten angelegt oder genehmigt)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-153-B01",
+   "soll": "Wird die Übersicht für einen anderen als den angemeldeten Benutzer angefordert, muss der Aufrufer eine Vertretungsberechtigung haben, sonst wird die Anfrage abgewiesen.",
+   "zeilen": [
+    24,
+    25,
+    27,
+    28
+   ],
+   "code": [
+    "24:   IF iv_uname <> sy-uname.",
+    "25:     AUTHORITY-CHECK OBJECT 'Z_MSS_PRX'",
+    "27:     IF sy-subrc <> 0.",
+    "28:       RAISE no_proxy_authority."
+   ],
+   "engine": [
+    "Die Berechtigung auf Z_MSS_PRX wird geprüft."
+   ]
+  },
+  {
+   "id": "BM-153-B02",
+   "soll": "Zum Benutzer wird über den Kommunikationssatz die Personalnummer der Führungskraft im Zeitraum ermittelt; ohne Zuordnung wird die Anfrage abgewiesen.",
+   "zeilen": [
+    33,
+    38,
+    39
+   ],
+   "code": [
+    "33:   SELECT SINGLE pernr FROM pa0105 INTO lv_mgr_pernr",
+    "38:   IF sy-subrc <> 0.",
+    "39:     MESSAGE e020(zmss) WITH iv_uname RAISING no_employee."
+   ],
+   "engine": [
+    "pernr des Satzes wird gelesen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-153-B03",
+   "soll": "Über den Auswertungsweg der Leiterplanstelle werden die Personen der geleiteten Einheit ermittelt, ohne die Führungskraft selbst.",
+   "zeilen": [
+    106,
+    124
+   ],
+   "code": [
+    "106:         CALL FUNCTION 'RH_STRUC_GET'",
+    "124:         mt_member = VALUE #( FOR r IN lt_result"
+   ],
+   "engine": [
+    "Der Funktionsbaustein RH_STRUC_GET wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-153-B04",
+   "soll": "Liefert die Struktur nichts oder bleibt niemand übrig, wird die Teamliste verworfen und die Anfrage mit „keine Führungskraft“ abgewiesen.",
+   "zeilen": [
+    48,
+    119,
+    127,
+    130
+   ],
+   "code": [
+    "48:       MESSAGE lx_org TYPE 'E' RAISING not_a_manager.",
+    "119:         IF sy-subrc <> 0.",
+    "127:         IF mt_member IS INITIAL.",
+    "130:       CLEANUP."
+   ],
+   "engine": [
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-153-B05",
+   "soll": "Für jedes Teammitglied wird die organisatorische Zuordnung am Ende des Zeitraums gelesen; fehlt sie, bleibt das Mitglied unberücksichtigt.",
+   "zeilen": [
+    142,
+    143,
+    154
+   ],
+   "code": [
+    "142:     LOOP AT mt_member ASSIGNING FIELD-SYMBOL(<ls_member>).",
+    "143:       CALL FUNCTION 'HR_READ_INFOTYPE'",
+    "154:       IF sy-subrc <> 0 OR lt_p0001 IS INITIAL."
+   ],
+   "engine": [
+    "Jede Zeile aus mt_member wird einzeln verarbeitet.",
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-153-B06",
+   "soll": "Hat der aufrufende Benutzer für dessen Personalbereich, Mitarbeitergruppe, -kreis und Organisationsschlüssel keine Leseberechtigung auf Abwesenheiten, wird das Mitglied ausgeblendet und mitgezählt.",
+   "zeilen": [
+    159,
+    160,
+    197
+   ],
+   "code": [
+    "159:       IF is_authorized( ls_p0001 ) = abap_false.",
+    "160:         mv_hidden = mv_hidden + 1.",
+    "197:     AUTHORITY-CHECK OBJECT 'P_ORGIN'"
+   ],
+   "engine": [
+    "Die Berechtigung auf P_ORGIN wird geprüft."
+   ]
+  },
+  {
+   "id": "BM-153-B07",
+   "soll": "Für berechtigte Mitglieder werden die Abwesenheiten im Zeitraum gelesen und ihre Abwesenheitstage summiert.",
+   "zeilen": [
+    165,
+    180
+   ],
+   "code": [
+    "165:       CALL FUNCTION 'HR_READ_INFOTYPE'",
+    "180:       ls_line-days  = REDUCE #( INIT d = 0"
+   ],
+   "engine": [
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-153-B08",
+   "soll": "Jedes Mitglied wird ohne Abwesenheit als „FREI“, bei mehr als zehn Tagen als „HOCH“ und sonst als „NORMAL“ eingestuft.",
+   "zeilen": [
+    183
+   ],
+   "code": [
+    "183:       ls_line-level = SWITCH #( ls_line-days"
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-153-B09",
+   "soll": "Die Übersicht wird nach Abwesenheitstagen absteigend sortiert und mit der Zahl ausgeblendeter Mitarbeiter an das Portal zurückgegeben.",
+   "zeilen": [
+    51,
+    52,
+    191
+   ],
+   "code": [
+    "51:   et_team   = lo_reader->build_absence_overview( ).",
+    "52:   ev_hidden = lo_reader->mv_hidden.",
+    "191:     SORT rt_team BY days DESCENDING."
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode build_absence_overview von lo_reader wird nach et_team übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

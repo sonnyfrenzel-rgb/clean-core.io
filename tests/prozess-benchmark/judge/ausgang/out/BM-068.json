@@ -1,0 +1,73 @@
+{
+ "id": "BM-068",
+ "urteile": [
+  {
+   "id": "BM-068-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'cuobj des Satzes wird gelesen' – Objektschlüssel aus Material/Charge und Klassenart 023 nicht erkennbar."
+  },
+  {
+   "id": "BM-068-B02",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Ausnahme KEINE_KLASSIFIZIERUNG."
+  },
+  {
+   "id": "BM-068-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'atinn des Satzes wird gelesen' (zweimal) und 'Sätze aus ausp'; Merkmale Reinheit/Verfallsdatum nicht benannt."
+  },
+  {
+   "id": "BM-068-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "zu_allgemein"
+   ],
+   "kurz": "Status P und Verlassen ohne Treffer erkannt; dass der Reinheitswert fehlt und P 'manuell prüfen' bedeutet, nicht gesagt; 'die Status', 'erhalten P' fehlerhaft."
+  },
+  {
+   "id": "BM-068-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur 'In der Tabelle wird nach einer passenden Zeile gesucht'; Rückgabe der Reinheit und Übernahme des Verfallsdatums fehlen."
+  },
+  {
+   "id": "BM-068-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Status S bei 'lv_vfdat IS NOT INITIAL AND lv_vfdat < sy-datum' logisch richtig, 'verfallene Charge' aber nur technisch."
+  },
+  {
+   "id": "BM-068-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik",
+    "falsch"
+   ],
+   "kurz": "F bei Reinheit ab Grenzwert erkannt; 'Für kleinere oder gleiche ev_reinheit wird die Status auf S gesetzt' ist falsch (Gleichheit ergibt F)."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

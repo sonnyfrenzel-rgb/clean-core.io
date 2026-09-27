@@ -1,0 +1,351 @@
+{
+ "id": "BM-079",
+ "titel": "Störmeldung zu Instandhaltungsauftrag: Ereignisempfänger, Klasse, CMMS-RFC und TECO-Lauf",
+ "prozess": "Legt jemand eine Störmeldung mit Priorität 1 an, löst SAP ein Ereignis aus, dessen Empfänger die Meldung sofort weiterverarbeitet; ein Report verarbeitet liegengebliebene Meldungen der letzten Tage nach oder schließt im zweiten Modus rückgemeldete Störaufträge technisch ab. Die Verarbeitung liest die Meldung, bricht ab, wenn sie fehlt oder keine Störmeldung ist, und tut nichts, wenn schon ein Auftrag existiert. Sie sperrt die Meldung – ist sie gesperrt, bekommt der Ereignisempfänger einen vorübergehenden Fehler und das Ereignis wird erneut zugestellt. Anhand des ABC-Kennzeichens der Anlage bestimmt sie die Auftragspriorität und legt einen IH-Auftrag PM01 mit Meldungsbezug und einem Vorgang an; bei Fehler rollt sie zurück, hebt die Sperre auf und bricht ab. Bei kritischer Anlage gibt sie den Auftrag sofort frei und übergibt ihn synchron an das CMMS des Anlagenlieferanten; scheitert das, merkt sie ihn zum Nachversand vor. Für jeden neuen Auftrag löst sie ein Workflow-Ereignis aus und hebt die Sperre auf. Im TECO-Modus schließt der Report alle rückgemeldeten, noch offenen Störaufträge des Planungswerks technisch ab und gibt die Anzahl aus.",
+ "verboten": [
+  "zcl_pm_breakdown_processor.abap:96 — kein Fachsatz „Der Auftrag übernimmt die Priorität der Meldung“ (die Priorität folgt der Anlagenkritikalität: 1 oder 2, obwohl die Meldung Priorität 1 hat)",
+  "zcl_pm_breakdown_processor.abap:251 — kein Fachsatz „Nicht übertragene Aufträge werden automatisch erneut gesendet“ (der Code merkt sie nur in ZPM_CMMS_QUEUE vor; der Nachversand-Job ist nicht Teil des Falls)",
+  "zcl_pm_breakdown_processor.abap:294 — kein Fachsatz „Die Meldung wird beim TECO abgeschlossen“ (abgeschlossen wird nur der Auftrag)",
+  "zcl_pm_breakdown_processor.abap:115 — kein Fachsatz „Scheitert die Freigabe, wird der Auftrag gelöscht oder die Verarbeitung abgebrochen“ (der Fehlschlag wird nur im Text vermerkt, CMMS-Übergabe und Ereignis folgen trotzdem)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-079-B01",
+   "soll": "Wird eine Meldung angelegt, prüft der Ereignisempfänger, ob es eine Störmeldung (M2) mit Priorität 1 ist; alle anderen Meldungen werden ignoriert.",
+   "zeilen": [
+    86,
+    88,
+    89
+   ],
+   "code": [
+    "86:   SELECT SINGLE qmart priok FROM qmel INTO (lv_qmart, lv_priok)",
+    "88:   IF sy-subrc <> 0 OR lv_qmart <> 'M2' OR lv_priok <> '1'.",
+    "89:     RETURN."
+   ],
+   "engine": [
+    "qmart priok des Satzes wird gelesen.",
+    "Für sy-subrc <> 0 OR lv_qmart <> 'M2' OR lv_priok <> '1' wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-079-B02",
+   "soll": "Passende Störmeldungen werden sofort in einen Instandhaltungsauftrag überführt.",
+   "zeilen": [
+    94
+   ],
+   "code": [
+    "94:       lv_text = lo_proc->process( lv_qmnum )."
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode process von lo_proc wird nach lv_text übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-079-B03",
+   "soll": "Scheitert die Verarbeitung wegen einer Sperre, meldet der Empfänger einen vorübergehenden Fehler, damit das Ereignis erneut zugestellt wird; bei jedem anderen Fehler meldet er einen endgültigen Fehler.",
+   "zeilen": [
+    97,
+    99,
+    101
+   ],
+   "code": [
+    "97:       IF lv_text CS 'gesperrt'.",
+    "99:         RAISE temp_error.",
+    "101:       RAISE any_error."
+   ],
+   "engine": []
+  },
+  {
+   "id": "BM-079-B04",
+   "soll": "Die Meldung wird mit Art, Priorität, Kurztext, Auftragsbezug, Equipment, Planungswerk und Planergruppe gelesen; fehlt sie oder ist sie keine Störmeldung, wird die Verarbeitung mit Fehler abgebrochen.",
+   "zeilen": [
+    238,
+    244,
+    249
+   ],
+   "code": [
+    "238:     SELECT SINGLE m~qmnum m~qmart m~priok m~qmtxt m~aufnr",
+    "244:     IF sy-subrc <> 0.",
+    "249:     IF rs_notif-qmart <> 'M2'."
+   ],
+   "engine": [
+    "m~qmnum m~qmart m~priok m~qmtxt m~aufnr i~equnr i~iwerk i~ingrp INTO CORRESPONDING FIELDS OF rs_notif des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-079-B05",
+   "soll": "Hat die Meldung bereits einen Auftrag, wird nur „hat bereits Auftrag“ zurückgemeldet.",
+   "zeilen": [
+    181,
+    183
+   ],
+   "code": [
+    "181:     IF ls_notif-aufnr IS NOT INITIAL.",
+    "183:       RETURN."
+   ],
+   "engine": [
+    "Mit einer nicht leeren ls_notif-aufnr wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-079-B06",
+   "soll": "Die Meldung wird gesperrt; ist sie bereits gesperrt, wird mit „gesperrt“ abgebrochen.",
+   "zeilen": [
+    186,
+    193,
+    194
+   ],
+   "code": [
+    "186:     CALL FUNCTION 'ENQUEUE_EIQMEL'",
+    "193:     IF sy-subrc <> 0.",
+    "194:       RAISE EXCEPTION TYPE zcx_pm_breakdown"
+   ],
+   "engine": [
+    "Der Funktionsbaustein ENQUEUE_EIQMEL wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-079-B07",
+   "soll": "Eine Anlage gilt als kritisch, wenn das aktuelle Zeitsegment ihres Equipments das ABC-Kennzeichen A trägt; ohne Equipment ist sie unkritisch.",
+   "zeilen": [
+    199,
+    260,
+    262,
+    268
+   ],
+   "code": [
+    "199:     lv_crit = is_critical( ls_notif-equnr ).",
+    "260:     CHECK iv_equnr IS NOT INITIAL.",
+    "262:     SELECT SINGLE l~abckz",
+    "268:     IF lv_abckz = 'A'."
+   ],
+   "engine": [
+    "Nur Eine nicht leere iv_equnr gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "l~abckz INTO lv_abckz des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-079-B08",
+   "soll": "Der Auftrag erhält bei kritischer Anlage Priorität 1, sonst Priorität 2.",
+   "zeilen": [
+    200,
+    201,
+    203
+   ],
+   "code": [
+    "200:     IF lv_crit = abap_true.",
+    "201:       lv_priok = '1'.",
+    "203:       lv_priok = '2'."
+   ],
+   "engine": [
+    "Für lv_crit mit dem Wert abap_true wird die lv_priok auf 1 gesetzt.",
+    "Für lv_crit mit dem Wert abap_true wird die lv_priok auf 1 gesetzt, sonst die lv_priok auf 2 gesetzt.",
+    "lv_crit mit dem Wert abap_true setzen die lv_priok auf 1.",
+    "Für andere lv_crit wird die lv_priok auf 2 gesetzt.",
+    "Andere lv_crit setzen die lv_priok auf 2."
+   ]
+  },
+  {
+   "id": "BM-079-B09",
+   "soll": "Es wird ein Instandhaltungsauftrag der Art PM01 mit Bezug zur Meldung, Equipment, Planungswerk, Planergruppe, Priorität, dem Meldungstext und Starttermin heute angelegt, mit einem Vorgang „Stoerungsbeseitigung“ (Steuerschlüssel PM01).",
+   "zeilen": [
+    207,
+    301
+   ],
+   "code": [
+    "207:         lv_aufnr = create_order( is_notif = ls_notif",
+    "301:     CALL FUNCTION 'BAPI_ALM_ORDER_MAINTAIN'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAPI_ALM_ORDER_MAINTAIN wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-079-B10",
+   "soll": "Scheitert die Anlage, wird zurückgerollt, die Meldungssperre aufgehoben und die Verarbeitung mit Fehler abgebrochen; sonst wird festgeschrieben und die neue Auftragsnummer übernommen.",
+   "zeilen": [
+    210,
+    309,
+    310,
+    316
+   ],
+   "code": [
+    "210:         CALL FUNCTION 'DEQUEUE_EIQMEL'",
+    "309:     IF line_exists( lt_return[ type = 'E' ] ) OR line_exists( lt_return[ type = 'A' ] ).",
+    "310:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "316:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein DEQUEUE_EIQMEL wird aufgerufen.",
+    "Für line_exists( lt_return[ type = 'E' ] ) OR line_exists( lt_return[ type = 'A' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-079-B11",
+   "soll": "Bei kritischer Anlage wird der Auftrag sofort freigegeben; das Ergebnis „freigegeben“ oder „Freigabe fehlgeschlagen“ wird im Rückgabetext vermerkt.",
+   "zeilen": [
+    218,
+    220,
+    333
+   ],
+   "code": [
+    "218:     IF lv_crit = abap_true.",
+    "220:       IF lv_frei = abap_true.",
+    "333:     CALL FUNCTION 'BAPI_ALM_ORDER_MAINTAIN'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein BAPI_ALM_ORDER_MAINTAIN wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-079-B12",
+   "soll": "Bei kritischer Anlage wird der Auftrag zusätzlich synchron an das CMMS des Anlagenlieferanten übergeben; scheitert die Übergabe, wird er mit Fehlertext für den Nachversand vorgemerkt.",
+   "zeilen": [
+    225,
+    355,
+    365,
+    372
+   ],
+   "code": [
+    "225:       sync_cmms( iv_aufnr = lv_aufnr",
+    "355:     CALL FUNCTION 'Z_CMMS_ORDER_SYNC'",
+    "365:     IF sy-subrc <> 0.",
+    "372:       INSERT zpm_cmms_queue FROM ls_queue."
+   ],
+   "engine": [
+    "Ein entferntes System wird über die eingegebene Destination benachrichtigt. Welches System und was dort geschieht, ist aus dem gelieferten Code nicht ableitbar.",
+    "Ohne Treffer wird COMMIT WORK ausgeführt."
+   ]
+  },
+  {
+   "id": "BM-079-B13",
+   "soll": "Für jeden angelegten Auftrag wird das Workflow-Ereignis ZBREAKDOWN ausgelöst.",
+   "zeilen": [
+    229,
+    382
+   ],
+   "code": [
+    "229:     raise_event( lv_aufnr ).",
+    "382:     CALL FUNCTION 'SAP_WAPI_CREATE_EVENT'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein SAP_WAPI_CREATE_EVENT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-079-B14",
+   "soll": "Zum Schluss wird die Meldungssperre aufgehoben.",
+   "zeilen": [
+    231
+   ],
+   "code": [
+    "231:     CALL FUNCTION 'DEQUEUE_EIQMEL'"
+   ],
+   "engine": [
+    "Der Funktionsbaustein DEQUEUE_EIQMEL wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-079-B15",
+   "soll": "Im Nachverarbeitungsmodus liest der Report die Störmeldungen M2 mit Priorität 1 ohne Auftrag der letzten Tage (Vorschlag 3) im Planungswerk; ohne Treffer gibt er einen Hinweis aus.",
+   "zeilen": [
+    34,
+    35,
+    44
+   ],
+   "code": [
+    "34:   gv_von = sy-datum - p_tage.",
+    "35:   SELECT m~qmnum FROM qmel AS m",
+    "44:   IF gt_qmnum IS INITIAL."
+   ],
+   "engine": [
+    "Es werden Sätze aus qmel mit dem eingegebenen i~iwerk selektiert.",
+    "Ohne Treffer wird Keine offenen Stoermeldungen ohne Auftrag ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird Keine offenen Stoermeldungen ohne Auftrag ausgegeben und vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-079-B16",
+   "soll": "Jede Meldung wird verarbeitet und das Ergebnis grün, ein Fehler rot mit Text ausgegeben.",
+   "zeilen": [
+    51,
+    52,
+    55
+   ],
+   "code": [
+    "51:         gv_text = go_proc->process( gv_qmnum ).",
+    "52:         WRITE: / icon_green_light AS ICON, gv_text.",
+    "55:         WRITE: / icon_red_light AS ICON, gv_text."
+   ],
+   "engine": [
+    "Der Rückgabewert der Methode process von go_proc wird nach gv_text übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Bei Treffern werden icon_green_light AS ICON und Der Rückgabewert als Liste ausgegeben.",
+    "icon_green_light AS ICON wird ausgegeben.",
+    "Der Rückgabewert wird ausgegeben.",
+    "Bei Treffern werden icon_red_light AS ICON und Der Rückgabewert als Liste ausgegeben.",
+    "icon_red_light AS ICON wird ausgegeben.",
+    "Der Rückgabewert wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-079-B17",
+   "soll": "Im TECO-Modus werden die Aufträge der Art PM01 mit Meldungsbezug im Planungswerk gelesen.",
+   "zeilen": [
+    28,
+    398
+   ],
+   "code": [
+    "28:   IF p_teco = abap_true.",
+    "398:     SELECT a~* FROM aufk AS a"
+   ],
+   "engine": [
+    "Für p_teco mit dem Wert abap_true wird Technisch abgeschlossen: ausgegeben, Der Rückgabewert ausgegeben und der Block verlassen.",
+    "Bei p_teco gleich abap_true wird Technisch abgeschlossen: ausgegeben und vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Es werden Sätze aus aufk selektiert."
+   ]
+  },
+  {
+   "id": "BM-079-B18",
+   "soll": "Nur rückgemeldete, noch nicht technisch abgeschlossene Aufträge werden technisch abgeschlossen; bei Fehler wird zurückgerollt, sonst festgeschrieben und gezählt.",
+   "zeilen": [
+    407,
+    415,
+    428,
+    432
+   ],
+   "code": [
+    "407:       SELECT SINGLE @abap_true FROM jest",
+    "415:       SELECT SINGLE @abap_true FROM jest",
+    "428:       CALL FUNCTION 'BAPI_ALM_ORDER_MAINTAIN'",
+    "432:       IF line_exists( lt_return[ type = 'E' ] )."
+   ],
+   "engine": [
+    "abap_true des Satzes wird gelesen.",
+    "abap_true des Satzes wird gelesen.",
+    "Der Funktionsbaustein BAPI_ALM_ORDER_MAINTAIN wird aufgerufen.",
+    "Für line_exists( lt_return[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Für line_exists( lt_return[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-079-B19",
+   "soll": "Die Zahl der abgeschlossenen Aufträge wird ausgegeben.",
+   "zeilen": [
+    30
+   ],
+   "code": [
+    "30:     WRITE: / 'Technisch abgeschlossen:', gv_count."
+   ],
+   "engine": [
+    "Für p_teco mit dem Wert abap_true wird Technisch abgeschlossen: ausgegeben, Der Rückgabewert ausgegeben und der Block verlassen.",
+    "Bei p_teco gleich abap_true wird Technisch abgeschlossen: ausgegeben und vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Technisch abgeschlossen: und Der Rückgabewert werden ausgegeben.",
+    "Es wird Technisch abgeschlossen: ausgegeben, Der Rückgabewert ausgegeben und der Block verlassen.",
+    "Technisch abgeschlossen: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Der Rückgabewert wird ausgegeben."
+   ]
+  }
+ ]
+}

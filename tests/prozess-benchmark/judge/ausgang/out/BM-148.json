@@ -1,0 +1,72 @@
+{
+ "id": "BM-148",
+ "urteile": [
+  {
+   "id": "BM-148-B01",
+   "urteil": "fehlt",
+   "mangel": [
+    "technisch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur \"Unterprogramm walk wird aufgerufen, Wirkung nicht belegt\"; kein Ablauf der Hierarchie ausgesagt."
+  },
+  {
+   "id": "BM-148-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Verlassen bei pv_depth > p_maxd erkannt; Vermerken der Abschneidung fehlt."
+  },
+  {
+   "id": "BM-148-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"RH_STRUC_GET wird aufgerufen\"; Personen über Planstellen und Zählung fehlen."
+  },
+  {
+   "id": "BM-148-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Zeile wird in gt_out aufgenommen\"; Ebene und Personenzahl nicht benannt."
+  },
+  {
+   "id": "BM-148-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Selektion aus hrp1001, Schleife und rekursiver walk-Aufruf erkannt, aber nicht als Auswertung der Untereinheiten formuliert."
+  },
+  {
+   "id": "BM-148-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Meldung bei gv_too_deep erkannt, nicht als Hinweis auf abgeschnittene Teilbäume."
+  },
+  {
+   "id": "BM-148-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "factory/display und Meldung erkannt; \"nach cl_salv_table übernommen\" falsch (lo_alv), \"Wirkung nicht belegt\"."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

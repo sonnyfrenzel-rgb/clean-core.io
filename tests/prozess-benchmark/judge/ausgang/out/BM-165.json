@@ -1,0 +1,43 @@
+{
+ "id": "BM-165",
+ "urteile": [
+  {
+   "id": "BM-165-B01",
+   "urteil": "abweichend",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "„kleinere werden übersprungen, die Schleife läuft weiter“ ist falsch: kein Loop, CHECK beendet den Exit bei jedem Wert außer X; Schalterbedeutung fehlt."
+  },
+  {
+   "id": "BM-165-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein"
+   ],
+   "kurz": "Nur „In der Tabelle wird nach einer passenden Zeile gesucht“; Warenempfänger auf Kopfebene nicht genannt."
+  },
+  {
+   "id": "BM-165-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein"
+   ],
+   "kurz": "Nur „Die Zahl der Sätze wird ermittelt“; Abgleich mit der Sanktionsliste nach Land/Name fehlt."
+  },
+  {
+   "id": "BM-165-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "Meldung bei sy-dbcnt > 0 erkannt, aber nicht, dass es eine Fehlermeldung ist, die das Sichern verhindert."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

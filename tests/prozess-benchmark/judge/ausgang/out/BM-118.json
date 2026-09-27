@@ -1,0 +1,178 @@
+{
+ "id": "BM-118",
+ "urteile": [
+  {
+   "id": "BM-118-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Es werden Aufträge selektiert' – Kontraktpositionen mit Abrechnungsart Z und Laufzeitüberlappung fehlen; 'vertraege_lesen Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-118-B02",
+   "urteil": "gleich",
+   "mangel": [
+    "redundant"
+   ],
+   "kurz": "'Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen' entspricht dem Soll."
+  },
+  {
+   "id": "BM-118-B03",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus ser02 selektiert' – Equipments der Objektliste nicht benannt; 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-118-B04",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Zählerlesung und Ausgabe 'ohne Abrechnungszähler' erkennbar; 'nicht berücksichtigt' fehlt, widersprüchlich 'Ohne Treffer'/'Bei Treffern', 'ls_obj>-equnr' verstümmelt."
+  },
+  {
+   "id": "BM-118-B05",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "'Sätze aus imrg selektiert' und 'usage ... Verhalten nicht belegt' – Verbrauchsformel fehlt, Methode steht im gelieferten Code."
+  },
+  {
+   "id": "BM-118-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "Ausgabe Equipment + Text genannt, aber 'Bei Treffern' statt Fehlerfall; Verbrauch null fehlt."
+  },
+  {
+   "id": "BM-118-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "'cjump des Satzes wird gelesen' – Überlaufkorrektur und Fehler ohne Überlauf fehlen."
+  },
+  {
+   "id": "BM-118-B08",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Sätze aus konv selektiert' – Kondition ZCPK nicht benannt; 'Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-118-B09",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "Nur 'abrechnung_berechnen ... Wirkung nicht belegt'; Summierung und Freimenge fehlen."
+  },
+  {
+   "id": "BM-118-B10",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "'Ohne Treffer wird ... ohne Preis ZCPK ausgegeben' trifft die Meldung; 'nicht übernommen' fehlt, zusätzlich widersprüchlich 'Bei Treffern'."
+  },
+  {
+   "id": "BM-118-B11",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "unvollstaendig"
+   ],
+   "kurz": "'Für sy-subrc mit dem Wert 4 wird ... Preis nicht berechenbar ausgegeben' – Betragsformel fehlt, Bedingung technisch."
+  },
+  {
+   "id": "BM-118-B12",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "Kopfzeile, GUI-Status LISTE und Feldliste gs_bill-... genannt; Spalten nur als Feldnamen, 'Funktion Fakturieren' nicht benannt."
+  },
+  {
+   "id": "BM-118-B13",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "zu_allgemein"
+   ],
+   "kurz": "'Nur Beträge größer 0 gehen weiter' und 'eine Meldung' – Fakturieren/Abweisen anderer Funktionen nicht fachlich; 'fakturieren Wirkung nicht belegt' falsch."
+  },
+  {
+   "id": "BM-118-B14",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "grammatik"
+   ],
+   "kurz": "Ausgabe 'bereits abgerechnet mit' bei Treffer erkennbar; 'mit dem eingegebenen von' verstümmelt, Überspringen nicht gesagt."
+  },
+  {
+   "id": "BM-118-B15",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur Übergabe an BAPI_SALESORDER_CREATEFROMDAT2; Lastschriftanforderung ZL2 mit Bezug und Menge fehlt; 'konvertiert' falsch."
+  },
+  {
+   "id": "BM-118-B16",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant",
+    "falsch"
+   ],
+   "kurz": "'Ohne Belegnummer wird BAPI_TRANSACTION_ROLLBACK aufgerufen ... Fehler: ausgegeben' – nur technisch, 'Bei Treffern' falsch."
+  },
+  {
+   "id": "BM-118-B17",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "unvollstaendig",
+    "redundant"
+   ],
+   "kurz": "COMMIT-Baustein, Ausgabe 'Lastschriftanforderung' und Meldung – Protokoll (INSERT zcs_zf_log) und Anzahl fehlen fachlich."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

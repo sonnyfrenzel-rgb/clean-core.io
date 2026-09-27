@@ -1,0 +1,120 @@
+{
+ "id": "BM-107",
+ "titel": "Auftragsfreigabe nur mit erteilten Genehmigungen und aktiver Freischaltung (BAdI WORKORDER_UPDATE)",
+ "prozess": "Wird ein Instandhaltungsauftrag freigegeben, ruft das System die BAdI-Methode mit den Auftragskopfdaten auf. Geprüft werden nur Aufträge des Planungswerks 2000; alle anderen werden ohne Prüfung freigegeben. Zunächst liest die Methode alle nicht gelöschten Genehmigungen des Auftrags und zählt die noch nicht erteilten. Ist mindestens eine offen, lehnt sie die Freigabe mit Anzahl und Auftragsnummer ab. Anschließend liest sie die Vorgänge mit Steuerschlüssel ZWCM und die dazu erfassten Freischaltungen aus einer Kundentabelle. Je Vorgang gilt: ist eine Freischaltung nicht aktiv oder gar keine erfasst, ist der Vorgang nicht freigeschaltet, und die Prüfung bricht beim ersten solchen Vorgang ab. In diesem Fall wird die Freigabe mit einer Meldung zu diesem Vorgang abgelehnt, andernfalls darf der Auftrag freigegeben werden. Aufträge ohne ZWCM-Vorgänge passieren die zweite Prüfung immer.",
+ "verboten": [
+  "zcl_im_pm_wcm_release.abap:47 — kein Fachsatz „Aufträge ohne ZWCM-Vorgänge werden abgelehnt“: ohne solche Vorgänge liest FOR ALL ENTRIES zwar alle Freischaltungen, die Vorgangsschleife läuft aber nicht und die Freigabe wird erlaubt",
+  "zcl_im_pm_wcm_release.abap:25 — kein Fachsatz „die Prüfung gilt für alle Werke oder ist über Auftragsarten gesteuert“: sie ist hart auf Planungswerk 2000 beschränkt",
+  "gesamte Scheibe — kein Fachsatz „Genehmigungen werden erteilt oder Freischaltungen gesetzt“: die Methode prüft nur und lehnt ggf. ab",
+  "zcl_im_pm_wcm_release.abap:69 — kein Fachsatz „alle nicht freigeschalteten Vorgänge werden gemeldet“: die Prüfung bricht beim ersten ab und nennt nur diesen"
+ ],
+ "saetze": [
+  {
+   "id": "BM-107-B01",
+   "soll": "Die Prüfung greift nur für Aufträge des Planungswerks 2000; alle anderen Aufträge werden ohne Prüfung freigegeben.",
+   "zeilen": [
+    25
+   ],
+   "code": [
+    "25:     CHECK is_header_dialog-iwerk = '2000'."
+   ],
+   "engine": [
+    "Nur is_header_dialog-iwerk mit dem Wert 2000 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-107-B02",
+   "soll": "Es werden die nicht gelöschten Genehmigungen zum Auftrag gelesen und die noch nicht erteilten gezählt.",
+   "zeilen": [
+    28,
+    33
+   ],
+   "code": [
+    "28:     SELECT counter, permit, gendatum, genvname FROM ihgns",
+    "33:     DATA(lv_offen) = REDUCE i( INIT n = 0"
+   ],
+   "engine": [
+    "Das Ergebnis enthält counter, permit, gendatum und genvname.",
+    "Es werden Sätze aus ihgns selektiert."
+   ]
+  },
+  {
+   "id": "BM-107-B03",
+   "soll": "Ist mindestens eine Genehmigung nicht erteilt, wird die Freigabe mit einer Fehlermeldung mit Anzahl und Auftragsnummer abgelehnt.",
+   "zeilen": [
+    37,
+    38
+   ],
+   "code": [
+    "37:     IF lv_offen > 0.",
+    "38:       MESSAGE e210(zpm) WITH lv_offen is_header_dialog-aufnr"
+   ],
+   "engine": [
+    "Für lv_offen größer 0 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-107-B04",
+   "soll": "Es werden die Vorgänge des Auftrags mit Steuerschlüssel ZWCM gelesen und dazu die erfassten Freischaltungen.",
+   "zeilen": [
+    43,
+    47
+   ],
+   "code": [
+    "43:     SELECT * FROM afvc INTO TABLE lt_afvc",
+    "47:     SELECT * FROM zpm_freisch INTO TABLE lt_isol"
+   ],
+   "engine": [
+    "Es werden Sätze aus afvc selektiert.",
+    "Es werden Sätze aus zpm_freisch selektiert."
+   ]
+  },
+  {
+   "id": "BM-107-B05",
+   "soll": "Ein ZWCM-Vorgang gilt als nicht freigeschaltet, wenn eine seiner Freischaltungen nicht aktiv ist oder gar keine erfasst ist.",
+   "zeilen": [
+    54,
+    59
+   ],
+   "code": [
+    "54:         IF ls_isol-status <> 'AKT'.",
+    "59:       IF sy-subrc <> 0."
+   ],
+   "engine": [
+    "Für Status ungleich AKT wird der Block verlassen.",
+    "Bei ls_isol-status ungleich AKT wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-107-B06",
+   "soll": "Die Prüfung der Vorgänge endet beim ersten nicht freigeschalteten Vorgang.",
+   "zeilen": [
+    63
+   ],
+   "code": [
+    "63:       IF lv_isol_ok = abap_false."
+   ],
+   "engine": [
+    "Für lv_isol_ok mit dem Wert abap_false wird der Block verlassen.",
+    "Bei lv_isol_ok gleich abap_false wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-107-B07",
+   "soll": "Ist ein Vorgang nicht freigeschaltet, wird die Freigabe mit einer Fehlermeldung zu diesem Vorgang abgelehnt; sonst wird der Auftrag freigegeben.",
+   "zeilen": [
+    68,
+    69
+   ],
+   "code": [
+    "68:     IF lv_isol_ok = abap_false.",
+    "69:       MESSAGE e211(zpm) WITH ls_afvc-vornr is_header_dialog-aufnr"
+   ],
+   "engine": [
+    "Für lv_isol_ok mit dem Wert abap_false wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

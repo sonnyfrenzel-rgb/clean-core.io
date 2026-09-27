@@ -1,0 +1,62 @@
+{
+ "id": "BM-147",
+ "urteile": [
+  {
+   "id": "BM-147-B01",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "unvollstaendig"
+   ],
+   "kurz": "Lesen aus zpt_nz_cust und Verlassen ohne Treffer erkannt; Nachtzuschlagsregel/Personalteilbereich nicht benannt."
+  },
+  {
+   "id": "BM-147-B02",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "falsch",
+    "grammatik"
+   ],
+   "kurz": "Schleife über tip und \"nur leere tip-abwkz\" technisch erkannt; Anwesenheit nicht benannt, \"kleinere werden übersprungen\" sinnlos."
+  },
+  {
+   "id": "BM-147-B03",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Berechnung des Nachtanteils."
+  },
+  {
+   "id": "BM-147-B04",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Mindestdauer."
+  },
+  {
+   "id": "BM-147-B05",
+   "urteil": "fehlt",
+   "mangel": [],
+   "kurz": "Kein Engine-Satz zur Tagessumme."
+  },
+  {
+   "id": "BM-147-B06",
+   "urteil": "teilweise",
+   "mangel": [
+    "technisch",
+    "redundant"
+   ],
+   "kurz": "Verlassen bei Summe 0 erkannt, aber \"ohne Zuschlag\" nicht benannt."
+  },
+  {
+   "id": "BM-147-B07",
+   "urteil": "teilweise",
+   "mangel": [
+    "zu_allgemein",
+    "unvollstaendig"
+   ],
+   "kurz": "Nur \"Eine Zeile wird aufgenommen\"; Zeitlohnart, Nachtstunden, Dauernachtschicht fehlen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}
