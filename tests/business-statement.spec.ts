@@ -330,3 +330,68 @@ test('ein UPDATE mit Schlüssel wird als solches beschrieben, eines ohne nicht',
     expect(satz.text).toContain('Ob eine Zeile getroffen wird');
   }
 });
+
+// ---------------------------------------------------------------------------
+// Die Fehlmuster aus dem Prozess-Benchmark (F1–F12)
+//
+// Jeder Test unten benennt ein Muster, das fünf unabhängige Richter an den
+// Sätzen dieses Erzeugers gefunden haben, und hält die Korrektur mit einem
+// eigens geschriebenen Minimal-ABAP fest — kein Fall aus dem Benchmark.
+// ---------------------------------------------------------------------------
+
+const quelle = (...z: string[]) => z.join('\n') + '\n';
+const satzAn = (code: string, zeile: number) =>
+  buildBusinessStatements(code)
+    .filter((s) => s.anchors.some((a) => a.lineStart <= zeile && zeile <= a.lineEnd))
+    .map((s) => s.text);
+
+test('F1 — CHECK sagt die Folge seines Orts und die Bedingung, wie sie ist', () => {
+  // In einer FORM ohne Schleife: die Routine wird verlassen, nichts läuft „weiter".
+  const imUnterprogramm = satzAn(
+    quelle('FORM freigabe USING iv_art TYPE c.', "  CHECK iv_art = 'A'.", '  WRITE / iv_art.', 'ENDFORM.'),
+    2,
+  ).join(' ');
+  expect(imUnterprogramm).toContain('Unterprogramm freigabe');
+  expect(imUnterprogramm).toContain('gleich A');
+  expect(imUnterprogramm).not.toMatch(/Schleife|kleinere/);
+
+  // In einem Ereignisblock: der Block wird verlassen.
+  const imEreignis = satzAn(
+    quelle('REPORT z_f1.', 'PARAMETERS p_echt AS CHECKBOX.', 'START-OF-SELECTION.', '  CHECK p_echt IS NOT INITIAL.', "  WRITE / 'X'."),
+    4,
+  ).join(' ');
+  expect(imEreignis).toContain('Ereignisblock START-OF-SELECTION');
+  expect(imEreignis).toContain('nicht leer');
+  expect(imEreignis).not.toMatch(/Schleife|kleinere/);
+
+  // In einer Schleife mit Gleichheit: der Durchlauf wird übersprungen, aber
+  // „kleinere" gibt es bei einer Gleichheitsprüfung nicht.
+  const inSchleife = satzAn(
+    quelle('FORM zeilen TABLES it_pos.', '  LOOP AT it_pos INTO DATA(ls_pos).', "    CHECK ls_pos-kz = 'L'.", '  ENDLOOP.', 'ENDFORM.'),
+    3,
+  ).join(' ');
+  expect(inSchleife).toContain('Schleifendurchlauf');
+  expect(inSchleife).not.toContain('kleinere');
+
+  // Ein SELECT in eine Tabelle öffnet keine Schleife — auch nicht mit
+  // CORRESPONDING FIELDS OF TABLE. Der CHECK dahinter steht in der Routine.
+  const nachSelect = satzAn(
+    quelle(
+      'FORM lesen.',
+      '  SELECT * FROM zstamm INTO CORRESPONDING FIELDS OF TABLE gt_stamm.',
+      '  CHECK gt_stamm IS NOT INITIAL.',
+      'ENDFORM.',
+    ),
+    3,
+  ).join(' ');
+  expect(nachSelect).toContain('Unterprogramm lesen');
+  expect(nachSelect).not.toContain('Schleife');
+
+  // Wo „kleinere" wahr ist, bleibt es: ein Größenvergleich über ein bekanntes
+  // Fachwort in einer Schleife.
+  const groesse = satzAn(
+    quelle('LOOP AT gt_pos INTO gs_pos.', '  CHECK gs_pos-betrag >= 100.', 'ENDLOOP.'),
+    2,
+  ).join(' ');
+  expect(groesse).toContain('kleinere werden übersprungen, die Schleife läuft weiter');
+});

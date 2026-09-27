@@ -52,7 +52,7 @@
  */
 
 import { readStatements, type AbapStatement, type SourceRange } from './statement-reader';
-import { tableTerm, termFor, type BusinessTerm } from './business-glossary';
+import { isKnownField, nounPhrase, tableTerm, termFor, type BusinessTerm } from './business-glossary';
 import { buildProcessFacts } from './process-facts';
 import { readLuwStates, type LuwModel } from './luw-states';
 
@@ -215,15 +215,57 @@ const OPENERS: Record<string, BlockKind> = {
   FORM: 'routine',
   METHOD: 'routine',
   MODULE: 'routine',
+  FUNCTION: 'routine',
   CLASS: 'class',
 };
 
 const CLOSERS = new Set([
-  'ENDIF', 'ENDLOOP', 'ENDDO', 'ENDWHILE', 'ENDCASE', 'ENDTRY', 'ENDFORM', 'ENDMETHOD', 'ENDMODULE', 'ENDCLASS', 'ENDSELECT',
+  'ENDIF', 'ENDLOOP', 'ENDDO', 'ENDWHILE', 'ENDCASE', 'ENDTRY', 'ENDFORM', 'ENDMETHOD', 'ENDMODULE', 'ENDFUNCTION',
+  'ENDCLASS', 'ENDSELECT', 'ENDCATCH',
 ]);
 
+/**
+ * Welche `SELECT` eine Schleife öffnen — die, zu denen ein `ENDSELECT` gehört.
+ *
+ * Früher galt jedes `SELECT` ohne `INTO TABLE` und ohne `SINGLE` als Schleife.
+ * Ein `INTO CORRESPONDING FIELDS OF TABLE`, ein `APPENDING TABLE` oder ein
+ * `SELECT COUNT(*)` öffnet aber keine, und weil nie ein `ENDSELECT` kam, stand
+ * danach **der ganze Rest des Programms** in einer erfundenen Schleife — mit
+ * „Bei Treffern … als Liste" und „die Schleife läuft weiter" an Stellen, die in
+ * keiner Schleife stehen. Gezählt wird deshalb gegen die `ENDSELECT`.
+ */
+function selectLoops(statements: readonly AbapStatement[]): Set<number> {
+  const loops = new Set<number>();
+  const open: number[] = [];
+  for (const statement of statements) {
+    const keyword = statement.keyword.toUpperCase();
+    if (keyword === 'SELECT') {
+      const text = statement.text;
+      const table = /\b(?:INTO|APPENDING)\s+(?:CORRESPONDING\s+FIELDS\s+OF\s+)?TABLE\b/i.test(text);
+      const aggregateOnly =
+        /^SELECT\s+(?:SINGLE\s+)?(?:COUNT|MAX|MIN|SUM|AVG)\s*\(/i.test(text) && !/\bGROUP\s+BY\b/i.test(text);
+      if (!table && !/\bSINGLE\b/i.test(text) && !aggregateOnly) open.push(statement.index);
+    } else if (keyword === 'ENDSELECT') {
+      const head = open.pop();
+      if (head !== undefined) loops.add(head);
+    }
+  }
+  return loops;
+}
+
+/** Was einen Block öffnet — die Tabelle oben plus die Sonderfälle, die ein Schlüsselwort allein nicht sagt. */
+function opens(statement: AbapStatement, loops: ReadonlySet<number>): BlockKind | null {
+  const keyword = statement.keyword.toUpperCase();
+  if (keyword === 'SELECT') return loops.has(statement.index) ? 'loop' : null;
+  // `CLASS x DEFINITION DEFERRED.` und `… LOAD.` haben kein ENDCLASS.
+  if (keyword === 'CLASS' && /\bDEFINITION\s+(?:DEFERRED|LOAD)\b/i.test(statement.text)) return null;
+  // `CATCH SYSTEM-EXCEPTIONS … ENDCATCH` ist ein eigener Block, kein Zweig eines TRY.
+  if (keyword === 'CATCH' && /^CATCH\s+SYSTEM-EXCEPTIONS\b/i.test(statement.text)) return 'try';
+  return OPENERS[keyword] ?? null;
+}
+
 /** Für jede Anweisung der Stapel der offenen Blöcke — ohne zweiten Parser. */
-function blockStacks(statements: readonly AbapStatement[]): Block[][] {
+function blockStacks(statements: readonly AbapStatement[], loops: ReadonlySet<number>): Block[][] {
   const stacks: Block[][] = [];
   const stack: Block[] = [];
   for (const statement of statements) {
@@ -239,21 +281,90 @@ function blockStacks(statements: readonly AbapStatement[]): Block[][] {
       stacks.push([...stack]);
       continue;
     }
-    if (keyword === 'CATCH') {
+    if (keyword === 'CATCH' && !/^CATCH\s+SYSTEM-EXCEPTIONS\b/i.test(statement.text)) {
       stack.pop();
       stack.push({ kind: 'catch', head: statement });
       stacks.push([...stack]);
       continue;
     }
     stacks.push([...stack]);
-    const opener = OPENERS[keyword];
+    const opener = opens(statement, loops);
     if (opener) stack.push({ kind: opener, head: statement });
-    // `SELECT … ENDSELECT` ist eine Schleife; `SELECT … INTO TABLE` nicht.
-    if (keyword === 'SELECT' && !/\bINTO\s+TABLE\b/i.test(statement.text) && !/\bSINGLE\b/i.test(statement.text)) {
-      stack.push({ kind: 'loop', head: statement });
-    }
   }
   return stacks;
+}
+
+// ---------------------------------------------------------------------------
+// Die Einheit, die ein CHECK, RETURN oder EXIT verlässt
+// ---------------------------------------------------------------------------
+
+/** Die Ereignisse eines Reports — ein RETURN oder CHECK darin verlässt nur dieses Ereignis. */
+const EVENT =
+  /^(START-OF-SELECTION|END-OF-SELECTION|INITIALIZATION|LOAD-OF-PROGRAM|TOP-OF-PAGE(?:\s+DURING\s+LINE-SELECTION)?|END-OF-PAGE|AT\s+SELECTION-SCREEN(?:\s+OUTPUT|\s+ON\s+(?:VALUE-REQUEST\s+FOR\s+|HELP-REQUEST\s+FOR\s+|BLOCK\s+|RADIOBUTTON\s+GROUP\s+|END\s+OF\s+)?\S+)?|AT\s+LINE-SELECTION|AT\s+USER-COMMAND|AT\s+PF\d+)$/i;
+
+/** Ein `GET knoten` — das Ereignis einer logischen Datenbank, nicht `GET PARAMETER`, `GET TIME` … */
+const GET_NOT_LDB =
+  /^GET\s+(?:PARAMETER|TIME|REFERENCE|BADI|CURSOR|PF-STATUS|LOCALE|BIT|RUN\s+TIME|DATASET|PROPERTY|PERMISSIONS)\b/i;
+
+export function isLdbGet(text: string): boolean {
+  return /^GET\s+[A-Za-z0-9_]+(?:\s+LATE)?(?:\s+FIELDS\b.*)?$/i.test(text.trim()) && !GET_NOT_LDB.test(text.trim());
+}
+
+function isEvent(statement: AbapStatement): boolean {
+  return EVENT.test(statement.text.trim()) || isLdbGet(statement.text);
+}
+
+interface Unit {
+  kind: 'loop' | 'routine' | 'event' | 'unknown';
+  head: AbapStatement | null;
+}
+
+/**
+ * Was ein `CHECK` an dieser Stelle verlässt: die innerste Schleife, sonst die
+ * Routine, sonst das Ereignis. Das ist ABAP-Semantik, keine Auslegung — und die
+ * Folge ist jeweils eine andere: ein übersprungener Durchlauf, eine verlassene
+ * Routine, ein verlassener Ereignisblock.
+ */
+function enclosingUnit(statements: readonly AbapStatement[], stack: readonly Block[], index: number): Unit {
+  for (let i = stack.length - 1; i >= 0; i -= 1) {
+    if (stack[i].kind === 'loop') return { kind: 'loop', head: stack[i].head };
+    if (stack[i].kind === 'routine') return { kind: 'routine', head: stack[i].head };
+  }
+  for (let i = index - 1; i >= 0; i -= 1) {
+    const other = statements[i];
+    if (isEvent(other)) return { kind: 'event', head: other };
+    if (/^(?:ENDFORM|ENDMETHOD|ENDFUNCTION|ENDMODULE|ENDCLASS)$/i.test(other.keyword)) break;
+  }
+  return { kind: 'unknown', head: null };
+}
+
+/** Die Routine mit ihrem Namen, im verlangten Fall: „das Unterprogramm pruefen". */
+function routineLabel(head: AbapStatement, kasus: 'nom' | 'akk' = 'nom'): string {
+  const match = /^(FORM|METHOD|MODULE|FUNCTION)\s+([A-Za-z0-9_~/]+)/i.exec(head.text);
+  if (!match) return kasus === 'nom' ? 'die Routine' : 'die Routine';
+  const name = match[2];
+  switch (match[1].toUpperCase()) {
+    case 'FORM':
+      return `das Unterprogramm ${name}`;
+    case 'METHOD':
+      return `die Methode ${name}`;
+    case 'MODULE':
+      return `das Dialogmodul ${name}`;
+    default:
+      return `${kasus === 'nom' ? 'der' : 'den'} Funktionsbaustein ${name}`;
+  }
+}
+
+/** Der Block, den ein CHECK oder RETURN außerhalb jeder Schleife verlässt — mit Namen. */
+function unitLabel(unit: Unit, kasus: 'nom' | 'akk' = 'nom'): string {
+  if (unit.kind === 'routine' && unit.head) return routineLabel(unit.head, kasus);
+  if (unit.kind === 'event' && unit.head) {
+    return `der Ereignisblock ${unit.head.text.trim().replace(/\s+/g, ' ').toUpperCase()}`.replace(
+      /^der/,
+      kasus === 'nom' ? 'der' : 'den',
+    );
+  }
+  return kasus === 'nom' ? 'der aktuelle Verarbeitungsblock' : 'den aktuellen Verarbeitungsblock';
 }
 
 // ---------------------------------------------------------------------------
@@ -318,6 +429,104 @@ function conditionSubject(condition: string): { subject: string; term: BusinessT
     };
   }
   return { subject: text, term: null, comparison: null };
+}
+
+const OPERATOR_WORDS: Record<string, string> = {
+  '=': 'gleich',
+  EQ: 'gleich',
+  '<>': 'ungleich',
+  NE: 'ungleich',
+  '>': 'größer als',
+  GT: 'größer als',
+  '<': 'kleiner als',
+  LT: 'kleiner als',
+  '>=': 'mindestens',
+  GE: 'mindestens',
+  '<=': 'höchstens',
+  LE: 'höchstens',
+};
+
+const TRUE_VALUES = /^(?:'X'|abap_true|b_true|c_true)$/i;
+const FALSE_VALUES = /^(?:''|' '|space|abap_false|b_false|c_false)$/i;
+
+/** Ein Vergleichswert, wie ein Satz ihn schreibt: Literal ohne Anführungszeichen, Bezeichner wie im Quelltext. */
+function valueText(value: string): string {
+  const literal = literalOf(value.replace(/\(\d+\)$/, ''));
+  return literal ?? plain(value);
+}
+
+/**
+ * Eine ABAP-Bedingung als **Nebensatz** — „der Betrag größer als 0 ist".
+ *
+ * Der Nebensatz trägt die Bedingung, wie sie ist: kein erfundenes „kleinere",
+ * keine Umkehrung, kein erratenes Geschlecht (ein unbekannter Bezeichner heißt
+ * „das Feld …"). Was sich nicht in einen einfachen Satz fassen lässt — eine
+ * Verknüpfung mit AND/OR, ein Ausdruck —, steht wörtlich in Anführungszeichen.
+ * Wörtlich ist technisch, aber wahr.
+ *
+ * `subrc` sagt, was `sy-subrc` an dieser Stelle bedeutet (F2); ohne Angabe
+ * bleibt es beim neutralen „der Rückgabewert".
+ */
+function conditionClause(condition: string, subrc?: (value: string, equal: boolean) => string | null): string {
+  const text = condition.replace(/^(IF|ELSEIF|WHILE|CHECK)\s+/i, '').trim();
+  const literally = `die Bedingung „${text}“ erfüllt ist`;
+  // Eine reine UND- oder reine ODER-Kette ohne Klammern ist eine Aufzählung
+  // einfacher Bedingungen; jede Mischung und jede Klammer bleibt wörtlich.
+  if (!/[()]/.test(text)) {
+    for (const [connector, word] of [['AND', 'und'], ['OR', 'oder']] as const) {
+      const parts = text.split(connector === 'AND' ? /\s+AND\s+/i : /\s+OR\s+/i);
+      const other = connector === 'AND' ? /\sOR\s/i : /\sAND\s/i;
+      if (parts.length > 1 && !other.test(text) && !/\bBETWEEN\b/i.test(text)) {
+        const clauses = parts.map((part) => conditionClause(part, subrc));
+        if (clauses.every((clause) => !clause.startsWith('die Bedingung'))) {
+          return `${clauses.slice(0, -1).join(', ')} ${word} ${clauses[clauses.length - 1]}`;
+        }
+        return literally;
+      }
+    }
+  }
+  if (/\s(?:AND|OR|EQUIV)\s/i.test(text) || /^NOT\s/i.test(text)) return literally;
+
+  const initial = /^(\S+)\s+IS\s+(NOT\s+)?INITIAL$/i.exec(text);
+  if (initial) {
+    if (/^sy-subrc$/i.test(initial[1])) {
+      const phrase = subrc?.('0', !initial[2]);
+      if (phrase) return phrase;
+      return `der Rückgabewert (sy-subrc) ${initial[2] ? 'ungleich ' : ''}0 ist`;
+    }
+    return `${nounPhrase(initial[1])} ${initial[2] ? 'nicht ' : ''}leer ist`;
+  }
+  const bound = /^(\S+)\s+IS\s+(NOT\s+)?(BOUND|ASSIGNED|SUPPLIED|REQUESTED)$/i.exec(text);
+  if (bound) {
+    const word = { BOUND: 'gebunden', ASSIGNED: 'zugewiesen', SUPPLIED: 'versorgt', REQUESTED: 'angefordert' }[
+      bound[3].toUpperCase() as 'BOUND'
+    ];
+    return `${nounPhrase(bound[1])} ${bound[2] ? 'nicht ' : ''}${word} ist`;
+  }
+  const selection = /^(\S+)\s+(NOT\s+)?IN\s+(\S+)$/i.exec(text);
+  if (selection) {
+    return `${nounPhrase(selection[1])} ${selection[2] ? 'nicht ' : ''}in der Selektion ${plain(selection[3])} liegt`;
+  }
+  const compare = /^(\S+)\s*(<=|>=|<>|<|>|=|\bEQ\b|\bNE\b|\bLT\b|\bGT\b|\bLE\b|\bGE\b)\s*(\S+)$/i.exec(text);
+  if (compare) {
+    const [, left, rawOperator, right] = compare;
+    const operator = rawOperator.toUpperCase();
+    const equal = operator === '=' || operator === 'EQ';
+    const unequal = operator === '<>' || operator === 'NE';
+    if (/^sy-subrc$/i.test(left) && (equal || unequal)) {
+      const phrase = subrc?.(valueText(right), equal);
+      if (phrase) return phrase;
+      return `der Rückgabewert (sy-subrc) ${equal ? '' : 'ungleich '}${valueText(right)} ist`;
+    }
+    if ((equal || unequal) && (TRUE_VALUES.test(right) || FALSE_VALUES.test(right))) {
+      const set = TRUE_VALUES.test(right) === equal;
+      return `${nounPhrase(left)} ${set ? '' : 'nicht '}gesetzt ist`;
+    }
+    return `${nounPhrase(left)} ${OPERATOR_WORDS[operator]} ${valueText(right)} ist`;
+  }
+  const exists = /^line_exists\(\s*([A-Za-z0-9_\-<>]+)\[/i.exec(text);
+  if (exists) return `in ${plain(exists[1])} eine passende Zeile existiert`;
+  return literally;
 }
 
 /** Das Gegenstück zu `conditionSubject` für einen `ELSE`-Zweig. */
@@ -678,6 +887,53 @@ function registrationNotes(luw: LuwModel, index: number): string[] {
   return notes;
 }
 
+/** Was übersprungen wird, wenn ein CHECK mit diesem Vergleich in einer Schleife steht. */
+const CHECK_COMPLEMENT: Record<string, string> = {
+  '>=': 'kleinere',
+  GE: 'kleinere',
+  '>': 'kleinere und gleiche',
+  GT: 'kleinere und gleiche',
+  '<=': 'größere',
+  LE: 'größere',
+  '<': 'größere und gleiche',
+  LT: 'größere und gleiche',
+};
+
+/**
+ * Der Satz zu einem `CHECK` (F1) — die Folge hängt am Ort, nicht an einer Vorlage.
+ *
+ * `CHECK` verlässt in einer Schleife den **Durchlauf**, in einer Routine die
+ * **Routine**, sonst den **Ereignisblock**. Die frühere Vorlage sagte überall
+ * „kleinere werden übersprungen, die Schleife läuft weiter" — auch ohne
+ * Schleife und auch bei einer Gleichheitsprüfung, wo es kein „kleiner" gibt.
+ * „Kleinere" steht jetzt nur noch dort, wo es wahr ist: ein Größenvergleich
+ * über ein bekanntes Fachwort in einer Schleife.
+ */
+function checkSentence(
+  statement: AbapStatement,
+  statements: readonly AbapStatement[],
+  stack: readonly Block[],
+  subrc?: (value: string, equal: boolean) => string | null,
+): string {
+  const unit = enclosingUnit(statements, stack, statement.index);
+  const condition = statement.text.replace(/^CHECK\s+/i, '').trim();
+  const compare = /^(\S+)\s*(<=|>=|<|>|\bGE\b|\bGT\b|\bLE\b|\bLT\b)\s*(\S+)$/i.exec(condition);
+  if (unit.kind === 'loop' && compare && isKnownField(compare[1])) {
+    const { subject } = conditionSubject(`CHECK ${compare[1]} ${normalizeOperator(compare[2])} ${compare[3]}`);
+    const complement = CHECK_COMPLEMENT[compare[2].toUpperCase()];
+    return `Nur ${subject} gehen weiter; ${complement} werden übersprungen, die Schleife läuft weiter.`;
+  }
+  const clause = conditionClause(condition, subrc);
+  if (unit.kind === 'loop') {
+    return `Nur wenn ${clause}, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter.`;
+  }
+  return `Nur wenn ${clause}, geht es weiter; sonst wird ${unitLabel(unit)} an dieser Stelle verlassen.`;
+}
+
+function normalizeOperator(operator: string): string {
+  return ({ GE: '>=', GT: '>', LE: '<=', LT: '<', EQ: '=', NE: '<>' } as Record<string, string>)[operator.toUpperCase()] ?? operator;
+}
+
 /** Die Sätze, die aus einer einzelnen Anweisung kommen. */
 function sentenceFor(
   statement: AbapStatement,
@@ -824,12 +1080,7 @@ function sentenceFor(
   }
 
   if (keyword === 'CHECK') {
-    const { subject } = conditionSubject(text);
-    return {
-      anchors,
-      core: `Nur ${subject} gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.`,
-      tag: 'check',
-    };
+    return { anchors, core: checkSentence(statement, statements, stack), tag: 'check' };
   }
 
   if (keyword === 'ASSERT') {
@@ -1100,7 +1351,7 @@ interface Branch {
 }
 
 /** Die Zweige einer `IF … ELSEIF … ELSE … ENDIF`-Kette ab `index`. */
-function branchChain(statements: readonly AbapStatement[], index: number): Branch[] | null {
+function branchChain(statements: readonly AbapStatement[], index: number, loops: ReadonlySet<number>): Branch[] | null {
   if (statements[index].keyword.toUpperCase() !== 'IF') return null;
   const branches: Branch[] = [];
   let current: Branch = { head: statements[index], kind: 'if', body: [] };
@@ -1122,7 +1373,7 @@ function branchChain(statements: readonly AbapStatement[], index: number): Branc
       branches.push(current);
       return branches;
     }
-    if (OPENERS[keyword]) depth += 1;
+    if (opens(statement, loops)) depth += 1;
     else if (CLOSERS.has(keyword)) depth -= 1;
     if (depth === 0) current.body.push(statement);
   }
@@ -1174,8 +1425,9 @@ function branchSentences(
   statements: readonly AbapStatement[],
   index: number,
   origins: Map<string, ValueOrigin>,
+  loops: ReadonlySet<number>,
 ): Draft[] {
-  const branches = branchChain(statements, index);
+  const branches = branchChain(statements, index, loops);
   if (!branches) return [];
   const drafts: Draft[] = [];
   const parts: Array<{ branch: Branch; subject: string; phrase: string }> = [];
@@ -1321,14 +1573,15 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
   // Dieselbe Lesung wie im Skelett: der Satz verdichtet den Wirkungsstatus
   // des Modells (2.12), er bildet keinen eigenen.
   const luw = readLuwStates(buildProcessFacts(source));
-  const stacks = blockStacks(statements);
+  const loops = selectLoops(statements);
+  const stacks = blockStacks(statements, loops);
   const origins = originMap(statements);
   const out: BusinessStatement[] = [];
 
   for (let i = 0; i < statements.length; i += 1) {
     const guard = guardSentence(statements, i, origins);
     if (guard) out.push(build(guard));
-    for (const draft of branchSentences(statements, i, origins)) out.push(build(draft));
+    for (const draft of branchSentences(statements, i, origins, loops)) out.push(build(draft));
   }
   for (const draft of sequenceSentences(statements, stacks, origins)) out.push(build(draft));
 
@@ -1337,7 +1590,10 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
   let runStack: Block[] = [];
   const flush = () => {
     if (run.length > 0) {
-      const draft = listSentence(run, runStack.some((block) => block.kind === 'loop'), origins);
+      // „Bei Treffern" trägt nur eine Ausgabe, die **unmittelbar** in der
+      // Schleife steht; in einem Zweig der Schleife hängt sie an dessen
+      // Bedingung, nicht an einem Treffer.
+      const draft = listSentence(run, runStack[runStack.length - 1]?.kind === 'loop', origins);
       if (draft) out.push(build(draft));
     }
     run = [];

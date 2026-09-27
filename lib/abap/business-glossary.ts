@@ -169,3 +169,82 @@ export function termFor(identifier: string): BusinessTerm {
 export function tableTerm(name: string): BusinessTerm | null {
   return TABLE_TERMS[name.trim().toLowerCase()] ?? null;
 }
+
+/** Ob das Wörterbuch einen Bezeichner kennt — dann trägt er ein Fachwort. */
+export function isKnownField(identifier: string): boolean {
+  return FIELD_TERMS[stemOf(identifier)] !== undefined;
+}
+
+/**
+ * Das grammatische Geschlecht der Fachwörter oben, nach dem Singular.
+ *
+ * Es steht hier, weil ein Satz vor einem Fachwort einen Artikel braucht und
+ * „die return_code" oder „die Funktionsbaustein" kein Deutsch ist. Geraten wird
+ * auch hier nichts: ein Wort ohne Eintrag bekommt keinen Artikel, sondern die
+ * neutrale Form „das Feld …" (`nounPhrase`).
+ */
+export type Genus = 'm' | 'f' | 'n';
+
+const GENUS: Readonly<Record<string, Genus>> = Object.freeze({
+  Kundennummer: 'f',
+  Name: 'm',
+  Länderschlüssel: 'm',
+  Buchungskreis: 'm',
+  Abstimmkonto: 'n',
+  Verkaufsorganisation: 'f',
+  Vertriebsweg: 'm',
+  Sparte: 'f',
+  Mandant: 'm',
+  Benutzername: 'm',
+  'Kennwort-Hash': 'm',
+  Sperrstatus: 'm',
+  Belegnummer: 'f',
+  Auftragsart: 'f',
+  Nettowert: 'm',
+  Sperrkennzeichen: 'n',
+  Betrag: 'm',
+  Route: 'f',
+  Status: 'm',
+  Anzahl: 'f',
+  Summe: 'f',
+  Mindestwert: 'm',
+  Wert: 'm',
+  Text: 'm',
+  Schlüssel: 'm',
+  Fall: 'm',
+  'Review-Markierung': 'f',
+  Listtitel: 'm',
+  Tabelle: 'f',
+  Funktionsbaustein: 'm',
+  Programm: 'n',
+  Unterprogramm: 'n',
+  Destination: 'f',
+  Feld: 'n',
+  Zeile: 'f',
+  Ergebnis: 'n',
+  Regel: 'f',
+  Benutzer: 'm',
+  Typ: 'm',
+  Prädikat: 'n',
+});
+
+const ARTICLES: Readonly<Record<'nom' | 'akk' | 'dat', Readonly<Record<Genus, string>>>> = Object.freeze({
+  nom: { m: 'der', f: 'die', n: 'das' },
+  akk: { m: 'den', f: 'die', n: 'das' },
+  dat: { m: 'dem', f: 'der', n: 'dem' },
+});
+
+/**
+ * Ein Bezeichner als Nominalgruppe mit Artikel, im verlangten Fall.
+ *
+ * Ein Fachwort mit bekanntem Geschlecht bekommt seinen Artikel („der Betrag",
+ * „die Kundennummer"); alles andere heißt „das Feld lv_x" — das ist wahr für
+ * jeden Bezeichner und errät kein Geschlecht.
+ */
+export function nounPhrase(identifier: string, kasus: 'nom' | 'akk' | 'dat' = 'nom'): string {
+  const word = termFor(identifier);
+  const genus = isKnownField(identifier) ? GENUS[word.singular] : undefined;
+  if (genus) return `${ARTICLES[kasus][genus]} ${word.singular}`;
+  const raw = identifier.trim().replace(/^[@<]+/, '').replace(/[>]+$/, '');
+  return `${ARTICLES[kasus].n} Feld ${raw}`;
+}
