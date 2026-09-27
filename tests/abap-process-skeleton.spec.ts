@@ -2450,6 +2450,41 @@ test.describe('ADR-054 — events in sub-processes and at early exits', () => {
     expect(skeleton.nodes.filter((n) => n.kind === 'start').map((n) => n.label)).toEqual(['START-OF-SELECTION']);
   });
 
+  test('RAISE EVENT calls the handlers and goes on — it is not an error end', () => {
+    // §5.8 draws an error end for "`RAISE`" — an exception. `RAISE EVENT` only
+    // shares the word: the handlers `SET HANDLER` registered run, and the next
+    // statement runs after them. Written for this test.
+    const source = [
+      'REPORT zraise_event.', //                                          1
+      'CLASS lcl_order DEFINITION.', //                                   2
+      '  PUBLIC SECTION.', //                                             3
+      '    EVENTS released.', //                                          4
+      '    METHODS release IMPORTING iv_vbeln TYPE vbeln.', //            5
+      'ENDCLASS.', //                                                     6
+      'CLASS lcl_order IMPLEMENTATION.', //                               7
+      '  METHOD release.', //                                             8
+      "    UPDATE vbak SET lifsk = ' ' WHERE vbeln = @iv_vbeln.", //      9
+      '    RAISE EVENT released.', //                                     10
+      "    CALL FUNCTION 'Z_NOTIFY_SALES'.", //                           11
+      '    IF iv_vbeln IS INITIAL. RAISE EXCEPTION TYPE cx_sy_no_handler. ENDIF.', // 12
+      '  ENDMETHOD.', //                                                  13
+      'ENDCLASS.', //                                                     14
+      'START-OF-SELECTION.', //                                           15
+      '  NEW lcl_order( )->release( iv_vbeln = 1 ).', //                  16
+    ].join('\n');
+    const skeleton = buildProcessSkeleton(source);
+    const at = (line: number) => skeleton.nodes.filter((n) => n.anchor?.lineStart === line).map((n) => n.kind);
+    expect(at(10), 'the event is a call whose handlers are decided at run time').toEqual(['call-opaque']);
+    expect(skeleton.nodes.find((n) => n.anchor?.lineStart === 10)?.label).toBe('RELEASED');
+    // The flow goes on: the call after it is reached from the event.
+    const event = skeleton.nodes.find((n) => n.anchor?.lineStart === 10);
+    const next = skeleton.edges.filter((e) => e.from === event?.id).map((e) => skeleton.nodes.find((n) => n.id === e.to));
+    expect(next.map((n) => [n?.kind, n?.anchor?.lineStart])).toEqual([['service-task', 11]]);
+    // The exception is still what it was: an error end.
+    expect(at(12)).toContain('end-error');
+    expect(skeleton.notes.filter((n) => n.reason === 'unreachable-after-abort')).toEqual([]);
+  });
+
   test('events are not steps: first look, "Ask this case" and the map count what they counted', () => {
     const skeleton = buildProcessSkeleton(RELEASE);
     const stage = processStage(skeleton);

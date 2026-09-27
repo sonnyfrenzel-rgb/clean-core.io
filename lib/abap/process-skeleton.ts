@@ -88,7 +88,7 @@ export type SkeletonNodeKind =
    * something drawn would still have followed. See `leaveEarly`.
    */
   | 'end'
-  /** Error end event — `MESSAGE … TYPE 'E'/'A'/'X'`, `RAISE`, `LEAVE PROGRAM`. */
+  /** Error end event — `MESSAGE … TYPE 'E'/'A'/'X'`, `RAISE` of an exception (not `RAISE EVENT`), `LEAVE PROGRAM`. */
   | 'end-error'
   /** Exclusive gateway — `IF`, `CASE`, and a `CHECK` that is not a run switch. */
   | 'gateway'
@@ -630,6 +630,27 @@ function isInfoMessage(text: string): boolean {
   if (isMessageInto(text)) return false;
   if (/^MESSAGE\s+[iI]\d/.test(text)) return true;
   return /^MESSAGE\b[\s\S]*\bTYPE\s+'[Ii]'/.test(text);
+}
+
+/**
+ * `RAISE EVENT name …` — an ABAP Objects event, **not** an exception.
+ *
+ * It shares its first word with `RAISE EXCEPTION` and `RAISE cx_…`, and that
+ * is all it shares: the runtime calls every handler registered for the event
+ * with `SET HANDLER`, synchronously, and then the statement after it runs. It
+ * ends nothing. Read as a `RAISE`, it drew an error end in the middle of a
+ * method and cut off every step behind it (`luw-states.ts` already told the
+ * two apart; this file did not).
+ * Which handlers run is decided at run time by `SET HANDLER`, so the call is
+ * drawn opaque (rule 3) — the flow goes on after it.
+ */
+function isRaiseEvent(text: string): boolean {
+  return /^RAISE\s+EVENT\b/i.test(text);
+}
+
+/** `RAISE EXCEPTION …`, `RAISE cx_…`, `RAISE RESUMABLE …` — the `RAISE` that ends the flow. */
+function raisesException(statement: AbapStatement): boolean {
+  return statement.keyword === 'RAISE' && !isRaiseEvent(statement.text);
 }
 
 /**
@@ -1256,7 +1277,9 @@ class SkeletonBuilder {
       if (/^CALL\s+TRANSACTION\b/i.test(text) || statement.keyword === 'SUBMIT') out.add('call');
       if (/^CALL\s+SCREEN\b/i.test(text)) out.add('human');
       if (isListOutput(statement) || isFileOutput(statement)) out.add('file');
-      if (isErrorMessage(text) || statement.keyword === 'RAISE') out.add('error');
+      if (isErrorMessage(text) || raisesException(statement)) out.add('error');
+      // The handlers of an event are called, whoever they turn out to be.
+      if (isRaiseEvent(text)) out.add('call');
       if (isInfoMessage(text)) out.add('human');
       if (/^LEAVE\s+PROGRAM\b/i.test(text)) out.add('error');
       if (statement.keyword === 'AUTHORITY-CHECK') out.add('authority');
@@ -2505,7 +2528,7 @@ class SkeletonBuilder {
       if (DECLARATIVE.has(statement.keyword) || statement.nativeSql) continue;
       const text = statement.text;
       if (statement.keyword === 'RETURN' || statement.keyword === 'STOP'
-        || statement.keyword === 'RAISE' || isErrorMessage(text)
+        || raisesException(statement) || isErrorMessage(text)
         || /^LEAVE\s+PROGRAM\b/i.test(text) || /^LEAVE\s+TO\s+TRANSACTION\b/i.test(text)) {
         return false;
       }
@@ -2761,11 +2784,20 @@ class SkeletonBuilder {
       this.edges.push({ from: node.id, to: ctx.region.endNodeId, kind: 'sequence', condition: '', reason: 'no-return' });
       return { exits: [], outputRun: null };
     }
-    if (/^LEAVE\s+PROGRAM\b/i.test(text) || isErrorMessage(text) || statement.keyword === 'RAISE') {
+    if (/^LEAVE\s+PROGRAM\b/i.test(text) || isErrorMessage(text) || raisesException(statement)) {
       const node = this.addNode('end-error', this.errorLabel(statement), anchorOf(statement),
         ctx.region, ctx.container);
       this.connect(incoming, node.id);
       return { exits: [], outputRun: null };
+    }
+    if (isRaiseEvent(text)) {
+      // Rule 3: the handlers `SET HANDLER` registered are called and return.
+      // Who they are is decided at run time, so the call stays opaque; the
+      // label is the event's name, a token of the statement (rule 6).
+      const event = /^RAISE\s+EVENT\s+([\w/~]+)/i.exec(text)?.[1]?.toUpperCase() ?? 'RAISE EVENT';
+      return keep(this.addNode('call-opaque', event, anchorOf(statement, 2), ctx.region, ctx.container, {
+        detail: { event: true, dynamic: true, returns: true },
+      }));
     }
 
     if (isInfoMessage(text)) {
