@@ -977,6 +977,36 @@ test('QA 594357222bd7 — ein Kennzeichen ohne erratenes Geschlecht, im Zweig un
   expect(satzAn(code, 10).join(' ')).toContain('Wenn die Löschvormerkung gesetzt ist');
 });
 
+test('QA b8f597730411 — SELECT … WHERE sagt seine Einschränkung, MESSAGE … INTO im Zweig gibt nichts aus', () => {
+  const code = quelle(
+    'REPORT z_b8f.',
+    'PARAMETERS p_status TYPE c LENGTH 1.',
+    'START-OF-SELECTION.',
+    '  SELECT * FROM zbeleg INTO TABLE @DATA(lt_offen) WHERE status = @p_status.',
+    '  SELECT * FROM zbeleg INTO TABLE @DATA(lt_alle).',
+    '  SELECT * FROM zbeleg INTO @DATA(ls_beleg) WHERE status = @p_status.',
+    '    WRITE / ls_beleg-status.',
+    '  ENDSELECT.',
+    '  IF gv_id IS INITIAL.',
+    '    MESSAGE e001(zz) WITH gv_id INTO gv_text.',
+    '  ENDIF.',
+  );
+  const mitWhere = satzAn(code, 4).join(' ');
+  expect(mitWhere).toContain('Es werden Sätze aus zbeleg mit dem eingegebenen Status selektiert');
+  expect(mitWhere).not.toMatch(/\b(?:alle|jede|jeder)\b/i);
+  // Ohne WHERE wird keine Einschränkung erfunden.
+  expect(satzAn(code, 5).join(' ')).toBe('Es werden Sätze aus zbeleg selektiert.');
+  const schleife = satzAn(code, 6).join(' ');
+  expect(schleife).toContain('mit dem eingegebenen Status');
+  expect(schleife).not.toMatch(/\b(?:alle|jede|jeder)\b/i);
+
+  // MESSAGE … INTO bleibt im Zweigsatz eine Übernahme, keine Ausgabe.
+  const zweig = buildBusinessStatements(code).filter((s) => s.grain === 'group' && s.anchors.some((a) => a.lineStart === 10));
+  expect(zweig.length).toBe(1);
+  expect(zweig[0].text).toContain('der Meldungstext in gv_text übernommen');
+  expect(zweig[0].text).not.toMatch(/ausgegeben|angezeigt wird(?! dabei nichts)/);
+});
+
 test('QA 23c5c0362148 — eine Kopie von sy-subrc trägt die Bedeutung ihrer setzenden Anweisung, solange sie gilt', () => {
   const pruefung = (...zeilen: string[]) =>
     satzAn(quelle('FORM probe.', ...zeilen, '  IF lv_rc <> 0.', '    RETURN.', '  ENDIF.', 'ENDFORM.'), zeilen.length + 2).join(' ');
