@@ -249,8 +249,8 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     const confirmationModal = page.locator('h3:has-text("Confirm Target Operating Model")');
     await expect(confirmationModal).toBeVisible();
 
-    // Click Start AI Modernization Engine in confirmation modal
-    await page.click('button:has-text("Start AI Modernization Engine")');
+    // Confirm the operating model and start (label since D.10a)
+    await page.click('button:has-text("Confirm and start the analysis")');
     console.log('AI modernization started. Performing deep analysis...');
 
     // Wait for the analysis loader to complete and render the analysis report
