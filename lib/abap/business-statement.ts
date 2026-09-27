@@ -738,6 +738,353 @@ function resultFieldsSentence(statement: AbapStatement): Draft | null {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Was `sy-subrc` an einer Stelle bedeutet (F2)
+// ---------------------------------------------------------------------------
+
+/**
+ * Der Anfang eines Satzes über eine Bedingung: entweder eine Wendung („Ohne
+ * Treffer wird …") oder ein vorangestellter Bedingungssatz („Ist die Sperre
+ * nicht zu erhalten, wird …"). Der Unterschied ist nur das Komma.
+ */
+interface Lead {
+  text: string;
+  clause: boolean;
+}
+
+const lead = (text: string, clause = false): Lead => ({ text, clause });
+
+/** „Ohne Treffer wird X" oder „Ist die Sperre nicht zu erhalten, wird X". */
+function compose(subject: Lead, rest: string): string {
+  return `${subject.text}${subject.clause ? ',' : ''} wird ${rest}`;
+}
+
+/** Beide Ausgänge einer `sy-subrc`-Prüfung, als Satzanfang und als Nebensatz. */
+interface SubrcOutcome {
+  fail: Lead;
+  ok: Lead;
+  failClause: string;
+  okClause: string;
+}
+
+const outcome = (fail: Lead, ok: Lead, failClause: string, okClause: string): SubrcOutcome => ({
+  fail,
+  ok,
+  failClause,
+  okClause,
+});
+
+/** Wo die setzende Anweisung nicht eindeutig ist, bleibt es neutral. */
+function neutralOutcome(value = '0'): SubrcOutcome {
+  return outcome(
+    lead(`Bei Rückgabewert ungleich ${value}`),
+    lead(`Bei Rückgabewert ${value}`),
+    `der Rückgabewert (sy-subrc) ungleich ${value} ist`,
+    `der Rückgabewert (sy-subrc) ${value} ist`,
+  );
+}
+
+/** Namen, die im ganzen Ausschnitt als interne Tabelle deklariert oder gefüllt werden. */
+function internalTables(statements: readonly AbapStatement[]): Set<string> {
+  const names = new Set<string>();
+  for (const statement of statements) {
+    const text = statement.text;
+    const declared = /^(?:DATA|STATICS|CLASS-DATA)\s+([A-Za-z0-9_]+)\s+(?:TYPE|LIKE)\s+(?:(?:STANDARD|SORTED|HASHED|ANY|INDEX)\s+)?(?:TABLE|RANGE)\s+OF\b/i.exec(text);
+    if (declared) names.add(declared[1].toLowerCase());
+    for (const match of text.matchAll(/\b(?:INTO|APPENDING)\s+(?:CORRESPONDING\s+FIELDS\s+OF\s+)?TABLE\s+@?(?:DATA\()?([A-Za-z0-9_]+)\)?/gi)) {
+      names.add(match[1].toLowerCase());
+    }
+    const tables = /^FORM\s+\S+\s+TABLES\s+(.+?)(?:\s+(?:USING|CHANGING|RAISING)\s+.*)?$/i.exec(text);
+    if (tables) {
+      const words = tables[1].split(/\s+/);
+      for (let i = 0; i < words.length; i += 1) {
+        if (/^(?:STRUCTURE|TYPE|LIKE)$/i.test(words[i])) i += 1;
+        else if (/^[A-Za-z_]\w*$/.test(words[i])) names.add(words[i].toLowerCase());
+      }
+    }
+  }
+  return names;
+}
+
+/** Ob ein Schreibziel eine interne Tabelle (oder das Bild) ist statt einer Datenbanktabelle. */
+function writesInternally(statement: AbapStatement, tables: ReadonlySet<string>): boolean {
+  const text = statement.text;
+  const keyword = statement.keyword.toUpperCase();
+  if (/^MODIFY\s+(?:SCREEN|LINE|CURRENT\s+LINE|TABLE)\b/i.test(text)) return true;
+  if (/^(?:INSERT|DELETE)\s+(?:LINES\s+OF|TABLE|ADJACENT\s+DUPLICATES)\b/i.test(text)) return true;
+  if (/\bINTO\s+TABLE\b|\bINDEX\b|\bTRANSPORTING\b|\bASSIGNING\b|\bREFERENCE\s+INTO\b/i.test(text)) return true;
+  if (keyword === 'UPDATE') return false;
+  const target =
+    /^(?:INSERT\s+INTO|DELETE\s+FROM|MODIFY|INSERT|DELETE)\s+(\(?[A-Za-z0-9_/<>~-]+\)?)/i.exec(text)?.[1] ?? '';
+  const name = target.replace(/[()]/g, '').toLowerCase();
+  if (/^</.test(name) || INTERNAL_TABLE.test(name) || /^[mgl]t_|^[xy][a-z]/.test(name) || tables.has(name)) {
+    // `xvbap`, `yvbap` sind die Vorher/Nachher-Tabellen der Exits; eine
+    // Datenbanktabelle beginnt nicht mit x oder y, eine Z-Tabelle mit z.
+    return tableTerm(name) === null;
+  }
+  return false;
+}
+
+/** Ob eine Anweisung in die Datenbank schreibt — nicht in eine interne Tabelle, nicht auf das Bild. */
+function isDbWrite(statement: AbapStatement, tables: ReadonlySet<string>): boolean {
+  if (!DB_WRITE.test(statement.text)) return false;
+  if (/^(?:UPDATE|MODIFY|INSERT|DELETE)\b/i.test(statement.text) && !/^MODIFY\s+ENTITIES\b/i.test(statement.text)) {
+    return !writesInternally(statement, tables);
+  }
+  return true;
+}
+
+/** Die Anweisungen, die `sy-subrc` nicht anfassen — über sie hinweg wird weitergesucht. */
+const SUBRC_NEUTRAL = new Set([
+  'WRITE', 'CLEAR', 'FREE', 'REFRESH', 'DATA', 'CONSTANTS', 'TYPES', 'FIELD-SYMBOLS', 'STATICS', 'MESSAGE', 'ADD',
+  'SUBTRACT', 'MULTIPLY', 'DIVIDE', 'CONDENSE', 'TRANSLATE', 'APPEND', 'COLLECT', 'ULINE', 'SKIP', 'NEW-LINE',
+  'FORMAT', 'SORT', 'MOVE', 'MOVE-CORRESPONDING', 'CONCATENATE', 'SPLIT', 'SHIFT', 'GET',
+]);
+
+/**
+ * Die Anweisung, die das geprüfte `sy-subrc` gesetzt hat — oder `null`, wenn
+ * das aus dem Code nicht eindeutig folgt.
+ *
+ * Gesucht wird rückwärts, über Zuweisungen, Ausgaben und Kopien von
+ * `sy-subrc` hinweg. Eine Blockgrenze (`ENDIF`, `ELSE`, `ENDTRY` …) oder ein
+ * Aufruf, dessen Inneres `sy-subrc` setzen kann (`PERFORM`, Methode), beendet
+ * die Suche ohne Ergebnis: dann ist der Satz neutral statt geraten.
+ */
+function subrcSetter(statements: readonly AbapStatement[], before: number): AbapStatement | null {
+  for (let i = before - 1; i >= 0; i -= 1) {
+    const statement = statements[i];
+    if (statement.nativeSql) continue;
+    const keyword = statement.keyword.toUpperCase();
+    const text = statement.text;
+    if (keyword === 'ENDLOOP' || keyword === 'ENDSELECT' || keyword === 'ENDCATCH') {
+      // Der Kopf der Schleife ist die setzende Anweisung.
+      let depth = 0;
+      const opener = keyword === 'ENDLOOP' ? 'LOOP' : keyword === 'ENDSELECT' ? 'SELECT' : 'CATCH';
+      for (let j = i - 1; j >= 0; j -= 1) {
+        const k = statements[j].keyword.toUpperCase();
+        if (k === keyword) depth += 1;
+        else if (k === opener && (opener !== 'SELECT' || !/\bSINGLE\b|\bTABLE\b/i.test(statements[j].text))) {
+          if (depth === 0) return statements[j];
+          depth -= 1;
+        }
+      }
+      return null;
+    }
+    if (keyword === 'ENDEXEC') return statement;
+    if (SUBRC_NEUTRAL.has(keyword) && !(keyword === 'GET' && /^GET\s+PARAMETER\b/i.test(text))) continue;
+    // Eine Zuweisung ohne Methodenaufruf, auch die Kopie `lv_rc = sy-subrc`.
+    if (/^(?:DATA\()?[A-Za-z0-9_\-<>~]+\)?\s*(?:[-+*/]|&&)?=\s/.test(text) && !/->|=>/.test(text)) continue;
+    return statement;
+  }
+  return null;
+}
+
+/** Was `sy-subrc` nach genau dieser Anweisung bedeutet. */
+function outcomeOf(setter: AbapStatement | null, statements: readonly AbapStatement[], value: string): SubrcOutcome {
+  if (!setter || value !== '0') return neutralOutcome(value);
+  const text = setter.text;
+  const keyword = setter.keyword.toUpperCase();
+  const found = () =>
+    outcome(lead('Ohne Treffer'), lead('Bei Treffer'), 'kein Treffer vorliegt', 'ein Treffer vorliegt');
+  if (keyword === 'SELECT' || keyword === 'LOOP' || keyword === 'FIND' || keyword === 'SEARCH') return found();
+  if (keyword === 'READ' && /^READ\s+TABLE\b/i.test(text)) return found();
+  if (keyword === 'READ' && /^READ\s+DATASET\b/i.test(text)) {
+    return outcome(
+      lead('Ist das Dateiende erreicht', true),
+      lead('Wurde ein Satz gelesen', true),
+      'das Dateiende erreicht ist',
+      'ein Satz gelesen wurde',
+    );
+  }
+  if (keyword === 'AUTHORITY-CHECK') {
+    const object = /OBJECT\s+('[^']*'|[A-Za-z0-9_]+)/i.exec(text);
+    const name = object ? (literalOf(object[1]) ?? object[1]) : '';
+    const field = /ID\s+'[^']*'\s+FIELD\s+([ps]_\w+)/i.exec(text);
+    const restriction = field ? ` für den eingegebenen ${termFor(field[1]).singular}` : '';
+    return outcome(
+      lead(`Ohne Berechtigung auf ${name}${restriction}`),
+      lead(`Mit Berechtigung auf ${name}${restriction}`),
+      `die Berechtigung auf ${name} fehlt`,
+      `die Berechtigung auf ${name} vorliegt`,
+    );
+  }
+  if (keyword === 'CALL') {
+    const fn = /^CALL\s+FUNCTION\s+('[^']*'|[A-Za-z0-9_]+)/i.exec(text);
+    if (fn) {
+      const name = resolveValue(fn[1], statements, setter.index).value ?? plain(fn[1]);
+      if (/^ENQUEUE_/i.test(name)) {
+        return outcome(
+          lead(`Ist die Sperre über ${name} nicht zu erhalten`, true),
+          lead(`Ist die Sperre über ${name} gesetzt`, true),
+          `die Sperre über ${name} nicht zu erhalten ist`,
+          `die Sperre über ${name} gesetzt ist`,
+        );
+      }
+      return outcome(
+        lead(`Scheitert der Aufruf von ${name}`, true),
+        lead(`Gelingt der Aufruf von ${name}`, true),
+        `der Aufruf von ${name} scheitert`,
+        `der Aufruf von ${name} gelingt`,
+      );
+    }
+    const transaction = /^CALL\s+TRANSACTION\s+('[^']*'|[A-Za-z0-9_]+)/i.exec(text);
+    if (transaction) {
+      const name = literalOf(transaction[1]) ?? transaction[1];
+      return outcome(
+        lead(`Meldet die Transaktion ${name} einen Fehler`, true),
+        lead(`Läuft die Transaktion ${name} ohne Fehler`, true),
+        `die Transaktion ${name} einen Fehler meldet`,
+        `die Transaktion ${name} ohne Fehler läuft`,
+      );
+    }
+    const method = /^CALL\s+METHOD\s+\S*?([A-Za-z0-9_]+)\s*(?:\(|$|\s)/i.exec(text);
+    if (method && /\bEXCEPTIONS\b/i.test(text)) {
+      return outcome(
+        lead(`Scheitert der Aufruf von ${method[1]}`, true),
+        lead(`Gelingt der Aufruf von ${method[1]}`, true),
+        `der Aufruf von ${method[1]} scheitert`,
+        `der Aufruf von ${method[1]} gelingt`,
+      );
+    }
+    return neutralOutcome(value);
+  }
+  if (/->|=>/.test(text) && /\bEXCEPTIONS\b/i.test(text)) {
+    const method = /(?:->|=>)([A-Za-z0-9_]+)\s*\(/.exec(text);
+    if (method) {
+      return outcome(
+        lead(`Scheitert der Aufruf von ${method[1]}`, true),
+        lead(`Gelingt der Aufruf von ${method[1]}`, true),
+        `der Aufruf von ${method[1]} scheitert`,
+        `der Aufruf von ${method[1]} gelingt`,
+      );
+    }
+  }
+  if (keyword === 'OPEN' && /^OPEN\s+DATASET\b/i.test(text)) {
+    return outcome(
+      lead('Lässt sich die Datei nicht öffnen', true),
+      lead('Ist die Datei geöffnet', true),
+      'die Datei sich nicht öffnen lässt',
+      'die Datei geöffnet ist',
+    );
+  }
+  if (['INSERT', 'UPDATE', 'MODIFY', 'DELETE'].includes(keyword)) {
+    const what = writesInternally(setter, internalTables(statements)) ? 'die Tabellenänderung' : 'die Datenbankänderung';
+    return outcome(
+      lead(`Schlägt ${what} fehl`, true),
+      lead(`Gelingt ${what}`, true),
+      `${what} fehlschlägt`,
+      `${what} gelingt`,
+    );
+  }
+  if (keyword === 'RECEIVE') {
+    return outcome(
+      lead('Scheitert die Rückmeldung der parallelen Task', true),
+      lead('Liegt die Rückmeldung der parallelen Task vor', true),
+      'die Rückmeldung der parallelen Task scheitert',
+      'die Rückmeldung der parallelen Task vorliegt',
+    );
+  }
+  if (keyword === 'CATCH') {
+    return outcome(
+      lead('Ist eine Ausnahme aufgetreten', true),
+      lead('Ist keine Ausnahme aufgetreten', true),
+      'eine Ausnahme aufgetreten ist',
+      'keine Ausnahme aufgetreten ist',
+    );
+  }
+  if (keyword === 'EXEC' || keyword === 'ENDEXEC') {
+    return outcome(
+      lead('Scheitert die Native-SQL-Anweisung', true),
+      lead('Gelingt die Native-SQL-Anweisung', true),
+      'die Native-SQL-Anweisung scheitert',
+      'die Native-SQL-Anweisung gelingt',
+    );
+  }
+  if (keyword === 'ASSIGN') {
+    return outcome(
+      lead('Lässt sich das Feld nicht zuweisen', true),
+      lead('Ist das Feld zugewiesen', true),
+      'das Feld sich nicht zuweisen lässt',
+      'das Feld zugewiesen ist',
+    );
+  }
+  if (keyword === 'GET' && /^GET\s+PARAMETER\b/i.test(text)) {
+    return outcome(
+      lead('Ist der Benutzerparameter nicht gesetzt', true),
+      lead('Ist der Benutzerparameter gesetzt', true),
+      'der Benutzerparameter nicht gesetzt ist',
+      'der Benutzerparameter gesetzt ist',
+    );
+  }
+  if (keyword === 'COMMIT' && /\bAND\s+WAIT\b/i.test(text)) {
+    return outcome(
+      lead('Scheitert die Verbuchung', true),
+      lead('Gelingt die Verbuchung', true),
+      'die Verbuchung scheitert',
+      'die Verbuchung gelingt',
+    );
+  }
+  return neutralOutcome(value);
+}
+
+/**
+ * Was `sy-subrc` (oder eine Kopie davon) an der Stelle `index` bedeutet.
+ *
+ * Für eine Kopie `lv_rc = sy-subrc` zählt die Anweisung vor der Kopie, nicht
+ * vor der Prüfung — dazwischen kann beliebig viel stehen.
+ */
+function subrcOutcome(statements: readonly AbapStatement[], index: number, variable = 'sy-subrc', value = '0'): SubrcOutcome {
+  let from = index;
+  if (!/^sy-subrc$/i.test(variable)) {
+    const needle = variable.toLowerCase();
+    from = -1;
+    for (let i = index - 1; i >= 0; i -= 1) {
+      const copy = /^(?:DATA\()?([A-Za-z0-9_]+)\)?\s*=\s*sy-subrc\s*$/i.exec(statements[i].text);
+      if (copy && copy[1].toLowerCase() === needle) {
+        from = i;
+        break;
+      }
+    }
+    if (from < 0) return neutralOutcome(value);
+  }
+  return outcomeOf(subrcSetter(statements, from), statements, value);
+}
+
+/** Der Nebensatz zu `sy-subrc = value` an dieser Stelle — für `conditionClause`. */
+function subrcClauseAt(statements: readonly AbapStatement[], index: number) {
+  return (value: string, equal: boolean): string => {
+    const result = subrcOutcome(statements, index, 'sy-subrc', value);
+    return equal ? result.okClause : result.failClause;
+  };
+}
+
+/**
+ * Der Satzanfang zu `IF x IS [NOT] INITIAL`.
+ *
+ * „Ohne Treffer" ist nur wahr, wenn die leere Tabelle das Ergebnis eines
+ * Lesens ist — ein `SELECT … INTO TABLE` in genau diese Tabelle. Sonst ist sie
+ * einfach leer, und so steht es auch da.
+ */
+function initialLead(name: string, statements: readonly AbapStatement[], index: number, negated: boolean): Lead {
+  const needle = plain(name).toLowerCase();
+  const filledBySelect = statements
+    .slice(0, index)
+    .some(
+      (other) =>
+        other.keyword.toUpperCase() === 'SELECT' &&
+        new RegExp(`\\b(?:INTO|APPENDING)\\s+(?:CORRESPONDING\\s+FIELDS\\s+OF\\s+)?TABLE\\s+@?(?:DATA\\()?${escapeForRegExp(needle)}\\b`, 'i').test(other.text),
+    );
+  if (INTERNAL_TABLE.test(name) || internalTables(statements).has(needle)) {
+    if (filledBySelect) return lead(negated ? 'Bei Treffern' : 'Ohne Treffer');
+    return lead(negated ? `Enthält die Tabelle ${plain(name)} Zeilen` : `Ist die Tabelle ${plain(name)} leer`, true);
+  }
+  if (isKnownField(name)) {
+    const word = termFor(name).singular;
+    return lead(negated ? `Mit einer nicht leeren ${word}` : `Ohne ${word}`);
+  }
+  return lead(`Ist ${nounPhrase(name)} ${negated ? 'nicht ' : ''}leer`, true);
+}
+
 /** Die Wächter: `IF … . WRITE 'X'. RETURN.` — Bedingung, Ausgabe und Rücksprung als eine Aussage. */
 function guardSentence(
   statements: readonly AbapStatement[],
@@ -770,30 +1117,15 @@ function guardSentence(
   const leave = body.find((s) => ['RETURN', 'LEAVE', 'EXIT'].includes(s.keyword.toUpperCase()));
   if (!leave) return null;
 
-  let subject: string;
-  // Eine interne Tabelle (`lt_`, `gt_`, `it_`) ist leer, wenn nichts gefunden
-  // wurde — fachlich heißt das „ohne Treffer", nicht „ohne Zeile".
-  if (initial) subject = INTERNAL_TABLE.test(initial[1]) ? 'Ohne Treffer' : `Ohne ${termFor(initial[1]).singular}`;
+  let subject: Lead;
+  if (initial) subject = initialLead(initial[1], statements, index, false);
   else if (subrc) {
-    // Ein `sy-subrc` sagt für sich nichts. Was es bedeutet, steht in der
-    // Anweisung **davor**: nach einer Berechtigungsprüfung heißt „<> 0" fehlende
-    // Berechtigung, nach einem Lesen fehlender Treffer.
-    // Die Berechtigungsprüfung steht selten unmittelbar vor ihrem `IF`: dazwischen
-    // liegen oft die Kopie von `sy-subrc` und andere Vorbereitungen. Gesucht wird
-    // deshalb in den letzten vier Anweisungen, und nur dort.
-    const auth =
-      statements
-        .slice(Math.max(0, index - 4), index)
-        .reverse()
-        .find((other) => other.keyword.toUpperCase() === 'AUTHORITY-CHECK') ?? null;
-    if (auth) {
-      const object = /OBJECT\s+('[^']*'|[A-Za-z0-9_]+)/i.exec(auth.text);
-      const field = /ID\s+'[^']*'\s+FIELD\s+([ps]_\w+)/i.exec(auth.text);
-      const restriction = field ? ` für den eingegebenen ${termFor(field[1]).singular}` : '';
-      subject = `Ohne Berechtigung auf ${object ? (literalOf(object[1]) ?? object[1]) : ''}${restriction}`;
-    } else {
-      subject = subrc[1] === '<>' ? 'Ohne Treffer' : 'Bei Treffer';
-    }
+    // Ein `sy-subrc` sagt für sich nichts. Was es bedeutet, sagt die Anweisung,
+    // die es gesetzt hat (F2): nach einer Berechtigungsprüfung heißt „<> 0"
+    // fehlende Berechtigung, nach einer Sperre eine nicht erhaltene Sperre,
+    // nach einem Lesen fehlender Treffer.
+    const outcome = subrcOutcome(statements, index, compared![1]);
+    subject = subrc[1] === '<>' ? outcome.fail : outcome.ok;
   }
   else if (compare) {
     // Ein Kennzeichen ist im ABAP ein `= 'X'`; fachlich ist es „gesetzt" oder
@@ -801,9 +1133,9 @@ function guardSentence(
     const value = literalOf(compare[3]) ?? plain(compare[3]);
     const name = plain(compare[1]);
     if (value === 'X') {
-      subject = compare[2] === '=' ? `Mit gesetztem ${name}` : `Ohne gesetztes ${name}`;
+      subject = lead(compare[2] === '=' ? `Mit gesetztem ${name}` : `Ohne gesetztes ${name}`);
     } else {
-      subject = compare[2] === '=' ? `Bei ${name} gleich ${value}` : `Bei ${name} ungleich ${value}`;
+      subject = lead(compare[2] === '=' ? `Bei ${name} gleich ${value}` : `Bei ${name} ungleich ${value}`);
     }
   } else return null;
 
@@ -815,13 +1147,13 @@ function guardSentence(
   // Steht keine da, wird es auch nicht behauptet.
   const guardsAWrite = statements
     .slice(leave.index + 1)
-    .some((next) => DB_WRITE.test(next.text));
+    .some((next) => isDbWrite(next, internalTables(statements)));
   const exit = guardsAWrite
     ? 'vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben'
     : 'der Block verlassen';
   const core = label
-    ? `${subject} wird ${label} ausgegeben und ${exit}.`
-    : `${subject} wird ${exit}.`;
+    ? `${compose(subject, `${label} ausgegeben und ${exit}`)}.`
+    : `${compose(subject, exit)}.`;
   return { anchors, core, grain: 'group', tag: 'guard' };
 }
 
@@ -1080,7 +1412,11 @@ function sentenceFor(
   }
 
   if (keyword === 'CHECK') {
-    return { anchors, core: checkSentence(statement, statements, stack), tag: 'check' };
+    return {
+      anchors,
+      core: checkSentence(statement, statements, stack, subrcClauseAt(statements, statement.index)),
+      tag: 'check',
+    };
   }
 
   if (keyword === 'ASSERT') {
@@ -1380,26 +1716,30 @@ function branchChain(statements: readonly AbapStatement[], index: number, loops:
   return null;
 }
 
-function branchSubject(branch: Branch): string {
+/**
+ * Der Satzanfang eines Zweigs. `chainHead` ist die Stelle des `IF` — auch für
+ * ein `ELSEIF sy-subrc …` zählt die Anweisung vor dem `IF`, denn was zwischen
+ * `IF` und `ELSEIF` steht, gehört zum vorigen Zweig und läuft hier nicht.
+ */
+function branchSubject(branch: Branch, statements: readonly AbapStatement[], chainHead: number): Lead {
   if (branch.kind === 'else') {
     const subject = elseSubject(branch.previous);
-    return subject === 'Sonst' ? subject : `Für ${lowerFirst(subject)}`;
+    return lead(subject === 'Sonst' ? subject : `Für ${lowerFirst(subject)}`);
   }
   const head = branch.head.text;
-  const subrc = /^(?:IF|ELSEIF)\s+sy-subrc\s*(<>|=)\s*0\s*$/i.exec(head);
-  if (subrc) return subrc[1] === '<>' ? 'Ohne Treffer' : 'Bei Treffer';
-  const initial = /^(?:IF|ELSEIF)\s+(\S+)\s+IS\s+(NOT\s+)?INITIAL\s*$/i.exec(head);
-  if (initial) {
-    if (INTERNAL_TABLE.test(initial[1])) return initial[2] ? 'Bei Treffern' : 'Ohne Treffer';
-    const word = termFor(initial[1]).singular;
-    return initial[2] ? `Mit einer nicht leeren ${word}` : `Ohne ${word}`;
+  const subrc = /^(?:IF|ELSEIF)\s+sy-subrc\s*(<>|=|NE|EQ)\s*0\s*$/i.exec(head);
+  if (subrc) {
+    const result = subrcOutcome(statements, chainHead);
+    return /^(?:<>|NE)$/i.test(subrc[1]) ? result.fail : result.ok;
   }
+  const initial = /^(?:IF|ELSEIF)\s+(\S+)\s+IS\s+(NOT\s+)?INITIAL\s*$/i.exec(head);
+  if (initial) return initialLead(initial[1], statements, chainHead, Boolean(initial[2]));
   const flag = /^(?:IF|ELSEIF)\s+(\S+)\s*(<>|=)\s*'X'\s*$/i.exec(head);
-  if (flag) return flag[2] === '=' ? `Mit gesetztem ${plain(flag[1])}` : `Ohne gesetztes ${plain(flag[1])}`;
+  if (flag) return lead(flag[2] === '=' ? `Mit gesetztem ${plain(flag[1])}` : `Ohne gesetztes ${plain(flag[1])}`);
   // „Beträge größer 10000" ist ein Subjekt, kein Satzanfang vor „wird".
   // Das Fallbuch schreibt an dieser Stelle „Für größere Beträge wird …", und
   // genau diese Form trägt auch einen erzeugten Satz.
-  return `Für ${lowerFirst(conditionSubject(head).subject)}`;
+  return lead(`Für ${lowerFirst(conditionSubject(head).subject)}`);
 }
 
 /**
@@ -1430,30 +1770,37 @@ function branchSentences(
   const branches = branchChain(statements, index, loops);
   if (!branches) return [];
   const drafts: Draft[] = [];
-  const parts: Array<{ branch: Branch; subject: string; phrase: string }> = [];
+  const parts: Array<{ branch: Branch; subject: Lead; phrase: string }> = [];
   for (const branch of branches) {
     const fragments = branch.body
       .map((statement) => bodyFragment(statement, origins))
       .filter((fragment): fragment is string => fragment !== null);
     if (fragments.length === 0) continue;
     const phrase = enumerate(fragments);
-    const subject = branchSubject(branch);
+    const subject = branchSubject(branch, statements, index);
     parts.push({ branch, subject, phrase });
     drafts.push({
       anchors: [range(branch.head), ...branch.body.map(range)],
-      core: `${subject} wird ${phrase}.`,
+      core: `${compose(subject, phrase)}.`,
       grain: 'group',
       tag: `branch${branch.head.lineStart}`,
     });
   }
   if (parts.length >= 2) {
     const [first, ...rest] = parts;
+    // „…, sonst Y" ist nur wahr, wenn Y der einzige andere Ausgang ist: ein
+    // ELSE direkt hinter dem ersten Zweig. Ein ELSEIF hat eine eigene
+    // Bedingung, und die gehört in den Satz, statt in einem „sonst" zu
+    // verschwinden.
+    const plainElse = parts.length === branches.length && rest.length === 1 && rest[0].branch.kind === 'else';
     drafts.push({
       anchors: [
         range(first.branch.head),
         ...parts.flatMap((part) => [range(part.branch.head), ...part.branch.body.map(range)]),
       ],
-      core: `${first.subject} wird ${first.phrase}, sonst ${rest.map((part) => part.phrase).join(' beziehungsweise ')}.`,
+      core: plainElse
+        ? `${compose(first.subject, first.phrase)}, sonst ${rest[0].phrase}.`
+        : parts.map((part) => `${compose(part.subject, part.phrase)}.`).join(' '),
       grain: 'group',
       tag: `chain${first.branch.head.lineStart}`,
     });

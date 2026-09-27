@@ -395,3 +395,31 @@ test('F1 — CHECK sagt die Folge seines Orts und die Bedingung, wie sie ist', (
   ).join(' ');
   expect(groesse).toContain('kleinere werden übersprungen, die Schleife läuft weiter');
 });
+
+test('F2 — die Wortwahl nach sy-subrc folgt der Anweisung, die es gesetzt hat', () => {
+  const nach = (...setter: string[]) =>
+    satzAn(quelle('FORM probe.', ...setter, '  IF sy-subrc <> 0.', "    WRITE / 'FEHLER'.", '    RETURN.', '  ENDIF.', 'ENDFORM.'), setter.length + 2).join(' ');
+
+  // Ein Lesen: „Treffer" ist hier das richtige Wort und bleibt.
+  expect(nach('  SELECT SINGLE name1 FROM zkunde INTO @DATA(lv_name) WHERE id = @gv_id.')).toContain('Ohne Treffer');
+
+  const berechtigung = nach("  AUTHORITY-CHECK OBJECT 'Z_BELEG' ID 'ACTVT' FIELD '02'.");
+  expect(berechtigung).toContain('Ohne Berechtigung auf Z_BELEG');
+  expect(berechtigung).not.toContain('Treffer');
+
+  const sperre = nach("  CALL FUNCTION 'ENQUEUE_EZBELEG' EXPORTING id = gv_id EXCEPTIONS foreign_lock = 1 OTHERS = 2.");
+  expect(sperre).toContain('Sperre');
+  expect(sperre).not.toContain('Treffer');
+
+  const aufruf = nach("  CALL FUNCTION 'Z_BELEG_SENDEN' EXPORTING id = gv_id EXCEPTIONS failed = 1.");
+  expect(aufruf).toContain('Scheitert der Aufruf von Z_BELEG_SENDEN');
+
+  expect(nach('  OPEN DATASET gv_datei FOR INPUT IN TEXT MODE ENCODING DEFAULT.')).toContain('Datei nicht öffnen');
+  expect(nach('  INSERT zbeleg FROM gs_beleg.')).toContain('Datenbankänderung');
+
+  // Wo die setzende Anweisung nicht eindeutig ist — hier liegt ein Zweig
+  // dazwischen —, bleibt der Satz neutral statt geraten.
+  const offen = nach("  IF gv_modus = 'A'.", "    SELECT SINGLE name1 FROM zkunde INTO @DATA(lv_x) WHERE id = @gv_id.", '  ENDIF.');
+  expect(offen).toContain('Rückgabewert ungleich 0');
+  expect(offen).not.toContain('Treffer');
+});
