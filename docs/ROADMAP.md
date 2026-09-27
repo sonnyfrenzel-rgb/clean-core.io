@@ -2348,3 +2348,75 @@ Verschlechterung, kein Freibrief.
 **Reihenfolge:** 17.5 vor 17.6, und beide vor jeder weiteren Modellentscheidung —
 sonst optimiert man eine Größe, die niemand misst. 17.5 ist unabhängig von der
 Modellfrage nützlich und billig: der Sollwert liegt seit Monaten im Repository.
+
+### Die Entscheidung zu Weg B (Sonny, 27.09.2026) und 17.10
+
+Ein Benchmark aus 200 konstruierten Fällen (`tests/prozess-benchmark/`) hat 2.273
+Sollsätze **blind** von fünf Richtern bewerten lassen — je Sollsatz drei Varianten ohne
+Herkunft, die Zuordnung erst nach allen Urteilen geöffnet
+(`judge/schluss/zuordnung.json`):
+
+| | gleich | abweichend | falsche Aussagen | verbotene Schlüsse |
+|---|---|---|---|---|
+| Weg A (Engine, nach den Fachsatz-Korrekturen) | 10,3 % | 0,1 % | 11 | 4 |
+| Weg B (Modell, `lib/business-statement-prompt.ts`) | 86,5 % | 0,3 % | 39 | 19 |
+
+B trifft den fachlichen Sinn fast immer, erfindet aber öfter; A ist verlässlich, aber
+technisch. **Sonny folgt dem Vorschlag:** B liefert den lesbaren Satz mit Herkunft
+*Model proposal*, A steht als belegte Aussage darunter, und ein Widerspruch zwischen
+beiden wird markiert.
+
+| Nr. | Schritt | Größe |
+|---|---|---|
+| 17.10 | **Gebaut 27.09.2026.** **Weg B in die Business-Sicht, Weg A als Beleg darunter, Widerspruch markiert.** Eine eigene Modellstufe `statements` (Schalter wie `naming`, bis 3.0 nur mit der Arbeitsraum-Vorschau angeboten), ausgelöst **nur** über einen Knopf in der Dokumentation, mit der Kostenzeile vor dem Klick. Der Weg ist der der Namensstufe: Browser → `/api/gemini` (Stufenschalter, fehlender Schlüssel, eigener Schlüssel, Stundenlimit je Konto) → `POST /api/projects/{id}/statement-proposal` mit Quittung; die Route baut den Kontext aus der gespeicherten Quelle nach, verweigert eine fremde Quelle (409) und eine Antwort ohne gültige Quittung (422), prüft mit `validateStatementAnswer` und speichert per Admin SDK unter `projects/{id}/statement_proposal/current` — **nie** in Lauf, Quittung, Signatur oder Audit-Pack, keine Regeländerung. Leser lesen, nur der Besitzer fordert an. Der Widerspruch prüft `lib/statement-contradiction.ts` deterministisch an den Ankern des B-Satzes, beim Anzeigen, nicht gespeichert. **Gemessen:** siehe unten. | M |
+
+**Ergebnis 17.10 (gemessen, 27.09.2026).** Zuerst die Korrektur an 17.8: dort hieß es
+„B schlägt A nicht — A bleibt allein", mit 7 und 9 gegen 69 von 173. Das Maß war das
+Dice-Maß aus 17.5, auf Kürzung kalibriert und nicht auf unabhängige Formulierung — es
+hat **Wortwahl** gemessen, nicht **Inhalt**. Der Schlusssatz von 17.8 hat das als Grenze
+genannt und trotzdem entschieden; die blinde Bewertung nach Inhalt kehrt das Ergebnis
+um (86,5 % gegen 10,3 % „gleich"). Richtig bleibt an 17.8 die Warnung, dass eine
+nachträglich gefundene Zahl B nicht zum Sieger *machen* darf — hier ist sie vorher
+festgelegt und blind erhoben worden, und sie misst auch die Kehrseite: B erfindet
+mehr (39 gegen 11 falsche Aussagen). Deshalb steht A unter jedem B-Satz, und deshalb die
+Markierung.
+
+**Das Widerspruchsmodul**, entwickelt nur an der Lernhälfte (`split.json → learn`), die
+Prüfhälfte einmal am Ende gemessen (`tests/prozess-benchmark/widerspruch.ts`). Treffer =
+Sollsätze, an denen die Richter B den Mangel `falsch` gaben und einer der B-Sätze dort
+markiert wird; Fehlalarm = markierter B-Satz an einem Sollsatz mit Urteil `gleich`:
+
+| | Treffer „falsch" | verbotene Schlüsse markiert | Fehlalarme an „gleich" | markiert insgesamt |
+|---|---|---|---|---|
+| Lernhälfte (100 Fälle) | 11 von 25 (44 %) | 4 von 12 | 8 von 1.580 (0,5 %) | 21 von 1.658 |
+| Prüfhälfte (100 Fälle) | **2 von 14 (14 %)** | **0 von 7** | **13 von 1.869 (0,7 %)** | 14 von 1.930 |
+
+Ehrlich gelesen: **das Modul ist vorsichtig, aber es findet wenig.** Die Fehlalarmquote
+hält auf der Prüfhälfte (unter 1 %), die Trefferquote nicht — von den 11 Treffern der
+Lernhälfte stammen 5 aus einem Fall (BM-012, fünfmal `MESSAGE … INTO`), und auf der
+Prüfhälfte kommt dieses Muster nicht vor. Die meisten falschen B-Aussagen sind inhaltlich (ein erfundener
+„aktiv"-Filter, ein Rückgabecode aus dem falschen Aufruf, `AT END OF` mit unzuverlässigem
+Feldwert) und für eine Regel ohne Deutung nicht zu greifen. **Alle 21 „Fehlalarme"**
+beider Hälften kommen aus zwei Regeln, deren Aussage **am Code stimmt**, die die Richter
+aber uneinheitlich werteten: `MESSAGE … RAISING` („angezeigt" nur, wenn der Aufrufer die
+Ausnahme nicht behandelt — 5 Mal an einem als falsch gewerteten Satz, 18 Mal an einem
+„gleich"-Satz, 10 davon in einem Fall, BM-199; deshalb nur *Not supported by the code*,
+nie *Contradicts*) und `RETURN`/`STOP` in `START-OF-SELECTION` mit folgendem
+`END-OF-SELECTION` („das Programm wird beendet" — 3 Treffer, 3 Fehlalarme). Ob die
+`RAISING`-Regel bleibt, ist eine Produktfrage: sie sagt Wahres, das die Richter
+überwiegend nicht für einen Fehler hielten.
+Messgrenze: die Richterdateien tragen je B-Satz nur die Zeilen seines Sollsatzes, nicht
+seine eigenen Anker; im Produkt prüft das Modul gegen die Anker, die die Validierung dem
+Satz gelassen hat. Vier Regeln (`WRITE … TO`, Persistenz ohne Schreibanweisung, nicht
+vorhandene Ausnahme, Anzeigetransaktion als „Anlage") haben auf keiner Hälfte gefeuert —
+weder Treffer noch Fehlalarm; sie stehen aus den Richterbefunden der Engine-Sätze und
+sind mit eigenem Minimal-ABAP getestet. **Nicht gebaut:** „alle/jede" bei `LOOP … WHERE`,
+`CHECK` und leerer `FOR ALL ENTRIES`-Tabelle — auf der Lernhälfte war kein einziger
+B-Befund dieser Art, und eine Regel ohne Beleg wäre geraten.
+
+**Kosten je Analyse.** Die Stufe kostet nichts, bis jemand den Knopf drückt: ein Aufruf
+von `gemini-3.8-flash` je Quelle, mit dem ganzen Quelltext und seinen Zeilennummern im
+Prompt. Gemessen in 17.8: 3,80 $ für zwei Durchgänge über 68 Fälle, also rund **3 Cent je
+Aufruf** bei Korpusgröße; größere Quellen entsprechend mehr. Er zählt nicht auf die fünf
+Analyse-Läufe, aber auf das Stundenlimit der Modellaufrufe des Kontos (20 je Stunde in
+`/api/gemini`); mit eigenem Schlüssel zahlt das Konto selbst.

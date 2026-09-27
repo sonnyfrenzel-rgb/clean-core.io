@@ -1,6 +1,6 @@
 # DESIGN.md — Clean-Core.io
 
-**Version 1.5 · 24.09.2026 · abgenommen von Sonny · verbindlich für alles, was zur Oberfläche von 3.0 gehört** (Roadmap-Schritte 1.4–1.7,
+**Version 1.7 · 27.09.2026 · abgenommen von Sonny · verbindlich für alles, was zur Oberfläche von 3.0 gehört** (Roadmap-Schritte 1.4–1.7,
 Phasen 2–8, 3.0). Das Zielbild zeigen die Mockups
 [`docs/roadmap/clean-core-mockups-v2_8.html`](docs/roadmap/clean-core-mockups-v2_8.html). Entscheidungen mit Datum
 und Begründung stehen im Entscheidungslog [`docs/design/decisions.md`](docs/design/decisions.md); diese Datei sagt
@@ -809,6 +809,20 @@ Navigation. Deshalb gilt (ADR-032):
 Im Export bleiben eingeklappte Teilprozesse echte BPMN-Teilprozesse — Signavio kann in sie hineinspringen wie die
 Karte.
 
+### 5.10 Fachsatz: Vorschlag oben, Beleg darunter, Widerspruch markiert
+
+Am Element und in der Liste aller Fachsätze (ADR-055, Roadmap 17.10):
+
+| Was | Wie |
+|---|---|
+| **Vorschlag** (Weg B, Modell) | oben, Lesegröße 13 px, `--cc-ink`, dahinter der Chip *Model proposal* |
+| **Beleg** (Weg A, Engine) | direkt darunter, 12 px, `--cc-ink-muted`, davor der Chip *Reconstructed*; fällt für den Vorschlag nie weg. Hat die Engine an diesen Zeilen keinen Satz, steht das da |
+| **Widerspruch** | am Vorschlag, kein Chip: 2-px-Randstrich links und eine Zeile Worte mit Icon — *Contradicts the evidence* (`warning`) oder *Not supported by the code* (`neutral`). Der Grund und die Zeilen stehen eine Aktion tiefer (§2.11, `<details>`) |
+| **Anfordern** | ein Knopf *Propose business sentences* (Secondary), nach dem ersten Vorschlag *Ask the model again* (Ghost); daneben vor dem Klick die Kostenzeile nach §2.8 — ein Modellaufruf, zählt nicht auf die Analyse-Läufe, zählt auf das Stundenlimit der Modellaufrufe; mit eigenem Schlüssel „with your own Gemini key". Nur der Besitzer hat ihn; ein eingeladener Leser sieht, was der Besitzer angefordert hat |
+| **Ohne Vorschlag** | nicht angefordert, verworfen, für eine frühere Quelle oder fehlgeschlagen: die Sätze der Engine allein, wie vorher — keine leere Fläche, kein Fehlerton; ein Grund, wenn einer bekannt ist, in `--cc-ink-muted` |
+
+Nie automatisch: Öffnen der Stufe kostet keinen Modellaufruf. Bis 3.0 nur mit der Arbeitsraum-Vorschau.
+
 ---
 
 ## 6. Hilfestellung
@@ -1044,6 +1058,7 @@ Sonny 15.09.2026):
 
 | Version | Datum | Was |
 |---|---|---|
+| 1.7 | 27.09.2026 | Fachsatz als Vorschlag des Modells über dem Satz der Engine, Widerspruch als Randstrich mit Worten statt Chip, Anfordern nur per Knopf mit Kostenzeile (§5.10, ADR-055, Roadmap 17.10) |
 | 1.6 | 27.09.2026 | Ereignisse in Teilprozessen und an frühen Ausstiegen (ADR-054, Sonny 27.09.2026): jeder aufklappbare Teilprozess beginnt in seiner Ebene an einem Startereignis auf der `FORM`-/`METHOD`-Zeile; `RETURN`, `EXIT` außerhalb von Schleifen und `STOP` enden auf einem eigenen Endereignis mit der Bedingung an der Kante — direkt vor dem Blockschluss bleibt es das normale Ende; ein verlassender `CHECK` bleibt bedingter Fluss auf das normale Ende. Ereignisse zählen nirgends als Schritt, ein vorzeitiges Ende heißt „End (early)" (§5.8) |
 | 1.5 | 24.09.2026 | Entscheidungen E-1 bis E-7 aus Block D („die ganze App aus einem Guss"), Sonny 24.09.2026 (ADR-047 bis ADR-053): 12 px / 600 als Stufe „Meta/Chip" in der Skala (§1.2); 2 px nur in Chips, Kennungen und zur Icon-Ausrichtung, 6/10/14 px nicht (§1.3); Stufenkopf wie Projekttitel 22 px / 800, `--cc-ink`, neutrales Icon, „Back to workspace" (§1.2, §2.3); Schwere eines Befunds als feste Liste `lib/severity.ts` mit Kennungsform und Farben (§1.8, §4.1, §8); Tokens statt Palette auch auf öffentlichen Seiten, große Radien und Mesh nur dort (Einleitung, §1); altes Dashboard und alte Stufen-Demo werden nach dieser Datei neu gebaut, nichts wird entfernt statt umgebaut (§2.2, §6.1.2); deutsche Datenschutzerklärung als Rechtstext-Ausnahme von §3 |
 | 1.4.3 | 15.09.2026 | Abgleich mit der abgenommenen Landingpage 3.0: Vertrauenssatz nennt den Admin-Zugriff, den `firestore.rules` zulässt; Quelle für den verschlüsselten Schlüssel ist Terms §5 und `/trust`, nicht `SECURITY.md` §4 (das sind S/4-Zugangsdaten); Tour-Stationen in der Sichten-Reihenfolge Business · IT · Management; Bewegung auf der Startseite, Fokusring auf Code-Fläche, Gewichte des `SectionHeader` |

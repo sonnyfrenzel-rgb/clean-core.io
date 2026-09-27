@@ -47,6 +47,19 @@ dazu Schritt A aus dem Security-Audit von v2.19.0 und die Befunde der Vollprüfu
   was sie tut. Dazu ein Satz statt fünf gleichen, richtige Artikel vor Feldnamen und
   deutsche Begriffe für die SAP-Standardtabellen und -felder. Im Referenzkorpus verletzt
   kein Satz mehr eine der 166 verbotenen Aussagen (vorher vier).
+- **Fachsätze in Klarsprache vom Modell, der Satz aus dem Code als Beleg darunter
+  (17.10, mit der Arbeitsraum-Vorschau).** Ein Knopf in der Dokumentation lässt das
+  Modell je Schritt einen Fachsatz vorschlagen und sagt vorher, was das kostet: ein
+  Modellaufruf, nicht auf die Analyse-Läufe, aber auf das Stundenlimit. Der Vorschlag
+  steht oben mit *Model proposal*, der Satz der Engine darunter mit *Reconstructed* —
+  er fällt nie weg. Sagt der Vorschlag etwas, das die Anweisungen an seinen Zeilen
+  nicht tragen — eine „angezeigte" Meldung, die `MESSAGE … INTO` nur in Variablen
+  schreibt, ein „Programmende" vor einem `END-OF-SELECTION` —, steht daran *Contradicts
+  the evidence* oder *Not supported by the code*, mit dem Grund auf Nachfrage. Der
+  Vorschlag liegt außerhalb jeder Signatur; ohne ihn bleibt die Seite, wie sie war.
+  Grundlage ist eine blinde Bewertung von 2.273 Sollsätzen durch fünf Richter: das
+  Modell trifft den fachlichen Sinn in 86,5 % der Fälle, die Engine in 10,3 %, aber das
+  Modell erfindet öfter (39 gegen 11 falsche Aussagen).
 - **Die sieben Stufen haben einen Kopf.** Jede Stufe trägt ihren Namen aus derselben
   Liste wie der Stepper, in 22 px / 800, mit neutralem Icon statt grüner Blase und
   „Back to workspace" darüber — der Link führt in die Sicht und Ebene zurück, aus der
