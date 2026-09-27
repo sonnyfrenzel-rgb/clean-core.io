@@ -20,6 +20,7 @@ import {
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { isTransientModelError } from '@/lib/model-retry';
 import { issueModelReceipt } from '@/lib/model-receipt';
+import { GEMINI_TEST_STUB_HEADER, GEMINI_TEST_STUB_TEXT, geminiTestStubActive } from '@/lib/gemini-test-stub';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
 /**
@@ -283,13 +284,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // The test suite's stand-in for the provider — never in a deployment
+    // (`lib/gemini-test-stub.ts`: no K_SERVICE, the emulator build, and a
+    // per-request secret). Every gate above has run; only the call is replaced,
+    // and the receipt below is minted exactly as for a real answer
+    // (QA review of 75b573cd22f0, 080cd5fce607).
+    const stubbed = geminiTestStubActive(process.env, request.headers.get(GEMINI_TEST_STUB_HEADER));
+
     // Resolve the AI client — load BYOK key from secure user_secrets if it exists, else server key.
-    const byokKey = await loadGeminiApiKey(decodedToken.uid);
+    const byokKey = stubbed ? null : await loadGeminiApiKey(decodedToken.uid);
     const ai = byokKey
       ? new GoogleGenAI({ apiKey: byokKey })
       : getDefaultAI();
 
-    if (!ai) {
+    if (!ai && !stubbed) {
       // Roadmap 1.2 — a named reason, not just a sentence. The Analyze stage
       // reads this code and finishes the run without a narrative instead of
       // failing; before, the same 503 aborted the whole analysis and the
@@ -305,8 +313,8 @@ export async function POST(request: NextRequest) {
 
     // No quota reservation here — metering happens once per analysis run in
     // /api/runs/create. See the module header.
-    const text = await callWithRetry(async () => {
-      const result = await ai.models.generateContent({
+    const text = stubbed ? GEMINI_TEST_STUB_TEXT : await callWithRetry(async () => {
+      const result = await ai!.models.generateContent({
         model,
         contents: prompt,
         config: jsonResponse

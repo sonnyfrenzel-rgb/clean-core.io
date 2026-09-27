@@ -6,8 +6,10 @@ import firebaseConfig from '../firebase-config.json';
 import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
 import { TERMS_VERSION } from '../lib/constants';
 import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
-import { issueModelReceipt } from '../lib/model-receipt';
+import { issueModelReceipt, verifyModelReceipt } from '../lib/model-receipt';
+import { GEMINI_TEST_STUB_HEADER, GEMINI_TEST_STUB_TEXT } from '../lib/gemini-test-stub';
 import { STAGE_DISABLED_CODE } from '../lib/model-stages';
+import { namingContextOf } from '../lib/process-naming';
 import {
   STATEMENT_SOURCE_NAME,
   applyStatementProposal,
@@ -273,4 +275,55 @@ test('the statements stage is switched on its own, and the proxy is what refuses
 
   const on = await request.post('/api/model-stages', { headers: headers(), data: { stages: { statements: true } } });
   expect((await on.json()).stages.statements).toBe(true);
+});
+
+test('080cd5fce607: the proxy signs the stage it was called under — at the route, with the provider stubbed', async ({ request }) => {
+  // QA review of 75b573cd22f0: until now only the source said so. The stub
+  // replaces the provider call and nothing else (`lib/gemini-test-stub.ts`),
+  // so the request passes every gate of `/api/gemini` and the receipt is minted
+  // as for a real answer.
+  const stubHeaders = { ...headers(), [GEMINI_TEST_STUB_HEADER]: process.env.PILOT_APPROVAL_SECRET ?? '' };
+  const res = await request.post('/api/gemini', {
+    headers: stubHeaders,
+    data: { prompt: 'Describe these statements.', stage: 'statements', jsonResponse: true },
+  });
+  expect(res.status(), await res.text()).toBe(200);
+  const body = (await res.json()) as { text: string; receipt: Record<string, unknown> };
+  expect(body.text).toBe(GEMINI_TEST_STUB_TEXT);
+  expect(body.receipt.stage).toBe('statements');
+
+  const key = signingKey();
+  expect(verifyModelReceipt(body.receipt, { uid, text: body.text, key, stage: 'statements' }).ok).toBe(true);
+  expect(verifyModelReceipt(body.receipt, { uid, text: body.text, key, stage: 'naming' })).toEqual({ ok: false, refusal: 'wrong-stage' });
+
+  // And the store takes it: the real chain, proxy receipt into the statements route.
+  const stored = await request.post(path, { headers: headers(), data: { digest: CONTEXT.digest, text: body.text, receipt: body.receipt } });
+  expect(stored.status(), await stored.text()).toBe(200);
+  // …while the naming store refuses the same receipt.
+  const naming = await request.post(`/api/projects/${PROJECT_ID}/process-naming`, {
+    headers: headers(),
+    data: { digest: namingContextOf(PROGRAM).digest, text: body.text, receipt: body.receipt },
+  });
+  expect(naming.status(), await naming.text()).toBe(422);
+  expect(await naming.json()).toMatchObject({ code: 'receipt-refused', refusal: 'wrong-stage' });
+
+  // The stub sits behind the stage switch, not in front of it.
+  await request.post('/api/model-stages', { headers: headers(), data: { stages: { statements: false } } });
+  try {
+    const off = await request.post('/api/gemini', {
+      headers: stubHeaders,
+      data: { prompt: 'Describe these statements.', stage: 'statements', jsonResponse: true },
+    });
+    expect(off.status()).toBe(403);
+    expect((await off.json()).code).toBe(STAGE_DISABLED_CODE);
+  } finally {
+    await request.post('/api/model-stages', { headers: headers(), data: { stages: { statements: true } } });
+  }
+
+  // A wrong token is no stub: the request then goes the ordinary way.
+  const wrong = await request.post('/api/gemini', {
+    headers: { ...headers(), [GEMINI_TEST_STUB_HEADER]: 'not-the-secret' },
+    data: { prompt: 'Describe these statements.', stage: 'statements', jsonResponse: true },
+  });
+  if (wrong.status() === 200) expect((await wrong.json()).text).not.toBe(GEMINI_TEST_STUB_TEXT);
 });
