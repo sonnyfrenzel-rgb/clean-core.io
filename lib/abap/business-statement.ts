@@ -1126,6 +1126,7 @@ function guardSentence(
   statements: readonly AbapStatement[],
   index: number,
   origins: Map<string, ValueOrigin>,
+  context: SourceContext,
 ): Draft | null {
   const head = statements[index];
   if (head.keyword.toUpperCase() !== 'IF') return null;
@@ -1141,12 +1142,17 @@ function guardSentence(
   const subrc = compared && subrcNames.has(compared[1].toLowerCase()) ? [compared[0], compared[2]] : null;
   const compare = /^IF\s+(\S+)\s*(<>|=)\s*('[^']*'|\S+)\s*$/i.exec(head.text);
 
+  // Der Rumpf des Wächters, nur seine eigene Ebene: ein RETURN in einer
+  // inneren Schleife oder einem inneren IF gehört nicht ihm.
   const body: AbapStatement[] = [];
+  let depth = 0;
   for (let i = index + 1; i < statements.length; i += 1) {
     const next = statements[i];
     const keyword = next.keyword.toUpperCase();
-    if (keyword === 'ENDIF' || keyword === 'ELSE' || keyword === 'ELSEIF') break;
-    body.push(next);
+    if (depth === 0 && (keyword === 'ENDIF' || keyword === 'ELSE' || keyword === 'ELSEIF')) break;
+    if (opens(next, context.loops)) depth += 1;
+    else if (CLOSERS.has(keyword)) depth -= 1;
+    else if (depth === 0) body.push(next);
     if (body.length > 4) break;
   }
   const write = body.find((s) => isOutputWrite(s));
@@ -1168,7 +1174,12 @@ function guardSentence(
     // „nicht gesetzt", und genau so liest es ein Fachbereichsmensch.
     const value = literalOf(compare[3]) ?? plain(compare[3]);
     const name = plain(compare[1]);
-    if (value === 'X') {
+    if (/^sy-subrc$/i.test(name)) {
+      // Ein anderer Wert als 0: was er heißt, sagt nur die Dokumentation der
+      // setzenden Anweisung — der Satz bleibt neutral.
+      const neutral = neutralOutcome(value);
+      subject = compare[2] === '=' ? neutral.ok : neutral.fail;
+    } else if (value === 'X') {
       subject = lead(compare[2] === '=' ? `Mit gesetztem ${name}` : `Ohne gesetztes ${name}`);
     } else {
       subject = lead(compare[2] === '=' ? `Bei ${name} gleich ${value}` : `Bei ${name} ungleich ${value}`);
@@ -1177,16 +1188,7 @@ function guardSentence(
 
   const anchors = [range(head), ...(write ? [range(write)] : []), range(leave)];
   const label = write ? writtenTarget(write, origins).label : null;
-  // **Was der Wächter verhindert, ist die Aussage** — nicht, dass er greift.
-  // Steht hinter ihm eine Datenbankänderung, dann ist „es wird nichts
-  // geschrieben" keine Floskel, sondern genau das, was dieser Zweig belegt.
-  // Steht keine da, wird es auch nicht behauptet.
-  const guardsAWrite = statements
-    .slice(leave.index + 1)
-    .some((next) => isDbWrite(next, internalTables(statements)));
-  const exit = guardsAWrite
-    ? 'vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben'
-    : 'der Block verlassen';
+  const exit = guardExit(statements, index, body, leave, context);
   const core = label
     ? `${compose(subject, `${label} ausgegeben und ${exit}`)}.`
     : `${compose(subject, exit)}.`;
@@ -1195,6 +1197,140 @@ function guardSentence(
 
 /** Was eine Datenbankzeile ändern kann — die Liste, auf die sich der Wächter beruft. */
 const DB_WRITE = /^(UPDATE|MODIFY|INSERT|DELETE|EXEC\s+SQL)\b|execute_update|CALL\s+TRANSACTION|IN\s+UPDATE\s+TASK/i;
+
+/** Was über eine ganze Quelle einmal gelesen wird und viele Sätze brauchen. */
+interface SourceContext {
+  stacks: Block[][];
+  loops: ReadonlySet<number>;
+  tables: Set<string>;
+}
+
+/**
+ * Ob das Ziel eines Aufrufs im gelieferten Code steht — `FORM x`, `METHOD x`,
+ * `FUNCTION x`. Nur dann lässt sich über seine Wirkung etwas sagen.
+ */
+function definedInSource(statement: AbapStatement, statements: readonly AbapStatement[]): boolean {
+  const text = statement.text;
+  if (/^COMMIT\b/i.test(text)) return true;
+  const perform = /^PERFORM\s+([A-Za-z0-9_]+)/i.exec(text);
+  if (perform) return !/\bIN\s+PROGRAM\b/i.test(text) && routineHead(statements, 'FORM', perform[1]) !== null;
+  const fn = /^CALL\s+FUNCTION\s+'([^']+)'/i.exec(text);
+  if (fn) return routineHead(statements, 'FUNCTION', fn[1]) !== null;
+  const method = /(?:->|=>)([A-Za-z0-9_]+)\s*\(|^CALL\s+METHOD\s+\S*?(?:->|=>)?([A-Za-z0-9_]+)(?:\s|$|\()/i.exec(text);
+  if (method) return routineHead(statements, 'METHOD', method[1] ?? method[2]) !== null;
+  return false;
+}
+
+/** Der Kopf einer Routine im gelieferten Code — `FORM name`, `METHOD name`, `FUNCTION name`. */
+function routineHead(
+  statements: readonly AbapStatement[],
+  kind: 'FORM' | 'METHOD' | 'FUNCTION' | 'MODULE',
+  name: string,
+): AbapStatement | null {
+  const wanted = name.toLowerCase();
+  return (
+    statements.find((other) => {
+      if (other.keyword.toUpperCase() !== kind) return false;
+      const match = /^\S+\s+([A-Za-z0-9_~/]+)/.exec(other.text);
+      if (!match) return false;
+      const found = match[1].toLowerCase();
+      // `METHOD if_x~name` implementiert `name` einer Schnittstelle.
+      return found === wanted || found.endsWith(`~${wanted}`);
+    }) ?? null
+  );
+}
+
+/** Eine Anweisung, hinter der Code steht, der schreiben oder festschreiben kann. */
+function callsOut(statement: AbapStatement): boolean {
+  return /^(?:PERFORM|CALL|SUBMIT|COMMIT|RAISE\s+EVENT)\b/i.test(statement.text) || /->|=>/.test(statement.text);
+}
+
+/**
+ * Die Verarbeitungseinheit, die ein RETURN verlässt, und wo sie endet: die
+ * Routine bis zu ihrem END…, das Ereignis bis zum nächsten Ereignis oder zur
+ * nächsten Routine.
+ */
+function processingUnit(
+  statements: readonly AbapStatement[],
+  stack: readonly Block[],
+  index: number,
+): { kind: 'routine' | 'event' | 'unknown'; start: number; end: number } {
+  const routine = [...stack].reverse().find((block) => block.kind === 'routine');
+  if (routine) {
+    const closer = /^METHOD$/i.test(routine.head.keyword)
+      ? 'ENDMETHOD'
+      : /^FUNCTION$/i.test(routine.head.keyword)
+        ? 'ENDFUNCTION'
+        : /^MODULE$/i.test(routine.head.keyword)
+          ? 'ENDMODULE'
+          : 'ENDFORM';
+    const end = statements.findIndex((other, i) => i > index && other.keyword.toUpperCase() === closer);
+    return { kind: 'routine', start: routine.head.index, end: end < 0 ? statements.length : end };
+  }
+  let start = 0;
+  let kind: 'event' | 'unknown' = 'unknown';
+  for (let i = index - 1; i >= 0; i -= 1) {
+    if (isEvent(statements[i])) {
+      start = i;
+      kind = 'event';
+      break;
+    }
+  }
+  const end = statements.findIndex(
+    (other, i) => i > index && (isEvent(other) || /^(?:FORM|CLASS|METHOD|MODULE|FUNCTION)$/i.test(other.keyword)),
+  );
+  return { kind, start, end: end < 0 ? statements.length : end };
+}
+
+/**
+ * Was ein Wächter mit seinem Rücksprung verhindert (F6).
+ *
+ * „Vor der Datenbankoperation zurückgekehrt" nur, wenn in derselben Einheit
+ * hinter dem Rücksprung wirklich geschrieben wird. „Es wird nichts
+ * geschrieben" nur, wenn der Weg es trägt: der Rücksprung verlässt ein
+ * Ereignis (eine Routine kehrt zum Aufrufer zurück, und der macht weiter),
+ * der Wächter selbst ruft nichts auf, vor ihm wurde in der Einheit nichts
+ * geschrieben, und kein anderes Ereignis (END-OF-SELECTION …) schreibt oder
+ * ruft etwas auf. Sonst wäre es eine Behauptung ohne Beleg — genau die, die
+ * die Richter an einem `log_sichern` mit COMMIT WORK dahinter gefunden haben.
+ */
+function guardExit(
+  statements: readonly AbapStatement[],
+  index: number,
+  body: readonly AbapStatement[],
+  leave: AbapStatement,
+  context: SourceContext,
+): string {
+  const keyword = leave.keyword.toUpperCase();
+  const stack = context.stacks[leave.index];
+  const innermost = [...stack].reverse().find((block) => block.kind === 'loop' || block.kind === 'routine');
+  if (keyword === 'EXIT' && innermost?.kind === 'loop') return 'die Schleife verlassen';
+  if (keyword === 'LEAVE') return leavePhrase(leave) ?? 'der Block verlassen';
+  const unit = processingUnit(statements, stack, leave.index);
+  const writesLater = statements.slice(leave.index + 1, unit.end).some((next) => isDbWrite(next, context.tables));
+  if (!writesLater) return 'der Block verlassen';
+  const quiet =
+    unit.kind !== 'routine' &&
+    !body.some((statement) => callsOut(statement) || isDbWrite(statement, context.tables)) &&
+    !statements.slice(unit.start, index).some((statement) => isDbWrite(statement, context.tables) || /^COMMIT\b/i.test(statement.text)) &&
+    !statements
+      .slice(unit.end)
+      .some(
+        (statement) =>
+          !context.stacks[statement.index].some((block) => block.kind === 'routine' || block.kind === 'class') &&
+          !/^(?:FORM|CLASS|METHOD|MODULE|FUNCTION)$/i.test(statement.keyword) &&
+          (callsOut(statement) || isDbWrite(statement, context.tables)),
+      );
+  return quiet
+    ? 'vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben'
+    : 'vor der Datenbankoperation zurückgekehrt';
+}
+
+/** Wohin ein LEAVE führt — ausgebaut in F9; hier nur, damit der Wächter es nicht „Block" nennt. */
+function leavePhrase(statement: AbapStatement): string | null {
+  void statement;
+  return null;
+}
 
 /** Eine Zuweisung in einem Zweig: „Negative Beträge setzen die Route auf INVALID." */
 function branchAssignment(statement: AbapStatement, stack: Block[]): Draft | null {
@@ -1435,11 +1571,28 @@ function sentenceFor(
   // gelieferten Code ist angekündigt und nicht persistiert; steht hinter ihr
   // kein `sy-subrc`-Vergleich, ist auch der Erfolg nicht geprüft. Beides ist
   // aus dem Ausschnitt ablesbar und gehört deshalb an den Satz.
+  //
+  // F6: „kein COMMIT WORK" ist eine negative Behauptung und steht nur da, wo
+  // sie trägt. Ein `BAPI_TRANSACTION_COMMIT` schreibt fest wie ein COMMIT
+  // WORK; ein Aufruf, dessen Inneres nicht im Ausschnitt steht, kann es tun;
+  // und außerhalb eines ausführbaren Programms (Methode, Baustein, Exit)
+  // gehört das Festschreiben dem Aufrufer. In all diesen Fällen schweigt der
+  // Satz dazu, statt etwas zu behaupten, was der Code nicht zeigt.
   const persistenceNotes = (): string[] => {
     const notes: string[] = [];
     const rest = statements.slice(statement.index + 1);
-    if (!statements.some((other) => other.keyword.toUpperCase() === 'COMMIT')) {
-      notes.push('Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK.');
+    const rap = /^MODIFY\s+ENTITIES\b/i.test(text);
+    const committed = statements.some((other) =>
+      rap
+        ? /^COMMIT\s+ENTITIES\b/i.test(other.text)
+        : /^COMMIT\b/i.test(other.text) || /\bBAPI_TRANSACTION_COMMIT\b|\bDB_COMMIT\b/i.test(other.text),
+    );
+    const program = statements.some((other) => /^(?:REPORT|PROGRAM)$/i.test(other.keyword));
+    const opaque = rest.some((other) => callsOut(other) && !definedInSource(other, statements));
+    if (rap && !committed) {
+      notes.push('Angekündigt, nicht persistiert: die Änderung liegt im Transaktionspuffer; im gelieferten Code steht kein COMMIT ENTITIES.');
+    } else if (!rap && !committed && program && !opaque) {
+      notes.push('Im gelieferten Code steht kein COMMIT WORK.');
     }
     if (!rest.some((other) => /\bsy-subrc\b/i.test(other.text))) {
       notes.push('sy-subrc wird danach nicht ausgewertet.');
@@ -1465,6 +1618,17 @@ function sentenceFor(
     };
   }
 
+  if (keyword === 'MODIFY' && /^MODIFY\s+SCREEN\b/i.test(text)) {
+    return { anchors, core: 'Die geänderten Attribute des Bildelements werden übernommen.', tag: 'modify' };
+  }
+  if (keyword === 'MODIFY' && writesInternally(statement, internalTables(statements))) {
+    const target = /^MODIFY\s+(?:TABLE\s+)?([A-Za-z0-9_\-<>~]+)/i.exec(text);
+    return {
+      anchors,
+      core: `Eine Zeile der internen Tabelle ${target ? plain(target[1]) : ''} wird geändert; in die Datenbank wird dabei nichts geschrieben.`.replace(/\s+;/, ';'),
+      tag: 'modify',
+    };
+  }
   if (keyword === 'MODIFY') {
     const target = /^MODIFY\s+(?:ENTITIES\s+OF\s+)?(\([^)]+\)|[A-Za-z0-9_/]+)/i.exec(text);
     const raw = target ? plain(target[1]) : null;
@@ -1503,7 +1667,7 @@ function sentenceFor(
         tag: 'rollback',
       };
     }
-    return { anchors, core: 'Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert.', tag: 'rollback' };
+    return { anchors, core: 'Mit ROLLBACK WORK werden die noch nicht festgeschriebenen Änderungen verworfen.', tag: 'rollback' };
   }
 
   if (keyword === 'PERFORM') {
@@ -2117,10 +2281,11 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
   const loops = selectLoops(statements);
   const stacks = blockStacks(statements, loops);
   const origins = originMap(statements);
+  const context: SourceContext = { stacks, loops, tables: internalTables(statements) };
   const out: BusinessStatement[] = [];
 
   for (let i = 0; i < statements.length; i += 1) {
-    const guard = guardSentence(statements, i, origins);
+    const guard = guardSentence(statements, i, origins, context);
     if (guard) out.push(build(guard));
     for (const draft of branchSentences(statements, i, origins, loops)) out.push(build(draft));
   }

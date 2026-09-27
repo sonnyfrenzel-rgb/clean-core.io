@@ -493,3 +493,67 @@ test('F5 — MESSAGE … INTO und WRITE … TO geben nichts aus', () => {
   expect(ausgabe).toContain('ausgegeben');
   expect(ausgabe).not.toContain('CURRENCY');
 });
+
+test('F6 — „es wird nichts geschrieben" und „kein COMMIT WORK" nur, wenn der Weg es trägt', () => {
+  const waechter = (...danach: string[]) =>
+    quelle(
+      'REPORT z_f6.',
+      'PARAMETERS p_id TYPE c LENGTH 10.',
+      'START-OF-SELECTION.',
+      '  IF p_id IS INITIAL.',
+      "    WRITE / 'KEIN_SCHLUESSEL'.",
+      '    RETURN.',
+      '  ENDIF.',
+      "  UPDATE zbeleg SET status = 'X' WHERE id = p_id.",
+      ...danach,
+    );
+  // Der einfache Fall trägt die Aussage: nichts anderes läuft danach.
+  expect(satzAn(waechter(), 4).join(' ')).toContain('es wird nichts geschrieben');
+
+  // Ein späteres Ereignis, das etwas aufruft, macht sie unbelegt.
+  const mitEnde = satzAn(waechter('END-OF-SELECTION.', '  PERFORM protokoll_sichern.'), 4).join(' ');
+  expect(mitEnde).toContain('vor der Datenbankoperation zurückgekehrt');
+  expect(mitEnde).not.toContain('nichts geschrieben');
+
+  // Ein Wächter, der selbst sichert, schreibt.
+  const sichernd = satzAn(
+    quelle(
+      'REPORT z_f6b.',
+      'START-OF-SELECTION.',
+      '  IF gt_daten IS INITIAL.',
+      '    PERFORM protokoll_sichern.',
+      '    RETURN.',
+      '  ENDIF.',
+      '  MODIFY zbeleg FROM TABLE gt_daten.',
+    ),
+    3,
+  ).join(' ');
+  expect(sichernd).not.toContain('nichts geschrieben');
+
+  // Ein EXIT in einer Schleife verlässt nur die Schleife.
+  const schleife = satzAn(
+    quelle('REPORT z_f6c.', 'LOOP AT gt_pos INTO gs_pos.', "  IF gs_pos-kz = 'E'.", '    EXIT.', '  ENDIF.', 'ENDLOOP.', 'DELETE FROM zbeleg WHERE id = gv_id.'),
+    3,
+  ).join(' ');
+  expect(schleife).toContain('Schleife verlassen');
+  expect(schleife).not.toContain('Datenbankoperation');
+
+  // „kein COMMIT WORK" nicht neben einem BAPI_TRANSACTION_COMMIT …
+  const bapi = satzAn(
+    quelle('REPORT z_f6d.', "UPDATE zbeleg SET status = 'X' WHERE id = gv_id.", "CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'."),
+    2,
+  ).join(' ');
+  expect(bapi).not.toMatch(/kein COMMIT|nicht persistiert/);
+  // … und nicht in einer Routine ohne Programm: dort schreibt der Aufrufer fest.
+  const routine = satzAn(quelle('FORM speichern.', "  UPDATE zbeleg SET status = 'X' WHERE id = gv_id.", 'ENDFORM.'), 2).join(' ');
+  expect(routine).not.toMatch(/kein COMMIT|nicht persistiert/);
+  // Wo es wahr ist, bleibt es stehen.
+  expect(satzAn(quelle('REPORT z_f6e.', "UPDATE zbeleg SET status = 'X' WHERE id = gv_id."), 2).join(' ')).toContain(
+    'kein COMMIT WORK',
+  );
+
+  // Ein MODIFY auf eine interne Tabelle oder das Bild schreibt nicht in die Datenbank.
+  const intern = satzAn(quelle('REPORT z_f6f.', 'MODIFY gt_pos FROM gs_pos INDEX 1.'), 2).join(' ');
+  expect(intern).toContain('internen Tabelle gt_pos');
+  expect(intern).not.toMatch(/kein COMMIT|eingefügt oder überschrieben/);
+});
