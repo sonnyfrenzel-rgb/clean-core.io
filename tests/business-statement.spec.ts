@@ -596,3 +596,22 @@ test('F7 — „nicht belegt" nur, wenn das Aufrufziel wirklich fehlt', () => {
   expect(satzAn(code, 16).join(' ')).toContain('nicht belegt');
   expect(satzAn(code, 17).join(' ')).toContain('nicht belegt');
 });
+
+test('F8 — der Rückgabewert landet beim Empfänger links vom =, nicht bei der Klasse vor =>', () => {
+  const code = quelle(
+    'REPORT z_f8.',
+    'START-OF-SELECTION.',
+    '  cl_fremd_liste=>erzeugen( IMPORTING eo_liste = go_liste CHANGING ct_daten = gt_daten ).',
+    '  zcl_fremd_lader=>neu_aufbauen( ).',
+    '  gv_anzahl = zcl_fremd_lader=>zaehlen( ).',
+  );
+  const importing = satzAn(code, 3).join(' ');
+  expect(importing).not.toContain('nach cl_fremd_liste');
+  expect(importing).toContain('in go_liste übernommen');
+
+  const ohne = satzAn(code, 4).join(' ');
+  expect(ohne).not.toMatch(/Rückgabewert|übernommen/);
+  expect(ohne).toContain('Die Methode neu_aufbauen von zcl_fremd_lader wird aufgerufen');
+
+  expect(satzAn(code, 5).join(' ')).toContain('nach gv_anzahl übernommen');
+});

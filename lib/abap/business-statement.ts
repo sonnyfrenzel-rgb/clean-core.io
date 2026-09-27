@@ -606,7 +606,7 @@ function originMap(statements: readonly AbapStatement[]): Map<string, ValueOrigi
       continue;
     }
     // `DATA(lv_x) = cls=>meth( … )` und `lv_x = obj->meth( … )`.
-    const call = /^(?:DATA\()?([A-Za-z0-9_]+)\)?\s*=\s*\S+(?:=>|->)\w+\s*\(/.exec(text);
+    const call = /^(?:DATA\()?([A-Za-z0-9_]+)\)?\s*=(?!>)\s*\S+(?:=>|->)\w+\s*\(/.exec(text);
     if (call) origins.set(call[1].toLowerCase(), 'method-return');
   }
   return origins;
@@ -2080,11 +2080,19 @@ function sentenceFor(
     // `\s` zu `s` und `\b` zu einem Backspace wurde; es traf nie, und jede
     // Methode galt als fehlend, auch die im selben Quelltext implementierten.
     const head = methodImplementation(statements, owner, name);
-    const target = /^([A-Za-z0-9_()]+)\s*=/.exec(text);
+    // F8: der Empfänger steht **links vom Gleichheitszeichen** — nicht vor dem
+    // `=>` eines statischen Aufrufs. `/^([A-Za-z0-9_()]+)\s*=/` las in
+    // `cl_salv_table=>factory( … )` das `=` des Pfeils und nannte die Klasse
+    // als Empfänger ihres eigenen Rückgabewerts.
+    const target = /^(?:DATA\(([A-Za-z0-9_]+)\)|([A-Za-z0-9_\-~>]+?))\s*=(?!>)/.exec(text);
+    const receiver = target ? (target[1] ?? target[2]) : null;
+    const exported = !receiver
+      ? /\b(?:IMPORTING|RECEIVING)\s+\w+\s*=\s*(DATA\([A-Za-z0-9_]+\)|[A-Za-z0-9_\-~>]+)/i.exec(text)
+      : null;
     const effects = head ? routineEffects(statements, head) : [];
-    const core = target
-      ? `Der Rückgabewert der Methode ${name} von ${owner} wird nach ${plain(target[1])} übernommen.`
-      : `Die Methode ${name} von ${owner} wird aufgerufen${effects.length > 0 ? `; sie ${enumerate(effects)}` : ''}.`;
+    const core = receiver
+      ? `Der Rückgabewert der Methode ${name} von ${owner} wird nach ${plain(receiver)} übernommen.`
+      : `Die Methode ${name} von ${owner} wird aufgerufen${exported ? `; ihr Ergebnis wird in ${plain(exported[1])} übernommen` : ''}${effects.length > 0 ? `; sie ${enumerate(effects)}` : ''}.`;
     return {
       anchors,
       core,
