@@ -186,7 +186,40 @@ function evaluate(korpusCase: KorpusCase): CaseOutcome {
   return base;
 }
 
-const cases = readCases();
+/**
+ * BM_CONCAT=1: jeder Mehrdateifall wird zu **einer** Quelle zusammengefügt —
+ * so, wie ein Nutzer ein Programm mit Includes ins Produkt einfügt (die
+ * Analyse-Seite nimmt genau eine Quelle an). Die Datei mit REPORT/PROGRAM/
+ * FUNCTION-POOL steht vorn, der Rest in Namensreihenfolge; jeder Sollanker
+ * wird auf die Zeile in der zusammengefügten Quelle umgerechnet.
+ */
+function concatenate(korpusCase: KorpusCase): KorpusCase {
+  if (korpusCase.sources.length < 2) return korpusCase;
+  const head = (code: string) => /^\s*(REPORT|PROGRAM|FUNCTION-POOL)\b/im.test(code);
+  const ordered = [...korpusCase.sources].sort((a, b) => Number(head(b.code)) - Number(head(a.code)) || a.name.localeCompare(b.name));
+  const offset = new Map<string, number>();
+  let lines: string[] = [];
+  for (const source of ordered) {
+    offset.set(source.name, lines.length);
+    const own = source.code.split('\n');
+    if (own[own.length - 1] === '') own.pop();
+    lines = lines.concat(own);
+  }
+  const name = 'combined.abap';
+  const remap = <T extends { file: string | null; line: number | null; raw?: string } | null>(anchor: T): T => {
+    if (!anchor || anchor.line == null) return anchor;
+    const line = anchor.line + (offset.get(anchor.file ?? ordered[0].name) ?? 0);
+    return { ...anchor, file: name, line, raw: `${name}:${line}` };
+  };
+  const expected = JSON.parse(JSON.stringify(korpusCase.expected)) as KorpusCase['expected'];
+  for (const node of expected.skeleton.nodes) node.anchor = remap(node.anchor);
+  for (const statement of expected.businessStatements) statement.anchors = statement.anchors.map((anchor) => remap(anchor)!);
+  for (const object of expected.objects) object.anchor = remap(object.anchor);
+  const code = lines.join('\n') + '\n';
+  return { ...korpusCase, expected, sources: [{ name, code, lineCount: lines.length }] };
+}
+
+const cases = process.env.BM_CONCAT === '1' ? readCases().map(concatenate) : readCases();
 const outcomes = cases.map(evaluate);
 writeFileSync(OUT, JSON.stringify({ root: KORPUS_ROOT, written: new Date().toISOString(), outcomes }, null, 2));
 
