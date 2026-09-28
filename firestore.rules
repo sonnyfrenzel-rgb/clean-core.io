@@ -17,8 +17,25 @@ service cloud.firestore {
     // set-admin-claim API which writes the custom claim, and (b) the
     // Firestore get() caused evaluation errors in the emulator when the
     // user document didn't exist yet (e.g., during first-time create).
+    //
+    // The claim lives in the ID token, and a token minted before a withdrawal
+    // stays valid here for up to an hour: `revokeRefreshTokens` stops the next
+    // token, and the server's revocation check never runs for SDK requests
+    // (QA full review of fc787674705f, 36f3d696ddda). So the same durable signal
+    // the server honours is honoured here: `setAdminClaim` writes
+    // `users/{uid}.isAdmin = false` *before* it removes the claim, and a mirror
+    // saying false denies. It grants nothing — true or absent leaves the claim
+    // to decide, as on the server (`lib/firebase-admin.ts`, the withdrawal
+    // mirror). `exists()` first, because `get()` on a missing profile is an
+    // evaluation error; it is the caller's own profile, the same one access
+    // `accountActive()` already pays for.
     function isAdmin() {
-      return isAuthenticated() && request.auth.token.get('admin', false) == true;
+      return isAuthenticated() &&
+             request.auth.token.get('admin', false) == true &&
+             !(
+               exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', true) == false
+             );
     }
 
     // NOTE: getUserData() and getUserOrgId() were removed because they used

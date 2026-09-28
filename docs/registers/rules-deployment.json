@@ -39,5 +39,14 @@
       "worklist"
     ],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
+  },
+  "pending": {
+    "sha256OfLfNormalisedText": "d477740cf319725b79fd6e1ce17522ffcd6d376115c0165dd3fd5ad3580b4efd",
+    "recordedAt": "2026-09-28",
+    "recordedFor": "QA full review of fc787674705f, 36f3d696ddda: isAdmin() honours the withdrawal mirror users/{uid}.isAdmin == false, so a withdrawn administrator's still-valid ID token no longer passes the admin branches. Narrows only; no client field added or removed. Braucht Sonnys Rules-Deploy (npm run deploy:rules).",
+    "addsToClient": [],
+    "removesFromClient": [],
+    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",
+    "note": "Bis zum Deploy sind die alten Regeln live. `npm run deploy:rules` rollt aus und loescht diesen Block."
   }
 }

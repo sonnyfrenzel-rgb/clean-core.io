@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { initializeFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
-import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
+import { adminSetDoc, adminMergeDoc, adminSetCustomClaim } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
 
@@ -278,5 +278,55 @@ test.describe('Firestore Security Rules: AnalysisRuns subcollection validation',
       createAllowedSucceeded = false;
     }
     expect(createAllowedSucceeded).toBe(true);
+  });
+});
+
+test.describe('Firestore Security Rules: a withdrawn administrator', () => {
+  // QA full review of fc787674705f, 36f3d696ddda. The claim lives in the ID
+  // token; `setAdminClaim` writes the mirror `users/{uid}.isAdmin = false`,
+  // removes the claim and revokes the refresh tokens — and the token already in
+  // the browser still says `admin: true` for up to an hour. The server drops
+  // the claim on a withdrawn mirror; the rules used to believe it.
+  test('loses admin access at the rules with the token it still holds', async () => {
+    const stamp = Date.now();
+    const subjectEmail = `rules-subject-${stamp}@cleancore-test.io`;
+    const adminEmail = `rules-withdrawn-admin-${stamp}@cleancore-test.io`;
+
+    const subject = await createUserWithEmailAndPassword(firebaseAuth, subjectEmail, TEST_PASSWORD);
+    await adminSetDoc('users', subject.user.uid, {
+      firstName: 'Subject', lastName: 'User', email: subjectEmail, tier: 'pilot', status: 'approved',
+    });
+
+    const adminCred = await createUserWithEmailAndPassword(firebaseAuth, adminEmail, TEST_PASSWORD);
+    await adminSetDoc('users', adminCred.user.uid, {
+      firstName: 'Ops', lastName: 'Withdrawn', email: adminEmail, tier: 'pilot', status: 'approved', isAdmin: true,
+    });
+    await adminSetCustomClaim(adminCred.user.uid, { admin: true });
+    await signInWithEmailAndPassword(firebaseAuth, adminEmail, TEST_PASSWORD);
+    const claims = await firebaseAuth.currentUser!.getIdTokenResult(true);
+    expect(claims.claims.admin, 'the token carries the admin claim').toBe(true);
+
+    // The control: the claim opens another account's profile.
+    const other = doc(firestoreDb, 'users', subject.user.uid);
+    const before = await getDoc(other);
+    expect(before.exists(), 'an administrator reads another profile').toBe(true);
+
+    // The withdrawal's first, durable step. The token is not refreshed.
+    await adminMergeDoc('users', adminCred.user.uid, { isAdmin: false });
+    const still = await firebaseAuth.currentUser!.getIdTokenResult(false);
+    expect(still.claims.admin, 'the token in hand still says admin').toBe(true);
+
+    let refused = false;
+    try {
+      await getDoc(other);
+    } catch {
+      refused = true;
+    }
+    expect(refused, 'a withdrawn administrator still read another profile').toBe(true);
+
+    // Their own profile stays theirs.
+    const own = await getDoc(doc(firestoreDb, 'users', adminCred.user.uid));
+    expect(own.exists()).toBe(true);
+    await firebaseAuth.signOut();
   });
 });
