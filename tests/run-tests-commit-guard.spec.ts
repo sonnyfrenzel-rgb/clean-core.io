@@ -58,4 +58,18 @@ test.describe('the inputs a run executed, compared at commit', () => {
     // A refused commit is a refusal, not a green result.
     expect(src).toMatch(/if \(moved\) \{[\s\S]{0,1200}?testResults: \[\][\s\S]{0,200}?status: moved === 'project-gone' \? 404 : 409/);
   });
+
+  test('a commit that fails is a refusal, not a result (a418de0cd071)', () => {
+    // QA review of 1e520bfaf727: the catch only logged, `moved` stayed null, and
+    // the route answered 200 with the runner's passing verdicts beside
+    // `receipt: null`.
+    const src = readFileSync(join(process.cwd(), 'app/api/run-tests/route.ts'), 'utf8');
+    const start = src.indexOf('} catch (receiptErr) {');
+    expect(start).toBeGreaterThan(-1);
+    const handler = src.slice(start, src.indexOf('if (moved) {', start));
+    expect(handler, 'a failed record still falls through to the success answer').toMatch(/return NextResponse\.json\(/);
+    expect(handler).toContain('testResults: []');
+    expect(handler).toContain('receipt: null');
+    expect(handler).toMatch(/status: 503/);
+  });
 });

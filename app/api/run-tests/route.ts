@@ -573,13 +573,28 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
       recorded = moved === null;
     } catch (receiptErr) {
       // The run happened; the record of it did not. Reported rather than
-      // swallowed into a green screen: without the receipt the phase contract
-      // will read the suite as self-reported, which is the honest outcome.
+      // swallowed into a green screen.
       logger.error('run-tests: the execution receipt could not be written', {
         route: 'api/run-tests',
         projectId: sanitizedProjectId,
         error: errMessage(receiptErr),
       });
+      // And refused, not answered as a result (QA review of 1e520bfaf727,
+      // a418de0cd071). The success answer below used to go out anyway with the
+      // runner's verdicts and `receipt: null`, so a page could still show a
+      // passing run that nothing on the project records — the same outcome the
+      // draft branch above refuses for an unrecorded draft run.
+      return NextResponse.json(
+        {
+          output: stdout,
+          error: 'The tests ran, but their result could not be recorded on the project. Nothing was saved; run the tests again.',
+          code: 'run-not-recorded',
+          exitCode: 1,
+          testResults: [],
+          receipt: null,
+        },
+        { status: 503 },
+      );
     }
 
     if (moved) {
