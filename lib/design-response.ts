@@ -94,5 +94,10 @@ export function checkDesignResponse(text: string): DesignCheck {
   if (!Array.isArray(data.roadmap) || data.roadmap.length === 0 || !data.roadmap.every(isObject)) {
     return { ok: false, reason: 'The design has no roadmap.' };
   }
+  // A list of empty objects is not a roadmap: at least one phase has to say
+  // which phase it is (QA review of 1e520bfaf727, c24eab489d3d).
+  if (!data.roadmap.some((p) => nonEmptyString(p.phase) || nonEmptyString(p.title))) {
+    return { ok: false, reason: 'No roadmap phase is named.' };
+  }
   return { ok: true };
 }

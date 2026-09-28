@@ -44,6 +44,9 @@ test.describe('a design is stored only when it is one', () => {
     ['services of strings', JSON.stringify({ ...VALID, cloudServices: ['XSUAA'] })],
     ['a roadmap with no phase', JSON.stringify({ ...VALID, roadmap: [] })],
     ['a roadmap that is text', JSON.stringify({ ...VALID, roadmap: 'later' })],
+    // QA review of 1e520bfaf727, c24eab489d3d.
+    ['a roadmap of empty phases', JSON.stringify({ ...VALID, roadmap: [{}] })],
+    ['a roadmap whose phases name nothing', JSON.stringify({ ...VALID, roadmap: [{ phase: ' ', title: '', deliverables: [] }] })],
   ];
   for (const [name, text] of refused) {
     test(`${name} is refused`, () => {
