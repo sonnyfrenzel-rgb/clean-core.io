@@ -1015,6 +1015,8 @@ class SkeletonBuilder {
   private deregisteredHandlers = new Set<string>();
   /** Bound handlers whose `SET HANDLER` the walk has passed, so a later `RAISE EVENT` may run them. */
   private registeredInWalk = new Set<string>();
+  /** > 0 while a branch whose arms the reader cannot separate is walked — no registration counts there. */
+  private registrationFrozen = 0;
   /** The event blocks of the report (one program run), for `registeredBefore`. */
   private runEntries: EntryPoint[] = [];
   private methodCallCache = new Map<number, MethodCall[]>();
@@ -2825,8 +2827,15 @@ class SkeletonBuilder {
     if (!branch) {
       // 2.1 refused to read this construct (a chained IF, a macro body). The
       // skeleton refuses the gateway too and walks the body as a sequence, so
-      // nothing inside it is lost.
-      return this.walkRange(block.openIndex + 1, block.closeIndex - 1, ctx, incoming);
+      // nothing inside it is lost. Its arms cannot be told apart, so nothing
+      // registered inside it counts, not even later in the same body (QA
+      // review of 58f29a1ef618): registrations are kept frozen while it is walked.
+      const registered = this.registeredInWalk;
+      this.registrationFrozen += 1;
+      const walked = this.walkRange(block.openIndex + 1, block.closeIndex - 1, ctx, incoming);
+      this.registrationFrozen -= 1;
+      this.registeredInWalk = registered;
+      return walked;
     }
 
     const label = branch.kind === 'case' ? (branch.selector ?? 'CASE') : snippet(opener.text);
@@ -2839,7 +2848,13 @@ class SkeletonBuilder {
 
     const exits: Exit[] = [];
     let hasDefault = false;
+    // QA review of 58f29a1ef618 (0d7a5847a0ca): the arms exclude each other.
+    // Each starts from what was registered before the branch; what one arm
+    // registers holds for the rest of that arm only (`walkRange` restores the
+    // state before the block once all arms are walked).
+    const registered = new Set(this.registeredInWalk);
     for (let a = 0; a < branch.arms.length; a++) {
+      this.registeredInWalk = new Set(registered);
       const arm = branch.arms[a];
       const next = branch.arms[a + 1];
       const bodyFrom = arm.headerIndex + 1;
@@ -3070,6 +3085,10 @@ class SkeletonBuilder {
     }
     const protectedTo = (handlers[0] ?? block.closeIndex) - 1;
     const beforeProtected = this.nodes.length;
+    // QA review of 58f29a1ef618 (0d7a5847a0ca): a handler runs when the
+    // protected part broke off somewhere, so it — and each handler after it —
+    // starts from what was registered before the TRY.
+    const registered = new Set(this.registeredInWalk);
     const exits = this.walkRange(block.openIndex + 1, protectedTo, ctx, incoming);
     const attachedTo = this.nodes.slice(beforeProtected).find((n) => n.region === ctx.region.key) ?? null;
 
@@ -3094,6 +3113,7 @@ class SkeletonBuilder {
         }
       }
       const to = (handlers[h + 1] ?? block.closeIndex) - 1;
+      this.registeredInWalk = new Set(registered);
       out.push(...this.walkRange(handlers[h] + 1, to, ctx,
         [{ from: boundary.id, condition: '', kind: 'sequence' }]));
     }
@@ -3345,7 +3365,7 @@ class SkeletonBuilder {
     if (!handlers || handlers.deregisters) return;
     for (const { key, name } of handlers) {
       if (!this.boundHandlers.includes(key)) continue;
-      this.registeredInWalk.add(key);
+      if (!this.registrationFrozen) this.registeredInWalk.add(key);
       const declared = this.handlerEvent.get(key);
       if (!declared || this.classNames.has(declared.of)) continue;
       this.pushCallback(key, name, statement, `EVENT ${declared.event} OF ${declared.of}`);

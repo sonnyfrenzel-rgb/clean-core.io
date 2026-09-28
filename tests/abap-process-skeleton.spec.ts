@@ -2841,6 +2841,20 @@ test.describe('ADR-054 — events in sub-processes and at early exits', () => {
     const sameBranch = buildProcessSkeleton(source(
       'IF lo_order IS BOUND.\n    SET HANDLER lo_log->on_released FOR lo_order.\n    lo_order->release( 2 ).\n  ENDIF.'));
     expect(at(sameBranch, 14).map((n) => n.kind)).toEqual(['sub-process']);
+    // QA review of 58f29a1ef618 (0d7a5847a0ca): the arms exclude each other —
+    // a registration in one arm is not in force in the other.
+    const otherArm = buildProcessSkeleton(source(
+      'IF lo_order IS BOUND.\n    SET HANDLER lo_log->on_released FOR lo_order.\n  ELSE.\n'
+      + '    lo_order->release( 2 ).\n  ENDIF.'));
+    expect(at(otherArm, 14).map((n) => n.kind)).toEqual(['call-opaque']);
+    const otherWhen = buildProcessSkeleton(source(
+      "CASE sy-ucomm.\n    WHEN 'LOG'.\n      SET HANDLER lo_log->on_released FOR lo_order.\n"
+      + "    WHEN 'REL'.\n      lo_order->release( 2 ).\n  ENDCASE."));
+    expect(at(otherWhen, 14).map((n) => n.kind)).toEqual(['call-opaque']);
+    const otherCatch = buildProcessSkeleton(source(
+      'TRY.\n    SET HANDLER lo_log->on_released FOR lo_order.\n    lo_order->check( ).\n'
+      + '  CATCH cx_root.\n    lo_order->release( 2 ).\n  ENDTRY.'));
+    expect(at(otherCatch, 14).map((n) => n.kind)).toEqual(['call-opaque']);
     // A routine that can leave before its SET HANDLER does not register for
     // its caller; one that cannot, does.
     const viaForm = (body: string) => buildProcessSkeleton(`${source('PERFORM register.')}
