@@ -21,4 +21,4 @@ export const APP_RELEASE_DATE_ISO = '2026-09-28';
  * already documents above, and a date that is one day wrong in a legal document
  * is worse than one more line to keep in step. Update all four together.
  */
-export const APP_RELEASE_DATE_DE = '24. September 2026';
+export const APP_RELEASE_DATE_DE = '28. September 2026';
