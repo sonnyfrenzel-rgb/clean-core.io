@@ -97,11 +97,15 @@ test.describe('a write in flight does not bring an erased account back (7bf0db90
     }
   });
 
-  test('the three routes write through the guards, never with a merge-set', () => {
+  test('the four routes write through the guards, never with a merge-set', () => {
     const sites: Array<[string, string]> = [
       ['app/api/account/register/route.ts', 'mergeWhileProfileExists('],
       ['app/api/mfa/enrolled/route.ts', 'updateExistingProfile('],
       ['app/api/model-stages/route.ts', 'updateExistingProfile('],
+      // QA full review of fc787674705f, 2eb73a29b0fd: the gate ran before the
+      // nonce write and the mail, and the merge-set after them re-created a
+      // profile erased in between.
+      ['app/api/request-tenant-access/route.ts', 'updateExistingProfile('],
     ];
     for (const [file, guard] of sites) {
       const src = read(file);

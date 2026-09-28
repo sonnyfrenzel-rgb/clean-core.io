@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createApprovalToken } from '@/lib/approval-token';
 import { APP_VERSION } from '@/lib/version';
-import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, issueTenantApprovalNonce } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, issueTenantApprovalNonce, updateExistingProfile } from '@/lib/firebase-admin';
 import { APP_BASE_URL, CONTACT_EMAIL, USER_MAIL_FROM } from '@/lib/constants';
 import { htmlToText } from '@/lib/mail-text';
 import { escapeHtml } from '@/lib/utils';
@@ -287,15 +287,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Set requested flag on user document server-side (F-03 / Audit security fix)
-    const { db, FieldValue } = await getAdminDb();
-    await db.collection('users').doc(uid).set({
+    //
+    // An update, not a merge-set. The gate above ran before the nonce write and
+    // the mail; an erasure that deletes `users/{uid}` in between used to be
+    // undone here, because a merge onto a missing document creates it (QA full
+    // review of fc787674705f, 2eb73a29b0fd). `updateExistingProfile` fails on a
+    // missing profile with the gate's own 404, so the erased account stays
+    // erased and the caller is refused.
+    const { FieldValue } = await getAdminDb();
+    await updateExistingProfile(uid, {
       s4TenantAccessRequested: true,
       // Recorded either way, so an un-notified request is findable rather than
       // indistinguishable from one an administrator is sitting on.
       s4TenantAccessNotified: adminNotified,
       s4TenantAccessRequestedAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
-    }, { merge: true });
+    });
 
     if (!adminNotified) {
       // The request is stored — it is not lost — but the caller must not be told
@@ -314,6 +321,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, notificationSent: true });
   } catch (error) {
+    // The profile vanished after the gate (2eb73a29b0fd): the gate's own answer.
+    if (error instanceof QuotaError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('Error in request-tenant-access API:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
