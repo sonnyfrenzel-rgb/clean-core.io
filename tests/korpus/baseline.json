@@ -3,7 +3,7 @@
     "path": "docs/korpus/referenzkorpus-v2.1.md",
     "sha256": "9b1ed17256d04a3990335ff9e1a54f2151bccfd44e43190cc40fead2c0d0b288"
   },
-  "written": "2026-09-27",
+  "written": "2026-09-28",
   "entries": [
     {
       "case": "CC-001",
@@ -1452,7 +1452,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "4 von 6 Sollknoten verglichen (2 getroffen, 2 ohne Knoten, 0 mit anderer Art); 0 von 6 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 6 ohne aufgelöste Enden). Die Engine baut an diesem Fall 3 Knoten. Ohne Knoten: h/call@source.abap:5 erwartet call-activity|service-task|sub-process|transaction|user-task|task in source.abap:5–5, g/gateway@source.abap:10 erwartet gateway in source.abap:10–10. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: d/action@source.abap:8 — keine Brücke für „action\" an „gv_review = 'N'\", y/action@source.abap:11 — keine Brücke für „action\" an „gv_review = 'Y'\"."
+      "reason": "4 von 6 Sollknoten verglichen (2 getroffen, 2 ohne Knoten, 0 mit anderer Art); 0 von 6 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 6 ohne aufgelöste Enden). Die Engine baut an diesem Fall 3 Knoten. Ohne Knoten: h/call@source.abap:5 erwartet call-activity|service-task|sub-process|transaction|user-task|task|business-rule-task|read|write in source.abap:5–5, g/gateway@source.abap:10 erwartet gateway in source.abap:10–10. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: d/action@source.abap:8 — keine Brücke für „action\" an „gv_review = 'N'\", y/action@source.abap:11 — keine Brücke für „action\" an „gv_review = 'Y'\"."
     },
     {
       "case": "CC-010",
@@ -4730,7 +4730,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "7 von 8 Sollknoten verglichen (5 getroffen, 2 ohne Knoten, 0 mit anderer Art); 2 von 6 Sollkanten verglichen (2 getroffen, 0 fehlend, 0 mit anderer Art, 4 ohne aufgelöste Enden). Die Engine baut an diesem Fall 7 Knoten. Ohne Knoten: g/gateway@source.abap:13 erwartet gateway in source.abap:13–13, cb/start@source.abap:18 erwartet start in source.abap:18–18. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: rr/rfc@source.abap:19 — keine Brücke für „rfc\" an „RECEIVE RESULTS FROM FUNCTION 'Z_CC_ROUT\"."
+      "reason": "7 von 8 Sollknoten verglichen (6 getroffen, 1 ohne Knoten, 0 mit anderer Art); 2 von 6 Sollkanten verglichen (2 getroffen, 0 fehlend, 0 mit anderer Art, 4 ohne aufgelöste Enden). Die Engine baut an diesem Fall 9 Knoten. Ohne Knoten: g/gateway@source.abap:13 erwartet gateway in source.abap:13–13. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: rr/rfc@source.abap:19 — keine Brücke für „rfc\" an „RECEIVE RESULTS FROM FUNCTION 'Z_CC_ROUT\"."
     },
     {
       "case": "CC-032",
@@ -10068,7 +10068,7 @@
         {
           "name": "kanten",
           "status": "compared",
-          "compared": 1,
+          "compared": 3,
           "total": 5,
           "note": "Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten."
         },
@@ -10094,7 +10094,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "4 von 5 Sollknoten verglichen (3 getroffen, 0 ohne Knoten, 1 mit anderer Art); 1 von 5 Sollkanten verglichen (1 getroffen, 0 fehlend, 0 mit anderer Art, 4 ohne aufgelöste Enden). Die Engine baut an diesem Fall 5 Knoten. Ohne Knoten: —. Andere Knotenart: c/call@source.abap:9 → Engine end, business-rule-task. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: a/action@source.abap:12 — keine Brücke für „action\" an „vbak-lifsk = '01'\"."
+      "reason": "4 von 5 Sollknoten verglichen (4 getroffen, 0 ohne Knoten, 0 mit anderer Art); 3 von 5 Sollkanten verglichen (2 getroffen, 1 fehlend, 0 mit anderer Art, 2 ohne aufgelöste Enden). Die Engine baut an diesem Fall 5 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: c→g („call\", bedingt). Andere Kantenart: —. Nicht vergleichbar: a/action@source.abap:12 — keine Brücke für „action\" an „vbak-lifsk = '01'\"."
     },
     {
       "case": "CC-068",

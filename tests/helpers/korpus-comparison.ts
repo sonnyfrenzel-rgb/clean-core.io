@@ -943,6 +943,34 @@ export const SKELETON_BRIDGES: SkeletonBridge[] = [
       'der Baustein nicht in der Scheibe liegt).',
   },
   {
+    type: 'opaque_call',
+    kinds: ['send-task'],
+    construct: /^CALL\s+FUNCTION\b/i,
+    why:
+      'Ein Baustein, den §5.8 als Versand erkennt (Zeile Send-Task: Mail, Nachricht, IDoc-Ausgang), ist für den ' +
+      'Leser kein undurchsichtiger Aufruf mehr: die Engine benennt ihn nach seiner Wirkung, wie sie einen ' +
+      '`CALL FUNCTION` sonst als Service-Aktivität benennt. Dieselbe Anweisung, genauer gelesen — kein anderer Schritt.',
+  },
+  {
+    type: 'call',
+    kinds: ['business-rule-task', 'read', 'write'],
+    construct: /^(PERFORM|CALL\s+METHOD)\b/i,
+    why:
+      'Ein Aufruf einer Routine dieser Quelle. §5.8 zeichnet eine kleine Routine als **einen** Schritt ' +
+      '(`collapseSmallRegions`) und benennt ihn nach ihrer Wirkung — liest sie nur, ist er ein Lesen, schreibt sie ' +
+      'nur, ein Schreiben, stuft sie aus Literalen ein, eine Entscheidungstabelle (Business-Rule-Task). Der Knoten ' +
+      'steht auf der Aufrufzeile und meint denselben Aufruf.',
+  },
+  {
+    type: 'opaque_call',
+    kinds: ['business-rule-task', 'read', 'write'],
+    construct: /^(PERFORM|CALL\s+METHOD)\b/i,
+    why:
+      'Wie bei `call`: das Fallbuch hielt das Ziel für undurchsichtig, die Engine hat die Routine in der Quelle ' +
+      'gefunden und zeichnet sie nach §5.8 als einen Schritt mit ihrer Wirkung (Lesen, Schreiben, ' +
+      'Entscheidungstabelle) — derselbe Aufruf, genauer gelesen.',
+  },
+  {
     type: 'call-opaque',
     kinds: ['call-opaque'],
     construct: /[\s\S]/,
