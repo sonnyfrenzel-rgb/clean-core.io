@@ -1,5 +1,5 @@
 export const APP_VERSION = 'v2.20.0';
-export const APP_RELEASE_DATE = 'September 24, 2026';
+export const APP_RELEASE_DATE = 'September 28, 2026';
 
 /**
  * Same date as APP_RELEASE_DATE, in ISO 8601 (YYYY-MM-DD), for schema.org
@@ -10,7 +10,7 @@ export const APP_RELEASE_DATE = 'September 24, 2026';
  * midnight and then converts to UTC, which shifts the date one day back in
  * every positive UTC offset (CET included). Update both constants together.
  */
-export const APP_RELEASE_DATE_ISO = '2026-09-24';
+export const APP_RELEASE_DATE_ISO = '2026-09-28';
 
 /**
  * The same date again, written the way a German reader expects it, for the
