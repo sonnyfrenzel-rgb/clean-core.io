@@ -100,7 +100,7 @@ def table(title, groups):
 
 
 ALL = {o['id'] for o in after}
-table('Gesamt', [('alle 200', ALL), ('Welle 1 (Kernmodule)', {o['id'] for o in after if wave(o) == 1}),
+table('Gesamt', [('alle Fälle', ALL), ('Welle 1 (Kernmodule)', {o['id'] for o in after if wave(o) == 1}),
                  ('Welle 2 (Randmodule, Grenzfälle)', {o['id'] for o in after if wave(o) == 2}),
                  ('Welle 3 (verdeckt, Schwerpunkt komplex/OO)', {o['id'] for o in after if wave(o) == 3}),
                  ('Lernhälfte', ALL & LEARN), ('Prüfhälfte (W1+W2)', {o['id'] for o in after if wave(o) < 3} - LEARN)])
