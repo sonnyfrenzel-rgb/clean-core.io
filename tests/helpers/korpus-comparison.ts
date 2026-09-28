@@ -838,6 +838,21 @@ export interface SkeletonBridge {
   why: string;
 }
 
+/**
+ * Die funktionale Schreibweise eines Methodenaufrufs — `lo->m( … )`,
+ * `cls=>m( … )`, `me->m( … )`, `lv = lo->m( … )`, `DATA(x) = lo->m( … )` und,
+ * in einer Klasse, das bloße `m( … )` am Anfang der Anweisung. Seit D2
+ * (27.09.2026) liest die Engine genau diese Formen als Aufruf
+ * (`methodCallsIn` in `process-skeleton.ts`, Auflösung über
+ * `lib/abap/method-resolution.ts`) und zeichnet sie wie `CALL METHOD`. Ein
+ * Konstrukt, das nur `CALL METHOD` kennt, machte jeden Sollaufruf in dieser
+ * Schreibweise „nicht vergleichbar" — eine Lücke der Messung, nicht der Engine.
+ * `DATA(x) = …` ohne Aufruf ist eine Deklaration und bleibt draußen.
+ */
+const FUNCTIONAL_METHOD_CALL = String.raw`^(?:[\w/<>]+(?:->|=>))+[\w/~]+\(|^(?!(?:DATA|FINAL)\()[\w/~]+\(`;
+const withMethodCalls = (construct: RegExp): RegExp =>
+  new RegExp(`${construct.source}|${FUNCTIONAL_METHOD_CALL}`, construct.flags);
+
 export const SKELETON_BRIDGES: SkeletonBridge[] = [
   {
     type: 'start',
@@ -920,7 +935,7 @@ export const SKELETON_BRIDGES: SkeletonBridge[] = [
       'read',
       'write',
     ],
-    construct: /^(CALL\s+(FUNCTION|METHOD|SCREEN|TRANSACTION|BADI)|PERFORM|SUBMIT|MESSAGE|WRITE|EXPORT|IMPORT|TRANSFER|OPEN\s+DATASET|ENQUEUE|DEQUEUE|AUTHORITY-CHECK|SELECT|INSERT|UPDATE|MODIFY|DELETE|COMMIT|ROLLBACK)\b/i,
+    construct: withMethodCalls(/^(CALL\s+(FUNCTION|METHOD|SCREEN|TRANSACTION|BADI)|PERFORM|SUBMIT|MESSAGE|WRITE|EXPORT|IMPORT|TRANSFER|OPEN\s+DATASET|ENQUEUE|DEQUEUE|AUTHORITY-CHECK|SELECT|INSERT|UPDATE|MODIFY|DELETE|COMMIT|ROLLBACK)\b/i),
     why:
       'Ein Schritt ohne eigene Art im Fallbuch. Die Engine vergibt dem Schritt eine Art aus §5.8 — welche, ' +
       'entscheidet sie am Konstrukt —, deshalb zählt jede Aktivitätsart als Treffer. Eine reine Wertzuweisung ' +
@@ -930,13 +945,15 @@ export const SKELETON_BRIDGES: SkeletonBridge[] = [
   {
     type: 'call',
     kinds: ['call-activity', 'service-task', 'sub-process', 'transaction', 'user-task', 'task'],
-    construct: /^(CALL\s+(FUNCTION|METHOD|SCREEN|TRANSACTION|BADI)|PERFORM|SUBMIT)\b/i,
-    why: 'Aufruf mit bekanntem Ziel; die Engine benennt ihn nach dem, was das Ziel tut.',
+    construct: withMethodCalls(/^(CALL\s+(FUNCTION|METHOD|SCREEN|TRANSACTION|BADI)|PERFORM|SUBMIT)\b/i),
+    why:
+      'Aufruf mit bekanntem Ziel; die Engine benennt ihn nach dem, was das Ziel tut. Ein Methodenaufruf zählt in ' +
+      'jeder Schreibweise, die die Engine seit D2 als Aufruf liest (`withMethodCalls`).',
   },
   {
     type: 'opaque_call',
     kinds: ['call-opaque', 'service-task', 'call-activity', 'sub-process', 'transaction', 'user-task'],
-    construct: /^(CALL\s+(FUNCTION|METHOD|SCREEN|TRANSACTION|BADI)|PERFORM|SUBMIT|CREATE\s+OBJECT)\b/i,
+    construct: withMethodCalls(/^(CALL\s+(FUNCTION|METHOD|SCREEN|TRANSACTION|BADI)|PERFORM|SUBMIT|CREATE\s+OBJECT)\b/i),
     why:
       'Aufruf, dessen Quelle der Leser nicht hat. Die Engine führt `call-opaque`, benennt den Aufruf aber nach ' +
       'seiner Art, wenn die Anweisung sie hergibt (ein `CALL FUNCTION` bleibt eine Service-Aktivität, auch wenn ' +
@@ -954,7 +971,7 @@ export const SKELETON_BRIDGES: SkeletonBridge[] = [
   {
     type: 'call',
     kinds: ['business-rule-task', 'read', 'write'],
-    construct: /^(PERFORM|CALL\s+METHOD)\b/i,
+    construct: withMethodCalls(/^(PERFORM|CALL\s+METHOD)\b/i),
     why:
       'Ein Aufruf einer Routine dieser Quelle. §5.8 zeichnet eine kleine Routine als **einen** Schritt ' +
       '(`collapseSmallRegions`) und benennt ihn nach ihrer Wirkung — liest sie nur, ist er ein Lesen, schreibt sie ' +
@@ -964,7 +981,7 @@ export const SKELETON_BRIDGES: SkeletonBridge[] = [
   {
     type: 'opaque_call',
     kinds: ['business-rule-task', 'read', 'write'],
-    construct: /^(PERFORM|CALL\s+METHOD)\b/i,
+    construct: withMethodCalls(/^(PERFORM|CALL\s+METHOD)\b/i),
     why:
       'Wie bei `call`: das Fallbuch hielt das Ziel für undurchsichtig, die Engine hat die Routine in der Quelle ' +
       'gefunden und zeichnet sie nach §5.8 als einen Schritt mit ihrer Wirkung (Lesen, Schreiben, ' +

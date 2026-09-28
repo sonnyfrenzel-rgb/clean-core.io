@@ -2602,16 +2602,16 @@
       "case": "CC-018",
       "class": "skelett",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 1,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
         {
           "name": "knotenart",
           "status": "compared",
-          "compared": 1,
+          "compared": 3,
           "total": 3,
           "note": "Knotenart je Anker über alle Arten aus SkeletonNodeKind, Brücke nur bei passendem Konstrukt."
         },
@@ -2644,7 +2644,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "1 von 3 Sollknoten verglichen (1 getroffen, 0 ohne Knoten, 0 mit anderer Art); 0 von 2 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 2 ohne aufgelöste Enden). Die Engine baut an diesem Fall 2 Knoten. Weniger als die Hälfte der Sollknoten war vergleichbar; das Ergebnis trägt keine Aussage. Nicht vergleichbar: c/call@source.abap:13 — keine Brücke für „call\" an „lo_rule->route( )\", b/opaque_call@source.abap:8 — keine Brücke für „opaque_call\" an „super->route( )\"."
+      "reason": "3 von 3 Sollknoten verglichen (1 getroffen, 1 ohne Knoten, 1 mit anderer Art); 0 von 2 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 2 ohne aufgelöste Enden). Die Engine baut an diesem Fall 2 Knoten. Ohne Knoten: b/opaque_call@source.abap:8 erwartet call-opaque|service-task|call-activity|sub-process|transaction|user-task|business-rule-task|read|write in source.abap:8–8. Andere Knotenart: c/call@source.abap:13 → Engine end. Fehlende Kante: —. Andere Kantenart: —."
     },
     {
       "case": "CC-018",
