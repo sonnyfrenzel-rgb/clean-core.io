@@ -10,10 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-## [Unreleased] — auf `dev`, seit v2.19.0
+## [v2.20.0] — 2026-09-28
 
-Der Anfang von Block D — die ganze App aus einem Guss nach `DESIGN.md`, vor 3.0 —,
-dazu Schritt A aus dem Security-Audit von v2.19.0 und die Befunde der Vollprüfung.
+Der Prozess wird genauer: Gemessen an einem neuen Benchmark aus 300 konstruierten,
+blind geschriebenen und gegengeprüften ABAP-Fällen (`docs/prozess-benchmark/BERICHT.md`)
+trifft das rekonstruierte Prozessskelett 81,1 % statt 61,3 % der Sollknoten, auf der
+verdeckten Prüfhälfte 82,1 %; auf der schweren, objektorientierten dritten Welle 72,3 %
+statt 39,5 %. Die Fachsätze sagen fast nichts Falsches mehr, und ein Modellvorschlag mit
+Beleg und Widerspruchsmarkierung steht für die Arbeitsraum-Vorschau bereit (17.10).
+Dazu der Anfang von Block D — die ganze App aus einem Guss nach `DESIGN.md`, vor 3.0 —,
+Schritt A aus dem Security-Audit von v2.19.0 und die Befunde der Vollprüfung.
 
 ### Was alle bemerken
 
@@ -36,6 +42,14 @@ dazu Schritt A aus dem Security-Audit von v2.19.0 und die Befunde der Vollprüfu
   statt still in das gemeinsame Ende zu laufen. Ein `CHECK` bleibt ein bedingter Fluss.
   Ereignisse zählen nirgends als Schritt. Gemessen am Prozess-Benchmark: Knoten-Treffer
   von 69,4 % auf 78,7 %, auf der verdeckten Prüfhälfte von 69,1 % auf 78,8 %.
+- **Was die Laufzeit aufruft, beginnt auch im Prozess.** Ein `RAISE EVENT` ist kein
+  Fehler-Ende mehr, das den Ablauf abschnitt, sondern ruft den per `SET HANDLER`
+  gebundenen Behandler — aber nur, wenn die Registrierung vorher durchlaufen wurde und
+  nirgends abgemeldet wird. Nach `LEAVE TO SCREEN` läuft der Fluss nicht mehr weiter.
+  Rückrufe (`ON END OF TASK`), ALV-Ereignisbehandler, BAdI-Methoden (`intf~meth`) und
+  Redefinitionen einer Oberklasse, die nicht im Upload steht, sind Einstiege statt „nicht
+  erreicht“ — mit dem Vermerk, dass ihr Auslöser nicht im Code steht. Endstand am
+  Benchmark: 81,1 % (Prüfhälfte 82,1 %); auf der schweren dritten Welle 72,3 %.
 - **Die Fachsätze der Business-Sicht sagen nichts mehr, was der Code nicht trägt.**
   Fünf unabhängige Prüfungen über 2.273 Sollsätze fanden dieselben Fehler: `CHECK` hieß
   überall „kleinere werden übersprungen, die Schleife läuft weiter", jedes `sy-subrc`
