@@ -45,6 +45,10 @@ hat keinen Aufrufer), Löschen der Datei würde das Rauschen beenden — Sonnys 
 UX-Review (0,48 $): 3 neue Befunde, UX-174 eingeplant (Block D), UX-172/-173 widerlegt.
 Die Posteingänge von v2.19.0 waren im Integrationsstand bereits leer; die Warnung beim
 Sitzungsstart kam aus dem veralteten Arbeitsverzeichnis `Project-Platform`.
+QA-Vollprüfung (2,11 $, 28 Aufrufe, **unvollständig** — Budget reichte nicht für den ganzen
+Code): neu 6 hoch, 334 mittel, 23 niedrig. Die 6 hohen werden in dieser Sitzung geprüft und
+behoben (Branch `fix/qa-full-220`); die mittleren und niedrigen sind ein **eigener Schritt**
+„Vollprüfung von v2.20.0 abarbeiten“ nach Block D-Start, wie bei v2.18.0.
 
 **Test-Audit (27.09.):** 4.699 Tests, 26 min E2E; 304 Browser-Tests kosten 84 % der Zeit, ~12 min
 davon feste Pausen nach der Anmeldung; echte Gemini-Aufrufe verursachten 4 der letzten 9 roten
