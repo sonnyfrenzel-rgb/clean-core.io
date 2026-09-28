@@ -49,6 +49,12 @@ QA-Vollprüfung (2,11 $, 28 Aufrufe, **unvollständig** — Budget reichte nicht
 Code): neu 6 hoch, 334 mittel, 23 niedrig. Die 6 hohen werden in dieser Sitzung geprüft und
 behoben (Branch `fix/qa-full-220`); die mittleren und niedrigen sind ein **eigener Schritt**
 „Vollprüfung von v2.20.0 abarbeiten“ nach Block D-Start, wie bei v2.18.0.
+Ergebnis der hohen: 5 bestätigt und behoben (`f03c6c53`..`1e520bfa`), 1 widerlegt
+(`48b1b259955f`). Die QA-Runde dazu fand 3 mittlere: 2 behoben (`ce8cccc1`, `109458d1`),
+1 widerlegt (`1adcb710abb9` — ein Lauf beschreibt alle Fälle samt Quittung, `abd1e6aa`);
+Runde zu `abd1e6aa` ohne neuen Befund. **Offen bei Sonny:** `npm run deploy:rules` — erst
+danach wirkt der Admin-Widerruf in `firestore.rules` (Befund `87d43759c2d3`), und das Go für
+ein Release dieser Fixes auf `main`.
 
 **Test-Audit (27.09.):** 4.699 Tests, 26 min E2E; 304 Browser-Tests kosten 84 % der Zeit, ~12 min
 davon feste Pausen nach der Anmeldung; echte Gemini-Aufrufe verursachten 4 der letzten 9 roten
