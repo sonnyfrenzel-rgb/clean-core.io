@@ -3,6 +3,51 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
+## Feierabend 28.09.2026 (Sitzung 27./28.09.)
+
+**Ausgeliefert:** **v2.20.0** auf `main` (`fc787674`, clean-core.io). Enthält alles seit v2.19.0:
+Block D D.1–D.10a, Security-Schritt A, die Vollprüfung von v2.19.0, und die Arbeit dieser Sitzung.
+
+**Prozess-Benchmark** (`tests/prozess-benchmark/`, Bericht `docs/prozess-benchmark/BERICHT.md`):
+300 konstruierte ABAP-Fälle in drei Wellen (Kernmodule · Randmodule mit Grenzfällen · verdeckt,
+schwer, OO), blind geschrieben, gegengeprüft (`review.json`), eingefroren (`frozen-*.json`,
+`validate.py` prüft die Hashes), Lern-/Prüfhälften (`split.json`). Richterurteile zu den
+Fachsätzen in `judge/`.
+
+| Knoten-Treffer | vorher | nachher |
+|---|---|---|
+| Welle 1+2 (Prüfhälfte) | 61,3 % (61,9 %) | **81,1 % (82,1 %)** |
+| Welle 3 (Prüfhälfte, einmal gemessen) | 39,5 % (38,8 %) | **72,3 % (70,4 %)** |
+
+**Gebaut:** D1–D4 (Methodenaufrufe, Dynpro-Module/FB als Einstiege, keine Doppelstarts, Popups),
+ADR-054 (Teilprozess-Start, eigenes Ende je frühem Ausstieg), RAISE EVENT/SET HANDLER
+(konservativ: nur durchlaufene, unbedingte, nie abgemeldete Registrierung je Einstieg), LEAVE TO
+SCREEN, Rückrufe, ALV-Behandler, BAdI-Methoden, Redefinitionen als Einstiege; Fachsätze Weg A ohne
+Falschaussagen (236 → 11, verbotene Aussagen im Korpus 4 → 0); Weg B über 200 Fälle gemessen
+(86,5 % inhaltlich gleich) und als 17.10 in die Business-Sicht (Vorschlag + Beleg +
+Widerspruchsmarkierung, Quittung an die Stufe gebunden, Gemini-Test-Stub mit drei Toren); zwei
+Versäumnisse im Korpus-Vergleicher behoben (getrennt ausgewiesen); die Benchmark-Daten gehen
+nicht an das QA-Modell (sonst lief sein Budget leer); `full-pipeline` sucht den umbenannten
+Button (CI war seit 24.09. rot).
+
+**QA-Schleife:** ~25 Befunde in 14 Runden bestätigt und behoben (u. a. Methode der falschen
+Klasse, Quittung ohne Stufenbindung, Widerspruchsregeln, Registrierung über Zweige/Einstiege,
+Release-Daten), 1 teilweise widerlegt. **Versäumnis:** die Deploy-Pipeline war von `bf5d4f69` bis
+`3fae0f20` rot (Textinventar, Demo-Digest), weil nur QA verfolgt wurde — behoben, Regel im
+Memory: nach jedem Push die CI bis zum Ergebnis beobachten.
+
+**Sonnys Entscheidungen:** siehe `docs/ROADMAP.md` §9 „Am 27./28.09.2026 geschlossen“.
+
+**Test-Audit (27.09.):** 4.699 Tests, 26 min E2E; 304 Browser-Tests kosten 84 % der Zeit, ~12 min
+davon feste Pausen nach der Anmeldung; echte Gemini-Aufrufe verursachten 4 der letzten 9 roten
+Läufe; Lücken: Admin-Schalter, Registrierung über die Oberfläche, Audit-Pack Export→Prüfung,
+Leseansicht Eingeladener. Stufen 1–3 vorgeschlagen, **Freigabe offen**.
+
+**Offen, in dieser Reihenfolge:** Block D (nächste Sitzung) · Schleifenebenen mit Start ·
+Test-Audit-Stufen nach Freigabe · Welle-3-Designfragen (polymorphe Aufrufe, kleine Methoden) ·
+Sprache der erzeugten Sätze (ADR-009) · BM-232 Cluster-ID · `process-states-view` teilt im
+Parallellauf ein `tmp/`-Bundle (in CI mit 1 Worker ohne Wirkung).
+
 ## Feierabend 24.09.2026
 
 **Ausgeliefert:** v2.18.0 und **v2.19.0** auf `main` (clean-core.io). v2.19.0: isolierter Test-Runner (8.9) mit Produktions-Runnern, Mail-Layout (3.0.9), 3.0.11, 3.0.12 (Regeln live, `32e1970bb02e`), Vollprüfung von v2.18.0 abgearbeitet, Gemini-Retry bei 503, Security-Pipeline mit Stapelprüfung, UX-Agent auf Mockups 2.8.

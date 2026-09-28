@@ -98,6 +98,17 @@ Was die Phasen voraussetzen oder ersetzen. Gelesen, nicht gelaufen.
 
 ## 4. Phasen bis 3.0
 
+**Stand 28.09.2026.** `main` ist **v2.20.0** (`fc787674`). Neu ist der Prozess-Benchmark
+(`docs/prozess-benchmark/BERICHT.md`): 300 blind geschriebene, gegengeprüfte und eingefrorene
+ABAP-Fälle in drei Wellen, gemessen mit dem Vergleicher des Referenzkorpus. Daran gewachsen:
+Methodenaufrufe als Schritte (D2), Dynpro-Module und Funktionsbausteine als Einstiege (D1),
+ADR-054 (Teilprozess-Start, eigenes Ende je frühem Ausstieg), Framework-Einstiege
+(Rückrufe, ALV-/Ereignisbehandler, BAdI-Methoden, Redefinitionen) und 17.10 (Weg B als
+Vorschlag mit Beleg und Widerspruchsmarkierung, hinter der Arbeitsraum-Vorschau). Skelett
+61,3 % → 81,1 % (Welle 1+2, Prüfhälfte 82,1 %), Welle 3 39,5 % → 72,3 %. Block D steht bei
+10 von 40 Schritten und ist der nächste Arbeitsblock; die Entscheidungen der zwei Tage stehen
+in §9.
+
 **Stand 18.09.2026, Abend.** `main` ist v2.13.0 (`b88c77b`): Phase 2 und Phase 5 vollständig.
 Auf `dev` (`acf09bb`) liegen darüber: Phase 6 zu vier Achteln (6.1, 6.5, 6.6, 6.7), Phase 7 zu
 sechs Achteln (7.1, 7.2, 7.3, 7.5, 7.6, 7.7 — 7.6 ohne Tafel, siehe BACKLOG 30), die MFA-Pflicht
@@ -795,6 +806,25 @@ diese Roadmap das Konto nicht anfasst.
 ---
 
 ## 9. Entscheidungen
+
+### Am 27./28.09.2026 geschlossen (Sonny)
+
+| # | Entscheidung | Folge |
+|---|---|---|
+| 1 | Ein Prozess-Benchmark aus konstruierten ABAP-Fällen misst die Treffergenauigkeit der Prozessbeschreibung; Welle 2 aus Randmodulen mit Grenzfällen; Welle 3 als verdeckte, schwere Prüfmenge — „wir brauchen noch mehr Qualität“ | `tests/prozess-benchmark/`, Bericht `docs/prozess-benchmark/BERICHT.md` |
+| 2 | Verbesserungen müssen nachhaltig und generisch sein, nicht auf die Beispiele zugeschnitten | Lern-/Prüfhälften, eingefroren vor dem ersten Lauf; Prüfhälften nur als Summe |
+| 3 | Weg B (Gemini-Fachsätze) wird mitgemessen; danach: B als Vorschlag, A als Beleg darunter, Widerspruch markiert | Roadmap **17.10**, ADR-055, DESIGN.md §5.10 |
+| 4 | Designänderung für ≥ 80 %, „super benutzerfreundlich“: Start-Ereignis je aufklappbarem Teilprozess, eigenes Ende je `RETURN` | **ADR-054**, DESIGN.md §5.8; `CHECK` bleibt bedingter Fluss (Koordinator, gedeckt durch §5.8) |
+| 5 | Rümpfe von Mehrfach-Schleifen, die §5.8 als eigene Ebene zeichnet, bekommen ebenfalls ein Start-Ereignis | **offen, nächster Schritt** (nach v2.20.0) |
+| 6 | Block D ist die nächste Sitzung | Plan `docs/design/block-d-plan.md` |
+| 7 | Release v2.20.0 auf `main` erst, wenn die Erkenntnisse aus Welle 3 eingearbeitet sind | erfüllt am 28.09.2026 |
+
+**Offen nach dem 28.09.2026:** (a) Welle 3 unter 80 % — polymorphe Aufrufe mit offenem Ziel
+(nicht raten vs. alle Kandidaten zeigen) und kleine Methoden als ein Schritt sind Designfragen;
+(b) Freigabe der Stufen aus dem Test-Audit (feste Pausen, Gemini-Stub in CI, Worker, Umfrage-Code);
+(c) Sprache der erzeugten Sätze gegen ADR-009; (d) BM-232 trägt eine fachlich falsche Cluster-ID
+im Quelltext (`'DE'` statt `'RD'`), die der Prüfer nicht ändern durfte — für die Messung ohne
+Wirkung, zur Entscheidung.
 
 ### Am 22.09.2026 geschlossen
 
