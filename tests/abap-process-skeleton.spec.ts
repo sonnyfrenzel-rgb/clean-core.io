@@ -2419,6 +2419,34 @@ test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
     expect(next(at(21)[0].id)).toEqual([factory[0].id]);
   });
 
+  test('D2 — a method whose step is a call on a method not in the source has an effect, like a PERFORM into another program', () => {
+    // §5.8, Eingeklappter Teilprozess: "eine `FORM`/Methode mit eigener
+    // Wirkung"; a technical helper has none. A call the reader cannot see
+    // into is an effect — `PERFORM x IN PROGRAM y` already counts as one — so
+    // the routine that makes it is not folded away with it. Written for this test.
+    const skeleton = buildProcessSkeleton([
+      'REPORT zopaque_only.', //                                                  1
+      'CLASS lcl_sync DEFINITION.', //                                            2
+      '  PUBLIC SECTION.', //                                                     3
+      '    METHODS push IMPORTING io_api TYPE REF TO zif_remote_api.', //         4
+      'ENDCLASS.', //                                                             5
+      'CLASS lcl_sync IMPLEMENTATION.', //                                        6
+      '  METHOD push.', //                                                        7
+      '    io_api->transmit( ).', //                                              8
+      '  ENDMETHOD.', //                                                          9
+      'ENDCLASS.', //                                                             10
+      'START-OF-SELECTION.', //                                                   11
+      '  DATA(lo_sync) = NEW lcl_sync( ).', //                                    12
+      '  lo_sync->push( go_api ).', //                                            13
+      "  WRITE / 'done'.", //                                                     14
+    ].join('\n'));
+    const at = (line: number) => skeleton.nodes.filter((n) => n.anchor?.lineStart === line);
+    expect(at(13).map((n) => [n.kind, n.label])).toEqual([['call-opaque', 'PUSH']]);
+    expect(at(13)[0].detail?.effects).toEqual(['call']);
+    expect(at(8).map((n) => [n.kind, n.label])).toEqual([['call-opaque', 'IO_API->TRANSMIT']]);
+    expect(skeleton.notDrawn.technicalHelpers).toEqual([]);
+  });
+
   test('D2 — an ambiguous method is not guessed, and a called method is not also an entry', () => {
     const ambiguous = buildProcessSkeleton([
       'CLASS lcl_a IMPLEMENTATION.',

@@ -1336,6 +1336,7 @@ class SkeletonBuilder {
       if (statement.keyword === 'AUTHORITY-CHECK') out.add('authority');
       const perform = /^PERFORM\s+([\w/]+)/i.exec(text);
       if (perform && !this.formBlocks.has(perform[1].toUpperCase())) out.add('call');
+      if (this.methodCallsIn(statement).some((call) => call.standalone && !call.key)) out.add('call');
     }
     if (out.size === 0 && this.classifiesFromLiterals(block)) out.add('business-rule');
     return out;

@@ -2644,7 +2644,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "3 von 3 Sollknoten verglichen (1 getroffen, 1 ohne Knoten, 1 mit anderer Art); 0 von 2 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 2 ohne aufgelöste Enden). Die Engine baut an diesem Fall 2 Knoten. Ohne Knoten: b/opaque_call@source.abap:8 erwartet call-opaque|service-task|call-activity|sub-process|transaction|user-task|business-rule-task|read|write in source.abap:8–8. Andere Knotenart: c/call@source.abap:13 → Engine end. Fehlende Kante: —. Andere Kantenart: —."
+      "reason": "3 von 3 Sollknoten verglichen (2 getroffen, 0 ohne Knoten, 1 mit anderer Art); 0 von 2 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 2 ohne aufgelöste Enden). Die Engine baut an diesem Fall 5 Knoten. Ohne Knoten: —. Andere Knotenart: c/call@source.abap:13 → Engine end, call-opaque. Fehlende Kante: —. Andere Kantenart: —."
     },
     {
       "case": "CC-018",
