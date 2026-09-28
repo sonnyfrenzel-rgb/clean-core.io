@@ -1002,6 +1002,10 @@ class SkeletonBuilder {
   private refTypes = new Map<string, Set<string>>();
   /** The statements, over the whole source, whose calls resolve to each method — for entries and helpers. */
   private methodCallSites = new Map<string, number[]>();
+  /** `METHODS m FOR EVENT ev OF cls` — the event each implemented handler method declares, upper-cased. */
+  private handlerEvent = new Map<string, { event: string; of: string }>();
+  /** Handler methods a `SET HANDLER` of this source registers, in the order it first names them. */
+  private boundHandlers: string[] = [];
   private methodCallCache = new Map<number, MethodCall[]>();
   /**
    * ADR-054. Every early end the walk drew, with the statement it stands on —
@@ -1036,6 +1040,7 @@ class SkeletonBuilder {
     this.readMethodVisibility();
     this.readSelectionScreen();
     this.readMethodCallSites();
+    this.readEventHandlers();
     this.readEffects();
     this.noteWhatIsNotRead();
 
@@ -1258,6 +1263,7 @@ class SkeletonBuilder {
         for (const call of this.methodCallsIn(statement)) {
           if (call.key) performed.push(call.key);
         }
+        if (isRaiseEvent(statement.text)) performed.push(...this.handlersRaisedBy(statement));
         if (statement.keyword !== 'PERFORM') continue;
         const m = /^PERFORM\s+([\w/]+)/i.exec(statement.text);
         if (m && this.formBlocks.has(m[1].toUpperCase())) performed.push(m[1].toUpperCase());
@@ -1317,8 +1323,9 @@ class SkeletonBuilder {
       if (/^CALL\s+SCREEN\b/i.test(text)) out.add('human');
       if (isListOutput(statement) || isFileOutput(statement)) out.add('file');
       if (isErrorMessage(text) || raisesException(statement)) out.add('error');
-      // The handlers of an event are called, whoever they turn out to be.
-      if (isRaiseEvent(text)) out.add('call');
+      // The handlers of an event are called, whoever they turn out to be. Where
+      // the source binds them, their own effect travels instead (`readEffects`).
+      if (isRaiseEvent(text) && !this.handlersRaisedBy(statement).length) out.add('call');
       if (isInfoMessage(text)) out.add('human');
       if (/^LEAVE\s+PROGRAM\b/i.test(text)) out.add('error');
       if (statement.keyword === 'AUTHORITY-CHECK') out.add('authority');
@@ -1443,6 +1450,85 @@ class SkeletonBuilder {
       { byNameAlone: true },
     );
     return { key, ambiguous };
+  }
+
+  /**
+   * Event handlers — which implemented method a `RAISE EVENT` of this source
+   * runs, as far as the source writes it down.
+   *
+   * ABAP binds a handler to an event in two places, and both must stand here:
+   * the definition declares it (`METHODS on_done FOR EVENT done OF lcl_run`),
+   * and a `SET HANDLER lo->on_done FOR …` registers it. The declaration alone
+   * is not a binding — a handler nobody registers never runs — and the
+   * registration alone does not say which event it answers. With both, the
+   * `RAISE EVENT done` calls that method, synchronously, and the statement after
+   * it runs next: a method call in all but spelling, and §5.8 draws "eine
+   * `FORM`/Methode mit eigener Wirkung" as a sub-process.
+   *
+   * The handler named in `SET HANDLER` is resolved by the one rule every
+   * method call uses (`method-resolution.ts`, via `resolveMethod`) — no second
+   * resolution. A name that does not resolve, or resolves to two classes, binds
+   * nothing, and the `RAISE EVENT` stays what it was: an opaque call (rule 3).
+   * `ACTIVATION ' '` / `abap_false` deregisters and is not read as a binding.
+   */
+  private readEventHandlers(): void {
+    for (const block of this.structure.blocks) {
+      if (block.kind !== 'class') continue;
+      const cls = /^CLASS\s+([\w/]+)\s+DEFINITION\b/i.exec(this.statements[block.openIndex].text)?.[1]?.toUpperCase();
+      if (!cls) continue;
+      for (let i = block.openIndex + 1; i < block.closeIndex; i++) {
+        const m = /^(?:CLASS-)?METHODS\s+([\w/~]+)\s+FOR\s+EVENT\s+([\w/~]+)\s+OF\s+([\w/]+)/i
+          .exec(this.statements[i].text);
+        if (!m) continue;
+        const key = `${cls}=>${m[1].toUpperCase()}`;
+        if (this.routineBlocks.has(key)) this.handlerEvent.set(key, { event: m[2].toUpperCase(), of: m[3].toUpperCase() });
+      }
+    }
+    if (!this.handlerEvent.size) return;
+    for (const statement of this.statements) {
+      if (statement.keyword !== 'SET' || statement.nativeSql) continue;
+      const code = maskLiterals(statement.text);
+      const set = /^SET\s+HANDLER\s+([\s\S]+?)\s+FOR\s+/i.exec(code);
+      if (!set) continue;
+      if (/\bACTIVATION\s+(?:'\s*'|space|abap_false)/i.test(statement.text)) continue;
+      for (const handler of set[1].split(/\s+/)) {
+        const parts = /^(?:([\w/]+|<[\w/]+>)(->|=>))?([\w/~]+)$/.exec(handler);
+        if (!parts) continue;
+        const { key, ambiguous } = this.resolveMethod(parts[1] ?? null,
+          (parts[2] as '->' | '=>' | undefined) ?? null, parts[3].toUpperCase(), statement.index);
+        if (key && !ambiguous && this.handlerEvent.has(key) && !this.boundHandlers.includes(key)) {
+          this.boundHandlers.push(key);
+        }
+      }
+    }
+    for (const statement of this.statements) {
+      if (!isRaiseEvent(statement.text)) continue;
+      for (const key of this.handlersRaisedBy(statement)) {
+        this.methodCallSites.set(key, [...(this.methodCallSites.get(key) ?? []), statement.index]);
+      }
+    }
+  }
+
+  /**
+   * The registered handlers a `RAISE EVENT` runs: those declared for this event
+   * of the raising class, of a class it inherits from, or of the interface the
+   * statement names (`RAISE EVENT lif_x~ev`). In the order `SET HANDLER`
+   * registered them — the order the runtime calls them in.
+   */
+  private handlersRaisedBy(statement: AbapStatement): string[] {
+    if (!this.boundHandlers.length) return [];
+    const written = /^RAISE\s+EVENT\s+([\w/~]+)/i.exec(statement.text)?.[1]?.toUpperCase();
+    const raiser = this.classOf(statement.index);
+    if (!written || !raiser) return [];
+    const tilde = written.lastIndexOf('~');
+    const event = tilde < 0 ? written : written.slice(tilde + 1);
+    const owners = new Set<string>();
+    if (tilde >= 0) owners.add(written.slice(0, tilde));
+    for (let at: string | undefined = raiser; at && !owners.has(at); at = this.superOf.get(at)) owners.add(at);
+    return this.boundHandlers.filter((key) => {
+      const declared = this.handlerEvent.get(key);
+      return declared !== undefined && declared.event === event && owners.has(declared.of);
+    });
   }
 
   /**
@@ -2941,6 +3027,21 @@ class SkeletonBuilder {
       // Who they are is decided at run time, so the call stays opaque; the
       // label is the event's name, a token of the statement (rule 6).
       const event = /^RAISE\s+EVENT\s+([\w/~]+)/i.exec(text)?.[1]?.toUpperCase() ?? 'RAISE EVENT';
+      // Unless the source binds them (`readEventHandlers`): then the event
+      // runs those methods here, one after the other, and each is drawn as a
+      // call on it would be — sub-process, one step, or folded as a helper.
+      const handlers = this.handlersRaisedBy(statement);
+      if (handlers.length) {
+        let live = incoming;
+        for (const key of handlers) {
+          const impl = this.methodImpls.find((m) => m.key === key);
+          live = this.callRoutine(key, impl?.name ?? key, anchorOf(statement, 2), ctx, live, {
+            method: true, event,
+            ...(impl ? { class: impl.cls } : {}),
+          });
+        }
+        return { exits: live, outputRun: null };
+      }
       return keep(this.addNode('call-opaque', event, anchorOf(statement, 2), ctx.region, ctx.container, {
         detail: { event: true, dynamic: true, returns: true },
       }));

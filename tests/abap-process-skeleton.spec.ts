@@ -2624,6 +2624,70 @@ test.describe('ADR-054 — events in sub-processes and at early exits', () => {
     expect(skeleton.notes.filter((n) => n.reason === 'unreachable-after-abort')).toEqual([]);
   });
 
+  test('RAISE EVENT opens the handler SET HANDLER binds as a sub-process; unbound it stays opaque', () => {
+    // §5.8, Eingeklappter Teilprozess: "eine `FORM`/Methode mit eigener
+    // Wirkung". A handler the source both declares (`FOR EVENT … OF`) and
+    // registers (`SET HANDLER`) is what `RAISE EVENT` runs, right there. Written
+    // for this test.
+    const source = (registration: string) => [
+      'REPORT zevent_bound.', //                                                       1
+      'CLASS lcl_order DEFINITION.', //                                                2
+      '  PUBLIC SECTION.', //                                                          3
+      '    EVENTS released EXPORTING VALUE(ev_id) TYPE i.', //                         4
+      '    METHODS release IMPORTING iv_id TYPE i.', //                                5
+      'ENDCLASS.', //                                                                  6
+      'CLASS lcl_log DEFINITION.', //                                                  7
+      '  PUBLIC SECTION.', //                                                          8
+      '    METHODS on_released FOR EVENT released OF lcl_order IMPORTING ev_id.', //  9
+      'ENDCLASS.', //                                                                  10
+      'CLASS lcl_order IMPLEMENTATION.', //                                            11
+      '  METHOD release.', //                                                          12
+      "    UPDATE zorder SET status = 'R' WHERE id = @iv_id.", //                      13
+      '    RAISE EVENT released EXPORTING ev_id = iv_id.', //                          14
+      "    CALL FUNCTION 'Z_NOTIFY'.", //                                              15
+      '  ENDMETHOD.', //                                                               16
+      'ENDCLASS.', //                                                                  17
+      'CLASS lcl_log IMPLEMENTATION.', //                                              18
+      '  METHOD on_released.', //                                                      19
+      '    SELECT SINGLE * FROM zorder INTO @DATA(ls_order) WHERE id = @ev_id.', //    20
+      "    IF ls_order-prio = 'H'.", //                                                21
+      '      INSERT zorder_log FROM @( VALUE #( id = ev_id ) ).', //                   22
+      '    ENDIF.', //                                                                 23
+      "    MESSAGE 'Released' TYPE 'I'.", //                                           24
+      '  ENDMETHOD.', //                                                               25
+      'ENDCLASS.', //                                                                  26
+      'START-OF-SELECTION.', //                                                        27
+      '  DATA(lo_order) = NEW lcl_order( ).', //                                       28
+      '  DATA(lo_log) = NEW lcl_log( ).', //                                           29
+      `  ${registration}`, //                                                          30
+      '  lo_order->release( 1 ).', //                                                  31
+    ].join('\n');
+
+    const bound = buildProcessSkeleton(source('SET HANDLER lo_log->on_released FOR lo_order.'));
+    const at = (s: ProcessSkeleton, line: number) => s.nodes.filter((n) => n.anchor?.lineStart === line);
+    const call = at(bound, 14);
+    expect(call.map((n) => [n.kind, n.label])).toEqual([['sub-process', 'ON_RELEASED']]);
+    expect(call[0].anchor?.secondary?.lineStart).toBe(19);
+    expect(call[0].expandsTo).toBeTruthy();
+    // The handler's own plane begins on its METHOD line (ADR-054) and holds its steps.
+    expect(at(bound, 19).map((n) => n.kind)).toEqual(['start']);
+    expect(at(bound, 22).map((n) => n.kind)).toEqual(['write']);
+    // The flow goes on after the handler returns.
+    const next = bound.edges.filter((e) => e.from === call[0].id).map((e) => bound.nodes.find((n) => n.id === e.to));
+    expect(next.map((n) => [n?.kind, n?.anchor?.lineStart])).toEqual([['service-task', 15]]);
+    // Reached from a call, so not a second beginning.
+    expect(bound.nodes.filter((n) => n.kind === 'start' && n.detail?.origin)).toHaveLength(1);
+
+    // Declared but never registered: nothing in the source binds it, and the
+    // event stays an opaque call (rule 3), as before.
+    const unbound = buildProcessSkeleton(source('WRITE / lo_order.'));
+    expect(at(unbound, 14).map((n) => [n.kind, n.label])).toEqual([['call-opaque', 'RELEASED']]);
+    expect(at(unbound, 19)).toEqual([]);
+    // Deregistering is not a binding either.
+    const off = buildProcessSkeleton(source("SET HANDLER lo_log->on_released FOR lo_order ACTIVATION ' '."));
+    expect(at(off, 14).map((n) => n.kind)).toEqual(['call-opaque']);
+  });
+
   test('LEAVE TO SCREEN and LEAVE LIST-PROCESSING end the step where they stand; LEAVE TO LIST-PROCESSING does not', () => {
     // §5.8 / ADR-054: "jeder Weg hinaus endet dort, wo er hinausgeht". Both
     // statements leave the dialog step on the spot — the statement after them
