@@ -2141,6 +2141,42 @@
       "status": "widerlegt",
       "reason": "Gemessen statt geschaetzt: #003D7C mit 70 % Deckkraft auf Weiss mischt zu etwa rgb(77,119,163), relative Luminanz 0,174, Kontrast (1,05/0,224) = 4,69:1 >= 4,5:1 fuer Fliesstext (app/components/LegalOverlay.tsx:43).",
       "updatedAt": "2026-09-24T18:18:12.862Z"
+    },
+    {
+      "id": "UX-172",
+      "fingerprint": "d678782f0dc4",
+      "title": "Ersatz-Button wirkt deaktiviert, ist aber einzige Aktion",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "fc787674705fe7011dd7fa1f97da3d18bb45fca5",
+      "createdAt": "2026-09-28T06:18:30.611Z",
+      "status": "widerlegt",
+      "reason": "Der Button ist deaktiviert, solange keine signierte Quelle existiert (app/(app)/project/[projectId]/documentation/page.tsx:1752 disabled={!signedSource || ...}); Grund und naechster Schritt stehen direkt darunter (Zeile 1758: 'There is no source here that the active run signed. Run the analysis in stage 1 first.'). Genau die Empfehlung des Befunds.",
+      "updatedAt": "2026-09-28T06:18:30.611Z"
+    },
+    {
+      "id": "UX-173",
+      "fingerprint": "98e2571a6cd3",
+      "title": "Druck gibt Modellschätzung ohne Vorbehalt weiter",
+      "severity": "low",
+      "area": "release",
+      "firstSeenHead": "fc787674705fe7011dd7fa1f97da3d18bb45fca5",
+      "createdAt": "2026-09-28T06:18:30.812Z",
+      "status": "widerlegt",
+      "reason": "Der Ausdruck traegt den Vorbehalt dreifach: StageHeader mit 'Demonstration model' und 'Not a business case' (tco/page.tsx:214-220, nicht print:hidden), der Hinweiskasten data-tco-model-notice (Zeile 329, nicht print:hidden) und eine eigene Druck-Fusszeile mit allen Annahmen (Zeile 536, hidden print:block).",
+      "updatedAt": "2026-09-28T06:18:30.812Z"
+    },
+    {
+      "id": "UX-174",
+      "fingerprint": "3586549a5a7c",
+      "title": "Neue Einmal-Tokens für Größen und Abstände ohne System",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "fc787674705fe7011dd7fa1f97da3d18bb45fca5",
+      "createdAt": "2026-09-28T06:18:31.009Z",
+      "status": "eingeplant",
+      "step": "Block D",
+      "updatedAt": "2026-09-28T06:18:31.009Z"
     }
   ]
 }

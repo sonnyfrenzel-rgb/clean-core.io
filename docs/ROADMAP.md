@@ -1497,6 +1497,7 @@ einer Einladung) braucht Sonnys Abwägung gegen weitergeleitete Links.
 | UX-168 | medium | Technik-Ankündigung lädt zum Fragen ein ohne Antwortweg | D.22a | eingeplant |
 | UX-169 | medium | Dokumentation heißt anders als die Stufe selbst | D.9 | eingeplant |
 | UX-170 | medium | Bestätigungsseite ohne Ausweg bei ungültigem Link | D.26 | eingeplant |
+| UX-174 | medium | Neue Einmal-Tokens für Größen und Abstände ohne System | Block D | eingeplant |
 | UX-008 | low | Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert | 3.0.4 | behoben |
 | UX-011 | low | Wirre Befund-Begriffe und Sprachmix | 1.5 | eingeplant |
 | UX-013 | low | Vorschau widerspricht Editierbarkeit, Start irreführend | 1.5 | eingeplant |
