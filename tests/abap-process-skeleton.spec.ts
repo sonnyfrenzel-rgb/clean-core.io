@@ -2850,6 +2850,32 @@ ${body}
 ENDFORM.`);
     expect(at(viaForm('  CHECK lo_order IS BOUND.'), 14).map((n) => n.kind)).toEqual(['call-opaque']);
     expect(at(viaForm("  WRITE / 'register'."), 14).map((n) => n.kind)).toEqual(['sub-process']);
+    // A registration holds within one run: two function modules are called on
+    // their own, the event blocks of a report run one after another.
+    const classes = source('').split('\n').slice(1, 26).join('\n');
+    const pool = (a: string, b: string) => buildProcessSkeleton([
+      'FUNCTION-POOL zevents.',
+      'DATA: lo_order TYPE REF TO lcl_order, lo_log TYPE REF TO lcl_log.',
+      classes,
+      'FUNCTION z_first.', a, 'ENDFUNCTION.',
+      'FUNCTION z_second.', b, 'ENDFUNCTION.',
+    ].join('\n'));
+    const register = '  SET HANDLER lo_log->on_released FOR lo_order.';
+    const raise = '  lo_order->release( 1 ).';
+    expect(at(pool(register, raise), 15).map((n) => n.kind)).toEqual(['call-opaque']);
+    expect(at(pool(`${register}\n${raise}`, "  WRITE / 'x'."), 15).map((n) => n.kind)).toEqual(['sub-process']);
+    const report = (first: string, second: string) => buildProcessSkeleton([
+      'REPORT zevents_run.',
+      'DATA: lo_order TYPE REF TO lcl_order, lo_log TYPE REF TO lcl_log.',
+      classes,
+      first, second,
+    ].join('\n'));
+    // INITIALIZATION runs before START-OF-SELECTION, wherever it is written.
+    expect(at(report(`START-OF-SELECTION.\n${raise}`, `INITIALIZATION.\n${register}`), 15).map((n) => n.kind))
+      .toEqual(['sub-process']);
+    // …but not past a way out of the block that registers.
+    expect(at(report(`START-OF-SELECTION.\n${raise}`, `INITIALIZATION.\n  CHECK sy-batch = abap_false.\n${register}`), 15)
+      .map((n) => n.kind)).toEqual(['call-opaque']);
     // And the explicit 'X' is a registration like the bare one.
     const explicit = buildProcessSkeleton(source("SET HANDLER lo_log->on_released FOR lo_order ACTIVATION 'X'."));
     expect(at(explicit, 14).map((n) => n.kind)).toEqual(['sub-process']);

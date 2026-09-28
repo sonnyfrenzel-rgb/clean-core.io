@@ -1015,6 +1015,8 @@ class SkeletonBuilder {
   private deregisteredHandlers = new Set<string>();
   /** Bound handlers whose `SET HANDLER` the walk has passed, so a later `RAISE EVENT` may run them. */
   private registeredInWalk = new Set<string>();
+  /** The event blocks of the report (one program run), for `registeredBefore`. */
+  private runEntries: EntryPoint[] = [];
   private methodCallCache = new Map<number, MethodCall[]>();
   /**
    * ADR-054. Every early end the walk drew, with the statement it stands on —
@@ -1054,6 +1056,7 @@ class SkeletonBuilder {
     this.noteWhatIsNotRead();
 
     const entries = this.readEntryPoints();
+    this.runEntries = entries.filter((e) => e.origin === 'event' || e.origin === 'implicit');
     for (const entry of entries) this.buildEntryRegion(entry);
     for (const entry of this.deferredModuleEntries()) this.buildEntryRegion(entry);
     // A callback's own walk can start another task, so this runs until the
@@ -2461,6 +2464,17 @@ class SkeletonBuilder {
 
     const from = entry.implicit ? entry.statement.index : entry.statement.index + 1;
     this.regionLast.set(region.key, entry.lastIndex);
+    // QA review of 4b19e798aa85 (after 9311b96162e2): what `SET HANDLER`
+    // registered holds only within one run. Every entry that is called on its
+    // own — a function module, a method called from outside, a screen module,
+    // a bare FORM, a callback, an event handler — starts with nothing
+    // registered. The event blocks of a report are one run: a block starts
+    // with what the blocks that run **before** it (runtime order, rule 4 —
+    // not the order they are written in) register unconditionally
+    // (`registeredBefore`).
+    this.registeredInWalk = entry.origin === 'event' || entry.origin === 'implicit'
+      ? this.registeredBefore(entry)
+      : new Set();
     const exits = this.walkRange(from, entry.lastIndex, {
       region, container, loops: [], loopBreaks: [],
     }, [{ from: start.id, condition: '', kind: 'sequence' }]);
@@ -2472,6 +2486,32 @@ class SkeletonBuilder {
    * The region a routine opens — a `FORM`, or since D2 a method this source
    * implements — built once however often it is called.
    */
+  /**
+   * The handlers the event blocks that run before this one register for
+   * certain: a `SET HANDLER` standing at the top level of such a block — in
+   * no branch, loop or TRY, and not in a routine it calls — in a block that
+   * cannot be left before its end. Anything less certain is left out, and the
+   * `RAISE` it would have opened stays opaque.
+   */
+  private registeredBefore(entry: EntryPoint): Set<string> {
+    const out = new Set<string>();
+    if (!this.boundHandlers.length) return out;
+    for (const earlier of this.runEntries) {
+      if (earlier === entry || earlier.rank >= entry.rank) continue;
+      const from = earlier.implicit ? earlier.statement.index : earlier.statement.index + 1;
+      if (this.canLeaveEarly(from, earlier.lastIndex)) continue;
+      // The implicit START-OF-SELECTION is scattered between blocks: only its own statements.
+      const own = earlier.implicit ? new Set(this.programLevelStatements().map((s) => s.index)) : null;
+      for (let i = from; i <= earlier.lastIndex; i++) {
+        if ((this.structure.enclosing[i] ?? []).length || (own && !own.has(i))) continue;
+        const handlers = this.handlersSetBy(this.statements[i]);
+        if (!handlers || handlers.deregisters) continue;
+        for (const { key } of handlers) if (this.boundHandlers.includes(key)) out.add(key);
+      }
+    }
+    return out;
+  }
+
   /** Does any statement between `from` and `to` leave the routine early? Conservative: anywhere counts. */
   private canLeaveEarly(from: number, to: number): boolean {
     for (let i = from; i <= to; i++) {
