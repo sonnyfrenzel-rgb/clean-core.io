@@ -65,28 +65,8 @@ import StaleNotice from '@/components/StaleNotice';
 import { escapeHtml } from '@/lib/utils';
 import { sapApiHubLink } from '@/lib/export-safety';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
+import { cleanAndParseJSON, checkDesignResponse } from '@/lib/design-response';
 
-const cleanAndParseJSON = (str: string) => {
-  let cleaned = str.trim();
-
-  // 1. Extract JSON block if wrapped in markdown
-  const firstBrace = cleaned.indexOf('{');
-  const lastBrace = cleaned.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
-  }
-
-  // 2. Strip multi-line comments: /* ... */
-  cleaned = cleaned.replace(/\/\*[\s\S]*?\*\//g, '');
-
-  // 3. Strip single-line comments: // ..., but preserve URLs like http://, https://
-  cleaned = cleaned.replace(/(?<!:)\/\/.*$/gm, '');
-
-  // 4. Strip trailing commas before closing braces/brackets
-  cleaned = cleaned.replace(/,\s*([}\]])/g, '$1');
-
-  return JSON.parse(cleaned);
-};
 
 /**
  * Smart analysis context preparation for the Design prompt.
@@ -318,6 +298,14 @@ ${prepareAnalysisContext(analysis)}`;
       if (!responseText) {
         throw new Error('Gemini returned an empty response. The AI model did not produce any output for the design prompt.');
       }
+      // Not every non-empty answer is a design: `{}`, a truncated object or
+      // sections of the wrong type used to be stored as one, with `status:
+      // 'designed'`, over whatever design was there (QA full review of
+      // fc787674705f, 6a5a3b3546de). Refused here, the stored design stays.
+      const shape = checkDesignResponse(responseText);
+      if (!shape.ok) {
+        throw new Error(`The model's answer is not a usable solution design (${shape.reason}) Nothing was saved — regenerate to try again.`);
+      }
 
       await updateDoc(doc(db, 'projects', projectId as string), {
         solutionDesign: responseText,
@@ -433,7 +421,7 @@ ${responseText.substring(0, 4000)}`;
     const trimmedDesignText = currentProject.solutionDesign.trim();
     if (trimmedDesignText.startsWith('{') || (trimmedDesignText.includes('{') && trimmedDesignText.includes('}'))) {
       try {
-        data = cleanAndParseJSON(currentProject.solutionDesign);
+        data = cleanAndParseJSON(currentProject.solutionDesign) as DesignData;
         isJson = true;
       } catch {}
     }
@@ -705,7 +693,7 @@ ${responseText.substring(0, 4000)}`;
     const trimmedDesignText = design.trim();
     if (trimmedDesignText.startsWith('{') || (trimmedDesignText.includes('{') && trimmedDesignText.includes('}'))) {
       try {
-        data = cleanAndParseJSON(design);
+        data = cleanAndParseJSON(design) as DesignData;
       } catch (e) {
         console.error('Failed to parse JSON design, falling back to markdown rendering', e);
       }
