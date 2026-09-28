@@ -2815,6 +2815,22 @@ test.describe('ADR-054 — events in sub-processes and at early exits', () => {
     // Deregistering is not a binding either.
     const off = buildProcessSkeleton(source("SET HANDLER lo_log->on_released FOR lo_order ACTIVATION ' '."));
     expect(at(off, 14).map((n) => n.kind)).toEqual(['call-opaque']);
+
+    // QA review of 3fae0f200cec (05f4cc9b4009): the binding must be in force
+    // at the RAISE. Registered only after the call that raises: opaque.
+    const late = buildProcessSkeleton(source('lo_order->release( 1 ).')
+      .replace(/\n {2}lo_order->release\( 1 \)\.$/, '\n  SET HANDLER lo_log->on_released FOR lo_order.'));
+    expect(at(late, 14).map((n) => n.kind)).toEqual(['call-opaque']);
+    // Registered, then switched off before the RAISE: opaque.
+    const switchedOff = buildProcessSkeleton(source(
+      "SET HANDLER lo_log->on_released FOR lo_order.\n  SET HANDLER lo_log->on_released FOR lo_order ACTIVATION ' '."));
+    expect(at(switchedOff, 14).map((n) => n.kind)).toEqual(['call-opaque']);
+    // An activation the reader cannot pin to 'X' may switch it off: opaque.
+    const variable = buildProcessSkeleton(source('SET HANDLER lo_log->on_released FOR lo_order ACTIVATION gv_on.'));
+    expect(at(variable, 14).map((n) => n.kind)).toEqual(['call-opaque']);
+    // And the explicit 'X' is a registration like the bare one.
+    const explicit = buildProcessSkeleton(source("SET HANDLER lo_log->on_released FOR lo_order ACTIVATION 'X'."));
+    expect(at(explicit, 14).map((n) => n.kind)).toEqual(['sub-process']);
   });
 
   test('a handler SET HANDLER registers for an event of a class outside the source is an entry, trigger the event', () => {
@@ -2856,6 +2872,18 @@ test.describe('ADR-054 — events in sub-processes and at early exits', () => {
     // Declared but not registered: nothing says the method ever runs.
     const declared = buildProcessSkeleton(source('WRITE / lo_events.'));
     expect(starts(declared)).toEqual([['START-OF-SELECTION', 13, 'event', undefined]]);
+
+    // QA review of 3fae0f200cec (05f4cc9b4009): a handler the source may
+    // switch off is not an entry either, and a registration no walk passes
+    // (a FORM nothing performs) registers nothing.
+    const off = buildProcessSkeleton(source(
+      "SET HANDLER lo_events->on_double_click FOR go_grid.\n  SET HANDLER lo_events->on_double_click FOR go_grid ACTIVATION space."));
+    expect(starts(off)).toEqual([['START-OF-SELECTION', 13, 'event', undefined]]);
+    const unwalked = buildProcessSkeleton(`${source('WRITE / lo_events.')}
+FORM never_performed.
+  SET HANDLER lo_events->on_double_click FOR go_grid.
+ENDFORM.`);
+    expect(starts(unwalked)).toEqual([['START-OF-SELECTION', 13, 'event', undefined]]);
   });
 
   test('LEAVE TO SCREEN and LEAVE LIST-PROCESSING end the step where they stand; LEAVE TO LIST-PROCESSING does not', () => {

@@ -1011,6 +1011,10 @@ class SkeletonBuilder {
   private handlerEvent = new Map<string, { event: string; of: string }>();
   /** Handler methods a `SET HANDLER` of this source registers, in the order it first names them. */
   private boundHandlers: string[] = [];
+  /** Handlers some `SET HANDLER … ACTIVATION` of this source may switch off — never a binding. */
+  private deregisteredHandlers = new Set<string>();
+  /** Bound handlers whose `SET HANDLER` the walk has passed, so a later `RAISE EVENT` may run them. */
+  private registeredInWalk = new Set<string>();
   private methodCallCache = new Map<number, MethodCall[]>();
   /**
    * ADR-054. Every early end the walk drew, with the statement it stands on —
@@ -1497,22 +1501,21 @@ class SkeletonBuilder {
       }
     }
     if (!this.handlerEvent.size) return;
+    // QA review of 3fae0f200cec (05f4cc9b4009): a handler the source may
+    // deregister anywhere is not a binding at all — which of the two is in
+    // force at a given `RAISE` is a question of run time, and the conservative
+    // answer is the opaque call. The order of registration and `RAISE` is the
+    // walk's to decide (`registeredInWalk`).
+    const registered: string[] = [];
     for (const statement of this.statements) {
-      if (statement.keyword !== 'SET' || statement.nativeSql) continue;
-      const code = maskLiterals(statement.text);
-      const set = /^SET\s+HANDLER\s+([\s\S]+?)\s+FOR\s+/i.exec(code);
-      if (!set) continue;
-      if (/\bACTIVATION\s+(?:'\s*'|space|abap_false)/i.test(statement.text)) continue;
-      for (const handler of set[1].split(/\s+/)) {
-        const parts = /^(?:([\w/]+|<[\w/]+>)(->|=>))?([\w/~]+)$/.exec(handler);
-        if (!parts) continue;
-        const { key, ambiguous } = this.resolveMethod(parts[1] ?? null,
-          (parts[2] as '->' | '=>' | undefined) ?? null, parts[3].toUpperCase(), statement.index);
-        if (key && !ambiguous && this.handlerEvent.has(key) && !this.boundHandlers.includes(key)) {
-          this.boundHandlers.push(key);
-        }
+      const handlers = this.handlersSetBy(statement);
+      if (!handlers) continue;
+      for (const { key } of handlers) {
+        if (handlers.deregisters) this.deregisteredHandlers.add(key);
+        else if (!registered.includes(key)) registered.push(key);
       }
     }
+    this.boundHandlers = registered.filter((key) => !this.deregisteredHandlers.has(key));
     for (const statement of this.statements) {
       if (!isRaiseEvent(statement.text)) continue;
       for (const key of this.handlersRaisedBy(statement)) {
@@ -1522,13 +1525,42 @@ class SkeletonBuilder {
   }
 
   /**
+   * The implemented handlers one `SET HANDLER` names, resolved through
+   * `resolveMethod`, and whether the statement (possibly) deregisters them —
+   * `null` for any other statement. `ACTIVATION` with anything but `'X'` or
+   * `abap_true` (`' '`, `space`, `abap_false`, a variable) is read as a
+   * possible deregistration: a value the reader cannot pin to "on" is not "on".
+   */
+  private handlersSetBy(statement: AbapStatement): (Array<{ key: string; name: string }> & { deregisters: boolean }) | null {
+    if (statement.keyword !== 'SET' || statement.nativeSql) return null;
+    const set = /^SET\s+HANDLER\s+([\s\S]+?)\s+FOR\s+/i.exec(maskLiterals(statement.text));
+    if (!set) return null;
+    const activation = /\bACTIVATION\s+(\S+)/i.exec(statement.text)?.[1];
+    const out = Object.assign([] as Array<{ key: string; name: string }>, {
+      deregisters: activation !== undefined && !/^(?:'X'|abap_true)$/i.test(activation),
+    });
+    for (const handler of set[1].split(/\s+/)) {
+      const parts = /^(?:([\w/]+|<[\w/]+>)(->|=>))?([\w/~]+)$/.exec(handler);
+      if (!parts) continue;
+      const { key, ambiguous } = this.resolveMethod(parts[1] ?? null,
+        (parts[2] as '->' | '=>' | undefined) ?? null, parts[3].toUpperCase(), statement.index);
+      if (key && !ambiguous && this.handlerEvent.has(key)) out.push({ key, name: parts[3] });
+    }
+    return out;
+  }
+
+  /**
    * The registered handlers a `RAISE EVENT` runs: those declared for this event
    * of the raising class, of a class it inherits from, or of the interface the
    * statement names (`RAISE EVENT lif_x~ev`). In the order `SET HANDLER`
    * registered them — the order the runtime calls them in.
    */
-  private handlersRaisedBy(statement: AbapStatement): string[] {
+  private handlersRaisedBy(statement: AbapStatement, inWalk = false): string[] {
     if (!this.boundHandlers.length) return [];
+    if (inWalk) {
+      // At the walk's `RAISE`: only a registration the walk has already passed.
+      return this.handlersRaisedBy(statement).filter((key) => this.registeredInWalk.has(key));
+    }
     const written = /^RAISE\s+EVENT\s+([\w/~]+)/i.exec(statement.text)?.[1]?.toUpperCase();
     const raiser = this.classOf(statement.index);
     if (!written || !raiser) return [];
@@ -3101,7 +3133,7 @@ class SkeletonBuilder {
       // Unless the source binds them (`readEventHandlers`): then the event
       // runs those methods here, one after the other, and each is drawn as a
       // call on it would be — sub-process, one step, or folded as a helper.
-      const handlers = this.handlersRaisedBy(statement);
+      const handlers = this.handlersRaisedBy(statement, true);
       if (handlers.length) {
         let live = incoming;
         for (const key of handlers) {
@@ -3224,7 +3256,7 @@ class SkeletonBuilder {
           anchorOf(statement, tokenIndexOf(statement, /^OBJECT$/i) + 1), statement);
       }
     }
-    if (statement.keyword === 'SET') this.recordForeignHandlers(statement);
+    if (statement.keyword === 'SET') this.recordHandlerRegistration(statement);
     // D2: a method call — the whole statement, or an operand of it.
     return { exits: this.walkMethodCalls(statement, ctx, incoming), outputRun: null };
   }
@@ -3239,21 +3271,21 @@ class SkeletonBuilder {
    * back, in so many words. So it becomes an entry of its own, once the walk
    * has passed the registration, with the event as its trigger — which the
    * declaration names, so it is determined. A handler of a class this source
-   * holds is left to its `RAISE EVENT`.
+   * holds is left to its `RAISE EVENT` — which runs it only once the walk has
+   * passed this registration (`registeredInWalk`, QA review of 3fae0f200cec).
+   * A handler the source may deregister anywhere is bound nowhere
+   * (`readEventHandlers`), so it opens neither.
    */
-  private recordForeignHandlers(statement: AbapStatement): void {
-    if (!this.boundHandlers.length || !/^SET\s+HANDLER\b/i.test(statement.text)) return;
-    if (/\bACTIVATION\s+(?:'\s*'|space|abap_false)/i.test(statement.text)) return;
-    const handlers = /^SET\s+HANDLER\s+([\s\S]+?)\s+FOR\s+/i.exec(maskLiterals(statement.text))?.[1] ?? '';
-    for (const handler of handlers.split(/\s+/)) {
-      const parts = /^(?:([\w/]+|<[\w/]+>)(->|=>))?([\w/~]+)$/.exec(handler);
-      if (!parts) continue;
-      const { key, ambiguous } = this.resolveMethod(parts[1] ?? null,
-        (parts[2] as '->' | '=>' | undefined) ?? null, parts[3].toUpperCase(), statement.index);
-      if (!key || ambiguous || !this.boundHandlers.includes(key)) continue;
+  private recordHandlerRegistration(statement: AbapStatement): void {
+    if (!this.boundHandlers.length) return;
+    const handlers = this.handlersSetBy(statement);
+    if (!handlers || handlers.deregisters) return;
+    for (const { key, name } of handlers) {
+      if (!this.boundHandlers.includes(key)) continue;
+      this.registeredInWalk.add(key);
       const declared = this.handlerEvent.get(key);
       if (!declared || this.classNames.has(declared.of)) continue;
-      this.pushCallback(key, parts[3], statement, `EVENT ${declared.event} OF ${declared.of}`);
+      this.pushCallback(key, name, statement, `EVENT ${declared.event} OF ${declared.of}`);
     }
   }
 
