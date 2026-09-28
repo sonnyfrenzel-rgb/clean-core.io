@@ -33,8 +33,8 @@ service cloud.firestore {
       return isAuthenticated() &&
              request.auth.token.get('admin', false) == true &&
              !(
-               exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', true) == false
+               exists(callerProfilePath()) &&
+               get(callerProfilePath()).data.get('isAdmin', true) == false
              );
     }
 
