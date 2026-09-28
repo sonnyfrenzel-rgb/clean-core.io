@@ -1382,9 +1382,15 @@ class SkeletonBuilder {
         continue;
       }
       if (block.kind !== 'method') continue;
-      const cls = this.classOf(block.openIndex);
+      // A `METHOD` with no class around it at all is an excerpt — one method of
+      // a class the upload does not hold (a Web Dynpro controller, a gateway
+      // method pasted on its own). It is still a routine: a call on its name
+      // reaches it, and the class it belongs to is simply not written, so its
+      // key carries an empty class.
+      const bare = !(this.structure.enclosing[block.openIndex] ?? []).some((b) => b.kind === 'class');
+      const cls = bare ? '' : this.classOf(block.openIndex);
       const name = /^METHOD\s+([\w/~]+)/i.exec(opener.text)?.[1]?.toUpperCase();
-      if (!cls || !name) continue;
+      if (cls === null || !name) continue;
       const key = `${cls}=>${name}`;
       if (this.routineBlocks.has(key)) continue;
       const tilde = name.lastIndexOf('~');
@@ -1810,7 +1816,15 @@ class SkeletonBuilder {
       }];
     }
 
-    const forms = this.formEntries();
+    // The last resort, and the method has the same one as the form: a method of
+    // a class whose definition this source does not hold, which no call of the
+    // source reaches. Its visibility is written only in the missing definition
+    // — so it is not read as "public" — but whoever calls it is outside this
+    // source either way, which is exactly the evidence "eine `FORM`, die kein
+    // `PERFORM` erreicht" is (§5.8). Only here, where nothing above answered:
+    // a report or a function group has said where it begins.
+    const forms = [...this.formEntries(), ...this.methodEntries(true)]
+      .sort((a, b) => a.statement.index - b.statement.index);
     if (forms.length) return this.noteTriggers(forms);
 
     this.noteNoEntryPoint();
@@ -2090,19 +2104,23 @@ class SkeletonBuilder {
     return 'interface';
   }
 
-  private methodEntries(): EntryPoint[] {
+  private methodEntries(orphans = false): EntryPoint[] {
     const out: EntryPoint[] = [];
     for (const block of this.structure.blocks) {
       if (block.kind !== 'method') continue;
       const opener = this.statements[block.openIndex];
       const name = /^METHOD\s+([\w/~]+)/i.exec(opener.text);
       if (!name) continue;
+      const cls = this.classOf(block.openIndex);
+      const key = `${cls ?? ''}=>${name[1].toUpperCase()}`;
       const trigger = this.methodTrigger(name[1]) ?? this.implementedInterfaceMethod(name[1], block.openIndex);
-      if (!trigger) continue;
+      if (orphans) {
+        // The last resort: no trigger, no definition, nothing else answered.
+        if (trigger || this.entryOfBlock.has(block.openIndex) || (cls && this.definedClasses.has(cls))) continue;
+      } else if (!trigger) continue;
       // D2, and D3's rule for forms: a method this source calls is drawn where
       // it is called, as a sub-process — not a second time as a beginning. A
       // call from inside its own body (recursion) does not count.
-      const key = `${this.classOf(block.openIndex) ?? ''}=>${name[1].toUpperCase()}`;
       const sites = this.methodCallSites.get(key) ?? [];
       if (sites.some((site) => site < block.openIndex || site > block.closeIndex)) continue;
       this.entryOfBlock.add(block.openIndex);
@@ -2114,7 +2132,7 @@ class SkeletonBuilder {
         rank: RUNTIME_ORDER.length,
         implicit: false,
         origin: 'method',
-        trigger,
+        trigger: orphans ? null : trigger,
       });
     }
     return out;
@@ -2206,6 +2224,9 @@ class SkeletonBuilder {
             : entry.trigger === 'dynpro PBO' ? 'the screen runtime raises PBO on it'
               : entry.trigger ? `it is declared as a ${entry.trigger} handler`
                 : entry.origin === 'function' ? 'it is a function module, callable by name'
+                  : entry.origin === 'method'
+                    ? 'no call in this source reaches it and the definition of its class is not in this source, '
+                      + 'so its caller is outside this source'
                   : 'no PERFORM in this source reaches it, so its caller is outside this source';
       this.note('entry-trigger-not-determined', entry.statement,
         `The process is drawn as beginning at the ${what} ${entry.label} because ${proof}. `

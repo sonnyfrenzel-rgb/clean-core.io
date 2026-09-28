@@ -1868,6 +1868,58 @@ test.describe('roadmap 2.14 — where the process begins', () => {
     expect(starts(report).map((n) => n.label)).toEqual(['START-OF-SELECTION']);
   });
 
+  test('last resort: a method no call reaches, of a class whose definition is not here, begins like an unperformed FORM', () => {
+    // §5.8, Startereignis: "eine `FORM`, die kein `PERFORM` erreicht" — its
+    // caller is outside the source. A method of a class whose definition this
+    // upload does not hold, and which no call of the source reaches, has the
+    // same caller. Written for this test.
+    const excerpt = buildProcessSkeleton([
+      'CLASS zcl_freight IMPLEMENTATION.', //                                    1
+      '  METHOD get_rate.', //                                                   2
+      '    SELECT SINGLE rate FROM zfreight INTO @rv_rate WHERE land1 = @iv_land1.', // 3
+      '    log_rate( rv_rate ).', //                                             4
+      '  ENDMETHOD.', //                                                         5
+      '  METHOD log_rate.', //                                                   6
+      '    INSERT zfreight_log FROM @( VALUE #( rate = iv_rate ) ).', //          7
+      '  ENDMETHOD.', //                                                         8
+      'ENDCLASS.', //                                                            9
+    ].join('\n'));
+    // `log_rate` is reached by a call, so it is a step of `get_rate`, not a second beginning.
+    expect(starts(excerpt).filter((n) => n.detail?.origin).map((n) => [n.label, n.anchor?.lineStart, n.detail?.origin, n.detail?.trigger]))
+      .toEqual([['get_rate', 2, 'method', undefined]]);
+    expect(starts(excerpt)[0].detail?.triggerNotDetermined).toBe(true);
+    expect(reasons(excerpt)).toContain('entry-trigger-not-determined');
+    expect(excerpt.nodes.some((n) => n.anchor?.lineStart === 4)).toBe(true);
+
+    // Methods on their own, without any class around them (a controller
+    // excerpt): the call on the name reaches the other one.
+    const bare = buildProcessSkeleton([
+      'METHOD onaction_save.', //                                                1
+      '  wd_comp_controller->save_order( ).', //                                 2
+      'ENDMETHOD.', //                                                           3
+      'METHOD save_order.', //                                                   4
+      "  UPDATE zorder SET status = 'S' WHERE id = @mv_id.", //                  5
+      "  MESSAGE 'Saved' TYPE 'I'.", //                                          6
+      'ENDMETHOD.', //                                                           7
+    ].join('\n'));
+    expect(starts(bare).filter((n) => n.detail?.origin).map((n) => [n.label, n.anchor?.lineStart]))
+      .toEqual([['onaction_save', 1]]);
+    expect(bare.nodes.filter((n) => n.anchor?.lineStart === 2).map((n) => n.kind)).not.toContain('call-opaque');
+
+    // Only the last resort: a report has said where it begins.
+    const report = buildProcessSkeleton([
+      'REPORT z_partial.',
+      'START-OF-SELECTION.',
+      "  UPDATE zsd_run SET done = 'X'.",
+      'CLASS lcl_calc IMPLEMENTATION.',
+      '  METHOD run.',
+      "    UPDATE zsd_log SET x = 1.",
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+    ].join('\n'));
+    expect(starts(report).map((n) => n.label)).toEqual(['START-OF-SELECTION']);
+  });
+
   test('a RAP handler is an entry although its section is private', () => {
     // Corpus case CC-059. `FOR DETERMINE ON MODIFY` stands in the source and
     // says the runtime calls this method; the section does not contradict it.
