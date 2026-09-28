@@ -2162,6 +2162,43 @@ test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
     expect(skeleton.notDrawn.unreached.map((u) => u.name)).toEqual(['NEVER_CALLED', 'ORPHAN_RESULT']);
   });
 
+  test('a METHOD named with CALLING … ON END OF TASK is the same entry as the FORM: once, trigger ON END OF TASK', () => {
+    // QA review of ca7373c0cee0 (42ae5d7e15ad): `recordCallback` reads the
+    // method spelling too, and nothing held it. Written for this test.
+    const source = [
+      'REPORT zasync_method.', //                                                      1
+      'CLASS lcl_price DEFINITION.', //                                                2
+      '  PUBLIC SECTION.', //                                                          3
+      '    METHODS start.', //                                                         4
+      '    METHODS take_result IMPORTING p_task TYPE clike.', //                       5
+      'ENDCLASS.', //                                                                  6
+      'CLASS lcl_price IMPLEMENTATION.', //                                            7
+      '  METHOD start.', //                                                            8
+      "    CALL FUNCTION 'Z_PRICE_TASK' STARTING NEW TASK 'T1'", //                    9
+      '      CALLING take_result ON END OF TASK.', //                                  10
+      '    WAIT UNTIL gv_done = abap_true.', //                                        11
+      '  ENDMETHOD.', //                                                               12
+      '  METHOD take_result.', //                                                      13
+      "    RECEIVE RESULTS FROM FUNCTION 'Z_PRICE_TASK' IMPORTING ev_price = gv_price.", // 14
+      '    UPDATE zprice SET price = @gv_price WHERE id = 1.', //                      15
+      '    gv_done = abap_true.', //                                                   16
+      '  ENDMETHOD.', //                                                               17
+      'ENDCLASS.', //                                                                  18
+      'START-OF-SELECTION.', //                                                        19
+      '  NEW lcl_price( )->start( ).', //                                              20
+    ].join('\n');
+    const skeleton = buildProcessSkeleton(source);
+    const starts = skeleton.nodes.filter((n) => n.kind === 'start');
+    expect(starts.map((n) => [n.label, n.anchor?.lineStart, n.detail?.origin, n.detail?.trigger])).toEqual([
+      ['START-OF-SELECTION', 19, 'event', undefined],
+      ['take_result', 13, 'callback', 'ON END OF TASK'],
+    ]);
+    const region = skeleton.regions.find((r) => r.anchor?.lineStart === 13);
+    expect(skeleton.nodes.filter((n) => n.region === region?.key).map((n) => [n.kind, n.anchor?.lineStart]))
+      .toEqual(expect.arrayContaining([['write', 15], ['end', 17]]));
+    expect(skeleton.notDrawn.unreached).toEqual([]);
+  });
+
   test('D2 — a method call is a step: a sub-process where the source implements it, opaque where not', () => {
     // §5.8, Eingeklappter Teilprozess: "eine `FORM`/Methode mit eigener Wirkung".
     const skeleton = buildProcessSkeleton([
@@ -2551,6 +2588,15 @@ test.describe('ADR-054 — events in sub-processes and at early exits', () => {
     const call = skeleton.nodes.find((n) => n.anchor?.lineStart === 9);
     const fromBack = skeleton.edges.filter((e) => e.to === call?.id && e.condition === "'BACK'");
     expect(fromBack).toEqual([]);
+
+    // QA review of ca7373c0cee0 (d6615cfbdbaa): the short spelling `LEAVE
+    // SCREEN` leaves the step just the same — held on its own.
+    const plain = buildProcessSkeleton(pool.replace('LEAVE TO SCREEN 0.', 'LEAVE SCREEN.'));
+    const plainEarly = plain.nodes.filter((n) => n.detail?.early === true);
+    expect(plainEarly.map((n) => [n.kind, n.label, n.anchor?.lineStart])).toEqual([['end', 'LEAVE SCREEN', 5]]);
+    expect(plain.edges.filter((e) => e.from === plainEarly[0].id)).toEqual([]);
+    const plainCall = plain.nodes.find((n) => n.anchor?.lineStart === 9);
+    expect(plain.edges.filter((e) => e.to === plainCall?.id && e.condition === "'BACK'")).toEqual([]);
 
     const report = (leave: string) => [
       'REPORT zleave_list.', //                                           1
