@@ -1920,6 +1920,55 @@ test.describe('roadmap 2.14 — where the process begins', () => {
     expect(starts(report).map((n) => n.label)).toEqual(['START-OF-SELECTION']);
   });
 
+  test('a REDEFINITION of a superclass outside the source is an entry: the superclass calls it', () => {
+    // §5.8, Startereignis: a routine the source declares callable from outside
+    // (2.14). A redefinition replaces a method the superclass declares, and the
+    // superclass's code — not in this source — is its caller. Written for this test.
+    const source = (superclass: string) => [
+      ...(superclass === 'zcl_order_dpc'
+        ? ['CLASS zcl_order_dpc DEFINITION PUBLIC.', '  PROTECTED SECTION.', '    METHODS orders_get_entityset.', 'ENDCLASS.']
+        : []),
+      'CLASS zcl_order_dpc_ext DEFINITION PUBLIC INHERITING FROM zcl_order_dpc_base CREATE PUBLIC.'
+        .replace('zcl_order_dpc_base', superclass),
+      '  PUBLIC SECTION.',
+      '  PROTECTED SECTION.',
+      '    METHODS orders_get_entityset REDEFINITION.',
+      'ENDCLASS.',
+      'CLASS zcl_order_dpc_ext IMPLEMENTATION.',
+      '  METHOD orders_get_entityset.',
+      '    SELECT * FROM zorder INTO TABLE @et_entityset UP TO 100 ROWS.',
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+    ].join('\n');
+    const outside = buildProcessSkeleton(source('zcl_order_dpc_base'));
+    expect(starts(outside).map((n) => [n.label, n.anchor?.lineStart, n.detail?.origin, n.detail?.trigger]))
+      .toEqual([['orders_get_entityset', 7, 'method', 'REDEFINITION OF ZCL_ORDER_DPC_BASE']]);
+    // What triggers the superclass is still not in the source, and is said.
+    expect(outside.notes.find((n) => n.reason === 'entry-trigger-not-determined')?.detail)
+      .toContain('redefines a method of ZCL_ORDER_DPC_BASE');
+
+    // A superclass this source holds is not outside.
+    expect(starts(buildProcessSkeleton(source('zcl_order_dpc')))).toHaveLength(0);
+
+    // A local subclass in a report runs when the report hands it over — not
+    // the redefinition's to say.
+    const report = buildProcessSkeleton([
+      'REPORT z_local_sub.',
+      'CLASS lcl_sub DEFINITION INHERITING FROM zcl_framework_base.',
+      '  PROTECTED SECTION.',
+      '    METHODS do_work REDEFINITION.',
+      'ENDCLASS.',
+      'CLASS lcl_sub IMPLEMENTATION.',
+      '  METHOD do_work.',
+      "    UPDATE zsd_log SET x = 1.",
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+      'START-OF-SELECTION.',
+      "  UPDATE zsd_run SET done = 'X'.",
+    ].join('\n'));
+    expect(starts(report).map((n) => n.label)).toEqual(['START-OF-SELECTION']);
+  });
+
   test('a RAP handler is an entry although its section is private', () => {
     // Corpus case CC-059. `FOR DETERMINE ON MODIFY` stands in the source and
     // says the runtime calls this method; the section does not contradict it.

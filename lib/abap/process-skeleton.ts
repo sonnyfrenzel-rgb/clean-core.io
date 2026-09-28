@@ -996,6 +996,11 @@ class SkeletonBuilder {
   private definedClasses = new Set<string>();
   /** Does this source write an event block — is it a report? Set by `readEntryPoints`. */
   private writesEventBlock = false;
+  /**
+   * `METHODS m REDEFINITION` in a class whose superclass is not in this source,
+   * keyed `CLASS=>METHOD`: the superclass, and whether the class is global.
+   */
+  private redefinedFromOutside = new Map<string, { superclass: string; global: boolean }>();
   /** `CLASS x DEFINITION INHERITING FROM y`: the superclass each local class names. */
   private superOf = new Map<string, string>();
   /** `lo_x TYPE REF TO lcl_y` and its relatives: the class a reference variable holds. */
@@ -1998,6 +2003,7 @@ class SkeletonBuilder {
     for (const block of this.structure.blocks) {
       if (block.kind !== 'class' && block.kind !== 'interface') continue;
       const opener = this.statements[block.openIndex];
+      this.readRedefinitions(block);
       // **Local is not public.** `PUBLIC SECTION` in a `CLASS lcl_x DEFINITION`
       // means public *within this program*; only `DEFINITION PUBLIC` — a global
       // class — is callable from outside the source. Without that distinction
@@ -2062,6 +2068,46 @@ class SkeletonBuilder {
     }
   }
 
+  /**
+   * `METHODS name REDEFINITION` in a class that inherits from a class this
+   * source does not hold — a gateway `*_DPC_EXT` redefining `…_GET_ENTITYSET`,
+   * a RAP saver redefining `save_modified`, a subclass of a framework class.
+   *
+   * A redefinition replaces a method the **superclass** declares, and the one
+   * that calls it is the superclass's code — the dispatcher, the framework —
+   * which is not in this source. That is written down twice here: the word
+   * `REDEFINITION` and the `INHERITING FROM` a class the source does not
+   * define. Its section is the superclass's decision (a protected redefinition
+   * is the usual shape), so the visibility rule of 2.14 does not reach it —
+   * the same reason a RAP handler is read whatever its section.
+   *
+   * A superclass this source **does** hold is not outside: there the call is
+   * in the source, or it is polymorphism the reader does not resolve.
+   */
+  private readRedefinitions(block: Block): void {
+    const opener = this.statements[block.openIndex].text;
+    const cls = /^CLASS\s+([\w/]+)\s+DEFINITION\b/i.exec(opener)?.[1]?.toUpperCase();
+    const superclass = cls ? this.superOf.get(cls) : undefined;
+    if (!cls || !superclass || this.classNames.has(superclass)) return;
+    const global = /^CLASS\s+[\w/]+\s+DEFINITION\b[^.]*\bPUBLIC\b/i.test(opener);
+    for (let i = block.openIndex + 1; i < block.closeIndex; i++) {
+      const m = /^(?:CLASS-)?METHODS\s+([\w/~]+)\s+(?:FINAL\s+)?REDEFINITION\b/i.exec(this.statements[i].text);
+      if (m) this.redefinedFromOutside.set(`${cls}=>${m[1].toUpperCase()}`, { superclass, global });
+    }
+  }
+
+  /**
+   * The trigger of a redefinition `readRedefinitions` recorded — except for a
+   * local class in a source that writes an event block. A report holds local
+   * classes only, and a local subclass there runs when the report hands an
+   * instance of it over; whether it does is not the redefinition's to say.
+   */
+  private redefinitionTrigger(key: string): string | null {
+    const found = this.redefinedFromOutside.get(key);
+    if (!found || (!found.global && this.writesEventBlock)) return null;
+    return `REDEFINITION OF ${found.superclass}`;
+  }
+
   /** Is this implemented method one the source declares callable from outside? */
   private methodTrigger(name: string): string | null {
     const upper = name.toUpperCase();
@@ -2113,7 +2159,8 @@ class SkeletonBuilder {
       if (!name) continue;
       const cls = this.classOf(block.openIndex);
       const key = `${cls ?? ''}=>${name[1].toUpperCase()}`;
-      const trigger = this.methodTrigger(name[1]) ?? this.implementedInterfaceMethod(name[1], block.openIndex);
+      const trigger = this.methodTrigger(name[1]) ?? this.implementedInterfaceMethod(name[1], block.openIndex)
+        ?? this.redefinitionTrigger(key);
       if (orphans) {
         // The last resort: no trigger, no definition, nothing else answered.
         if (trigger || this.entryOfBlock.has(block.openIndex) || (cls && this.definedClasses.has(cls))) continue;
@@ -2222,6 +2269,8 @@ class SkeletonBuilder {
         : entry.trigger === 'interface' ? 'its class implements the interface that declares it'
           : entry.trigger === 'dynpro PAI' ? 'the screen runtime raises PAI on it'
             : entry.trigger === 'dynpro PBO' ? 'the screen runtime raises PBO on it'
+              : entry.trigger?.startsWith('REDEFINITION OF ')
+                ? `it redefines a method of ${entry.trigger.slice(16)}, which is not in this source and is what calls it`
               : entry.trigger ? `it is declared as a ${entry.trigger} handler`
                 : entry.origin === 'function' ? 'it is a function module, callable by name'
                   : entry.origin === 'method'
