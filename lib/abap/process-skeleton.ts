@@ -992,6 +992,10 @@ class SkeletonBuilder {
   private methodImpls: MethodImpl[] = [];
   /** Classes and interfaces this source defines or implements, upper-cased. */
   private classNames = new Set<string>();
+  /** Classes whose `CLASS x DEFINITION` (not `DEFERRED`, not `LOAD`) stands in this source, upper-cased. */
+  private definedClasses = new Set<string>();
+  /** Does this source write an event block — is it a report? Set by `readEntryPoints`. */
+  private writesEventBlock = false;
   /** `CLASS x DEFINITION INHERITING FROM y`: the superclass each local class names. */
   private superOf = new Map<string, string>();
   /** `lo_x TYPE REF TO lcl_y` and its relatives: the class a reference variable holds. */
@@ -1362,6 +1366,10 @@ class SkeletonBuilder {
       if (block.kind === 'class' || block.kind === 'interface') {
         const name = /^(?:CLASS|INTERFACE)\s+([\w/]+)/i.exec(opener.text);
         if (name) this.classNames.add(name[1].toUpperCase());
+        if (name && /^CLASS\s+[\w/]+\s+DEFINITION\b/i.test(opener.text)
+          && !/\bDEFINITION\s+(?:DEFERRED|LOAD)\b/i.test(opener.text)) {
+          this.definedClasses.add(name[1].toUpperCase());
+        }
         const parent = /\bINHERITING\s+FROM\s+([\w/]+)/i.exec(opener.text);
         if (name && parent) this.superOf.set(name[1].toUpperCase(), parent[1].toUpperCase());
         continue;
@@ -1662,6 +1670,7 @@ class SkeletonBuilder {
    */
   private readEntryPoints(): EntryPoint[] {
     const events = this.eventEntries();
+    this.writesEventBlock = events.length > 0;
     if (events.length) {
       // Unchanged from rule 4, and deliberately: a program that writes an event
       // block but no `START-OF-SELECTION` still runs its program-level
@@ -1963,6 +1972,38 @@ class SkeletonBuilder {
     return this.externallyCallableMethods.get(upper.slice(0, tilde + 1)) ?? null;
   }
 
+  /**
+   * §5.8's "BAdI-Methode": `METHOD zif_x~name.` in a source that does not hold
+   * the definition of its class — the BAdI implementation, the method of a
+   * global class pasted as an excerpt.
+   *
+   * `readMethodVisibility` reads visibility off the class **definition**, and a
+   * class whose definition is in another file declares nothing here. That
+   * silence stays for a plain method: whether `METHOD save.` is public or a
+   * private helper is written only in the definition. The tilde is different.
+   * It is written in the implementation itself, and it says the method is a
+   * component of an interface — and an interface component is public wherever
+   * it is implemented; it is called through the interface, from outside. The
+   * 2.14 note on "declares nothing" is about a source that runs nothing (an
+   * interface on its own, `entry-not-applicable`); a method with statements in
+   * it runs code, and until 27.09.2026 such an upload ended with
+   * `no-entry-point` and zero nodes.
+   *
+   * Two limits keep it to that evidence. Only where the definition is **not**
+   * here — where it is, `readMethodVisibility` has already decided, and a local
+   * class stays local (2.14: "Public heißt nicht von außen aufrufbar"). And
+   * never in a source that writes an event block: a report holds only local
+   * classes, so an implementation without its definition there is a partial
+   * upload of a local class, not a BAdI. What calls it stays not determined
+   * (`noteTriggers`).
+   */
+  private implementedInterfaceMethod(name: string, openIndex: number): string | null {
+    if (this.writesEventBlock || !name.includes('~')) return null;
+    const cls = this.classOf(openIndex);
+    if (cls && this.definedClasses.has(cls)) return null;
+    return 'interface';
+  }
+
   private methodEntries(): EntryPoint[] {
     const out: EntryPoint[] = [];
     for (const block of this.structure.blocks) {
@@ -1970,7 +2011,7 @@ class SkeletonBuilder {
       const opener = this.statements[block.openIndex];
       const name = /^METHOD\s+([\w/~]+)/i.exec(opener.text);
       if (!name) continue;
-      const trigger = this.methodTrigger(name[1]);
+      const trigger = this.methodTrigger(name[1]) ?? this.implementedInterfaceMethod(name[1], block.openIndex);
       if (!trigger) continue;
       // D2, and D3's rule for forms: a method this source calls is drawn where
       // it is called, as a sub-process — not a second time as a beginning. A

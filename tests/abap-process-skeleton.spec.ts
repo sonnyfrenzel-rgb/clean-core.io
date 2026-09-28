@@ -1807,6 +1807,67 @@ test.describe('roadmap 2.14 — where the process begins', () => {
     expect(starts(implementation)[0].detail?.trigger).toBe('interface');
   });
 
+  test('a METHOD intf~name whose class definition is not in the source is an entry (§5.8 "BAdI-Methode")', () => {
+    // §5.8, Startereignis: "Einstieg: … BAdI-Methode …". The tilde stands in
+    // the implementation and says the method is an interface component —
+    // public wherever it is implemented. Written for this test.
+    const withClass = buildProcessSkeleton([
+      'CLASS zcl_im_order_check IMPLEMENTATION.', //                          1
+      '  METHOD zif_ex_order_check~before_save.', //                          2
+      "    CHECK is_order-auart = 'ZOR'.", //                                 3
+      "    UPDATE zsd_order_log SET checked = 'X' WHERE vbeln = @is_order-vbeln.", // 4
+      '  ENDMETHOD.', //                                                      5
+      '  METHOD format_text.', //                                             6
+      '    rv_text = iv_text.', //                                            7
+      '  ENDMETHOD.', //                                                      8
+      'ENDCLASS.', //                                                         9
+    ].join('\n'));
+    expect(starts(withClass).map((n) => [n.label, n.anchor?.lineStart, n.detail?.origin, n.detail?.trigger]))
+      .toEqual([['zif_ex_order_check~before_save', 2, 'method', 'interface']]);
+    expect(withClass.nodes.some((n) => n.kind === 'write' && n.anchor?.lineStart === 4)).toBe(true);
+    expect(withClass.nodes.find((n) => n.kind === 'end')?.anchor?.lineStart).toBe(5);
+    // What triggers it is not in the source and is said, not guessed.
+    expect(reasons(withClass)).toContain('entry-trigger-not-determined');
+    expect(reasons(withClass)).not.toContain('no-entry-point');
+
+    // The method alone, as an excerpt: the same evidence.
+    const excerpt = buildProcessSkeleton([
+      'METHOD zif_ex_order_check~before_save.',
+      "  UPDATE zsd_order_log SET checked = 'X' WHERE vbeln = @is_order-vbeln.",
+      'ENDMETHOD.',
+    ].join('\n'));
+    expect(starts(excerpt).map((n) => [n.label, n.detail?.trigger])).toEqual([['zif_ex_order_check~before_save', 'interface']]);
+
+    // Where the definition **is** here it decides: a local class stays local
+    // (2.14, "Public heißt nicht von außen aufrufbar").
+    const local = buildProcessSkeleton([
+      'CLASS lcl_check DEFINITION.',
+      '  PUBLIC SECTION.',
+      '    INTERFACES lif_check.',
+      'ENDCLASS.',
+      'CLASS lcl_check IMPLEMENTATION.',
+      '  METHOD lif_check~run.',
+      "    UPDATE zsd_order_log SET checked = 'X'.",
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+    ].join('\n'));
+    expect(starts(local)).toHaveLength(0);
+
+    // And a report holds only local classes: an implementation without its
+    // definition there is a partial upload, not a BAdI.
+    const report = buildProcessSkeleton([
+      'REPORT z_partial.',
+      'START-OF-SELECTION.',
+      "  UPDATE zsd_run SET done = 'X'.",
+      'CLASS lcl_check IMPLEMENTATION.',
+      '  METHOD lif_check~run.',
+      "    UPDATE zsd_order_log SET checked = 'X'.",
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+    ].join('\n'));
+    expect(starts(report).map((n) => n.label)).toEqual(['START-OF-SELECTION']);
+  });
+
   test('a RAP handler is an entry although its section is private', () => {
     // Corpus case CC-059. `FOR DETERMINE ON MODIFY` stands in the source and
     // says the runtime calls this method; the section does not contradict it.
