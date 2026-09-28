@@ -172,6 +172,34 @@ export function testRunSubject(source: {
   };
 }
 
+/**
+ * Does the project still hold what a run read and executed?
+ *
+ * `/api/run-tests` reads the project, runs the suite for seconds to minutes,
+ * and then records verdicts built from that read. It asks this inside its
+ * write transaction, against the project as it is at commit (QA full review of
+ * fc787674705f, ee7b72f51837): the active run, the code, the suite and the case
+ * list — verdicts excluded, as in `casesDigest`, so a concurrent run of the same
+ * suite does not count as a change. The suite's `spec`, which the runner falls
+ * back to when `code` is empty, is compared too, because the subject does not
+ * hash it.
+ */
+export function sameTestRunInputs(
+  read: Parameters<typeof testRunSubject>[0],
+  now: Parameters<typeof testRunSubject>[0],
+): boolean {
+  const a = testRunSubject(read);
+  const b = testRunSubject(now);
+  if (a.runId !== b.runId || a.codeDigest !== b.codeDigest || a.suiteDigest !== b.suiteDigest || a.casesDigest !== b.casesDigest) {
+    return false;
+  }
+  const spec = (source: { testSuite?: unknown }) => {
+    const suite = source.testSuite as { spec?: unknown } | undefined | null;
+    return suite && typeof suite.spec === 'string' ? suite.spec : '';
+  };
+  return spec(read) === spec(now);
+}
+
 function isTestRunScope(value: unknown): value is TestRunScope {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const scope = value as Record<string, unknown>;

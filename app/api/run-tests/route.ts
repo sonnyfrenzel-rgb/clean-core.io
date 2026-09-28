@@ -6,7 +6,8 @@ import { isUrlSafe } from '@/lib/url-validation';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import { parseTapOutput, applyRunnerVerdicts } from '@/lib/test-verdicts';
-import { testRunSubject, TEST_RUN_RECEIPT_VERSION, type TestRunReceipt } from '@/lib/test-receipt';
+import { testRunSubject, sameTestRunInputs, TEST_RUN_RECEIPT_VERSION, type TestRunReceipt } from '@/lib/test-receipt';
+import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { loadDraftForRun, recordDraftExecution } from '@/lib/repair-draft-store';
 import type { RepairDraft } from '@/lib/repair-draft';
 import { executeSandboxRun } from '@/lib/test-sandbox/core';
@@ -542,18 +543,34 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
         receipt: null,
       });
     }
+    // Written only onto the project this run read, as it stood when it was
+    // read (QA full review of fc787674705f, ee7b72f51837). Between that read
+    // and this line the suite ran — seconds to minutes — and a merge-set here
+    // wrote `executedCases`, built from the old snapshot, over cases the owner
+    // had regenerated meanwhile, or re-created a project deleted meanwhile as a
+    // stub holding nothing but stale verdicts. The transaction re-reads the
+    // project and records only if it still exists, is still the caller's, and
+    // still has the run, code, suite and case list that were executed.
+    let moved: 'project-gone' | 'project-changed' | null = null;
     try {
       const { db } = await getAdminDb();
-      await db
-        .collection('projects')
-        .doc(sanitizedProjectId)
-        .set(
+      const projectRef: DocumentReference = db.collection('projects').doc(sanitizedProjectId);
+      moved = await db.runTransaction(async (tx: Transaction) => {
+        const fresh = await tx.get(projectRef);
+        if (!fresh.exists) return 'project-gone' as const;
+        const now = (fresh.data() || {}) as Record<string, unknown>;
+        if (now.userId !== decodedToken.uid) return 'project-gone' as const;
+        if (!sameTestRunInputs(projectData, now)) return 'project-changed' as const;
+        tx.set(
+          projectRef,
           storedCases.length > 0
             ? { testCases: executedCases, testRunReceipt: receipt }
             : { testRunReceipt: receipt },
           { merge: true },
         );
-      recorded = true;
+        return null;
+      });
+      recorded = moved === null;
     } catch (receiptErr) {
       // The run happened; the record of it did not. Reported rather than
       // swallowed into a green screen: without the receipt the phase contract
@@ -563,6 +580,26 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
         projectId: sanitizedProjectId,
         error: errMessage(receiptErr),
       });
+    }
+
+    if (moved) {
+      // Nothing was written, and the verdicts describe a project state that is
+      // no longer there — a refusal, not a result (the same shape the draft
+      // branch above gives a run nobody recorded).
+      return NextResponse.json(
+        {
+          output: stdout,
+          error:
+            moved === 'project-gone'
+              ? 'The project was deleted while the tests ran. Nothing was saved.'
+              : 'The project changed while the tests ran — the code, the test suite, the test cases or the analysis run are no longer the ones that were executed. Nothing was saved; run the tests again.',
+          code: moved,
+          exitCode: 1,
+          testResults: [],
+          receipt: null,
+        },
+        { status: moved === 'project-gone' ? 404 : 409 },
+      );
     }
 
     // The receipt travels back so the page the reader is looking at can show the
