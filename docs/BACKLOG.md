@@ -38,6 +38,14 @@ Memory: nach jedem Push die CI bis zum Ergebnis beobachten.
 
 **Sonnys Entscheidungen:** siehe `docs/ROADMAP.md` §9 „Am 27./28.09.2026 geschlossen“.
 
+**Aufnahmen zu v2.20.0:** Security-Audit (1 hoch, 15 mittel, 50 niedrig, 13 info; 0,79 $) —
+75 neue Einträge SEC-2026-555 bis -629: 45 eingeplant (§12), 30 widerlegt, ~60 davon inhaltlich
+Wiederholungen früherer Entscheidungen; der hohe Befund ist wie seit v2.18 widerlegt (die Datei
+hat keinen Aufrufer), Löschen der Datei würde das Rauschen beenden — Sonnys Entscheidung.
+UX-Review (0,48 $): 3 neue Befunde, UX-174 eingeplant (Block D), UX-172/-173 widerlegt.
+Die Posteingänge von v2.19.0 waren im Integrationsstand bereits leer; die Warnung beim
+Sitzungsstart kam aus dem veralteten Arbeitsverzeichnis `Project-Platform`.
+
 **Test-Audit (27.09.):** 4.699 Tests, 26 min E2E; 304 Browser-Tests kosten 84 % der Zeit, ~12 min
 davon feste Pausen nach der Anmeldung; echte Gemini-Aufrufe verursachten 4 der letzten 9 roten
 Läufe; Lücken: Admin-Schalter, Registrierung über die Oberfläche, Audit-Pack Export→Prüfung,
