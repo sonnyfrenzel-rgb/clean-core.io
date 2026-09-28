@@ -977,7 +977,7 @@ class SkeletonBuilder {
    * `PERFORMING form ON END OF TASK` or `CALLING meth ON END OF TASK`, in the
    * order the walk met them — see `callbackEntries`.
    */
-  private callbacks: Array<{ key: string; label: string; site: AbapStatement }> = [];
+  private callbacks: Array<{ key: string; label: string; site: AbapStatement; trigger: string }> = [];
   /**
    * Every routine a call in this source can open as a sub-process (D2): the
    * forms under their name, as before, and the methods this source implements
@@ -1862,9 +1862,9 @@ class SkeletonBuilder {
     if (key && !ambiguous && this.routineBlocks.has(key)) this.pushCallback(key, method[3], statement);
   }
 
-  private pushCallback(key: string, label: string, site: AbapStatement): void {
+  private pushCallback(key: string, label: string, site: AbapStatement, trigger = 'ON END OF TASK'): void {
     if (this.callbacks.some((c) => c.key === key)) return;
-    this.callbacks.push({ key, label, site });
+    this.callbacks.push({ key, label, site, trigger });
   }
 
   /**
@@ -1872,7 +1872,7 @@ class SkeletonBuilder {
    * already drawn: a callback the source also performs is a sub-process of that
    * caller, and drawing it a second time as a beginning would be D3 again.
    */
-  private callbackEntry(callback: { key: string; label: string; site: AbapStatement }): EntryPoint | null {
+  private callbackEntry(callback: { key: string; label: string; site: AbapStatement; trigger: string }): EntryPoint | null {
     const block = this.routineBlocks.get(callback.key);
     if (!block || this.reachedRoutines.has(callback.key) || this.entryOfBlock.has(block.openIndex)) return null;
     this.entryOfBlock.add(block.openIndex);
@@ -1886,7 +1886,7 @@ class SkeletonBuilder {
       origin: 'callback',
       // Determined, unlike the other entries that are not event blocks: the
       // statement that names it says what calls it.
-      trigger: 'ON END OF TASK',
+      trigger: callback.trigger,
     };
   }
 
@@ -3153,8 +3153,37 @@ class SkeletonBuilder {
           anchorOf(statement, tokenIndexOf(statement, /^OBJECT$/i) + 1), statement);
       }
     }
+    if (statement.keyword === 'SET') this.recordForeignHandlers(statement);
     // D2: a method call — the whole statement, or an operand of it.
     return { exits: this.walkMethodCalls(statement, ctx, incoming), outputRun: null };
+  }
+
+  /**
+   * `SET HANDLER lo->on_click FOR go_grid` where `on_click` is declared `FOR
+   * EVENT double_click OF cl_gui_alv_grid` and that class is **not** in this
+   * source: the method is called by code outside the source, when that class
+   * raises the event — no `RAISE EVENT` here will ever run it
+   * (`handlersRaisedBy`). It is the same kind of evidence as `ON END OF TASK`
+   * (`recordCallback`): the source registers a routine for the runtime to call
+   * back, in so many words. So it becomes an entry of its own, once the walk
+   * has passed the registration, with the event as its trigger — which the
+   * declaration names, so it is determined. A handler of a class this source
+   * holds is left to its `RAISE EVENT`.
+   */
+  private recordForeignHandlers(statement: AbapStatement): void {
+    if (!this.boundHandlers.length || !/^SET\s+HANDLER\b/i.test(statement.text)) return;
+    if (/\bACTIVATION\s+(?:'\s*'|space|abap_false)/i.test(statement.text)) return;
+    const handlers = /^SET\s+HANDLER\s+([\s\S]+?)\s+FOR\s+/i.exec(maskLiterals(statement.text))?.[1] ?? '';
+    for (const handler of handlers.split(/\s+/)) {
+      const parts = /^(?:([\w/]+|<[\w/]+>)(->|=>))?([\w/~]+)$/.exec(handler);
+      if (!parts) continue;
+      const { key, ambiguous } = this.resolveMethod(parts[1] ?? null,
+        (parts[2] as '->' | '=>' | undefined) ?? null, parts[3].toUpperCase(), statement.index);
+      if (!key || ambiguous || !this.boundHandlers.includes(key)) continue;
+      const declared = this.handlerEvent.get(key);
+      if (!declared || this.classNames.has(declared.of)) continue;
+      this.pushCallback(key, parts[3], statement, `EVENT ${declared.event} OF ${declared.of}`);
+    }
   }
 
   private errorLabel(statement: AbapStatement): string {

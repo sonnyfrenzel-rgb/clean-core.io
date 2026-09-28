@@ -2688,6 +2688,47 @@ test.describe('ADR-054 — events in sub-processes and at early exits', () => {
     expect(at(off, 14).map((n) => n.kind)).toEqual(['call-opaque']);
   });
 
+  test('a handler SET HANDLER registers for an event of a class outside the source is an entry, trigger the event', () => {
+    // §5.8 draws a start event where the source says something outside its
+    // own flow calls a routine — the same evidence as `ON END OF TASK`: the
+    // registration names the routine, the declaration names the event. No
+    // `RAISE EVENT` of this source can run it. Written for this test.
+    const source = (registration: string) => [
+      'REPORT zgrid_click.', //                                                               1
+      'CLASS lcl_events DEFINITION.', //                                                      2
+      '  PUBLIC SECTION.', //                                                                 3
+      '    METHODS on_double_click FOR EVENT double_click OF cl_gui_alv_grid IMPORTING e_row.', // 4
+      'ENDCLASS.', //                                                                         5
+      'CLASS lcl_events IMPLEMENTATION.', //                                                  6
+      '  METHOD on_double_click.', //                                                         7
+      '    READ TABLE gt_order INTO DATA(ls_order) INDEX e_row-index.', //                    8
+      "    SET PARAMETER ID 'AUN' FIELD ls_order-vbeln.", //                                  9
+      "    CALL TRANSACTION 'VA03' AND SKIP FIRST SCREEN.", //                                10
+      '  ENDMETHOD.', //                                                                      11
+      'ENDCLASS.', //                                                                         12
+      'START-OF-SELECTION.', //                                                               13
+      '  SELECT * FROM vbak INTO TABLE @gt_order UP TO 50 ROWS.', //                          14
+      '  DATA(lo_events) = NEW lcl_events( ).', //                                            15
+      `  ${registration}`, //                                                                 16
+      '  CALL SCREEN 100.', //                                                                17
+    ].join('\n');
+    const starts = (s: ProcessSkeleton) => s.nodes.filter((n) => n.kind === 'start' && n.detail?.origin)
+      .map((n) => [n.label, n.anchor?.lineStart, n.detail?.origin, n.detail?.trigger]);
+
+    const registered = buildProcessSkeleton(source('SET HANDLER lo_events->on_double_click FOR go_grid.'));
+    expect(starts(registered)).toEqual([
+      ['START-OF-SELECTION', 13, 'event', undefined],
+      ['on_double_click', 7, 'callback', 'EVENT DOUBLE_CLICK OF CL_GUI_ALV_GRID'],
+    ]);
+    expect(registered.nodes.some((n) => n.kind === 'transaction' && n.anchor?.lineStart === 10)).toBe(true);
+    // The event is written down, so the trigger is not "not determined".
+    expect(registered.notes.filter((n) => n.reason === 'entry-trigger-not-determined')).toEqual([]);
+
+    // Declared but not registered: nothing says the method ever runs.
+    const declared = buildProcessSkeleton(source('WRITE / lo_events.'));
+    expect(starts(declared)).toEqual([['START-OF-SELECTION', 13, 'event', undefined]]);
+  });
+
   test('LEAVE TO SCREEN and LEAVE LIST-PROCESSING end the step where they stand; LEAVE TO LIST-PROCESSING does not', () => {
     // §5.8 / ADR-054: "jeder Weg hinaus endet dort, wo er hinausgeht". Both
     // statements leave the dialog step on the spot — the statement after them
