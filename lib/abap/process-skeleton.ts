@@ -2472,6 +2472,16 @@ class SkeletonBuilder {
    * The region a routine opens — a `FORM`, or since D2 a method this source
    * implements — built once however often it is called.
    */
+  /** Does any statement between `from` and `to` leave the routine early? Conservative: anywhere counts. */
+  private canLeaveEarly(from: number, to: number): boolean {
+    for (let i = from; i <= to; i++) {
+      const statement = this.statements[i];
+      if (['CHECK', 'RETURN', 'EXIT', 'STOP', 'LEAVE'].includes(statement.keyword)) return true;
+      if (isErrorMessage(statement.text) || raisesException(statement)) return true;
+    }
+    return false;
+  }
+
   private routineRegion(name: string): SkeletonRegion | null {
     const known = this.regionOfRoutine.get(name);
     if (known) return known;
@@ -2527,10 +2537,17 @@ class SkeletonBuilder {
     const before = this.nodes.length;
     this.regionLast.set(region.key, to);
     this.expanding.push(name);
+    const registered = new Set(this.registeredInWalk);
     const exits = this.walkRange(guarded, to, {
       region, container: name, loops: [], loopBreaks: [],
     }, []);
     this.expanding.pop();
+    // QA review of 4b19e798aa85 (9311b96162e2): a routine that can leave
+    // before its end (`CHECK`, `RETURN`, `EXIT`, `STOP`, `LEAVE`, an error end)
+    // may return without its `SET HANDLER` having run — its registrations do
+    // not reach the caller. Its region is also built once and reused, so
+    // what it registers is kept only where no way out precedes it anywhere.
+    if (this.canLeaveEarly(from, to)) this.registeredInWalk = registered;
     // The walk gives a sub-process no start event — the call site is where it
     // begins, and `addSubProcessStarts` adds one only once it is known that the
     // routine is drawn as a plane of its own (ADR-054) — so its first node is
@@ -2592,10 +2609,16 @@ class SkeletonBuilder {
       if (block) {
         outputRun = null;
         if (FLOW_BLOCKS.has(block.kind) && block.closeIndex <= to) {
+          // QA review of 4b19e798aa85 (9311b96162e2): a `SET HANDLER` inside
+          // a branch, a loop body or a TRY/CATCH may not run at all, so it
+          // registers only for what follows it inside that block. Past the
+          // block the registrations are what they were before it.
+          const registered = new Set(this.registeredInWalk);
           if (block.kind === 'if' || block.kind === 'case') live = this.walkBranch(block, ctx, live);
           else if (block.kind === 'try') live = this.walkTry(block, ctx, live);
           else if (block.kind === 'at') live = this.walkGroupChange(block, ctx, live);
           else live = this.walkLoop(block, ctx, live);
+          this.registeredInWalk = registered;
           i = block.closeIndex + 1;
           continue;
         }

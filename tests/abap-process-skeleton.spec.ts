@@ -2828,6 +2828,28 @@ test.describe('ADR-054 — events in sub-processes and at early exits', () => {
     // An activation the reader cannot pin to 'X' may switch it off: opaque.
     const variable = buildProcessSkeleton(source('SET HANDLER lo_log->on_released FOR lo_order ACTIVATION gv_on.'));
     expect(at(variable, 14).map((n) => n.kind)).toEqual(['call-opaque']);
+    // QA review of 4b19e798aa85 (9311b96162e2): a registration inside a
+    // branch may not run — past ENDIF the RAISE stays opaque.
+    const conditional = buildProcessSkeleton(source(
+      'IF lo_order IS BOUND.\n    SET HANDLER lo_log->on_released FOR lo_order.\n  ENDIF.'));
+    expect(at(conditional, 14).map((n) => n.kind)).toEqual(['call-opaque']);
+    // The same inside a loop body.
+    const looped = buildProcessSkeleton(source(
+      'DO 1 TIMES.\n    SET HANDLER lo_log->on_released FOR lo_order.\n  ENDDO.'));
+    expect(at(looped, 14).map((n) => n.kind)).toEqual(['call-opaque']);
+    // Registration and RAISE in the same branch: it holds there.
+    const sameBranch = buildProcessSkeleton(source(
+      'IF lo_order IS BOUND.\n    SET HANDLER lo_log->on_released FOR lo_order.\n    lo_order->release( 2 ).\n  ENDIF.'));
+    expect(at(sameBranch, 14).map((n) => n.kind)).toEqual(['sub-process']);
+    // A routine that can leave before its SET HANDLER does not register for
+    // its caller; one that cannot, does.
+    const viaForm = (body: string) => buildProcessSkeleton(`${source('PERFORM register.')}
+FORM register.
+${body}
+  SET HANDLER lo_log->on_released FOR lo_order.
+ENDFORM.`);
+    expect(at(viaForm('  CHECK lo_order IS BOUND.'), 14).map((n) => n.kind)).toEqual(['call-opaque']);
+    expect(at(viaForm("  WRITE / 'register'."), 14).map((n) => n.kind)).toEqual(['sub-process']);
     // And the explicit 'X' is a registration like the bare one.
     const explicit = buildProcessSkeleton(source("SET HANDLER lo_log->on_released FOR lo_order ACTIVATION 'X'."));
     expect(at(explicit, 14).map((n) => n.kind)).toEqual(['sub-process']);
