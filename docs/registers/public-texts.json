@@ -3063,6 +3063,69 @@
       "measured": {
         "lines": 656
       }
+    },
+    {
+      "path": "docs/prozess-benchmark/BERICHT.md",
+      "kind": "report",
+      "purpose": "Abschlussbericht des Prozess-Benchmarks (300 Faelle): Messverfahren, Treffergenauigkeit von Skelett und Fachsaetzen, Aenderungen, Lessons Learned",
+      "audience": "Sonny, Entwickler",
+      "saysToday": "Stand 28.09.2026: Skelett 61,3 % -> 81,1 % (Welle 1+2), Welle 3 72,3 %, Fachsaetze inhaltlich gemessen.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Datierter Messbericht; Zahlen gelten fuer den genannten Stand und werden durch neue Laeufe ergaenzt, nicht umgeschrieben.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "CHANGELOG.md"
+      ],
+      "measured": {
+        "lines": 164
+      }
+    },
+    {
+      "path": "tests/prozess-benchmark/judge/richter-brief.md",
+      "kind": "brief",
+      "purpose": "Anweisung an die Richter-Agenten fuer die inhaltliche Bewertung der Fachsaetze (Ausgangsstand)",
+      "audience": "Agenten",
+      "saysToday": "Urteilsstufen gleich/teilweise/abweichend/fehlt, Maengelkategorien, Ausgabeformat.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Beleg, nach welcher Anweisung die Urteile in judge/ausgang entstanden; bleibt unveraendert neben den Urteilen.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "docs/prozess-benchmark/BERICHT.md"
+      ],
+      "measured": {
+        "lines": 56
+      }
+    },
+    {
+      "path": "tests/prozess-benchmark/judge/richter-brief-schluss.md",
+      "kind": "brief",
+      "purpose": "Anweisung an die Schlussrichter: drei Varianten je Sollsatz blind (A vorher, A nachher, B)",
+      "audience": "Agenten",
+      "saysToday": "Blinde X/Y/Z-Beschriftung, Zuordnung erst nach den Urteilen geoeffnet.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Beleg, nach welcher Anweisung die Urteile in judge/schluss entstanden; bleibt unveraendert neben den Urteilen.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "docs/prozess-benchmark/BERICHT.md"
+      ],
+      "measured": {
+        "lines": 57
+      }
     }
   ],
   "served": [
