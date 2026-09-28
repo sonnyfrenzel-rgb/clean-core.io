@@ -61,4 +61,21 @@ test.describe('a design is stored only when it is one', () => {
     expect(check, 'the design is written before it is checked').toBeLessThan(write);
     expect(src.slice(check, write)).toMatch(/if \(!shape\.ok\)\s*\{\s*throw /);
   });
+
+  test('the design and its NFRs are written together, in one write (5c1f3bd288f6)', () => {
+    // Two writes around a second model call let two tabs interleave: one tab's
+    // design beside the other tab's NFRs, or the previous design's NFRs beside a
+    // new design when the NFR call failed.
+    const src = readFileSync(join(process.cwd(), 'app/(app)/project/[projectId]/design/page.tsx'), 'utf8');
+    const start = src.indexOf('const generateDesign = useCallback(');
+    const body = src.slice(start, src.indexOf('const generateDesignRef', start));
+    const writes = body.match(/updateDoc\(doc\(db, 'projects', projectId as string\), \{[\s\S]*?\}\);/g) || [];
+    expect(writes, 'the generation writes the project more than once').toHaveLength(1);
+    expect(writes[0]).toContain('solutionDesign: responseText');
+    expect(writes[0]).toContain("status: 'designed'");
+    // No NFRs from this call means none, not the previous design's.
+    expect(writes[0]).toContain('nonFunctionalRequirements: nfrForDesign ?? deleteField()');
+    // And the NFR call happens before that write, so it is the write's input.
+    expect(body.indexOf('callGemini(nfrPrompt')).toBeLessThan(body.indexOf(writes[0] ?? ''));
+  });
 });

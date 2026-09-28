@@ -307,14 +307,14 @@ ${prepareAnalysisContext(analysis)}`;
         throw new Error(`The model's answer is not a usable solution design (${shape.reason}) Nothing was saved — regenerate to try again.`);
       }
 
-      await updateDoc(doc(db, 'projects', projectId as string), {
-        solutionDesign: responseText,
-        status: 'designed'
-      });
-      setDesign(responseText);
-      setProject((prev: Project | null) => prev ? { ...prev, solutionDesign: responseText } : prev);
-
-      // Separate NFR generation call (non-blocking)
+      // The NFRs are generated from this design and stored with it, in one
+      // write. They used to be two writes around a second model call, so two
+      // tabs regenerating at once could leave one tab's design beside the
+      // other tab's NFRs, and a failed NFR call left the previous design's NFRs
+      // beside the new design (QA full review of fc787674705f, 5c1f3bd288f6).
+      // Whichever generation writes last now writes a matching pair; an NFR
+      // failure stores the design without NFRs rather than with stale ones.
+      let nfrForDesign: Record<string, unknown> | null = null;
       setLoadingMessage('Generating non-functional requirements...');
       try {
         const nfrPrompt = `You are an SAP Enterprise Architect. Based on the following solution design, generate comprehensive Non-Functional Requirements. Return ONLY a JSON object matching this schema exactly:
@@ -337,15 +337,22 @@ ${responseText.substring(0, 4000)}`;
         if (nfrResponse) {
           try {
             const cleaned = nfrResponse.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
-            const parsed = JSON.parse(cleaned);
-            setNfrData(parsed);
-            // Persist NFR alongside design
-            await updateDoc(doc(db, 'projects', projectId as string), {
-              nonFunctionalRequirements: parsed
-            });
+            const parsed: unknown = JSON.parse(cleaned);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+              nfrForDesign = parsed as Record<string, unknown>;
+            }
           } catch { /* NFR parse failure is non-critical */ }
         }
       } catch { /* NFR generation failure is non-critical */ }
+
+      await updateDoc(doc(db, 'projects', projectId as string), {
+        solutionDesign: responseText,
+        status: 'designed',
+        nonFunctionalRequirements: nfrForDesign ?? deleteField(),
+      });
+      setDesign(responseText);
+      setNfrData(nfrForDesign as NFRData | null);
+      setProject((prev: Project | null) => prev ? { ...prev, solutionDesign: responseText } : prev);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to generate design.';
       console.error('[Design] Generation FAILED:', err);
