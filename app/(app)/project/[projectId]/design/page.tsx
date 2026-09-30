@@ -29,7 +29,7 @@ import { withPreviewPolicy } from '@/lib/export-preview';
 import { getSecurityExplanation } from '@/components/design/SecurityHardeningChecklist';
 import { getCloudServiceDetails } from '@/components/design/CloudServiceIntegrations';
 
-import { DocumentSkeleton } from '@/components/Skeleton';
+import CcSkeleton from '@/components/cc/Skeleton';
 import NavigationButtons from '@/components/NavigationButtons';
 import { withoutUnapprovedMoney, withoutUnapprovedMoneyDeep } from '@/lib/money-honesty';
 
@@ -700,7 +700,9 @@ ${responseText.substring(0, 4000)}`;
             <p className="m-0 cc-text-cell text-cc-ink-muted">{loadingMessage || 'Loading project data...'}</p>
           </div>
         </div>
-        <DocumentSkeleton />
+        <div className="p-4 sm:p-8">
+          <CcSkeleton shape="text" label="the technical design" count={6} />
+        </div>
       </div>
     </div>
   );

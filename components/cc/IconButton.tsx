@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import type { CcDensity } from './Button';
+import { CC_BUTTON_VARIANT_CLASSES, type CcDensity } from './Button';
 
 /**
  * A button whose whole content is an icon — `DESIGN.md` §1.5.
@@ -44,7 +44,9 @@ export default function CcIconButton({
       data-cc-density={density}
       className={cn(
         'inline-flex items-center justify-center rounded-cc-row border',
-        'bg-cc-surface border-cc-field-border text-cc-ink-muted hover:bg-cc-surface-muted',
+        // "Like ghost" (§1.5) by reference, not by copy: the same classes the
+        // ghost button wears, so the two cannot drift apart.
+        CC_BUTTON_VARIANT_CLASSES.ghost,
         'disabled:opacity-60 disabled:cursor-not-allowed',
         density === 'compact' ? 'h-8 w-8 pointer-coarse:h-11 pointer-coarse:w-11' : 'h-11 w-11',
       )}

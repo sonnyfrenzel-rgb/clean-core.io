@@ -179,6 +179,24 @@ test.describe('design source guard (DESIGN.md, app-wide ratchet)', () => {
     expect(scanFile('components/workspace/Probe.tsx', allowed).map((h) => `${h.rule} ${h.snippet}`)).toEqual([]);
   });
 
+  test('the named library exceptions are exactly as wide as their case (D.33)', () => {
+    const rules = (rel: string, source: string) => scanFile(rel, source).map((h) => h.rule);
+    // TOUCH_TARGET_COMPENSATION: -m-2.5 only where the same variant grows 24 px to 44 px.
+    const why = 'h-6 w-6 max-[600px]:-m-2.5 max-[600px]:h-11 max-[600px]:w-11';
+    expect(rules('components/cc/Probe.tsx', `<button className="${why}">?</button>`)).toEqual([]);
+    expect(rules('components/cc/Probe.tsx', '<button className="h-6 w-6 max-[600px]:-m-2.5 pointer-coarse:h-11 pointer-coarse:w-11">?</button>')).toEqual(['R18']);
+    expect(rules('components/cc/Probe.tsx', '<button className="h-8 w-8 max-[600px]:-m-2.5 max-[600px]:h-11 max-[600px]:w-11">?</button>')).toEqual(['R18']);
+    expect(rules('components/cc/Probe.tsx', '<div className="-m-2.5">x</div>')).toEqual(['R18']);
+    // TABLE_ROW_OPEN: the library table's row, and nothing else.
+    expect(rules('components/cc/Table.tsx', '<tr data-cc-table-row={k} onClick={go}><td /></tr>')).toEqual([]);
+    expect(rules('components/cc/Table.tsx', '<tr onClick={go}><td /></tr>')).toEqual(['R9']);
+    expect(rules('components/workspace/Probe.tsx', '<tr data-cc-table-row={k} onClick={go}><td /></tr>')).toEqual(['R9']);
+    // No exception for a look: a hand-built segment row counts, the library's shared look does not.
+    const segment = '<button role="radio" className="bg-cc-ink px-2">x</button>';
+    expect(rules('components/cc/SegmentedControl.tsx', segment)).toEqual(['R7']);
+    expect(rules('components/process-states/Probe.tsx', '<button role="radio" className={ccSegmentClass(on)}>x</button>')).toEqual([]);
+  });
+
   test('a `//` that is not a comment hides nothing after it (QA c07adecd2fb5, 01bcfd747ee8)', () => {
     // The comment stripper used to be a regex that blanked the rest of a line
     // from any `//` not preceded by a colon or a quote — an attribute value, a

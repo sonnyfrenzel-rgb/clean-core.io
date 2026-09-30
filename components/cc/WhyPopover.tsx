@@ -109,10 +109,10 @@ export default function CcWhyPopover({
           role="dialog"
           aria-label={`${t('why.label')}: ${subject}`}
           data-cc-why-popover=""
-          className="absolute top-full left-0 z-cc-popover mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-cc-card border border-cc-line bg-cc-surface p-3.5 text-left shadow-cc-dialog"
+          className="absolute top-full left-0 z-cc-popover mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-cc-card border border-cc-line bg-cc-surface p-4 text-left shadow-cc-dialog"
         >
           <CcProvenanceChip value={provenance} />
-          <dl className="mt-2.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-[12px] leading-snug">
+          <dl className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-[12px] leading-snug">
             <dt className="font-semibold text-cc-ink-muted">{t('why.basis')}</dt>
             <dd className="m-0 font-medium text-cc-ink">{basis}</dd>
             {evidence ? (

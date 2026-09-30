@@ -6,8 +6,8 @@ import { t } from '@/lib/cc-messages';
 import { CC_SKELETON_DELAY_MS, useCcDelayedFlag } from './delay';
 
 /**
- * The skeleton of `DESIGN.md` §2.8 — block D, step D.5c. Replaces
- * `components/Skeleton.tsx` once its five users move (D.22).
+ * The skeleton of `DESIGN.md` §2.8 — block D, step D.5c. The only one since
+ * D.33 removed `components/Skeleton.tsx`.
  *
  * Used where the layout is known — a header, a table, cards — and only when
  * loading takes longer than 300 ms. Mounting it *is* the loading state; it

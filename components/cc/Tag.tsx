@@ -16,7 +16,7 @@ import { ruleProperty, type RulePropertyValue } from '@/lib/rule-property';
  * one and the other does not.
  */
 const CLASSES =
-  'inline-block rounded-[4px] border border-cc-line bg-cc-surface-muted px-1.5 align-middle text-[11px] font-medium leading-[18px] text-cc-ink-muted whitespace-nowrap';
+  'inline-block rounded-[4px] border border-cc-line bg-cc-surface-muted px-2 align-middle text-[11px] font-medium leading-[18px] text-cc-ink-muted whitespace-nowrap';
 
 export function CcTag({ children }: { children: React.ReactNode }) {
   return (

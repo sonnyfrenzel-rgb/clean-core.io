@@ -5,6 +5,7 @@ import { AlertTriangle, Check } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcField from '@/components/cc/Field';
 import { CcTag } from '@/components/cc/Tag';
+import { CC_SEGMENTED_GROUP, ccSegmentClass } from '@/components/cc/SegmentedControl';
 import { revisionTime } from '@/components/process-revisions/RevisionHistory';
 import {
   ELEMENT_STATES,
@@ -101,14 +102,14 @@ export default function StateChoice({ subject, entry, mark = null, onConfirm, bu
         <p
           data-state-mark={subject.subject}
           data-state-mark-stale={mark.stale ? 'yes' : 'no'}
-          className="flex items-start gap-1.5 text-[12px] font-medium leading-snug text-cc-warning"
+          className="flex items-start gap-1 text-[12px] font-medium leading-snug text-cc-warning"
         >
           <AlertTriangle size={14} aria-hidden={true} />
           <span>{mark.sentence}</span>
         </p>
       ) : null}
 
-      <span role="radiogroup" aria-label={`Need for ${subject.label}`} className="inline-flex gap-0.5 self-start rounded-cc-row border border-cc-field-border bg-cc-surface-muted p-0.5">
+      <span role="radiogroup" aria-label={`Need for ${subject.label}`} className={`${CC_SEGMENTED_GROUP} self-start`}>
         {ELEMENT_STATES.map((state, index) => {
           const selected = chosen === state;
           return (
@@ -124,10 +125,7 @@ export default function StateChoice({ subject, entry, mark = null, onConfirm, bu
               data-state-option={state}
               data-state-option-on={selected ? 'yes' : 'no'}
               onClick={() => setChosen(state)}
-              className={[
-                'inline-flex items-center gap-1 rounded-[6px] px-2 py-1 text-[12px] whitespace-nowrap disabled:opacity-60',
-                selected ? 'bg-cc-ink text-cc-on-dark font-semibold' : 'bg-transparent text-cc-ink-muted font-medium',
-              ].join(' ')}
+              className={ccSegmentClass(selected)}
             >
               {selected ? <Check size={12} aria-hidden={true} /> : null}
               {STATE_LABELS[state]}

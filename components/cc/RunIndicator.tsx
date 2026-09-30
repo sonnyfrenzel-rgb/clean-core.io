@@ -108,7 +108,7 @@ export default function CcRunIndicator({
     <div data-cc-run-indicator="" className="flex flex-col gap-3">
       <p className="m-0 text-[13px] font-medium text-cc-ink">{scope}</p>
 
-      <ol className="m-0 flex list-none flex-col gap-1.5 p-0">
+      <ol className="m-0 flex list-none flex-col gap-2 p-0">
         {stages.map((stage) => (
           <li
             key={stage.id}

@@ -30,7 +30,7 @@ export default function CcArtefactRow({ icon, title, detail, status }: CcArtefac
   return (
     <div
       data-cc-artefact-row=""
-      className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-start gap-2.5 rounded-cc-row border border-cc-line bg-cc-surface-muted px-2.5 py-2"
+      className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-start gap-3 rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2"
     >
       <span className="flex h-7 w-7 items-center justify-center rounded-cc-row border border-cc-line bg-cc-surface text-cc-ink-muted">
         {icon}
@@ -38,12 +38,12 @@ export default function CcArtefactRow({ icon, title, detail, status }: CcArtefac
       <span className="min-w-0">
         <span className="block text-[13px] font-semibold leading-snug text-cc-ink">{title}</span>
         {detail ? (
-          <span className="mt-0.5 block text-[12px] font-medium leading-snug text-cc-ink-muted">
+          <span className="mt-1 block text-[12px] font-medium leading-snug text-cc-ink-muted">
             {detail}
           </span>
         ) : null}
       </span>
-      <span className="flex items-center gap-1.5 pt-0.5">{status}</span>
+      <span className="flex items-center gap-2">{status}</span>
     </div>
   );
 }

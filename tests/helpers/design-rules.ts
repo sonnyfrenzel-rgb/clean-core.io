@@ -106,6 +106,46 @@ export const STANDALONE_EXPORT_TEMPLATES = [
 export const STANDALONE_EXPORT_FILES = [STANDALONE_EXPORT_STYLE, ...STANDALONE_EXPORT_TEMPLATES] as const;
 
 /**
+ * Named rule exceptions for the library (block D, D.33). The library holds
+ * itself to every rule; these are the two places where DESIGN.md itself says a
+ * rule does not apply, written as a rule with its reason rather than as an
+ * entry in a baseline list. Each is as narrow as its case: one attribute in one
+ * file, one piece of arithmetic. (The looks §1.5 fixes outside the four
+ * buttons — icon button "wie ghost", the segmented control — need none: they
+ * are shared constants in the library, like `CC_BUTTON_*`.)
+ *
+ * TABLE_ROW_OPEN (R9) — DESIGN.md §2.4 and `CcTable`: `onOpen` on a row is a
+ *   mouse shortcut beside a real link in a cell, never the only way in, so the
+ *   row has no role and no key handler on purpose (a role on a `<tr>` would
+ *   break the table for a screen reader). Only the `<tr data-cc-table-row>` in
+ *   `components/cc/Table.tsx`.
+ *
+ * TOUCH_TARGET_COMPENSATION (R18) — DESIGN.md §2.9/§2.10 (WG-03): the "Why?"
+ *   target is 24 px and grows to 44 px on a phone and under a coarse pointer; a
+ *   negative margin of exactly (44 − 24) / 2 = 10 px (`-m-2.5`) under the same
+ *   variant keeps the row from growing. That is arithmetic on a hit area, not a
+ *   spacing step, so it passes only in a tag that is `h-6 w-6` and `h-11 w-11`
+ *   under the very variant that carries the margin.
+ */
+export const TABLE_ROW_OPEN = { file: 'components/cc/Table.tsx', attribute: 'data-cc-table-row' } as const;
+export const TOUCH_TARGET_COMPENSATION = { margin: '-m-2.5', base: ['h-6', 'w-6'], grown: ['h-11', 'w-11'] } as const;
+
+/** True when a `-m-2.5` at `index` is TOUCH_TARGET_COMPENSATION inside `tagText`. */
+function compensatesTouchTarget(code: string, index: number, tagText: string | undefined): boolean {
+  if (!tagText) return false;
+  // The variant prefix written right before the margin, e.g. `max-[600px]:`.
+  let start = index;
+  while (start > 0 && !/[\s'"`{}]/.test(code[start - 1])) start--;
+  const variant = code.slice(start, index);
+  if (!variant || !variant.endsWith(':')) return false;
+  const tokens = new Set(tagText.split(/[\s'"`{}()+,]+/).filter(Boolean));
+  return (
+    TOUCH_TARGET_COMPENSATION.base.every((k) => tokens.has(k)) &&
+    TOUCH_TARGET_COMPENSATION.grown.every((k) => tokens.has(`${variant}${k}`))
+  );
+}
+
+/**
  * The files the guard reads: every `.tsx` under `app/` and `components/`
  * (route handlers under `app/api/` are not UI), plus the `.ts` style modules
  * under `components/` (e.g. `components/cc/state.ts`, where class strings live).
@@ -216,13 +256,14 @@ const GROUPS: { match: (rel: string) => boolean; group: string; step: string }[]
   { match: (r) => r.startsWith('app/(app)/settings/'), group: 'settings', step: 'D.20a' },
   { match: (r) => r.startsWith('app/(app)/admin/') || r.startsWith('components/admin/'), group: 'admin', step: 'D.21' },
   {
-    // The old dashboard and what D.22c checked and kept: `Skeleton` (the
-    // analyze/design/testing stages), `ProcessStrip` (the landing showroom) and
-    // the process-states cards (their rendered spec). The orphans went in D.22c.
+    // The old dashboard and what D.22c checked and kept: `ProcessStrip` (the
+    // landing showroom) and the process-states cards (their rendered spec). The
+    // orphans went in D.22c; `Skeleton` went in D.33, its last user is on
+    // `CcSkeleton`.
     match: (r) =>
       r.startsWith('app/(app)/dashboard/') ||
       r.startsWith('components/process-states/') ||
-      ['StarterExamples', 'Skeleton', 'ProcessStrip'].some((n) => r === `components/${n}.tsx`),
+      ['StarterExamples', 'ProcessStrip'].some((n) => r === `components/${n}.tsx`),
     group: 'dashboard-legacy',
     step: 'D.22',
   },
@@ -545,6 +586,7 @@ export function scanFile(rel: string, source: string): Hit[] {
 
   // R18 — half spacing steps
   each(RE_SPACING, (m) => {
+    if (m[0] === TOUCH_TARGET_COMPENSATION.margin && compensatesTouchTarget(code, m.index, enclosingTag(m.index)?.text)) return;
     if (m[2] !== undefined) {
       const v = parseFloat(m[2]);
       if (v % 4 === 0) return;
@@ -628,7 +670,8 @@ export function scanFile(rel: string, source: string): Hit[] {
       /^(div|span|li|tr|td)$/.test(t.name) &&
       /\bonClick=/.test(t.text) &&
       !/\bdata-(?:backdrop|cc-scrim)\b/.test(t.text) &&
-      !/\brole=["']option["']/.test(t.text)
+      !/\brole=["']option["']/.test(t.text) &&
+      !(rel === TABLE_ROW_OPEN.file && t.name === 'tr' && t.text.includes(`${TABLE_ROW_OPEN.attribute}=`))
     ) {
       if (!/\brole=/.test(t.text) || !/\bonKey(?:Down|Up|Press)=/.test(t.text)) add('R9', t.start, t.text.slice(0, 100));
     }

@@ -314,18 +314,19 @@ export default function CleanCoreScorePage() {
                 ]}
                 rows={FIGURES.map((f) => ({
                   key: f.figure,
+                  emphasis: f.ours,
                   cells: {
                     figure: (
-                      <span key="figure" className="font-bold text-cc-ink">
+                      <span className="font-bold text-cc-ink">
                         {f.figure}
                         <span className="block font-cc-mono text-[11px] font-semibold uppercase tracking-wider text-cc-ink-muted">
                           {f.scale}
                         </span>
                       </span>
                     ),
-                    who: <span key="who" className="leading-relaxed text-cc-ink-muted">{f.who}</span>,
-                    direction: <span key="direction" className="whitespace-nowrap font-bold text-cc-ink">{f.direction}</span>,
-                    says: <span key="says" className="leading-relaxed text-cc-ink-muted">{f.says}</span>,
+                    who: <span className="leading-relaxed text-cc-ink-muted">{f.who}</span>,
+                    direction: <span className="whitespace-nowrap font-bold text-cc-ink">{f.direction}</span>,
+                    says: <span className="leading-relaxed text-cc-ink-muted">{f.says}</span>,
                   },
                 }))}
               />
