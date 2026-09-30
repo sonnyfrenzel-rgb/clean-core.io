@@ -9,6 +9,9 @@ import { readTableDependencies } from '../lib/abap/table-dependencies';
 import { applyRunnerVerdicts, parseTapOutput } from '../lib/test-verdicts';
 import { isUrlSafe } from '../lib/url-validation';
 import { diffResultSets } from '../lib/abap/result-diff';
+import JSZip from 'jszip';
+import { verifyAuditPack } from '../lib/audit-pack-verify';
+import { canonicalAuditManifest } from '../lib/audit-pack-canonical';
 import { generateExecutiveSummary, generateExecutiveSummaryDoc, generateModelCard } from '../lib/audit-pack';
 
 /**
@@ -173,6 +176,36 @@ test.describe('the executive summary of an audit pack', () => {
       const row = text.split('\n').find((l) => l.includes('BYOK Used')) ?? '';
       expect(row, `${what}: no key row`).not.toBe('');
       expect(row, `${what}: claims a key was used where no model was called`).toContain('Not applicable — no model was called');
+    }
+  });
+});
+
+test.describe('verifying a pack sealed in format 2', () => {
+  test('does not report success over a user-attested file whose contents it cannot check', async () => {
+    const sha = (s: string) => crypto.createHash('sha256').update(s).digest('hex');
+    const bound = { projectId: 'p-1', runId: 'r-1', runHash: 'h-1', engineVersion: 'v1.0', sapApiCatalogVersion: '2024.FPS02' };
+    const body = '# Findings\nRisk: low.';
+    const files = [{ path: 'a-findings.md', sha256: sha(body), bytes: 1 }];
+    const pack = async (attested: { path: string; provenance: 'user-attested' }[]) => {
+      const zip = new JSZip();
+      zip.file('a-findings.md', body);
+      if (attested.length) zip.file('07-user-attested.md', '# User-attested\nArchitect sign-off: given by the board.');
+      const manifestHash = sha(canonicalAuditManifest({ files, ...bound, attested, version: '2.1' }));
+      zip.file('manifest.json', JSON.stringify({ version: '2.1', ...bound, generatedAt: '2026-09-16T08:00:00.000Z', files, attested, manifestHash, signed: true, signature: 'hmac' }));
+      return zip.generateAsync({ type: 'nodebuffer' });
+    };
+    // The signing service confirms the signature — the case where only the
+    // attested file's contents are unchecked.
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response(JSON.stringify({ valid: true }), { status: 200 })) as typeof fetch;
+    try {
+      const plain = await verifyAuditPack(await pack([]));
+      expect(plain.success, 'control: a format-2 pack without an attested file').toBe(true);
+      const withAttested = await verifyAuditPack(await pack([{ path: '07-user-attested.md', provenance: 'user-attested' }]));
+      expect(withAttested.integrityValid, 'an old pack stopped verifying').toBe(true);
+      expect(withAttested.success, 'success over contents nobody sealed').toBe(false);
+    } finally {
+      globalThis.fetch = realFetch;
     }
   });
 });

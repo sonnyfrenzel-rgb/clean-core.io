@@ -125,7 +125,9 @@ test.describe('an unsigned pack is not a successful verification', () => {
     // It used to read `status === 'authentic' || status === 'integrity-only'`,
     // so a ZIP anyone could assemble — arbitrary files, matching hashes,
     // signed: false — came back success: true.
-    expect(s).toContain("const success = status === 'authentic';");
+    // And not over a user-attested file whose contents the format did not seal
+    // (tests/hardening-v220-cf.spec.ts holds that behaviour).
+    expect(s).toContain("const success = status === 'authentic' && !attestedUnbound;");
     expect(s).not.toMatch(/success\s*=\s*status === 'authentic' \|\|/);
   });
 
