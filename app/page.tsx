@@ -37,6 +37,8 @@ import AuthLink from '@/components/landing/AuthLink';
 import ViewsStage, { type StageView } from '@/components/landing/ViewsStage';
 import StageTimeline, { type TimelineStage } from '@/components/landing/StageTimeline';
 import { publicButton } from '@/components/landing/public-button';
+import HeroPreview from '@/components/landing/HeroPreview';
+import ProcessMapPanel from '@/components/landing/ProcessMapPanel';
 import CcTable from '@/components/cc/Table';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcAnchor from '@/components/cc/Anchor';
@@ -51,7 +53,8 @@ import { PROVENANCE, type ProvenanceValue } from '@/lib/provenance';
 import { PUBLIC_CLOUD_FIT_BUCKETS, PUBLIC_CLOUD_FIT_BUCKET_LABELS, PUBLIC_CLOUD_FIT_BUCKET_MEANINGS } from '@/lib/abap/public-cloud-fit';
 import { STARTER_EXAMPLES } from '@/lib/starter-examples';
 import { TRUST_CLAIMS, TRUST_PLEDGE, SECURITY_MODEL_URL, type TrustClaim } from '@/lib/trust-claims';
-import { DEMO_OBJECT_NAME, DEMO_ROUTE } from '@/lib/demo-marks';
+import { DEMO_OBJECT_NAME, DEMO_PROJECT_TITLE, DEMO_ROUTE, DEMO_SOURCE_FILE } from '@/lib/demo-marks';
+import { landingHero, landingProcess } from '@/lib/landing-process';
 import { landingShotSrc, stageShot } from '@/lib/landing-shots';
 import { landingStages } from '@/lib/landing-stages';
 import { landingShotSize } from '@/lib/landing-shot-size';
@@ -210,6 +213,8 @@ export default function Home() {
   const referenceExample = STARTER_EXAMPLES.find((e) => e.name === reference.fileName.replace(/(_\d+LOC)?\.abap$/i, '')) ?? STARTER_EXAMPLES[STARTER_EXAMPLES.length - 1];
   const demoExample = STARTER_EXAMPLES.find((e) => e.name === DEMO_OBJECT_NAME);
   const lines = (n: number) => n.toLocaleString('en-US');
+  const hero = landingHero(DEMO_SOURCE_FILE, DEMO_OBJECT_NAME);
+  const referenceProcess = landingProcess(reference.fileName, reference.fileName.replace(/(_\d+LOC)?\.abap$/i, ''));
 
   const ladder = (['A', 'B', 'C', 'D'] as const).map((level) => ({
     level,
@@ -435,9 +440,9 @@ export default function Home() {
               <p className="inline-flex items-center gap-2 rounded-full border border-cc-line bg-white px-4 py-2 text-sm font-semibold text-cc-ink-muted shadow-cc">
                 <Users size={16} className="text-cc-brand-strong" aria-hidden="true" /> Free for the SAP Community
               </p>
-              <h1 id="hero-title" className="mt-6 text-balance font-extrabold tracking-[-0.035em] text-cc-ink">
-                <span className="block text-4xl leading-[1.05] sm:text-5xl md:text-6xl">SAP Clean Core Accelerator</span>
-                <span className="mt-3 block text-2xl leading-tight text-cc-ink-muted sm:text-3xl md:text-4xl">
+              <h1 id="hero-title" className="mt-6 text-balance font-extrabold text-cc-ink">
+                <span className="block text-xl font-bold tracking-[-0.01em] text-cc-brand-strong sm:text-2xl">SAP Clean Core Accelerator</span>
+                <span className="mt-3 block text-4xl leading-[1.05] tracking-[-0.035em] sm:text-5xl md:text-6xl">
                   Understand a piece of custom ABAP and decide what happens to it.
                 </span>
               </h1>
@@ -464,12 +469,7 @@ export default function Home() {
               </p>
             </div>
             <div className="mx-auto mt-14 max-w-6xl">
-              <Shot
-                shot="hero"
-                priority
-                caption={`The demo project ${DEMO_OBJECT_NAME} in the workspace — fictitious code, captured from the product.`}
-                alt={`The workspace with the demo project ${DEMO_OBJECT_NAME} open in the Business view: the demo notice, the title with its line count and catalog version, the three views, the seven stages as tools, and the first layer.`}
-              />
+              <HeroPreview hero={hero} title={DEMO_PROJECT_TITLE} />
             </div>
           </div>
         </section>
@@ -752,19 +752,61 @@ export default function Home() {
               Clean-Core.io draws the process as BPMN from what the ABAP code does, puts a line anchor on every element,
               and names what the code cannot show instead of drawing it.
             </SectionHeader>
-            <Shot
-              shot="process"
-              caption={`The process map of the demo project, one level down — captured from the workspace.`}
-              alt={`The process map of ${DEMO_OBJECT_NAME} opened at one sub-process: levels and outline on the left, the BPMN diagram in the middle, path and overlay filters above it, and the count of elements that carry a line anchor.`}
-            />
+            <div className="mb-6 max-w-3xl">
+              <h3 className="text-xl font-bold text-cc-ink">Large processes stay readable</h3>
+              <p className="mt-2 text-base font-medium leading-relaxed text-cc-ink-muted">
+                Levels instead of zoom: the map opens as an overview, and every phase opens in place. Try it on the{' '}
+                {lines(referenceProcess.lines)}-line example — with the mouse, the keyboard, or as a list of steps.
+              </p>
+            </div>
+            <div className="overflow-hidden rounded-3xl border border-cc-line bg-cc-surface" data-landing-process="">
+              <p className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-cc-line bg-cc-surface-muted px-4 py-3 text-sm font-medium text-cc-ink-muted">
+                <span>
+                  Example <code className="font-cc-mono text-cc-ink">{referenceProcess.program}</code> · {lines(referenceProcess.lines)} lines ·{' '}
+                  {referenceProcess.planes[0].nodes.filter((n) => n.opens).length} phases on the overview · {referenceProcess.anchored} of {referenceProcess.flowNodes} flow elements carry a line anchor
+                </span>
+                <CcProvenanceChip value="reconstructed" />
+              </p>
+              <ProcessMapPanel process={referenceProcess} />
+              <ul className="m-0 flex list-none flex-col border-t border-cc-line p-0 text-sm font-medium text-cc-ink-muted">
+                {referenceProcess.notDrawn.unreached > 0 && (
+                  <li className="flex flex-wrap items-center gap-2 px-4 py-3">
+                    Not reached from any entry point: {referenceProcess.notDrawn.forms} forms
+                    {referenceProcess.notDrawn.modules > 0 ? ` and ${referenceProcess.notDrawn.modules} screen modules` : ''},{' '}
+                    {referenceProcess.notDrawn.unreachedLines} lines
+                    {referenceProcess.notDrawn.firstLine !== null && (
+                      <CcAnchor>
+                        L{referenceProcess.notDrawn.firstLine}–{referenceProcess.notDrawn.lastLine}
+                      </CcAnchor>
+                    )}
+                    — listed, not drawn.
+                  </li>
+                )}
+                {referenceProcess.notDrawn.helpers.length > 0 && (
+                  <li className="flex flex-wrap items-center gap-2 border-t border-cc-line px-4 py-3">
+                    {referenceProcess.notDrawn.helpers.length} technical helpers folded into their callers:
+                    {referenceProcess.notDrawn.helpers.map((h) => (
+                      <code key={h} className="font-cc-mono text-cc-ink">
+                        {h}
+                      </code>
+                    ))}
+                  </li>
+                )}
+              </ul>
+            </div>
+            <p className="mt-3 text-sm font-medium text-cc-ink-muted">
+              Drawn when this page was built from the BPMN 2.0 export of the example — the same shapes, positions and
+              line anchors the downloaded file carries. Names are the technical names from the code: business names come
+              from a model, and this page calls none.
+            </p>
             <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
               {[
                 { t: 'Every element points to its lines', d: 'Start and end events, tasks, decisions and sub-processes each carry a line anchor. Decisions keep their condition from the code; proposed lanes are marked as proposals, never as your organisation.' },
                 { t: 'Business rules come out of the code', d: 'Literals in conditions — tolerances, plants, vendor lists, date limits — become rule candidates with their anchor. You keep, change or drop each one.' },
-                { t: 'Large processes stay readable', d: 'Levels instead of zoom: the map opens as an overview, a sub-process opens in place, and the same content is available as a list of steps.' },
+                { t: 'Unreached code is named, not drawn', d: 'Forms no entry point calls stay off the map and are listed underneath with their lines. Identical forms are grouped, technical helpers fold into their caller.' },
                 { t: 'Leaves as a BPMN 2.0 XML file', d: 'Export the process as standard BPMN 2.0 XML; collapsed sub-processes stay real sub-processes. There is no connection to a Signavio workspace.' },
               ].map((f) => (
-                <div key={f.t} className={CARD}>
+                <div key={f.t} className="min-w-0 border-t-2 border-cc-ink pt-4">
                   <h3 className="text-base font-bold text-cc-ink">{f.t}</h3>
                   <p className="mt-2 text-sm font-medium leading-relaxed text-cc-ink-muted">{f.d}</p>
                 </div>
