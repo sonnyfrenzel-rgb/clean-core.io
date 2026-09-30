@@ -25,17 +25,24 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/*
+ * Colours are the --cc-* tokens of app/globals.css (block D, D.25b), and the
+ * sheet follows DESIGN.md §7.1: no background fills, ink on white, boxes as
+ * 1 px outlines, nothing split inside a box or a table row. The dark cover and
+ * scope panels became outlined ones for the same reason: a printer does not
+ * print a colour, and a reader forwarded the PDF should get the same page as
+ * the one who printed it. Nothing is below 8.5 pt (about 11 px, the type floor
+ * of §1.2) and nothing is heavier than 800.
+ */
 const PRINT_CSS = `
   @page {
     size: A4;
     margin: 18mm 17mm 20mm;
   }
 
-  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-
   body {
-    background: #ffffff;
-    color: #1a2433;
+    background: var(--cc-surface);
+    color: var(--cc-ink);
     font-size: 10.5pt;
     line-height: 1.52;
   }
@@ -46,30 +53,30 @@ const PRINT_CSS = `
   .cover { break-after: page; padding-top: 6mm; }
 
   .cover-band {
-    background: #0f172a;
-    color: #ffffff;
+    border: 1px solid var(--cc-line);
+    border-top: 3pt solid var(--cc-brand-strong);
     border-radius: 6mm;
     padding: 22mm 14mm 20mm;
     margin-bottom: 12mm;
   }
 
   .cover-eyebrow {
-    font-size: 7.5pt; font-weight: 900; letter-spacing: 0.18em;
-    text-transform: uppercase; color: #34d399; margin: 0 0 7mm;
+    font-size: 8.5pt; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--cc-brand-strong); margin: 0 0 7mm;
   }
 
   .cover h1 {
-    font-size: 30pt; font-weight: 900; line-height: 1.06;
-    letter-spacing: -0.025em; margin: 0 0 7mm; color: #ffffff;
+    font-size: 30pt; font-weight: 800; line-height: 1.06;
+    letter-spacing: -0.025em; margin: 0 0 7mm; color: var(--cc-ink);
   }
 
-  .cover-sub { font-size: 12pt; line-height: 1.5; color: #cbd5e1; margin: 0; font-weight: 500; }
+  .cover-sub { font-size: 12pt; line-height: 1.5; color: var(--cc-ink-muted); margin: 0; font-weight: 500; }
 
   .cover-meta {
     display: flex; flex-wrap: wrap; gap: 3mm 9mm;
-    font-size: 8pt; font-weight: 800; letter-spacing: 0.08em;
-    text-transform: uppercase; color: #64748b;
-    border-top: 0.5pt solid #cbd5e1; padding-top: 5mm;
+    font-size: 8.5pt; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--cc-ink-muted);
+    border-top: 1px solid var(--cc-line); padding-top: 5mm;
   }
 
   /* --- Structure ------------------------------------------------------ */
@@ -77,21 +84,21 @@ const PRINT_CSS = `
   .part.part-first { break-before: auto; }
 
   .part-head {
-    border-bottom: 1.5pt solid #0f172a; padding-bottom: 3.5mm; margin-bottom: 5mm;
+    border-bottom: 1.5pt solid var(--cc-ink); padding-bottom: 3.5mm; margin-bottom: 5mm;
     break-inside: avoid; break-after: avoid;
   }
 
   .part-eyebrow {
-    font-size: 7.5pt; font-weight: 900; letter-spacing: 0.16em;
-    text-transform: uppercase; color: #047857; margin: 0 0 2mm;
+    font-size: 8.5pt; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--cc-brand-strong); margin: 0 0 2mm;
   }
 
   .part-head h2 {
-    font-size: 19pt; font-weight: 900; letter-spacing: -0.02em;
-    line-height: 1.12; margin: 0 0 3mm; color: #0f172a;
+    font-size: 19pt; font-weight: 800; letter-spacing: -0.02em;
+    line-height: 1.12; margin: 0 0 3mm; color: var(--cc-ink);
   }
 
-  .part-intro { font-size: 10pt; color: #475569; margin: 0; line-height: 1.55; }
+  .part-intro { font-size: 10pt; color: var(--cc-ink-muted); margin: 0; line-height: 1.55; }
 
   /* Chapters deliberately do NOT set break-inside: avoid. Several of them are
      taller than a printed page, so an unbreakable chapter cannot be honoured —
@@ -102,16 +109,16 @@ const PRINT_CSS = `
   .chapter { margin-bottom: 6mm; }
 
   .chapter h3 {
-    font-size: 13pt; font-weight: 900; letter-spacing: -0.015em;
-    line-height: 1.25; margin: 0 0 3mm; color: #0f172a;
+    font-size: 13pt; font-weight: 800; letter-spacing: -0.015em;
+    line-height: 1.25; margin: 0 0 3mm; color: var(--cc-ink);
     break-inside: avoid; break-after: avoid;
   }
 
-  .chapter h3 .num { color: #047857; margin-right: 2.5mm; }
+  .chapter h3 .num { color: var(--cc-brand-strong); margin-right: 2.5mm; }
 
   .lede {
-    font-size: 11pt; font-weight: 700; line-height: 1.5; color: #0f172a;
-    border-left: 1.5pt solid #10b981; padding-left: 5mm; margin: 0 0 4mm;
+    font-size: 11pt; font-weight: 700; line-height: 1.5; color: var(--cc-ink);
+    border-left: 1.5pt solid var(--cc-brand); padding-left: 5mm; margin: 0 0 4mm;
     break-inside: avoid; break-after: avoid;
   }
 
@@ -125,19 +132,19 @@ const PRINT_CSS = `
      column itself takes. */
   .def {
     break-inside: avoid; display: grid; grid-template-columns: 37mm 1fr;
-    gap: 0 5mm; padding: 1.5mm 0; border-bottom: 0.4pt solid #e8edf3;
+    gap: 0 5mm; padding: 1.5mm 0; border-bottom: 1px solid var(--cc-line);
   }
 
   .def:last-child { border-bottom: 0; }
-  .def dt { font-weight: 800; color: #0f172a; font-size: 9pt; line-height: 1.4; }
-  .def dd { margin: 0; color: #475569; font-size: 9pt; line-height: 1.42; }
+  .def dt { font-weight: 800; color: var(--cc-ink); font-size: 9pt; line-height: 1.4; }
+  .def dd { margin: 0; color: var(--cc-ink-muted); font-size: 9pt; line-height: 1.42; }
 
   /* --- Tables ---------------------------------------------------------- */
   figure { margin: 5mm 0 0; break-inside: avoid; }
 
   figcaption {
-    font-size: 7.5pt; font-weight: 900; letter-spacing: 0.13em;
-    text-transform: uppercase; color: #94a3b8; margin-bottom: 2.5mm;
+    font-size: 8.5pt; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--cc-ink-muted); margin-bottom: 2.5mm;
   }
 
   table { width: 100%; border-collapse: collapse; font-size: 9pt; }
@@ -145,123 +152,120 @@ const PRINT_CSS = `
   thead { display: table-header-group; }
 
   th {
-    text-align: left; font-size: 7.5pt; font-weight: 900; letter-spacing: 0.1em;
-    text-transform: uppercase; color: #64748b; background: #f4f7fa;
-    padding: 2.4mm 3mm; border-bottom: 0.6pt solid #cbd5e1;
+    text-align: left; font-size: 8.5pt; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--cc-ink-muted);
+    padding: 2.4mm 3mm; border-bottom: 1px solid var(--cc-ink-muted);
   }
 
   td {
     padding: 2.6mm 3mm; vertical-align: top; line-height: 1.45;
-    border-bottom: 0.4pt solid #e8edf3; color: #475569;
+    border-bottom: 1px solid var(--cc-line); color: var(--cc-ink-muted);
   }
 
-  td:first-child { font-weight: 700; color: #0f172a; }
+  td:first-child { font-weight: 700; color: var(--cc-ink); }
   tr { break-inside: avoid; }
 
   /* --- Margin notes ----------------------------------------------------- */
+  /* Each kind carries its word (the label) and a coloured edge; on a printer
+     without colour the word is what tells them apart (§7.1). */
   .note {
     break-inside: avoid; margin: 3.5mm 0 0; padding: 3.5mm 4.5mm;
-    border-radius: 3mm; border: 0.5pt solid #d7dee7; background: #f7f9fb;
+    border-radius: 3mm; border: 1px solid var(--cc-line); border-left: 3pt solid var(--cc-neutral);
   }
 
   .note-label {
-    font-size: 7pt; font-weight: 900; letter-spacing: 0.13em;
-    text-transform: uppercase; margin: 0 0 1.5mm; color: #64748b;
+    font-size: 8.5pt; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; margin: 0 0 1.5mm; color: var(--cc-neutral);
   }
 
-  .note-title { font-size: 9.5pt; font-weight: 800; margin: 0 0 1mm; color: #0f172a; }
-  .note-text { font-size: 9.5pt; margin: 0; color: #475569; line-height: 1.5; }
+  .note-title { font-size: 9.5pt; font-weight: 800; margin: 0 0 1mm; color: var(--cc-ink); }
+  .note-text { font-size: 9.5pt; margin: 0; color: var(--cc-ink-muted); line-height: 1.5; }
 
-  .note-remember { background: #f0fdf5; border-color: #b6e6cd; }
-  .note-remember .note-label, .note-remember .note-title { color: #05603a; }
-  .note-remember .note-text { color: #14614a; }
+  .note-remember { border-left-color: var(--cc-brand-strong); }
+  .note-remember .note-label { color: var(--cc-brand-strong); }
 
-  .note-tip { background: #f0f7ff; border-color: #bcd9f5; }
-  .note-tip .note-label, .note-tip .note-title { color: #0b4a86; }
-  .note-tip .note-text { color: #1b5486; }
+  .note-tip { border-left-color: var(--cc-information); }
+  .note-tip .note-label { color: var(--cc-information); }
 
-  .note-warning { background: #fffbeb; border-color: #f2ddab; }
-  .note-warning .note-label, .note-warning .note-title { color: #92610a; }
-  .note-warning .note-text { color: #8a5f14; }
+  .note-warning { border-left-color: var(--cc-warning-line); }
+  .note-warning .note-label { color: var(--cc-warning); }
 
-  .note-jargon { background: #f0fdf9; border-color: #b3e5d8; }
-  .note-jargon .note-label, .note-jargon .note-title { color: #0a5b4c; }
-  .note-jargon .note-text { color: #17604f; }
+  .note-jargon { border-left-color: var(--cc-ink-muted); }
+  .note-jargon .note-label { color: var(--cc-ink-muted); }
 
   /* --- Contents --------------------------------------------------------- */
   .toc { break-after: page; }
-  .toc h2 { font-size: 15pt; font-weight: 900; margin: 0 0 6mm; color: #0f172a; }
+  .toc h2 { font-size: 15pt; font-weight: 800; margin: 0 0 6mm; color: var(--cc-ink); }
 
   .toc-row {
     display: grid; grid-template-columns: 17mm 1fr; gap: 0 4mm;
-    padding: 2.8mm 0; border-bottom: 0.4pt solid #e8edf3;
+    padding: 2.8mm 0; border-bottom: 1px solid var(--cc-line);
   }
 
   .toc-row span:first-child {
-    font-size: 7.5pt; font-weight: 900; letter-spacing: 0.11em;
-    text-transform: uppercase; color: #94a3b8; padding-top: 0.7mm;
+    font-size: 8.5pt; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--cc-ink-muted); padding-top: 0.7mm;
   }
 
-  .toc-row span:last-child { font-weight: 800; font-size: 10.5pt; color: #0f172a; }
-  .toc-row em { display: block; font-style: normal; font-weight: 400; font-size: 9pt; color: #64748b; margin-top: 0.8mm; }
+  .toc-row span:last-child { font-weight: 800; font-size: 10.5pt; color: var(--cc-ink); }
+  .toc-row em { display: block; font-style: normal; font-weight: 400; font-size: 9pt; color: var(--cc-ink-muted); margin-top: 0.8mm; }
 
   /* --- Answer box ------------------------------------------------------- */
   .answer {
-    border: 0.8pt solid #a7e3c4; background: #f2fdf7;
-    border-radius: 4mm; padding: 7mm 8mm; margin-bottom: 9mm;
+    border: 1px solid var(--cc-line); border-left: 3pt solid var(--cc-brand-strong);
+    border-radius: 4mm; padding: 7mm 8mm; margin-bottom: 9mm; break-inside: avoid;
   }
 
   .answer .part-eyebrow { margin-bottom: 3mm; }
-  .answer p:first-of-type { font-size: 12.5pt; font-weight: 800; line-height: 1.36; color: #0b2c1e; margin: 0 0 4mm; }
-  .answer p:last-child { margin: 0; color: #2a5646; font-size: 10pt; }
+  .answer p:first-of-type { font-size: 12.5pt; font-weight: 800; line-height: 1.36; color: var(--cc-ink); margin: 0 0 4mm; }
+  .answer p:last-child { margin: 0; color: var(--cc-ink-muted); font-size: 10pt; }
 
   /* --- Capability cards -------------------------------------------------- */
-  .cap { break-inside: avoid; margin-bottom: 7mm; padding-bottom: 6mm; border-bottom: 0.5pt solid #e8edf3; }
+  .cap { break-inside: avoid; margin-bottom: 7mm; padding-bottom: 6mm; border-bottom: 1px solid var(--cc-line); }
   .cap:last-of-type { border-bottom: 0; }
 
   .cap-head { margin-bottom: 3mm; }
 
   .cap-stage {
-    font-size: 7pt; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase;
-    color: #047857; border: 0.5pt solid #a7e3c4; background: #f2fdf7;
+    font-size: 8.5pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--cc-brand-strong); border: 1px solid var(--cc-brand-strong);
     padding: 1mm 2.5mm; border-radius: 2mm; margin-right: 3mm;
   }
 
-  .cap-head h3 { display: inline; font-size: 12pt; font-weight: 900; color: #0f172a; }
-  .cap-output { margin: 0 0 4mm; color: #334155; }
+  .cap-head h3 { display: inline; font-size: 12pt; font-weight: 800; color: var(--cc-ink); }
+  .cap-output { margin: 0 0 4mm; color: var(--cc-ink); }
 
   .cap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; }
 
-  .cap-cell { border-radius: 2.5mm; padding: 3.2mm 3.5mm; font-size: 8.5pt; line-height: 1.45; }
+  .cap-cell {
+    border-radius: 2.5mm; padding: 3.2mm 3.5mm; font-size: 8.5pt; line-height: 1.45;
+    border: 1px solid var(--cc-line); color: var(--cc-ink-muted); break-inside: avoid;
+  }
   .cap-cell p { margin: 0; }
 
   .cap-cell .k {
-    display: block; font-size: 7pt; font-weight: 900; letter-spacing: 0.12em;
-    text-transform: uppercase; margin-bottom: 1.2mm;
+    display: block; font-size: 8.5pt; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; margin-bottom: 1.2mm; color: var(--cc-ink-muted);
   }
 
-  .cap-benefit { background: #f2fdf7; border: 0.4pt solid #b6e6cd; color: #14614a; }
-  .cap-benefit .k { color: #05603a; }
-  .cap-effort { background: #f6f8fa; border: 0.4pt solid #dde4ec; color: #4b5a6b; }
-  .cap-effort .k { color: #64748b; }
-  .cap-limit { background: #fffbeb; border: 0.4pt solid #f2ddab; color: #8a5f14; }
-  .cap-limit .k { color: #92610a; }
+  .cap-benefit { border-top: 2pt solid var(--cc-brand-strong); }
+  .cap-benefit .k { color: var(--cc-brand-strong); }
+  .cap-effort { border-top: 2pt solid var(--cc-ink-muted); }
+  .cap-limit { border-top: 2pt solid var(--cc-warning-line); }
+  .cap-limit .k { color: var(--cc-warning); }
 
   /* --- Scope + colophon --------------------------------------------------- */
-  .scope { background: #0f172a; color: #e2e8f0; border-radius: 5mm; padding: 8mm 9mm; break-inside: avoid; }
-  .scope h3 { color: #ffffff; font-size: 13pt; font-weight: 900; margin: 0 0 2mm; }
-  .scope > p { color: #94a3b8; font-size: 9pt; margin: 0 0 5mm; }
-  .scope .def { border-bottom-color: #24334a; }
-  .scope .def dt { color: #ffffff; }
-  .scope .def dd { color: #b6c2d2; }
+  .scope { border: 1.5pt solid var(--cc-ink); border-radius: 5mm; padding: 8mm 9mm; break-inside: avoid; }
+  .scope h3 { color: var(--cc-ink); font-size: 13pt; font-weight: 800; margin: 0 0 2mm; }
+  .scope > p { color: var(--cc-ink-muted); font-size: 9pt; margin: 0 0 5mm; }
 
   .colophon {
-    margin-top: 7mm; padding-top: 4mm; border-top: 0.5pt solid #cbd5e1;
-    font-size: 8.5pt; color: #64748b; line-height: 1.55; break-inside: avoid;
+    margin-top: 7mm; padding-top: 4mm; border-top: 1px solid var(--cc-line);
+    font-size: 8.5pt; color: var(--cc-ink-muted); line-height: 1.55; break-inside: avoid;
   }
 
-  .colophon strong { color: #0f172a; }
-  a { color: #047857; text-decoration: none; }
+  .colophon strong { color: var(--cc-ink); }
+  a { color: var(--cc-brand-strong); text-decoration: underline; text-underline-offset: 2px; }
 `;
 
 const NOTE_CLASS: Record<string, string> = {
@@ -379,7 +383,10 @@ export default function CleanCoreExplainedPrintPage() {
                 {ch.table && (
                   <figure>
                     <figcaption>{ch.table.caption}</figcaption>
-                    <table>
+                    {/* `doc-table`: the long-form document table of /clean-core-explained
+                        (app/globals.css), labelled cells included, so a narrow
+                        screen restacks it the same way. */}
+                    <table className="doc-table">
                       <thead>
                         <tr>
                           {ch.table.head.map((h) => (
@@ -391,7 +398,7 @@ export default function CleanCoreExplainedPrintPage() {
                         {ch.table.rows.map((row, i) => (
                           <tr key={i}>
                             {row.map((cell, j) => (
-                              <td key={j}>{cell}</td>
+                              <td key={j} data-label={ch.table!.head[j]}>{cell}</td>
                             ))}
                           </tr>
                         ))}
