@@ -1,4 +1,5 @@
 import { marked } from 'marked';
+import type { DOMPurify } from 'dompurify';
 
 /**
  * Sanitizer for untrusted / AI-generated markdown and HTML (audit P1 XSS).
@@ -48,11 +49,11 @@ const OUTBOUND_CSS = /\\|@import|(?:image-set|image|cross-fade|src)\s*\(|url\s*\
  * config forbids `style` elements and attributes altogether, so for it they
  * never find anything to decide.
  */
-function addStyleHooks(purify: any): void {
-  purify.addHook('uponSanitizeElement', (node: Element, data: { tagName: string }) => {
+function addStyleHooks(purify: DOMPurify): void {
+  purify.addHook('uponSanitizeElement', (node, data) => {
     if (data.tagName === 'style' && OUTBOUND_CSS.test(node.textContent || '')) node.textContent = '';
   });
-  purify.addHook('uponSanitizeAttribute', (_node: Element, data: { attrName: string; attrValue: string; keepAttr: boolean }) => {
+  purify.addHook('uponSanitizeAttribute', (_node, data) => {
     if (data.attrName === 'style' && OUTBOUND_CSS.test(data.attrValue || '')) data.keepAttr = false;
   });
 }
