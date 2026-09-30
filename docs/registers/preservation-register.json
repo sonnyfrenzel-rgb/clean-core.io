@@ -463,7 +463,8 @@
           {
             "field": "worklist",
             "from": "project",
-            "why": "the editable gaps worklist"
+            "via": "buildAnalysisExportHtml",
+            "why": "the editable gaps worklist (components/analyze/GapsWorklist.tsx, from the project prop) and the Confluence export, which lib/analysis-export.ts builds since D.28"
           },
           {
             "field": "usageReport",
