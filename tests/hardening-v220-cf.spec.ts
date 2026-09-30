@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { withPreviewPolicy } from '../lib/export-preview';
 import { getPublishedKeyring, resetSigningKeypairCache } from '../lib/audit-signing-keypair';
+import { buildAbapEvidence } from '../lib/abap/evidence-model';
 
 /**
  * Hardening that shipped with the v2.20 security steps C and F.
@@ -88,6 +89,29 @@ test.describe('the list of retired signing keys', () => {
         else process.env[v] = previous[i];
       });
       resetSigningKeypairCache();
+    }
+  });
+});
+
+test.describe('credentials quoted from the source', () => {
+  test('are removed from every field of a finding that quotes the source', () => {
+    const google = 'AIzaSyD4k3yF0rT3stPurp0s3s0nlyXYZ12345';
+    const aws = 'AKIAIOSFODNN7EXAMPLE';
+    const jwt = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U';
+    const source = [
+      'REPORT zdemo.',
+      "DATA lv_url TYPE string VALUE 'HTTPS://svc:s3cr3tpass@host.example/x?password=hunter2'.",
+      `CALL TRANSACTION '${google}'.`,
+      `CALL TRANSACTION '${aws}'.`,
+      `CALL FUNCTION 'Z_REMOTE' DESTINATION '${jwt}'.`,
+    ].join('\n');
+    const report = buildAbapEvidence(source, 'zdemo.abap');
+    const kinds = report.findings.map((f) => f.kind);
+    // Not vacuous: the statements that quote the secrets did produce findings.
+    expect(kinds).toEqual(expect.arrayContaining(['bdc', 'rfc-call', 'hardcoded-value']));
+    const printed = JSON.stringify(report.findings);
+    for (const secret of ['s3cr3tpass', 'hunter2', google.slice(6), google.slice(6).toUpperCase(), aws.slice(4), jwt.split('.')[1]]) {
+      expect(printed, `a credential survived in a finding: ${secret.slice(0, 6)}…`).not.toContain(secret);
     }
   });
 });

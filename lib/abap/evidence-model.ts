@@ -149,12 +149,24 @@ const ROUTE_NOTE: Partial<Record<DependencyRoute, string>> = {
 export function redactCredentials(snippet: string | undefined): string {
   if (!snippet) return snippet ?? '';
   return snippet
+    // A private key block, whole — or from its header to the end of the text
+    // when the source splits it over several literals.
+    .replace(/-----BEGIN ([A-Z ]*)PRIVATE KEY-----[\s\S]*?(?:-----END \1PRIVATE KEY-----|$)/g, '-----BEGIN $1PRIVATE KEY-----…<redacted>')
     // Google API keys (AIzaSy…), the shape the credential detector reports.
-    .replace(/\bAIzaSy[0-9A-Za-z_\-]{10,}/g, 'AIzaSy…<redacted>')
+    // Case-blind: a key that became a transaction code was upper-cased on the way.
+    .replace(/\bAIzaSy[0-9A-Za-z_\-]{10,}/gi, 'AIzaSy…<redacted>')
     // Bearer-ish and generic long secrets behind an obvious key word.
-    .replace(/\b(sk-|ghp_|gho_|github_pat_)[0-9A-Za-z_\-]{10,}/g, '$1…<redacted>')
-    // A password or token assigned to a literal in ABAP.
-    .replace(/\b(PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY)\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']{4,})'/gi,
+    .replace(/\b(sk-|sk_live_|rk_live_|ghp_|gho_|ghs_|github_pat_|xox[abprs]-|glpat-)[0-9A-Za-z_\-]{10,}/g, '$1…<redacted>')
+    // AWS access key ids.
+    .replace(/\b(AKIA|ASIA)[0-9A-Z]{16}\b/g, '$1…<redacted>')
+    // A JSON Web Token: three base64url parts, the first a JSON header.
+    .replace(/\beyJ[0-9A-Za-z_\-]{8,}\.[0-9A-Za-z_\-]{8,}\.[0-9A-Za-z_\-]{8,}/g, 'eyJ…<redacted>')
+    // A password inside a connection string or URL.
+    .replace(/\b(password|passwd|pwd)=([^;&'"\s]+)/gi, '$1=…<redacted>')
+    .replace(/(\/\/[^\s/:@'"]+):([^\s/@'"]+)@/g, '$1:…<redacted>@')
+    // A password or token assigned to a literal in ABAP — of any length: a short
+    // secret is still a secret.
+    .replace(/\b(PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY)\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi,
       (_m, word, mid) => `${word}${mid}'…<redacted>'`);
 }
 
@@ -198,6 +210,12 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
       // statements, so it never saw the case). One gate means a detector added
       // next year is covered without anyone remembering this paragraph.
       snippet: redactCredentials(finding.snippet),
+      // The snippet is not the only field that quotes the source: a title names
+      // the transaction or function a literal called, and the object name can
+      // be the file name. Same gate, same reason.
+      title: redactCredentials(finding.title),
+      ...(finding.objectName !== undefined ? { objectName: redactCredentials(finding.objectName) } : {}),
+      technicalDetail: redactCredentials(finding.technicalDetail),
       id: `CC-${String(idCounter++).padStart(3, '0')}`,
       // Default source: 'static-parser' for all scanner findings.
       // Upgraded to 'catalog-match' when a sapReplacement is present.
