@@ -113,6 +113,8 @@ Stelle im Code, die an Resend sendet, als Typ vorkommt.
 
 ## Fertig im Sinne von 3.0.9
 
-Der Seed-Test landet bei allen vier Anbietern im Posteingang und Google
-Postmaster nennt die Domain-Reputation nicht „schlecht" — geprüft vor jedem
-Versand, nicht einmal (`docs/ROADMAP.md`, Zeile 3.0.9).
+Entscheidung Sonny, 30.09.2026: keine CSA-Zertifizierung, T-Online entfällt. Der Seed-Test landet bei **Gmail
+und Microsoft (Microsoft 365 und Outlook.com)** im Posteingang, und Google Postmaster nennt die Domain-Reputation
+nicht „schlecht" — geprüft vor jedem Versand, nicht einmal (`docs/ROADMAP.md`, Zeile 3.0.9). **GMX/web.de** wird
+in jedem Lauf mitgemessen und berichtet, blockiert aber nicht (bekannte Einschränkung; Hebel: Zeit, niedriges
+gleichmäßiges Volumen, Absender in die Kontakte).
