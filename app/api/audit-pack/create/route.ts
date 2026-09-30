@@ -412,7 +412,9 @@ export async function POST(req: NextRequest) {
     if (error?.status === 429 || error?.statusCode === 429) {
       return NextResponse.json({ error: error.message }, { status: 429 });
     }
+    // The cause is in the log line above; the caller gets a fixed sentence, as
+    // the other routes do — an internal error's text can carry server detail.
     logger.error('audit-pack/create failed', { route: 'api/audit-pack/create', error: errMessage(error) });
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'The audit pack could not be created.' }, { status: 500 });
   }
 }

@@ -180,6 +180,33 @@ test.describe('the executive summary of an audit pack', () => {
   });
 });
 
+test.describe('an internal error answered by a route', () => {
+  test('reaches the caller as a fixed sentence, never as the error text', () => {
+    const routes: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+        const rel = `${dir}/${entry.name}`;
+        if (entry.isDirectory()) walk(rel);
+        else if (entry.name === 'route.ts') routes.push(rel);
+      }
+    };
+    walk('app/api');
+    expect(routes.length).toBeGreaterThan(30);
+    // The seeding route of the test suite answers 404 on Cloud Run and behind two
+    // more gates everywhere else; its error text is what a failing spec prints.
+    const TEST_ONLY = new Set(['app/api/test/seed/route.ts']);
+    const offenders: string[] = [];
+    for (const rel of routes.filter((r) => !TEST_ONLY.has(r))) {
+      const src = read(rel);
+      for (let at = src.indexOf('status: 500'); at >= 0; at = src.indexOf('status: 500', at + 1)) {
+        const call = src.slice(src.lastIndexOf('NextResponse.json(', at), at);
+        if (/\b\w+\??\.message\b/.test(call)) offenders.push(`${rel}:${src.slice(0, at).split('\n').length}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+});
+
 test.describe('verifying a pack sealed in format 2', () => {
   test('does not report success over a user-attested file whose contents it cannot check', async () => {
     const sha = (s: string) => crypto.createHash('sha256').update(s).digest('hex');
