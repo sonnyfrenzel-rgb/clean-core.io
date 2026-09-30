@@ -96,7 +96,6 @@ import { getRunCapabilities } from '@/lib/run-capabilities';
 import type { UsageReport as UsageReportType } from '@/lib/abap/usage-model';
 import type { AtcReport as AtcReportType } from '@/lib/abap/atc-model';
 
-import { DocumentSkeleton } from '@/components/Skeleton';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps } from '@/lib/workflow-steps';

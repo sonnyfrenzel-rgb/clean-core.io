@@ -58,10 +58,13 @@ const CHECK_ONLY = process.argv.includes('--check');
 
 /**
  * Chromium renders header and footer in an isolated document with a 10px default,
- * so the styling has to be inline and self-contained here.
+ * so the styling has to be inline and self-contained here — the CSS variables
+ * of `app/globals.css` do not exist in it, so the colour is written out as the
+ * value of `--cc-ink-muted` (#4b5563, 7.6 : 1 on white). 11 px is DESIGN.md
+ * §1.2's floor; the footer used to be 7 pt (9.3 px) in #94a3b8 (2.6 : 1) (D.33).
  */
 const FOOTER = `
-  <div style="width:100%; font-family: Inter, Arial, sans-serif; font-size:7pt; color:#94a3b8;
+  <div style="width:100%; font-family: Inter, Arial, sans-serif; font-size:11px; color:#4b5563;
               padding:0 17mm; display:flex; justify-content:space-between; align-items:center;">
     <span>clean-core.io/clean-core-explained</span>
     <span><span class="pageNumber"></span> / <span class="totalPages"></span></span>

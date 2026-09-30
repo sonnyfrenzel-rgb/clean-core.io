@@ -29,8 +29,8 @@ export interface CcObjectIdentifierProps {
 
 export default function CcObjectIdentifier({ title, identifier, meta }: CcObjectIdentifierProps) {
   return (
-    <span data-cc-object-identifier="" className="flex min-w-0 flex-col gap-0.5">
-      <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+    <span data-cc-object-identifier="" className="flex min-w-0 flex-col gap-1">
+      <span className="flex min-w-0 flex-wrap items-center gap-2">
         <span data-cc-object-identifier-title="" className="text-[13px] font-semibold text-cc-ink">
           {title}
         </span>

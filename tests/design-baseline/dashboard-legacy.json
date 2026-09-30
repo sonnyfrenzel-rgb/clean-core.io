@@ -1,17 +1,5 @@
 {
   "$comment": "Ceilings of tests/design-source-guard.spec.ts for this group: per file and rule, the count may not rise, and when it falls the ceiling must fall in the same commit. Lower with `npm run design:baseline -- --group <group>`; never raise by hand. Rules: tests/helpers/design-rules.ts. Plan: Block D, luecken-und-plan.md §4.",
   "group": "dashboard-legacy",
-  "files": {
-    "components/Skeleton.tsx": {
-      "step": "D.22",
-      "R4": 3,
-      "R12": 1,
-      "R13": 1
-    },
-    "components/process-states/StateChoice.tsx": {
-      "step": "D.22",
-      "R7": 1,
-      "R18": 1
-    }
-  }
+  "files": {}
 }

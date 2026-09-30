@@ -39,7 +39,6 @@ const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false }
 const TestingPieChart = nextDynamic(() => import('@/components/TestingCharts').then(mod => mod.TestingPieChart), { ssr: false });
 const TestingBarChart = nextDynamic(() => import('@/components/TestingCharts').then(mod => mod.TestingBarChart), { ssr: false });
 
-import { ProjectSkeleton } from '@/components/Skeleton';
 
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { saveAs } from '@/lib/fileSaver';

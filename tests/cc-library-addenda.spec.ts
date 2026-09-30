@@ -314,3 +314,40 @@ test.describe('a layer open on the very first render', () => {
     });
   }
 });
+
+test.describe('CcTable from a server component (D.33)', () => {
+  test('cells need no key of their own, and the row the page is about is set apart in ink', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    const errors: string[] = [];
+    page.on('console', (m) => {
+      if (m.type() === 'error') errors.push(m.text());
+    });
+    // /clean-core-score is a server component that hands CcTable its cells;
+    // before D.33 every one of them had to carry a key nobody used.
+    await page.goto('/clean-core-score', { waitUntil: 'networkidle', timeout: 180_000 });
+    const table = page.locator('[data-cc-table]').first();
+    await expect(table).toBeVisible();
+    expect(errors.filter((e) => /unique "key" prop/.test(e)), 'React asked for a key').toEqual([]);
+    expect(read('app/(app)/clean-core-score/page.tsx'), 'the page works around the table again').not.toMatch(/<span key="/);
+
+    const ours = table.locator('[data-cc-table-emphasis]');
+    await expect(ours).toHaveCount(1);
+    await expect(ours).toContainText('Clean Core Score');
+    const look = await ours.evaluate((el) => {
+      const probe = document.createElement('div');
+      probe.style.color = 'var(--cc-ink)';
+      probe.style.background = 'var(--cc-surface-muted)';
+      document.body.appendChild(probe);
+      const tokens = { ink: getComputedStyle(probe).color, muted: getComputedStyle(probe).backgroundColor };
+      probe.remove();
+      return {
+        ...tokens,
+        background: getComputedStyle(el).backgroundColor,
+        bar: getComputedStyle(el.querySelector('td')!).boxShadow,
+      };
+    });
+    // Ours is not a proof, so never the green of "evidenced" (§1.1, ADR-007).
+    expect(look.background).toBe(look.muted);
+    expect(look.bar).toContain(look.ink);
+  });
+});

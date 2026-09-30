@@ -75,7 +75,7 @@ export default function CcProvenanceChip({ value, note }: CcProvenanceChipProps)
       data-cc-form={entry.form}
       title={entry.meaning}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2 py-px align-middle',
+        'inline-flex items-center gap-1 rounded-full border px-2 py-px align-middle',
         'text-[11px] font-semibold leading-4 whitespace-nowrap',
         state.text,
         entry.form === 'filled' ? cn(state.bg, state.border) : state.borderStrong,
