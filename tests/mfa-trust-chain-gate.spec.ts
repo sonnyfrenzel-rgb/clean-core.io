@@ -151,22 +151,32 @@ const docsOf = async (ref: FirebaseFirestore.CollectionReference) => {
     .sort(([a], [b]) => a.localeCompare(b));
 };
 
+/**
+ * Every subcollection under a document, whatever it is called. Naming `runs`
+ * and `audit_packs` left out the rest — invitations, drafts, decisions — so a
+ * route that wrote one of those and then refused compared equal (QA full review
+ * of fc787674705f, 6e489eeeee7c). Listed, not enumerated, so a subcollection
+ * added later is in the snapshot without anyone remembering to add it.
+ */
+const subcollectionsOf = async (ref: FirebaseFirestore.DocumentReference) => {
+  const collections = (await ref.listCollections()).sort((a, b) => a.id.localeCompare(b.id));
+  return Promise.all(collections.map(async (c) => [c.id, await docsOf(c)] as const));
+};
+
 async function storedState(projectId: string) {
   const project = db().collection('projects').doc(projectId);
-  const [user, creds, gemini, runs, packs, projectDoc] = await Promise.all([
+  const [user, creds, gemini, subcollections, projectDoc] = await Promise.all([
     db().collection('users').doc(uid).get(),
     db().collection('s4_credentials').doc(uid).get(),
     db().collection('user_secrets').doc(uid).collection('providers').doc('gemini').get(),
-    docsOf(project.collection('runs')),
-    docsOf(project.collection('audit_packs')),
+    subcollectionsOf(project),
     project.get(),
   ]);
   return JSON.stringify(stable({
     user: user.data() ?? null,
     creds: creds.data() ?? null,
     gemini: gemini.data() ?? null,
-    runs,
-    packs,
+    subcollections,
     project: projectDoc.data() ?? null,
   }));
 }

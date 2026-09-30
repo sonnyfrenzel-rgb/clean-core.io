@@ -14,8 +14,9 @@
 
 import type { Page } from '@playwright/test';
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './admin-seed';
+import { connectAuthToEmulator, requireEmulator } from './emulator-guard';
 import firebaseConfig from '../../firebase-config.json';
 
 export const GALLERY_PATH = '/admin/design-system';
@@ -43,13 +44,13 @@ export async function createGalleryAdmin(prefix: string): Promise<GalleryAdmin> 
   const email = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@cleancore-test.io`;
   const password = 'DesignSystem123!';
 
+  // Fail closed before anything else: `firebase-config.json` names the real
+  // project, and swallowing every error of `connectAuthEmulator` let an Auth
+  // instance that was never connected go on to create the account there (QA
+  // full review of fc787674705f, bad0b5e20d90).
+  requireEmulator();
   const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  try {
-    connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-  } catch {
-    /* already connected */
-  }
+  const auth = connectAuthToEmulator(getAuth(app));
 
   const cred = await createUserWithEmailAndPassword(auth, email, password);
   const uid = cred.user.uid;

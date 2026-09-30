@@ -39,7 +39,7 @@ function walk(dir: string, out: string[] = []): string[] {
       walk(full, out);
       continue;
     }
-    if (/\.(ts|tsx|mjs|js)$/.test(entry.name)) out.push(full);
+    if (/\.(ts|tsx|mjs|cjs|js|ya?ml|sh)$/.test(entry.name)) out.push(full);
   }
   return out;
 }
@@ -47,7 +47,11 @@ function walk(dir: string, out: string[] = []): string[] {
 test.describe('the audit signing key has no fallback', () => {
   test('the retired constant appears nowhere in the tree', () => {
     const offenders: string[] = [];
-    for (const dir of ['app', 'lib', 'tests', 'scripts', 'components']) {
+    // `.github` too: a deploy step that supplies the retired key as a fallback
+    // is the same regression as a route that does (QA full review of
+    // fc787674705f, 56b8f20c704e). `walk` skips dot-directories below the root
+    // it is given, so the workflows are named as a root of their own.
+    for (const dir of ['app', 'lib', 'tests', 'scripts', 'components', '.github']) {
       const abs = path.join(ROOT, dir);
       if (!fs.existsSync(abs)) continue;
       for (const file of walk(abs)) {
