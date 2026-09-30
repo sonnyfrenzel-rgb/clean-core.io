@@ -5,7 +5,7 @@ import { FileCode2, Layers, Search, FileType, AlertTriangle, Check, Box, Plug, C
 import { formatNumber } from '@/lib/format';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcWhyPopover from '@/components/cc/WhyPopover';
-import { SupportLevelMark } from './CoverageVerdict';
+import SupportLevelMark from './SupportLevelMark';
 import type { SupportFinding } from '@/lib/abap/class-model';
 import { detectFindings, summarize } from '@/lib/abap/findings-detector';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';

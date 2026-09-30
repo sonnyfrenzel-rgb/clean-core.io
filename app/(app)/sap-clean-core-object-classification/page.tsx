@@ -101,7 +101,7 @@ export default function CleanCoreClassificationPage() {
             </p>
             <div className="space-y-4 pt-2">
               {GRADES.map((g) => (
-                <div key={g} className="p-5 border rounded-2xl flex items-start gap-4" style={{ borderColor: `${ABCD_META[g].color}33`, background: `${ABCD_META[g].color}0d` }}>
+                <div key={g} className="p-5 border border-cc-line bg-cc-surface rounded-2xl flex items-start gap-4">
                   <span className={`shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl text-lg font-black border ${ABCD_META[g].badge}`}>{g}</span>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">

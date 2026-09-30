@@ -1,4 +1,5 @@
 import type { Project } from '@/lib/types';
+import { formatIsoDate } from '@/lib/format';
 import type { ObjectStatusValue } from '@/lib/object-status';
 import { staleness, workflowSteps, workflowSummary } from '@/lib/workflow-steps';
 
@@ -103,19 +104,17 @@ export function projectStale(project: Project | null | undefined): { note: strin
   return null;
 }
 
-/** Firestore timestamp, `Date`, or ISO string → the ISO date §3 asks for in a table. */
+/**
+ * Firestore timestamp, `Date`, or ISO string → the ISO date §3 asks for in a
+ * table. Delegates to `formatIsoDate` in `lib/format.ts` (block D, D.29), the
+ * one place that turns a moment into "2026-09-15", so the list report and every
+ * other table print the same day for the same instant. A falsy value (nothing
+ * recorded, or a zero that is not a date anyone wrote) stays `null` here, as it
+ * always did.
+ */
 export function isoDate(value: unknown): string | null {
   if (!value) return null;
-  const asDate =
-    typeof (value as { toDate?: () => Date })?.toDate === 'function'
-      ? (value as { toDate: () => Date }).toDate()
-      : value instanceof Date
-        ? value
-        : typeof value === 'string' || typeof value === 'number'
-          ? new Date(value)
-          : null;
-  if (!asDate || Number.isNaN(asDate.getTime())) return null;
-  return asDate.toISOString().slice(0, 10);
+  return formatIsoDate(value);
 }
 
 export function toWorkspaceRow(project: Project & { id: string }): WorkspaceRow {

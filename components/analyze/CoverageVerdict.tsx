@@ -1,52 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { CircleAlert, CircleHelp, CircleCheck, CircleX } from 'lucide-react';
+import { CircleHelp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SupportFinding } from '@/lib/abap/class-model';
-import { LEVEL_LABEL, type SupportLevel } from '@/lib/abap/support-matrix';
+import type { SupportLevel } from '@/lib/abap/support-matrix';
 import type { SupportSummary } from '@/lib/abap/findings-detector';
-import { STATE_CLASSES } from '@/components/cc/state';
-import { stateChartColor, type ChartState } from '@/lib/chart-colors';
+import { stateChartColor } from '@/lib/chart-colors';
+import { SUPPORT_LEVEL_STATE } from '@/lib/support-level';
+import SupportLevelMark from './SupportLevelMark';
 import { formatPercent } from '@/lib/format';
 import CcDialog from '@/components/cc/Dialog';
 import CcIconButton from '@/components/cc/IconButton';
 import CcWhyPopover from '@/components/cc/WhyPopover';
-
-/**
- * How a support level is shown — shared by the verdict, the construct list and
- * the pre-analysis preview, so the three agree.
- *
- * "Fully supported" is neutral, not green: it is the static detector's reading
- * of one construct against the support matrix, not a proof that the program
- * runs on the target (ADR-007, §1.1). Partial is `warning`, not supported is
- * `error`. The word and an icon always travel with the colour — the emoji the
- * matrix carries are not shown (§3.1).
- */
-export const SUPPORT_LEVEL_STATE: Record<SupportLevel, ChartState> = {
-  fully: 'neutral',
-  partial: 'warning',
-  'not-supported': 'error',
-};
-
-const SUPPORT_LEVEL_ICON: Record<SupportLevel, typeof CircleCheck> = {
-  fully: CircleCheck,
-  partial: CircleAlert,
-  'not-supported': CircleX,
-};
-
-export function SupportLevelMark({ level, label }: { level: SupportLevel; label?: string }) {
-  const Icon = SUPPORT_LEVEL_ICON[level];
-  return (
-    <span
-      data-support-level={level}
-      className={cn('inline-flex items-center gap-1 cc-text-meta whitespace-nowrap', STATE_CLASSES[SUPPORT_LEVEL_STATE[level]].text)}
-    >
-      <Icon size={14} aria-hidden="true" />
-      {label ?? LEVEL_LABEL[level]}
-    </span>
-  );
-}
 
 interface CoverageVerdictProps {
   findings: SupportFinding[];

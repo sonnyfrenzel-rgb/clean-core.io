@@ -125,17 +125,16 @@ export function rollupLevel(levels: SupportLevel[]): SupportLevel {
   return 'fully';
 }
 
-/** Human labels / emojis — the single source the UI renders from (no hardcoded table). */
+/**
+ * Human labels — the single source the UI renders from (no hardcoded table).
+ * How a level is *drawn* (state colour and icon) is the fixed list in
+ * `lib/support-level.ts`; the emoji that stood beside this map went in block D,
+ * step D.29 — emoji are not interface symbols (`DESIGN.md` §3.1).
+ */
 export const LEVEL_LABEL: Record<SupportLevel, string> = {
   'fully': 'Fully Supported',
   'partial': 'Partial',
   'not-supported': 'Not Supported',
-};
-
-export const LEVEL_EMOJI: Record<SupportLevel, string> = {
-  'fully': '✅',
-  'partial': '⚠️',
-  'not-supported': '❌',
 };
 
 /** Ordered rows for rendering (matrix order). */

@@ -48,7 +48,12 @@ test.describe('how-it-works page is data-driven from SUPPORT_MATRIX', () => {
     expect(page).toMatch(/from\s+['"]@\/lib\/abap\/support-matrix['"]/);
     expect(page).toMatch(/supportMatrixRows|SUPPORT_MATRIX/);
     expect(page).toContain('LEVEL_LABEL');
-    expect(page).toContain('LEVEL_EMOJI');
+    // The level is drawn by the one mark over the fixed list in
+    // lib/support-level.ts (word, icon, state colour) — not an emoji and not a
+    // colour chosen in the page (block D, D.29; DESIGN.md §3.1, §4.1).
+    expect(page).toContain('<SupportLevelMark level={row.level}');
+    expect(page).not.toMatch(/LEVEL_EMOJI|✅|⚠️|❌/);
+    expect(page).not.toMatch(/row\.level === 'fully' \? 'text-/);
   });
 
   test('wires per-construct fields (title, notes) and anchors for deep links', () => {
