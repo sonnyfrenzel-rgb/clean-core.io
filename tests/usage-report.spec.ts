@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
  * headline, and links into the right tab of the admin panel. The metric computation
  * itself is exercised against production by the script's dry run.
  */
-import { renderUsageReportEmail, renderUsageReportSubject } from '../lib/usage-report-email';
+import { renderUsageReportEmail, renderUsageReportSubject, renderUsageReportText } from '../lib/usage-report-email';
 import type { UsageReport } from '../lib/usage-report';
 
 const report: UsageReport = {
@@ -21,23 +21,12 @@ const report: UsageReport = {
     accounts: 34, activated: 8, neverStarted: 26, atLimit: 3, byok: 1,
     unitsUsed: 21, unitsGranted: 165, objectsAnalysed: 17, runsAllTime: 37,
   },
-  newAccounts: [
-    { name: 'Alexandra Bergmann-Hofstetter', email: 'alexandra.bergmann-hofstetter@sehr-lange-firmendomain.example', when: new Date() },
-    { name: 'Tim Bauer', email: 'tim.bauer@example.com', when: new Date() },
-  ],
-  newlyActivated: [{ name: 'Maria Huber', email: 'maria.huber@example.com', runs: 4 }],
-  reachedLimit: [{ name: 'Jonas Roth', email: 'jonas.roth@example.com' }],
+  newAccounts: 2,
+  newlyActivated: [4, 1],
+  reachedLimit: 3,
   delivery: {
     sent: 7, delivered: 4, delayed: 1, bounced: 1, complained: 0, opened: 1, awaiting: 0,
-    failures: [
-      {
-        to: 'felix.frenzel@sehr-lange-firmendomain.example',
-        kind: 'welcome',
-        status: 'email.bounced',
-        detail: 'The recipient server rejected the message: 550 5.7.1 Message blocked by policy',
-        at: new Date('2026-08-20T08:11:00Z'),
-      },
-    ],
+    failures: [{ kind: 'tenant access request received', status: 'email.bounced', count: 1 }],
   },
 };
 
@@ -80,7 +69,7 @@ for (const [name, width] of [['mobile-320', 320], ['mobile-375', 375], ['desktop
       'href', 'https://clean-core.io/admin?tab=usage',
     );
 
-    // A long address must not push the mail sideways on a phone.
+    // Nothing may push the mail sideways on a phone.
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `${name} overflows by ${overflow}px`).toBeLessThanOrEqual(0);
@@ -90,7 +79,7 @@ for (const [name, width] of [['mobile-320', 320], ['mobile-375', 375], ['desktop
 }
 
 test.describe('mail delivery is in the report', () => {
-  test('the counts are shown, and a bounce is named with its reason', async ({ page }) => {
+  test('the counts are shown, and a bounce is counted by kind of mail', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 1400 });
     await page.setContent(renderUsageReportEmail(report), { waitUntil: 'load' });
 
@@ -99,11 +88,11 @@ test.describe('mail delivery is in the report', () => {
       await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
     }
 
-    // The point of the section: who did not get it, and why. A count alone would
-    // not tell the operator what to do next.
+    // Which kind of mail did not arrive, and how often — the operator's next
+    // step (a welcome mail that bounced means an account without its guide).
+    // Not to whom: the report carries figures only (30.09.2026).
     await expect(page.getByText('Nicht angekommen')).toBeVisible();
-    await expect(page.getByText(/felix\.frenzel@/)).toBeVisible();
-    await expect(page.getByText(/Message blocked by policy/)).toBeVisible();
+    await expect(page.getByText('1 × tenant access request received')).toBeVisible();
   });
 
   test('a clean week does not invent a failure section', async ({ page }) => {
@@ -140,47 +129,48 @@ test.describe('mail delivery is in the report', () => {
   });
 });
 
-test.describe('a user cannot write the administrator’s report', () => {
+test.describe('the report names nobody', () => {
   /**
-   * `name` comes straight from `firstName` and `lastName` on the user profile —
-   * the account owner types it. Interpolated raw, a first name of `<a href>` put
-   * a working link into the internal report and an `<img src>` made it call out
-   * the moment the administrator opened the mail (QA review of 33471220d6e9,
-   * finding 230989f67624).
+   * The three sections that used to list people — new, first analysis, at the
+   * limit — are counts since 30.09.2026, and the delivery section counts per
+   * kind of mail. What an operator still acts on is a number; "who" is in the
+   * admin panel. `tests/usage-report-figures-only.spec.ts` proves the same for a
+   * report built from seeded accounts, including the stored snapshot.
    */
-  const hostile = {
-    ...report,
-    newAccounts: [
-      { name: '<a href="https://phish.example/reset">Password reset</a>', email: 'a@b.c', when: new Date() },
-      { name: 'Tim', email: '<img src="https://tracker.example/p.gif">tim@example.com', when: new Date() },
-    ],
-    newlyActivated: [{ name: '<script>window.__pwned = 1;</script>Maria', email: 'maria@example.com', runs: 2 }],
-    reachedLimit: [{ name: '</div><h1 style="color:red">Quota exceeded — call this number</h1>', email: 'j@example.com' }],
-  };
+  test('each former list is a count, in both parts of the mail', async ({ page }) => {
+    const html = renderUsageReportEmail(report);
+    const text = renderUsageReportText(report);
+    await page.setContent(html, { waitUntil: 'load' });
 
-  test('names and addresses arrive as text, not as markup', async ({ page }) => {
-    await page.setContent(renderUsageReportEmail(hostile), { waitUntil: 'load' });
-
-    // Nothing the user typed became an element.
-    expect(await page.locator('a[href^="https://phish.example"]').count()).toBe(0);
-    expect(await page.locator('img[src^="https://tracker.example"]').count()).toBe(0);
-    expect(await page.evaluate(() => (window as unknown as { __pwned?: number }).__pwned)).toBeUndefined();
-    // …and the report still shows what the person is called, as text — for the
-    // two lists that still name people. "Neu registriert" is a count since
-    // 23.09.2026 (Sonny: naming new accounts is not required), so the escaping
-    // that used to be tested through `Password reset` is tested here through the
-    // names that remain, and the absence of that one is asserted below rather
-    // than left to chance.
-    // Twice on purpose — the HTML panel and the plain-text part both carry it.
-    await expect(page.getByText('Maria', { exact: false })).toHaveCount(2);
-    await expect(page.getByText('Quota exceeded — call this number')).toBeVisible();
-    // The new-account panel carries a number and nobody's name or address.
     await expect(page.getByText('2 neue Registrierungen')).toBeVisible();
-    await expect(page.getByText('Password reset', { exact: false })).toHaveCount(0);
-    await expect(page.getByText('a@b.c', { exact: false })).toHaveCount(0);
-    await expect(page.getByText('tim@example.com', { exact: false })).toHaveCount(0);
-    expect(await page.locator('h1').count()).toBe(0);
-    // Every link in the report still points where the report's own markup put it.
+    await expect(page.getByText('2 Accounts mit erster Analyse')).toBeVisible();
+    await expect(page.getByText('Analysen je Account diese Woche: 4, 1')).toBeVisible();
+    await expect(page.getByText('3 Accounts am Limit')).toBeVisible();
+
+    expect(text).toContain('2 neue Registrierungen');
+    expect(text).toContain('2 Accounts, Analysen je Account: 4, 1');
+    expect(text).toContain('3 Accounts am Limit');
+    expect(text).toContain('1 x tenant access request received');
+
+    // No address shape anywhere but the report's own sender domain.
+    for (const [part, body] of [['html', html], ['text', text]] as const) {
+      const addresses = (body.match(/[^\s@"'<>()]+@[^\s@"'<>()]+/g) ?? []).filter((a) => !a.endsWith('clean-core.io'));
+      expect(addresses, `${part}: an address in the report`).toEqual([]);
+    }
+  });
+
+  test('a value that reaches the markup arrives as text', async ({ page }) => {
+    // The kind of mail is set by our own send calls, not by a user; it is
+    // escaped anyway, so that never has to be re-checked.
+    const hostile: UsageReport = {
+      ...report,
+      delivery: {
+        ...report.delivery,
+        failures: [{ kind: '<img src="https://tracker.example/p.gif">welcome', status: 'email.bounced', count: 1 }],
+      },
+    };
+    await page.setContent(renderUsageReportEmail(hostile), { waitUntil: 'load' });
+    expect(await page.locator('img[src^="https://tracker.example"]').count()).toBe(0);
     const hrefs = await page.locator('a').evaluateAll((els) => els.map((e) => (e as HTMLAnchorElement).getAttribute('href') || ''));
     expect(hrefs.length).toBeGreaterThan(0);
     expect(hrefs.every((h) => h.startsWith('https://clean-core.io'))).toBe(true);

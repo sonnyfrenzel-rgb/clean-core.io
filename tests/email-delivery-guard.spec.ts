@@ -429,15 +429,23 @@ test('the signup notification does not claim a queued mail arrived', () => {
   expect(s).toMatch(/whether it arrived is on the account/i);
 });
 
-test('the weekly admin report escapes every name it was handed', () => {
+test('the weekly admin report escapes every string it was handed, and is handed no names', () => {
   const s = read('lib/usage-report-email.ts');
-  const fn = s.slice(s.indexOf('function personList'), s.indexOf('function deliveryPanel'));
   // A first name of `<a href>` or `<img src>` put a working link, or a remote
-  // call, into the administrator's own report (finding 230989f67624).
-  for (const raw of ['${p.name}', '${p.suffix}', '${p.email}', '${title}', '${emptyText}']) {
-    expect(fn, `personList still interpolates ${raw} unescaped`).not.toContain(raw);
+  // call, into the administrator's own report (finding 230989f67624). Since
+  // 30.09.2026 the report carries figures only, so no name reaches it at all;
+  // the list renderer that took names is gone, and the panel that replaced it
+  // still escapes every string.
+  expect(s, 'a renderer that lists people is back').not.toContain('function personList');
+  expect(s).not.toMatch(/\b(?:p|a|f)\.(?:name|email|to|detail)\b/);
+  const fn = s.slice(s.indexOf('function countPanel'), s.indexOf('function deliveryPanel'));
+  for (const raw of ['${title}', '${emptyText}', '${detail}', '${noun.one}', '${noun.many}']) {
+    expect(fn, `countPanel interpolates ${raw} unescaped`).not.toContain(raw);
   }
-  for (const escaped of ['escapeHtml(p.name)', 'escapeHtml(p.suffix)', 'escapeHtml(p.email)', 'escapeHtml(title)', 'escapeHtml(emptyText)']) {
-    expect(fn, `personList does not escape with ${escaped}`).toContain(escaped);
+  for (const escaped of ['escapeHtml(title)', 'escapeHtml(emptyText)', 'escapeHtml(detail)']) {
+    expect(fn, `countPanel does not escape with ${escaped}`).toContain(escaped);
   }
+  const failures = s.slice(s.indexOf('const failures = d.failures.length'), s.indexOf('return `', s.indexOf('const failures = d.failures.length')));
+  expect(failures).toContain('escapeHtml(f.kind)');
+  expect(failures).not.toContain('${f.kind}');
 });

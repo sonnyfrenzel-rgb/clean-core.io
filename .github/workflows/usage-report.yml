@@ -23,7 +23,8 @@ on:
     - cron: '0 10 * * 5' # 12:00 Berlin during CEST (summer)
     - cron: '0 11 * * 5' # 12:00 Berlin during CET (winter)
   workflow_dispatch:
-    # No recipient input. The report is the account list with usage figures, and
+    # No recipient input. The report holds production usage figures (figures
+    # only since 30.09.2026 — no names or addresses), and
     # a free-text address turned a manual dispatch into a way to send it
     # anywhere: the job authenticates to production with OIDC, builds the
     # report and mailed it to whatever was typed in (QA full review of

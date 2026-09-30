@@ -240,7 +240,6 @@ export function renderSourceTemplate(source: string, name: string, scope: Record
 
 function sampleUsageReport(now: Date): UsageReport {
   const day = 24 * 60 * 60 * 1000;
-  const person = (n: string) => ({ name: `Seed Person ${n}`, email: `seed-person-${n.toLowerCase()}@example.com` });
   return {
     generatedAt: now,
     periodStart: new Date(now.getTime() - 7 * day),
@@ -251,18 +250,13 @@ function sampleUsageReport(now: Date): UsageReport {
       accounts: 40, activated: 12, neverStarted: 28, atLimit: 1, byok: 1,
       unitsUsed: 61, unitsGranted: 200, objectsAnalysed: 57, runsAllTime: 131,
     },
-    newAccounts: [
-      { ...person('A'), when: new Date(now.getTime() - 2 * day) },
-      { ...person('B'), when: new Date(now.getTime() - 4 * day) },
-    ],
-    newlyActivated: [{ ...person('A'), runs: 3 }],
-    reachedLimit: [person('C')],
+    // Figures only, like the real report since 30.09.2026.
+    newAccounts: 2,
+    newlyActivated: [3],
+    reachedLimit: 1,
     delivery: {
       sent: 6, delivered: 4, delayed: 0, bounced: 1, complained: 0, opened: 2, awaiting: 1,
-      failures: [{
-        to: 'seed-person-d@example.com', kind: 'welcome', status: 'email.bounced',
-        detail: 'Seed sample: mailbox does not exist', at: new Date(now.getTime() - day),
-      }],
+      failures: [{ kind: 'welcome', status: 'email.bounced', count: 1 }],
     },
   };
 }

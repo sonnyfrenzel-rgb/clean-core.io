@@ -21,10 +21,14 @@ import { isTestAccount } from './test-accounts';
  * conflated.
  */
 
+/**
+ * One account as the report counts it. `email` is here for one reason only —
+ * `isTestAccount` decides by the address — and it never leaves this module:
+ * nothing in `UsageReport` carries it.
+ */
 export interface Cohort {
   uid: string;
   email: string;
-  name: string;
   createdAt: Date | null;
   used: number;
   limit: number;
@@ -62,12 +66,26 @@ export interface UsageReport {
     objectsAnalysed: number;
     runsAllTime: number;
   };
-  /** Registered during the reporting week — worth a personal follow-up. */
-  newAccounts: { name: string; email: string; when: Date | null }[];
-  /** Completed their first ever analysis during the week — the adoption signal. */
-  newlyActivated: { name: string; email: string; runs: number }[];
-  /** Ran out of free units — a conversation, not a problem. */
-  reachedLimit: { name: string; email: string }[];
+  /*
+   * Figures only, since 30.09.2026 (Sonny). The three fields below used to be
+   * lists of people — name and address of every new account, every account
+   * that ran its first analysis and every account at its limit — and the mail
+   * carried them out of our infrastructure through a mail provider into an
+   * inbox, while `usage_reports` kept a copy that an account erasure never
+   * reached. The report asks whether adoption is moving; the numbers answer
+   * that, and "who" is in the admin panel, behind a login and a second factor.
+   * Nothing in this interface may name, address or identify an account.
+   */
+  /** Accounts registered during the reporting week. */
+  newAccounts: number;
+  /**
+   * Accounts that completed their first ever analysis during the week — the
+   * adoption signal. One entry per such account: how many analyses it ran this
+   * week, largest first. The length is the count; no entry says whose it is.
+   */
+  newlyActivated: number[];
+  /** Accounts that have used up their free units — a conversation, not a problem. */
+  reachedLimit: number;
   /** What became of the mail the platform sent this week. */
   delivery: DeliveryMetrics;
 }
@@ -90,14 +108,13 @@ export interface DeliveryMetrics {
   opened: number;
   /** Sent, but no delivery event has arrived. */
   awaiting: number;
-  /** Every message that did not reach its reader, with the provider's reason. */
-  failures: {
-    to: string;
-    kind: string;
-    status: string;
-    detail: string | null;
-    at: Date | null;
-  }[];
+  /**
+   * Messages that did not reach their reader, counted per kind of mail and
+   * outcome — `welcome` bounced twice, say. Not per recipient: the address is
+   * the recipient, and the provider's reason text usually repeats it, so
+   * neither is carried (30.09.2026, figures only).
+   */
+  failures: { kind: string; status: string; count: number }[];
 }
 
 const toDate = (value: unknown): Date | null => {
@@ -109,6 +126,20 @@ const toDate = (value: unknown): Date | null => {
 };
 
 const inWindow = (d: Date | null, from: Date, to: Date) => !!d && d >= from && d < to;
+
+/** Failed messages, counted per kind and outcome; most frequent first. */
+function countFailures(failed: { kind: string; status: string }[]): DeliveryMetrics['failures'] {
+  const counts = new Map<string, { kind: string; status: string; count: number }>();
+  for (const m of failed) {
+    const key = `${m.status} ${m.kind}`;
+    const entry = counts.get(key) ?? { kind: m.kind, status: m.status, count: 0 };
+    entry.count += 1;
+    counts.set(key, entry);
+  }
+  return [...counts.values()].sort(
+    (a, b) => b.count - a.count || a.status.localeCompare(b.status) || a.kind.localeCompare(b.kind),
+  );
+}
 
 /**
  * @param periodEnd end of the reporting week (exclusive); defaults to now
@@ -141,7 +172,6 @@ export async function buildUsageReport(db: Firestore, periodEnd: Date = new Date
       return {
         uid: d.id,
         email: (u.email || '').toLowerCase(),
-        name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || 'Unbenannt',
         createdAt: toDate(u.createdAt),
         used,
         limit,
@@ -201,9 +231,7 @@ export async function buildUsageReport(db: Firestore, periodEnd: Date = new Date
         to: to[0] || '',
         kind: (m.kind || 'mail') as string,
         status: (m.status || 'email.sent') as string,
-        detail: (m.lastDetail ?? null) as string | null,
         sentAt: toDate(m.sentAt),
-        at: toDate(m.lastEventAt) || toDate(m.sentAt),
       };
     })
     .filter((m) => inWindow(m.sentAt, periodStart, periodEnd) && !isTestAccount(m.to));
@@ -219,10 +247,7 @@ export async function buildUsageReport(db: Firestore, periodEnd: Date = new Date
     // delivered figure stays a count of messages that arrived.
     opened: mail.filter((m) => m.status === 'email.opened' || m.status === 'email.clicked').length,
     awaiting: countBy('email.sent'),
-    failures: mail
-      .filter((m) => FAILED.has(m.status))
-      .map((m) => ({ to: m.to, kind: m.kind, status: m.status, detail: m.detail, at: m.at }))
-      .sort((a, b) => (b.at?.getTime() || 0) - (a.at?.getTime() || 0)),
+    failures: countFailures(mail.filter((m) => FAILED.has(m.status))),
   };
 
   return {
@@ -242,20 +267,46 @@ export async function buildUsageReport(db: Firestore, periodEnd: Date = new Date
       objectsAnalysed: cohort.reduce((s, u) => s + u.distinctObjects, 0),
       runsAllTime: runs.length,
     },
-    newAccounts: cohort
-      .filter((u) => inWindow(u.createdAt, periodStart, periodEnd))
-      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0))
-      .map((u) => ({ name: u.name, email: u.email, when: u.createdAt })),
+    newAccounts: cohort.filter((u) => inWindow(u.createdAt, periodStart, periodEnd)).length,
     newlyActivated: [...firstRunByUser.entries()]
       .filter(([, at]) => inWindow(at, periodStart, periodEnd))
-      .map(([uid]) => {
-        const u = byUid.get(uid)!;
-        return { name: u.name, email: u.email, runs: runCountInPeriod.get(uid) || 0 };
-      })
-      .sort((a, b) => b.runs - a.runs),
-    reachedLimit: cohort
-      .filter((u) => u.atLimit)
-      .map((u) => ({ name: u.name, email: u.email })),
+      .map(([uid]) => runCountInPeriod.get(uid) || 0)
+      .sort((a, b) => b - a),
+    reachedLimit: cohort.filter((u) => u.atLimit).length,
     delivery,
+  };
+}
+
+/**
+ * What the Friday job stores in `usage_reports`, field by field.
+ *
+ * Named rather than spread: `{ ...report }` stored whatever the report happened
+ * to carry, and when it carried people, the snapshot kept them for good. The
+ * recipient is not stored either — it is the administrator's address, and the
+ * provider id already identifies the message. Timestamps stay `Date`s; the
+ * Admin SDK writes them as Firestore Timestamps.
+ */
+export function usageReportSnapshot(report: UsageReport, extra: { providerId: string }) {
+  const { current, previous, totals, delivery } = report;
+  return {
+    periodStart: report.periodStart,
+    periodEnd: report.periodEnd,
+    current: { ...current },
+    previous: { ...previous },
+    totals: { ...totals },
+    newAccounts: report.newAccounts,
+    newlyActivated: [...report.newlyActivated],
+    reachedLimit: report.reachedLimit,
+    delivery: {
+      sent: delivery.sent,
+      delivered: delivery.delivered,
+      delayed: delivery.delayed,
+      bounced: delivery.bounced,
+      complained: delivery.complained,
+      opened: delivery.opened,
+      awaiting: delivery.awaiting,
+      failures: delivery.failures.map((f) => ({ kind: f.kind, status: f.status, count: f.count })),
+    },
+    providerId: extra.providerId,
   };
 }
