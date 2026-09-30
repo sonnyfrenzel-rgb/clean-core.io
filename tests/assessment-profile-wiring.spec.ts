@@ -561,6 +561,15 @@ test.describe('7.10 — the routes', () => {
     expect(pinned.status()).toBe(200);
     expect((await pinned.json()).snapshot.registryKey).toBe('pce-2023-3');
 
+    // The path verdict comes from the same snapshot as the grade (QA review of
+    // e7372791c70d). CL_APJ_SCP_TOOLS is `deprecated` without a successor in the
+    // Public list and `released` in the PCE 2023 FPS03 list, so the two files
+    // answer "no path" differently for it.
+    const pathLatest = await post({ objects: ['CL_APJ_SCP_TOOLS'] });
+    expect((await pathLatest.json()).noPath.CL_APJ_SCP_TOOLS, 'the Public list shows no path').toBe(true);
+    const pathPinned = await post({ objects: ['CL_APJ_SCP_TOOLS'], snapshot: 'pce-2023-3' });
+    expect((await pathPinned.json()).noPath.CL_APJ_SCP_TOOLS, 'the PCE 2023-3 answer carried the Public list\'s path verdict').toBe(false);
+
     const priv = await post({ objects: ['KNA1'], profile: { edition: 'private', release: 'PCE-2023-3' } });
     expect(priv.status()).toBe(200);
     const privBody = await priv.json();

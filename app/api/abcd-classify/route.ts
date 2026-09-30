@@ -158,8 +158,9 @@ export async function POST(req: Request) {
     const key = gradeKey(name, use);
     if (!grades[key]) grades[key] = gradeSapObjectUse(name, use, readKey);
     // Keyed by name alone — hasNoReleasedApiPath does not depend on `use`, so
-    // one entry serves every use of the same object.
-    if (!(name in noPath)) noPath[name] = hasNoReleasedApiPath(name);
+    // one entry serves every use of the same object. Read from the snapshot
+    // the grade is read from, so one answer speaks for one catalog.
+    if (!(name in noPath)) noPath[name] = hasNoReleasedApiPath(name, readKey);
   }
 
   return NextResponse.json({ grades, noPath, snapshot, ...(coverage ? { coverage } : {}) });
