@@ -16,6 +16,7 @@ import {
   parseBpmn,
   traceabilityOf,
 } from '../lib/process-map';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * The process map — roadmap 2.5.
@@ -252,13 +253,7 @@ let idToken = '';
 const readRules = () => fs.readFileSync(path.resolve(__dirname, '..', 'firestore.rules'), 'utf8');
 
 async function signIn(page: Page) {
-  await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', EMAIL);
-  await page.fill('input[type="password"]', PASSWORD);
-  await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForTimeout(4000);
+  await signInViaLanding(page, EMAIL, PASSWORD);
 }
 
 test.describe('the map on the page, without a mouse', () => {

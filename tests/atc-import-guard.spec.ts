@@ -6,6 +6,7 @@ import firebaseConfig from '../firebase-config.json';
 import { parseAtc } from '../lib/abap/atc-parser';
 import type { AtcReport } from '../lib/abap/atc-model';
 import { TERMS_VERSION } from '../lib/constants';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * ATC-Import (roadmap 7.1), the same shape of guard `tests/usage-import-guard.spec.ts`
@@ -177,13 +178,7 @@ test.describe('the analyze page stores nothing before confirmation, and then the
   test('declare nothing, preview, confirm — and the stored report is the one that was shown', async ({ page }) => {
     test.setTimeout(120 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
 
     await page.locator('[data-atc-file]').setInputFiles({
@@ -279,13 +274,7 @@ test.describe('the comparison panel, once an analysis exists', () => {
 
   test('shows both a "both" and an "atc-only" object, each with the honest wording — never merged, never a verdict', async ({ page }) => {
     test.setTimeout(120 * 1000);
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
 
     const panel = page.locator('[data-atc-findings-panel]');

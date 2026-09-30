@@ -8,6 +8,7 @@ import { sha256Hex, artefactDigest, buildSourceChangeRecord } from '../lib/artef
 import { staleness, handoverBlockers, generationBlockers, workflowSteps } from '../lib/workflow-steps';
 import { TERMS_VERSION } from '../lib/constants';
 import type { Project, TestCase } from '../lib/types';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * After a source change, nothing built for the old source passes as current
@@ -264,13 +265,7 @@ test.describe('server side', () => {
   test('the pages say so, and the handover buttons are disabled', async ({ page }) => {
     test.setTimeout(120 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL, PASSWORD);
 
     await page.goto(`/project/${PROJECT_ID}/delivery`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-stale-notice]')).toBeVisible({ timeout: 30000 });

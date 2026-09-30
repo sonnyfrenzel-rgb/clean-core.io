@@ -9,6 +9,7 @@ import { adminSetDoc } from './helpers/admin-seed';
 import { sha256Hex } from '../lib/artefact-digest';
 import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
 import { buildBpmnExportFromSource } from '../lib/bpmn/export';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * The seam between the brief (4.4) and the stage that offers it.
@@ -52,13 +53,7 @@ const FILE_NAME = 'z_brief_seam.abap';
 const SOURCE_SHA = sha256Hex(PROGRAM);
 
 async function signIn(page: Page) {
-  await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', EMAIL);
-  await page.fill('input[type="password"]', PASSWORD);
-  await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForTimeout(4000);
+  await signInViaLanding(page, EMAIL, PASSWORD);
 }
 
 test.describe.configure({ mode: 'serial' });

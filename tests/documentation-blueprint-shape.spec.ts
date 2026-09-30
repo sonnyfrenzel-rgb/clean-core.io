@@ -7,6 +7,7 @@ import { adminSetDoc, adminGetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { checkBlueprintShape } from '../app/(app)/project/[projectId]/documentation/blueprint-schema';
 import { sha256Hex } from '../lib/artefact-digest';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * QA findings 0d8443fae823 / 58201e6aaedb — a blueprint with the wrong field
@@ -240,13 +241,7 @@ test.describe('the documentation is read from the code, and a legacy blueprint s
 
   /** Signs in through the real form, as the other rendered specs do. */
   async function signIn(page: import('@playwright/test').Page) {
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL, PASSWORD);
   }
 
   test('the button reads the whole source, calls no model and stores the engine form', async ({ page }) => {

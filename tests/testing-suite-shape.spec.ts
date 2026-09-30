@@ -9,6 +9,7 @@ import {
   checkTestSuiteShape,
   testSuiteRejectionMessage,
 } from '../app/(app)/project/[projectId]/testing/test-suite-schema';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap 17.2 — the documentation stage's defect, one stage over.
@@ -223,13 +224,7 @@ test.describe('the check runs before the write', () => {
 
   /** Signs in through the real form, as the other rendered specs do. */
   async function signIn(page: import('@playwright/test').Page) {
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL, PASSWORD);
   }
 
   /** The stage must believe it may call a model; whether this machine has a key is not the subject. */

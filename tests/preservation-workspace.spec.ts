@@ -18,6 +18,7 @@ import { sha256Hex, artefactDigest, type TrackedArtefact } from '../lib/artefact
 import { STATUS_FACETS, workspaceStatusLine, workspaceTools, type WorkspaceStatus } from '../lib/workspace-model';
 import { nextOpenPoint } from '../lib/next-step';
 import type { Project } from '../lib/types';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * The preservation register in the new workspace — roadmap 3.0.3.
@@ -494,13 +495,7 @@ test.describe('the reference cases, opened in the workspace', () => {
 
   async function signIn(page: Page) {
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL, PASSWORD);
   }
 
   test('each case paints the statuses the register records, and every phase is one "Why?" away', async ({

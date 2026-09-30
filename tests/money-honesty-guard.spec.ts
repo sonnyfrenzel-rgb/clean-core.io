@@ -11,6 +11,7 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap step 0.4 (`UX-E13-F01:R0`): no module shows an amount that no approved
@@ -123,13 +124,7 @@ test.describe('a stored analysis with amounts in its prose', () => {
 
   test('the Analyze stage and its Confluence export show none of them', async ({ page }) => {
     test.setTimeout(180 * 1000);
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL, PASSWORD);
 
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
     const exportButton = page.getByRole('button', { name: /Export Confluence/ });

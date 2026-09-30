@@ -8,6 +8,7 @@ import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
 import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
 import { MODEL_STAGES, NOT_GENERATED, STAGE_DISABLED_CODE, offeredModelStages } from '../lib/model-stages';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap 1.2 — the zero-LLM lock path, observed rather than grepped.
@@ -71,13 +72,7 @@ async function setStages(request: APIRequestContext, stages: Record<string, bool
 }
 
 async function signIn(page: Page) {
-  await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', EMAIL);
-  await page.fill('input[type="password"]', SIGN_IN);
-  await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForTimeout(4000);
+  await signInViaLanding(page, EMAIL, SIGN_IN);
 }
 
 test.beforeAll(async () => {

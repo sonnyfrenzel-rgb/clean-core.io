@@ -34,6 +34,7 @@ import { phaseTone, workflowSteps, type RailStep } from '../lib/workflow-steps';
 import { analysisRunInputs, buildInputManifest } from '../lib/input-manifest';
 import { sha256Hex } from '../lib/artefact-digest';
 import type { Project, TestCase } from '../lib/types';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap 1.4 — the workspace shell, and the two promises it makes.
@@ -458,13 +459,7 @@ const unique = (prefix: string) =>
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 async function signIn(page: Page, email: string): Promise<void> {
-  await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', email);
-  await page.fill('input[type="password"]', PASSWORD);
-  await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForTimeout(4000);
+  await signInViaLanding(page, email, PASSWORD);
 }
 
 /** Either the shell renders or the address is a 404. Nothing in between. */

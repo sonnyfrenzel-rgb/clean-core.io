@@ -5,6 +5,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * No savings forecast from figures nobody entered (roadmap E12-F01-US02).
@@ -101,13 +102,7 @@ test.describe('rendered', () => {
   test('no forecast until the reader has entered all three figures', async ({ page }) => {
     test.setTimeout(120 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${PROJECT_ID}/tco`, { waitUntil: 'domcontentloaded' });
 
     const noForecast = page.locator('[data-tco-no-forecast]');

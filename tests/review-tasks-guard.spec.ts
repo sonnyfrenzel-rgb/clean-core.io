@@ -25,6 +25,7 @@ import {
   reviewTasksNoneLine,
   reviewTasksTitle,
 } from '../components/ReviewTasks';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap 7.5 — *Prüfaufträge statt Scheinwissen*, and V25-A05: "ein zu kurzes
@@ -752,13 +753,7 @@ test.describe('the panel a reader actually meets', () => {
       await route.abort();
     });
 
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', RENDER_EMAIL);
-    await page.fill('input[type="password"]', RENDER_SIGN_IN);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(3500);
+    await signInViaLanding(page, RENDER_EMAIL, RENDER_SIGN_IN, { pauseMs: 3500 });
     await page.goto(`/project/${RENDER_PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-stage-title]', { timeout: 30000 });
 

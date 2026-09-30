@@ -7,6 +7,7 @@ import { adminSetDoc } from './helpers/admin-seed';
 import { CC_MESSAGES } from '../lib/cc-messages';
 import { DEMO_PROJECT_TITLE, DEMO_TAG } from '../lib/demo-marks';
 import { OBJECT_STATUS } from '../lib/object-status';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap 1.8 — "My workspace" as a List Report, observed rather than grepped.
@@ -76,13 +77,7 @@ async function createAccount(email: string): Promise<string> {
 }
 
 async function signIn(page: Page, email: string) {
-  await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', email);
-  await page.fill('input[type="password"]', SIGN_IN);
-  await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForTimeout(4000);
+  await signInViaLanding(page, email, SIGN_IN);
 }
 
 /** Signs in as the admin and opens the list report. */

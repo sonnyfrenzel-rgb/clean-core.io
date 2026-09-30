@@ -7,6 +7,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * The ABAP Cloud delivery bundle has to survive the one thing it exists for.
@@ -45,13 +46,7 @@ function emulatorAuth() {
 }
 
 async function signIn(page: Page) {
-  await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', EMAIL);
-  await page.fill('input[type="password"]', PASSWORD);
-  await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForTimeout(4000);
+  await signInViaLanding(page, EMAIL, PASSWORD);
 }
 
 test.describe('the ABAP Cloud bundle a customer imports', () => {

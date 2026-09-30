@@ -7,6 +7,7 @@ import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { LIVE_TEST_EXECUTION } from '../lib/locked-paths';
 import { TERMS_VERSION } from '../lib/constants';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap step 0.1 (`G0:R0`): live test execution against a connected tenant is
@@ -150,13 +151,7 @@ test.describe('the lock holds when used', () => {
     const runRequests: string[] = [];
     page.on('request', (r) => { if (r.url().includes('/api/run-tests')) runRequests.push(r.method()); });
 
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL, PASSWORD);
 
     await page.goto(`/project/${PROJECT_ID}/testing`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(LIVE_TEST_EXECUTION.userNotice).first()).toBeVisible({ timeout: 30000 });

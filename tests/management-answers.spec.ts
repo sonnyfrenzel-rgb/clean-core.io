@@ -17,6 +17,7 @@ import { isProvenanceValue } from '../lib/provenance';
 import { workflowSteps } from '../lib/workflow-steps';
 import { sha256Hex } from '../lib/artefact-digest';
 import type { Project } from '../lib/types';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap 6.4 — the Management view's answers.
@@ -351,13 +352,7 @@ const PASSWORD = 'ManagementView123!';
 const unique = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 async function signIn(page: Page, email: string): Promise<void> {
-  await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', email);
-  await page.fill('input[type="password"]', PASSWORD);
-  await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForTimeout(4000);
+  await signInViaLanding(page, email, PASSWORD);
 }
 
 test.describe('a project with no runs, in the Management view', () => {

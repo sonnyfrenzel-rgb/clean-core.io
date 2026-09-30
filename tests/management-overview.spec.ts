@@ -31,6 +31,7 @@ import {
 import { emptyProjectDecision } from '../lib/project-decision';
 import type { ItFindingRow, ItFindingsSource } from '../lib/it-findings';
 import type { Project } from '../lib/types';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap 3.0.10 — the Management view becomes readable in seconds.
@@ -404,13 +405,7 @@ const PASSWORD = 'ManagementOverview123!';
 const unique = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 async function signIn(page: Page, email: string): Promise<void> {
-  await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', email);
-  await page.fill('input[type="password"]', PASSWORD);
-  await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForTimeout(4000);
+  await signInViaLanding(page, email, PASSWORD);
 }
 
 /** Reads, standard-table access, a modification: enough objects for every chart to have segments. */

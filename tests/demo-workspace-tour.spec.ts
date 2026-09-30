@@ -6,6 +6,7 @@ import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { DEMO_TITLE_PREFIX } from '../lib/demo-marks';
 import { TOUR_STATIONS, TOUR_STORAGE_KEY } from '../lib/demo-tour';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * The demo workspace and its tour, rendered — roadmap 3.0.7, `DESIGN.md` §6.1.2.
@@ -35,13 +36,7 @@ const PASSWORD = `spec-${process.pid}-Aa1!`;
 test.describe.configure({ mode: 'serial' });
 
 async function signIn(page: Page, email: string) {
-  await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', email);
-  await page.fill('input[type="password"]', PASSWORD);
-  await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForTimeout(4000);
+  await signInViaLanding(page, email, PASSWORD);
 }
 
 async function openDemo(page: Page, query = '') {

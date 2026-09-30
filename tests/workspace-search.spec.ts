@@ -24,6 +24,7 @@ import {
   SEARCH_KIND_LABEL,
 } from '../lib/workspace-search';
 import type { Project, WorklistItem } from '../lib/types';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap 6.6 — search in the project (⌘K) and the glossary.
@@ -598,13 +599,7 @@ const PASSWORD = 'WorkspaceSearch123!';
 const unique = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 async function signIn(page: Page, email: string): Promise<void> {
-  await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', email);
-  await page.fill('input[type="password"]', PASSWORD);
-  await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForTimeout(4000);
+  await signInViaLanding(page, email, PASSWORD);
 }
 
 test.describe('the ⌘K dialog, opened by an administrator who turned the workspace on', () => {

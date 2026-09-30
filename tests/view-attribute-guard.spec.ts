@@ -8,6 +8,7 @@ import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { buildAuditPackContents, signedGeneratorInput, attestationsOf, type AuditPackSource } from '../lib/audit-pack-build';
 import { adminSetCustomClaim } from './helpers/admin-seed';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * `expect.arrayContaining([a, b, c])` matches when the array holds **all** of
@@ -434,13 +435,7 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
       return route.continue();
     });
 
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL_UI);
-    await page.fill('input[type="password"]', PASSWORD_UI);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL_UI, PASSWORD_UI);
 
     await page.goto(`/project/${PROJECT_UI}`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
@@ -539,13 +534,7 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
       return route.continue();
     });
 
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL_UI);
-    await page.fill('input[type="password"]', PASSWORD_UI);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL_UI, PASSWORD_UI);
 
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.goto('/admin/new-project', { waitUntil: 'domcontentloaded' });

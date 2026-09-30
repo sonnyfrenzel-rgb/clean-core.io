@@ -10,6 +10,7 @@ import {
 import firebaseConfig from '../firebase-config.json';
 import { adminSetDoc } from './helpers/admin-seed';
 import { TERMS_VERSION } from '../lib/constants';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * The name on the button is the name of the thing that opens.
@@ -135,13 +136,7 @@ async function openFrom(page: Page, trigger: ReturnType<Page['locator']>): Promi
 }
 
 async function signIn(page: Page, email: string): Promise<void> {
-  await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', email);
-  await page.fill('input[type="password"]', PASSWORD);
-  await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForTimeout(4000);
+  await signInViaLanding(page, email, PASSWORD);
 }
 
 test.describe('what the header button promises, and what opens', () => {

@@ -10,6 +10,7 @@ import type { UsageReport } from '../lib/abap/usage-model';
 // account fail `requireCurrentTerms` on every protected route, so a version
 // bump would break this spec for a reason that has nothing to do with it.
 import { TERMS_VERSION } from '../lib/constants';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * A usage import that can be believed (roadmap E03-F02, CR-24).
@@ -242,13 +243,7 @@ test.describe('the analyze page stores nothing before confirmation, and then the
   test('declare, see the rejected rows, confirm — and the stored report is the one that was shown', async ({ page }) => {
     test.setTimeout(120 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
 
     await page.locator('[data-usage-window-from]').fill('2026-02-01');
