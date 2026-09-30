@@ -86,6 +86,12 @@ test.describe('public pages, signed out', () => {
     // "Ask the assistant"; inside a project the same button says "Ask this case".
     // Both labels are exercised rendered in `tests/assistant-label.spec.ts`; what
     // this test owns is that the toggle is mounted and toggles.
+    //
+    // At phone width: since D.8 (Sonny, 30.09.2026) the floating toggle is off
+    // on desktop by default and is the one way in on a phone, so that is where
+    // it is mounted and toggles. The desktop entry is the header button,
+    // checked in `tests/assistant-label.spec.ts`.
+    await page.setViewportSize({ width: 390, height: 844 });
     const chatbotTrigger = page.locator('[data-chatbot-toggle]').first();
     await expect(chatbotTrigger).toBeVisible();
     await expect(chatbotTrigger).toContainText('Ask the assistant');

@@ -346,14 +346,18 @@ const unique = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toSt
  * each click, so a slow first click is never undone by a second one.
  */
 async function openChat(page: Page): Promise<void> {
-  const toggle = page.locator('[data-chatbot-toggle]').first();
+  // The header button: since D.8 (Sonny, 30.09.2026) the floating button is
+  // off on desktop by default, and this spec runs at desktop width. The same
+  // checks, through the entry a desktop reader actually has.
+  const toggle = page.locator('[data-assistant-trigger="header"]');
   await expect(toggle).toBeVisible({ timeout: 90000 });
   const panel = page.locator('[data-chatbot-scope]');
 
   // Nothing here is optional: the assertion is the last line of the block and
   // `toPass` re-runs the whole block until it holds, so a panel that never
   // opens fails the spec. The one thing that is conditional is the *click* —
-  // this is a toggle, and clicking it again on an open panel would close it.
+  // the floating toggle this used to click closed an open panel, and clicking
+  // only while the panel is shut is right for either entry.
   //
   // The visibility is read into a named result first, rather than asked inline
   // inside the condition, because `tests/no-vacuous-tests.spec.ts` is
@@ -405,7 +409,7 @@ test.describe('the assistant, inside a project, in a browser', () => {
     await signIn(page, OWNER);
     await page.goto(`/project/${LIVE_PROJECT}/analyze`, { waitUntil: 'domcontentloaded' });
 
-    const toggle = page.locator('[data-chatbot-toggle]').first();
+    const toggle = page.locator('[data-assistant-trigger="header"]');
     await expect(toggle).toBeVisible({ timeout: 90000 });
     await expect(toggle, 'the assistant still advertises itself as "Ask AI"').toContainText('Ask this case');
     await openChat(page);

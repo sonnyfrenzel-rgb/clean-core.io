@@ -242,7 +242,7 @@ export default function SettingsPage() {
   // System Preferences States
   const [backupEnabled, setBackupEnabled] = useState<boolean>(true);
   const [defaultView, setDefaultView] = useState<'dashboard' | 'analytics' | 'transformation'>('dashboard');
-  const [desktopChatbotEnabled, setDesktopChatbotEnabled] = useState<boolean>(true);
+  const [desktopChatbotEnabled, setDesktopChatbotEnabled] = useState<boolean>(false);
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
   const [prefsSaved, setPrefsSaved] = useState(false);
   // Stable, so the toast's four-second timer is not restarted by every render.
@@ -608,7 +608,10 @@ export default function SettingsPage() {
       setLastName(profile.lastName || '');
       setBackupEnabled(profile.backupEnabled !== false); // default true
       setDefaultView(profile.landingPageDefault || 'dashboard');
-      setDesktopChatbotEnabled(profile.desktopChatbotEnabled !== false); // default true
+      // Off unless saved as on (D.8, Sonny 30.09.2026): on desktop the header
+      // carries the assistant, so the floating button is an opt-in. A stored
+      // `true` keeps it.
+      setDesktopChatbotEnabled(profile.desktopChatbotEnabled === true);
 
       // F-03: Load S4 metadata (non-secret) — password is write-only
       if (profile.s4Meta?.configured) {
@@ -1201,15 +1204,15 @@ export default function SettingsPage() {
                 />
 
                 <div className="sm:col-span-2">
-                  {/* What the setting really does, and nothing more: it adds
-                      `md:hidden` to the floating toggle in
-                      `components/GlossaryChatbot.tsx`. The assistant itself
+                  {/* What the setting really does, and nothing more: only a
+                      saved `true` removes `sm:hidden` from the floating toggle
+                      in `components/GlossaryChatbot.tsx`. The assistant itself
                       stays, and so does the button in the header — saying
                       otherwise here would be the one lie a settings page
                       cannot afford. */}
                   <CcCheckbox
                     label="Floating assistant button"
-                    help="Show the floating assistant button on desktop screens. The button in the header stays either way."
+                    help="Also show the floating assistant button on desktop screens. The button in the header is always there; on a phone the floating button is the way in and stays."
                     checked={desktopChatbotEnabled}
                     onChange={setDesktopChatbotEnabled}
                   />
