@@ -319,7 +319,9 @@ test.describe('the level of a use: read, write, type reference, own table', () =
     const read = (p: string) => readFileSync(join(__dirname, '..', p), 'utf8');
     const route = read('app/api/abcd-classify/route.ts');
     const comparison = read('tests/helpers/korpus-comparison.ts');
-    expect(route).toMatch(/gradeSapObjectUse\(name, use\)/);
+    // Roadmap 7.10: the route passes the snapshot the target reads as a third
+    // argument; it is still the same function the corpus grades through.
+    expect(route).toMatch(/gradeSapObjectUse\(name, use(, readKey)?\)/);
     expect(comparison).toMatch(/gradeSapObjectUse\(name, uses\.get\(name\) \?\? null\)/);
     expect(comparison).not.toMatch(/\bgradeSapObject\(/);
     expect(route).not.toMatch(/\bgradeSapObject\(/);

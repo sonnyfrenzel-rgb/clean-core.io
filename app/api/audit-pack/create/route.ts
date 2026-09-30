@@ -9,7 +9,8 @@ import { signEd25519, getSigningKeypair } from '@/lib/audit-signing-keypair';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { APP_VERSION } from '@/lib/version';
 import { signOffKey } from '@/lib/artefact-digest';
-import { getCatalogSnapshotRef, getMergedCatalogVersion } from '@/lib/abap/catalog-service';
+import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
+import { catalogSnapshotRefForProject } from '@/lib/abap/catalog-snapshots';
 import { PROFILE_INPUT_ID } from '@/lib/assessment-profile';
 import { liveProfileDigest, recordedProfileOf } from '@/lib/assessment-target';
 import {
@@ -222,7 +223,7 @@ export async function POST(req: NextRequest) {
           live[PROFILE_INPUT_ID] = liveProfileDigest({
             project: projectData,
             recorded: recordedProfile,
-            catalogSnapshot: getCatalogSnapshotRef(),
+            catalogSnapshot: catalogSnapshotRefForProject(projectData),
           });
         }
         const unverified = invalidatingInputs(unverifiedInputs(recordedManifest, live));
@@ -274,7 +275,10 @@ export async function POST(req: NextRequest) {
         if (stale) {
           blockers.push({
             code: 'sign-off-stale',
-            message: 'The architecture sign-off was given for a previous source. Confirm the target architecture again in stage 2.',
+            message:
+              projectData.auditMetadata?.sourceChange?.reason === 'profile'
+                ? 'The architecture sign-off was given for a previous target profile. Confirm the target architecture again in stage 2.'
+                : 'The architecture sign-off was given for a previous source. Confirm the target architecture again in stage 2.',
           });
         }
       }

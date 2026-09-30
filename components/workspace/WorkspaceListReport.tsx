@@ -29,6 +29,7 @@ import {
   runScope,
   type AnalysisRunStage,
 } from '@/lib/analysis-run';
+import { declaredTargetOf } from '@/lib/assessment-target';
 import type { Project } from '@/lib/types';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
@@ -190,6 +191,8 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
           legacyCode: project.legacyCode,
           fileName: project.auditMetadata?.inputFingerprint?.fileName || 'main.abap',
           deployment: project.s4Deployment === 'public' ? 'public' : 'private',
+          // Roadmap 7.10 - the declaration the project's last run was made under.
+          targetProfile: declaredTargetOf(project),
           callModel,
           signal: controller.signal,
           onStages: (stages) =>

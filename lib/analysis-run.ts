@@ -73,6 +73,12 @@ export interface AnalysisRunInput {
   /** The uploaded file name, as the run records it. */
   fileName: string;
   deployment: 'public' | 'private';
+  /**
+   * Roadmap 7.10 - the declared half of the target profile (release, component
+   * levels, language version per object), sent as the run's `targetProfile`.
+   * Omitted, the server uses what the project declared with its last run.
+   */
+  targetProfile?: import('./assessment-target').AssessmentTarget;
   // `byokUsed` used to be here, taken from `profile.byokConfigured` and sent to
   // the run route inside a client-supplied `modelCard`. The route has not read
   // that since 1.2, and since the model receipt the answer comes from the
@@ -167,7 +173,7 @@ function aborted(signal: AbortSignal | undefined): boolean {
  * writes and the one thing the signature deliberately does not cover.
  */
 export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunResult> {
-  const { projectId, legacyCode, fileName, deployment, callModel, signal, onStages } = input;
+  const { projectId, legacyCode, fileName, deployment, targetProfile, callModel, signal, onStages } = input;
 
   const stages = stagesFor(callModel);
   const publish = () => onStages?.(stages.map((s) => ({ ...s })));
@@ -281,6 +287,7 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
         projectId,
         legacyCode,
         s4Deployment: deployment,
+        ...(targetProfile ? { targetProfile } : {}),
         analysis: narrative,
         ...(modelReceipt ? { modelReceipt } : {}),
         extensibilityRoute: routeReport.recommendedRoute,

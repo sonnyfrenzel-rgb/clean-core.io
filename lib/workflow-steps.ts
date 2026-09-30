@@ -197,6 +197,13 @@ export interface Staleness {
   /** The standing architect sign-off was given for a previous source. */
   signOff: boolean;
   /**
+   * Roadmap 7.10 - what moved: the source, or (same source) the target
+   * profile. `'profile'` when the change record says so (`reason: 'profile'`)
+   * or the project's profile no longer matches the run's. Only the wording
+   * reads it; what is stale is decided above, the same way for both.
+   */
+  basis: 'source' | 'profile';
+  /**
    * Inputs of the active run that cannot be shown to still match (roadmap 0.6).
    * Empty on a run signed before the input manifest existed — there is nothing
    * recorded to compare, and that case is reported rather than guessed at.
@@ -225,7 +232,7 @@ export interface Staleness {
  */
 export function staleness(project: Project | null): Staleness {
   const none: Staleness = {
-    sourceChanged: false, design: false, code: false, tests: false, docs: false, signOff: false, unverifiedInputs: [],
+    sourceChanged: false, design: false, code: false, tests: false, docs: false, signOff: false, basis: 'source', unverifiedInputs: [],
   };
   if (!project) return none;
 
@@ -284,8 +291,17 @@ export function staleness(project: Project | null): Staleness {
     tests: sourceChanged || unchangedSince('testCases'),
     docs: sourceChanged || unchangedSince('documentation'),
     signOff: ((sourceChanged || profileMoved) && project.approvedByArchitect === true) || signOffUnchanged,
+    basis: !sourceChanged && (profileMoved || record?.reason === 'profile') ? 'profile' : 'source',
     unverifiedInputs: unverified,
   };
+}
+
+/**
+ * "a previous source" or "a previous target profile" - the phrase every stale
+ * sentence uses, so a profile change is not described as a source change.
+ */
+export function previousBasis(project: Project | null): string {
+  return staleness(project).basis === 'profile' ? 'a previous target profile' : 'a previous source';
 }
 
 /** "the analysed source and the target deployment" — for a blocker sentence. */
@@ -346,10 +362,11 @@ export function generationBlockers(
       `The signed run's inputs cannot all be shown to still match — ${inputList(s.unverifiedInputs)}. Re-run the analysis in stage 1 first.`,
     ];
   }
-  if (s.design && p.design) out.push('The solution design was generated for a previous source. Regenerate it in stage 2 first.');
-  if (s.signOff) out.push('The architecture sign-off was given for a previous source. Confirm it again in stage 2.');
+  const prev = s.basis === 'profile' ? 'a previous target profile' : 'a previous source';
+  if (s.design && p.design) out.push(`The solution design was generated for ${prev}. Regenerate it in stage 2 first.`);
+  if (s.signOff) out.push(`The architecture sign-off was given for ${prev}. Confirm it again in stage 2.`);
   if (target !== 'transformation' && s.code && p.code) {
-    out.push('The code was generated from a previous source. Regenerate it in stage 3 first.');
+    out.push(`The code was generated from ${prev}. Regenerate it in stage 3 first.`);
   }
   return out;
 }
@@ -591,6 +608,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
   // review, is not a finished design — it is the thing US02 exists to stop
   // someone approving.
   const s = staleness(project);
+  const prevBasis = s.basis === 'profile' ? 'a previous target profile' : 'a previous source';
   const blockers = handoverBlockers(project);
   const stale = (base: RailStep, detail: string, badge = 'Stale'): RailStep => ({
     ...base,
@@ -612,20 +630,20 @@ export function workflowSteps(project: Project | null): RailStep[] {
           )
         : analyze,
     hasDesign && s.design
-      ? stale(design, 'Designed for a previous source — regenerate it against the current analysis.')
+      ? stale(design, `Designed for ${prevBasis} — regenerate it against the current analysis.`)
       : hasDesign && s.signOff
-        ? { ...design, state: 'partial', done: false, proven: false, badge: 'Re-confirm', detail: 'The sign-off was given for a previous source — confirm the target architecture again.' }
+        ? { ...design, state: 'partial', done: false, proven: false, badge: 'Re-confirm', detail: `The sign-off was given for ${prevBasis} — confirm the target architecture again.` }
         : design,
     hasGenerated && s.code
-      ? stale(transformation, 'Generated from a previous source — regenerate it once the design is current.')
+      ? stale(transformation, `Generated from ${prevBasis} — regenerate it once the design is current.`)
       : transformation,
-    hasDocs && s.docs ? stale(documentation, 'Written for a previous source — regenerate it.') : documentation,
-    tests.total > 0 && s.tests ? stale(testing, 'Test cases written for a previous source — regenerate the suite.') : testing,
+    hasDocs && s.docs ? stale(documentation, `Written for ${prevBasis} — regenerate it.`) : documentation,
+    tests.total > 0 && s.tests ? stale(testing, `Test cases written for ${prevBasis} — regenerate the suite.`) : testing,
     hasRun && (s.sourceChanged || s.unverifiedInputs.length > 0)
       ? stale(economics, 'Modelled on the score of a different source — re-run the analysis.')
       : economics,
     blockers.length > 0
-      ? stale(delivery, `Handover blocked — built for a previous source: ${blockers.join(', ')}.`, 'Blocked')
+      ? stale(delivery, `Handover blocked — built for ${prevBasis}: ${blockers.join(', ')}.`, 'Blocked')
       : delivery,
   ];
 }

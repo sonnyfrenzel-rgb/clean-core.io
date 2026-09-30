@@ -280,7 +280,7 @@ export function isKnownGapCode(code: unknown): code is ProfileGapCode {
 /**
  * The target a project declares now, or the empty declaration. Read from the
  * Admin-written `assessmentTarget`; anything that does not parse is treated as
- * nothing declared — which leaves every fact open (unconfirmed), never covered.
+ * nothing declared — which leaves every fact open (a note), never assumed.
  */
 export function declaredTargetOf(project: unknown): AssessmentTarget {
   const raw = isObj(project) ? project.assessmentTarget : undefined;

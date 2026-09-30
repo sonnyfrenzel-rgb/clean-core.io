@@ -5,7 +5,7 @@ import CcField, { CC_CONTROL_HEIGHT } from '@/components/cc/Field';
 import CcSelect from '@/components/cc/Select';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import { cn } from '@/lib/utils';
-import { profileCoverage, type AbapLanguageVersion } from '@/lib/assessment-profile';
+import { expectedCatalogKey, profileCoverage, type AbapLanguageVersion } from '@/lib/assessment-profile';
 import { buildAssessmentProfile, normaliseAssessmentTarget, type AssessmentTarget } from '@/lib/assessment-target';
 
 /**
@@ -13,9 +13,10 @@ import { buildAssessmentProfile, normaliseAssessmentTarget, type AssessmentTarge
  *
  * Next to the deployment choice, because it is the same kind of fact: not a
  * preference, an input to the verdict. The owner names the release and the
- * ABAP language version of each object the source defines; everything the
- * owner does not name stays open and the run is carried as *unconfirmed* —
- * never quietly assessed as Standard ABAP on some release.
+ * ABAP language version of each object the source defines. What is left
+ * open is noted, never assumed (no object becomes Standard ABAP by default),
+ * and the release picks the catalog: a Private Edition release SAP publishes a
+ * pinned list for is read against that list.
  *
  * The preview underneath is the rule the server applies, run here on the same
  * function (`profileCoverage`), with the catalog snapshot left to the server:
@@ -55,19 +56,23 @@ export default function AssessmentTargetFields({ deployment, objects, value, onC
             edition: deployment,
             target: parsed.target,
             objects,
-            catalogSnapshot: { registryKey: 'latest', sourceSha256: 'named-by-the-server' },
+            // The snapshot the server will read for this target; its digest is the server's to name.
+            catalogSnapshot: {
+              registryKey: expectedCatalogKey(deployment, parsed.target.release) ?? 'latest',
+              sourceSha256: 'named-by-the-server',
+            },
             ruleVersion: 'rules-v1.0',
           }),
         )
       : null;
 
   return (
-    <div className="space-y-4" data-assessment-target="">
+    <div className="space-y-4" data-assessment-target="" id="assessment-target">
       <div>
         <h3 className="cc-text-h3 text-cc-ink">Target profile</h3>
         <p className="cc-text-cell text-cc-ink-muted mt-1">
           The release and the language version of each object decide whether an object is released for you.
-          Whatever you leave open is carried as unconfirmed in the signed run, not assumed.
+          Whatever you leave open is noted in the signed run, not assumed.
         </p>
       </div>
 
@@ -106,17 +111,25 @@ export default function AssessmentTargetFields({ deployment, objects, value, onC
         </div>
       )}
 
-      {preview && preview.state === 'covered' && (
-        <CcMessageStrip state="information" headline="This profile can be confirmed.">
-          Every fact it names is one the run will read. The server adds the catalog snapshot it looks up.
-        </CcMessageStrip>
-      )}
       {preview && preview.state !== 'covered' && (
         <CcMessageStrip state="warning" headline="The run will be carried as unconfirmed.">
           <ul className="list-disc pl-4 space-y-1" data-assessment-target-gaps="">
-            {preview.gaps.map((g) => (
-              <li key={`${g.code}:${g.subject ?? ''}`}>{g.sentence}</li>
-            ))}
+            {preview.gaps
+              .filter((g) => g.severity !== 'notes')
+              .map((g) => (
+                <li key={`${g.code}:${g.subject ?? ''}`}>{g.sentence}</li>
+              ))}
+          </ul>
+        </CcMessageStrip>
+      )}
+      {preview && preview.gaps.some((g) => g.severity === 'notes') && (
+        <CcMessageStrip state="neutral">
+          <ul className="list-disc pl-4 space-y-1" data-assessment-target-notes="">
+            {preview.gaps
+              .filter((g) => g.severity === 'notes')
+              .map((g) => (
+                <li key={`${g.code}:${g.subject ?? ''}`}>{g.sentence}</li>
+              ))}
           </ul>
         </CcMessageStrip>
       )}

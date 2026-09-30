@@ -14,7 +14,7 @@ import { deriveProjectDecision } from '@/lib/decision-facts';
 import type { EvidenceChange } from '@/lib/run-evidence-digest';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { isFirestoreId } from '@/lib/firestore-id';
-import { getCatalogSnapshotRef } from '@/lib/abap/catalog-service';
+import { catalogSnapshotRefForProject } from '@/lib/abap/catalog-snapshots';
 import { profileDrift, recordedProfileOf } from '@/lib/assessment-target';
 import { logger, errMessage } from '@/lib/logger';
 
@@ -174,7 +174,7 @@ export async function POST(
           activeRunEvidence = runSnap.exists ? evidenceDigest(runSnap.data()) : null;
           const recordedProfile = runSnap.exists ? recordedProfileOf(runSnap.data()) : null;
           if (recordedProfile) {
-            profileDriftNow = profileDrift({ project, recorded: recordedProfile, catalogSnapshot: getCatalogSnapshotRef() });
+            profileDriftNow = profileDrift({ project, recorded: recordedProfile, catalogSnapshot: catalogSnapshotRefForProject(project) });
           }
         }
 

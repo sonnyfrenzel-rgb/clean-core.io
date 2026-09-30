@@ -206,15 +206,46 @@ export function getMergedCatalogVersion(): string {
 /* ---------- which snapshot answers (roadmap 7.10, CR-02) ---------- */
 
 /**
- * The catalog snapshot every lookup in this module reads: the registry key of
- * the release file and the digest of the raw file SAP served.
+ * The release files a lookup can read, by registry key.
+ *
+ * `latest` is always here — it is imported above and every page reads it.
+ * The Private Edition files (`pce-latest` and the release-pinned ones) are
+ * registered by `lib/abap/catalog-snapshots.ts`, which only server code
+ * imports: this module also reaches the browser (through the evidence engine),
+ * and ~6 MB of PCE data has no business in a browser bundle. A key that was
+ * never registered is not shipped, and a lookup that names it is refused.
+ */
+const RELEASE_ARTIFACTS = new Map<string, CloudificationArtifact>([[CR.meta?.release || 'latest', CR]]);
+
+/** Called by `lib/abap/catalog-snapshots.ts`; the key is the artifact's own `meta.release`. */
+export function registerCatalogSnapshot(artifact: CloudificationArtifact): void {
+  if (artifact?.meta?.release && artifact.meta.sourceSha256) RELEASE_ARTIFACTS.set(artifact.meta.release, artifact);
+}
+
+/** Whether a lookup can read this snapshot in this process. */
+export function hasCatalogSnapshot(snapshot: string): boolean {
+  return RELEASE_ARTIFACTS.has(snapshot);
+}
+
+function releaseArtifact(snapshot: string | undefined): CloudificationArtifact {
+  if (snapshot === undefined) return CR;
+  const artifact = RELEASE_ARTIFACTS.get(snapshot);
+  if (!artifact) throw new CatalogSnapshotNotShipped(snapshot);
+  return artifact;
+}
+
+/**
+ * A catalog snapshot as the run records it: the registry key of the release
+ * file and the digest of the raw file SAP served.
  *
  * The key alone is not an identity — `latest` is a moving name — so the digest
  * travels with it into the run's `AssessmentProfile`. This is what makes a
  * result say *which* catalog answered, and a resync visible as a different one.
+ * Omitted, it is the default file (`latest`); named, the snapshot must be shipped.
  */
-export function getCatalogSnapshotRef(): { registryKey: string; sourceSha256: string } {
-  return { registryKey: CR.meta?.release || '', sourceSha256: CR.meta?.sourceSha256 || '' };
+export function getCatalogSnapshotRef(snapshot?: string): { registryKey: string; sourceSha256: string } {
+  const a = releaseArtifact(snapshot);
+  return { registryKey: a.meta?.release || '', sourceSha256: a.meta?.sourceSha256 || '' };
 }
 
 /** A lookup asked for a snapshot this build does not ship. Never answered from another one. */
@@ -238,8 +269,7 @@ export class CatalogSnapshotNotShipped extends Error {
  * Latest-Eintrag ersetzt keinen älteren Release-Snapshot still").
  */
 export function assertSnapshot(snapshot: string | undefined): void {
-  if (snapshot === undefined) return;
-  if (snapshot !== getCatalogSnapshotRef().registryKey) throw new CatalogSnapshotNotShipped(snapshot);
+  releaseArtifact(snapshot);
 }
 
 /* ---------- clean core level (A–D) lookup ---------- */
@@ -252,9 +282,11 @@ export function assertSnapshot(snapshot: string | undefined): void {
  * grade, not the map.
  */
 export function getSapObjectStates(objectName: string, snapshot?: string): SapObjectStates {
-  assertSnapshot(snapshot);
+  // The release state comes from the snapshot the profile reads; the
+  // classification file (classicAPI / noAPI) is release-agnostic and shared.
+  const releaseFile = releaseArtifact(snapshot);
   const key = (objectName || '').toUpperCase().trim();
-  const release = CR.entries?.[key];
+  const release = releaseFile.entries?.[key];
   const classification = CR_CLASS.entries?.[key];
 
   // "isSapObject" drives the residual level C verdict, so it must mean "we know

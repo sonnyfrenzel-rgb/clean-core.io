@@ -27,6 +27,7 @@ import {
   runProfileRecord,
 } from '@/lib/assessment-target';
 import { INPUT_IDS } from '@/lib/input-manifest';
+import { catalogSnapshotRefFor } from '@/lib/abap/catalog-snapshots';
 
 /**
  * The most ABAP one request may be asked to analyse.
@@ -257,11 +258,14 @@ export async function POST(req: NextRequest) {
     // the engine reads (key *and* digest) and the rule version. Built before
     // the quota is reserved, so a profile that is refused costs nothing.
     const rulesetVersion = 'rules-v1.0';
+    // The snapshot this target reads: the pinned Private Edition file for a
+    // named release SAP publishes one for, the edition's moving list otherwise.
+    const catalogSnapshot = catalogSnapshotRefFor(targetDeployment, assessmentTarget.release);
     const assessmentProfile = buildAssessmentProfile({
       edition: targetDeployment,
       target: assessmentTarget,
       objects: repositoryObjectsOf(extractCodeInventory(legacyCode)),
-      catalogSnapshot: getCatalogSnapshotRef(),
+      catalogSnapshot,
       ruleVersion: rulesetVersion,
     });
     const assessmentCoverage = profileCoverage(assessmentProfile);
@@ -318,7 +322,13 @@ export async function POST(req: NextRequest) {
     const targetFileName = uploadedFileName || 'unknown_file.abap';
 
     // deterministic server-side calculations
-    const evidenceReport = buildAbapEvidence(legacyCode, targetFileName, targetDeployment as 'public' | 'private');
+    const evidenceReport = buildAbapEvidence(
+      legacyCode,
+      targetFileName,
+      targetDeployment as 'public' | 'private',
+      // Roadmap 7.10 - the object states come from the snapshot the profile names.
+      catalogSnapshot.registryKey,
+    );
     const extensibilityReport = routeExtensibility(evidenceReport, targetDeployment);
     const codeInventory = extractCodeInventory(legacyCode);
     const dataCoupling = extractDataCoupling(legacyCode);

@@ -7,6 +7,8 @@ import { initializeApp as initAdminApp, getApps as getAdminApps } from 'firebase
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import firebaseConfig from '../firebase-config.json';
 import crLatest from '../lib/abap/generated/cloudification-repo.latest.json';
+import crPce2023 from '../lib/abap/generated/cloudification-repo.pce-2023-3.json';
+import { catalogSnapshotKeyFor } from '../lib/abap/catalog-snapshots';
 import {
   PROFILE_INPUT_ID,
   profileManifestInput,
@@ -26,17 +28,18 @@ import {
 import {
   CatalogSnapshotNotShipped,
   getCatalogSnapshotRef,
+  getSapObjectStates,
   gradeSapObjectUse,
 } from '../lib/abap/catalog-service';
 import { analysisRunInputs, buildInputManifest, type InputManifest } from '../lib/input-manifest';
-import { staleness, handoverBlockers } from '../lib/workflow-steps';
+import { staleness, handoverBlockers, generationBlockers, previousBasis } from '../lib/workflow-steps';
 import { validateProjectCommand } from '../lib/project-commands';
 import { evidenceDigest } from '../lib/run-evidence-digest';
 import { recordGaps } from '../lib/legacy-project';
 import { buildAuditPackContents } from '../lib/audit-pack-build';
 import { INPUT_MANIFEST_FILE } from '../lib/audit-pack';
 import { computeRunHash, signRunHash, verifyRunIntegrity } from '../lib/run-signature';
-import { sha256Hex, signOffKey } from '../lib/artefact-digest';
+import { artefactDigest, sha256Hex, signOffKey } from '../lib/artefact-digest';
 import { hydrateProject } from '../lib/project-loader';
 import { TERMS_VERSION } from '../lib/constants';
 import type { Project } from '../lib/types';
@@ -83,6 +86,9 @@ const DECLARED: AssessmentTarget = {
     { object: 'Z_PROFILE_WIRING', languageVersion: 'standard' },
   ],
 };
+
+/** A Private Edition 2023 FPS03 target, every object's language version stated. */
+const PCE_2023: AssessmentTarget = { ...DECLARED, release: '2023 FPS03' };
 
 const profileFor = (edition: string, target: AssessmentTarget = DECLARED): AssessmentProfile =>
   buildAssessmentProfile({
@@ -142,11 +148,14 @@ test.describe('7.10 station 1 — the declaration and the profile built from it'
     expect(priv.profileCoverage.state).toBe('unconfirmed');
     expect(priv.profileCoverage.gaps.map((g) => g.code)).toEqual(['snapshot-substituted', 'snapshot-unpinned']);
     expect(profileRevision(priv.assessmentProfile).startsWith('unconfirmed:private@2508/latest#rules-v1.0+')).toBe(true);
-    // Nothing declared: unconfirmed, never covered by default.
-    expect(runProfileRecord(profileFor('public', EMPTY), src).profileCoverage.gaps.map((g) => g.code)).toEqual([
-      'language-version-unknown',
-      'language-version-unknown',
-      'release-not-named',
+    // Nothing declared: covered, with a note per open fact - never unconfirmed,
+    // never assumed (decision Sonny, 30.09.2026).
+    const open = runProfileRecord(profileFor('public', EMPTY), src).profileCoverage;
+    expect(open.state).toBe('covered');
+    expect(open.gaps.map((g) => `${g.code}:${g.severity}`)).toEqual([
+      'language-version-unknown:notes',
+      'language-version-unknown:notes',
+      'release-not-named:notes',
     ]);
   });
 });
@@ -161,11 +170,40 @@ test.describe('7.10 station 2 — the snapshot is an argument, and latest never 
     });
   });
 
-  test('a lookup that names a release-pinned snapshot is refused, not answered from latest', () => {
-    expect(() => gradeSapObjectUse('KNA1', 'read', 'pce-2023-3')).toThrow(CatalogSnapshotNotShipped);
-    expect(() => gradeSapObjectUse('KNA1', 'read', 'pce-latest')).toThrow(CatalogSnapshotNotShipped);
+  test('a lookup that names a snapshot this build does not ship is refused, not answered from latest', () => {
+    expect(() => gradeSapObjectUse('KNA1', 'read', 'btp-latest')).toThrow(CatalogSnapshotNotShipped);
+    expect(() => gradeSapObjectUse('KNA1', 'read', 'pce-2022-2')).toThrow(CatalogSnapshotNotShipped);
     // The shipped key answers exactly what the unnamed lookup answers.
     expect(gradeSapObjectUse('KNA1', 'read', 'latest')).toEqual(gradeSapObjectUse('KNA1', 'read'));
+  });
+
+  test('a pinned Private Edition snapshot answers from its own file, not from latest', () => {
+    const pce = (crPce2023 as { meta: { release: string; sourceSha256: string }; entries: Record<string, { state: string }> });
+    const pub = (crLatest as { entries: Record<string, { state: string }> }).entries;
+    // An object whose state SAP publishes differently for 2023 FPS03 and for the Public list.
+    const differing = Object.keys(pce.entries).find((k) => pub[k] && pub[k].state !== pce.entries[k].state);
+    expect(differing, 'no object differs between the two files').toBeTruthy();
+    expect(getSapObjectStates(differing!, 'pce-2023-3').releaseState).toBe(pce.entries[differing!].state);
+    expect(getSapObjectStates(differing!).releaseState).toBe(pub[differing!].state);
+    expect(getCatalogSnapshotRef('pce-2023-3')).toEqual({ registryKey: 'pce-2023-3', sourceSha256: pce.meta.sourceSha256 });
+  });
+
+  test('a target reads the pinned file for its release, the edition list otherwise', () => {
+    expect(catalogSnapshotKeyFor('private', '2023 FPS03')).toBe('pce-2023-3');
+    expect(catalogSnapshotKeyFor('private', 'PCE-2025-1')).toBe('pce-2025-1');
+    expect(catalogSnapshotKeyFor('private', '')).toBe('pce-latest');
+    // No pinned file for 2022: the moving list is read - and the profile says so.
+    expect(catalogSnapshotKeyFor('private', '2022 FPS02')).toBe('pce-latest');
+    expect(catalogSnapshotKeyFor('public', '2508')).toBe('latest');
+    const p = buildAssessmentProfile({
+      edition: 'private',
+      target: { ...DECLARED, release: '2022 FPS02' },
+      objects: ['Z_PROFILE_WIRING', 'ZCL_PROFILE_WIRING'],
+      catalogSnapshot: getCatalogSnapshotRef('pce-latest'),
+      ruleVersion: 'rules-v1.0',
+    });
+    expect(runProfileRecord(p, 'x').profileCoverage).toMatchObject({ state: 'unconfirmed' });
+    expect(runProfileRecord(p, 'x').profileCoverage.gaps.map((g) => g.code)).toEqual(['snapshot-unpinned']);
   });
 
   test('a Private-Edition profile that names a release is not covered by the moving latest list', () => {
@@ -227,6 +265,29 @@ test.describe('7.10 station 4 — a profile change invalidates what depended on 
     expect(s.unverifiedInputs.map((u) => u.id)).toContain(PROFILE_INPUT_ID);
     expect(s.signOff, 'a sign-off under one profile read as current under another').toBe(true);
     expect(handoverBlockers(moved).join(' ')).toContain('the target profile');
+  });
+
+  test('what went stale after a profile change says "target profile", not "source"', () => {
+    const recorded = profileFor('private');
+    const design = '# Target';
+    const withRecord = (reason?: 'profile') =>
+      projectOn(recorded, {
+        solutionDesign: design,
+        auditMetadata: {
+          inputFingerprint: { sha256: sha256Hex(SOURCE) },
+          sourceChange: {
+            at: '2026-09-30T10:00:00.000Z', runId: 'run-1', previousSha256: sha256Hex(SOURCE),
+            artefacts: { solutionDesign: artefactDigest('solutionDesign', design)! },
+            ...(reason ? { reason } : {}),
+          },
+        } as Project['auditMetadata'],
+      });
+    const afterProfile = withRecord('profile');
+    expect(staleness(afterProfile)).toMatchObject({ design: true, basis: 'profile' });
+    expect(generationBlockers(afterProfile, 'transformation').join(' ')).toContain('generated for a previous target profile');
+    expect(previousBasis(afterProfile)).toBe('a previous target profile');
+    // A record without the reason is what a source change has always written.
+    expect(generationBlockers(withRecord(), 'transformation').join(' ')).toContain('generated for a previous source');
   });
 
   test('the sign-off command refuses a run assessed under another profile — 409, nothing written', () => {
@@ -386,7 +447,7 @@ test.describe('7.10 — the routes', () => {
 
     const res = await request.post('/api/runs/create', {
       headers: auth(),
-      data: { projectId: PROJECT_ID, legacyCode: SOURCE, s4Deployment: 'private', targetProfile: DECLARED, analysis: '{}', uploadedFileName: 'z.abap' },
+      data: { projectId: PROJECT_ID, legacyCode: SOURCE, s4Deployment: 'private', targetProfile: PCE_2023, analysis: '{}', uploadedFileName: 'z.abap' },
     });
     expect(res.status()).toBe(200);
     const { runId } = await res.json();
@@ -394,8 +455,9 @@ test.describe('7.10 — the routes', () => {
     const before = await read(`projects/${PROJECT_ID}/runs/${publicRunId}`);
     expect(run.assessmentSubject).not.toBe(before.assessmentSubject);
     expect(run.inputFingerprint.sha256).toBe(before.inputFingerprint.sha256);
-    expect(run.profileCoverage.state).toBe('unconfirmed');
-    expect(run.profileCoverage.gaps.map((g: { code: string }) => g.code)).toContain('snapshot-substituted');
+    // A Private Edition 2023 FPS03 target is read against SAP's pinned file for it: covered.
+    expect(run.assessmentProfile.catalogSnapshot).toEqual(getCatalogSnapshotRef('pce-2023-3'));
+    expect(run.profileCoverage).toEqual({ state: 'covered', gaps: [] });
 
     const project = await read(`projects/${PROJECT_ID}`);
     expect(project.auditMetadata.sourceChange, 'a profile change left the sign-off reading as current').toBeTruthy();
@@ -404,6 +466,23 @@ test.describe('7.10 — the routes', () => {
     expect(project.auditMetadata.sourceChange.signOff).toBe(signOffKey(signOffAt));
     const hydrated = hydrateProject(PROJECT_ID, project as Project, { kind: 'found', data: run });
     expect(staleness(hydrated).signOff).toBe(true);
+  });
+
+  test('a Private Edition release SAP publishes no pinned list for is signed as unconfirmed, and says why', async ({ request }) => {
+    const other = `${PROJECT_ID}-2022`;
+    await db.doc(`projects/${other}`).set({ name: 'Profile wiring 2022', userId: uid, createdAt: new Date(), status: 'uploaded', legacyCode: SOURCE });
+    const res = await request.post('/api/runs/create', {
+      headers: auth(),
+      data: { projectId: other, legacyCode: SOURCE, s4Deployment: 'private', targetProfile: { ...PCE_2023, release: '2022 FPS02' }, analysis: '{}', uploadedFileName: 'z.abap' },
+    });
+    expect(res.status()).toBe(200);
+    const { runId } = await res.json();
+    const run = await read(`projects/${other}/runs/${runId}`);
+    expect(run.assessmentProfile.catalogSnapshot.registryKey).toBe('pce-latest');
+    expect(run.profileCoverage.state).toBe('unconfirmed');
+    expect(run.profileCoverage.gaps.map((g: { code: string }) => g.code)).toEqual(['snapshot-unpinned']);
+    const entry = run.inputManifest.inputs.find((i: { id: string }) => i.id === PROFILE_INPUT_ID);
+    expect(entry.revision.startsWith('unconfirmed:private@2022 FPS02/pce-latest#')).toBe(true);
   });
 
   test('a sign-off on a run whose profile the project no longer stands on is a 409, and nothing is written', async ({ request }) => {
@@ -445,24 +524,25 @@ test.describe('7.10 — the routes', () => {
     const zip = await JSZip.loadAsync(await res.body());
     const text = await zip.file(INPUT_MANIFEST_FILE)!.async('string');
     const doc = JSON.parse(text);
-    expect(doc.targetProfile).toMatchObject({ recorded: true, claim: 'unconfirmed', coverage: 'unconfirmed' });
+    expect(doc.targetProfile).toMatchObject({ recorded: true, claim: 'confirmed', coverage: 'covered', reasons: [], notes: [] });
+    expect(doc.targetProfile.profile.catalogSnapshot.registryKey).toBe('pce-2023-3');
     expect(doc.inputs.map((i: { id: string }) => i.id)).toContain(PROFILE_INPUT_ID);
     const manifest = JSON.parse(await zip.file('manifest.json')!.async('string'));
     expect(manifest.files.find((f: { path: string }) => f.path === INPUT_MANIFEST_FILE).sha256).toBe(node256(text));
   });
 
-  test('the analyze stage shows the profile the run signed, and why it is unconfirmed', async ({ page }) => {
+  test('the analyze stage shows the profile the run signed and the snapshot that answered', async ({ page }) => {
     test.setTimeout(240_000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.waitForURL(/dashboard/, { timeout: 60_000 }).catch(() => {});
     await page.goto(`/project/${PROJECT_ID}/analyze`);
     const card = page.locator('[data-assessment-profile]').first();
-    await expect(card).toHaveAttribute('data-assessment-profile', 'unconfirmed', { timeout: 60_000 });
-    await expect(card.locator('[data-profile-line]')).toContainText('private @ 2508 · catalog latest@');
-    await expect(card.locator('[data-profile-gap="snapshot-substituted"]')).toContainText('pce-latest');
-    // Never the quieter state: an unconfirmed profile is not shown as confirmed.
-    await expect(card).not.toContainText('Every fact this result depends on is named');
+    await expect(card).toHaveAttribute('data-assessment-profile', 'covered', { timeout: 60_000 });
+    await expect(card.locator('[data-profile-line]')).toContainText('private @ 2023 FPS03 · catalog pce-2023-3@');
+    // Everything was stated: no note, no unconfirmed reason.
+    await expect(card.locator('[data-profile-note]')).toHaveCount(0);
+    await expect(card.locator('[data-profile-gap]')).toHaveCount(0);
   });
 
   test('the lookup names its snapshot, refuses one it does not ship and a target it cannot answer for', async ({ request }) => {
@@ -471,19 +551,27 @@ test.describe('7.10 — the routes', () => {
     expect(plain.status()).toBe(200);
     expect((await plain.json()).snapshot).toEqual(getCatalogSnapshotRef());
 
+    const unshipped = await post({ objects: ['KNA1'], snapshot: 'btp-latest' });
+    expect(unshipped.status()).toBe(422);
+    const unshippedBody = await unshipped.json();
+    expect(unshippedBody.code).toBe('snapshot-not-shipped');
+    expect(unshippedBody.grades).toBeUndefined();
+
     const pinned = await post({ objects: ['KNA1'], snapshot: 'pce-2023-3' });
-    expect(pinned.status()).toBe(422);
-    const pinnedBody = await pinned.json();
-    expect(pinnedBody.code).toBe('snapshot-not-shipped');
-    expect(pinnedBody.grades).toBeUndefined();
+    expect(pinned.status()).toBe(200);
+    expect((await pinned.json()).snapshot.registryKey).toBe('pce-2023-3');
 
     const priv = await post({ objects: ['KNA1'], profile: { edition: 'private', release: 'PCE-2023-3' } });
     expect(priv.status()).toBe(200);
     const privBody = await priv.json();
-    expect(privBody.coverage.state).toBe('unconfirmed');
-    expect(privBody.coverage.gaps.map((g: { code: string }) => g.code)).toEqual(
-      expect.arrayContaining(['snapshot-substituted', 'snapshot-unpinned']),
-    );
+    expect(privBody.snapshot.registryKey).toBe('pce-2023-3');
+    expect(privBody.coverage.state).toBe('covered');
+
+    const unpublished = await post({ objects: ['KNA1'], profile: { edition: 'private', release: '2022 FPS02' } });
+    const unpublishedBody = await unpublished.json();
+    expect(unpublishedBody.snapshot.registryKey).toBe('pce-latest');
+    expect(unpublishedBody.coverage.state).toBe('unconfirmed');
+    expect(unpublishedBody.coverage.gaps.map((g: { code: string }) => g.code)).toEqual(['snapshot-unpinned']);
 
     const onPrem = await post({ objects: ['KNA1'], profile: { edition: 'on-premise' } });
     expect(onPrem.status()).toBe(422);

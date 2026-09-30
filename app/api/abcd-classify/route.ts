@@ -10,6 +10,7 @@ import {
 } from '@/lib/abap/catalog-service';
 import { gradeKey, objectUseFromAccess, type GradedObject, type ObjectUse } from '@/lib/abap/abcd-classification';
 import { profileCoverage, PROFILE_VERSION, type AssessmentProfile } from '@/lib/assessment-profile';
+import { catalogSnapshotKeyFor } from '@/lib/abap/catalog-snapshots';
 
 /**
  * Resolve clean core levels — and, since roadmap "SAP-Katalog im
@@ -88,30 +89,42 @@ export async function POST(req: Request) {
     );
   }
 
-  const snapshot = getCatalogSnapshotRef();
+  // Which release file answers: the one the caller names, else the one the
+  // target reads (pinned Private Edition file for a named release, the
+  // edition's moving list otherwise), else the default file.
   const requested = (body as { snapshot?: unknown })?.snapshot;
+  const rawProfile = (body as { profile?: unknown })?.profile;
+  const p = (rawProfile && typeof rawProfile === 'object' ? rawProfile : {}) as Record<string, unknown>;
+  const edition = String(p.edition ?? '');
+  const release = typeof p.release === 'string' ? p.release.trim().slice(0, 40) : '';
+  let readKey: string | undefined;
   if (requested !== undefined) {
+    readKey = typeof requested === 'string' ? requested : String(requested);
     try {
-      assertSnapshot(typeof requested === 'string' ? requested : String(requested));
+      assertSnapshot(readKey);
     } catch (err) {
       if (err instanceof CatalogSnapshotNotShipped) {
-        return NextResponse.json({ error: err.message, code: 'snapshot-not-shipped', snapshot }, { status: 422 });
+        return NextResponse.json(
+          { error: err.message, code: 'snapshot-not-shipped', snapshot: getCatalogSnapshotRef() },
+          { status: 422 },
+        );
       }
       throw err;
     }
+  } else if (rawProfile !== undefined) {
+    readKey = catalogSnapshotKeyFor(edition, release);
   }
+  const snapshot = getCatalogSnapshotRef(readKey);
 
-  // The target, when the caller names one. Built with the snapshot this build
-  // actually reads and the level rule's own version, so the coverage speaks
-  // about this answer and not about an ideal one.
-  const rawProfile = (body as { profile?: unknown })?.profile;
+  // The target, when the caller names one. Built with the snapshot this
+  // lookup actually reads and the level rule's own version, so the coverage
+  // speaks about this answer and not about an ideal one.
   let coverage: ReturnType<typeof profileCoverage> | null = null;
   if (rawProfile !== undefined) {
-    const p = (rawProfile && typeof rawProfile === 'object' ? rawProfile : {}) as Record<string, unknown>;
     const profile: AssessmentProfile = {
       profileVersion: PROFILE_VERSION,
-      edition: String(p.edition ?? '') as AssessmentProfile['edition'],
-      release: typeof p.release === 'string' ? p.release.trim().slice(0, 40) : '',
+      edition: edition as AssessmentProfile['edition'],
+      release,
       components: [],
       catalogSnapshot: snapshot,
       ruleVersion: `levels ${getLevelRuleVersion().fingerprint}`,
@@ -143,7 +156,7 @@ export async function POST(req: Request) {
     name = name.trim().toUpperCase();
     if (!name) continue;
     const key = gradeKey(name, use);
-    if (!grades[key]) grades[key] = gradeSapObjectUse(name, use);
+    if (!grades[key]) grades[key] = gradeSapObjectUse(name, use, readKey);
     // Keyed by name alone — hasNoReleasedApiPath does not depend on `use`, so
     // one entry serves every use of the same object.
     if (!(name in noPath)) noPath[name] = hasNoReleasedApiPath(name);

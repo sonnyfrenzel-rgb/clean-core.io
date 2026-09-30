@@ -170,7 +170,19 @@ export function redactCredentials(snippet: string | undefined): string {
       (_m, word, mid) => `${word}${mid}'…<redacted>'`);
 }
 
-export function buildAbapEvidence(code: string, fileName: string, deployment?: 'public' | 'private'): AbapEvidenceReport {
+/**
+ * `catalogSnapshot` (roadmap 7.10): the release file SAP object states are read
+ * from — `pce-2023-3` for a Private Edition 2023 FPS03 target, say. Omitted, the
+ * default file. A snapshot that is not shipped throws rather than being
+ * answered from another one (`CatalogSnapshotNotShipped`). The successor
+ * mapping (`MERGED_TABLE_MAP`) stays the shared mapping layer.
+ */
+export function buildAbapEvidence(
+  code: string,
+  fileName: string,
+  deployment?: 'public' | 'private',
+  catalogSnapshot?: string,
+): AbapEvidenceReport {
   const findings: EvidenceFinding[] = [];
   const statements = tokenize(code);
   let idCounter = 1;
@@ -231,7 +243,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     // the data coupling asks.
     const routeNote = ROUTE_NOTE[route] ?? '';
 
-    const sapStates = getSapObjectStates(table);
+    const sapStates = getSapObjectStates(table, catalogSnapshot);
     const knownToSap = Boolean(sapStates.releaseState || sapStates.classificationState);
     // Conventional ABAP local-data prefix AND unknown to SAP → a variable whose
     // declaration this upload does not contain (a common case with partial code).

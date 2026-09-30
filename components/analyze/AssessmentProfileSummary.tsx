@@ -16,7 +16,10 @@ import { staleness } from '@/lib/workflow-steps';
  * component levels, the language version of every object, the catalog
  * snapshot (key and digest) and the rule version. This card shows it, and it
  * shows what the result may claim: *covered*, or *unconfirmed* with every
- * reason as a sentence. There is no third, quieter state — a profile nobody
+ * reason as a sentence. What the owner has not stated (release, language
+ * version) is a quiet note with the way to state it, not "unconfirmed"
+ * (decision Sonny, 30.09.2026) — unconfirmed is kept for a catalog that does
+ * not answer for this target. There is no third, quieter state — a profile nobody
  * could confirm is never shown as one somebody did.
  *
  * A run signed before 7.10 recorded no profile. The card says exactly that
@@ -46,6 +49,8 @@ export default function AssessmentProfileSummary({ project }: { project: Project
   }
 
   const coverage = profileCoverage(profile);
+  const verdictGaps = coverage.gaps.filter((g) => g.severity !== 'notes');
+  const notes = coverage.gaps.filter((g) => g.severity === 'notes');
   const moved = staleness(project).unverifiedInputs.some((u) => u.id === PROFILE_INPUT_ID);
   const subject = typeof project.assessmentSubject === 'string' ? project.assessmentSubject.slice(0, 12) : null;
 
@@ -63,18 +68,35 @@ export default function AssessmentProfileSummary({ project }: { project: Project
 
           {coverage.state === 'covered' ? (
             <CcMessageStrip state="success" headline="Covered.">
-              Every fact this result depends on is named and is the one that was read.
+              The catalog snapshot read is the one this target's verdicts come from.
             </CcMessageStrip>
           ) : (
             <CcMessageStrip state="warning" headline="Carried as unconfirmed.">
               <ul className="list-disc pl-4 space-y-1" data-profile-gaps="">
-                {coverage.gaps.map((g) => (
+                {verdictGaps.map((g) => (
                   <li key={`${g.code}:${g.subject ?? ''}`} data-profile-gap={g.code}>
                     {g.sentence}
                   </li>
                 ))}
               </ul>
             </CcMessageStrip>
+          )}
+
+          {notes.length > 0 && (
+            <div data-profile-notes="">
+              <CcMessageStrip state="neutral">
+                <ul className="list-disc pl-4 space-y-1">
+                  {notes.map((g) => (
+                    <li key={`${g.code}:${g.subject ?? ''}`} data-profile-note={g.code}>
+                      {g.sentence}
+                    </li>
+                  ))}
+                </ul>
+                <a href="#assessment-target" className="underline text-cc-ink">
+                  State it under Target profile, then run the analysis again.
+                </a>
+              </CcMessageStrip>
+            </div>
           )}
 
           {moved && (

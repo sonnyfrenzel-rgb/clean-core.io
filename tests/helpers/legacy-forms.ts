@@ -79,7 +79,7 @@ const currentProfile = () =>
     edition: 'private',
     target: { release: '', components: [], languageVersions: [] },
     objects: ['Z_LEGACY_PO_RELEASE'],
-    catalogSnapshot: { registryKey: 'latest', sourceSha256: 'a'.repeat(64) },
+    catalogSnapshot: { registryKey: 'pce-latest', sourceSha256: 'a'.repeat(64) },
     ruleVersion: 'rules-v1.0',
   });
 const currentManifest = () =>

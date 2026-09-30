@@ -691,7 +691,13 @@ function targetProfileSection(project: Project): Record<string, unknown> {
     recorded: true,
     claim: coverage.state === 'covered' ? 'confirmed' : 'unconfirmed',
     coverage: coverage.state,
-    reasons: coverage.gaps.map((g) => ({ code: g.code, subject: g.subject, sentence: g.sentence })),
+    reasons: coverage.gaps
+      .filter((g) => g.severity !== 'notes')
+      .map((g) => ({ code: g.code, subject: g.subject, sentence: g.sentence })),
+    // What the owner did not state - a note, not a reason the claim is weaker.
+    notes: coverage.gaps
+      .filter((g) => g.severity === 'notes')
+      .map((g) => ({ code: g.code, subject: g.subject, sentence: g.sentence })),
     subject: typeof project.assessmentSubject === 'string' ? project.assessmentSubject : null,
     profile,
   };
