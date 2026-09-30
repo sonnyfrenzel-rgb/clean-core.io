@@ -1218,7 +1218,7 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-318 | niedrig | P1 | sofort | eingeplant |
 | SEC-2026-319 | niedrig | P2 | sofort | eingeplant |
 | SEC-2026-320 | niedrig | P2 | sofort | eingeplant |
-| SEC-2026-321 | niedrig | P2 | sofort - mit dem naechsten Regel-Deploy | eingeplant |
+| SEC-2026-321 | niedrig | P2 | sofort - mit dem naechsten Regel-Deploy | behoben |
 | SEC-2026-322 | niedrig | P3 | 3.0 | eingeplant |
 | SEC-2026-323 | niedrig | P3 | 3.0 | eingeplant |
 | SEC-2026-324 | niedrig | P2 | sofort | eingeplant |
@@ -1230,7 +1230,7 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-344 | hoch | P3 | eigener Schritt: S/4-Schluesselhygiene mit Migration, braucht Sonnys Go | eingeplant |
 | SEC-2026-418 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
 | SEC-2026-419 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
-| SEC-2026-420 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-420 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-421 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
 | SEC-2026-422 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
 | SEC-2026-423 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
@@ -1286,103 +1286,103 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-473 | niedrig | P2 | behoben in diesem Patch-Schritt | eingeplant |
 | SEC-2026-474 | niedrig | P2 | behoben in diesem Patch-Schritt | eingeplant |
 | SEC-2026-475 | mittel | P2 | behoben in diesem Patch-Schritt | eingeplant |
-| SEC-2026-476 | mittel | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-476 | mittel | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-477 | mittel | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-478 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
-| SEC-2026-479 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-479 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-480 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-481 | niedrig | P3 | v2.19-Sicherheitsschritt A - sofort | behoben |
-| SEC-2026-482 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-483 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-484 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-482 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-483 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-484 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-485 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-486 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-487 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
-| SEC-2026-488 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-489 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-488 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-489 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-490 | niedrig | P3 | nur falls die Jira-Integration je aktiviert wird | eingeplant |
 | SEC-2026-491 | niedrig | P3 | eigener Schritt: CSP ohne unsafe-inline (Nonce), mit Messung | eingeplant |
 | SEC-2026-492 | niedrig | P3 | v2.19-Sicherheitsschritt A - sofort | behoben |
 | SEC-2026-493 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-494 | niedrig | P3 | eigener Schritt: CSP ohne unsafe-inline (Nonce), mit Messung | eingeplant |
 | SEC-2026-495 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
-| SEC-2026-496 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-496 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-497 | niedrig | P3 | v2.19-Sicherheitsschritt A - sofort | behoben |
-| SEC-2026-498 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-499 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-500 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-501 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-498 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-499 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-500 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-501 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-502 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-503 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-504 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
 | SEC-2026-505 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-506 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
-| SEC-2026-507 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-507 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-508 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-509 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
 | SEC-2026-511 | niedrig | P3 | nur falls die Jira-Integration je aktiviert wird | eingeplant |
 | SEC-2026-512 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-513 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-514 | niedrig | P2 | v2.19-Sicherheitsschritt A - sofort | behoben |
-| SEC-2026-515 | info | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-515 | info | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-516 | info | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
 | SEC-2026-517 | info | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-518 | info | P3 | eigener Schritt: S/4-Schluesselhygiene mit Migration, braucht Sonnys Go | eingeplant |
-| SEC-2026-519 | info | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-520 | info | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-519 | info | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-520 | info | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-521 | info | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
 | SEC-2026-522 | info | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-523 | info | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-524 | mittel | P2 | eigener Schritt: CSP ohne unsafe-inline (Nonce), mit Messung | eingeplant |
 | SEC-2026-525 | mittel | P2 | v2.19-Sicherheitsschritt A - sofort | behoben |
-| SEC-2026-526 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-526 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-527 | mittel | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-528 | mittel | P2 | Phase 2 · Datenschutz-Schritt | behoben |
 | SEC-2026-529 | mittel | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-557 | mittel | P2 | eigener Schritt: CSP ohne unsafe-inline (Nonce), mit Messung | eingeplant |
 | SEC-2026-558 | mittel | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
-| SEC-2026-559 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-561 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-565 | mittel | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-559 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-561 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-565 | mittel | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-566 | mittel | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
-| SEC-2026-568 | mittel | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-569 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-570 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-568 | mittel | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-569 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-570 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-571 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-572 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-573 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-576 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | behoben |
-| SEC-2026-577 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-577 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-578 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
 | SEC-2026-580 | niedrig | P3 | eigener Schritt: CSP ohne unsafe-inline (Nonce), mit Messung | eingeplant |
-| SEC-2026-581 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-581 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-582 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-583 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-585 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-586 | niedrig | P3 | eigener Schritt: CSP ohne unsafe-inline (Nonce), mit Messung | eingeplant |
-| SEC-2026-588 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-588 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-589 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-590 | niedrig | P3 | Phase 2 · Datenschutz-Schritt | behoben |
 | SEC-2026-592 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-596 | niedrig | P3 | eigener Schritt: S/4-Schluesselhygiene mit Migration, braucht Sonnys Go | eingeplant |
-| SEC-2026-597 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-598 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-599 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-600 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-597 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-598 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-599 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-600 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-601 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-603 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
 | SEC-2026-606 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-607 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
-| SEC-2026-608 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-608 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-609 | niedrig | P2 | Phase 2 · Datenschutz-Schritt | behoben |
 | SEC-2026-610 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-611 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-613 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
 | SEC-2026-616 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
-| SEC-2026-620 | info | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-620 | info | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-624 | info | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-626 | info | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
-| SEC-2026-627 | info | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-627 | info | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-629 | info | P3 | Phase 2 · Datenschutz-Schritt | behoben |
 
 **Audit von v2.20.0 (`fc78767`), 28.09.2026: 1 hoch, 15 mittel, 50 niedrig, 13 info — alle 188
@@ -1412,7 +1412,8 @@ sind seit dem Audit unverändert (Hash `32e1970bb02e`, so am 24.09. ausgerollt).
 - **Schritt A — sofort:** SEC-2026-514, -525 (P2); -481, -492, -497 (P3). Behoben am 24.09.2026, noch nicht auf `main`.
 - **Schritt B — mit dem nächsten Regel-Deploy, braucht Sonnys Go:** SEC-2026-482, -489, -496,
   -500, -519, -520, -526 (P2); -476, -479, -483, -484, -488, -498, -499, -501, -507, -515 (P3).
-  Gehört mit dem schon eingeplanten SEC-2026-321 in denselben Deploy.
+  Gehört mit dem schon eingeplanten SEC-2026-321 in denselben Deploy. Deployed on 30.09.2026 (rules `def53aa1`) and closed, together with
+  the same step's rows from the v2.20.0 audit and SEC-2026-420.
 - **Schritt C — vor 3.0:** SEC-2026-477, -478, -480, -485, -502, -503, -506, -508, -510, -512,
   -513, -523, -527 (P3), zusammen mit SEC-2026-421 und -422.
 - **Schritt F — neben verwandter Arbeit:** SEC-2026-486, -487, -493, -495, -505, -517, -522, -529 (P3).
