@@ -392,4 +392,20 @@ test.describe('(g) the BYOK key', () => {
     expect(read('playwright.config.ts')).toContain('process.env.BYOK_ENCRYPTION_KEY =');
   });
 
+  test('the deploy stops, before it deploys, when the secret is missing or not 32 bytes', () => {
+    const deploy = read('.github/workflows/deploy.yml');
+    const job = deploy.slice(deploy.indexOf('\n  deploy:'));
+    const step = job.slice(job.indexOf('- name: Assert Production Secrets Configured'), job.indexOf('- name: Authenticate with Google Cloud'));
+    expect(step, 'the assertion step no longer comes before the deploy').not.toBe('');
+    expect(job.indexOf('- name: Assert Production Secrets Configured')).toBeLessThan(job.indexOf('- name: Deploy to Google Cloud Run'));
+    expect(step).toContain('BYOK_ENCRYPTION_KEY: ${{ secrets.BYOK_ENCRYPTION_KEY }}');
+    expect(step, 'a missing BYOK key no longer stops the deploy').toMatch(/if \[ -z "\$BYOK_ENCRYPTION_KEY" \]; then\s+echo "::error::[^"]*BYOK_ENCRYPTION_KEY[^"]*"\s+exit 1/);
+    expect(step, 'a malformed BYOK key no longer stops the deploy').toMatch(/base64 -d[^\n]*wc -c[\s\S]*!= "32" \]; then\s+echo "::error::[^"]*"\s+exit 1/);
+    // Never printed: the value is only ever an input to a pipe.
+    for (const line of step.split('\n').filter((l) => /echo|printf/.test(l))) {
+      if (line.includes('$BYOK_ENCRYPTION_KEY')) expect(line, 'the key value is echoed').toMatch(/printf '%s' "\$BYOK_ENCRYPTION_KEY" \|/);
+    }
+    // The comment that called it "passed and not asserted" is gone with the behaviour.
+    expect(job).not.toMatch(/BYOK_ENCRYPTION_KEY[^\n]*\n[^\n]*passed and not asserted/);
+  });
 });

@@ -379,10 +379,22 @@ jobs:
           fi
 
       # F-16: Assert production secrets are configured before deploying (Finding F2)
+      #
+      # BYOK_ENCRYPTION_KEY (roadmap 3.0.13 g, owner decision 30.09.2026) is
+      # asserted here too, and its shape with it: the app accepts only a value
+      # that decodes to exactly 32 bytes (`lib/byok-key.ts`), and anything else
+      # is treated as absent - saving an own model key is refused and every key
+      # sealed under it becomes unreadable. A deploy that would ship in that
+      # state stops here instead. Unlike AUDIT_SIGNING_KEY's length floor (see
+      # tests/signing-key-guard.spec.ts), refusing a malformed value costs
+      # nothing: a value the app cannot use has never sealed a key, so fixing it
+      # breaks no stored record. The value is only piped into base64 and wc and
+      # never printed.
       - name: Assert Production Secrets Configured
         env:
           AUDIT_SIGNING_KEY: ${{ secrets.AUDIT_SIGNING_KEY }}
           S4_HOST_ALLOWLIST: ${{ secrets.S4_HOST_ALLOWLIST }}
+          BYOK_ENCRYPTION_KEY: ${{ secrets.BYOK_ENCRYPTION_KEY }}
         run: |
           if [ -z "$AUDIT_SIGNING_KEY" ]; then
             echo "::error::FATAL: AUDIT_SIGNING_KEY secret is not configured in GitHub Repository secrets!"
@@ -390,6 +402,15 @@ jobs:
           fi
           if [ -z "$S4_HOST_ALLOWLIST" ]; then
             echo "::error::FATAL: S4_HOST_ALLOWLIST secret is not configured in GitHub Repository secrets!"
+            exit 1
+          fi
+          if [ -z "$BYOK_ENCRYPTION_KEY" ]; then
+            echo "::error::FATAL: BYOK_ENCRYPTION_KEY secret is not configured in GitHub Repository secrets! Create it with 'openssl rand -base64 32' (32 bytes, base64) before deploying."
+            exit 1
+          fi
+          byok_bytes="$(printf '%s' "$BYOK_ENCRYPTION_KEY" | tr -d '[:space:]' | base64 -d 2>/dev/null | wc -c | tr -d '[:space:]')"
+          if [ "$byok_bytes" != "32" ]; then
+            echo "::error::FATAL: BYOK_ENCRYPTION_KEY is set but does not decode from base64 to 32 bytes; the app would refuse to store keys with it. Replace it with the output of 'openssl rand -base64 32'."
             exit 1
           fi
 
@@ -410,12 +431,12 @@ jobs:
       # Ed25519 on — a feature that needs a workflow edit to activate is not
       # optional, it is unreachable.
       #
-      # BYOK_ENCRYPTION_KEY (roadmap 3.0.13 g) is passed and not asserted either,
-      # for a different reason: it is required, but its absence is handled by the
-      # app rather than by refusing every deploy — storing an own model key is
-      # refused with a reason and /api/health reports degraded, while everything
-      # else, including keys stored before 3.0.13, keeps working. The order is
-      # secret first, then this deploy, then scripts/byok-rekey.ts.
+      # BYOK_ENCRYPTION_KEY (roadmap 3.0.13 g) is required and asserted above:
+      # the deploy stops when it is missing or not 32 bytes (owner decision
+      # 30.09.2026). Should it ever reach a revision anyway, the app still
+      # degrades rather than falls back - storing an own model key is refused
+      # with a reason and /api/health reports degraded. The order is secret
+      # first, then this deploy, then scripts/byok-rekey.ts.
       - name: Deploy to Google Cloud Run
         uses: google-github-actions/deploy-cloudrun@251330ba9a8a34bfbc1622895f42e1d53fd14522 # v2
         with:
