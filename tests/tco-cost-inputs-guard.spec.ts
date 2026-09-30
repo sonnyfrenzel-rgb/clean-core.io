@@ -142,3 +142,17 @@ test.describe('rendered', () => {
     await expect(page.getByText('Annual Net Savings')).toHaveCount(0);
   });
 });
+
+// Sonny, 30.09.2026: the printed estimate names the inputs it was priced with —
+// the input panel does not print, and "the cost figures entered above" pointed
+// at nothing on paper. Amounts go through formatAmount, so an input left empty
+// prints "Not determined", never a zero.
+test('the printed estimate names the inputs it was priced with', () => {
+  const page = fs.readFileSync(path.join(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'tco', 'page.tsx'), 'utf8');
+  const print = page.slice(page.indexOf('hidden print:block'), page.indexOf('</div>', page.indexOf('hidden print:block')));
+  expect(print).toContain('data-tco-print-inputs');
+  for (const input of ['formatAmount(devRate, currency)', 'formatAmount(userRate, currency)', 'formatAmount(oneTimeCost, currency)', 'formatNumber(loc)']) {
+    expect(print, `the print footer does not name ${input}`).toContain(input);
+  }
+  expect(print).not.toContain('entered above');
+});
