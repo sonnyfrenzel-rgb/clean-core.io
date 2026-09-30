@@ -19,6 +19,7 @@ import type { Auth } from 'firebase-admin/auth';
 import firebaseConfig from '../firebase-config.json';
 import { FIRESTORE_DB_ID } from '../lib/constants';
 import { deleteUserDataAndAccount } from '../lib/firebase-admin';
+import { suppressionId } from '../lib/unsubscribe-token';
 import { generateExecutiveSummary, generateExecutiveSummaryDoc, generateModelCard } from '../lib/audit-pack';
 
 /**
@@ -250,7 +251,7 @@ test.describe('the HTML documents served from public/', () => {
 });
 
 test.describe('account erasure and the mail records', () => {
-  test('takes the outbox and delivery-log records of the account with it', async () => {
+  test('takes the outbox, delivery-log, opt-out and report records of the account with it', async () => {
     // The whole cascade against the emulator: tens of queries, some of them
     // collection-group ones, which the emulator answers slowly.
     test.setTimeout(120_000);
@@ -264,6 +265,44 @@ test.describe('account erasure and the mail records', () => {
       eventByUid: db.collection('email_events').doc(`${uid}-m1`),
       eventByAddress: db.collection('email_events').doc(`${uid}-m2`),
       someoneElse: db.collection('email_events').doc(`${uid}-m3`),
+      // The opt-out list, keyed by the hash of the address as the unsubscribe
+      // route writes it; one entry that carries the uid under another id; and
+      // somebody else's opt-out, which has to stay.
+      suppressedByAddress: db.collection('email_suppressions').doc(suppressionId(email)),
+      suppressedByUid: db.collection('email_suppressions').doc(`${uid}-s-uid`),
+      suppressedOther: db.collection('email_suppressions').doc(suppressionId(other)),
+      // A weekly-report snapshot in the shape stored before 30.09.2026, naming
+      // the account next to somebody else; and one in the current shape.
+      oldReport: db.collection('usage_reports').doc(`${uid}-r-old`),
+      newReport: db.collection('usage_reports').doc(`${uid}-r-new`),
+    };
+    const oldReport = {
+      periodStart: new Date('2026-09-01T10:00:00Z'),
+      current: { registrations: 2, activations: 1, activeAccounts: 2, runs: 4, projects: 2, units: 4 },
+      newAccounts: [
+        { name: 'Erased Person', email, when: new Date('2026-08-30T10:00:00Z') },
+        { name: 'Other Person', email: other, when: new Date('2026-08-31T10:00:00Z') },
+      ],
+      newlyActivated: [
+        { name: 'Erased Person', email, runs: 3 },
+        { name: 'Other Person', email: other, runs: 1 },
+      ],
+      reachedLimit: [{ name: 'Erased Person', email: email.toUpperCase() }, { name: 'Other Person', email: other }],
+      delivery: {
+        sent: 3, bounced: 2,
+        failures: [
+          { to: email, kind: 'welcome', status: 'email.bounced', detail: 'mailbox full', at: null },
+          { to: other, kind: 'welcome', status: 'email.bounced', detail: 'mailbox full', at: null },
+        ],
+      },
+      recipient: `${uid}-admin@cleancore-test.io`,
+      providerId: 'seed',
+    };
+    const newReport = {
+      periodStart: new Date('2026-10-02T10:00:00Z'),
+      newAccounts: 2, newlyActivated: [3, 1], reachedLimit: 2,
+      delivery: { sent: 3, bounced: 1, failures: [{ kind: 'welcome', status: 'email.bounced', count: 1 }] },
+      providerId: 'seed',
     };
     try {
       await db.collection('users').doc(uid).set({ email, status: 'approved', tier: 'pilot' });
@@ -271,6 +310,11 @@ test.describe('account erasure and the mail records', () => {
       await refs.eventByUid.set({ messageId: `${uid}-m1`, to: [email], uid, kind: 'welcome', status: 'email.sent' });
       await refs.eventByAddress.set({ messageId: `${uid}-m2`, to: [email], uid: null, kind: 'tenant approval', status: 'email.sent' });
       await refs.someoneElse.set({ messageId: `${uid}-m3`, to: [other], uid: null, kind: 'tenant approval', status: 'email.sent' });
+      await refs.suppressedByAddress.set({ email, list: 'community-updates', source: 'one-click' });
+      await refs.suppressedByUid.set({ email: `${uid}-old-spelling@cleancore-test.io`, uid, list: 'community-updates', source: 'one-click' });
+      await refs.suppressedOther.set({ email: other, list: 'community-updates', source: 'one-click' });
+      await refs.oldReport.set(oldReport);
+      await refs.newReport.set(newReport);
 
       const deleted: string[] = [];
       const auth = { deleteUser: async (id: string) => { deleted.push(id); } } as unknown as Auth;
@@ -281,6 +325,25 @@ test.describe('account erasure and the mail records', () => {
       expect((await refs.eventByUid.get()).exists, 'the delivery log kept a record by uid').toBe(false);
       expect((await refs.eventByAddress.get()).exists, 'the delivery log kept a record by address').toBe(false);
       expect((await refs.someoneElse.get()).exists, 'another recipient\'s record was taken too').toBe(true);
+
+      expect((await refs.suppressedByAddress.get()).exists, 'the opt-out list kept the address').toBe(false);
+      expect((await refs.suppressedByUid.get()).exists, 'the opt-out list kept an entry by uid').toBe(false);
+      expect((await refs.suppressedOther.get()).exists, 'somebody else\'s opt-out was taken too').toBe(true);
+
+      const kept = (await refs.oldReport.get()).data() || {};
+      const serialised = JSON.stringify(kept).toLowerCase();
+      expect(serialised.includes(email.toLowerCase()), 'an old report snapshot kept the address').toBe(false);
+      expect(serialised.includes('erased person'), 'an old report snapshot kept the name').toBe(false);
+      // Everybody else's entries, and the figures, are as they were.
+      expect(kept.newAccounts).toEqual([expect.objectContaining({ name: 'Other Person', email: other })]);
+      expect(kept.newlyActivated).toEqual([{ name: 'Other Person', email: other, runs: 1 }]);
+      expect(kept.reachedLimit).toEqual([{ name: 'Other Person', email: other }]);
+      expect(kept.delivery.failures).toEqual([expect.objectContaining({ to: other })]);
+      expect(kept.delivery.sent).toBe(3);
+      expect(kept.current).toEqual(oldReport.current);
+      expect(kept.recipient, 'the report recipient is not this account and stays').toBe(oldReport.recipient);
+      const untouched = (await refs.newReport.get()).data() || {};
+      expect({ ...untouched, periodStart: null }).toEqual({ ...newReport, periodStart: null });
     } finally {
       await Promise.all([...Object.values(refs), db.collection('users').doc(uid)].map((r) => r.delete().catch(() => {})));
     }

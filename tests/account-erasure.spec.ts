@@ -9,6 +9,7 @@ import firebaseConfig from '../firebase-config.json';
 import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
 import { deleteUserDataAndAccount } from '../lib/firebase-admin';
+import { suppressionId } from '../lib/unsubscribe-token';
 
 /**
  * Account erasure is complete or it has not happened (QA review of
@@ -82,10 +83,33 @@ async function seedOwnedData(uid: string, email: string) {
     answers: { q1: 'weekly' },
     comment: 'a comment that must not outlive the account',
   });
+  // An opt-out from community mail, and somebody else's, which has to stay.
+  await db.collection('email_suppressions').doc(suppressionId(email)).set({ email, list: 'community-updates', source: 'one-click' });
+  await db.collection('email_suppressions').doc(suppressionId(otherAddress(uid))).set({
+    email: otherAddress(uid), list: 'community-updates', source: 'one-click',
+  });
 }
 
-async function cleanUp(uid: string) {
+/** Somebody who is not the account being erased. */
+const otherAddress = (uid: string) => `${uid}-someone-else@cleancore-test.io`;
+
+async function expectOptOutsSorted(email: string, uid: string) {
   const db = adminDb();
+  expect(
+    (await db.collection('email_suppressions').doc(suppressionId(email)).get()).exists,
+    'the erased account is still on the opt-out list',
+  ).toBe(false);
+  expect(
+    (await db.collection('email_suppressions').doc(suppressionId(otherAddress(uid))).get()).exists,
+    'somebody else\'s opt-out went with the account',
+  ).toBe(true);
+}
+
+async function cleanUp(uid: string, email?: string) {
+  const db = adminDb();
+  for (const address of [email, otherAddress(uid)]) {
+    if (address) await db.collection('email_suppressions').doc(suppressionId(address)).delete().catch(() => {});
+  }
   for (const col of ['users', 's4_credentials', 'mfa_secrets']) {
     await db.collection(col).doc(uid).delete().catch(() => {});
   }
@@ -111,8 +135,9 @@ async function authAccountExists(uid: string): Promise<boolean> {
 test('a refused step keeps the profile and the sign-in, and names what is still stored', async () => {
   const db = adminDb();
   const uid = `erasure-partial-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  const email = `${uid}@cleancore-test.io`;
   try {
-    await seedOwnedData(uid, `${uid}@cleancore-test.io`);
+    await seedOwnedData(uid, email);
     const auth = recordingAuth();
 
     await expect(
@@ -138,8 +163,9 @@ test('a refused step keeps the profile and the sign-in, and names what is still 
     expect((await db.collection('s4_credentials').doc(uid).get()).exists).toBe(false);
     expect((await db.collection('users').doc(uid).get()).exists).toBe(false);
     expect(retry.deleted, 'the account was not deleted once everything else was gone').toEqual([uid]);
+    await expectOptOutsSorted(email, uid);
   } finally {
-    await cleanUp(uid);
+    await cleanUp(uid, email);
   }
 });
 
@@ -177,7 +203,8 @@ test('the whole erasure, through the route: the survey answers and the sign-in g
     expect((await db.collection('mfa_secrets').doc(uid).get()).exists).toBe(false);
     expect((await db.collection('users').doc(uid).get()).exists).toBe(false);
     expect(await authAccountExists(uid), 'the Firebase Auth account outlived the erasure').toBe(false);
+    await expectOptOutsSorted(email, uid);
   } finally {
-    await cleanUp(uid);
+    await cleanUp(uid, email);
   }
 });

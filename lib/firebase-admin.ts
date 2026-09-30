@@ -5,6 +5,8 @@ import { encrypt, decrypt } from './s4-credentials';
 import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp, s4AccessRequiresEnrolment } from './mfa-gate';
 import { starterExampleForFingerprint } from './starter-example-fingerprints';
 import { INVITATION_COLLECTION, PROJECT_READERS_FIELD, normaliseInvitedEmail } from './invitations';
+import { normaliseEmail, suppressionId } from './unsubscribe-token';
+import { withoutAccount } from './usage-snapshot-scrub';
 // Types only — erased at compile time, so the modules themselves still load
 // lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
 import type { Auth } from 'firebase-admin/auth';
@@ -819,6 +821,13 @@ export async function deleteUserDataAndAccount(
   // 3b. Backstop (F-03): purge immutable runs that were orphaned by an earlier
   //     client-side project delete. Best-effort — a missing collection-group index
   //     must never abort the erasure, so failures here are logged, not fatal.
+  //
+  //     Kept non-fatal on purpose for now (30.09.2026): the query needs a
+  //     collection-group index on `runs.userId`, which production does not have
+  //     yet, and collecting the failure before the index exists would stop every
+  //     erasure at step 4. Once Sonny has created the index in GCP (open item in
+  //     docs/BACKLOG.md, security v2.20.0), replace the `console.warn` with
+  //     `erasureErrors.push(...)`, like the steps around it.
   try {
     const q = db.collectionGroup('runs').where('userId', '==', uid).limit(400);
     let s = await q.get();
@@ -922,6 +931,54 @@ export async function deleteUserDataAndAccount(
         await batch.commit();
         snapshot = await q.get();
       }
+    });
+  }
+
+  //     The opt-out list (`app/api/unsubscribe/route.ts`) holds the address of
+  //     everyone who unsubscribed from community mail, keyed by its hash. It is
+  //     a record of the person, and an erased account is mailed never anyway —
+  //     `email_sends` above and the profile below go with it, so no send
+  //     script finds the address to skip. Removed by the id the route writes,
+  //     by the stored address in case a spelling differed, and by uid for any
+  //     entry that carries one (Sonny, 30.09.2026).
+  const addresses = [...new Set([profileAddress, invitedAddress].filter((a): a is string => !!a))];
+  const suppressionRefs = new Map<string, unknown>();
+  await tryDelete('email_suppressions', async () => {
+    for (const address of addresses) {
+      const ref = db.collection('email_suppressions').doc(suppressionId(address));
+      suppressionRefs.set(ref.path, ref);
+      const byAddress = await db.collection('email_suppressions').where('email', '==', normaliseEmail(address)).get();
+      byAddress.docs.forEach((d: ErasableDoc & { ref: { path: string } }) => suppressionRefs.set(d.ref.path, d.ref));
+    }
+    const byUid = await db.collection('email_suppressions').where('uid', '==', uid).get();
+    byUid.docs.forEach((d: ErasableDoc & { ref: { path: string } }) => suppressionRefs.set(d.ref.path, d.ref));
+    const batch = db.batch();
+    // Deleting an id that does not exist is not an error in Firestore.
+    suppressionRefs.forEach((ref) => batch.delete(ref as DocumentReference));
+    await batch.commit();
+  });
+
+  //     Weekly-report snapshots (`usage_reports`) written before 30.09.2026
+  //     listed accounts by name and address; snapshots since hold figures only
+  //     (`usageReportSnapshot`). The account's entries are taken out of the old
+  //     ones and everybody else's are left as they were — the one-off
+  //     `scripts/scrub-usage-report-snapshots.ts` is what turns the rest into
+  //     figures. One document a week, so the collection is read whole.
+  if (addresses.length > 0) {
+    await tryDelete('usage_reports', async () => {
+      const reports = await db.collection('usage_reports').get();
+      const batch = db.batch();
+      let writes = 0;
+      reports.docs.forEach((reportDoc: ErasableDoc) => {
+        const change = withoutAccount(reportDoc.data() || {}, addresses);
+        if (!change) return;
+        batch.update(reportDoc.ref, {
+          ...change.update,
+          ...(change.deleteRecipient ? { recipient: FieldValue.delete() } : {}),
+        });
+        writes += 1;
+      });
+      if (writes > 0) await batch.commit();
     });
   }
 
