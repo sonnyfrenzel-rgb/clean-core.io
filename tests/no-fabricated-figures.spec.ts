@@ -46,13 +46,42 @@ const BANNED = [
   'cleanCoreScore ?? 70',
 ];
 
+/**
+ * The shape of the defect rather than its six spellings: a measured value —
+ * a count of tests, a percentage, a coverage, a confidence, a score — with
+ * `||` or `??` and a non-zero number behind it. `BANNED` alone let
+ * `testCases?.length || 12` or `percentage ?? 93` through (QA full review of
+ * fc787674705f, 4e5a58582c23). A `0` fallback is not an invented figure and
+ * stays allowed, and so does a line count guarding a division.
+ */
+const MEASURED_FALLBACK =
+  /\b\w*(?:(?:[Tt]estCases|[Tt]ests|[Cc]ases)\??\.length|[Pp]ercentage|[Cc]overage\w*|[Cc]onfidence\w*|[Ss]core)\s*(?:\|\||\?\?)\s*[1-9]/;
+
 test.describe('no fabricated figures on measured values', () => {
+  test('the shape check catches the variants, and lets a zero and a line count through', () => {
+    for (const bad of [
+      'testCases?.length || 12',
+      'coverageEstimate?.percentage ?? 93',
+      'run.confidenceScore || 90',
+      'recommendationConfidence ?? 80',
+      'signedCleanCoreScore ?? 65',
+      ...BANNED,
+    ]) {
+      expect(MEASURED_FALLBACK.test(bad), `the check misses "${bad}"`).toBe(true);
+    }
+    for (const fine of ['signedCleanCoreScore ?? 0', "code.split('\\n').length || 1", 'transformationsLimit ?? 5']) {
+      expect(MEASURED_FALLBACK.test(fine), `the check refuses "${fine}"`).toBe(false);
+    }
+  });
+
   for (const rel of MEASURED_VALUE_SURFACES) {
     test(`${rel} substitutes no invented measurement`, () => {
       const source = fs.readFileSync(path.join(ROOT, rel), 'utf8');
       for (const pattern of BANNED) {
         expect(source, `${rel} reintroduced "${pattern}"`).not.toContain(pattern);
       }
+      const hit = MEASURED_FALLBACK.exec(source);
+      expect(hit?.[0] ?? null, `${rel} puts an invented figure behind a measured value`).toBeNull();
     });
   }
 

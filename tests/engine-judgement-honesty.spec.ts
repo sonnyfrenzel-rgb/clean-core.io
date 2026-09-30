@@ -227,11 +227,14 @@ test.describe('a legacy construct written inside a literal is not a construct', 
       'SELECT 1 FROM DUAL',
       'ENDEXEC.',
       'CALL SCREEN 100.',
+      // Without a real one, removing the update-task detector would leave the
+      // literal case above green (QA full review of fc787674705f, 4eebcdba7854).
+      "CALL FUNCTION 'Z_POST_ORDER' IN UPDATE TASK EXPORTING order = lv_order.",
       'COMMIT WORK.',
       'AUTHORITY-CHECK OBJECT \'V_VBAK_VKO\' ID \'ACTVT\' FIELD \'03\'.',
     ].join('\n');
     const found = kinds(real);
-    for (const kind of ['bdc', 'native-sql', 'dynpro', 'commit-work', 'authority-check']) {
+    for (const kind of ['bdc', 'native-sql', 'dynpro', 'update-task', 'commit-work', 'authority-check']) {
       expect(found, `the fix removed the detector instead of the false positive: ${kind}`).toContain(kind);
     }
   });

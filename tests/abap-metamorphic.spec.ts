@@ -831,6 +831,81 @@ function windowReader(lines: string[]): (from: number, to?: number) => string {
   };
 }
 
+/**
+ * The first word of every statement that starts on a line: the line's own first
+ * word, and the first word after each statement-ending period on it. Only the
+ * first used to be read, so the `ENDIF` in `WRITE / x. ENDIF.` was never
+ * counted and an engine that lost that block passed the closer check (QA full
+ * review of fc787674705f, 366856e752c1). Literals and comments are not code:
+ * the periods come from `terminatorOffsets`, which knows both.
+ */
+function statementHeadsOn(line: string): string[] {
+  if (line.startsWith('*')) return [];
+  const code = T.withoutComment(line);
+  const heads: string[] = [];
+  let from = 0;
+  for (const cut of [...T.terminatorOffsets(code), code.length]) {
+    const head = /^\s*([A-Za-z][\w-]*)\b/.exec(code.slice(from, cut));
+    if (head) heads.push(head[1]);
+    from = cut + 1;
+  }
+  return heads;
+}
+
+/** Every block closer in the source against the blocks the engine says end there. */
+function closerCheck(code: string, file: string): { orphans: string[]; unbacked: string[]; closers: number } {
+  const lines = code.split(/\r?\n/);
+  const native = T.nativeSqlLines(lines);
+  const r = readEverything(code, file);
+
+  const claimed = new Map<number, string[]>();
+  for (const b of r.facts.structure.blocks) {
+    if (!b.terminated) continue;
+    claimed.set(b.lineEnd, [...(claimed.get(b.lineEnd) ?? []), b.kind]);
+  }
+
+  const orphans: string[] = [];
+  let closers = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (native.has(i)) continue;
+    for (const word of statementHeadsOn(lines[i])) {
+      const kind = CLOSERS[word.toUpperCase()];
+      if (!kind) continue;
+      closers += 1;
+      const here = claimed.get(i + 1) ?? [];
+      const seat = here.indexOf(kind);
+      if (seat === -1) orphans.push(`L${i + 1} ${word} — no ${kind} block ends here (ends here: ${here.join(', ') || 'nothing'})`);
+      else here.splice(seat, 1);
+    }
+  }
+
+  const unbacked: string[] = [];
+  for (const [line, left] of claimed) for (const kind of left) unbacked.push(`L${line} a ${kind} block ends here, but no closer does`);
+  return { orphans, unbacked, closers };
+}
+
+test.describe('the closer check reads every statement on a line', () => {
+  test('a closer after another statement on the same line is a statement head', () => {
+    expect(statementHeadsOn('  WRITE / x. ENDIF.')).toEqual(['WRITE', 'ENDIF']);
+    expect(statementHeadsOn("  WRITE 'a. ENDIF.'. ENDLOOP. \" ENDDO.")).toEqual(['WRITE', 'ENDLOOP']);
+    expect(statementHeadsOn('* ENDIF.')).toEqual([]);
+  });
+
+  test('same-line closers are each claimed by exactly one block', () => {
+    const code = [
+      'REPORT zcc_same_line.',
+      'DATA lv_x TYPE i.',
+      'DO 3 TIMES.',
+      '  IF lv_x = 1. WRITE / lv_x. ENDIF.',
+      '  lv_x = lv_x + 1. ENDDO.',
+    ].join('\n');
+    const { orphans, unbacked, closers } = closerCheck(code, 'same-line.abap');
+    expect(closers, 'the two same-line closers were not counted').toBe(2);
+    expect(orphans).toEqual([]);
+    expect(unbacked).toEqual([]);
+  });
+});
+
 test.describe('P5 — every anchor points at its construct', () => {
   for (const { label: file, code } of BOUNDARY_INPUTS) {
     test(`${file}: every range the engine reports carries what it claims`, () => {
@@ -954,34 +1029,9 @@ test.describe('P5 — every anchor points at its construct', () => {
     });
 
     test(`${file}: every block closer in the source is claimed by exactly one block`, () => {
-      const lines = code.split(/\r?\n/);
-      const native = T.nativeSqlLines(lines);
-      const r = readEverything(code, file);
-
-      const claimed = new Map<number, string[]>();
-      for (const b of r.facts.structure.blocks) {
-        if (!b.terminated) continue;
-        claimed.set(b.lineEnd, [...(claimed.get(b.lineEnd) ?? []), b.kind]);
-      }
-
-      const orphans: string[] = [];
-      let closers = 0;
-      for (let i = 0; i < lines.length; i++) {
-        if (native.has(i)) continue;
-        const first = /^([A-Za-z][\w-]*)\b/.exec(codeOn(lines[i]));
-        const kind = first ? CLOSERS[first[1].toUpperCase()] : undefined;
-        if (!kind) continue;
-        closers += 1;
-        const here = claimed.get(i + 1) ?? [];
-        const seat = here.indexOf(kind);
-        if (seat === -1) orphans.push(`L${i + 1} ${first?.[1]} — no ${kind} block ends here (ends here: ${here.join(', ') || 'nothing'})`);
-        else here.splice(seat, 1);
-      }
-
+      const { orphans, unbacked, closers } = closerCheck(code, file);
       expect(orphans, `${file}: a closer in the source that no block claims means an opener was lost above it`).toEqual([]);
       // Nothing claims to end where no closer stands, either.
-      const unbacked: string[] = [];
-      for (const [line, left] of claimed) for (const kind of left) unbacked.push(`L${line} a ${kind} block ends here, but no closer does`);
       expect(unbacked, `${file}: a block that ends where nothing closes it`).toEqual([]);
       expect(closers, `${file} has no block closer at all — the check would be vacuous`).toBeGreaterThan(0);
     });

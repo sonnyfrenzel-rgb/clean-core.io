@@ -118,6 +118,11 @@ test.describe('the components cannot be overridden from outside', () => {
         if (!literal) continue;
         offenders.push(`${rel}: "${literal.slice(0, 60)}"`);
       }
+      // The pattern cannot see a string literal standing in a JSX expression
+      // (`{open ? 'Delete account' : t('cancel')}`) or in a visible attribute;
+      // the parser reader of D.29 below can, so the design system gets it too
+      // (QA full review of fc787674705f, b2d3a9ecfbff).
+      if (rel.endsWith('.tsx')) offenders.push(...hardCodedText(rel, text));
     }
     expect(
       offenders,
