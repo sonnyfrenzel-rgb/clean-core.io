@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
-      console.log(`[Email] Sending Tenant Revoke Email to user ${email}...`);
+      console.log(`[Email] Sending tenant revoke email...`);
       const resendRes = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
         );
       }
       const sent = await resendRes.json().catch(() => ({} as any));
-      console.log(`[Email] Sent tenant revoke to ${email}. id=${sent?.id ?? 'unknown'}`);
+      console.log(`[Email] Sent tenant revoke. id=${sent?.id ?? 'unknown'}`);
       if (sent?.id) {
         await recordEmailSent(sent.id, email, emailSubject, 'tenant revoke').catch((err) =>
           console.error('[Email] Could not record sent event:', err),

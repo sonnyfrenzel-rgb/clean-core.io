@@ -224,6 +224,16 @@ test.describe('a failed model call, as the log records it', () => {
   });
 });
 
+test.describe('the administrator mail routes', () => {
+  test('log a sent mail by its provider id, not by its recipient', () => {
+    for (const rel of ['app/api/send-approval-email/route.ts', 'app/api/send-tenant-approval-email/route.ts', 'app/api/send-tenant-revoke-email/route.ts']) {
+      const lines = read(rel).split('\n').filter((l) => l.includes('console.log(`[Email]'));
+      expect(lines.length, `${rel}: the send is no longer logged at all`).toBeGreaterThan(0);
+      for (const line of lines) expect(line, `${rel}: a recipient address in the log`).not.toMatch(/\$\{(email|to|recipient)\}/);
+    }
+  });
+});
+
 test.describe('verifying a pack sealed in format 2', () => {
   test('does not report success over a user-attested file whose contents it cannot check', async () => {
     const sha = (s: string) => crypto.createHash('sha256').update(s).digest('hex');
