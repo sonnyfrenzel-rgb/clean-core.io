@@ -37,6 +37,24 @@ test.describe('the landing page and the whitepaper', () => {
     expect(code('app/page.tsx')).not.toMatch(/without any platform limits/);
   });
 
+  test('erasure copy does not promise to purge everything (341a9ce7a451)', () => {
+    const src = code('app/page.tsx');
+    expect(src).not.toMatch(/purge all your uploads and data/);
+    expect(src).toMatch(/backup copies age out within 30 days/);
+  });
+
+  test('the disclaimer does not attribute the deterministic score to the model (9d98a3ea6701)', () => {
+    const src = code('app/page.tsx');
+    expect(src).not.toMatch(/compliance scores, modular code transformations/);
+    expect(src).toMatch(/Clean Core Score come from a deterministic engine/);
+  });
+
+  test('the no-training line carries the free-tier caveat (cc161722d461)', () => {
+    const src = code('app/page.tsx');
+    expect(src).not.toMatch(/\(not used by Google to train its models, per the Gemini API terms\)/);
+    expect(src).toMatch(/not used by Google to train its models[^<]*free-tier terms differ/);
+  });
+
 });
 
 test.describe('the legal pages', () => {

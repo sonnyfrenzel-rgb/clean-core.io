@@ -824,7 +824,7 @@ export default function Home() {
               {
                 icon: <ShieldCheck className="w-6 h-6 text-green-600" />,
                 title: "DSGVO / GDPR-aligned",
-                desc: "Art. 17 DSGVO erasure: purge all your uploads and data in Settings. Transactional emails are routed via the Resend API; subprocessors process data under their own terms."
+                desc: "Art. 17 DSGVO erasure: delete your uploads and account data in Settings; encrypted backup copies age out within 30 days, and the privacy policy names what else outlives a deletion. Transactional emails are routed via the Resend API; subprocessors process data under their own terms."
               },
               {
                 icon: <Layers className="w-6 h-6 text-green-600" />,
@@ -1027,13 +1027,13 @@ export default function Home() {
                 <strong>Free Community Modernization Platform:</strong> Clean-Core.io is a free, community-built SAP Clean Core modernization platform for architects and developers, maintained by Felix Frenzel. A free, non-commercial community project — no subscriptions or paid tiers. Provided for research and evaluation; generated outputs are drafts to review before productive use.
               </p>
               <p>
-                <strong>AI-Assisted Drafts &mdash; Verify Before You Deploy:</strong> All solution designs, compliance scores, modular code transformations, and test suites are dynamically generated using third-party generative AI models (Google Gemini API). All artifacts are provided on an <em>&quot;AS IS&quot;</em> and <em>&quot;AS AVAILABLE&quot;</em> basis without warranties of any kind. This tool generates the first compliant draft&mdash;the architect reviews, tests, and approves. We provide the abapGit packages and ABAP-Unit tests so you can compile and verify every output in your own Eclipse ADT environment.
+                <strong>AI-Assisted Drafts &mdash; Verify Before You Deploy:</strong> The findings, the extensibility route and the Clean Core Score come from a deterministic engine without a model; the solution designs, code transformations, test suites and narratives are generated using third-party generative AI models (Google Gemini API). All artifacts are provided on an <em>&quot;AS IS&quot;</em> and <em>&quot;AS AVAILABLE&quot;</em> basis without warranties of any kind. This tool generates the first draft&mdash;the architect reviews, tests, and approves. We provide the abapGit packages and ABAP-Unit tests so you can compile and verify every output in your own Eclipse ADT environment.
               </p>
               <p>
                 <strong>Limitation of Liability:</strong> In no event shall the administrator, contributors, or developers be held liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, loss of data, system crashes, integration failures, or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort arising in any way out of the use of this software, even if advised of the possibility of such damage.
               </p>
               <p>
-                <strong>Data Privacy & GDPR:</strong> Primary application storage and compute run on European cloud nodes in the Belgium (europe-west1) region. Uploaded code is processed via server-side proxy layers and saved in your encrypted, access-controlled project workspace (not used by Google to train its models, per the Gemini API terms). Users retain the right to erasure (Art. 17 GDPR) via the settings dashboard; AI and email subprocessors are disclosed separately.
+                <strong>Data Privacy & GDPR:</strong> Primary application storage and compute run on European cloud nodes in the Belgium (europe-west1) region. Uploaded code is processed via server-side proxy layers and saved in your encrypted, access-controlled project workspace (on the community key, not used by Google to train its models, per the paid Gemini API terms; with your own key, the terms of your Google account&apos;s tier apply, and free-tier terms differ). Users retain the right to erasure (Art. 17 GDPR) via the settings dashboard; AI and email subprocessors are disclosed separately.
               </p>
               <div className="pt-1 border-t border-gray-900">
                 <SapTrademarkNotice className="!text-gray-550" />
