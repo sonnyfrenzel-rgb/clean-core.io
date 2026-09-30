@@ -60,7 +60,7 @@ export default function PublicHeader({
             </span>
             <span className="hidden flex-col min-[400px]:flex">
               <span className="text-base font-extrabold leading-tight tracking-[-0.02em] text-cc-ink sm:text-lg">
-                Clean-Core<span className="text-cc-brand">.io</span>
+                Clean-Core<span className="text-cc-brand-strong">.io</span>
               </span>
               <span className="text-xs font-semibold leading-tight text-cc-ink-muted">Free Community Edition</span>
             </span>
