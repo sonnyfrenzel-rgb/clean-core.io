@@ -161,7 +161,9 @@ test.describe('the lock holds when used', () => {
     // stands exactly once on this screen — with the way to open the connection
     // itself, so the reader is turned away from one thing rather than from all
     // of them.
-    const tab = page.getByRole('button', { name: /^Check tenant connection$/ });
+    // A segment of the environment switch since D.17b (a radio in a radio
+    // group, DESIGN.md §1.5), not a free button — same name, same place.
+    const tab = page.getByRole('radio', { name: /^Check tenant connection$/ });
     await expect(tab).toBeVisible();
     await expect(tab).not.toContainText('Check only');
     const notice = page.locator('[data-live-test-lock]');
@@ -182,7 +184,7 @@ test.describe('the lock holds when used', () => {
     expect(runRequests, 'the tenant tab must not reach the runner').toEqual([]);
 
     // The same selection on the mock tab can run.
-    await page.getByRole('button', { name: /^Mock Environment$/ }).click();
+    await page.getByRole('radio', { name: /^Mock Environment$/ }).click();
     await expect(run).toBeEnabled({ timeout: 10000 });
   });
 });
