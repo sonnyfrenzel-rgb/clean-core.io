@@ -194,13 +194,13 @@ const GROUPS: { match: (rel: string) => boolean; group: string; step: string }[]
   { match: (r) => r.startsWith('app/(app)/settings/'), group: 'settings', step: 'D.20a' },
   { match: (r) => r.startsWith('app/(app)/admin/') || r.startsWith('components/admin/'), group: 'admin', step: 'D.21' },
   {
-    // The old dashboard and the orphans D.22 checks before deleting.
+    // The old dashboard and what D.22c checked and kept: `Skeleton` (the
+    // analyze/design/testing stages), `ProcessStrip` (the landing showroom) and
+    // the process-states cards (their rendered spec). The orphans went in D.22c.
     match: (r) =>
       r.startsWith('app/(app)/dashboard/') ||
       r.startsWith('components/process-states/') ||
-      r.startsWith('components/process-target/') ||
-      ['FileList', 'FileUpload', 'JiraIntegrationModal', 'UpgradeToEnterpriseModal', 'StarterExamples', 'Skeleton', 'ProcessStrip']
-        .some((n) => r === `components/${n}.tsx`),
+      ['StarterExamples', 'Skeleton', 'ProcessStrip'].some((n) => r === `components/${n}.tsx`),
     group: 'dashboard-legacy',
     step: 'D.22',
   },
