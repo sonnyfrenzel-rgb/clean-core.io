@@ -582,7 +582,10 @@ test.describe('an overlay is display, not content', () => {
     const imported = [...route.matchAll(/import\s*\{([^}]*)\}\s*from\s*['"]@\/lib\/abap\/catalog-service['"]/g)]
       .flatMap((match) => match[1].split(',').map((name) => name.trim()))
       .filter(Boolean);
-    expect(imported).toEqual(['getMergedCatalogVersion']);
+    // Roadmap 7.10 adds the snapshot's identity (registry key and the digest of
+    // the file SAP served) for the run's target profile - which catalog was
+    // read, still not what it says about any object.
+    expect(imported.sort()).toEqual(['getCatalogSnapshotRef', 'getMergedCatalogVersion']);
     for (const symbol of ['gradeSapObject', 'gradeSapObjectUse', 'CloudReadinessGrade', 'cleanCoreLevel', 'abcdGrade']) {
       expect(route, `the run route names ${symbol}`).not.toContain(symbol);
     }

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { readBoundedJson } from '../lib/url-validation';
+import { readBoundedBody } from '../lib/url-validation';
 
 /**
  * Five findings of the b88c77b review that live in the interface and in the
@@ -150,37 +150,41 @@ test.describe('the unsubscribe token is not written into the history and the log
     // the reader is run against all four callers.
     const source = read(ROUTE);
     const inBody = new Function('body', bodyOf(source, /function tokenInBody\(/)) as (b: unknown) => string;
-    const run = new Function(
+    // Since the QA review of a7e0ae36c896 the body is read through the
+    // bounded reader rather than `req.json()`, so the stand-in is a real
+    // Request with a real stream, and the reader and its bound are handed in.
+    const limits = source.match(/const BODY_LIMITS = (\{[^}]*\});/);
+    expect(limits, 'the body bound is gone').not.toBeNull();
+    const BODY_LIMITS = new Function(`return ${limits![1].replace(/_/g, '')};`)() as { maxBytes: number; timeoutMs: number };
+    const from = new Function(
       'req',
       'tokenInBody',
-      'readBoundedJson',
+      'readBoundedBody',
+      'BODY_LIMITS',
       `return (async () => {${bodyOf(source, /async function tokenFrom\(/)}})();`,
-    ) as (req: unknown, f: (b: unknown) => string, r: typeof readBoundedJson) => Promise<string>;
-    const from = (req: unknown, f: (b: unknown) => string) => run(req, f, readBoundedJson);
+    ) as (req: unknown, f: (b: unknown) => string, r: typeof readBoundedBody, l: typeof BODY_LIMITS) => Promise<string>;
+    const run = (req: unknown) => from(req, inBody, readBoundedBody, BODY_LIMITS);
 
-    // A real request, so the reader is measured on a real body stream (the
-    // body is read under a bound since the QA full review of fc787674705f).
-    const req = (body: unknown, query: string) =>
-      Object.assign(
-        new Request('http://localhost/api/unsubscribe', {
-          method: 'POST',
-          ...(body === undefined ? {} : { body: typeof body === 'string' ? body : JSON.stringify(body) }),
-        }),
-        { nextUrl: { searchParams: new URLSearchParams(query) } },
-      );
+    const req = (body: unknown, query: string) => {
+      const real = new Request(`http://localhost/api/unsubscribe?${query}`, {
+        method: 'POST',
+        ...(body === undefined ? {} : { body: typeof body === 'string' ? body : JSON.stringify(body) }),
+      });
+      return Object.assign(real, { nextUrl: { searchParams: new URLSearchParams(query) } });
+    };
 
     expect(inBody({ t: 'in-body' })).toBe('in-body');
     expect(inBody(null), 'null is not an object to read from').toBe('');
     expect(inBody({ t: 42 }), 'a number is not a token').toBe('');
 
-    expect(await from(req({ t: 'in-body' }, ''), inBody), 'our page').toBe('in-body');
-    expect(await from(req(undefined, 't=in-query'), inBody), 'one-click, no body').toBe('in-query');
-    expect(await from(req('List-Unsubscribe=One-Click', 't=in-query'), inBody), 'one-click, form body').toBe('in-query');
-    expect(await from(req({}, 't=in-query'), inBody), 'a body without a token').toBe('in-query');
-    expect(await from(req(undefined, ''), inBody), 'neither').toBe('');
-    // An oversized body is not buffered and not trusted: the query decides.
+    expect(await run(req({ t: 'in-body' }, '')), 'our page').toBe('in-body');
+    expect(await run(req(undefined, 't=in-query')), 'one-click, no body').toBe('in-query');
+    expect(await run(req('List-Unsubscribe=One-Click', 't=in-query')), 'one-click, form body').toBe('in-query');
+    expect(await run(req({}, 't=in-query')), 'a body without a token').toBe('in-query');
+    expect(await run(req(undefined, '')), 'neither').toBe('');
+    // A body past the bound is not read, and the query decides.
     expect(
-      await from(req({ t: 'in-body', pad: 'x'.repeat(64 * 1024) }, 't=in-query'), inBody),
+      await run(req({ t: 'in-body', pad: 'x'.repeat(BODY_LIMITS.maxBytes) }, 't=in-query')),
       'an oversized body',
     ).toBe('in-query');
   });

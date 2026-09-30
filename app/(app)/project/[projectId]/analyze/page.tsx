@@ -66,6 +66,9 @@ import type { SourceFile } from '@/lib/abap/findings-detector';
 import CodeInventoryTable from '@/components/analyze/CodeInventoryTable';
 import ModuleHeatmap from '@/components/analyze/ModuleHeatmap';
 import AbcdClassificationPanel from '@/components/analyze/AbcdClassificationPanel';
+import AssessmentProfileSummary from '@/components/analyze/AssessmentProfileSummary';
+import AssessmentTargetFields from '@/components/analyze/AssessmentTargetFields';
+import { declaredTargetOf, repositoryObjectsOf, type AssessmentTarget } from '@/lib/assessment-target';
 import DataCouplingTable from '@/components/analyze/DataCouplingTable';
 import ComplianceReviewHints from '@/components/ComplianceReviewHints';
 import ReviewTasks from '@/components/ReviewTasks';
@@ -116,6 +119,8 @@ export default function AnalyzePage() {
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [selectedCheckpoint, setSelectedCheckpoint] = useState(0);
   const [targetDeployment, setTargetDeployment] = useState<'public' | 'private' | null>(null);
+  // Roadmap 7.10 - what the owner declares about the target, sent with the run.
+  const [assessmentTarget, setAssessmentTarget] = useState<AssessmentTarget>({ release: '', components: [], languageVersions: [] });
   const [showConceptQuestion, setShowConceptQuestion] = useState(false);
   const [modalSelection, setModalSelection] = useState<'public' | 'private' | null>(null);
   // Only the stored project says it is the example; a query parameter granted
@@ -184,6 +189,8 @@ export default function AnalyzePage() {
           if (hydratedProject.s4Deployment) {
             setTargetDeployment(hydratedProject.s4Deployment as 'public' | 'private');
           }
+          // Roadmap 7.10 - the declaration the last run was made under.
+          setAssessmentTarget(declaredTargetOf(hydratedProject));
           if (hydratedProject.fromExample || hydratedProject.isExample) {
             setAcceptedTerms(true);
           }
@@ -491,6 +498,9 @@ export default function AnalyzePage() {
             projectId,
             legacyCode: codeToAnalyze,
             s4Deployment: deployment,
+            // Roadmap 7.10 - the declared half of the target profile. The server
+            // adds the catalog snapshot and the rule version and signs the whole.
+            targetProfile: assessmentTarget,
             // The model's text as the proxy returned it, byte for byte. The
             // receipt is issued over exactly that, so anything rewritten here
             // would make an honest run fail the origin check; the route performs
@@ -708,6 +718,10 @@ export default function AnalyzePage() {
    * there is nothing of theirs to notice in it and it is left alone — the same
    * condition the Terms checkbox below already uses.
    */
+  // Roadmap 7.10 - the repository objects the staged source defines, the ones a
+  // language version is declared for.
+  const stagedObjects = useMemo(() => repositoryObjectsOf(extractCodeInventory(legacyCode || '')), [legacyCode]);
+
   const personalDataHints = useMemo(
     () => (legacyCode && !isFromExample ? scanForPersonalDataHints(legacyCode) : []),
     [legacyCode, isFromExample],
@@ -811,7 +825,8 @@ export default function AnalyzePage() {
           <CodeInventoryTable codeInventory={project.codeInventory || []} />
           <ModuleHeatmap codeInventory={project.codeInventory || []} />
           <DataCouplingTable dataCoupling={project.dataCoupling || []} />
-          <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} />
+          <AssessmentProfileSummary project={project} />
+          <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} deployment={project.s4Deployment} release={project.assessmentProfile?.release} />
           {/* What those same tables may mean for a compliance review (roadmap
               7.7) — hints out of the table names, never a classification of
               anybody's data, and no model call. */}
@@ -1341,7 +1356,8 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
               <DataCouplingTable dataCoupling={project.dataCoupling || []} />
 
               {/* Cloud Readiness Classification (A–D) */}
-              <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} />
+              <AssessmentProfileSummary project={project} />
+              <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} deployment={project.s4Deployment} release={project.assessmentProfile?.release} />
 
               {/* Compliance review hints (roadmap 7.7) — hints out of the table
                   names, never a classification of anybody's data. */}
@@ -1627,6 +1643,13 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   value={targetDeployment}
                   onChange={setTargetDeployment}
                   options={PAGE_DEPLOYMENT_OPTIONS}
+                />
+
+                <AssessmentTargetFields
+                  deployment={targetDeployment}
+                  objects={stagedObjects}
+                  value={assessmentTarget}
+                  onChange={setAssessmentTarget}
                 />
               </div>
             )}

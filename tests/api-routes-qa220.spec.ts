@@ -54,7 +54,7 @@ test.describe('a request body is read under a bound', () => {
   for (const [rel, marker] of [
     ['app/api/request-tenant-access/route.ts', 'body = await readBoundedJson(new Response(request.body'],
     ['app/api/run-tests/route.ts', 'runRequest = await readBoundedJson(new Response(req.body'],
-    ['app/api/unsubscribe/route.ts', 'await readBoundedJson(new Response(req.body'],
+    ['app/api/unsubscribe/route.ts', 'await readBoundedBody(req, BODY_LIMITS)'],
     ['app/api/webhooks/resend/route.ts', 'body = await readBoundedBody(new Response(req.body'],
   ] as const) {
     test(`${rel} reads its body through the bounded reader only`, () => {

@@ -4,6 +4,8 @@ import { computeRunHash, signRunHash } from '../../lib/run-signature';
 import { analysisRunInputs, buildInputManifest } from '../../lib/input-manifest';
 import { sha256Hex } from '../../lib/artefact-digest';
 import type { HistoricalForm } from '../../lib/legacy-project';
+import { profileManifestInput } from '../../lib/assessment-profile';
+import { buildAssessmentProfile, runProfileRecord } from '../../lib/assessment-target';
 
 /**
  * Roadmap 3.0.2 — the stored shapes of a project across the versions of this
@@ -67,6 +69,31 @@ const manifestFor = () =>
       model: null,
     }),
   );
+
+/**
+ * Roadmap 7.10 - the profile the current form's run records, and the manifest
+ * that carries it. Built with the functions `/api/runs/create` uses.
+ */
+const currentProfile = () =>
+  buildAssessmentProfile({
+    edition: 'private',
+    target: { release: '', components: [], languageVersions: [] },
+    objects: ['Z_LEGACY_PO_RELEASE'],
+    catalogSnapshot: { registryKey: 'pce-latest', sourceSha256: 'a'.repeat(64) },
+    ruleVersion: 'rules-v1.0',
+  });
+const currentManifest = () =>
+  buildInputManifest([
+    ...analysisRunInputs({
+      sourceSha256: sha256Hex(SOURCE),
+      deploymentTarget: 'private',
+      catalogVersion: 'catalog-2026-09',
+      rulesetVersion: 'rules-v1.0',
+      engineVersion: '2.9.0',
+      model: null,
+    }),
+    profileManifestInput(currentProfile()),
+  ]);
 
 export interface LegacyForm {
   /** What the code calls it, and where it says so. */
@@ -168,7 +195,7 @@ export function legacyForms({ owner, key, pid }: LegacyFormOptions): Record<stri
         createdAt: Timestamp.fromDate(new Date('2025-03-01')),
       },
       run: signed(runV110(owner, pid('run-v110'), v110Run)),
-      gaps: ['run-before-manifest', 'run-before-model-record'],
+      gaps: ['run-before-manifest', 'run-before-model-record', 'run-before-profile'],
       provenance: 'done',
     },
     // After roadmap 0.5, before 1.2: the manifest is signed, model participation
@@ -191,22 +218,25 @@ export function legacyForms({ owner, key, pid }: LegacyFormOptions): Record<stri
         worklist: [],
       }),
       history: [signed(runV110(owner, pid('run-before-model-record'), 'run-older-0001'))],
-      gaps: ['run-before-model-record'],
+      gaps: ['run-before-model-record', 'run-before-profile'],
       provenance: 'done',
     },
-    // The form this version writes — the control: no gap at all.
+    // The form this version writes — the control: no gap at all. Since roadmap
+    // 7.10 that includes the target profile, signed with the run.
     current: {
-      name: 'the current form (manifest and model participation recorded)',
+      name: 'the current form (manifest, model participation and target profile recorded)',
       project: {
         name: 'Signed this week', userId: OWNER, legacyCode: SOURCE, s4Deployment: 'private',
         activeRunId: currentRun, cleanCoreScore: 44,
-        auditMetadata: { inputManifest: manifestFor() },
+        assessmentTarget: { release: '', components: [], languageVersions: [] },
+        auditMetadata: { inputManifest: currentManifest() },
         createdAt: new Date('2026-09-22T10:00:00.000Z'),
       },
       run: signed({
         ...runV110(owner, pid('current'), currentRun),
         analyzerVersion: '3.0.0',
-        inputManifest: manifestFor(),
+        inputManifest: currentManifest(),
+        ...runProfileRecord(currentProfile(), sha256Hex(SOURCE)),
         modelParticipation: 'none',
         model: { provider: null, modelId: null, engineVersion: '3.0.0', byokUsed: false },
         aiNarrativeMeta: { provider: null, modelId: null, responseHash: null, evidentiary: false },

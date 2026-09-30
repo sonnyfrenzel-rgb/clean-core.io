@@ -351,6 +351,20 @@ test('before accepting, the invited account sees who sent it and until when — 
   // Two facts and no more: the project's name stays behind acceptance.
   expect(Object.keys(own.body).sort()).toEqual(['expiresAt', 'invitedBy']);
 
+  // A suspended account with a still-valid token is stopped at the account
+  // gate, as POST stops it, before the invitation is read (QA review of
+  // a7e0ae36c896). Reinstated afterwards: later tests accept as this account.
+  await adminMergeDoc('users', accounts[READER_EMAIL].uid, { status: 'suspended' });
+  try {
+    const suspended = await peek(READER_EMAIL, id);
+    expect(suspended.status).toBe(403);
+    expect(suspended.body.code).toBe('account-gate');
+    expect(suspended.body).not.toHaveProperty('invitedBy');
+    expect(suspended.body).not.toHaveProperty('expiresAt');
+  } finally {
+    await adminMergeDoc('users', accounts[READER_EMAIL].uid, { status: 'approved' });
+  }
+
   // A forwarded link, a link that never existed and an expired one answer alike.
   const forwarded = await peek(STRANGER_EMAIL, id);
   expect(forwarded.status).toBe(403);

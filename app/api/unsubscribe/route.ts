@@ -3,7 +3,7 @@ import { logger, errMessage } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { verifyUnsubscribeToken, normaliseEmail, suppressionId } from '@/lib/unsubscribe-token';
 import { APP_BASE_URL } from '@/lib/constants';
-import { readBoundedJson } from '@/lib/url-validation';
+import { readBoundedBody } from '@/lib/url-validation';
 
 /**
  * One-click unsubscribe for bulk community mail (RFC 8058).
@@ -69,17 +69,21 @@ function tokenInBody(body: unknown): string {
   return typeof t === 'string' ? t : '';
 }
 
+/**
+ * What `{ t }` can take. A token is a few hundred bytes; the route is open to
+ * anyone, and `req.json()` buffered and parsed whatever it was sent before the
+ * token was looked at (QA review of a7e0ae36c896). A body over the bound is
+ * not read further and counts as no body, so the query still decides.
+ */
+const BODY_LIMITS = { maxBytes: 8 * 1024, timeoutMs: 5_000 };
+
 async function tokenFrom(req: NextRequest): Promise<string> {
   try {
-    // Bounded: this endpoint is unauthenticated, and `req.json()` buffered a
-    // body of any size before the token was even looked at (QA full review of
-    // fc787674705f, 03289710b54b). A token is a few hundred bytes; a body over
-    // the bound is cancelled and treated like no body at all.
-    const parsed = await readBoundedJson(new Response(req.body, { headers: req.headers }), { maxBytes: 8 * 1024, timeoutMs: 5_000 });
-    const fromBody = tokenInBody(parsed);
+    const fromBody = tokenInBody(JSON.parse(await readBoundedBody(req, BODY_LIMITS)));
     if (fromBody) return fromBody;
   } catch {
-    // No body, or not JSON — the one-click case. Fall through to the query.
+    // No body, not JSON, or over the bound — the one-click case. Fall through
+    // to the query.
   }
   return req.nextUrl.searchParams.get('t') || '';
 }

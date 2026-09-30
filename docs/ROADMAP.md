@@ -512,7 +512,7 @@ Mockup Screen 2.
 | 7.8 | **Anpassungsoptionen zum Standard, direkt am Element** (Entscheidung Sonny 16.09.2026): in der Business-Sicht zeigt jedes Element mit Standardkandidat unmittelbar, welche Anpassung des Prozesses näher an Fit-to-Standard führt — in der Prozesskarte (Map wie Steps, 2.5), in der Prozesskette bzw. Phasenübersicht (2.9) und in den Standard-Fit-Tabellen (7.2; Screens s1 und s3). **Je Betriebsmodell:** in Public Edition nur, was mit dem Scope Item und Key-User-/Developer-Extensibility ohne Modifikation geht; in Private Edition/RISE zusätzlich die Wege, die dort erlaubt bleiben (klassische Erweiterung, Modifikation als benannte Abweichung mit Upgrade-Folge). Jede Option nennt den Prozessschritt, der sich ändert, das Scope Item als zu prüfende ID, die Evidenzstufe E0–E4 aus 7.2, was sich für Nutzer ändert (7.6) und, sobald 7.4 eine Annahmenrevision hat, ihre Kosten neben „Nichts tun"; ohne Standardkandidat steht *Not determined* mit Grund (7.5), nie ein erfundener Weg. Eine gewählte Option wird Soll-Vorschlag in 3.6 (Ist und Soll) und Entscheidung je Element in 3.5 — nie eine automatische Änderung. Abgestimmt mit den vier Töpfen aus 6.7: „Blocked by SAP" hat keine Anpassungsoption, nur den Verweis auf SAPs Roadmap. Deterministisch aus Katalog, Level und Scope-Item-Zuordnung; das Modell formuliert höchstens die Klarsprache, mit Anker und Herkunft *Model proposal*. **Vergleichsberechtigung je Element, ergänzt 22.09.2026 (§16 V6):** **vor** jeder Standardzuordnung bekommt jedes Element deterministisch eine Vergleichsklasse — *fachlich vergleichbar* (Task, Teilprozess, Aufruf-Aktivität, Business-Rule-Task, Gateway auf einem Geschäftsfeld) · *technisch* (Lese-/Schreibschritt, technisches Gateway aus 2.15, Randereignis, Fehler-Ende, Helfer) · *strukturell* (Start, Ende, Lane, Pool, Datenobjekt, Anmerkung) · *unbekannt* (`call-opaque`, dynamisches Ziel). Nur *fachlich vergleichbar* trägt einen Standardkandidaten oder *Not determined*; *technisch* und *strukturell* tragen **nie** „kein Standardkandidat", sondern „nicht vergleichbar"; *unbekannt* heißt unbekannt. **Drei Ergebnisse, nie zwei:** belegt abgedeckt · belegt nicht abgedeckt · unbekannt. Die Klasse steht am Element, **nie** im signierten Pack — wie das Level. Warum hier und nicht in 7.2: 7.2 arbeitet auf Fähigkeiten aus Regeln, 7.8 bringt den Standardkandidaten erstmals ans Element, und dort entsteht das Risiko. Gemessen: im 1.000-Zeilen-Beispiel sind **15 von 65 Flussknoten (23 %) Endereignisse**, sechs davon mit Fehlerdefinition; über die acht Beispiele 14 `errorEventDefinition`, 5 `boundaryEvent`, 115 Datenelemente. Im Referenzbestand: typisierte Endereignisse 3 von 2.172, Datenobjekte 24 von 19.876 — **aber Abwesenheit im Diagramm ist kein negativer Funktionsnachweis**, der Bestand abstrahiert Implementierungsdetails, und wie vollständig, ist nicht gemessen. Genau deshalb drei Ergebnisse. **Fertig, wenn** über die acht Beispiele kein Endereignis, Gateway, Randereignis und kein Datenspeicher einen Standardkandidaten oder „nicht abgedeckt" trägt, jedes `call-opaque` als unbekannt steht und die Klassenfunktion rein ist (ohne Import aus `lib/bpmn`, wie `abcd-classification.ts`) | M |
 | 7.7 | **Prüfhinweise Compliance:** deterministische Hinweise auf personenbezogene, steuer- oder revisionsrelevante Daten aus den gelesenen Tabellen — sie bestimmen Prüftiefe und Testpflicht, sind aber Hinweise, keine Einstufung (Feedback 15.09.2026) | S |
 | 7.9 | **Zwei Dimensionen je Katalogobjekt** (CR-01): klassischer Freigabestatus und ABAP-Cloud-Verwendbarkeit getrennt sichtbar, Nachfolger benannt (CL_HTTP_UTILITY: klassisch freigegeben · Cloud: nicht freizugeben · Nachfolger CL_WEB_HTTP_UTILITY); der Grad bleibt der Clean-Core-Zielbezug (Entscheidung §9 Nr. 18) und sagt das am Objekt; `deprecated` ohne Nachfolger ist eine Prüfung, kein automatisches D | S |
-| 7.10 | **Modell gebaut 23.09.2026 (14fcac9), Verdrahtung offen.** **Zielprofil als Eingabe** (CR-02): Edition, Sprachversion je Objekt, Release-/Komponentenstand, Katalogsnapshot und Regelversion als versioniertes `AssessmentProfile` durch Analyse, Kataloglookup, Ergebnis, Entscheidung und Receipt; nicht abgedeckte Profile werden sichtbar abgelehnt oder als unbestätigt geführt; ein Profilwechsel ändert den Subject-Hash und entwertet abhängige Freigaben; ein Latest-Eintrag ersetzt keinen älteren Release-Snapshot still | L |
+| 7.10 | **Modell gebaut 23.09.2026 (14fcac9), verdrahtet 30.09.2026, Sonnys Entscheidungen vom 30.09. umgesetzt (PCE ausgeliefert, fehlende Angaben nur als Hinweis).** **Zielprofil als Eingabe** (CR-02): Edition, Sprachversion je Objekt, Release-/Komponentenstand, Katalogsnapshot und Regelversion als versioniertes `AssessmentProfile` durch Analyse, Kataloglookup, Ergebnis, Entscheidung und Receipt; nicht abgedeckte Profile werden sichtbar abgelehnt oder als unbestätigt geführt; ein Profilwechsel ändert den Subject-Hash und entwertet abhängige Freigaben; ein Latest-Eintrag ersetzt keinen älteren Release-Snapshot still | L |
 
 **Entscheidungen zur Economics-Stufe (Sonny, 23.09.2026), nach 7.4:**
 
@@ -545,6 +545,48 @@ ausgeliefert werden (~3 MB).
 2. **Bestandsläufe.** Am Tag, an dem Station 1 gebaut wird, hat kein vorhandener
    Run einen Profileintrag im Manifest; jedes bestehende Projekt stünde auf
    „unbestätigt". Dieselbe Frage wie C23-A02.
+
+**Stand 7.10 (30.09.2026) — verdrahtet.** Neu: `lib/assessment-target.ts` (was der
+Besitzer erklärt — Release, Komponentenstand, Sprachversion je Objekt — und wie daraus mit
+Snapshot und Regelversion das Profil wird). Je Station:
+1. **Analyse** — `/api/runs/create` baut das Profil, bevor die Quote reserviert wird. Eine
+   Edition, für die nichts nachgeschlagen werden kann, ist ein **422** mit dem Satz des Modells;
+   bisher wurde alles außer `public`/`private` still zu `public`. Die Erklärung kommt aus dem
+   Analyse-Schritt (`targetProfile`) oder, wenn der Aufrufer keine schickt, vom Projekt
+   (`assessmentTarget`, nur Admin SDK — **keine Regeländerung**).
+2. **Kataloglookup** — `getCatalogSnapshotRef()` nennt Schlüssel *und* Digest; die Lookups nehmen
+   den Snapshot als Argument und werfen `CatalogSnapshotNotShipped`, statt aus `latest` zu
+   antworten. `/api/abcd-classify` nennt in jeder Antwort den Snapshot, lehnt einen nicht
+   ausgelieferten ab (422) und trägt bei `profile` die Abdeckung.
+3. **Ergebnis** — der Lauf signiert `assessmentProfile`, `profileCoverage` und
+   `assessmentSubject`; das Manifest trägt `profile:assessment` (`source-artefact`). Die
+   Analyse-Seite zeigt das Profil mit Zustand und jedem Grund; das A–D-Panel sagt, welcher
+   Snapshot geantwortet hat.
+4. **Entscheidung** — gleiche Quelle, anderes Profil ist ein neues Subjekt: `runs/create`
+   schreibt den Änderungsdatensatz (`reason: 'profile'`), Freigabe und Artefakte lesen sich
+   veraltet. Freigabe und Entscheidung auf einem Lauf, dessen Profil das Projekt nicht mehr
+   hat, sind ein **409** `profile-changed`; `staleness()` zählt das Profil mit.
+5. **Receipt** — das Paket prüft das Profil vor dem Signieren und trägt es in
+   `08-input-manifest.json` (`targetProfile`: Anspruch, Gründe, Subjekt). Kein Grad.
+
+**Entscheidungen Sonny (30.09.2026), umgesetzt:**
+1. **Kein „unbestätigt" als Normalfall.** Fehlen Release oder Sprachversion, bleibt der Lauf
+   `covered`; die Lücke ist ein Hinweis (Schwere `notes`) mit Weg zur Eingabe. „Unbestätigt"
+   heißt nur noch echte Nicht-Abdeckung: ein Snapshot, der nicht der dieses Ziels ist
+   (`snapshot-substituted`), oder die bewegliche Liste statt der gepinnten (`snapshot-unpinned`).
+2. **PCE ausgeliefert.** `pce-latest`, `pce-2025-1`, `pce-2025-0`, `pce-2023-3` aus
+   github.com/SAP/abap-atc-cr-cv-s4hc, zusammen ~6,3 MB, nur serverseitig geladen
+   (`lib/abap/catalog-snapshots.ts`, nicht im Browser-Bundle); der wöchentliche Sync zieht sie
+   mit. Ein genanntes Release (z. B. „2023 FPS03") liest seine gepinnte Liste und ist bestätigt;
+   ohne Release liest es `pce-latest`; ein Release ohne gepinnte Liste (2022) liest `pce-latest`
+   und ist sichtbar unbestätigt.
+3. **Bestandsläufe** bleiben wie gebaut: gültig, gekennzeichnet `run-before-profile`, nicht
+   unbestätigt, nichts gegen ein Profil geprüft, das sie nie hatten.
+
+Veraltet-Texte sagen nach einem Profilwechsel „a previous target profile" statt „a previous
+source". Offen: die abgeleiteten Anzeigen (Vertrag, IT-Befunde, Demo) lesen Objektzustände
+weiter aus der Standardliste; der signierte Lauf und der A–D-Lookup lesen den Snapshot des Ziels.
+Tests: `tests/assessment-profile-wiring.spec.ts`, `tests/assessment-profile.spec.ts`.
 
 **Fertig, wenn** V25-A02 (beide Katalogsichten mit Vorrangregel und Regelversion),
 V25-A05 (zu kurzes Fenster erzeugt einen Prüfauftrag), V25-A06 und W22-A15/A16

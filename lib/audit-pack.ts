@@ -18,6 +18,8 @@
 import type { Project, WorklistItem } from '@/lib/types';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import { buildEvidenceChain } from '@/lib/evidence-chain';
+import { recordedProfileOf } from '@/lib/assessment-target';
+import { profileCoverage } from '@/lib/assessment-profile';
 // The escaper the HTML/Word executive summary below uses at every interpolation.
 // It is imported rather than defined here: one escaper, shared with the stage
 // exports, and its output is unchanged, so the signed bytes of a pack issued
@@ -714,6 +716,40 @@ user-attested content must be validated by a qualified reviewer.
 export const INPUT_MANIFEST_FILE = '08-input-manifest.json';
 
 /**
+ * Roadmap 7.10 - the target profile, as the receipt carries it: the profile the
+ * run signed, what the result may claim (`covered` or `unconfirmed`, with every
+ * reason as a sentence) and the subject hash. A run signed before 7.10 says so
+ * - `recorded: false` - rather than being given a profile by the pack.
+ */
+function targetProfileSection(project: Project): Record<string, unknown> {
+  const profile = recordedProfileOf(project);
+  if (!profile) {
+    return {
+      recorded: false,
+      note:
+        'This run was signed before runs recorded the target profile they were assessed against (roadmap 7.10). ' +
+        'Its deployment target is in the inputs above where the run recorded one; release, language versions ' +
+        'and catalog snapshot are not determined.',
+    };
+  }
+  const coverage = profileCoverage(profile);
+  return {
+    recorded: true,
+    claim: coverage.state === 'covered' ? 'confirmed' : 'unconfirmed',
+    coverage: coverage.state,
+    reasons: coverage.gaps
+      .filter((g) => g.severity !== 'notes')
+      .map((g) => ({ code: g.code, subject: g.subject, sentence: g.sentence })),
+    // What the owner did not state - a note, not a reason the claim is weaker.
+    notes: coverage.gaps
+      .filter((g) => g.severity === 'notes')
+      .map((g) => ({ code: g.code, subject: g.subject, sentence: g.sentence })),
+    subject: typeof project.assessmentSubject === 'string' ? project.assessmentSubject : null,
+    profile,
+  };
+}
+
+/**
  * Roadmap 0.5 — the run's `inputs[]`, as the pack carries them.
  *
  * `01-input-fingerprint.json` names one input, the source. Everything else the
@@ -755,6 +791,7 @@ export function generateInputManifestFile(project: Project): string {
       projectId: project.id ?? null,
       runId: project.activeRunId ?? null,
       ...body,
+      targetProfile: targetProfileSection(project),
     },
     null,
     2,

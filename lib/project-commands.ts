@@ -394,6 +394,16 @@ export interface ProjectCommandState {
    * 4b4586aff273). `undefined` or `null` refuses, as `activeRunEvidence` does.
    */
   derivedDecisionFingerprint?: string | null;
+  /**
+   * Roadmap 7.10 (CR-02) - the active run's target profile against the one the
+   * project states now (`profileDrift()` in `lib/assessment-target.ts`),
+   * computed by the caller from the run document inside the same transaction.
+   * `null`/absent when they agree, or when the run recorded no profile (a run
+   * signed before 7.10 is labelled, not reinterpreted). A sign-off or a
+   * decision on a run assessed under another profile is refused: it would
+   * approve an answer to a different question.
+   */
+  profileDrift?: { recorded: string; now: string } | null;
 }
 
 /** Facts only the server knows. Never taken from the request body. */
@@ -535,6 +545,17 @@ function refuseUnlessBoundToReadRun(
         (detail ? `What changed: ${detail}. ` : '') +
         `Reload the analysis and ${what === 'sign-off' ? 'sign off on' : 'decide on'} what it says now.`,
       { details: changes, activeRunId: typeof state.activeRunId === 'string' ? state.activeRunId : undefined },
+    );
+  }
+  // Roadmap 7.10 - the run is the one read, the evidence is the evidence read,
+  // and the question it answered has to be the project's question still.
+  if (state.profileDrift) {
+    return refuse(
+      409,
+      'profile-changed',
+      `Analysis run ${activeRunId} was assessed under the target profile ${state.profileDrift.recorded}, and this project now stands on ${state.profileDrift.now}. ` +
+        `A ${what} given now would be a ${what} on an answer to a different question. Nothing was written. Re-run the analysis under the current profile first.`,
+      { activeRunId },
     );
   }
   return null;

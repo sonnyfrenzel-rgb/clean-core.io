@@ -38,7 +38,7 @@
     },
     "rules": {
       "file": "firestore.rules",
-      "sha256OfLfNormalisedText": "235412c50ff78b9d1806bc166e95a864660ed85ed304c93536035e6971c6ef3a",
+      "sha256OfLfNormalisedText": "924d13ea8f538772b80b039cf3621981b7f9b291fb90b6966447d98408f24d49",
       "deploymentRecord": "docs/registers/rules-deployment.json",
       "note": "Hashed after normalising CRLF to LF so the value is the same on Windows and on CI.",
       "projectDocument": {
@@ -103,7 +103,10 @@
         "originalRecommendation",
         "recommendationConfidence",
         "recommendationJustification",
-        "inputManifest"
+        "inputManifest",
+        "assessmentProfile",
+        "profileCoverage",
+        "assessmentSubject"
       ],
       "unsignedFieldsOnTheRun": [
         "analysis",
@@ -119,6 +122,7 @@
       "transformationBypass",
       "legacyCode",
       "s4Deployment",
+      "assessmentTarget",
       "updatedAt",
       "worklist",
       "extensibilityRoute",

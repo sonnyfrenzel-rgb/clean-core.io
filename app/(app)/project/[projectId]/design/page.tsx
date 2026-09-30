@@ -56,7 +56,7 @@ import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { SourceFile } from '@/lib/abap/findings-detector';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
-import { workflowSteps, staleness } from '@/lib/workflow-steps';
+import { workflowSteps, staleness, previousBasis } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
 import { buildDesignExportHtml, designExportFileName } from '@/lib/design-export';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
@@ -699,9 +699,9 @@ ${responseText.substring(0, 4000)}`;
   const staleNotes = [
     ...(stale.sourceChanged ? ['The source changed after the signed run. Re-run the analysis in stage 1.'] : []),
     ...(designStale && !stale.sourceChanged
-      ? ['This design was generated for a previous source. Regenerate it — the analysis it was written from no longer describes the code under review.']
+      ? [`This design was generated for ${previousBasis(project)}. Regenerate it — the analysis it was written from no longer describes the code under review.`]
       : []),
-    ...(stale.signOff ? ['The sign-off below was given for a previous source. Unlock it and confirm the target architecture again.'] : []),
+    ...(stale.signOff ? [`The sign-off below was given for ${previousBasis(project)}. Unlock it and confirm the target architecture again.`] : []),
   ];
   const signOffCurrent = project?.approvedByArchitect === true && !stale.signOff && !designStale;
 
@@ -771,7 +771,7 @@ ${responseText.substring(0, 4000)}`;
 
       <Stepper steps={phases} current="design" projectId={projectId as string} />
 
-      <StaleNotice title="Built for a previous source" reasons={staleNotes} />
+      <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={staleNotes} />
 
       <StageHeader
         stage="design"
