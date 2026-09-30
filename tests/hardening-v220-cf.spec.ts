@@ -8,6 +8,7 @@ import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { readTableDependencies } from '../lib/abap/table-dependencies';
 import { applyRunnerVerdicts, parseTapOutput } from '../lib/test-verdicts';
 import { isUrlSafe } from '../lib/url-validation';
+import { generateExecutiveSummary, generateExecutiveSummaryDoc, generateModelCard } from '../lib/audit-pack';
 
 /**
  * Hardening that shipped with the v2.20 security steps C and F.
@@ -155,6 +156,23 @@ test.describe('the verdicts read from a test run', () => {
     const cases = [{ id: 'TC-001' }, { id: 'TC.002' }, { id: 'TC_003' }, { id: 'TC_004' }];
     const byId = Object.fromEntries(applyRunnerVerdicts(cases, parseTapOutput(tap), 1).map((c) => [c.id, c.status]));
     expect(byId).toEqual({ 'TC-001': 'Failed', 'TC.002': 'Failed', TC_003: 'Failed', TC_004: 'Skipped' });
+  });
+});
+
+test.describe('the executive summary of an audit pack', () => {
+  test('answers the key question the way the model card does', () => {
+    const project = {
+      id: 'p1',
+      name: 'Demo',
+      auditMetadata: { modelCard: { provider: null, model: null, modelParticipation: 'none', byokUsed: false } },
+    } as unknown as Parameters<typeof generateExecutiveSummary>[0];
+    const card = generateModelCard(project);
+    expect(card, 'the model card no longer says so — this test has lost its reference').toContain('Not applicable — no model was called');
+    for (const [what, text] of [['markdown', generateExecutiveSummary(project)], ['document', generateExecutiveSummaryDoc(project)]] as const) {
+      const row = text.split('\n').find((l) => l.includes('BYOK Used')) ?? '';
+      expect(row, `${what}: no key row`).not.toBe('');
+      expect(row, `${what}: claims a key was used where no model was called`).toContain('Not applicable — no model was called');
+    }
   });
 });
 
