@@ -10,6 +10,9 @@ import { assertRateLimit } from '@/lib/rate-limit';
 import { APP_VERSION } from '@/lib/version';
 import { signOffKey } from '@/lib/artefact-digest';
 import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
+import { catalogSnapshotRefForProject } from '@/lib/abap/catalog-snapshots';
+import { PROFILE_INPUT_ID } from '@/lib/assessment-profile';
+import { liveProfileDigest, recordedProfileOf } from '@/lib/assessment-target';
 import {
   INPUT_IDS,
   inputLabel,
@@ -211,6 +214,18 @@ export async function POST(req: NextRequest) {
               ? referenceDigest(INPUT_IDS.ruleset, runData.rulesetVersion)
               : null,
         };
+        // Roadmap 7.10 - the target profile, rebuilt from the project as it is
+        // now and against the catalog snapshot this build reads. A pack is not
+        // signed over a run whose profile is no longer the project's. A run
+        // signed before 7.10 recorded none and is not asked about one.
+        const recordedProfile = recordedProfileOf(runData);
+        if (recordedProfile) {
+          live[PROFILE_INPUT_ID] = liveProfileDigest({
+            project: projectData,
+            recorded: recordedProfile,
+            catalogSnapshot: catalogSnapshotRefForProject(projectData),
+          });
+        }
         const unverified = invalidatingInputs(unverifiedInputs(recordedManifest, live));
         if (unverified.length > 0) {
           blockers.push({
@@ -260,7 +275,10 @@ export async function POST(req: NextRequest) {
         if (stale) {
           blockers.push({
             code: 'sign-off-stale',
-            message: 'The architecture sign-off was given for a previous source. Confirm the target architecture again in stage 2.',
+            message:
+              projectData.auditMetadata?.sourceChange?.reason === 'profile'
+                ? 'The architecture sign-off was given for a previous target profile. Confirm the target architecture again in stage 2.'
+                : 'The architecture sign-off was given for a previous source. Confirm the target architecture again in stage 2.',
           });
         }
       }

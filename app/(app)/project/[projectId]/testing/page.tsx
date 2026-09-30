@@ -47,7 +47,7 @@ import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import NotGenerated from '@/components/NotGenerated';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
-import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
+import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import StaleNotice from '@/components/StaleNotice';
 import { STORED_TEST_SUITE_REJECTED } from './test-suite-schema';
@@ -859,11 +859,11 @@ export default function TestingSandboxPage() {
       <Stepper steps={phases} current="testing" projectId={projectId as string} />
 
       <StaleNotice
-        title="Built for a previous source"
+        title={`Built for ${previousBasis(project)}`}
         reasons={[
           ...generationBlockers(project, 'testing'),
           ...(phases.find((p) => p.key === 'testing')?.state === 'stale'
-            ? ['The test cases shown here were written for a previous source. Running them tests nothing about the current one.']
+            ? [`The test cases shown here were written for ${previousBasis(project)}. Running them tests nothing about the current one.`]
             : []),
         ]}
       />

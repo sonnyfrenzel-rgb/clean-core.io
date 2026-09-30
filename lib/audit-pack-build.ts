@@ -76,6 +76,13 @@ const RUN_FIELDS = [
   // Roadmap 0.5 — what the run was computed from. Server-written, inside the
   // run's own signature; the pack repeats it in a file of its own.
   'inputManifest',
+  // Roadmap 7.10 - the target profile the run was assessed against, its
+  // coverage and the subject hash. Inside the run's signature; the pack
+  // repeats them in 08-input-manifest.json. No grade: the A-D level is never
+  // part of the signed pack, and the profile carries none.
+  'assessmentProfile',
+  'profileCoverage',
+  'assessmentSubject',
   'model',
   'extensibilityRoute',
   'cleanCoreScore',

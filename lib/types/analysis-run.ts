@@ -59,6 +59,22 @@ export interface AnalysisRun {
    * they did, because the hash is recomputed from the stored document.
    */
   modelParticipation?: import('../model-stages').ModelParticipation;
+  /**
+   * Roadmap 7.10 (CR-02) — the target profile this run was assessed against:
+   * edition, release, component levels, the language version of every object
+   * the source defines, the catalog snapshot (key and digest) and the rule
+   * version. Inside the signed payload; the manifest carries it as
+   * `profile:assessment`.
+   *
+   * Absent on runs signed before 7.10. Those verify exactly as they were
+   * sealed and are labelled `run-before-profile` (`lib/legacy-project.ts`) —
+   * never given a profile after the fact.
+   */
+  assessmentProfile?: import('../assessment-profile').AssessmentProfile;
+  /** What the run may claim: `covered` or `unconfirmed`, with the gap codes. A rejected profile gets no run. */
+  profileCoverage?: import('../assessment-target').RecordedProfileCoverage;
+  /** `assessmentSubjectHash()` — the source under the profile. A profile change is a new subject. */
+  assessmentSubject?: string;
   // Results
   extensibilityRoute: string;
   cleanCoreScore: number;

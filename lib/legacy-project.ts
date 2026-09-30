@@ -22,6 +22,11 @@
  *     catalog, rule set and engine produced it is not recorded.
  *   - **a run signed before model participation** (before roadmap 1.2): no
  *     `modelParticipation`. Whether a model wrote the narrative is not recorded.
+ *   - **a run signed before the target profile** (before roadmap 7.10): no
+ *     `assessmentProfile` on the run. It was assessed against the deployment
+ *     it recorded and the one catalog the build shipped; which release, which
+ *     language versions and which catalog snapshot (by digest) is not recorded,
+ *     and nothing gives it a profile after the fact.
  *   - **dependencies stored before ownership** (before 2.16): `dataCoupling`
  *     entries without `isStandard`, so a name that is not a customer name is
  *     not therefore an SAP table.
@@ -40,12 +45,14 @@
  */
 
 import type { Project } from './types';
+import { recordedProfileOf } from './assessment-target';
 
 export const HISTORICAL_FORMS = [
   'before-signed-runs',
   'run-unreadable',
   'run-before-manifest',
   'run-before-model-record',
+  'run-before-profile',
   'coupling-before-ownership',
 ] as const;
 export type HistoricalForm = (typeof HISTORICAL_FORMS)[number];
@@ -132,6 +139,18 @@ export function recordGaps(project: Project | null): RecordGap[] {
       why:
         'This run was signed before runs recorded what part a model had in them. ' +
         'Whether a model wrote its narrative is not determined.',
+    });
+  }
+
+  if (runId && !runUnreadable && recordedProfileOf(project) === null) {
+    out.push({
+      form: 'run-before-profile',
+      label: 'Target profile',
+      why:
+        'This run was signed before runs recorded the target profile they were assessed against. ' +
+        'Its deployment is recorded where the run recorded one; the release, the language version of each object ' +
+        'and the catalog snapshot are not determined, so its result is neither confirmed nor refused for a profile. ' +
+        'Nothing gives it one after the fact: running the analysis again records the profile with a new run.',
     });
   }
 

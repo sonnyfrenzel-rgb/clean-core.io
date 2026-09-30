@@ -33,16 +33,22 @@ jobs:
       - name: Install Dependencies
         run: npm ci --foreground-scripts
 
-      - name: Sync catalog (latest)
+      # Roadmap 7.10: the Private Edition lists ship too - the moving one and
+      # every release-pinned file SAP publishes (lib/abap/catalog-snapshots.ts).
+      # Same exit-code contract per file: 20 = written, 0 = unchanged.
+      - name: Sync catalog (latest and Private Edition)
         id: sync
         run: |
-          set +e
-          npx tsx scripts/sync-cloudification-repo.ts latest
-          code=$?
-          set -e
-          if [ "$code" = "20" ]; then echo "changed=true" >> "$GITHUB_OUTPUT";
-          elif [ "$code" = "0" ]; then echo "changed=false" >> "$GITHUB_OUTPUT";
-          else exit "$code"; fi
+          changed=false
+          for release in latest pce-latest pce-2025-1 pce-2025-0 pce-2023-3; do
+            set +e
+            npx tsx scripts/sync-cloudification-repo.ts "$release"
+            code=$?
+            set -e
+            if [ "$code" = "20" ]; then changed=true;
+            elif [ "$code" != "0" ]; then exit "$code"; fi
+          done
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
 
       # The demo's release record names the catalog it was measured under
       # (tests/demo-release-guard.spec.ts); without this the guard goes red on

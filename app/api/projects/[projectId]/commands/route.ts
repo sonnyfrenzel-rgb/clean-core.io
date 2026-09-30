@@ -14,6 +14,8 @@ import { deriveProjectDecision } from '@/lib/decision-facts';
 import type { EvidenceChange } from '@/lib/run-evidence-digest';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { catalogSnapshotRefForProject } from '@/lib/abap/catalog-snapshots';
+import { profileDrift, recordedProfileOf } from '@/lib/assessment-target';
 import { logger, errMessage } from '@/lib/logger';
 
 /**
@@ -158,6 +160,10 @@ export async function POST(
         // refuses on it rather than treating an unreadable run as an
         // unchanged one.
         let activeRunEvidence: string | null = null;
+        // Roadmap 7.10 - the run's target profile against the project's now,
+        // read from the same run document in the same transaction. `null` for
+        // a run signed before 7.10: labelled, not reinterpreted.
+        let profileDriftNow: { recorded: string; now: string } | null = null;
         // Roadmap 8.4 adds the second command that is bound to the run it was
         // read from. Both are named here rather than "any command that sends an
         // expectedRunId": the set of commands that must be bound is a decision
@@ -166,6 +172,10 @@ export async function POST(
         if (wantsBinding && typeof project.activeRunId === 'string' && project.activeRunId.length > 0) {
           const runSnap = await tx.get(ref.collection('runs').doc(project.activeRunId));
           activeRunEvidence = runSnap.exists ? evidenceDigest(runSnap.data()) : null;
+          const recordedProfile = runSnap.exists ? recordedProfileOf(runSnap.data()) : null;
+          if (recordedProfile) {
+            profileDriftNow = profileDrift({ project, recorded: recordedProfile, catalogSnapshot: catalogSnapshotRefForProject(project) });
+          }
         }
 
         // `confirm-decision` confirms a record that came in from the browser, so
@@ -191,6 +201,7 @@ export async function POST(
           // is a confirmation of something else.
           decision: project.decision,
           derivedDecisionFingerprint,
+          profileDrift: profileDriftNow,
         };
         const decision = validateProjectCommand(body, state, { email, now: new Date().toISOString() });
         if (!decision.ok) {

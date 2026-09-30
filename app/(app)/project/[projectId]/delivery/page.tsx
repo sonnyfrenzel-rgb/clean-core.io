@@ -32,7 +32,7 @@ import { generateAuditPack } from '@/lib/audit-pack';
 import { APP_VERSION } from '@/lib/version';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
-import { workflowSteps, testEvidence, handoverBlockers, PHASES } from '@/lib/workflow-steps';
+import { workflowSteps, testEvidence, handoverBlockers, PHASES, previousBasis } from '@/lib/workflow-steps';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcToast from '@/components/cc/Toast';
@@ -563,8 +563,8 @@ jobs:
       </StageHeader>
 
       <StaleNotice
-        title="Handover blocked — built for a previous source"
-        reasons={blockers.map((b) => `${b.charAt(0).toUpperCase()}${b.slice(1)} — regenerate it for the current source before handing over.`)}
+        title={`Handover blocked — built for ${previousBasis(project)}`}
+        reasons={blockers.map((b) => `${b.charAt(0).toUpperCase()}${b.slice(1)} — regenerate it for the current ${previousBasis(project) === 'a previous target profile' ? 'target profile' : 'source'} before handing over.`)}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12 items-stretch">
@@ -727,7 +727,7 @@ jobs:
                   {!hasGeneratedCode
                     ? 'Run stage 3 to produce the code this line reports on'
                     : codeStale
-                      ? 'Generated from a previous source — regenerate in stage 3'
+                      ? `Generated from ${previousBasis(project)} — regenerate in stage 3`
                       : isAbapCloud
                       ? 'Handover: ABAP Cloud packages generated — not compiled or tested'
                       : 'Handover: TypeScript package generated — not compiled or tested'}
@@ -761,7 +761,7 @@ jobs:
                   {testCaseCount === 0
                     ? 'Nothing to verify'
                     : testingPhase.state === 'stale'
-                      ? 'Written for a previous source — regenerate in stage 5'
+                      ? `Written for ${previousBasis(project)} — regenerate in stage 5`
                       : testsPassed === testCaseCount
                       ? (!testingPhase.proven
                           ? 'Marked as passed — no test run is on record behind these verdicts. Run the suite in stage 5.'
@@ -823,7 +823,7 @@ jobs:
                   {!hasDocumentation
                     ? 'Run stage 4 to produce the documentation this line reports on'
                     : docsStale
-                      ? 'Written for a previous source — regenerate in stage 4'
+                      ? `Written for ${previousBasis(project)} — regenerate in stage 4`
                       : documentationFromCode
                         ? 'Every statement with its lines; owner, roles, KPIs and duration not determined'
                         : 'Written by a language model from 1,000-character slices — read it again from the code in stage 4'}

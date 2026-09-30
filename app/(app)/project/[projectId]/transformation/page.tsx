@@ -36,7 +36,7 @@ import { matchCdsView } from '@/lib/abap/cds-catalog';
 import { extractSelects, parseSelect } from '@/lib/abap/select-parser';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
-import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
+import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
 import { isAbapCloudTrack, trackCopy } from '@/lib/transformation-track';
 // Roadmap 8.3 — the generation follows the architecture contract, not a field
 // on the project document. See `lib/generation-direction.ts` for what it
@@ -858,7 +858,7 @@ CMD ["node", "srv/service.js"]`
   const staleNotes = [
     ...blockers,
     ...(phases.find((p) => p.key === 'transformation')?.state === 'stale'
-      ? ['The code shown here was generated from a previous source — it is not a transformation of the current one.']
+      ? [`The code shown here was generated from ${previousBasis(project)} — it is not a transformation of the current one.`]
       : []),
   ];
 
@@ -1034,7 +1034,7 @@ CMD ["node", "srv/service.js"]`
         </CcButton>
       </div>
 
-      <StaleNotice title="Built for a previous source" reasons={staleNotes} />
+      <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={staleNotes} />
 
       <CcToast open={showCopyDialog} onDismiss={closeCopyToast}>
         Code copied to clipboard

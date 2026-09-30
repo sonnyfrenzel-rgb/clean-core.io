@@ -19,6 +19,7 @@ import { INPUT_MANIFEST_FILE } from '../lib/audit-pack';
 import { canonicalAuditManifest } from '../lib/audit-pack-canonical';
 import { recomputeStoredRunHash, verifyRunIntegrity } from '../lib/run-signature';
 import { TERMS_VERSION } from '../lib/constants';
+import { PROFILE_INPUT_ID } from '../lib/assessment-profile';
 
 /**
  * Roadmap 0.5 — "Manifest- und Inputvertrag: `inputs[]` mit Revision und Hash".
@@ -269,7 +270,8 @@ test.describe('server side', () => {
     expect(manifest.manifestVersion).toBe(1);
     expect(manifest.revision).toBe(1);
     expect(manifest.inputs.map((i: ManifestInput) => i.id).sort()).toEqual(
-      [INPUT_IDS.catalog, INPUT_IDS.deployment, INPUT_IDS.engine, INPUT_IDS.model, INPUT_IDS.ruleset, INPUT_IDS.source].sort(),
+      // Roadmap 7.10 added the seventh: the target profile the run was assessed against.
+      [INPUT_IDS.catalog, INPUT_IDS.deployment, INPUT_IDS.engine, INPUT_IDS.model, INPUT_IDS.ruleset, INPUT_IDS.source, PROFILE_INPUT_ID].sort(),
     );
     const source = manifest.inputs.find((i: ManifestInput) => i.id === INPUT_IDS.source);
     expect(source.sha256).toBe(node256(SOURCE));
@@ -318,7 +320,7 @@ test.describe('server side', () => {
     expect(entry, `${INPUT_MANIFEST_FILE} is not in the pack`).toBeTruthy();
     const doc = JSON.parse(await entry!.async('string'));
     expect(doc.recorded).toBe(true);
-    expect(doc.inputs).toHaveLength(6);
+    expect(doc.inputs).toHaveLength(7);
     expect(doc.inputs.find((i: ManifestInput) => i.id === INPUT_IDS.source).sha256).toBe(node256(SOURCE));
 
     // The file is signed, not merely carried: it is listed under `files` with a

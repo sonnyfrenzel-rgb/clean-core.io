@@ -32,7 +32,7 @@ import ProcessDocumentationView from '@/components/documentation/ProcessDocument
 import { saveAs } from '@/lib/fileSaver';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
-import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
+import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { useProcessMap } from '@/hooks/useProcessMap';
@@ -1219,11 +1219,11 @@ Structure the JSON exactly like this:
       <Stepper steps={phases} current="documentation" projectId={projectId as string} />
 
       <StaleNotice
-        title="Built for a previous source"
+        title={`Built for ${previousBasis(project)}`}
         reasons={[
           ...generationBlockers(project, 'documentation'),
           ...(phases.find((p) => p.key === 'documentation')?.state === 'stale'
-            ? ['The blueprint shown here was written for a previous source.']
+            ? [`The blueprint shown here was written for ${previousBasis(project)}.`]
             : []),
         ]}
       />
