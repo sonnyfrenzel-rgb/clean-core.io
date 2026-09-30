@@ -1,14 +1,24 @@
 'use client';
 
-import { User, RotateCw, LogOut, ArrowLeft, Settings, Shield, Zap, Crown, Infinity, HelpCircle, X, ShieldAlert } from 'lucide-react';
+import { User, RotateCw, LogOut, Settings, Shield, HelpCircle, X, ChevronDown, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getAuth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
-import { useState, useEffect, useRef } from 'react';
-import ShellHelpMenu from '@/components/ShellHelpMenu';
+import { useState, useEffect } from 'react';
+import ShellHelpMenu, {
+  SHELL_MENU_ITEMS,
+  SHELL_MENU_PANEL,
+  SHELL_MENU_SEPARATOR,
+  SHELL_TRIGGER,
+  useShellMenu,
+} from '@/components/ShellHelpMenu';
+import CcButton from '@/components/cc/Button';
+import CcMessageBox from '@/components/cc/MessageBox';
+import CcTag from '@/components/cc/Tag';
+import { cn } from '@/lib/utils';
+import { PHASES } from '@/lib/workflow-steps';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import GlossarySidebar from '@/components/GlossarySidebar';
 import GlossaryChatbot from '@/components/GlossaryChatbot';
 import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import SiteFooter from '@/components/SiteFooter';
@@ -39,62 +49,22 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
   // nothing has to remove it, and the field on old accounts is simply not read;
   // see the note on it in `hooks/useUserProfile.ts`.
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
-  const accountButtonRef = useRef<HTMLButtonElement>(null);
-  const logoutDialogRef = useRef<HTMLDivElement>(null);
 
-  // Roadmap 3.0.4 — the account menu closes on Escape and gives the focus back
-  // to the button that opened it; before, only a click on the backdrop closed
-  // it, and a keyboard reader was left inside a menu with no way out.
-  useEffect(() => {
-    if (!showUserDropdown) return undefined;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      setShowUserDropdown(false);
-      accountButtonRef.current?.focus();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [showUserDropdown]);
-
-  // The sign-out confirmation is a modal (`DESIGN.md` §2.6): the focus moves
-  // into it, Tab stays inside, Escape cancels, and the focus returns to the
-  // account button — it used to open behind a blur with the focus still on the
-  // page underneath.
-  useEffect(() => {
-    if (!showLogoutConfirm) return undefined;
-    const box = logoutDialogRef.current;
-    box?.querySelector<HTMLElement>('[data-logout-cancel]')?.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        setShowLogoutConfirm(false);
-        return;
-      }
-      if (event.key !== 'Tab' || !box) return;
-      const focusable = box.querySelectorAll<HTMLElement>('button:not([disabled]), [href]');
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      } else if (!box.contains(document.activeElement)) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    const opener = accountButtonRef.current;
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      opener?.focus();
-    };
-  }, [showLogoutConfirm]);
+  // The account menu is a menu button in the WAI-ARIA sense (block D, D.6), on
+  // the same keyboard as the Help menu beside it: `useShellMenu` in
+  // `components/ShellHelpMenu.tsx`. Escape closes it and gives the focus back
+  // to the button that opened it (roadmap 3.0.4); the arrow keys move between
+  // the items; a press outside closes it — no invisible full-screen layer.
+  const {
+    open: accountMenuOpen,
+    close: closeAccountMenu,
+    rootRef: accountMenuRootRef,
+    triggerRef: accountButtonRef,
+    menuRef: accountMenuRef,
+    triggerProps: accountTriggerProps,
+    menuProps: accountMenuProps,
+  } = useShellMenu('account-menu-panel');
 
   // Initialize banner state from sessionStorage to avoid flashing dismissed banners.
   // Storage throws in a browser that refuses it; unguarded, that throw took the
@@ -151,30 +121,52 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
     }
   };
 
-  const getTierBadge = (tier: string = 'basic') => {
-    if (profile?.isAdmin) {
-      return <span className="bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><Crown size={10} /> Admin</span>;
-    }
+  /**
+   * The plan, as a tag (§4.1): a label with no state behind it, so the
+   * quietest form there is — no colour, no icon. It used to be five coloured
+   * pills at 10 px, one red "Admin" among them, which read as a warning.
+   */
+  const planLabel = (tier: string = 'basic'): string => {
+    if (profile?.isAdmin) return 'Admin';
     switch (tier) {
-      case 'enterprise': return <span className="bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><Crown size={10} /> Admin</span>;
-      case 'unlimited': return <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1"><Infinity size={10} /> Community BYOK</span>;
-      case 'premium': return <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1"><Crown size={10} /> Community Pro</span>;
-      case 'starter': return <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1"><Zap size={10} /> Community Standard</span>;
-      default: return <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1"><Shield size={10} /> Community Basic</span>;
+      case 'enterprise': return 'Admin';
+      case 'unlimited': return 'Community BYOK';
+      case 'premium': return 'Community Pro';
+      case 'starter': return 'Community Standard';
+      default: return 'Community Basic';
     }
   };
 
+  /**
+   * Where the reader stands, for the path in the shell bar (§2.1: "Workspace ›
+   * Projekt"). The workspace is the root; a stage names itself from `PHASES`
+   * (`lib/workflow-steps.ts`), the list the stepper and the stage title read.
+   * The project's own name is not fetched here — that would be one more read of
+   * a document that carries the source code; the stages hand it up in D.29.
+   * On the object page (`/project/<id>`) the workspace shows its own path.
+   */
+  const pathCurrent = ((): string | null => {
+    const stage = /^\/project\/[^/]+\/([^/?#]+)/.exec(pathname ?? '')?.[1];
+    if (stage) return PHASES.find((p) => p.key === stage)?.label ?? null;
+    if (pathname?.startsWith('/settings')) return 'Settings & Profile';
+    if (pathname?.startsWith('/admin')) return 'Admin Console';
+    return null;
+  })();
+  const atWorkspace = pathname === '/dashboard';
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8f9ff]">
+    <div className="min-h-screen flex flex-col bg-cc-page">
       {/* The first Tab stop of every signed-in page (roadmap 3.0.4, WCAG
           2.4.1): past the banner and the shell bar, straight to the content.
           Invisible until it has the focus. */}
       <a
         href="#main-content"
         data-skip-link=""
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-bold focus:text-gray-900 focus:shadow-xl focus:outline-2 focus:outline-offset-2 focus:outline-cc-focus"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-cc-row focus:outline-2 focus:outline-offset-2 focus:outline-cc-focus"
       >
-        Skip to content
+        <span className="block rounded-cc-row border border-cc-line bg-cc-surface px-4 py-3 text-[13px] font-semibold text-cc-ink shadow-cc-dialog">
+          Skip to content
+        </span>
       </a>
 
       {/* A signed-in visitor with no profile yet — a first Google sign-in — is
@@ -184,88 +176,108 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           and no way to give one. It renders nothing once a profile exists. */}
       <UserOnboarding />
 
-      {/* Warning Banner */}
+      {/* The warning band: the warning tokens and the type scale (§1.1, §1.2),
+          no lightning bolt (§3.1), no entrance animation (§1.7). It stays a
+          band across the page rather than a Message Strip, because it is about
+          the product, not about a section of the page. */}
       {showBanner && (
-        <div className="cc-no-print bg-amber-50/95 backdrop-blur text-amber-900 py-2 sm:py-2.5 px-4 pr-4 sm:pr-40 text-center text-[10px] sm:text-xs font-semibold border-b border-amber-200 flex flex-wrap items-center justify-center gap-1.5 sm:gap-3 transition-all shrink-0 relative animate-in slide-in-from-top duration-300">
-          <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-950 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider select-none shrink-0">
-            ⚡ Free Community Edition
-          </span>
-          <span className="leading-relaxed">
-            Free Community SAP Modernization Platform. Powered by Generative AI. Provided without warranty.
-          </span>
-          {/* The public versions. These used to point into the settings page.
-              This shell wraps /knowledge, /how-to and /first-run — pages that are
-              reachable without an account and are in the sitemap — so those two
-              links pointed a signed-out reader at a route behind the login. A
-              privacy policy and an imprint have to be available without
-              registration, immediately and permanently (§ 5 DDG, Art. 12/13
-              GDPR); the footer of the same page already links them correctly. */}
-          <div className="flex items-center gap-2 font-black shrink-0">
-            <Link href="/datenschutz" className="underline hover:text-green-750 transition-colors">Privacy Policy</Link>
-            <span>•</span>
-            <Link href="/impressum" className="underline hover:text-green-750 transition-colors">Legal Notice</Link>
-            <span className="text-amber-300">|</span>
-            <button 
-              onClick={dismissBanner}
-              className="inline-flex items-center gap-1 bg-amber-200/80 hover:bg-amber-300 text-amber-950 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer border border-amber-300/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus hover:scale-105 active:scale-95 shadow-sm ml-1"
-              title="Dismiss warning"
-            >
-              <X size={10} strokeWidth={3} className="shrink-0" /> Dismiss
-            </button>
+        <div
+          data-shell-banner=""
+          className="cc-no-print shrink-0 border-b border-cc-warning-border bg-cc-warning-bg px-4 py-2 text-[12px] font-medium text-cc-ink"
+        >
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
+            <CcTag>Free Community Edition</CcTag>
+            <span className="leading-snug">
+              Free Community SAP Modernization Platform. Powered by Generative AI. Provided without warranty.
+            </span>
+            {/* The public versions. These used to point into the settings page.
+                This shell wraps /knowledge, /how-to and /first-run — pages that are
+                reachable without an account and are in the sitemap — so those two
+                links pointed a signed-out reader at a route behind the login. A
+                privacy policy and an imprint have to be available without
+                registration, immediately and permanently (§ 5 DDG, Art. 12/13
+                GDPR); the footer of the same page already links them correctly. */}
+            <span className="flex shrink-0 items-center gap-2 font-semibold">
+              <Link href="/datenschutz" className="text-cc-ink underline">Privacy Policy</Link>
+              <span aria-hidden={true}>·</span>
+              <Link href="/impressum" className="text-cc-ink underline">Legal Notice</Link>
+              <button
+                type="button"
+                onClick={dismissBanner}
+                title="Dismiss warning"
+                className="ml-1 inline-flex min-h-6 items-center gap-1 rounded-cc-row px-1 font-semibold text-cc-ink underline pointer-coarse:min-h-11"
+              >
+                <X size={12} aria-hidden={true} /> Dismiss
+              </button>
+            </span>
           </div>
         </div>
       )}
-      
-      <header className="cc-no-print bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+
+      {/* The Shell Bar, DESIGN.md §2.1 and the mockups 2.8: 56 px, logo and
+          product name on the left, the path beside them, the quota, the
+          assistant, Help and the account menu on the right. White surface and a
+          1 px rule — no blur, no shadow, no green hover (ADR-007). */}
+      <header className="cc-no-print sticky top-0 z-50 border-b border-cc-line bg-cc-surface">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
           {/* Home means the dashboard for someone signed in and the landing page
               for everyone else. The same shell serves both, and a hard link to
               /dashboard was a dead end for a visitor who arrived on /knowledge
               from a search result — and a signal that skewed the internal link
               graph for crawlers. */}
-          <Link href={profile ? '/dashboard' : '/'} className="flex items-center gap-2 sm:gap-3 text-green-600 hover:opacity-80 transition-opacity shrink-0">
-            <div className="bg-green-600/10 p-2 rounded-xl hidden sm:block">
-              <RotateCw className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-lg sm:text-2xl tracking-tight text-gray-900 leading-none">Clean-Core<span className="text-green-600">.io</span></span>
-              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-gray-500 mt-1">Free Community Edition</span>
-            </div>
+          <Link href={profile ? '/dashboard' : '/'} className="flex shrink-0 items-center gap-2 text-cc-ink no-underline">
+            <span aria-hidden={true} className="hidden h-8 w-8 items-center justify-center rounded-cc-row bg-cc-brand-surface text-cc-brand sm:flex">
+              <RotateCw size={18} />
+            </span>
+            <span className="flex flex-col">
+              <span className="text-[15px] font-extrabold leading-tight tracking-[-0.02em] text-cc-ink">
+                Clean-Core<span className="text-cc-brand">.io</span>
+              </span>
+              <span className="text-[11px] font-medium leading-tight text-cc-ink-muted">Free Community Edition</span>
+            </span>
           </Link>
 
-          {/* The way out of a workflow step.
-              It used to be `hidden lg:flex`, so on a phone there was no route
-              back to the workspace from inside a project at all — the header
-              collapsed to a logo and an avatar. The label shortens instead of
-              disappearing. */}
-          {isProjectStep && (
-            <div className="flex items-center justify-center lg:flex-1 shrink-0">
-              <Link
-                href="/dashboard"
-                className="flex items-center gap-1.5 lg:gap-2 text-xs lg:text-sm font-bold text-gray-500 hover:text-green-600 transition-all bg-gray-100 px-3 lg:px-5 py-2 lg:py-2.5 rounded-full border border-gray-200 hover:border-green-200 hover:bg-green-50 whitespace-nowrap"
-              >
-                <ArrowLeft size={14} className="shrink-0" />
-                <span className="lg:hidden">Workspace</span>
-                <span className="hidden lg:inline">Back to My Workspace</span>
-              </Link>
-            </div>
+          {/* The path (§2.1). It replaced "Back to My Workspace", a pill that sat
+              a few pixels above the stage's own "Back to workspace" link (D.9)
+              and said the same thing twice in two shapes. The way back from a
+              stage is that link, which knows the view it came from; the path
+              says where the reader is and leads to the workspace. On a phone the
+              bar holds the logo, the quota and the account only — the stage's
+              link is the way back there. */}
+          {profile && (
+            <nav aria-label="Path" data-shell-path="" className="hidden min-w-0 items-center gap-1 text-[13px] font-medium text-cc-ink-muted sm:flex">
+              {atWorkspace ? (
+                <span aria-current="page" className="font-semibold text-cc-ink">My workspace</span>
+              ) : (
+                <Link href="/dashboard" className="whitespace-nowrap text-cc-ink-muted no-underline hover:text-cc-ink hover:underline">
+                  My workspace
+                </Link>
+              )}
+              {pathCurrent && !atWorkspace && (
+                <>
+                  <ChevronRight size={14} aria-hidden={true} className="shrink-0" />
+                  <span aria-current="page" className="truncate font-semibold text-cc-ink">{pathCurrent}</span>
+                </>
+              )}
+            </nav>
           )}
 
-          <div className="flex items-center gap-2 sm:gap-6">
+          <div className="ml-auto flex items-center gap-2 sm:gap-3">
             {/* The one place the quota is stated.
                 It used to appear three times in three shapes — and with two
                 different numbers: "1 / 5 TRANSFORMATIONS" here, "FREE BALANCE:
                 4 / 5 FREE" on the dashboard, "FREE TRANSFORMATIONS: 4 / 5" on
                 the transformation step. Used-of-total and remaining-of-total,
                 side by side, both true and impossible to reconcile at a glance.
-                One wording now, and it survives on a phone. */}
+                One wording now, and it survives on a phone. 12 px / 600, the
+                meta step of the scale (ADR-047), in sentence case. */}
             {profile && (
-              <div className="flex flex-col items-end">
-                <div className="hidden md:flex items-center gap-2">
-                  <span className="text-sm font-bold text-gray-900">{profile.firstName} {profile.lastName}</span>
-                  {getTierBadge(profile.tier)}
+              <div className="flex flex-col items-end leading-tight">
+                <div className="hidden items-center gap-2 md:flex">
+                  <span className="text-[13px] font-semibold text-cc-ink">{profile.firstName} {profile.lastName}</span>
+                  <CcTag>{planLabel(profile.tier)}</CcTag>
                 </div>
-                <div className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest md:mt-0.5 whitespace-nowrap">
+                <div data-shell-quota="" className="whitespace-nowrap text-[12px] font-semibold text-cc-ink-muted">
                   {runsAreSelfFunded(profile) || profile.transformationsLimit > 900
                     ? 'Unlimited'
                     : `${runsRemaining(profile)} of ${profile.transformationsLimit} left`}
@@ -273,68 +285,71 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
               </div>
             )}
 
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
-              data-assistant-trigger="header"
-              className="hidden sm:flex items-center gap-2 text-sm font-black text-green-700 hover:text-white bg-green-50 hover:bg-green-600 px-5 py-2.5 rounded-full border border-green-200 hover:border-green-600 hover:shadow-lg transition-all"
-            >
-              <HelpCircle size={14} /> {assistantLabel}
-            </button>
+            <span className="hidden sm:inline-flex">
+              <CcButton
+                variant="ghost"
+                icon={<HelpCircle size={16} aria-hidden={true} />}
+                onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
+                data-assistant-trigger="header"
+              >
+                {assistantLabel}
+              </CcButton>
+            </span>
 
             {/* Help, where §2.1 puts it in the shell bar — "Keyboard shortcuts"
                 lives here (§5.9 item 12, roadmap 3.0.4). */}
             <ShellHelpMenu assistantLabel={assistantLabel} />
 
-            <div className="relative">
+            <div ref={accountMenuRootRef} className="relative">
               <button
                 ref={accountButtonRef}
-                onClick={() => setShowUserDropdown(!showUserDropdown)}
+                {...accountTriggerProps}
                 aria-label="Account menu"
-                aria-expanded={showUserDropdown}
-                aria-controls={showUserDropdown ? 'account-menu-panel' : undefined}
                 /* The one element that says whose profile the shell is holding.
                    It is here with or without a profile, so a test can open the
                    menu before one has loaded and can tell "nobody" from "the
-                   wrong person" — see tests/profile-session-guard.spec.ts. */
+                   wrong person" — see tests/profile-session-guard.spec.ts. Its
+                   text is the initials and nothing else, for the same reason. */
                 data-account-menu
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gray-900 text-white flex items-center justify-center font-bold text-sm shadow-xl hover:scale-105 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
+                className={cn(SHELL_TRIGGER, 'pl-1 pr-2 text-[11px] text-cc-ink')}
               >
-                {profile ? profile.firstName[0] + profile.lastName[0] : <User className="w-5 h-5" />}
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-cc-row bg-cc-ink text-cc-on-dark">
+                  {profile ? profile.firstName[0] + profile.lastName[0] : <User size={14} aria-hidden={true} />}
+                </span>
+                <ChevronDown size={14} aria-hidden={true} className="text-cc-ink-muted" />
               </button>
 
-              {showUserDropdown && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setShowUserDropdown(false)}></div>
-                  <div id="account-menu-panel" className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 z-20 p-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="p-4 border-b border-gray-50 mb-1">
-                      <p className="text-sm font-bold text-gray-900">{profile?.firstName} {profile?.lastName}</p>
-                      <p className="text-xs text-gray-500 truncate">{profile?.email}</p>
-                    </div>
-                    
+              {accountMenuOpen && (
+                <div className={SHELL_MENU_PANEL}>
+                  <div className="border-b border-cc-line px-3 pt-2 pb-2">
+                    <p className="m-0 text-[13px] font-semibold text-cc-ink">{profile?.firstName} {profile?.lastName}</p>
+                    <p className="m-0 truncate text-[12px] font-medium text-cc-ink-muted">{profile?.email}</p>
+                  </div>
+                  <div ref={accountMenuRef} {...accountMenuProps} aria-label="Account" className={cn(SHELL_MENU_ITEMS, 'pt-1')}>
                     {profile?.isAdmin && (
-                      <Link 
-                        href="/admin" 
-                        onClick={() => setShowUserDropdown(false)}
-                        className="flex items-center gap-3 w-full p-3 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-xl transition-all border-b border-gray-100 pb-3"
-                      >
-                        <Shield size={18} className="text-green-600" /> Admin Console
-                      </Link>
+                      <>
+                        <Link href="/admin" role="menuitem" tabIndex={-1} onClick={() => closeAccountMenu(false)}>
+                          <Shield size={16} aria-hidden={true} /> Admin Console
+                        </Link>
+                        <div role="separator" className={SHELL_MENU_SEPARATOR} />
+                      </>
                     )}
-                    
-                    <Link 
-                      href="/settings" 
-                      onClick={() => setShowUserDropdown(false)}
-                      className="flex items-center gap-3 w-full p-3 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-xl transition-all mt-1"
-                    >
-                      <Settings size={18} /> Settings & Profile
+
+                    <Link href="/settings" role="menuitem" tabIndex={-1} onClick={() => closeAccountMenu(false)}>
+                      <Settings size={16} aria-hidden={true} /> Settings & Profile
                     </Link>
 
-                    <button 
-                      onClick={() => { setShowUserDropdown(false); window.dispatchEvent(new CustomEvent('open-chatbot', { detail: { returnFocusTo: accountButtonRef.current } })); }}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      tabIndex={-1}
+                      onClick={() => {
+                        closeAccountMenu(false);
+                        window.dispatchEvent(new CustomEvent('open-chatbot', { detail: { returnFocusTo: accountButtonRef.current } }));
+                      }}
                       data-assistant-trigger="menu"
-                      className="flex items-center gap-3 w-full p-3 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-xl transition-all text-left"
                     >
-                      <HelpCircle size={18} /> {assistantLabel}
+                      <HelpCircle size={16} aria-hidden={true} /> {assistantLabel}
                     </button>
 
                     {/* Roadmap 3.0.7, DESIGN.md §6.2: brings back the coach marks
@@ -342,83 +357,63 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                         only. Behind the workspace switch, like the tips. */}
                     {workspaceShellEnabled(profile) && (
                       <button
-                        onClick={() => { setShowUserDropdown(false); showTipsAgain(); }}
+                        type="button"
+                        role="menuitem"
+                        tabIndex={-1}
+                        onClick={() => { closeAccountMenu(true); showTipsAgain(); }}
                         data-show-tips-again=""
-                        className="flex items-center gap-3 w-full p-3 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-xl transition-all text-left"
                       >
-                        <Lightbulb size={18} /> Show tips again
+                        <Lightbulb size={16} aria-hidden={true} /> Show tips again
                       </button>
                     )}
 
-                    <button 
-                      onClick={() => { setShowUserDropdown(false); setShowLogoutConfirm(true); }}
-                      className="flex items-center gap-3 w-full p-3 text-sm font-bold text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                    <div role="separator" className={SHELL_MENU_SEPARATOR} />
+                    {/* The focus goes back to the account button before the box
+                        opens, so the box hands it back there when it closes. */}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      tabIndex={-1}
+                      data-menu-tone="danger"
+                      onClick={() => { closeAccountMenu(true); setShowLogoutConfirm(true); }}
                     >
-                      <LogOut size={18} /> Sign Out
+                      <LogOut size={16} aria-hidden={true} /> Sign Out
                     </button>
                   </div>
-                </>
+                </div>
               )}
             </div>
           </div>
         </div>
       </header>
 
-      {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-md flex items-center justify-center p-4 z-[100] animate-in fade-in duration-200">
-          <div
-            ref={logoutDialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="logout-dialog-title"
-            data-logout-dialog=""
-            className="bg-white p-6 sm:p-8 rounded-[2.5rem] w-full max-w-md shadow-2xl border border-gray-100"
-          >
-            <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6" aria-hidden={true}>
-              <LogOut className="w-8 h-8 text-red-600" />
-            </div>
-            <h2 id="logout-dialog-title" className="text-3xl font-black mb-3 text-gray-950 tracking-tight">Sign Out?</h2>
-            
-            <div className="bg-gray-50 p-6 rounded-3xl mb-8 border border-gray-100">
-              {profile?.tier === 'pilot' ? (
-                <div className="space-y-4">
-                  <p className="text-lg text-gray-700 leading-relaxed font-medium">
-                    You are currently using the <span className="text-gray-900 font-bold underline decoration-green-500 underline-offset-4 tracking-tight">Community Standard</span> plan.
-                  </p>
-                  <ul className="space-y-2 text-sm text-gray-600 font-medium italic">
-                    <li className="flex items-center gap-2">• Up to 5 App transformations</li>
-                    <li className="flex items-center gap-2">• Community Feedback access</li>
-                    <li className="flex items-center gap-2">• Free to use — review outputs before production</li>
-                  </ul>
-                  <p className="text-sm text-gray-500 font-bold border-t border-gray-200 pt-4">
-                    Are you sure you want to sign out?
-                  </p>
-                </div>
-              ) : (
-                <p className="text-lg text-gray-700 leading-relaxed font-medium">
-                  Are you sure you want to sign out of your workspace? All running processes will continue.
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                data-logout-cancel=""
-                onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 px-6 py-4 text-sm font-black text-gray-600 hover:bg-gray-100 rounded-2xl transition-all"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleLogout} 
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-2xl font-black text-sm transition-all shadow-xl shadow-red-200"
-              >
-                Sign Out Now
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Sign-out is a confirmation, so it is the Message Box (§2.6): the page
+          behind is inert, the focus is held inside and comes back to the
+          account button, Escape and the first focus lead away from signing
+          out, and "Sign out now" is the binding `dark` button. */}
+      <CcMessageBox
+        open={showLogoutConfirm}
+        title="Sign out?"
+        confirmLabel="Sign out now"
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      >
+        {profile?.tier === 'pilot' ? (
+          <>
+            <p className="m-0">
+              You are currently using the <b className="font-semibold">Community Standard</b> plan.
+            </p>
+            <ul className="m-0 mt-2 list-disc pl-5 text-cc-ink-muted">
+              <li>Up to 5 App transformations</li>
+              <li>Community Feedback access</li>
+              <li>Free to use — review outputs before production</li>
+            </ul>
+            <p className="m-0 mt-2">Are you sure you want to sign out?</p>
+          </>
+        ) : (
+          <p className="m-0">Are you sure you want to sign out of your workspace? All running processes will continue.</p>
+        )}
+      </CcMessageBox>
 
       {/* Asked once per Terms version, and it blocks: every protected route
           refuses while the accepted version is stale, so a dismissible notice
@@ -426,7 +421,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           as broken. See the component for the whole reasoning. */}
       <TermsReacceptGate />
 
-      <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-32">
+      <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-32">
         {children}
       </main>
       {/* Inside a workflow step the marketing footer becomes one line.
@@ -436,20 +431,20 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           middle of a seven-stage flow. The legally required links stay, and the
           complete footer keeps its place on every public page. */}
       {isProjectStep ? (
-        <footer className="cc-no-print border-t border-gray-100 bg-white/60">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] font-bold text-gray-400">
-            <Link href="/impressum" className="hover:text-green-600 transition-colors">Legal Notice</Link>
-            <Link href="/datenschutz" className="hover:text-green-600 transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-green-600 transition-colors">Terms</Link>
-            <span className="text-gray-300">·</span>
-            <span className="font-mono tracking-wider uppercase">Clean-Core.io {APP_VERSION}</span>
+        <footer className="cc-no-print border-t border-cc-line bg-cc-surface">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px] font-medium text-cc-ink-muted">
+            <Link href="/impressum" className="text-cc-ink-muted hover:text-cc-ink hover:underline">Legal Notice</Link>
+            <Link href="/datenschutz" className="text-cc-ink-muted hover:text-cc-ink hover:underline">Privacy Policy</Link>
+            <Link href="/terms" className="text-cc-ink-muted hover:text-cc-ink hover:underline">Terms</Link>
+            <span aria-hidden={true}>·</span>
+            <span className="font-cc-mono">Clean-Core.io {APP_VERSION}</span>
           </div>
         </footer>
       ) : (
-        <footer className="cc-no-print border-t border-gray-100 bg-white/60">
+        <footer className="cc-no-print border-t border-cc-line bg-cc-surface">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <SiteFooter />
-            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+            <div className="mt-8 pt-6 border-t border-cc-line text-center">
               <SapTrademarkNotice className="max-w-3xl mx-auto" />
             </div>
           </div>

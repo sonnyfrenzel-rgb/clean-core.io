@@ -90,11 +90,67 @@ test.describe('the shell can be passed with a keyboard (§1.6)', () => {
     }
   });
 
-  test('the account menu has a name and says whether it is open; sign-out is a labelled modal', () => {
+  test('the account menu has a name; sign-out is the Message Box, not a dialog of its own (§2.6)', () => {
     expect(layout).toContain('aria-label="Account menu"');
-    expect(layout).toContain('aria-expanded={showUserDropdown}');
-    expect(layout).toMatch(/role="dialog"\s+aria-modal="true"\s+aria-labelledby="logout-dialog-title"/);
+    // The menu button's state and keyboard come from the shared hook, not a
+    // second copy that could drift (block D, D.6).
+    expect(layout).toContain("useShellMenu('account-menu-panel')");
+    expect(layout).toContain('{...accountTriggerProps}');
+    expect(layout).toContain('{...accountMenuProps}');
+    // Sign-out asks through the library's Message Box, with the binding label.
+    expect(layout).toMatch(/<CcMessageBox[\s\S]*?confirmLabel="Sign out now"/);
+    expect(layout, 'a hand-built dialog in the shell').not.toContain('role="dialog"');
+    expect(layout, 'an invisible full-screen layer in the shell').not.toMatch(/className="[^"]*\bfixed inset-0\b/);
   });
+});
+
+test.describe('the two shell menus are menus in the WAI-ARIA sense (§1.6, block D, D.6)', () => {
+  const help = code('components/ShellHelpMenu.tsx');
+  const layout = code('app/(app)/layout.tsx');
+
+  /** The JSX between the element that spreads `menuProps` and its closing tag. */
+  const menuBlock = (src: string, spread: string): string => {
+    const at = src.indexOf(spread);
+    expect(at, `no element spreads ${spread}`).toBeGreaterThan(-1);
+    const start = src.lastIndexOf('<div', at);
+    let depth = 0;
+    const re = /<div\b|<\/div>/g;
+    re.lastIndex = start;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(src))) {
+      depth += m[0] === '</div>' ? -1 : 1;
+      if (depth === 0) return src.slice(start, m.index);
+    }
+    throw new Error(`the menu that spreads ${spread} is never closed`);
+  };
+
+  test('the hook gives the keyboard of a menu button', () => {
+    expect(help).toContain("role: 'menu' as const");
+    expect(help).toContain("'aria-haspopup': 'menu' as const");
+    for (const key of ['ArrowDown', 'ArrowUp', 'Home', 'End', 'Escape', 'Tab']) {
+      expect(help, `the menu does not handle ${key}`).toContain(`'${key}'`);
+    }
+  });
+
+  for (const [name, src, trigger, menu] of [
+    ['Help', help, '{...triggerProps}', '{...menuProps}'],
+    ['Account', layout, '{...accountTriggerProps}', '{...accountMenuProps}'],
+  ] as const) {
+    test(`${name}: every control inside the menu is a menuitem, one Tab stop for the whole menu`, () => {
+      expect(src, `${name}: the trigger is not the hook's`).toContain(trigger);
+      const block = menuBlock(src, menu);
+      const controls = [...block.matchAll(/<(button|Link|a)\b[^>]*>/g)].map((m) => m[0]);
+      expect(controls.length, `${name}: a menu without items`).toBeGreaterThan(0);
+      for (const tag of controls) {
+        expect(tag, `${name}: a control in the menu that is not a menuitem`).toContain('role="menuitem"');
+        expect(tag, `${name}: a menuitem that is its own Tab stop`).toContain('tabIndex={-1}');
+      }
+      // Nothing else inside a menu but items and separators.
+      for (const div of [...block.matchAll(/<div\b[^>]*>/g)].map((m) => m[0]).slice(1)) {
+        expect(div, `${name}: a container inside the menu`).toContain('role="separator"');
+      }
+    });
+  }
 });
 
 test.describe('the workspace (roadmap 3.0.4)', () => {
@@ -108,7 +164,6 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
     for (const rel of [
       'components/workspace/ToolBar.tsx',
       'components/workspace/LayerBar.tsx',
-      'components/ShellHelpMenu.tsx',
     ]) {
       const src = code(rel);
       expect(src, `${rel}: role="menu" without menuitems`).not.toContain('role="menu"');

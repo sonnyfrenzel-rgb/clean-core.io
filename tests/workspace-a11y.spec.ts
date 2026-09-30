@@ -228,6 +228,18 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     await account.focus();
     await page.keyboard.press('Enter');
     await expect(account).toHaveAttribute('aria-expanded', 'true');
+    // A menu in the WAI-ARIA sense (block D, D.6): the focus is on the first
+    // item, the arrows move and wrap, and every control inside is a menuitem.
+    const accountMenu = page.locator('#account-menu-panel[role="menu"]');
+    await expect(accountMenu).toBeVisible();
+    const items = accountMenu.locator('[role="menuitem"]');
+    await expect(items.first()).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await expect(items.last()).toBeFocused();
+    await expect(items.last()).toContainText('Sign Out');
+    await page.keyboard.press('Home');
+    await expect(items.first()).toBeFocused();
+    expect(await accountMenu.locator('button:not([role="menuitem"]), a:not([role="menuitem"])').count()).toBe(0);
     await page.keyboard.press('Escape');
     await expect(account).toHaveAttribute('aria-expanded', 'false');
     await expect(account).toBeFocused();
@@ -245,6 +257,8 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     await help.focus();
     await page.keyboard.press('Enter');
     await expect(help).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('[data-help-menu-panel][role="menu"]')).toBeVisible();
+    await expect(page.locator('[data-help-shortcuts-open][role="menuitem"]')).toBeFocused();
     await page.locator('[data-help-shortcuts-open]').click();
 
     const dialog = page.locator('dialog[data-keyboard-shortcuts]');
