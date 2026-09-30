@@ -1,6 +1,27 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
+
+const noSubscription = () => () => {};
+
+/**
+ * `false` on the server and during hydration, `true` in every render after it.
+ *
+ * Both layers portal to `document.body`, which the server does not have: the
+ * server renders nothing, and a client that rendered the portal on its first
+ * pass would disagree with that HTML — React throws the page away with a
+ * hydration error. A layer that is open on the very first render (a dialog
+ * opened from the address, a gate that has to be answered before anything
+ * else) did exactly that. With this, the first client render equals the
+ * server's and the layer opens one render later; a layer opened by a click is
+ * unaffected, because by then hydration is long over.
+ *
+ * Block D, D.5e — lifted from `app/components/LegalOverlay.tsx`, which solved
+ * it locally for the one dialog that had hit it.
+ */
+export function useCcHydrated(): boolean {
+  return useSyncExternalStore(noSubscription, () => true, () => false);
+}
 
 /**
  * What makes a layer modal — `DESIGN.md` §2.6, ADR-028. Shared by

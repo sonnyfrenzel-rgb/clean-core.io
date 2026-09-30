@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { t } from '@/lib/cc-messages';
 import CcIconButton from './IconButton';
-import { useCcModal } from './modal';
+import { useCcHydrated, useCcModal } from './modal';
 
 /**
  * A dialog for a form or an explanation — `DESIGN.md` §2.6, §2.7.
@@ -36,8 +36,40 @@ import { useCcModal } from './modal';
  * the browser's own behaviour rather than a keyboard handler that imitates it.
  * One `primary` in `actions` at most (§1.5: a dialog is one area); `dark` never
  * appears here.
+ *
+ * Block D, D.5e added three things:
+ *
+ *   - `dismissible={false}` — a question that has to be answered before
+ *     anything else (the terms gate): no close button, Escape does nothing, and
+ *     the dimmed page was never a way out. The only ways out are the
+ *     `actions`. Everything else modal stays — focus held, page inert.
+ *   - `data-*` attributes are handed to the layer, so a caller can be found by
+ *     its own name (`data-terms-gate`) without a wrapper element of its own.
+ *   - Open on the very first render without a hydration error (see
+ *     `useCcHydrated` in `./modal.ts`).
+ *
+ * The layer sits on `z-cc-overlay` (`app/globals.css`), above every floating
+ * helper — nothing may cover a question the page is asking.
  */
-export interface CcDialogProps {
+type CcDialogDismiss =
+  | {
+      /** The default: Escape and the close button call `onClose`. */
+      dismissible?: true;
+      /** Escape, the close button, and whatever `actions` call it from. */
+      onClose: () => void;
+    }
+  | {
+      /** No close button, Escape does nothing — only the `actions` lead out. */
+      dismissible: false;
+      onClose?: never;
+    };
+
+export type CcDialogProps = CcDialogOwnProps & CcDialogDismiss & {
+  /** Handed to the layer element. Only `data-*`: this is a name, not a style. */
+  [data: `data-${string}`]: string | undefined;
+};
+
+interface CcDialogOwnProps {
   open: boolean;
   title: string;
   /** One sentence under the title — what this dialog is for. Becomes the description. */
@@ -45,29 +77,34 @@ export interface CcDialogProps {
   children: React.ReactNode;
   /** The footer buttons, `CcButton`s. Cancel (`ghost`) first, the main action last. */
   actions?: React.ReactNode;
-  /** Escape, the close button, and whatever `actions` call it from. */
-  onClose: () => void;
   /** Makes body and footer a form; `event.preventDefault()` is already done. */
   onSubmit?: (event: React.FormEvent<HTMLFormElement>) => void;
   /** `default` 32 rem for a form, `wide` 48 rem for a table or a longer explanation. */
   size?: 'default' | 'wide';
 }
 
-export default function CcDialog({
-  open,
-  title,
-  lead,
-  children,
-  actions,
-  onClose,
-  onSubmit,
-  size = 'default',
-}: CcDialogProps) {
-  const dialogRef = useCcModal<HTMLDivElement>({ open, onClose, initialFocus: 'first-field' });
+const KEEP_OPEN = () => undefined;
+
+export default function CcDialog(props: CcDialogProps) {
+  const { open, title, lead, children, actions, onSubmit, size = 'default' } = props;
+  const dismissible = props.dismissible !== false;
+  const onClose = props.onClose ?? KEEP_OPEN;
+  const layerData: Record<string, string | undefined> = {};
+  for (const [key, value] of Object.entries(props)) {
+    if (key.startsWith('data-')) layerData[key] = value as string | undefined;
+  }
+
+  const hydrated = useCcHydrated();
+  const shown = open && hydrated;
+  const dialogRef = useCcModal<HTMLDivElement>({
+    open: shown,
+    onClose: dismissible ? onClose : KEEP_OPEN,
+    initialFocus: 'first-field',
+  });
   const titleId = useId();
   const leadId = useId();
 
-  if (!open || typeof document === 'undefined') return null;
+  if (!shown) return null;
 
   const body = (
     <>
@@ -91,7 +128,12 @@ export default function CcDialog({
   // `cc` on the layer: it is portalled to `body`, outside every `.cc` of the
   // page, and the focus ring of §1.6 is scoped to that class.
   return createPortal(
-    <div data-cc-dialog-layer="" className="cc fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      {...layerData}
+      data-cc-dialog-layer=""
+      data-cc-dismissible={dismissible ? undefined : 'false'}
+      className="cc fixed inset-0 z-cc-overlay flex items-center justify-center p-4"
+    >
       {/* Dimmed, and deliberately not a way out — see above. */}
       <div data-cc-scrim="" aria-hidden={true} className="absolute inset-0 bg-cc-overlay/45" />
       <div
@@ -119,9 +161,11 @@ export default function CcDialog({
               </p>
             ) : null}
           </div>
-          <CcIconButton label={t('action.close')} onClick={onClose} data-cc-dialog-close="">
-            <X size={16} aria-hidden={true} />
-          </CcIconButton>
+          {dismissible ? (
+            <CcIconButton label={t('action.close')} onClick={onClose} data-cc-dialog-close="">
+              <X size={16} aria-hidden={true} />
+            </CcIconButton>
+          ) : null}
         </div>
         {onSubmit ? (
           // `noValidate`: §2.7 checks on leaving a field and on submit, with the

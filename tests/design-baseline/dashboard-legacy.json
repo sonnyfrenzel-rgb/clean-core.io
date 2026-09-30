@@ -11,6 +11,7 @@
       "R5": 100,
       "R6": 2,
       "R7": 40,
+      "R8": 3,
       "R9": 2,
       "R10": 8,
       "R12": 67,
@@ -84,7 +85,7 @@
     "components/process-states/StateChoice.tsx": {
       "step": "D.22",
       "R7": 1,
-      "R18": 3
+      "R18": 1
     },
     "components/process-target/IstSollComparison.tsx": {
       "step": "D.22",

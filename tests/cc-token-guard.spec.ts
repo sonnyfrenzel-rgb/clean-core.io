@@ -89,7 +89,7 @@ function declaredTokens(): Map<string, string> {
 function declaredUtilityNames(): Set<string> {
   const css = read('app/globals.css');
   const names = new Set<string>();
-  for (const m of css.matchAll(/^\s*--(?:color|radius|shadow|font)-(cc-[a-z0-9-]+):/gm)) {
+  for (const m of css.matchAll(/^\s*--(?:color|radius|shadow|font|z-index)-(cc-[a-z0-9-]+):/gm)) {
     names.add(m[1]);
   }
   // `shadow-cc` has no suffix: the alias is `--shadow-cc`.
@@ -142,7 +142,7 @@ test.describe('the new namespace uses tokens and nothing else', () => {
     expect(declared.size, 'no cc theme aliases found — the scan would pass vacuously').toBeGreaterThan(20);
 
     const pattern =
-      /\b(?:text|bg|border|ring|outline|fill|stroke|decoration|placeholder|shadow|rounded|font)-(cc-[a-z0-9-]+)\b/g;
+      /\b(?:text|bg|border|ring|outline|fill|stroke|decoration|placeholder|shadow|rounded|font|z)-(cc-[a-z0-9-]+)\b/g;
     const offenders: string[] = [];
     for (const { rel, text } of ccSources()) {
       text.split('\n').forEach((line, i) => {

@@ -28,7 +28,8 @@ import CcButton from './Button';
  * `onOpen` makes the row clickable, and it is deliberately not the only way in:
  * a clickable `<tr>` cannot be reached from a keyboard and is invisible to a
  * screen reader. The caller puts a real link in a cell and may pass `onOpen` as
- * well, for the mouse.
+ * well, for the mouse. A click on that link — or on any other control in the
+ * row — is the control's, and does not open the row a second time.
  *
  * `limit` is §2.11's "Tables show the first five rows and 'Show all 42'"
  * (block D, step D.5c) — built here once, because it had been built by hand
@@ -76,6 +77,29 @@ export interface CcTableProps {
 
 const CELL = 'block px-3 py-2 align-top text-[13px] font-medium text-cc-ink sm:table-cell';
 
+/**
+ * What a click on a control inside a row is for: that control, not the row.
+ * Everything a person can operate on its own — a link, a button, a field, a
+ * `role` that acts like one, anything in the Tab order.
+ */
+const INTERACTIVE =
+  'a[href], button, input, select, textarea, label, summary, [role="button"], [role="link"], [role="checkbox"], [role="switch"], [role="menuitem"], [role="tab"], [tabindex]:not([tabindex="-1"])';
+
+/**
+ * `onOpen` for a click on the row itself — not for a click that belongs to a
+ * control inside it (block D, D.5e). The caller's link in the first cell used
+ * to fire twice: once as the link and once more as the row, and a button in a
+ * cell ("Delete", "Open menu") opened the row behind it as well. The row does
+ * not stop the event — a menu or a popover listening further up still hears it
+ * — it only declines to act on it.
+ */
+function openRow(event: React.MouseEvent<HTMLTableRowElement>, onOpen: () => void) {
+  const target = event.target instanceof Element ? event.target : null;
+  const control = target?.closest(INTERACTIVE);
+  if (control && control !== event.currentTarget && event.currentTarget.contains(control)) return;
+  onOpen();
+}
+
 export default function CcTable({ caption, columns, rows, limit }: CcTableProps) {
   const [first, ...rest] = columns;
   const bodyId = useId();
@@ -109,7 +133,7 @@ export default function CcTable({ caption, columns, rows, limit }: CcTableProps)
             <React.Fragment key={row.key}>
               <tr
                 data-cc-table-row={row.key}
-                onClick={row.onOpen}
+                onClick={row.onOpen ? (event) => openRow(event, row.onOpen!) : undefined}
                 className={cn(
                   'border-b border-cc-line',
                   beyond(index) ? 'hidden print:table-row' : 'block sm:table-row',

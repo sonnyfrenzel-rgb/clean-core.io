@@ -30,17 +30,9 @@
       "step": "D.5a",
       "R18": 3
     },
-    "components/cc/MessageStrip.tsx": {
-      "step": "D.5a",
-      "R18": 2
-    },
     "components/cc/ObjectIdentifier.tsx": {
       "step": "D.5a",
       "R18": 2
-    },
-    "components/cc/ObjectStatus.tsx": {
-      "step": "D.5a",
-      "R18": 1
     },
     "components/cc/ProvenanceChip.tsx": {
       "step": "D.5a",
@@ -52,8 +44,7 @@
     },
     "components/cc/SegmentedControl.tsx": {
       "step": "D.5a",
-      "R7": 1,
-      "R18": 2
+      "R7": 1
     },
     "components/cc/Table.tsx": {
       "step": "D.5a",

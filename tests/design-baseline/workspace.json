@@ -12,12 +12,12 @@
     },
     "components/process-map/BpmnEditor.tsx": {
       "step": "D.29",
-      "R7": 7,
-      "R18": 10
+      "R7": 6,
+      "R18": 4
     },
     "components/process-map/ProcessBreadcrumb.tsx": {
       "step": "D.29",
-      "R18": 3
+      "R18": 2
     },
     "components/process-map/ProcessCodeCard.tsx": {
       "step": "D.29",
@@ -27,12 +27,12 @@
     },
     "components/process-map/ProcessFilters.tsx": {
       "step": "D.29",
-      "R18": 5
+      "R18": 4
     },
     "components/process-map/ProcessHints.tsx": {
       "step": "D.29",
       "R7": 1,
-      "R18": 3
+      "R18": 1
     },
     "components/process-map/ProcessMap.tsx": {
       "step": "D.29",
@@ -46,7 +46,7 @@
     "components/process-map/ProcessMiniMap.tsx": {
       "step": "D.29",
       "R1": 1,
-      "R18": 3
+      "R18": 2
     },
     "components/process-map/ProcessOutline.tsx": {
       "step": "D.29",
@@ -112,7 +112,7 @@
       "step": "D.29",
       "R11": 3,
       "R12": 1,
-      "R18": 2,
+      "R18": 1,
       "R19": 1
     },
     "components/workspace/NewProject.tsx": {
