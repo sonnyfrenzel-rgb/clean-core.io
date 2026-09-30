@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import { verifyResendSignature, recordEmailEvent, type EmailEventType } from '@/lib/email-events';
+import { readBoundedBody, ResponseLimitError } from '@/lib/url-validation';
 
 /**
  * POST /api/webhooks/resend
@@ -46,7 +47,15 @@ export async function POST(req: NextRequest) {
   }
 
   // The raw body, before any parsing: the signature covers the exact bytes.
-  const body = await req.text();
+  let body: string;
+  try {
+    body = await readBoundedBody(new Response(req.body, { headers: req.headers }), WEBHOOK_BODY_LIMITS);
+  } catch (bodyErr) {
+    if (bodyErr instanceof ResponseLimitError) {
+      return NextResponse.json({ error: 'Payload too large.' }, { status: 413 });
+    }
+    throw bodyErr;
+  }
 
   const check = verifyResendSignature({
     body,

@@ -27,14 +27,47 @@ const MB = 1024 * 1024;
 test.describe('a request body is read under a bound', () => {
   const asResponse = (req: Request) => new Response(req.body, { headers: req.headers });
 
+  test('an oversized request is refused, a small one parses as req.json() would', async () => {
+    const big = new Request('http://localhost/x', { method: 'POST', body: JSON.stringify({ pad: 'x'.repeat(2 * MB) }) });
+    await expect(readBoundedJson(asResponse(big), { maxBytes: 32 * 1024, timeoutMs: 5_000 })).rejects.toBeInstanceOf(ResponseLimitError);
+
+    const small = new Request('http://localhost/x', { method: 'POST', body: JSON.stringify({ name: 'A', motivation: 'B' }) });
+    expect(await readBoundedJson(asResponse(small), { maxBytes: 32 * 1024, timeoutMs: 5_000 })).toEqual({ name: 'A', motivation: 'B' });
+  });
+
+  test('a declared length above the bound is refused before the body is read', async () => {
+    const req = new Request('http://localhost/x', {
+      method: 'POST',
+      body: '{}',
+      headers: { 'content-length': String(9 * MB) },
+    });
+    await expect(readBoundedBody(asResponse(req), { maxBytes: 256 * 1024, timeoutMs: 5_000 })).rejects.toThrow(/9437184 bytes/);
+  });
+
+  test('the webhook text is the same string req.text() returns, BOM included', async () => {
+    const bytes = new Uint8Array([0xef, 0xbb, 0xbf, ...new TextEncoder().encode('{"type":"email.sent"}')]);
+    const a = new Request('http://localhost/x', { method: 'POST', body: bytes });
+    const b = new Request('http://localhost/x', { method: 'POST', body: bytes });
+    expect(await readBoundedBody(asResponse(a), { maxBytes: 256 * 1024, timeoutMs: 5_000 })).toBe(await b.text());
+  });
+
   for (const [rel, marker] of [
     ['app/api/request-tenant-access/route.ts', 'body = await readBoundedJson(new Response(request.body'],
     ['app/api/run-tests/route.ts', 'runRequest = await readBoundedJson(new Response(req.body'],
     ['app/api/unsubscribe/route.ts', 'await readBoundedJson(new Response(req.body'],
     ['app/api/webhooks/resend/route.ts', 'body = await readBoundedBody(new Response(req.body'],
   ] as const) {
+    test(`${rel} reads its body through the bounded reader only`, () => {
+      const src = code(rel);
+      expect(src).toContain(marker);
+      expect(src, `${rel} still buffers the whole request`).not.toMatch(/\b(req|request)\.(json|text)\(\)/);
+    });
   }
 
+  test('run-tests refuses more selected cases than the runner accepts', () => {
+    const src = code('app/api/run-tests/route.ts');
+    expect(src).toMatch(/selectedTestIds\.length > MAX_RUN_PATTERNS/);
+  });
 });
 
 test.describe('request-tenant-access', () => {

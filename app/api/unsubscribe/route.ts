@@ -3,6 +3,7 @@ import { logger, errMessage } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { verifyUnsubscribeToken, normaliseEmail, suppressionId } from '@/lib/unsubscribe-token';
 import { APP_BASE_URL } from '@/lib/constants';
+import { readBoundedJson } from '@/lib/url-validation';
 
 /**
  * One-click unsubscribe for bulk community mail (RFC 8058).
@@ -70,7 +71,12 @@ function tokenInBody(body: unknown): string {
 
 async function tokenFrom(req: NextRequest): Promise<string> {
   try {
-    const fromBody = tokenInBody(await req.json());
+    // Bounded: this endpoint is unauthenticated, and `req.json()` buffered a
+    // body of any size before the token was even looked at (QA full review of
+    // fc787674705f, 03289710b54b). A token is a few hundred bytes; a body over
+    // the bound is cancelled and treated like no body at all.
+    const parsed = await readBoundedJson(new Response(req.body, { headers: req.headers }), { maxBytes: 8 * 1024, timeoutMs: 5_000 });
+    const fromBody = tokenInBody(parsed);
     if (fromBody) return fromBody;
   } catch {
     // No body, or not JSON — the one-click case. Fall through to the query.

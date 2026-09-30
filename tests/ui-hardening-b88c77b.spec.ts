@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { readBoundedJson } from '../lib/url-validation';
 
 /**
  * Five findings of the b88c77b review that live in the interface and in the
@@ -149,19 +150,24 @@ test.describe('the unsubscribe token is not written into the history and the log
     // the reader is run against all four callers.
     const source = read(ROUTE);
     const inBody = new Function('body', bodyOf(source, /function tokenInBody\(/)) as (b: unknown) => string;
-    const from = new Function(
+    const run = new Function(
       'req',
       'tokenInBody',
+      'readBoundedJson',
       `return (async () => {${bodyOf(source, /async function tokenFrom\(/)}})();`,
-    ) as (req: unknown, f: (b: unknown) => string) => Promise<string>;
+    ) as (req: unknown, f: (b: unknown) => string, r: typeof readBoundedJson) => Promise<string>;
+    const from = (req: unknown, f: (b: unknown) => string) => run(req, f, readBoundedJson);
 
-    const req = (body: unknown, query: string) => ({
-      json: async () => {
-        if (body === undefined) throw new SyntaxError('Unexpected end of JSON input');
-        return body;
-      },
-      nextUrl: { searchParams: new URLSearchParams(query) },
-    });
+    // A real request, so the reader is measured on a real body stream (the
+    // body is read under a bound since the QA full review of fc787674705f).
+    const req = (body: unknown, query: string) =>
+      Object.assign(
+        new Request('http://localhost/api/unsubscribe', {
+          method: 'POST',
+          ...(body === undefined ? {} : { body: typeof body === 'string' ? body : JSON.stringify(body) }),
+        }),
+        { nextUrl: { searchParams: new URLSearchParams(query) } },
+      );
 
     expect(inBody({ t: 'in-body' })).toBe('in-body');
     expect(inBody(null), 'null is not an object to read from').toBe('');
@@ -169,8 +175,14 @@ test.describe('the unsubscribe token is not written into the history and the log
 
     expect(await from(req({ t: 'in-body' }, ''), inBody), 'our page').toBe('in-body');
     expect(await from(req(undefined, 't=in-query'), inBody), 'one-click, no body').toBe('in-query');
+    expect(await from(req('List-Unsubscribe=One-Click', 't=in-query'), inBody), 'one-click, form body').toBe('in-query');
     expect(await from(req({}, 't=in-query'), inBody), 'a body without a token').toBe('in-query');
     expect(await from(req(undefined, ''), inBody), 'neither').toBe('');
+    // An oversized body is not buffered and not trusted: the query decides.
+    expect(
+      await from(req({ t: 'in-body', pad: 'x'.repeat(64 * 1024) }, 't=in-query'), inBody),
+      'an oversized body',
+    ).toBe('in-query');
   });
 });
 
