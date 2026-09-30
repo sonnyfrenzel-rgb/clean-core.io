@@ -96,8 +96,8 @@ export default function GuideShareBar() {
   };
 
   const tile =
-    'group relative flex flex-col items-start gap-3 rounded-2xl border p-5 text-left transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2';
-  const idle = 'border-gray-200 bg-gray-50/70 hover:border-green-200 hover:bg-green-50/50';
+    'group relative flex flex-col items-start gap-3 rounded-2xl border p-5 text-left transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cc-focus focus-visible:ring-offset-2';
+  const idle = 'border-cc-line bg-cc-surface-muted hover:border-cc-brand hover:bg-cc-brand-surface';
 
   return (
     <motion.section
@@ -106,19 +106,13 @@ export default function GuideShareBar() {
       whileInView="show"
       viewport={{ once: true, amount: 0.2 }}
       aria-labelledby="share-heading"
-      className="relative overflow-hidden rounded-[2rem] border border-gray-200 bg-white p-6 shadow-sm sm:p-9"
+      className="relative overflow-hidden rounded-3xl border border-cc-line bg-cc-surface p-6 sm:p-9"
     >
-      {/* A single quiet sheen, so the block reads as a surface rather than another card. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_88%_-10%,rgba(16,185,129,0.10),transparent_55%)]"
-      />
-
       <motion.div variants={item} className="relative mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <span className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-green-700">
-          <Share2 size={12} /> Pass it on
+        <span className="inline-flex items-center gap-2 rounded-full border border-cc-brand bg-cc-brand-surface px-3 py-1 text-xs font-bold uppercase tracking-widest text-cc-brand-strong">
+          <Share2 size={12} aria-hidden="true" /> Pass it on
         </span>
-        <h2 id="share-heading" className="text-lg font-black tracking-tight text-gray-950">
+        <h2 id="share-heading" className="text-lg font-extrabold tracking-tight text-cc-ink">
           Built to be forwarded — take it with you
         </h2>
       </motion.div>
@@ -132,9 +126,9 @@ export default function GuideShareBar() {
           type="button"
           onClick={handleCopy}
           aria-live="polite"
-          className={`${tile} ${copied ? 'border-green-300 bg-green-50' : copyFailed ? 'border-amber-300 bg-amber-50' : idle}`}
+          className={`${tile} ${copied ? 'border-cc-success-border bg-cc-success-bg' : copyFailed ? 'border-cc-warning-border bg-cc-warning-bg' : idle}`}
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition-colors group-hover:text-green-700">
+          <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-xl border border-cc-line bg-cc-surface text-cc-ink-muted transition-colors group-hover:text-cc-brand-strong">
             <AnimatePresence mode="wait" initial={false}>
               {copied ? (
                 <motion.span
@@ -144,7 +138,7 @@ export default function GuideShareBar() {
                   exit={{ scale: 0.6, opacity: 0 }}
                   transition={{ duration: 0.22 }}
                 >
-                  <Check size={17} className="text-green-600" />
+                  <Check size={16} className="text-cc-success" />
                 </motion.span>
               ) : (
                 <motion.span
@@ -154,16 +148,16 @@ export default function GuideShareBar() {
                   exit={{ scale: 0.6, opacity: 0 }}
                   transition={{ duration: 0.22 }}
                 >
-                  <Link2 size={17} />
+                  <Link2 size={16} />
                 </motion.span>
               )}
             </AnimatePresence>
           </span>
           <span>
-            <span className="block text-sm font-black text-gray-950">
+            <span className="block text-sm font-bold text-cc-ink">
               {copied ? 'Link copied' : copyFailed ? 'Copy it by hand' : 'Copy the link'}
             </span>
-            <span className="mt-0.5 block text-xs leading-relaxed text-gray-500">
+            <span className="mt-1 block text-xs leading-relaxed text-cc-ink-muted">
               {copyFailed ? GUIDE_URL : 'Paste it in a chat, a ticket, an email'}
             </span>
           </span>
@@ -178,12 +172,12 @@ export default function GuideShareBar() {
           download="SAP-Clean-Core-Explained.pdf"
           className={`${tile} ${idle}`}
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition-colors group-hover:text-green-700">
-            <FileDown size={17} />
+          <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-xl border border-cc-line bg-cc-surface text-cc-ink-muted transition-colors group-hover:text-cc-brand-strong">
+            <FileDown size={16} />
           </span>
           <span>
-            <span className="block text-sm font-black text-gray-950">Download the PDF</span>
-            <span className="mt-0.5 block text-xs leading-relaxed text-gray-500">
+            <span className="block text-sm font-bold text-cc-ink">Download the PDF</span>
+            <span className="mt-1 block text-xs leading-relaxed text-cc-ink-muted">
               Typeset for printing — and for attaching to your own mail
             </span>
           </span>
@@ -198,12 +192,12 @@ export default function GuideShareBar() {
           onClick={handleLinkedIn}
           className={`${tile} ${idle}`}
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition-colors group-hover:text-[#0a66c2]">
-            <Linkedin size={17} />
+          <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-xl border border-cc-line bg-cc-surface text-cc-ink-muted transition-colors group-hover:text-cc-brand-strong">
+            <Linkedin size={16} />
           </span>
           <span>
-            <span className="block text-sm font-black text-gray-950">Share on LinkedIn</span>
-            <span className="mt-0.5 block text-xs leading-relaxed text-gray-500">
+            <span className="block text-sm font-bold text-cc-ink">Share on LinkedIn</span>
+            <span className="mt-1 block text-xs leading-relaxed text-cc-ink-muted">
               Opens the post composer
             </span>
           </span>

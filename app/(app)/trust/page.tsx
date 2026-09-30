@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
-import { ShieldCheck, Lock, MapPin, Trash2, FileCheck2, Server, Network } from 'lucide-react';
+import { ShieldCheck, Lock, MapPin, Trash2, FileCheck2, Server, Network, type LucideIcon } from 'lucide-react';
 import BackLink from '@/components/BackLink';
 import { APP_VERSION } from '@/lib/version';
 
@@ -19,13 +19,13 @@ export const metadata: Metadata = withTwitterCard({
   },
 });
 
-const Section = ({ icon: Icon, title, children }: { icon: any; title: string; children: React.ReactNode }) => (
-  <section className="bg-white border border-slate-200 rounded-2xl p-6 mb-6">
-    <h2 className="flex items-center gap-3 text-lg font-black text-slate-900 mb-3">
-      <span className="bg-emerald-600 p-2 rounded-xl shrink-0"><Icon className="w-5 h-5 text-white" /></span>
+const Section = ({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: React.ReactNode }) => (
+  <section className="bg-cc-surface border border-cc-line rounded-2xl p-6 mb-6">
+    <h2 className="flex items-center gap-3 text-lg font-extrabold text-cc-ink mb-3">
+      <span className="bg-cc-brand-strong p-2 rounded-xl shrink-0"><Icon className="w-5 h-5 text-cc-on-dark" aria-hidden="true" /></span>
       {title}
     </h2>
-    <div className="text-sm text-slate-600 leading-relaxed space-y-3">{children}</div>
+    <div className="text-sm text-cc-ink-muted leading-relaxed space-y-3">{children}</div>
   </section>
 );
 
@@ -33,12 +33,12 @@ export default function TrustPage() {
   return (
     <main className="max-w-3xl mx-auto px-6 py-12">
       <BackLink />
-      <p className="text-xs font-bold tracking-widest text-emerald-600 uppercase mb-2 mt-4">Trust &amp; Privacy</p>
-      <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-3">How we handle your data</h1>
-      <p className="text-slate-600 leading-relaxed mb-8">
+      <p className="text-xs font-bold tracking-widest text-cc-brand-strong uppercase mb-2 mt-4">Trust &amp; Privacy</p>
+      <h1 className="text-3xl md:text-4xl font-extrabold text-cc-ink tracking-tight mb-3">How we handle your data</h1>
+      <p className="text-cc-ink-muted leading-relaxed mb-8">
         Clean-Core.io is a free, community-built tool. Trust is earned by being specific, so this page
         states plainly what we store, where, and what rights you have — no legalese padding.
-        <span className="text-slate-400"> (Reflects {APP_VERSION}.)</span>
+        <span className="text-cc-ink-muted"> (Reflects {APP_VERSION}.)</span>
       </p>
 
       <Section icon={MapPin} title="Data residency — EU-hosted">
@@ -99,7 +99,7 @@ export default function TrustPage() {
           Server-side auth on all mutating routes, admin gating with an allowlist, multi-layer SSRF
           defense on S/4HANA connections, a strict Content-Security-Policy, DOMPurify sanitization, and
           server-side quota/rate limiting. Supply-chain hygiene (secret scanning, dependency audit, SBOM)
-          runs in CI. Full detail in <Link href="/how-it-works" className="text-emerald-700 font-semibold hover:underline">how it works</Link> and the project&apos;s SECURITY documentation.
+          runs in CI. Full detail in <Link href="/how-it-works" className="text-cc-brand-strong font-semibold underline-offset-2 hover:underline">how it works</Link> and the project&apos;s SECURITY documentation.
         </p>
       </Section>
 
@@ -115,13 +115,13 @@ export default function TrustPage() {
 
       <Section icon={Server} title="Operational transparency">
         <p>
-          A public <code className="bg-slate-100 px-1.5 py-0.5 rounded text-xs">/api/health</code> probe
+          A public <code className="bg-cc-surface-muted px-1 py-0.5 rounded font-cc-mono text-xs">/api/health</code> probe
           reports liveness. We keep a documented data-retention registry and an incident-response playbook,
           including the GDPR 72-hour breach-notification obligation.
         </p>
       </Section>
 
-      <p className="text-xs text-slate-400 mt-8">
+      <p className="text-xs text-cc-ink-muted mt-8">
         Questions about data handling? Reach us via the in-app support form. This page is transparency,
         not a contract; enterprise procurement documents are available on request.
       </p>

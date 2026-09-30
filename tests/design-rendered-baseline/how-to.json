@@ -3,8 +3,6 @@
   "route": "/how-to",
   "step": "D.23b",
   "ceilings": {
-    "small": 5,
-    "contrast": 3,
-    "heavy": 30
+    "contrast": 2
   }
 }

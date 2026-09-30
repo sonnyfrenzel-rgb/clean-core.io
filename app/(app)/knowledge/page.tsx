@@ -5,6 +5,7 @@ import Link from 'next/link';
 import KnowledgeClient from '@/components/KnowledgeClient';
 import BackLink from '@/components/BackLink';
 import QuickAnswer from '@/components/QuickAnswer';
+import CcTable from '@/components/cc/Table';
 
 // Server-side Metadata configuration for SEO & GEO Crawlers
 export const metadata: Metadata = withTwitterCard({
@@ -53,6 +54,21 @@ const faqs = [
   }
 ];
 
+const COMPARISON_COLUMNS = [
+  { key: 'criterion', label: 'Feature / Criteria' },
+  { key: 'rap', label: 'In-App RAP (ABAP RESTful)' },
+  { key: 'cap', label: 'Side-by-Side CAP (SAP BTP)' },
+] as const;
+
+const COMPARISON_ROWS = [
+  { criterion: 'Runtime Environment', rap: 'Directly inside SAP S/4HANA (ABAP stack)', cap: 'SAP BTP (Node.js, Java, Cloud Foundry/Kyma)' },
+  { criterion: 'Primary Use Case', rap: 'Modifying/enhancing standard SAP business logic', cap: 'Standalone apps, partner SaaS, multi-system integration' },
+  { criterion: 'Development Languages', rap: 'Modern ABAP (Cloud-enabled subset)', cap: 'JavaScript, TypeScript, Java' },
+  { criterion: 'Database Access', rap: 'Native SQL on HANA via CDS views', cap: 'OData, REST, or database targets (HANA, PG, SQLite)' },
+  { criterion: 'Core Decoupling', rap: 'High logical coupling (shares SAP memory)', cap: 'Complete architectural separation (connected via APIs)' },
+  { criterion: 'Upgrade Impact', rap: 'Zero impact (uses officially released SAP APIs)', cap: 'Zero impact (completely independent execution)' },
+];
+
 export default function KnowledgePage() {
   const schemaJson = {
     "@context": "https://schema.org",
@@ -68,7 +84,7 @@ export default function KnowledgePage() {
   };
 
   return (
-    <div className="space-y-12 animate-in fade-in duration-300">
+    <div className="space-y-12 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300">
       
       {/* JSON-LD Structured Data for AI Crawlers */}
       <script
@@ -82,21 +98,20 @@ export default function KnowledgePage() {
       </div>
 
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-[2.5rem] p-8 sm:p-12 shadow-2xl relative overflow-hidden border border-slate-700/30">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(16,185,129,0.08),transparent)] pointer-events-none"></div>
-        <div className="relative z-10 max-w-4xl space-y-6">
-          <div className="inline-flex items-center gap-2 bg-green-500/15 border border-green-400/30 px-4 py-1.5 rounded-full text-xs font-bold text-green-400 tracking-wide uppercase">
-            <BookOpen size={14} /> Knowledge Hub
+      <div className="bg-cc-surface rounded-3xl p-8 sm:p-12 border border-cc-line">
+        <div className="max-w-4xl space-y-6">
+          <div className="inline-flex items-center gap-2 bg-cc-brand-surface border border-cc-brand px-4 py-1 rounded-full text-xs font-bold text-cc-brand-strong tracking-wide uppercase">
+            <BookOpen size={14} aria-hidden="true" /> Knowledge Hub
           </div>
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-none text-slate-50">
-            Clean Core & BTP <span className="text-green-400">Reference Hub</span>
+          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-none text-cc-ink">
+            Clean Core & BTP <span className="text-cc-brand-strong">Reference Hub</span>
           </h1>
-          <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-medium">
+          <p className="text-lg text-cc-ink-muted leading-relaxed max-w-2xl font-medium">
             Discover the technical architectures, security guidelines, and extensibility patterns aligned with SAP's published Clean Core guidelines for S/4HANA.
           </p>
-          <p className="text-sm text-slate-400 leading-relaxed max-w-2xl font-medium border-l-2 border-green-500/30 pl-4">
+          <p className="text-sm text-cc-ink-muted leading-relaxed max-w-2xl font-medium border-l-2 border-cc-brand pl-4">
             Naming note: since SAP Sapphire 2026, SAP BTP sits under the{' '}
-            <strong className="text-slate-300">SAP Business AI Platform (BAIP)</strong> umbrella together with
+            <strong className="text-cc-ink">SAP Business AI Platform (BAIP)</strong> umbrella together with
             SAP Business Data Cloud and SAP Business AI. This is a portfolio consolidation, not a retirement of
             SAP BTP &mdash; the services keep their names, and SAP shipped releases under the name &ldquo;SAP BTP
             ABAP environment&rdquo; as recently as August 2026. We use SAP BTP for the concrete services and
@@ -115,97 +130,61 @@ export default function KnowledgePage() {
       <KnowledgeClient />
 
       {/* Comparison Table Section (RAG-crawler-friendly) */}
-      <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-gray-100 space-y-6">
+      <div className="bg-cc-surface rounded-3xl p-6 sm:p-8 border border-cc-line space-y-6">
         <div className="space-y-1">
-          <h2 className="text-2xl font-black text-gray-950 flex items-center gap-3">
-            <Layers className="text-green-600" /> Extensibility Paradigm Comparison
+          <h2 className="text-2xl font-extrabold text-cc-ink flex items-center gap-3">
+            <Layers className="text-cc-brand-strong" aria-hidden="true" /> Extensibility Paradigm Comparison
           </h2>
-          <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">
+          <p className="text-xs text-cc-ink-muted font-bold uppercase tracking-wider">
             Decision framework comparing SAP RAP and BTP CAP extension routes
           </p>
         </div>
 
-        <div className="overflow-x-auto rounded-2xl border border-slate-200">
-          <table className="w-full border-collapse text-left text-sm text-slate-700">
-            <thead className="bg-slate-50 text-slate-900 border-b border-slate-200 font-bold">
-              <tr>
-                <th scope="col" className="px-6 py-4">Feature / Criteria</th>
-                <th scope="col" className="px-6 py-4">In-App RAP (ABAP RESTful)</th>
-                <th scope="col" className="px-6 py-4">Side-by-Side CAP (SAP BTP)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              <tr className="hover:bg-slate-50/50">
-                <td className="px-6 py-4 font-bold text-slate-900">Runtime Environment</td>
-                <td className="px-6 py-4">Directly inside SAP S/4HANA (ABAP stack)</td>
-                <td className="px-6 py-4">SAP BTP (Node.js, Java, Cloud Foundry/Kyma)</td>
-              </tr>
-              <tr className="hover:bg-slate-50/50">
-                <td className="px-6 py-4 font-bold text-slate-900">Primary Use Case</td>
-                <td className="px-6 py-4">Modifying/enhancing standard SAP business logic</td>
-                <td className="px-6 py-4">Standalone apps, partner SaaS, multi-system integration</td>
-              </tr>
-              <tr className="hover:bg-slate-50/50">
-                <td className="px-6 py-4 font-bold text-slate-900">Development Languages</td>
-                <td className="px-6 py-4">Modern ABAP (Cloud-enabled subset)</td>
-                <td className="px-6 py-4">JavaScript, TypeScript, Java</td>
-              </tr>
-              <tr className="hover:bg-slate-50/50">
-                <td className="px-6 py-4 font-bold text-slate-900">Database Access</td>
-                <td className="px-6 py-4">Native SQL on HANA via CDS views</td>
-                <td className="px-6 py-4">OData, REST, or database targets (HANA, PG, SQLite)</td>
-              </tr>
-              <tr className="hover:bg-slate-50/50">
-                <td className="px-6 py-4 font-bold text-slate-900">Core Decoupling</td>
-                <td className="px-6 py-4">High logical coupling (shares SAP memory)</td>
-                <td className="px-6 py-4">Complete architectural separation (connected via APIs)</td>
-              </tr>
-              <tr className="hover:bg-slate-50/50">
-                <td className="px-6 py-4 font-bold text-slate-900">Upgrade Impact</td>
-                <td className="px-6 py-4">Zero impact (uses officially released SAP APIs)</td>
-                <td className="px-6 py-4">Zero impact (completely independent execution)</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <CcTable
+          caption="Extensibility paradigm comparison: In-App RAP versus Side-by-Side CAP"
+          columns={COMPARISON_COLUMNS}
+          rows={COMPARISON_ROWS.map((r) => ({
+            key: r.criterion,
+            cells: { criterion: <strong className="font-bold">{r.criterion}</strong>, rap: r.rap, cap: r.cap },
+          }))}
+        />
       </div>
 
       {/* SAP Compliance Badge Section */}
-      <div className="bg-slate-900 text-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl border border-slate-800 space-y-6 relative overflow-hidden">
-        <div className="absolute right-0 bottom-0 w-96 h-96 bg-[radial-gradient(circle_at_70%_70%,rgba(16,185,129,0.05),transparent)] pointer-events-none"></div>
-        <div className="max-w-3xl space-y-3 relative z-10">
-          <h3 className="text-2xl md:text-3xl font-black text-slate-100 uppercase tracking-tight">
+      <div className="bg-cc-brand-surface rounded-3xl p-8 md:p-12 border border-cc-line space-y-6">
+        <div className="max-w-3xl space-y-3">
+          <h3 className="text-2xl md:text-3xl font-extrabold text-cc-ink tracking-tight">
             Clean Core Extensibility Alignment
           </h3>
-          <p className="text-sm text-slate-300 leading-relaxed font-medium">
+          <p className="text-sm text-cc-ink-muted leading-relaxed font-medium">
             Clean-Core.io leverages standard SAP technologies, securing transactions according to the SAP Cloud SDK guidelines. Keep your ERP core system upgradeable while expanding functionality with cloud-native scalability.
           </p>
-          <div className="inline-flex items-center gap-1.5 text-green-400 font-bold text-xs uppercase tracking-widest pt-4">
-            Clean Core Aligned Strategy <Check size={14} className="stroke-[3]" />
+          <div className="inline-flex items-center gap-2 text-cc-brand-strong font-bold text-xs uppercase tracking-widest pt-4">
+            Clean Core Aligned Strategy <Check size={14} className="stroke-[3]" aria-hidden="true" />
           </div>
         </div>
       </div>
 
       {/* Related tools & guides (internal linking) */}
-      <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-gray-100 space-y-4">
-        <h2 className="text-xl font-black text-gray-950">Related tools &amp; guides</h2>
+      <div className="bg-cc-surface rounded-3xl p-6 sm:p-8 border border-cc-line space-y-4">
+        <h2 className="text-xl font-extrabold text-cc-ink">Related tools &amp; guides</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-bold text-sm">
-          <Link href="/clean-core-explained" className="block text-green-600 hover:underline">→ SAP Clean Core, explained from scratch</Link>
-          <Link href="/abap-custom-code-analysis" className="block text-green-600 hover:underline">→ Free ABAP static code analysis</Link>
-          <Link href="/clean-core-score" className="block text-green-600 hover:underline">→ What is the Clean Core Score?</Link>
-          <Link href="/sap-clean-core-object-classification" className="block text-green-600 hover:underline">→ Clean Core object classification (A–D)</Link>
-          <Link href="/sap-cloudification" className="block text-green-600 hover:underline">→ SAP cloudification (cloudify ABAP)</Link>
+          <Link href="/clean-core-explained" className="block text-cc-brand-strong underline-offset-2 hover:underline">→ SAP Clean Core, explained from scratch</Link>
+          <Link href="/abap-custom-code-analysis" className="block text-cc-brand-strong underline-offset-2 hover:underline">→ Free ABAP static code analysis</Link>
+          <Link href="/clean-core-score" className="block text-cc-brand-strong underline-offset-2 hover:underline">→ What is the Clean Core Score?</Link>
+          <Link href="/sap-clean-core-object-classification" className="block text-cc-brand-strong underline-offset-2 hover:underline">→ Clean Core object classification (A–D)</Link>
+          <Link href="/sap-cloudification" className="block text-cc-brand-strong underline-offset-2 hover:underline">→ SAP cloudification (cloudify ABAP)</Link>
         </div>
       </div>
 
       {/* Further reading (SAP Community, external) */}
-      <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-gray-100 space-y-3">
-        <h2 className="text-xl font-black text-gray-950">Further reading</h2>
+      <div className="bg-cc-surface rounded-3xl p-6 sm:p-8 border border-cc-line space-y-3">
+        <h2 className="text-xl font-extrabold text-cc-ink">Further reading</h2>
         <a
           href="https://community.sap.com/t5/technology-blog-posts-by-members/you-can-t-clean-what-you-can-t-see-visibility-and-kpis-for-the/ba-p/14448151"
           target="_blank"
           rel="noopener noreferrer"
-          className="block text-green-600 hover:underline font-bold text-sm"
+          className="block text-cc-brand-strong underline-offset-2 hover:underline font-bold text-sm"
         >
           → You can&apos;t clean what you can&apos;t see: visibility &amp; KPIs for the Extensibility dimension (SAP Community) ↗
         </a>

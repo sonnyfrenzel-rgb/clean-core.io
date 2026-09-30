@@ -3,9 +3,7 @@
   "route": "/knowledge",
   "step": "D.23b",
   "ceilings": {
-    "small": 9,
     "contrast": 1,
-    "headings": 1,
-    "heavy": 17
+    "headings": 1
   }
 }

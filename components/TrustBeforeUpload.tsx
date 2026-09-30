@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import clsx from 'clsx';
 import {
+  Ban,
   ChevronDown,
   EyeOff,
   FileCheck2,
@@ -12,7 +13,6 @@ import {
   MapPin,
   Server,
   ShieldCheck,
-  Sparkles,
   Trash2,
   type LucideIcon,
 } from 'lucide-react';
@@ -48,7 +48,7 @@ const ICONS: Record<TrustClaim['icon'], LucideIcon> = {
   seal: FileCheck2,
   tracking: EyeOff,
   erasure: Trash2,
-  training: Sparkles,
+  training: Ban,
   security: ShieldCheck,
   free: HeartHandshake,
 };
@@ -58,7 +58,7 @@ function SourceLinks({ claim }: { claim: TrustClaim }) {
     <>
       {claim.sources.map((source, i) => {
         const external = source.href.startsWith('http');
-        const shared = 'text-green-700 underline decoration-green-300 underline-offset-2 hover:decoration-green-600 font-semibold';
+        const shared = 'text-cc-brand-strong underline decoration-cc-brand underline-offset-2 hover:text-cc-brand-deep hover:decoration-cc-brand-deep font-semibold';
         return (
           <span key={source.href + source.label} className="whitespace-nowrap">
             {i > 0 && <span aria-hidden="true"> · </span>}
@@ -92,7 +92,7 @@ export default function TrustBeforeUpload() {
       {/* What you confirm by uploading — a line, not a second tick box. */}
       <p
         data-trust-pledge
-        className="text-xs sm:text-sm text-gray-600 leading-relaxed text-center max-w-2xl mx-auto"
+        className="text-xs sm:text-sm text-cc-ink-muted leading-relaxed text-center max-w-2xl mx-auto"
       >
         <span data-trust-claim={TRUST_PLEDGE.id}>{TRUST_PLEDGE.text}</span>{' '}
         <SourceLinks claim={TRUST_PLEDGE} />
@@ -100,10 +100,10 @@ export default function TrustBeforeUpload() {
 
       <div
         data-trust-card
-        className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 sm:p-8"
+        className="bg-cc-surface rounded-cc-card border border-cc-line p-6 sm:p-8"
       >
         <div className="flex items-center justify-between gap-4">
-          <h3 data-trust-title className="text-base font-bold text-gray-900 tracking-tight">
+          <h3 data-trust-title className="text-base font-bold text-cc-ink tracking-tight">
             {TRUST_CARD_TITLE}
           </h3>
           <button
@@ -112,7 +112,7 @@ export default function TrustBeforeUpload() {
             aria-expanded={open}
             aria-controls="trust-claim-list"
             onClick={() => setOpen((v) => !v)}
-            className="md:hidden flex items-center gap-1 text-xs font-semibold text-green-700 hover:text-green-800"
+            className="md:hidden flex items-center gap-1 text-xs font-semibold text-cc-brand-strong hover:text-cc-brand-deep"
           >
             {TRUST_CARD_DISCLOSURE} · {open ? TRUST_CARD_HIDE : TRUST_CARD_SHOW}
             <ChevronDown
@@ -131,8 +131,8 @@ export default function TrustBeforeUpload() {
             const Icon = ICONS[claim.icon];
             return (
               <li key={claim.id} className="flex items-start gap-3">
-                <Icon size={15} className="text-green-600 mt-0.5 shrink-0" aria-hidden="true" />
-                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                <Icon size={15} className="text-cc-brand-strong mt-0.5 shrink-0" aria-hidden="true" />
+                <p className="text-xs sm:text-sm text-cc-ink-muted leading-relaxed">
                   <span data-trust-claim={claim.id}>{claim.text}</span>{' '}
                   <SourceLinks claim={claim} />
                 </p>
