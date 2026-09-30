@@ -301,13 +301,23 @@ export default function LandingModals() {
 
       await setDoc(userDocRef, newProfile);
 
-      await setDoc(doc(db, 'registration_requests', signedInUser.uid), {
-        email: signedInUser.email,
-        name: `${firstName} ${lastName}`,
-        motivation: motivation.trim().slice(0, 2000),
-        status: 'pending',
-        createdAt: serverTimestamp(),
-      });
+      // By now the account exists, so a failure here must not end in "Error
+      // creating account": the retry would only meet "already registered". The
+      // activation below writes this same request server-side
+      // (`app/api/account/register/route.ts`), and the dashboard offers that
+      // call again, so a lost write here is repaired there (QA full review of
+      // v2.20.0).
+      try {
+        await setDoc(doc(db, 'registration_requests', signedInUser.uid), {
+          email: signedInUser.email,
+          name: `${firstName} ${lastName}`,
+          motivation: motivation.trim().slice(0, 2000),
+          status: 'pending',
+          createdAt: serverTimestamp(),
+        });
+      } catch (requestErr) {
+        console.error('[Email Signup] registration request write failed:', requestErr);
+      }
 
       // Activates the account, records the consent and sends the one welcome
       // mail. A failure here leaves a created-but-inactive account rather than
@@ -810,9 +820,10 @@ export default function LandingModals() {
                             type="checkbox" 
                             checked={agreedGDPR} 
                             onChange={(e) => setAgreedGDPR(e.target.checked)}
-                            className="sr-only"
+                            className="peer sr-only"
                           />
-                          <div className={`w-4 h-4 border-2 rounded transition-all flex items-center justify-center ${agreedGDPR ? 'bg-green-600 border-green-600' : 'border-gray-300 group-hover:border-green-600'}`}>
+                          {/* The input is visually hidden, so the box carries its focus ring. */}
+                          <div className={`w-4 h-4 border-2 rounded transition-all flex items-center justify-center peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-solid peer-focus-visible:outline-cc-focus ${agreedGDPR ? 'bg-green-600 border-green-600' : 'border-gray-300 group-hover:border-green-600'}`}>
                             {agreedGDPR && <Check className="w-3 h-3 text-white" />}
                           </div>
                         </div>
@@ -835,9 +846,10 @@ export default function LandingModals() {
                             type="checkbox" 
                             checked={agreedTerms} 
                             onChange={(e) => setAgreedTerms(e.target.checked)}
-                            className="sr-only"
+                            className="peer sr-only"
                           />
-                          <div className={`w-4 h-4 border-2 rounded transition-all flex items-center justify-center ${agreedTerms ? 'bg-green-600 border-green-600' : 'border-gray-300 group-hover:border-green-600'}`}>
+                          {/* The input is visually hidden, so the box carries its focus ring. */}
+                          <div className={`w-4 h-4 border-2 rounded transition-all flex items-center justify-center peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-solid peer-focus-visible:outline-cc-focus ${agreedTerms ? 'bg-green-600 border-green-600' : 'border-gray-300 group-hover:border-green-600'}`}>
                             {agreedTerms && <Check className="w-3 h-3 text-white" />}
                           </div>
                         </div>
@@ -1086,6 +1098,9 @@ export default function LandingModals() {
                 <strong>Google Authentication (Firebase Auth):</strong> To sign in, we use Google Sign-In. This securely reads your name, email address, and profile picture from your Google account to authenticate your user session and establish access privileges.
               </li>
               <li>
+                <strong>Email and password (Firebase Auth):</strong> You can also register with an email address and a password instead of using Google. In that case we process the email address and the first and last name you enter. The password itself is handled by Firebase Authentication and is never visible to us.
+              </li>
+              <li>
                 <strong>Firestore User Profiles:</strong> We store metadata about your platform usage (e.g., number of performed code transformations, system limits, as well as your first and last name) in our secure database.
               </li>
               <li>
@@ -1111,7 +1126,7 @@ export default function LandingModals() {
             </p>
             <ul className="list-disc pl-5 space-y-2 text-xs text-slate-600">
               <li>
-                <strong>Google Cloud Platform & Firebase:</strong> Hosted on secure European servers in the <strong>Belgium (europe-west1)</strong> region for low-latency, fully GDPR-compliant authentication and database operations.
+                <strong>Google Cloud Platform & Firebase:</strong> Hosting, authentication, and database operations on European servers in the <strong>Belgium (europe-west1)</strong> region — data residency in the EU, operated in line with GDPR requirements.
               </li>
               <li>
                 <strong>Google Gemini API:</strong> Generative AI models used exclusively for code transformation, utilizing secure stateless proxy layers.
@@ -1133,7 +1148,7 @@ export default function LandingModals() {
               <li>Right to Withdraw Consent (Art. 7 Abs. 3 GDPR)</li>
             </ul>
             <p className="text-xs text-slate-500 mt-2">
-              To exercise these rights, particularly to cascadingly erase all your data immediately, you can trigger account deletion directly in your Profile Settings under the **Danger Zone**, which will permanently and instantly wipe all database and authentication entries. Alternatively, contact us at <strong>info@clean-core.io</strong>.
+              To exercise these rights, particularly to erase your data, you can trigger account deletion directly in your Profile Settings under the <strong>Danger Zone</strong>, which immediately deletes your live database and authentication entries, including every project and the source code in it. Residual copies in encrypted backups age out within 30 days, and the record of administrative actions on an account is kept for 24 months; the full privacy policy at clean-core.io/datenschutz says what else deletion does not reach. Alternatively, contact us at <strong>info@clean-core.io</strong>.
             </p>
           </div>
         </div>
@@ -1156,6 +1171,7 @@ export default function LandingModals() {
             <h3 className="text-lg font-bold mb-2">2. Data Collection & Processing</h3>
             <ul className="list-disc pl-5 space-y-2 text-xs text-slate-600">
               <li><strong>Google Authentication (Firebase Auth):</strong> Your name, email, and profile picture are used to authenticate your session.</li>
+              <li><strong>Email and password (Firebase Auth):</strong> If you register with an email address instead, we process that address and the name you enter; the password is handled by Firebase Authentication and is never visible to us.</li>
               <li><strong>Firestore User Profiles:</strong> We store metadata about your usage (transformation count, system limits, name) in our secure database.</li>
               <li><strong>BYOK (Bring Your Own Key):</strong> If configured, your Gemini API key is AES-256-GCM encrypted and never exposed to the browser.</li>
             </ul>
@@ -1164,7 +1180,7 @@ export default function LandingModals() {
           <div>
             <h3 className="text-lg font-bold mb-2">3. Source Code Processing</h3>
             <p className="text-sm leading-relaxed">
-              Uploaded ABAP files and generated artifacts are stored in Google Firebase (Europe). Source code is transmitted over encrypted channels to the Google Gemini API for analysis and transformation. We do not retain it outside your project, and we do not use it to train models; Google&apos;s handling of API data is governed by their applicable API terms.
+              Uploaded ABAP files and generated artifacts are stored in Google Firebase (Europe). For AI-driven modernization, source code is transmitted over encrypted channels to the Google Gemini API. We do not retain it outside your project, and we do not use it to train models; Google&apos;s handling of API data is governed by their applicable API terms.
             </p>
           </div>
 
