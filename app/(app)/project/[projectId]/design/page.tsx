@@ -26,6 +26,7 @@ import type { TargetArchitecture } from '@/components/ArchitectSignOff';
 import { recommendedArchitecture } from '@/lib/project-commands';
 import { runProjectCommand } from '@/lib/project-command-client';
 import { evidenceDigest } from '@/lib/run-evidence-digest';
+import { withPreviewPolicy } from '@/lib/export-preview';
 
 // Helper imports from components
 import { getSecurityExplanation } from '@/components/design/SecurityHardeningChecklist';
@@ -649,7 +650,9 @@ ${responseText.substring(0, 4000)}`;
     if (viewOnly) {
       // Not `document.write` into a blank window that inherits this origin: the
       // preview opens as its own document, with no handle back to the opener.
-      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+      // A blob document still shares this origin, so it carries a policy of its
+      // own under which nothing in it can run or fetch (`lib/export-preview.ts`).
+      const blob = new Blob([withPreviewPolicy(htmlContent)], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank', 'noopener,noreferrer');
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
