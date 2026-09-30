@@ -331,4 +331,43 @@ test.describe('server side', () => {
     const user = (await db.doc(`users/${uid}`).get()).data() || {};
     expect(user.chargedInputs?.[fingerprint]).toBeFalsy();
   });
+
+  test('a late result does not put its target profile back over a newer one (QA review of e7372791c70d)', async ({ request }) => {
+    // The same window as above, on the other half of what a run is bound to.
+    // Two runs over one source under different profiles used to commit in
+    // finishing order: the slower, older request wrote its `s4Deployment` and
+    // `assessmentTarget` over the ones the newer run had just made current.
+    const RACE_ID = `p-conservative-profile-${Date.now()}`;
+    const LONG_EXAMPLE = STARTER_EXAMPLES.find((e) => e.name === 'ZLEGACY_ORDER_FULFILLMENT_AUDIT')!;
+    const served = await request.get(`/starter-examples/${LONG_EXAMPLE.file}`);
+    expect(served.status(), LONG_EXAMPLE.file).toBe(200);
+    const SOURCE = `${new TextDecoder().decode(await served.body())}\n* profile race fixture ${Date.now()}\n`;
+    const fingerprint = node256(SOURCE);
+    await db.doc(`projects/${RACE_ID}`).set({
+      name: 'Late profile fixture', userId: uid, createdAt: new Date(), status: 'uploaded', legacyCode: SOURCE, s4Deployment: 'public',
+    });
+
+    const inFlight = request.post('/api/runs/create', {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { projectId: RACE_ID, legacyCode: SOURCE, s4Deployment: 'public', analysis: '{}', uploadedFileName: 'z.abap' },
+    });
+    const reserved = await observedWhile(inFlight, async () => {
+      const u = (await db.doc(`users/${uid}`).get()).data() || {};
+      return u.chargedInputs?.[fingerprint] === true;
+    });
+    expect(reserved, 'the run never reserved its unit, so the change below races nothing').toBe(true);
+    // What a newer run commits: another edition and its declaration.
+    await db.doc(`projects/${RACE_ID}`).update({ s4Deployment: 'private', assessmentTarget: { release: '2023 FPS03' } });
+
+    const res = await inFlight;
+    expect(res.status(), 'the late run was applied over the newer target profile').toBe(409);
+    expect((await res.json()).code).toBe('profile-moved');
+
+    const after = (await db.doc(`projects/${RACE_ID}`).get()).data()!;
+    expect(after.s4Deployment, 'the newer target was overwritten').toBe('private');
+    expect(after.assessmentTarget).toEqual({ release: '2023 FPS03' });
+    expect(after.activeRunId, 'the late run became the current state').toBeUndefined();
+    const user = (await db.doc(`users/${uid}`).get()).data() || {};
+    expect(user.chargedInputs?.[fingerprint]).toBeFalsy();
+  });
 });
