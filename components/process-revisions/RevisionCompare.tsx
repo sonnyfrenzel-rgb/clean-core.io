@@ -183,14 +183,14 @@ export default function RevisionCompare({
               <Group title="Added" entries={diff.added} tone="added" />
               <Group title="Removed" entries={diff.removed} tone="removed" />
               {diff.changed.length > 0 ? (
-                <div data-revision-diff-group="changed" className="flex flex-col gap-1.5">
+                <div data-revision-diff-group="changed" className="flex flex-col gap-2">
                   <h5 className="text-[13px] font-bold text-cc-ink">Changed</h5>
-                  <ul className="flex flex-col gap-1.5">
+                  <ul className="flex flex-col gap-2">
                     {diff.changed.map((element) => (
                       <li
                         key={element.id}
                         data-revision-diff-element={element.id}
-                        className="rounded-[8px] border border-cc-line bg-cc-surface px-3 py-2"
+                        className="rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
                       >
                         <p className="text-[13px] font-semibold text-cc-ink">
                           {element.kind}: {element.label}
@@ -198,7 +198,7 @@ export default function RevisionCompare({
                             <span className="font-medium text-cc-ink-muted"> · {element.anchor}</span>
                           ) : null}
                         </p>
-                        <ul className="mt-1 flex flex-col gap-0.5">
+                        <ul className="mt-1 flex flex-col gap-1">
                           {element.fields.map((field) => (
                             <li
                               key={field.field}
@@ -241,14 +241,14 @@ function Group({
 }) {
   if (entries.length === 0) return null;
   return (
-    <div data-revision-diff-group={tone} className="flex flex-col gap-1.5">
+    <div data-revision-diff-group={tone} className="flex flex-col gap-2">
       <h5 className="text-[13px] font-bold text-cc-ink">{title}</h5>
       <ul className="flex flex-col gap-1">
         {entries.map((element) => (
           <li
             key={element.id}
             data-revision-diff-element={element.id}
-            className="rounded-[8px] border border-cc-line bg-cc-surface px-3 py-1.5 text-[13px] font-medium text-cc-ink"
+            className="rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2 text-[13px] font-medium text-cc-ink"
           >
             {element.kind}: {element.label}
             {element.anchor ? <span className="text-cc-ink-muted"> · {element.anchor}</span> : null}

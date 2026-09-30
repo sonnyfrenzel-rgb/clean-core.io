@@ -12,8 +12,10 @@ import {
   Position,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Play, Square, GitFork, Database, User, Server, Lock, Cpu } from 'lucide-react';
+import { Play, Square, GitFork, Database, User, Server, Lock, Code2 } from 'lucide-react';
 import { clsx } from 'clsx';
+import CcTag from '@/components/cc/Tag';
+import { categoricalChartColor } from '@/lib/chart-colors';
 
 interface FlowNode {
   id: string;
@@ -29,46 +31,58 @@ interface ProcessFlowProps {
   onNodeClick?: (nodeId: string) => void;
 }
 
+/**
+ * Colours of the drawing (DESIGN.md §1.8): the element kinds are categories,
+ * not states, so they take the categorical palette of `lib/chart-colors.ts`.
+ * Green is not a category colour — it means "proven" (ADR-007).
+ */
+const TASK_COLOR = {
+  task: categoricalChartColor(0),
+  userTask: categoricalChartColor(1),
+  serviceTask: categoricalChartColor(2),
+} as const;
+
+const HANDLE = 'w-2 h-2 !bg-cc-field-border border border-cc-surface';
+const CAPTION = 'text-[11px] font-semibold text-cc-ink-muted mt-2 max-w-[120px] text-center leading-tight';
+
 // 1. Custom Swimlane Background Node Component
 const SwimlaneNode = ({ data }: any) => {
+  const LaneIcon = data.label === 'CISO' ? Lock : data.label === 'Developer' ? Code2 : data.label === 'System' ? Server : User;
   return (
     <div className="w-full h-full relative flex items-center select-none pointer-events-none">
       {/* Left role handle/label */}
-      <div className="absolute left-4 top-4 flex items-center gap-2 bg-[#0b1c30]/90 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/10 shadow-lg text-white pointer-events-auto">
-        {data.label === 'CISO' && <Lock className="w-3.5 h-3.5 text-rose-400" />}
-        {data.label === 'Developer' && <Cpu className="w-3.5 h-3.5 text-cyan-400" />}
-        {data.label === 'System' && <Server className="w-3.5 h-3.5 text-emerald-400" />}
-        {data.label !== 'CISO' && data.label !== 'Developer' && data.label !== 'System' && <User className="w-3.5 h-3.5 text-purple-400" />}
-        <span className="text-[10px] font-black uppercase tracking-widest">{data.label}</span>
+      <div className="absolute left-4 top-4 flex items-center gap-2 bg-cc-surface px-3 py-1 rounded-cc-row border border-cc-line shadow-cc text-cc-ink pointer-events-auto">
+        <LaneIcon className="w-4 h-4 text-cc-ink-muted" aria-hidden />
+        <span className="cc-text-label">{data.label}</span>
       </div>
-      {/* Translucent lane divider line */}
-      <div className="absolute bottom-0 left-0 right-0 border-b border-slate-200/50 w-full"></div>
+      {/* Lane divider line */}
+      <div className="absolute bottom-0 left-0 right-0 border-b border-cc-line w-full"></div>
     </div>
   );
 };
 
-// 2. Custom Start Event Component
+// 2. Custom Start Event Component — BPMN: a thin circle.
 const StartNode = ({ data }: any) => {
   return (
     <div className="flex flex-col items-center justify-center relative">
-      <div className="w-12 h-12 rounded-full bg-emerald-500/10 border-2 border-emerald-500 text-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-transform duration-150">
-        <Play className="w-5 h-5 fill-emerald-500 ml-0.5" />
+      <div className="w-12 h-12 rounded-full bg-cc-surface border-2 border-cc-ink text-cc-ink flex items-center justify-center">
+        <Play className="w-5 h-5 ml-1" aria-hidden />
       </div>
-      <span className="text-[10px] font-bold text-slate-600 mt-2 max-w-[120px] text-center leading-tight">{data.label}</span>
-      <Handle type="source" position={Position.Right} className="w-2.5 h-2.5 !bg-emerald-500 border border-white" />
+      <span className={CAPTION}>{data.label}</span>
+      <Handle type="source" position={Position.Right} className={HANDLE} />
     </div>
   );
 };
 
-// 3. Custom End Event Component
+// 3. Custom End Event Component — BPMN: a thick circle.
 const EndNode = ({ data }: any) => {
   return (
     <div className="flex flex-col items-center justify-center relative">
-      <div className="w-12 h-12 rounded-full bg-rose-500/10 border-4 border-rose-500 text-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/20 hover:scale-105 active:scale-95 transition-transform duration-150">
-        <Square className="w-4.5 h-4.5 fill-rose-500" />
+      <div className="w-12 h-12 rounded-full bg-cc-surface border-4 border-cc-ink text-cc-ink flex items-center justify-center">
+        <Square className="w-4 h-4 fill-current" aria-hidden />
       </div>
-      <span className="text-[10px] font-bold text-slate-600 mt-2 max-w-[120px] text-center leading-tight">{data.label}</span>
-      <Handle type="target" position={Position.Left} className="w-2.5 h-2.5 !bg-rose-500 border border-white" />
+      <span className={CAPTION}>{data.label}</span>
+      <Handle type="target" position={Position.Left} className={HANDLE} />
     </div>
   );
 };
@@ -77,14 +91,14 @@ const EndNode = ({ data }: any) => {
 const GatewayNode = ({ data }: any) => {
   return (
     <div className="flex flex-col items-center justify-center relative w-14 h-14">
-      <div className="w-10 h-10 bg-amber-500/10 border-2 border-amber-500 text-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/20 rotate-45 hover:scale-105 active:scale-95 transition-transform duration-150">
+      <div className="w-10 h-10 bg-cc-surface border-2 border-cc-ink text-cc-ink flex items-center justify-center rotate-45">
         <div className="-rotate-45 flex items-center justify-center">
-          <GitFork className="w-4 h-4" />
+          <GitFork className="w-4 h-4" aria-hidden />
         </div>
       </div>
-      <span className="text-[10px] font-bold text-slate-600 mt-2 max-w-[120px] text-center leading-tight absolute top-full left-1/2 -translate-x-1/2 whitespace-nowrap">{data.label}</span>
-      <Handle type="target" position={Position.Left} style={{ left: 0 }} className="w-2.5 h-2.5 !bg-amber-500 border border-white" />
-      <Handle type="source" position={Position.Right} style={{ right: 0 }} className="w-2.5 h-2.5 !bg-amber-500 border border-white" />
+      <span className={clsx(CAPTION, 'absolute top-full left-1/2 -translate-x-1/2 whitespace-nowrap')}>{data.label}</span>
+      <Handle type="target" position={Position.Left} style={{ left: 0 }} className={HANDLE} />
+      <Handle type="source" position={Position.Right} style={{ right: 0 }} className={HANDLE} />
     </div>
   );
 };
@@ -93,60 +107,45 @@ const GatewayNode = ({ data }: any) => {
 const TaskNode = ({ data }: any) => {
   const isUserTask = data.type === 'userTask';
   const isServiceTask = data.type === 'serviceTask';
-  
+  const color = isUserTask ? TASK_COLOR.userTask : isServiceTask ? TASK_COLOR.serviceTask : TASK_COLOR.task;
+
   let Icon = Server;
   if (isUserTask) Icon = User;
   if (isServiceTask) Icon = Database;
 
   return (
-    <div className={clsx(
-      "bg-white rounded-xl shadow-md border-2 p-3.5 w-[210px] hover:scale-[1.02] active:scale-[0.99] transition-all duration-200 cursor-pointer flex flex-col justify-between relative min-h-[95px]",
-      isUserTask ? "border-purple-300 hover:border-purple-500 shadow-purple-500/5 hover:shadow-purple-500/10" :
-      isServiceTask ? "border-emerald-300 hover:border-emerald-500 shadow-emerald-500/5 hover:shadow-emerald-500/10" :
-      "border-blue-300 hover:border-blue-500 shadow-blue-500/5 hover:shadow-blue-500/10"
-    )}>
-      {/* Top Accent bar */}
-      <div className={clsx(
-        "absolute top-0 left-0 right-0 h-1 rounded-t-xl",
-        isUserTask ? "bg-purple-500" :
-        isServiceTask ? "bg-emerald-500" :
-        "bg-blue-500"
-      )}></div>
+    <div
+      className="bg-cc-surface rounded-cc-row shadow-cc border border-cc-line hover:border-cc-field-border p-3 w-[210px] cursor-pointer flex flex-col justify-between relative min-h-[96px] overflow-hidden"
+    >
+      {/* Top accent bar: the kind of the task, from the categorical palette */}
+      <div aria-hidden className={clsx('absolute top-0 left-0 right-0 h-1', color.bg)}></div>
 
       {/* Top Meta info */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5 text-slate-500">
-          <Icon className={clsx("w-3.5 h-3.5", isUserTask ? "text-purple-500" : isServiceTask ? "text-emerald-500" : "text-blue-500")} />
-          <span className="text-[9px] font-black uppercase tracking-widest">{isUserTask ? 'User Task' : isServiceTask ? 'Service Task' : 'Task'}</span>
-        </div>
-        {/* SAP API / System Badge */}
-        {data.systems && data.systems.length > 0 && (
-          <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded text-[8px] font-black font-mono tracking-tight uppercase truncate max-w-[90px]" title={data.systems[0]}>
-            {data.systems[0]}
-          </span>
-        )}
+      <div className="flex items-center gap-1 mb-2 text-cc-ink-muted">
+        <Icon className="w-4 h-4 shrink-0" style={{ color: color.value }} aria-hidden />
+        <span className="cc-text-label whitespace-nowrap">{isUserTask ? 'User Task' : isServiceTask ? 'Service Task' : 'Task'}</span>
       </div>
 
       {/* Title */}
-      <h4 className="text-xs font-black text-slate-900 leading-snug tracking-tight mb-2 truncate" title={data.label}>
+      <h4 className="cc-text-h3 text-cc-ink leading-snug mb-2 truncate" title={data.label}>
         {data.label}
       </h4>
 
-      {/* Footer info: Role badge */}
-      <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-100">
-        <span className="text-[8px] font-bold text-slate-400 font-mono">ID: {data.id}</span>
-        <span className={clsx(
-          "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest font-mono",
-          isUserTask ? "bg-purple-50 text-purple-600 border border-purple-100" :
-          isServiceTask ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
-          "bg-blue-50 text-blue-600 border border-blue-100"
-        )}>
-          {data.role || 'System'}
-        </span>
+      {/* SAP API / System */}
+      {data.systems && data.systems.length > 0 && (
+        <div className="mb-2 truncate" title={data.systems[0]}>
+          <CcTag>{data.systems[0]}</CcTag>
+        </div>
+      )}
+
+      {/* Footer info: Role */}
+      <div className="flex items-center justify-between gap-2 mt-auto pt-2 border-t border-cc-line">
+        <span className="text-[11px] font-medium text-cc-ink-muted font-cc-mono truncate">ID: {data.id}</span>
+        <CcTag>{data.role || 'System'}</CcTag>
       </div>
 
-      <Handle type="target" position={Position.Left} className="w-2.5 h-2.5 !bg-slate-300 border-2 border-white hover:scale-125 transition-transform" />
-      <Handle type="source" position={Position.Right} className="w-2.5 h-2.5 !bg-slate-300 border-2 border-white hover:scale-125 transition-transform" />
+      <Handle type="target" position={Position.Left} className={HANDLE} />
+      <Handle type="source" position={Position.Right} className={HANDLE} />
     </div>
   );
 };
@@ -278,11 +277,12 @@ const ProcessFlow: React.FC<ProcessFlowProps> = ({ flow, tasks, onNodeClick }) =
             source: nodeData.id,
             target: nextId,
             animated: nodeData.type === 'gateway' || nodeData.type === 'exclusiveGateway',
+            // Sequence flow in ink: a line is not a state and not a category.
             markerEnd: {
               type: MarkerType.ArrowClosed,
-              color: '#10b981', // Emerald green arrow
+              color: 'var(--cc-ink-muted)',
             },
-            style: { stroke: '#10b981', strokeWidth: 2.5 },
+            style: { stroke: 'var(--cc-ink-muted)', strokeWidth: 2 },
           });
         });
       }
@@ -292,7 +292,7 @@ const ProcessFlow: React.FC<ProcessFlowProps> = ({ flow, tasks, onNodeClick }) =
   }, [flow, tasks]);
 
   return (
-    <div className="h-[500px] w-full bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden relative shadow-inner">
+    <div className="h-[500px] w-full bg-cc-surface-muted rounded-cc-card border border-cc-line overflow-hidden relative">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -309,7 +309,7 @@ const ProcessFlow: React.FC<ProcessFlowProps> = ({ flow, tasks, onNodeClick }) =
         nodesConnectable={false}
         elementsSelectable={true}
       >
-        <Background color="#cbd5e1" gap={20} />
+        <Background color="var(--cc-line)" gap={20} />
         <Controls />
       </ReactFlow>
     </div>
