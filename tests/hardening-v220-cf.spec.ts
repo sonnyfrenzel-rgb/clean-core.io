@@ -5,6 +5,7 @@ import path from 'path';
 import { withPreviewPolicy } from '../lib/export-preview';
 import { getPublishedKeyring, resetSigningKeypairCache } from '../lib/audit-signing-keypair';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
+import { readTableDependencies } from '../lib/abap/table-dependencies';
 
 /**
  * Hardening that shipped with the v2.20 security steps C and F.
@@ -113,5 +114,26 @@ test.describe('credentials quoted from the source', () => {
     for (const secret of ['s3cr3tpass', 'hunter2', google.slice(6), google.slice(6).toUpperCase(), aws.slice(4), jwt.split('.')[1]]) {
       expect(printed, `a credential survived in a finding: ${secret.slice(0, 6)}…`).not.toContain(secret);
     }
+  });
+});
+
+test.describe('the reading of typed data objects', () => {
+  test('stays linear in the size of the source', () => {
+    // Many short declarations of a dictionary-looking structure type, and a
+    // component selection for every tenth of them: the shape that made the old
+    // reading run one full-source scan per declaration (1.8 s here, measured,
+    // against 0.35 s for the single pass, at about 390 kB — above the 256 KB the
+    // analysis routes accept, so that the two are far enough apart to tell).
+    const lines = ['REPORT zdemo.'];
+    const N = 12000;
+    for (let i = 0; i < N; i += 1) lines.push(`DATA a${i} TYPE zcc_row_type${i % 50}.`);
+    for (let i = 0; i < N; i += 10) lines.push(`WRITE a${i}-f.`);
+    const source = lines.join('\n');
+    const started = Date.now();
+    const report = readTableDependencies(source);
+    const took = Date.now() - started;
+    // Not vacuous: a selected structure is still read as the type reference it is.
+    expect(report.dependencies.some((d) => d.table === 'ZCC_ROW_TYPE0' && d.access === 'reference')).toBe(true);
+    expect(took, `reading ${Math.round(source.length / 1024)} kB of declarations took ${took} ms`).toBeLessThan(1000);
   });
 });
