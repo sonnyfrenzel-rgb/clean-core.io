@@ -88,7 +88,7 @@ export default function CleanCoreClassificationPage() {
       {/* GEO Quick Answer */}
       <QuickAnswer
         question="What is the A/B/C/D Clean Core object classification?"
-        answer="It is SAP's cloud-readiness classification for technical objects. A = released SAP APIs and extension points; B = classic SAP APIs, SAP-recommended; C = internal SAP APIs, conditionally clean; D = not-recommended objects and technologies, to be replaced. Clean-Core.io derives the grade from SAP's own published object data — the Cloudification Repository release states plus SAP's classicAPI/noAPI classification file — so a graded object is a lookup, not an estimate. It gives a clearer way to assess custom code and plan upgrade-safe SAP development than a binary clean/not-clean view."
+        answer="It is SAP's cloud-readiness classification for technical objects. A = released SAP APIs and extension points; B = classic SAP APIs, SAP-recommended; C = internal SAP APIs, conditionally clean; D = not-recommended objects and technologies, to be replaced. Clean-Core.io derives the grade from SAP's own published object data — the Cloudification Repository release states plus SAP's classicAPI/noAPI classification file — so a graded SAP object is a lookup, not an estimate. Only your own Z/Y objects, which SAP has not classified, get a heuristic estimate, labelled as one. It gives a clearer way to assess custom code and plan upgrade-safe SAP development than a binary clean/not-clean view."
       />
 
       {/* Main */}

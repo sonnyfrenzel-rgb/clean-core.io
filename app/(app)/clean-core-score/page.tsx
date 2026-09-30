@@ -68,7 +68,7 @@ export const metadata: Metadata = withTwitterCard({
 const faqs = [
   {
     question: "What does a Clean Core Score of 100% mean?",
-    answer: "A score of 100% indicates that all analyzed customer-specific extensions align with SAP's published Clean Core guidelines. This means in-app modifications only run through released key-user apps, and side-by-side BTP extensions communicate via SAP-released interfaces. On these criteria the analyzed extensions are well-positioned for upgrades — subject to your own testing and validation."
+    answer: "A score of 100% means that no construct the analysis assessed produced a scored finding against SAP's published Clean Core guidelines. It says nothing about the constructs the analysis lists as not assessed, so a 100 is alignment only for the assessed part of the code — read the list of unassessed constructs before relying on it. On these criteria the assessed code is well-positioned for upgrades — subject to your own testing and validation."
   },
   {
     question: "Is the Clean Core Score the same as SAP's Technical Debt Score?",
@@ -80,7 +80,7 @@ const faqs = [
   },
   {
     question: "Does a high Clean Core Score mean lower costs?",
-    answer: "We do not put a figure on that. The score measures code structure, not money, and no cost, saving or ROI figure is derived from it anywhere in the product. The Economics stage models upgrade effort only from rates you enter yourself, on assumptions it names, and calls the result a demonstration model rather than a business case."
+    answer: "We do not put a figure on that. The score measures code structure, not money, and neither the analysis nor the board deck derives a cost, saving or ROI figure from it. The Economics stage is the one place it enters a money figure: it models upgrade effort from rates you enter yourself and the score of the signed run, on assumptions it names, and calls the result a demonstration model rather than a business case."
   },
   {
     question: "How is the Clean Core Score calculated?",
@@ -247,8 +247,8 @@ export default function CleanCoreScorePage() {
             <p className="text-gray-700 leading-relaxed font-medium">
               It is a property of code, not of a company. It is computed from the uploaded source and
               its data dependencies, deterministically, before any AI is involved — the same code
-              gives the same score every time, and every verdict behind it can be traced to the SAP
-              object it came from.
+              gives the same score every time, and every verdict behind it can be traced to the code
+              it came from — and, where it rests on SAP&apos;s catalog, to the SAP object as well.
             </p>
             <p className="text-gray-700 leading-relaxed font-medium">
               By maintaining a &ldquo;clean core,&rdquo; companies keep core processes stable while
@@ -372,10 +372,11 @@ export default function CleanCoreScorePage() {
                 <span className="mt-2 w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
                 <span>
                   <strong className="text-gray-955">Not a cost, a saving or an ROI.</strong> The score
-                  measures code structure. No money figure is derived from it anywhere in the product:
-                  the analysis states none, the board deck states none, and the Economics stage models
-                  upgrade effort only from rates you enter yourself, on assumptions it lists, and calls
-                  the result a demonstration model rather than a business case.
+                  measures code structure. The analysis states no money figure and the board deck
+                  states none. The Economics stage is the one place the score enters one: it models
+                  upgrade effort from rates you enter yourself and the score of the signed run, on
+                  assumptions it lists, and calls the result a demonstration model rather than a
+                  business case.
                 </span>
               </li>
               <li className="flex gap-3">
@@ -409,7 +410,7 @@ export default function CleanCoreScorePage() {
                 <Check className="text-green-600 shrink-0 mt-0.5" size={16} /> One figure for a code base, on a published rule
               </li>
               <li className="flex gap-2 items-start">
-                <Check className="text-green-600 shrink-0 mt-0.5" size={16} /> Every verdict traceable to SAP&rsquo;s own object data
+                <Check className="text-green-600 shrink-0 mt-0.5" size={16} /> Every verdict traceable to the code, catalog verdicts to SAP&rsquo;s object data
               </li>
               <li className="flex gap-2 items-start">
                 <Check className="text-green-600 shrink-0 mt-0.5" size={16} /> Critical couplings named with line numbers

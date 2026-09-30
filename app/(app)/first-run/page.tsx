@@ -163,7 +163,7 @@ export default function FirstRunPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
           { icon: CheckCircle2, t: 'What you need', d: 'An account. That is all — no approval to wait for, no system connection, no credentials, no data.' },
-          { icon: FileCode2, t: 'What it costs', d: 'One of your five transformations, spent at the analysis. The six stages after it are included.' },
+          { icon: FileCode2, t: 'What it costs', d: 'Nothing for a starter example the first time you run it. Any other analysis spends one of your five transformations when it completes. The six stages after it are included.' },
           { icon: Clock, t: 'How long', d: 'About fifteen minutes end to end, most of it spent reading the output rather than waiting.' },
         ].map((c) => (
           <div key={c.t} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
