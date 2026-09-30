@@ -71,9 +71,16 @@ export async function recordConsent({
   // stand-in.
   const contentSha256 = archivedTermsSha256(TERMS_VERSION);
 
+  // One batch, so the record and the state enforcement reads commit together
+  // or not at all. Two awaited writes could leave an acceptance on record that
+  // the profile never saw — enforcement still demanding the old version — and a
+  // retry then appended a second event for one acceptance (QA full review of
+  // v2.20.0).
+  const batch = db.batch();
+
   // 1) append-only consent event (primary, tamper-evident record; userId lets the
   //    erasure cascade purge it on account deletion).
-  await db.collection('consent_events').add({
+  batch.create(db.collection('consent_events').doc(), {
     uid,
     userId: uid,
     email,
@@ -86,7 +93,8 @@ export async function recordConsent({
   });
 
   // 2) mirror the accepted version onto the profile (server timestamp).
-  await db.collection('users').doc(uid).set(
+  batch.set(
+    db.collection('users').doc(uid),
     {
       termsVersionAccepted: TERMS_VERSION,
       termsAcceptedAt: FieldValue.serverTimestamp(),
@@ -94,6 +102,8 @@ export async function recordConsent({
     },
     { merge: true },
   );
+
+  await batch.commit();
 
   return { termsVersion: TERMS_VERSION };
 }

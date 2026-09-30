@@ -112,7 +112,11 @@ export async function saveS4Credentials(uid: string, cfg: S4ConfigInput): Promis
     btpDestinationJson: cfg.btpDestinationJson || '',
   });
 
-  await db.collection('s4_credentials').doc(uid).set({
+  // Vault and profile metadata in one batch (QA full review of v2.20.0): two
+  // awaited writes could leave credentials `loadS4ConfigForUser` serves while
+  // the save reported failure. Now both commit or neither does.
+  const batch = db.batch();
+  batch.set(db.collection('s4_credentials').doc(uid), {
     url: cfg.url,
     username: cfg.username || '',
     authType: cfg.authType,
@@ -122,7 +126,8 @@ export async function saveS4Credentials(uid: string, cfg: S4ConfigInput): Promis
   });
 
   // Nur nicht-geheime Metadaten ins (client-lesbare) Profil; Klartext-Feld entfernen.
-  await db.collection('users').doc(uid).set(
+  batch.set(
+    db.collection('users').doc(uid),
     {
       s4Meta: {
         configured: true,
@@ -136,6 +141,7 @@ export async function saveS4Credentials(uid: string, cfg: S4ConfigInput): Promis
     },
     { merge: true },
   );
+  await batch.commit();
 
   return {
     configured: true,
