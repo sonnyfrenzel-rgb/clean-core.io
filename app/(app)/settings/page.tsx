@@ -30,6 +30,7 @@ import {
 } from 'firebase/auth';
 import ModelStagesCard from '@/components/ModelStagesCard';
 import { byokAllowed } from '@/lib/byok-eligibility';
+import CommunityMailCard from '@/components/CommunityMailCard';
 import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
@@ -1540,6 +1541,10 @@ export default function SettingsPage() {
               workspace preview is on — the map it names is not shown
               anywhere else yet. */}
           <ModelStagesCard showPreviewStages={workspaceShellEnabled(profile)} />
+
+          {/* Owner decision 30.09.2026: community mail only with consent,
+              switched on here and written by the server. */}
+          <CommunityMailCard consent={profile?.communityMail} />
 
           {isPilotTier && (
             <div className={CARD}>

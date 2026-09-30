@@ -4,6 +4,7 @@ import { getAdminDb } from '@/lib/firebase-admin';
 import { verifyUnsubscribeToken, normaliseEmail, suppressionId } from '@/lib/unsubscribe-token';
 import { APP_BASE_URL } from '@/lib/constants';
 import { readBoundedBody } from '@/lib/url-validation';
+import { COMMUNITY_MAIL_FIELD } from '@/lib/community-mail';
 
 /**
  * One-click unsubscribe for bulk community mail (RFC 8058).
@@ -22,9 +23,11 @@ import { readBoundedBody } from '@/lib/url-validation';
  *                               unsubscribe. A *verified* opt-out that could not
  *                               be stored is answered 503, because that one is
  *                               worth retrying and a silent 200 loses it.
- *   GET  /api/unsubscribe?t=…   a human clicked the visible footer link — hand
- *                               them the confirmation page rather than acting on
- *                               a GET, which link scanners and prefetchers follow.
+ *   GET  /api/unsubscribe?t=…   a human clicked the visible footer link of a mail
+ *                               sent before 30.09.2026 — hand them the
+ *                               confirmation page rather than acting on a GET,
+ *                               which link scanners and prefetchers follow.
+ *                               Newer mails link to `/unsubscribe#t=…` directly.
  *
  * Suppressions are keyed by SHA-256 of the normalised address: a stable document
  * id that is safe in a path and keeps the raw address out of the key space. The
@@ -34,20 +37,41 @@ import { readBoundedBody } from '@/lib/url-validation';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Store the opt-out, and withdraw the account's consent with it.
+ *
+ * Since 30.09.2026 community mail needs an opt-in on the profile
+ * (`lib/community-mail.ts`), and an unsubscribe is a withdrawal of that consent
+ * (owner decision, QA finding bef96e7f054f). Both writes go in one batch: an
+ * opt-out that stored the suppression but left the flag on would show the
+ * account a switch that says "on" after it asked to stop, and the reverse would
+ * leave the address unsuppressed. The token names an address, not an account,
+ * so every profile with that address is withdrawn — normally exactly one.
+ * `update`, never `set`: an erased profile is not recreated.
+ */
 async function suppress(email: string, source: 'one-click' | 'confirmation-page'): Promise<void> {
   const { db, FieldValue } = await getAdminDb();
-  await db
-    .collection('email_suppressions')
-    .doc(suppressionId(email))
-    .set(
-      {
-        email: normaliseEmail(email),
-        list: 'community-updates',
-        source,
-        unsubscribedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    );
+  const address = normaliseEmail(email);
+  const profiles = await db.collection('users').where('email', '==', address).get();
+  const batch = db.batch();
+  batch.set(
+    db.collection('email_suppressions').doc(suppressionId(email)),
+    {
+      email: address,
+      list: 'community-updates',
+      source,
+      unsubscribedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
+  for (const profile of profiles.docs) {
+    batch.update(profile.ref, {
+      [`${COMMUNITY_MAIL_FIELD}.optIn`]: false,
+      [`${COMMUNITY_MAIL_FIELD}.withdrawnAt`]: FieldValue.serverTimestamp(),
+      [`${COMMUNITY_MAIL_FIELD}.source`]: 'unsubscribe',
+    });
+  }
+  await batch.commit();
 }
 
 /**
@@ -122,9 +146,16 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ success: true });
 }
 
+/**
+ * The visible link of a mail sent before 30.09.2026 pointed here with the token
+ * in the query. That request is in the log already and nothing can take it
+ * back; the redirect no longer adds a second line with the token in it. It
+ * hands the token on in the fragment, which the browser keeps to itself and
+ * `/unsubscribe` reads client-side (QA finding 8e25777f1339).
+ */
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('t') || '';
   const target = new URL('/unsubscribe', APP_BASE_URL);
-  if (token) target.searchParams.set('t', token);
+  if (token) target.hash = `t=${encodeURIComponent(token)}`;
   return NextResponse.redirect(target, 302);
 }

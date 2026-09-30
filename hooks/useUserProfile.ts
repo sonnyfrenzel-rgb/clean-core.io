@@ -49,6 +49,13 @@ export interface UserProfile {
    * *and* still being an administrator.
    */
   workspaceShell?: boolean;
+  /**
+   * Consent to community mail — surveys and community updates (owner decision
+   * 30.09.2026). Server-written, like `modelStages`: only
+   * `POST /api/community-mail` and `POST /api/unsubscribe` put a value in here,
+   * and `userClientUpdateKeys()` keeps the browser out of it. Absent means no.
+   */
+  communityMail?: import('@/lib/community-mail').CommunityMailConsent;
   createdAt: any;
   /** Server timestamp written once by `activateAccount`; absent means never activated. */
   activatedAt?: any;

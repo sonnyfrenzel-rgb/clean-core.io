@@ -139,9 +139,14 @@ test.describe('the unsubscribe token is not written into the history and the log
     expect(client, 'the token is back in the query of the POST').not.toMatch(/fetch\(\s*`?\/api\/unsubscribe\?/);
     expect(client).toContain("fetch('/api/unsubscribe'");
     expect(client).toContain('JSON.stringify({ t: token })');
-    // The GET link is a mail link and keeps its token in the URL; the page
-    // still receives it from `searchParams`.
-    expect(rendered('app/unsubscribe/page.tsx')).toContain('token={t || \'\'}');
+    // Since 30.09.2026 (QA finding 8e25777f1339) the visible mail link carries
+    // the token in the fragment, which never reaches the server: the page no
+    // longer takes it from `searchParams`, the client reads it from the address
+    // (the fragment, or the query of a link sent before that day) and strips it
+    // from the address bar and the history at once.
+    expect(rendered('app/unsubscribe/page.tsx'), 'the server page reads the token again').not.toContain('searchParams');
+    expect(client).toContain('window.location');
+    expect(client).toMatch(/window\.history\.replaceState\(/);
   });
 
   test('a one-click provider with no body still unsubscribes', async () => {

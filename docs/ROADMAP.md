@@ -866,6 +866,20 @@ diese Roadmap das Konto nicht anfasst.
 - **BYOK für OpenAI und Anthropic bleibt bei 3.5.** Die Härtung, die auch Gemini heute nützt, kommt **vor 3.0** als
   3.0.13. Die offenen Fragen der Erweiterung (Anbieter, Zustimmung/Terms-Fassung, Messung je Anbieter, wer BYOK darf)
   werden bei 3.5 entschieden.
+- **Community mail only with consent (QA bef96e7f054f).** Surveys and community updates go only to accounts that
+  switched "Community mail" on in the settings (default off, written server-side by `POST /api/community-mail`,
+  consent and withdrawal timestamped on the profile). Every sender passes the gate in `lib/community-mail.ts`; an
+  unsubscribe also switches the consent off; the privacy policy (EN + DE) names purpose, consent under Art. 6(1)(a)
+  and how to withdraw. Sign-up unchanged.
+- **Firebase Authentication is not regional (QA 69a2e0b89ac9).** The privacy policy names europe-west1 only for
+  Cloud Run hosting and Firestore, and lists Firebase Authentication under the third-country transfer paragraph
+  (DPF/SCC), EN + DE.
+- **The unsubscribe token leaves the logged URL (QA 8e25777f1339).** The visible mail link carries it in the
+  `#fragment` and the page POSTs it; old `?t=` links keep working and are stripped from the address bar. The RFC 8058
+  one-click URL in the header keeps the token in the query by design — accepted residual risk, the token can only
+  unsubscribe.
+- **Welcome mail to an unverified address (QA 7dac795fcb81): accepted risk, no code change** — verifying at sign-up
+  would change sign-up, which stays unchanged. Recorded with `scripts/qa/refute.mjs`.
 
 ### Am 27./28.09.2026 geschlossen (Sonny)
 
