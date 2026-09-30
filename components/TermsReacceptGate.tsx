@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { AlertTriangle, ExternalLink } from 'lucide-react';
 import { getAuth } from '@/lib/firebase';
@@ -9,8 +8,8 @@ import { signOut } from 'firebase/auth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { TERMS_VERSION, termsVersionInForce } from '@/lib/constants';
 import CcButton from '@/components/cc/Button';
+import CcDialog from '@/components/cc/Dialog';
 import CcMessageStrip from '@/components/cc/MessageStrip';
-import { useCcModal } from '@/components/cc/modal';
 
 /**
  * Asking again when the Terms have changed — and the reason it has to exist.
@@ -76,9 +75,6 @@ function readDeclined(): boolean {
   }
 }
 
-/** Escape on the blocking form: deliberately nothing (see the modal hook below). */
-const KEEP_OPEN = () => {};
-
 export default function TermsReacceptGate() {
   const { profile, loading } = useUserProfile();
   const [busy, setBusy] = useState(false);
@@ -126,27 +122,25 @@ export default function TermsReacceptGate() {
    * that answer 403 — which is the failure this whole gate exists to prevent,
    * reproduced for the people least able to guess what happened.
    *
-   * The trap, the `inert` page and Escape come from `useCcModal`, the code
-   * `CcDialog` and `CcMessageBox` are built on (§2.6, ADR-028), so this layer
-   * cannot drift into a third meaning of "modal". Its `onClose` does nothing:
-   * Escape is inert here on purpose, because declining is not an option once
-   * the accepted version has been ended. Only the blocking form takes focus; a
-   * banner that grabbed the caret would be worse than the problem it reports.
+   * The blocking form is a `CcDialog` with `dismissible={false}` (block D,
+   * D.31): the trap, the `inert` page and the inert Escape come from the
+   * library's modal code (§2.6, ADR-028), so this layer cannot drift into a
+   * third meaning of "modal" — and it no longer builds a layer of its own. The
+   * caret starts on the one action that opens the product again, marked
+   * `data-cc-initial-focus` for the dialog. Only the blocking form takes focus;
+   * a banner that grabbed the caret would be worse than the problem it reports.
+   * The scroll lock stays here: it belongs to this gate, not to every dialog.
    */
   const blockingOpen = needed && !declined && !mayDecline;
-  const dialogRef = useCcModal<HTMLDivElement>({ open: blockingOpen, onClose: KEEP_OPEN });
 
   useEffect(() => {
     if (!blockingOpen) return;
-    // After the modal hook has put the focus on the layer: the one action that
-    // opens the product again is where the caret starts.
-    dialogRef.current?.querySelector<HTMLButtonElement>('[data-terms-gate-accept]')?.focus();
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [blockingOpen, dialogRef]);
+  }, [blockingOpen]);
 
   if (!needed || declined) return null;
 
@@ -196,25 +190,15 @@ export default function TermsReacceptGate() {
    */
   const blocking = !mayDecline;
 
-  const body = (
-    <>
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 shrink-0 text-cc-warning">
-          <AlertTriangle size={20} aria-hidden={true} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <h2 id="terms-gate-title" className="m-0 cc-text-h2 text-cc-ink">
-            The Terms of Service have changed
-          </h2>
-          <p className="mt-1 mb-0 cc-text-cell text-cc-ink-muted">
-            {mayDecline
-              ? 'You accepted an earlier version. Please read the current one and accept it. You do not have to: section 10.3 lets you carry on under the Terms you accepted, and nothing stops working if you decline.'
-              : 'The version your account accepted is no longer in force, so the platform is closed to it. Please read the current Terms and accept them to carry on.'}
-          </p>
-        </div>
-      </div>
+  const explanation = mayDecline
+    ? 'You accepted an earlier version. Please read the current one and accept it. You do not have to: section 10.3 lets you carry on under the Terms you accepted, and nothing stops working if you decline.'
+    : 'The version your account accepted is no longer in force, so the platform is closed to it. Please read the current Terms and accept them to carry on.';
+  const title = 'The Terms of Service have changed';
 
-      <div className="mt-4 space-y-2 rounded-cc-row border border-cc-line bg-cc-surface-muted p-4 cc-text-cell text-cc-ink-muted">
+  // What changed, the two documents and the error: the same in both forms.
+  const details = (
+    <>
+      <div className="space-y-2 rounded-cc-row border border-cc-line bg-cc-surface-muted p-4 cc-text-cell text-cc-ink-muted">
         <p className="cc-text-label text-cc-ink-muted">What changed</p>
         <p>
           <strong className="font-semibold text-cc-ink">Do not upload personal data of third parties.</strong> ABAP carries it
@@ -260,22 +244,25 @@ export default function TermsReacceptGate() {
           </CcMessageStrip>
         </div>
       )}
+    </>
+  );
 
-      {/* Accepting is entering into a contract — the binding confirmation of
-          §1.5, and the only place on this layer that wears `dark`. */}
-      <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
-        <CcButton data-terms-gate-signout variant="ghost" onClick={() => signOut(getAuth())}>
-          Sign out instead
+  // Accepting is entering into a contract — the binding confirmation of §1.5,
+  // and the only place on this layer that wears `dark`. `data-cc-initial-focus`
+  // puts the caret on it when the blocking dialog opens.
+  const actions = (
+    <>
+      <CcButton data-terms-gate-signout variant="ghost" onClick={() => signOut(getAuth())}>
+        Sign out instead
+      </CcButton>
+      {mayDecline && (
+        <CcButton data-terms-gate-decline variant="ghost" onClick={() => setDeclined(true)}>
+          Not now &mdash; carry on under the Terms I accepted
         </CcButton>
-        {mayDecline && (
-          <CcButton data-terms-gate-decline variant="ghost" onClick={() => setDeclined(true)}>
-            Not now &mdash; carry on under the Terms I accepted
-          </CcButton>
-        )}
-        <CcButton data-terms-gate-accept variant="dark" busy={busy} onClick={accept}>
-          I have read and accept the Terms
-        </CcButton>
-      </div>
+      )}
+      <CcButton data-terms-gate-accept data-cc-initial-focus="" variant="dark" busy={busy} onClick={accept}>
+        I have read and accept the Terms
+      </CcButton>
     </>
   );
 
@@ -299,35 +286,39 @@ export default function TermsReacceptGate() {
           aria-labelledby="terms-gate-title"
           className="rounded-cc-card border border-cc-warning-border bg-cc-surface p-5 shadow-cc"
         >
-          {body}
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 shrink-0 text-cc-warning">
+              <AlertTriangle size={20} aria-hidden={true} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 id="terms-gate-title" className="m-0 cc-text-h2 text-cc-ink">
+                {title}
+              </h2>
+              <p className="mt-1 mb-0 cc-text-cell text-cc-ink-muted">{explanation}</p>
+            </div>
+          </div>
+          <div className="mt-4">{details}</div>
+          <div className="mt-5 flex flex-wrap items-center justify-end gap-2">{actions}</div>
         </div>
       </div>
     );
   }
 
-  if (typeof document === 'undefined') return null;
-
-  // Portalled to `body` like the library's layers: `inert` is inherited, so the
-  // layer has to be a sibling of the page it switches off, not a child of it.
-  return createPortal(
-    <div
-      data-terms-gate
+  // The library's dialog, not a layer of this file's own (block D, D.31): it
+  // portals to `body`, dims and switches off the page, holds the focus, and
+  // with `dismissible={false}` has no close button and ignores Escape — only
+  // the two actions lead out, and one of them is signing out.
+  return (
+    <CcDialog
+      open
+      dismissible={false}
+      title={title}
+      lead={explanation}
+      actions={actions}
+      data-terms-gate=""
       data-terms-gate-mode="blocking"
-      className="cc fixed inset-0 z-[200] flex items-center justify-center p-4"
     >
-      {/* Dimmed, and not a way out: nothing behind it works until this is answered. */}
-      <div data-cc-scrim="" aria-hidden={true} className="absolute inset-0 bg-cc-overlay/45" />
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="terms-gate-title"
-        tabIndex={-1}
-        className="relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-cc-card border border-cc-line bg-cc-surface p-5 shadow-cc-dialog"
-      >
-        {body}
-      </div>
-    </div>,
-    document.body,
+      {details}
+    </CcDialog>
   );
 }

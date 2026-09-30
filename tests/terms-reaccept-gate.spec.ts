@@ -81,6 +81,9 @@ test('a stale acceptance is stopped, and accepting is recorded on the server', a
   // answers 403 and would read as breakage.
   await page.keyboard.press('Escape');
   await expect(gate, 'Escape dismissed a gate that has nothing working behind it').toBeVisible();
+  // And there is no other way out of it but the two actions: no close button.
+  await expect(gate.locator('[data-cc-dialog-close]'), 'the blocking gate grew a close button').toHaveCount(0);
+  await expect(gate.getByRole('dialog', { name: 'The Terms of Service have changed' })).toBeVisible();
 
   const before = await adminGetDoc('users', uid);
   expect(before?.termsVersionAccepted, 'the fixture did not start stale').toBe(STALE);
@@ -121,6 +124,11 @@ test('the gate is mounted in the shell every protected page shares', () => {
   );
   // Refusing has to be possible without deleting the account.
   expect(gate).toContain('data-terms-gate-signout');
+  // The blocking form is the library's dialog, not a layer of its own (block D,
+  // D.31): one meaning of "modal", and `dismissible={false}` is what makes
+  // Escape and the scrim inert.
+  expect(gate, 'the blocking gate is not a CcDialog').toMatch(/<CcDialog[\s\S]*?dismissible=\{false\}/);
+  expect(gate, 'the gate builds its own overlay again').not.toMatch(/fixed inset-0|createPortal/);
 });
 
 /**
@@ -165,6 +173,9 @@ test('the keyboard cannot leave the gate', async ({ page }) => {
     });
 
   expect(await insideGate(), 'focus did not start inside the dialog').toBe(true);
+  // On the one action that opens the product again — not on the layer, not on
+  // "Sign out instead".
+  await expect(gate.locator('[data-terms-gate-accept]'), 'the caret did not start on Accept').toBeFocused();
 
   // Forwards past the last control, and backwards past the first: both are the
   // moments a trap is missing.

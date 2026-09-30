@@ -183,7 +183,7 @@ export default function TcoCalculatorPage() {
   const baselineScore = typeof project?.cleanCoreScore === 'number' ? project.cleanCoreScore : null;
   if (baselineScore === null || baselineScore >= TCO_TARGET_SCORE) {
     return (
-      <div className="cc min-h-screen bg-cc-page p-4 md:p-8 print:[&_[data-stage-back]]:hidden">
+      <div className="cc min-h-screen bg-cc-page p-4 md:p-8">
         <VerificationRail steps={phases} current="tco" projectId={projectId as string} />
         <Stepper steps={phases} current="tco" projectId={projectId as string} />
         <div className={`max-w-2xl mx-auto mt-10 p-8 ${CARD}`}>
@@ -231,9 +231,9 @@ export default function TcoCalculatorPage() {
 
   return (
     // `.cc` puts the stage under the workspace's focus ring (§1.6) and its
-    // print rule (§7.1). The way back to the workspace is navigation, and
-    // navigation does not print — on paper it would be a bare path in brackets.
-    <div className="cc min-h-screen bg-cc-page p-4 md:p-8 print:p-0 print:[&_[data-stage-back]]:hidden">
+    // print rule (§7.1). The way back to the workspace does not print either;
+    // `StageHeader` marks it `cc-no-print` for every stage.
+    <div className="cc min-h-screen bg-cc-page p-4 md:p-8 print:p-0">
 
       {/* Navigation, so neither prints. */}
       <VerificationRail steps={phases} current="tco" projectId={projectId as string} />
@@ -391,7 +391,7 @@ export default function TcoCalculatorPage() {
                 assumptions nothing measured. */}
             <span className="cc-text-label text-cc-ink-muted block">Annual Net Savings · Scenario</span>
             <div>
-              <p className="text-[22px] font-extrabold tracking-tight text-cc-ink mt-2 flex items-baseline gap-1">
+              <p className="cc-text-figure text-cc-ink mt-2 flex items-baseline gap-1">
                 {formatAmount(calculations.annualSavings, currency)}
                 <span className="cc-text-meta text-cc-ink-muted">/ year</span>
               </p>
@@ -414,7 +414,7 @@ export default function TcoCalculatorPage() {
                 </>
               ) : (
                 <>
-                  <p className="text-[22px] font-extrabold tracking-tight text-cc-ink mt-2 flex items-baseline gap-1">
+                  <p className="cc-text-figure text-cc-ink mt-2 flex items-baseline gap-1">
                     {calculations.paybackMonths}
                     <span className="cc-text-meta text-cc-ink-muted">Months</span>
                   </p>
@@ -436,7 +436,7 @@ export default function TcoCalculatorPage() {
                 </>
               ) : (
                 <>
-                  <p className="text-[22px] font-extrabold tracking-tight text-cc-ink mt-2 flex items-baseline gap-1">
+                  <p className="cc-text-figure text-cc-ink mt-2 flex items-baseline gap-1">
                     {calculations.roiYear1}%
                     <span className="cc-text-meta text-cc-ink-muted">Return</span>
                   </p>

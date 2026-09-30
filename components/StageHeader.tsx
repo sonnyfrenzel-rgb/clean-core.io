@@ -40,6 +40,10 @@ import { BACK_LINK_CLASS } from '@/components/BackLink';
  * other account the workspace is still `/dashboard`, and the link goes there —
  * a link into a 404 would be worse than no link.
  *
+ * The link is navigation, and navigation does not print (§7.1): it carries
+ * `cc-no-print`, so no stage has to hide it on paper by itself — on paper it
+ * would be a bare path in brackets (block D, D.31; Economics did it locally).
+ *
  * `stage` names the title from `PHASES` in `lib/workflow-steps.ts`, the list
  * the stepper, the rail and the dashboard read, so a stage that passes it
  * cannot be called one thing in the stepper and another above its own content
@@ -106,7 +110,7 @@ export default function StageHeader({
       className={`mt-6 mb-8 ${centred ? 'text-center' : ''}`}
     >
       {back.kind === 'pending' && (
-        <span aria-hidden="true" className={`${BACK_LINK_CLASS} mb-3 invisible`}>
+        <span aria-hidden="true" className={`${BACK_LINK_CLASS} cc-no-print mb-3 invisible`}>
           <ArrowLeft size={16} aria-hidden="true" /> Back to workspace
         </span>
       )}
@@ -114,7 +118,7 @@ export default function StageHeader({
         <Link
           href={back.href}
           data-stage-back={back.to}
-          className={`${BACK_LINK_CLASS} mb-3`}
+          className={`${BACK_LINK_CLASS} cc-no-print mb-3`}
         >
           <ArrowLeft size={16} aria-hidden="true" /> Back to workspace
         </Link>

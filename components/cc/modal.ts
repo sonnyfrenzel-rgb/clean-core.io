@@ -62,7 +62,8 @@ export interface CcModalOptions {
    * Where the focus goes when the layer opens. `container` — the layer itself,
    * for a confirmation, so the default focus never rests on the irreversible
    * button. `first-field` — the first input, select or textarea, for a form,
-   * falling back to the layer when there is none.
+   * falling back to the layer when there is none. In `first-field` mode an
+   * element marked `data-cc-initial-focus` wins over the first field.
    */
   initialFocus?: 'container' | 'first-field';
 }
@@ -100,11 +101,16 @@ export function useCcModal<T extends HTMLElement>({
       }
     }
 
+    // A form may name the control the caret belongs on (`data-cc-initial-focus`)
+    // — the terms gate has no field, and its one way back into the product is
+    // the button. Only in `first-field` mode: a confirmation (`container`)
+    // never rests its default focus on the irreversible button.
     const field =
       initialFocus === 'first-field'
-        ? box?.querySelector<HTMLElement>(
+        ? (box?.querySelector<HTMLElement>('[data-cc-initial-focus]:not([disabled])') ??
+          box?.querySelector<HTMLElement>(
             'input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled])',
-          )
+          ))
         : null;
     (field ?? box)?.focus();
 

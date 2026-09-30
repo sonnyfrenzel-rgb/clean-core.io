@@ -162,7 +162,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
       <a
         href="#main-content"
         data-skip-link=""
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-cc-row focus:outline-2 focus:outline-offset-2 focus:outline-cc-focus"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-cc-float focus:rounded-cc-row focus:outline-2 focus:outline-offset-2 focus:outline-cc-focus"
       >
         <span className="block rounded-cc-row border border-cc-line bg-cc-surface px-4 py-3 text-[13px] font-semibold text-cc-ink shadow-cc-dialog">
           Skip to content
@@ -218,7 +218,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           product name on the left, the path beside them, the quota, the
           assistant, Help and the account menu on the right. White surface and a
           1 px rule — no blur, no shadow, no green hover (ADR-007). */}
-      <header className="cc-no-print sticky top-0 z-50 border-b border-cc-line bg-cc-surface">
+      <header className="cc-no-print sticky top-0 z-cc-sticky border-b border-cc-line bg-cc-surface">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
           {/* Home means the dashboard for someone signed in and the landing page
               for everyone else. The same shell serves both, and a hard link to

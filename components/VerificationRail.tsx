@@ -87,7 +87,7 @@ export default function VerificationRail({
       {/* ── Desktop: a column at the right edge ─────────────────────────── */}
       <nav
         aria-label="Workflow progress"
-        className="hidden 2xl:flex fixed right-5 top-1/2 -translate-y-1/2 z-30 flex-col items-center gap-1 print:hidden"
+        className="hidden 2xl:flex fixed right-5 top-1/2 -translate-y-1/2 z-cc-float flex-col items-center gap-1 print:hidden"
       >
         {steps.map((step, i) => (
           <div key={step.key} className="flex flex-col items-center">
@@ -137,7 +137,7 @@ export default function VerificationRail({
           CC_BUTTON_BASE,
           CC_BUTTON_VARIANT_CLASSES.ghost,
           CC_BUTTON_DENSITY_CLASSES.cozy,
-          '2xl:hidden fixed left-4 bottom-4 z-30 shadow-cc print:hidden',
+          '2xl:hidden fixed left-4 bottom-4 z-cc-float shadow-cc print:hidden',
         )}
       >
         {/* A count of finished phases, not a verdict on them — so the icon is
