@@ -6,8 +6,7 @@
       "step": "D.27",
       "R3": 1,
       "R4": 11,
-      "R5": 1,
-      "R7": 1
+      "R5": 1
     },
     "components/LandingModals.tsx": {
       "step": "D.27",

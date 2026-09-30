@@ -7,7 +7,12 @@ import { getAuth } from '@/lib/firebase';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 
-export default function HeaderAuthButton() {
+/**
+ * `signInHref`: where the signed-out button leads. `?auth=signin` on the landing
+ * page, which mounts the sign-in dialog; `/?auth=signin` from every other public
+ * page, which does not (block D, D.24 — `components/PublicHeader.tsx`).
+ */
+export default function HeaderAuthButton({ signInHref = '?auth=signin' }: { signInHref?: string } = {}) {
   const auth = getAuth();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -47,7 +52,7 @@ export default function HeaderAuthButton() {
   }
 
   return (
-    <CcLinkButton href="?auth=signin" variant="primary" density="compact">
+    <CcLinkButton href={signInHref} variant="primary" density="compact">
       {/* The full label does not fit a 320px header next to the wordmark, and it
           could not shrink, so it pushed the page sideways. Everything from `sm`
           up — every width the page has been reviewed at — is unchanged. */}

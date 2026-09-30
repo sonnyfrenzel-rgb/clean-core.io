@@ -6,7 +6,7 @@
  */
 export default function SapTrademarkNotice({ className = '' }: { className?: string }) {
   return (
-    <p className={`text-[10px] sm:text-[11px] leading-relaxed text-slate-400 ${className}`}>
+    <p className={`text-[11px] leading-relaxed text-cc-ink-muted ${className}`}>
       SAP, S/4HANA, ABAP, SAP BTP and related names are trademarks or registered trademarks of SAP SE
       in Germany and other countries. Clean-Core.io is an independent, community-built tool and is{' '}
       <strong className="font-semibold">not affiliated with, sponsored, certified, or endorsed by SAP SE</strong>.

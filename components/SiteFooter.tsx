@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { RotateCw } from 'lucide-react';
 import { clsx } from 'clsx';
+import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 
 /**
  * Shared site footer — identical on the landing, the (app) marketing pages and the
@@ -12,6 +13,11 @@ import { clsx } from 'clsx';
  *   pages (SEO: avoids "Discovered – currently not indexed").
  *
  * `dark` renders for a dark background (landing footer); default is the light in-app footer.
+ *
+ * Block D, D.24: tokens instead of the palette, the micro-label (11 px, 600,
+ * uppercase, 0.08em — DESIGN.md §1.2) instead of 10 px in black weight, and no
+ * green hover (ADR-007: green means "backed by evidence", not "you are
+ * pointing here"). The links and their order are unchanged.
  */
 const COLUMNS: { heading: string; links: { href: string; label: string }[] }[] = [
   {
@@ -49,40 +55,42 @@ const COLUMNS: { heading: string; links: { href: string; label: string }[] }[] =
   },
 ];
 
+const MICRO_LABEL = 'text-[11px] font-semibold uppercase tracking-[0.08em]';
+
 export default function SiteFooter({ dark = false }: { dark?: boolean }) {
+  const muted = dark ? 'text-cc-on-dark/70' : 'text-cc-ink-muted';
   return (
-    <div className={clsx('max-w-4xl mx-auto', dark ? 'text-gray-400' : 'text-gray-600')}>
+    <div className={clsx('max-w-4xl mx-auto', muted)}>
       {/* Branded back-to-home — lands you back on the landing footer (same spot). */}
       <div className="flex flex-col items-center text-center mb-10">
         <Link
           href="/#site-footer"
           aria-label="Back to Clean-Core.io home"
-          className={clsx('inline-flex items-center gap-2 transition-opacity hover:opacity-80', dark ? 'text-white' : 'text-gray-900')}
+          className={clsx('inline-flex items-center gap-2 transition-opacity hover:opacity-80', dark ? 'text-cc-on-dark' : 'text-cc-ink')}
         >
-          <span className={clsx('p-1.5 rounded-lg', dark ? 'bg-green-500/15' : 'bg-green-600/10')}>
-            <RotateCw className="w-4 h-4 text-green-500" />
+          <span className={clsx('p-2 rounded-cc-row', dark ? 'bg-cc-brand/15' : 'bg-cc-brand-surface')}>
+            <RotateCw className="w-4 h-4 text-cc-brand" aria-hidden="true" />
           </span>
           <span className="font-bold text-base tracking-tight">
-            Clean-Core<span className="text-green-500">.io</span>
+            Clean-Core<span className="text-cc-brand">.io</span>
           </span>
         </Link>
-        <span className={clsx('text-[10px] font-black uppercase tracking-widest mt-2', dark ? 'text-gray-500' : 'text-gray-400')}>
-          Free Community Edition · complementary to SAP tooling
-        </span>
+        <span className={clsx(MICRO_LABEL, 'mt-2', muted)}>Free Community Edition · complementary to SAP tooling</span>
       </div>
 
       <nav aria-label="Footer" className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-8 text-left max-w-3xl mx-auto">
         {COLUMNS.map((col) => (
           <div key={col.heading}>
-            <h3 className={clsx('text-[10px] font-black uppercase tracking-widest mb-3', dark ? 'text-gray-500' : 'text-gray-400')}>
-              {col.heading}
-            </h3>
+            <h3 className={clsx(MICRO_LABEL, 'mb-3', muted)}>{col.heading}</h3>
             <ul className="space-y-2">
               {col.links.map((l) => (
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className={clsx('text-xs font-medium transition-colors', dark ? 'hover:text-white' : 'hover:text-green-700')}
+                    className={clsx(
+                      'text-xs font-medium underline-offset-4 hover:underline',
+                      dark ? 'hover:text-cc-on-dark' : 'hover:text-cc-ink',
+                    )}
                   >
                     {l.label}
                   </Link>
@@ -93,5 +101,25 @@ export default function SiteFooter({ dark = false }: { dark?: boolean }) {
         ))}
       </nav>
     </div>
+  );
+}
+
+/**
+ * The footer of the public pages outside the app shell — the catalog and the
+ * feature pages (block D, D.24). The same light footer the app shell renders on
+ * its public pages (`app/(app)/layout.tsx`): the link map, then the trademark
+ * notice, which those pages had been missing although they name more SAP
+ * objects than any other.
+ */
+export function PublicFooter() {
+  return (
+    <footer className="mt-16 border-t border-cc-line bg-cc-surface">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <SiteFooter />
+        <div className="mt-8 pt-6 border-t border-cc-line text-center">
+          <SapTrademarkNotice className="max-w-3xl mx-auto" />
+        </div>
+      </div>
+    </footer>
   );
 }

@@ -26,11 +26,9 @@ import {
   BookOpen,
   BarChart3,
   Briefcase,
-  Menu,
   CircleSlash,
-  RotateCw,
 } from 'lucide-react';
-import HeaderAuthButton from '@/components/HeaderAuthButton';
+import PublicHeader from '@/components/PublicHeader';
 import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import LandingModals from '@/components/LandingModals';
 import SectionHeader from '@/components/SectionHeader';
@@ -104,15 +102,6 @@ export const metadata: Metadata = withTwitterCard({
       'Understand a piece of custom ABAP and decide what happens to it. Every statement is tied to a line of your code; what could not be determined is said, not guessed. Free for the SAP community.',
   },
 });
-
-/** The navigation to the pages with search reach — header and phone menu read the same list. */
-const NAV: Array<{ href: string; label: string }> = [
-  { href: '/clean-core-explained', label: 'Clean Core Explained' },
-  { href: '/how-it-works', label: 'How It Works' },
-  { href: '/sap-clean-core-object-classification', label: 'Classification A–D' },
-  { href: '/catalog', label: 'SAP Object Catalog' },
-  { href: '/knowledge', label: 'Knowledge Base' },
-];
 
 /**
  * Real SAP objects for each level, graded at render time. An example is shown
@@ -463,59 +452,13 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-cc-page font-sans text-cc-ink">
+    <div className="min-h-screen bg-cc-page text-cc-ink">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaJson) }} />
 
-      <a
-        href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-cc-row focus:outline-2 focus:outline-offset-2 focus:outline-cc-focus"
-      >
-        <span className="block rounded-cc-row border border-cc-line bg-cc-surface px-4 py-3 text-sm font-semibold text-cc-ink shadow-cc-dialog">
-          Skip to content
-        </span>
-      </a>
-
-      {/* Header — logo, the pages with search reach, and the sign-in button where it always was. */}
-      <header className="sticky top-0 z-50 border-b border-cc-line bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-3 px-4 sm:gap-6 sm:px-6 lg:px-8">
-          <Link href="/" className="flex shrink-0 items-center gap-3" aria-label="Clean-Core.io home">
-            <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-cc-brand-surface text-cc-brand">
-              <RotateCw size={20} aria-hidden="true" />
-            </span>
-            <span className="hidden flex-col min-[400px]:flex">
-              <span className="text-base font-extrabold leading-tight tracking-[-0.02em] text-cc-ink sm:text-lg">
-                Clean-Core<span className="text-cc-brand">.io</span>
-              </span>
-              <span className="text-xs font-semibold leading-tight text-cc-ink-muted">Free Community Edition</span>
-            </span>
-          </Link>
-          <nav aria-label="Main" className="hidden items-center gap-6 lg:flex">
-            {NAV.map((n) => (
-              <Link key={n.href} href={n.href} className="whitespace-nowrap py-2 text-[15px] font-semibold text-cc-ink-muted hover:text-cc-ink">
-                {n.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            <HeaderAuthButton />
-            <details className="group relative lg:hidden">
-              <summary
-                aria-label="Menu"
-                className="grid h-11 w-11 cursor-pointer list-none place-items-center rounded-full border border-cc-field-border bg-white text-cc-ink [&::-webkit-details-marker]:hidden"
-              >
-                <Menu size={18} aria-hidden="true" />
-              </summary>
-              <nav aria-label="Main" className="absolute right-0 top-12 hidden w-64 max-w-[calc(100vw-2rem)] rounded-2xl group-open:block border border-cc-line bg-white p-2 shadow-cc-dialog">
-                {NAV.map((n) => (
-                  <Link key={n.href} href={n.href} className="flex min-h-11 items-center rounded-lg px-3 text-base font-semibold text-cc-ink hover:bg-cc-surface-muted">
-                    {n.label}
-                  </Link>
-                ))}
-              </nav>
-            </details>
-          </div>
-        </div>
-      </header>
+      {/* The public header (block D, D.24): logo, the pages with search reach,
+          and the sign-in button where it always was — `?auth=signin`, which the
+          sign-in dialog at the foot of this page reads. */}
+      <PublicHeader signInHref="?auth=signin" />
 
       <main id="main">
         {/* 1 · hero */}
