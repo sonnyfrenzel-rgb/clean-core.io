@@ -28,22 +28,22 @@ export default async function AuthActionPage({
   const { mode, oobCode } = await searchParams;
 
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center px-6 py-16">
+    <main className="min-h-screen bg-cc-page flex items-center justify-center px-6 py-16">
       <div className="w-full max-w-lg">
         <Link href="/" className="inline-block mb-8">
-          <span className="text-2xl font-black text-gray-950 tracking-tight">
-            Clean-Core<span className="text-green-600">.io</span>
+          <span className="text-2xl font-extrabold text-cc-ink tracking-tight">
+            Clean-Core<span className="text-cc-brand-strong">.io</span>
           </span>
-          <span className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mt-1">
+          <span className="block cc-text-label text-cc-ink-muted mt-1">
             Free Community SAP Modernization Platform
           </span>
         </Link>
 
-        <h1 className="text-3xl font-black text-gray-950 tracking-tight mb-3">Confirm your email address</h1>
+        <h1 className="text-3xl font-extrabold text-cc-ink tracking-tight mb-3">Confirm your email address</h1>
 
         <AuthActionClient mode={typeof mode === 'string' ? mode : ''} oobCode={typeof oobCode === 'string' ? oobCode : ''} />
 
-        <p className="text-xs text-gray-400 mt-8 leading-relaxed">
+        <p className="text-xs text-cc-ink-muted mt-8 leading-relaxed">
           Clean-Core.io · Felix Frenzel · Hellerstraße 9 · 96047 Bamberg · Germany
         </p>
       </div>
