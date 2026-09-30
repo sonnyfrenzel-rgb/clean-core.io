@@ -1,12 +1,16 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { AlertTriangle, ExternalLink, Loader2 } from 'lucide-react';
+import { AlertTriangle, ExternalLink } from 'lucide-react';
 import { getAuth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { TERMS_VERSION, termsVersionInForce } from '@/lib/constants';
+import CcButton from '@/components/cc/Button';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import { useCcModal } from '@/components/cc/modal';
 
 /**
  * Asking again when the Terms have changed — and the reason it has to exist.
@@ -72,6 +76,9 @@ function readDeclined(): boolean {
   }
 }
 
+/** Escape on the blocking form: deliberately nothing (see the modal hook below). */
+const KEEP_OPEN = () => {};
+
 export default function TermsReacceptGate() {
   const { profile, loading } = useUserProfile();
   const [busy, setBusy] = useState(false);
@@ -90,8 +97,6 @@ export default function TermsReacceptGate() {
       // A browser that refuses storage still gets the in-memory behaviour above.
     }
   };
-  const acceptRef = useRef<HTMLButtonElement | null>(null);
-  const dialogRef = useRef<HTMLDivElement | null>(null);
 
   const accepted = profile?.termsVersionAccepted ?? null;
   const needed = !loading && !!profile && accepted !== TERMS_VERSION;
@@ -113,55 +118,35 @@ export default function TermsReacceptGate() {
   const mayDecline = accepted === null || termsVersionInForce(accepted);
 
   /**
-   * Focus goes in and stays in, and the page behind does not scroll.
+   * Focus goes in and stays in, the page behind is inert, and it does not scroll.
    *
    * Setting initial focus is the easy half and was all this had at first (QA
    * review of 38e6f079a0ba). Without the trap, Tab walks out of a dialog that
    * blocks everything behind it, and a keyboard user ends up operating controls
    * that answer 403 — which is the failure this whole gate exists to prevent,
    * reproduced for the people least able to guess what happened.
+   *
+   * The trap, the `inert` page and Escape come from `useCcModal`, the code
+   * `CcDialog` and `CcMessageBox` are built on (§2.6, ADR-028), so this layer
+   * cannot drift into a third meaning of "modal". Its `onClose` does nothing:
+   * Escape is inert here on purpose, because declining is not an option once
+   * the accepted version has been ended. Only the blocking form takes focus; a
+   * banner that grabbed the caret would be worse than the problem it reports.
    */
+  const blockingOpen = needed && !declined && !mayDecline;
+  const dialogRef = useCcModal<HTMLDivElement>({ open: blockingOpen, onClose: KEEP_OPEN });
+
   useEffect(() => {
-    // Only the blocking form takes focus and traps it. A banner that grabbed the
-    // caret would be worse than the problem it reports.
-    if (!needed || declined || mayDecline) return;
-    acceptRef.current?.focus();
+    if (!blockingOpen) return;
+    // After the modal hook has put the focus on the layer: the one action that
+    // opens the product again is where the caret starts.
+    dialogRef.current?.querySelector<HTMLButtonElement>('[data-terms-gate-accept]')?.focus();
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Tab') return;
-      const root = dialogRef.current;
-      if (!root) return;
-      const focusable = [...root.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')]
-        .filter((el) => el.offsetParent !== null);
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      const active = document.activeElement as HTMLElement | null;
-
-      // Outside already — for instance because something else moved focus while
-      // the dialog was opening — bring it back rather than letting Tab continue.
-      if (!active || !root.contains(active)) {
-        event.preventDefault();
-        first.focus();
-        return;
-      }
-      if (event.shiftKey && active === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && active === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener('keydown', onKeyDown, true);
     return () => {
-      document.removeEventListener('keydown', onKeyDown, true);
       document.body.style.overflow = previousOverflow;
     };
-  }, [needed, declined, mayDecline]);
+  }, [blockingOpen, dialogRef]);
 
   if (!needed || declined) return null;
 
@@ -197,9 +182,8 @@ export default function TermsReacceptGate() {
    * Two shapes, because the two situations are not the same thing.
    *
    * While the accepted version is still in force (§ 10.3) the product works and
-   * the person may decline, so this is a **banner**: it sits at the foot of the
-   * page, it covers nothing, and it lets every click through (`pointer-events`
-   * is off on the wrapper and back on for the card itself). An overlay here
+   * the person may decline, so this is a **banner**: it sits in the page flow
+   * above the content and covers nothing. An overlay here
    * would take the page hostage over a question the reader is allowed to answer
    * with "no" — and it did: it intercepted pointer events in nine unrelated
    * specs whose fixtures simply never set `termsVersionAccepted`, which is
@@ -212,121 +196,138 @@ export default function TermsReacceptGate() {
    */
   const blocking = !mayDecline;
 
-  return (
+  const body = (
+    <>
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 shrink-0 text-cc-warning">
+          <AlertTriangle size={20} aria-hidden={true} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 id="terms-gate-title" className="m-0 cc-text-h2 text-cc-ink">
+            The Terms of Service have changed
+          </h2>
+          <p className="mt-1 mb-0 cc-text-cell text-cc-ink-muted">
+            {mayDecline
+              ? 'You accepted an earlier version. Please read the current one and accept it. You do not have to: section 10.3 lets you carry on under the Terms you accepted, and nothing stops working if you decline.'
+              : 'The version your account accepted is no longer in force, so the platform is closed to it. Please read the current Terms and accept them to carry on.'}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-2 rounded-cc-row border border-cc-line bg-cc-surface-muted p-4 cc-text-cell text-cc-ink-muted">
+        <p className="cc-text-label text-cc-ink-muted">What changed</p>
+        <p>
+          <strong className="font-semibold text-cc-ink">Do not upload personal data of third parties.</strong> ABAP carries it
+          more often than people expect: a developer&apos;s user id, a name in a comment, a real customer number, a
+          production record used as test data. Strip those before you upload. We do not offer a data processing
+          agreement, so there is no contract under which we could process such data for you.
+        </p>
+        <p>
+          <strong className="font-semibold text-cc-ink">You must be at least 18.</strong> Accepting these Terms is entering into
+          a contract, and this is a tool for professional software work.
+        </p>
+        <p>
+          The Privacy Policy was extended at the same time — server logs, concrete retention periods, and a German
+          version that prevails if the two ever differ.
+        </p>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-4 cc-text-identifier">
+        <Link
+          href="/terms"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-terms-gate-link="terms"
+          className="inline-flex items-center gap-1 text-cc-ink underline underline-offset-2 hover:text-cc-information"
+        >
+          Read the Terms <ExternalLink size={12} aria-hidden={true} />
+        </Link>
+        <Link
+          href="/datenschutz"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-terms-gate-link="privacy"
+          className="inline-flex items-center gap-1 text-cc-ink underline underline-offset-2 hover:text-cc-information"
+        >
+          Read the Privacy Policy <ExternalLink size={12} aria-hidden={true} />
+        </Link>
+      </div>
+
+      {error && (
+        <div data-terms-gate-error className="mt-4">
+          <CcMessageStrip state="error" announce>
+            {error}
+          </CcMessageStrip>
+        </div>
+      )}
+
+      {/* Accepting is entering into a contract — the binding confirmation of
+          §1.5, and the only place on this layer that wears `dark`. */}
+      <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
+        <CcButton data-terms-gate-signout variant="ghost" onClick={() => signOut(getAuth())}>
+          Sign out instead
+        </CcButton>
+        {mayDecline && (
+          <CcButton data-terms-gate-decline variant="ghost" onClick={() => setDeclined(true)}>
+            Not now &mdash; carry on under the Terms I accepted
+          </CcButton>
+        )}
+        <CcButton data-terms-gate-accept variant="dark" busy={busy} onClick={accept}>
+          I have read and accept the Terms
+        </CcButton>
+      </div>
+    </>
+  );
+
+  if (!blocking) {
+    return (
+      // In the page flow, not over it. A fixed banner still covers whatever is
+      // beneath it — it intercepted clicks in five specs even after the wrapper
+      // stopped taking pointer events — and a question somebody is allowed to
+      // answer with "no" must not sit on top of their work.
+      <div
+        data-terms-gate
+        data-terms-gate-mode="banner"
+        className="cc mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8"
+        onKeyDown={(e) => {
+          // Escape is a decline, and here declining is allowed.
+          if (e.key === 'Escape') setDeclined(true);
+        }}
+      >
+        <div
+          role="region"
+          aria-labelledby="terms-gate-title"
+          className="rounded-cc-card border border-cc-warning-border bg-cc-surface p-5 shadow-cc"
+        >
+          {body}
+        </div>
+      </div>
+    );
+  }
+
+  if (typeof document === 'undefined') return null;
+
+  // Portalled to `body` like the library's layers: `inert` is inherited, so the
+  // layer has to be a sibling of the page it switches off, not a child of it.
+  return createPortal(
     <div
       data-terms-gate
-      data-terms-gate-mode={blocking ? 'blocking' : 'banner'}
-      className={
-        blocking
-          ? 'fixed inset-0 z-[200] bg-gray-950/60 backdrop-blur-md flex items-center justify-center p-4'
-          // In the page flow, not over it. A fixed banner still covers whatever
-          // is beneath it — it intercepted clicks in five specs even after the
-          // wrapper stopped taking pointer events — and a question somebody is
-          // allowed to answer with "no" must not sit on top of their work.
-          : 'max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6'
-      }
-      onKeyDown={(e) => {
-        if (e.key !== 'Escape') return;
-        // Escape is a decline, and only where declining is allowed.
-        if (mayDecline) setDeclined(true);
-        else e.preventDefault();
-      }}
+      data-terms-gate-mode="blocking"
+      className="cc fixed inset-0 z-[200] flex items-center justify-center p-4"
     >
+      {/* Dimmed, and not a way out: nothing behind it works until this is answered. */}
+      <div data-cc-scrim="" aria-hidden={true} className="absolute inset-0 bg-cc-overlay/45" />
       <div
         ref={dialogRef}
-        role={blocking ? 'dialog' : 'region'}
-        {...(blocking ? { 'aria-modal': true } : {})}
+        role="dialog"
+        aria-modal="true"
         aria-labelledby="terms-gate-title"
-        className={
-          blocking
-            ? 'bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-gray-100 p-6 sm:p-8 max-h-[95vh] overflow-y-auto'
-            : 'bg-white w-full rounded-3xl shadow-sm border border-amber-200 p-6'
-        }
+        tabIndex={-1}
+        className="relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-cc-card border border-cc-line bg-cc-surface p-5 shadow-cc-dialog"
       >
-        <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mb-5 border border-amber-200">
-          <AlertTriangle className="w-7 h-7 text-amber-600" />
-        </div>
-        <h2 id="terms-gate-title" className="text-2xl font-black text-gray-950 tracking-tight mb-2">
-          The Terms of Service have changed
-        </h2>
-        <p className="text-sm font-medium text-gray-600 leading-relaxed mb-5">
-          {mayDecline
-            ? 'You accepted an earlier version. Please read the current one and accept it. You do not have to: section 10.3 lets you carry on under the Terms you accepted, and nothing stops working if you decline.'
-            : 'The version your account accepted is no longer in force, so the platform is closed to it. Please read the current Terms and accept them to carry on.'}
-        </p>
-
-        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-5 space-y-3 text-xs font-medium text-gray-600 leading-relaxed">
-          <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider">What changed</p>
-          <p>
-            <strong className="text-gray-800">Do not upload personal data of third parties.</strong> ABAP carries it
-            more often than people expect: a developer&apos;s user id, a name in a comment, a real customer number, a
-            production record used as test data. Strip those before you upload. We do not offer a data processing
-            agreement, so there is no contract under which we could process such data for you.
-          </p>
-          <p>
-            <strong className="text-gray-800">You must be at least 18.</strong> Accepting these Terms is entering into
-            a contract, and this is a tool for professional software work.
-          </p>
-          <p>
-            The Privacy Policy was extended at the same time — server logs, concrete retention periods, and a German
-            version that prevails if the two ever differ.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-3 mb-6 text-sm font-bold">
-          <Link
-            href="/terms"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-terms-gate-link="terms"
-            className="inline-flex items-center gap-1.5 text-green-700 hover:text-green-800 underline underline-offset-2"
-          >
-            Read the Terms <ExternalLink size={13} />
-          </Link>
-          <Link
-            href="/datenschutz"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-terms-gate-link="privacy"
-            className="inline-flex items-center gap-1.5 text-green-700 hover:text-green-800 underline underline-offset-2"
-          >
-            Read the Privacy Policy <ExternalLink size={13} />
-          </Link>
-        </div>
-
-        {error && (
-          <p data-terms-gate-error className="text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-2xl p-3 mb-4">
-            {error}
-          </p>
-        )}
-
-        <button
-          ref={acceptRef}
-          data-terms-gate-accept
-          onClick={accept}
-          disabled={busy}
-          className="w-full bg-gray-950 hover:bg-gray-900 disabled:opacity-60 text-white py-3.5 rounded-2xl font-black text-sm transition-all inline-flex items-center justify-center gap-2"
-        >
-          {busy && <Loader2 size={15} className="animate-spin" />}
-          I have read and accept the Terms
-        </button>
-        {mayDecline && (
-          <button
-            data-terms-gate-decline
-            onClick={() => setDeclined(true)}
-            className="w-full mt-3 border border-gray-200 hover:border-gray-300 text-gray-700 hover:text-gray-950 py-3 rounded-2xl font-bold text-xs transition-colors"
-          >
-            Not now &mdash; carry on under the Terms I accepted
-          </button>
-        )}
-        <button
-          data-terms-gate-signout
-          onClick={() => signOut(getAuth())}
-          className="w-full mt-3 text-gray-500 hover:text-gray-900 py-2 rounded-2xl font-bold text-xs transition-colors"
-        >
-          Sign out instead
-        </button>
+        {body}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
