@@ -41,9 +41,9 @@
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
   },
   "pending": {
-    "sha256OfLfNormalisedText": "7a68d28a176711e533c0fc57966e38f168acf9de2680e5733fa6e2136e515bf8",
-    "recordedAt": "2026-09-28",
-    "recordedFor": "QA full review of fc787674705f, 36f3d696ddda: isAdmin() honours the withdrawal mirror users/{uid}.isAdmin == false, so a withdrawn administrator's still-valid ID token no longer passes the admin branches. Narrows only; no client field added or removed. Braucht Sonnys Rules-Deploy (npm run deploy:rules).",
+    "sha256OfLfNormalisedText": "235412c50ff78b9d1806bc166e95a864660ed85ed304c93536035e6971c6ef3a",
+    "recordedAt": "2026-09-30",
+    "recordedFor": "QA full review of fc787674705f, 36f3d696ddda: isAdmin() honours the withdrawal mirror users/{uid}.isAdmin == false. Security audit of v2.20.0, Sicherheitsschritt B: create and update validation for users, projects, files, abap_examples, support_tickets, registration_requests and tenant_access_requests; uploads and support tickets owner-read only. Narrows only; no client project field added or removed. Braucht Sonnys Rules-Deploy (npm run deploy:rules).",
     "addsToClient": [],
     "removesFromClient": [],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",

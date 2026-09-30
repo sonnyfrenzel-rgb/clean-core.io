@@ -146,18 +146,28 @@ service cloud.firestore {
       ];
     }
 
-    // NOTE: projectAllowedKeys() and isValidProject() were removed.
-    // Field validation is handled server-side in API routes.
+    // A creation time written by the browser. Every client create in the app
+    // sends serverTimestamp(), which arrives here as exactly request.time; the
+    // window only tolerates a client clock (a test, an old tab) that is close.
+    function isCreationTime(t) {
+      return t is timestamp &&
+             t > request.time - duration.value(10, 'm') &&
+             t < request.time + duration.value(10, 'm');
+    }
 
-    // Validate User entity
-    function isValidUser(data) {
-      return data.firstName is string && data.firstName.size() > 0 && data.firstName.size() < 100 &&
-             data.lastName is string && data.lastName.size() > 0 && data.lastName.size() < 100 &&
-             data.email is string && data.email.size() < 255 &&
-             data.tier in ['basic', 'starter', 'premium', 'unlimited', 'enterprise', 'pilot', 'pilot_byok'] &&
-             data.transformationsUsed is number &&
-             data.transformationsLimit is number &&
-             data.createdAt is timestamp;
+    function isBoundedString(value, minSize, maxSize) {
+      return value is string && value.size() >= minSize && value.size() <= maxSize;
+    }
+
+    // The values a browser may put on its own new profile, beyond the fields the
+    // create rule pins to fixed values. The two sign-in fields must name one of
+    // the two methods the app offers, and the same one.
+    function isValidUserCreate(data) {
+      return isBoundedString(data.firstName, 1, 100) &&
+             isBoundedString(data.lastName, 1, 100) &&
+             isCreationTime(data.createdAt) &&
+             data.get('authMethod', 'google') in ['google', 'password'] &&
+             data.get('identityProvider', 'google') == data.get('authMethod', 'google');
     }
 
     match /users/{userId} {
@@ -172,6 +182,7 @@ service cloud.firestore {
                       isAdmin() || 
                       (
                         request.resource.data.keys().hasOnly(userClientCreateKeys()) &&
+                        isValidUserCreate(request.resource.data) &&
                         request.resource.data.get('orgId', null) == null &&
                         request.resource.data.get('email', '') == request.auth.token.email &&
                         request.resource.data.get('tier', 'pilot') == 'pilot' &&
@@ -234,6 +245,24 @@ service cloud.firestore {
              (!('nonFunctionalRequirements' in data) || (data.nonFunctionalRequirements is map));
     }
 
+    // The client-writable project fields isValidProject() does not already type.
+    // Checked only when the write touches them, so a field an older server
+    // version stored in another shape does not block unrelated edits; a field
+    // that is touched must be present afterwards (the app deletes none of them).
+    function isValidProjectFieldChange(data, changed) {
+      return (!('status' in changed) ||
+                data.status in ['uploaded', 'created', 'analyzed', 'designed', 'transformed', 'testing', 'documented', 'completed']) &&
+             (!('s4Deployment' in changed) || data.s4Deployment in ['public', 'private']) &&
+             (!('s4Environment' in changed) || data.s4Environment in ['mock', 'live']) &&
+             (!('extensibilityRoute' in changed) || isBoundedString(data.extensibilityRoute, 0, 200)) &&
+             (!('businessDocumentation' in changed) || isBoundedString(data.businessDocumentation, 0, 999999)) &&
+             (!('coverageEstimate' in changed) || data.coverageEstimate is map) &&
+             (!('manualTestingRequirements' in changed) ||
+                (data.manualTestingRequirements is list && data.manualTestingRequirements.size() <= 500)) &&
+             (!('worklist' in changed) || (data.worklist is list && data.worklist.size() <= 2000)) &&
+             (!('updatedAt' in changed) || data.updatedAt is timestamp);
+    }
+
     match /projects/{projectId} {
       // Nobody but the owner reads a project. The administrator used to be able
       // to, and Sonny took that away on 16.09.2026: a customer's ABAP is the
@@ -260,9 +289,14 @@ service cloud.firestore {
                     request.resource.data.userId == request.auth.uid &&
                     accountActive() &&
                     request.resource.data.status in ['uploaded', 'created'] &&
-                    request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 255;
-      // F-01: Owner may update their project, but userId and createdAt are immutable.
-      // Field-level size validation is enforced by isValidProject().
+                    request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 255 &&
+                    isCreationTime(request.resource.data.createdAt) &&
+                    (!('legacyCode' in request.resource.data) || isBoundedString(request.resource.data.legacyCode, 0, 999999)) &&
+                    (!('fromExample' in request.resource.data) || request.resource.data.fromExample is bool);
+      // F-01: Owner may update their project, but userId and createdAt are immutable
+      // (neither is on the allowlist below). Type and size of the fields on it are
+      // checked by isValidProject() on the whole document and by
+      // isValidProjectFieldChange() on the fields the write touches.
       // The administrator cannot write a project either: reading was the
       // permission in question, and an operator editing someone's evidence is
       // the worse half of the same thing.
@@ -311,7 +345,8 @@ service cloud.firestore {
                         'worklist', 'exports', 'updatedAt', 's4Environment',
                         'nonFunctionalRequirements'
                       ])
-                    )) && isValidProject(request.resource.data, true);
+                    )) && isValidProject(request.resource.data, true) &&
+                    isValidProjectFieldChange(request.resource.data, request.resource.data.diff(resource.data).affectedKeys());
       // F-03: project deletion is server-only via the Admin SDK (recursiveDelete
       // through DELETE /api/projects/{projectId}). A client deleteDoc() would orphan
       // the immutable runs/{runId} subcollection, so client delete is disabled here.
@@ -352,93 +387,113 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Validate SupportTicket
+    // A ticket is created open; its later states are the operator's. The field
+    // list is closed and the text bounded, the same shape the settings page sends.
     function isValidSupportTicket(data) {
-      return data.userId == request.auth.uid &&
-             data.subject is string && data.subject.size() > 0 &&
-             data.message is string && data.message.size() > 0 &&
-             data.status in ['open', 'in_progress', 'closed'] &&
-             data.createdAt is timestamp;
+      return data.keys().hasOnly(['userId', 'subject', 'message', 'status', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             isBoundedString(data.subject, 1, 500) &&
+             isBoundedString(data.message, 1, 20000) &&
+             data.status == 'open' &&
+             isCreationTime(data.createdAt);
     }
 
+    // Uploads (files, abap_examples) and support tickets hold a customer's own
+    // ABAP, the same material /projects/{projectId} closed to the operator on
+    // 16.09.2026. So they follow that line: read by their owner only, and
+    // uploads edited by their owner only. The admin keeps delete on all three and
+    // the ticket's state (update) — acting on a record, not reading it — and
+    // anything beyond that is a server-side act through the Admin SDK.
     match /support_tickets/{ticketId} {
-      allow read: if isAuthenticated() && (
-        isAdmin() ||
-        (resource != null && resource.data.userId == request.auth.uid && accountActive())
-      );
+      allow read: if isAuthenticated() &&
+                  resource != null && resource.data.userId == request.auth.uid && accountActive();
       allow create: if isAuthenticated() && accountActive() &&
                     isValidSupportTicket(request.resource.data);
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
-    // Validate FileEntry entity
-    function isValidFileEntry(data, isUpdate) {
-      return (isUpdate || (data.name is string && data.name.size() > 0 && data.name.size() < 255)) &&
-             (isUpdate || (data.content is string && data.content.size() < 1000000)) &&
-             (isUpdate || (data.userId is string && data.userId == request.auth.uid)) &&
-             (isUpdate || (data.createdAt is timestamp));
+    // One upload document, as a whole — create and update alike. The update
+    // rule validates the document the write would leave behind, so a changed
+    // field is held to the same size as a new one.
+    function isValidFileEntry(data) {
+      return data.keys().hasOnly(['name', 'content', 'userId', 'createdAt']) &&
+             isBoundedString(data.name, 1, 254) &&
+             isBoundedString(data.content, 0, 999999) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.createdAt is timestamp;
+    }
+
+    function isOwnUpload() {
+      return 'userId' in resource.data && resource.data.userId == request.auth.uid && accountActive();
     }
 
     match /files/{fileId} {
-      allow read: if isAuthenticated() && (
-        isAdmin() ||
-        (resource != null && resource.data.userId == request.auth.uid && accountActive())
-      );
-      allow create: if isAuthenticated() && 
+      allow read: if isAuthenticated() &&
+                  resource != null && resource.data.userId == request.auth.uid && accountActive();
+      allow create: if isAuthenticated() &&
                     accountActive() &&
                     request.resource.data.keys().hasAll(['name', 'content', 'userId', 'createdAt']) &&
-                    isValidFileEntry(request.resource.data, false);
-      allow update: if isAuthenticated() &&
-                    (('userId' in resource.data && resource.data.userId == request.auth.uid && accountActive()) || isAdmin()) &&
-                    isValidFileEntry(request.resource.data, true) &&
-                    (!('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId) &&
-                    (!('createdAt' in request.resource.data) || request.resource.data.createdAt == resource.data.createdAt);
-      allow delete: if isAuthenticated() && (('userId' in resource.data && resource.data.userId == request.auth.uid && accountActive()) || isAdmin());
+                    isValidFileEntry(request.resource.data);
+      allow update: if isAuthenticated() && isOwnUpload() &&
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'content']) &&
+                    isValidFileEntry(request.resource.data);
+      allow delete: if isAuthenticated() && (isOwnUpload() || isAdmin());
     }
 
-    // Validate ABAPExample entity
-    function isValidABAPExample(data, isUpdate) {
-      return (isUpdate || (data.name is string && data.name.size() > 0 && data.name.size() < 255)) &&
-             (isUpdate || (data.code is string && data.code.size() < 1000000)) &&
-             (isUpdate || (data.userId is string && data.userId == request.auth.uid)) &&
-             (isUpdate || (data.createdAt is timestamp));
+    function isValidABAPExample(data) {
+      return data.keys().hasOnly(['name', 'code', 'userId', 'createdAt']) &&
+             isBoundedString(data.name, 1, 254) &&
+             isBoundedString(data.code, 0, 999999) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.createdAt is timestamp;
     }
 
     match /abap_examples/{exampleId} {
-      allow read: if isAuthenticated() && (
-        isAdmin() ||
-        (resource != null && resource.data.userId == request.auth.uid && accountActive())
-      );
-      allow create: if isAuthenticated() && 
+      allow read: if isAuthenticated() &&
+                  resource != null && resource.data.userId == request.auth.uid && accountActive();
+      allow create: if isAuthenticated() &&
                     accountActive() &&
                     request.resource.data.keys().hasAll(['name', 'code', 'userId', 'createdAt']) &&
-                    isValidABAPExample(request.resource.data, false);
-      allow update: if isAuthenticated() &&
-                    (('userId' in resource.data && resource.data.userId == request.auth.uid && accountActive()) || isAdmin()) &&
-                    isValidABAPExample(request.resource.data, true) &&
-                    (!('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId) &&
-                    (!('createdAt' in request.resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+                    isValidABAPExample(request.resource.data);
+      allow update: if isAuthenticated() && isOwnUpload() &&
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'code']) &&
+                    isValidABAPExample(request.resource.data);
       // The dashboard offers the owner a delete of their own example and calls
       // deleteDoc for it, and there was no delete rule — so the call hit
       // default-deny and the row stayed, with the owner unable to remove what
       // they uploaded (security audit of b88c77b, SEC-b88c77b-61, verified at
-      // the line on 21.09.2026). Owner or admin, the same condition the update
-      // rule uses and the same one /files carries.
-      allow delete: if isAuthenticated() &&
-                    (('userId' in resource.data && resource.data.userId == request.auth.uid && accountActive()) || isAdmin());
+      // the line on 21.09.2026). Owner or admin, the same condition /files carries.
+      allow delete: if isAuthenticated() && (isOwnUpload() || isAdmin());
+    }
+
+    // The two request documents a browser writes about itself: created once,
+    // in the state an administrator then moves on (Admin SDK), with a closed
+    // field list — the shape hooks/useUserProfile.ts, components/LandingModals.tsx,
+    // the settings page and the testing stage send.
+    function isValidAccessRequest(data, maxMotivation) {
+      return data.keys().hasAll(['email', 'name', 'status', 'createdAt']) &&
+             data.keys().hasOnly(['email', 'name', 'motivation', 'status', 'createdAt']) &&
+             data.email == request.auth.token.email &&
+             isBoundedString(data.name, 0, 250) &&
+             (!('motivation' in data) || isBoundedString(data.motivation, 0, maxMotivation)) &&
+             data.status == 'pending' &&
+             isCreationTime(data.createdAt);
     }
 
     match /registration_requests/{requestId} {
       allow read: if isAuthenticated() && ((requestId == request.auth.uid && accountActive()) || isAdmin());
-      allow create: if isAuthenticated() && requestId == request.auth.uid && accountActive();
+      allow create: if isAuthenticated() && requestId == request.auth.uid && accountActive() &&
+                    isValidAccessRequest(request.resource.data, 2000);
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
     match /tenant_access_requests/{requestId} {
       allow read: if isAuthenticated() && ((requestId == request.auth.uid && accountActive()) || isAdmin());
-      allow create: if (isAuthenticated() && requestId == request.auth.uid && accountActive()) || isAdmin();
+      allow create: if (isAuthenticated() && requestId == request.auth.uid && accountActive() &&
+                        isValidAccessRequest(request.resource.data, 5000)) ||
+                       isAdmin();
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }

@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getDb, getAuth } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -561,9 +561,9 @@ export default function TestingSandboxPage() {
       await setDoc(doc(db, 'tenant_access_requests', uid), {
         name: `${profile.firstName} ${profile.lastName}`,
         email: profile.email,
-        motivation: accessRequestedMotivation || 'Live S/4HANA Public Cloud Sandbox Connection',
+        motivation: (accessRequestedMotivation || 'Live S/4HANA Public Cloud Sandbox Connection').slice(0, 2000),
         status: 'pending',
-        createdAt: new Date()
+        createdAt: serverTimestamp()
       });
 
       // 3. Trigger email notification
@@ -1600,6 +1600,7 @@ export default function TestingSandboxPage() {
                         <textarea 
                           placeholder="E.g., connecting our non-productive S/4HANA Public Cloud Sandbox to validate OData interfaces..."
                           value={accessRequestedMotivation}
+                          maxLength={2000}
                           onChange={e => setAccessRequestedMotivation(e.target.value)}
                           className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-medium text-[#0b1c30] focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all h-20 resize-none outline-none font-medium"
                         />
