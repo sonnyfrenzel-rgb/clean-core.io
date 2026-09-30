@@ -9,6 +9,7 @@ import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcObjectStatus from '@/components/cc/ObjectStatus';
+import { wt, shellSwitchHttpError } from '@/lib/workspace-messages';
 
 /**
  * The switch the 3.0 interface grows behind — roadmap 1.4.
@@ -40,7 +41,7 @@ export default function WorkspaceShellSwitch() {
     setError('');
     try {
       const user = getAuth()?.currentUser;
-      if (!user) throw new Error('Sign in again to change this setting.');
+      if (!user) throw new Error(wt('shellSwitch.signInAgain'));
       const token = await user.getIdToken();
       const res = await fetch('/api/workspace-shell', {
         method: 'POST',
@@ -49,10 +50,10 @@ export default function WorkspaceShellSwitch() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `Could not save the setting (HTTP ${res.status}).`);
+        throw new Error(data.error || shellSwitchHttpError(res.status));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save the setting.');
+      setError(err instanceof Error ? err.message : wt('shellSwitch.saveFailed'));
     } finally {
       setBusy(false);
     }
@@ -61,8 +62,8 @@ export default function WorkspaceShellSwitch() {
   return (
     <div className="cc" data-workspace-shell-switch={enabled ? 'on' : 'off'}>
       <CcCard
-        title="Workspace preview"
-        meta={<CcObjectStatus value={enabled ? 'confirmed' : 'not-started'} facet="Preview" />}
+        title={wt('shellSwitch.title')}
+        meta={<CcObjectStatus value={enabled ? 'confirmed' : 'not-started'} facet={wt('shellSwitch.facet')} />}
         actions={
           <CcButton
             variant={enabled ? 'ghost' : 'primary'}
@@ -70,28 +71,26 @@ export default function WorkspaceShellSwitch() {
             disabled={busy}
             data-workspace-shell-toggle=""
           >
-            {enabled ? 'Turn off' : 'Turn on'}
+            {enabled ? wt('shellSwitch.turnOff') : wt('shellSwitch.turnOn')}
           </CcButton>
         }
       >
         <p className="m-0 text-[13px] leading-relaxed font-medium text-cc-ink-muted">
-          The 3.0 workspace, on your own account only. It adds one address —
-          <code className="mx-1 font-cc-mono text-[12px] text-cc-ink">/project/&lt;id&gt;</code>— which
-          stays a 404 for every other account, signed in or not. Nothing else changes anywhere, and
-          nothing behind it is privileged: it is the same project, read the same way, drawn
-          differently.
+          {wt('shellSwitch.leadBefore')}
+          <code className="mx-1 font-cc-mono text-[12px] text-cc-ink">{wt('shellSwitch.address')}</code>
+          {wt('shellSwitch.leadAfter')}
         </p>
         {enabled && (
           <p className="m-0 mt-2 text-[13px] font-medium text-cc-ink-muted">
             <Link href="/admin/design-system" className="font-semibold text-cc-ink underline">
-              The design system
+              {wt('shellSwitch.designSystem')}
             </Link>{' '}
-            is the language it is built from.
+            {wt('shellSwitch.designSystemAfter')}
           </p>
         )}
         {error && (
           <div className="mt-2.5">
-            <CcMessageStrip state="error" headline="Not saved." announce>
+            <CcMessageStrip state="error" headline={wt('shellSwitch.notSaved')} announce>
               {error}
             </CcMessageStrip>
           </div>

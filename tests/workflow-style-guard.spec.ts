@@ -5,7 +5,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
-import { stageBackLink, workspaceBackHref } from '../lib/workspace-back-href';
+import { stageBackLink, stageHref, workspaceBackHref, WORKSPACE_RETURN } from '../lib/workspace-back-href';
 
 /**
  * The seven stages look like one product, and this is what keeps them that way.
@@ -256,5 +256,27 @@ test.describe('"Back to workspace" leads to the view and layer the stage was ope
     const src = fs.readFileSync(path.join(process.cwd(), 'components/StageHeader.tsx'), 'utf8');
     expect(src).toContain('const back = stageBackLink({ projectId, profileLoading, shell, search });');
     expect(src).not.toContain('workspaceBackHref(');
+  });
+
+  test('the way in carries what the way back reads — the three workspace links, round trip (D.29)', () => {
+    // Toolbar, status line and "Next step" link into a stage with the view and
+    // their own place on the page; "Back to workspace" on that stage then
+    // returns to exactly that view and place.
+    for (const from of Object.values(WORKSPACE_RETURN)) {
+      for (const view of ['business', 'it', 'management'] as const) {
+        const href = stageHref({ base: '/project/p-1', path: 'design', view, from });
+        expect(href).toBe(`/project/p-1/design?view=${view}&from=${from}`);
+        const search = href.slice(href.indexOf('?'));
+        expect(workspaceBackHref({ projectId: 'p-1', shell: true, search })).toBe(`/project/p-1?view=${view}#${from}`);
+      }
+    }
+    // The demo has no workspace to return to, and an unknown view is dropped.
+    expect(stageHref({ base: '/demo', path: 'tco' })).toBe('/demo/tco');
+    expect(stageHref({ base: '/project/p-1', path: 'tco', view: 'admin', from: WORKSPACE_RETURN.tools })).toBe('/project/p-1/tco');
+    // And the three components build their links through it, not by hand.
+    for (const rel of ['ToolBar', 'StatusLine', 'NextStepCard']) {
+      const src = fs.readFileSync(path.join(process.cwd(), `components/workspace/${rel}.tsx`), 'utf8');
+      expect(src, `${rel} builds its stage link by hand`).toMatch(/href=\{stageHref\(\{/);
+    }
   });
 });

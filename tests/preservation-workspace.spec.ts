@@ -531,7 +531,9 @@ test.describe('the reference cases, opened in the workspace', () => {
       // Every tool, at its route.
       for (const stage of register.stages) {
         await expect(
-          page.locator(`[data-workspace-tools] a[href="/project/${projectId}/${stage.route.split('/').pop()}"]`),
+          page.locator(
+            `[data-workspace-tools] a[href="/project/${projectId}/${stage.route.split('/').pop()}?view=it&from=workspace-tools"]`,
+          ),
           `${rc.id}: the ${stage.key} tool`,
         ).toHaveCount(1);
       }
@@ -543,7 +545,7 @@ test.describe('the reference cases, opened in the workspace', () => {
         await expect(handover.locator(`[data-workspace-status-phase="${key}"]`)).toBeVisible();
         await expect(handover.locator(`[data-workspace-status-tool="${key}"]`)).toHaveAttribute(
           'href',
-          `/project/${projectId}/${key}`,
+          `/project/${projectId}/${key}?view=it&from=workspace-status`,
         );
       }
       for (const [key, badge] of Object.entries(rc.expect.badges)) {
@@ -571,7 +573,7 @@ test.describe('the reference cases, opened in the workspace', () => {
           await expect(status.locator(`[data-workspace-status-phase="${key}"]`), `${rc.id}: ${facet} names ${key}`).toBeVisible();
           await expect(status.locator(`[data-workspace-status-tool="${key}"]`)).toHaveAttribute(
             'href',
-            `/project/${projectId}/${stageRoute(key)}`,
+            `/project/${projectId}/${stageRoute(key)}?view=it&from=workspace-status`,
           );
           const badge = (rc.expect.badges as Record<string, string>)[key];
           if (badge) await expect(status.locator(`[data-workspace-status-phase="${key}"]`)).toContainText(badge);

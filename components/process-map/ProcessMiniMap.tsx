@@ -3,6 +3,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import type { MiniMapRow } from '@/lib/process-navigation';
+import { mapMiniCellLabel, wt } from '@/lib/workspace-messages';
 
 /**
  * The mini map — roadmap 2.9, `DESIGN.md` §5.9 item 5.
@@ -42,7 +43,7 @@ export default function ProcessMiniMap({
   return (
     <div
       data-process-minimap=""
-      aria-label="Mini map — every level, every step"
+      aria-label={wt('mapMini.label')}
       role="group"
       className="flex flex-col gap-1 rounded-cc-card border border-cc-line bg-cc-surface p-2"
     >
@@ -56,7 +57,7 @@ export default function ProcessMiniMap({
             row.plane === plane && 'bg-cc-surface-muted',
           )}
         >
-          <span className="w-8 shrink-0 truncate font-cc-mono text-[10px] font-semibold text-cc-ink-muted">
+          <span className="w-8 shrink-0 truncate font-cc-mono text-[11px] font-semibold text-cc-ink-muted">
             {row.outline || '—'}
           </span>
           <span className="flex min-w-0 flex-wrap gap-0.5">
@@ -73,7 +74,7 @@ export default function ProcessMiniMap({
                           : cell.event ? 'event'
                             : cell.decision ? 'decision' : 'step'
                 }
-                aria-label={`${cell.outline} in ${row.label}`}
+                aria-label={mapMiniCellLabel(cell.outline, row.label)}
                 tabIndex={-1}
                 onClick={() => onSelect(cell.id)}
                 className="cc-minimap-cell"

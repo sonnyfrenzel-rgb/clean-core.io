@@ -3,6 +3,7 @@
 import React from 'react';
 import { ChevronRight, CornerLeftUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { wt } from '@/lib/workspace-messages';
 
 /**
  * The path line above the map — roadmap 2.9, `DESIGN.md` §5.9 item 2.
@@ -34,7 +35,7 @@ export default function ProcessBreadcrumb({ crumbs, onOpen }: ProcessBreadcrumbP
   const parent = crumbs.length > 1 ? crumbs[last - 1] : null;
 
   return (
-    <nav data-process-path="" aria-label="Level" className="flex flex-wrap items-center gap-1.5">
+    <nav data-process-path="" aria-label={wt('map.levelNav')} className="flex flex-wrap items-center gap-1.5">
       <ol className="flex min-w-0 flex-wrap items-center gap-1">
         {crumbs.map((crumb, index) => (
           <li key={crumb.plane ?? 'top'} className="flex min-w-0 items-center gap-1">
@@ -77,7 +78,7 @@ export default function ProcessBreadcrumb({ crumbs, onOpen }: ProcessBreadcrumbP
           )}
         >
           <CornerLeftUp size={11} aria-hidden={true} />
-          One level up (Alt+Up)
+          {wt('map.levelUp')}
         </button>
       ) : null}
     </nav>

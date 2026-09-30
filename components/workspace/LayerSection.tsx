@@ -5,6 +5,7 @@ import CcAnchor from '@/components/cc/Anchor';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcEmptyState } from '@/components/cc/EmptyState';
 import type { WorkspaceLayer } from '@/lib/workspace-model';
+import { wt, layerSectionShowing } from '@/lib/workspace-messages';
 
 /**
  * The content of the chosen layer — `DESIGN.md` §2.3 item 5, roadmap 6.2.
@@ -56,7 +57,7 @@ export default function WorkspaceLayerSection({ layer }: { layer: WorkspaceLayer
         // bar uses under "More", so a reader who arrives here from either
         // direction reads one sentence rather than two versions of it.
         <div className="mt-2" data-workspace-layer-absent={layer.key}>
-          <CcEmptyState title="Nothing on record for this layer">
+          <CcEmptyState title={wt('layerSection.nothingOnRecord')}>
             <span data-workspace-layer-absent-reason="">{layer.missing}</span>
           </CcEmptyState>
         </div>
@@ -92,7 +93,7 @@ export default function WorkspaceLayerSection({ layer }: { layer: WorkspaceLayer
               data-workspace-layer-more-count=""
               className="m-0 mt-1.5 text-[12px] font-medium text-cc-ink-muted"
             >
-              Showing {layer.rows.length} of {layer.total}.
+              {layerSectionShowing(layer.rows.length, layer.total)}
             </p>
           )}
         </>

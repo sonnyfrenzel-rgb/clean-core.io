@@ -5,6 +5,8 @@ import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CcButton from '@/components/cc/Button';
 import type { LayerKey, WorkspaceLayer } from '@/lib/workspace-model';
+import { t } from '@/lib/cc-messages';
+import { wt, layerBarEmptyCount } from '@/lib/workspace-messages';
 
 /**
  * The Anchor Bar — `DESIGN.md` §2.3 item 4, roadmap 1.4.
@@ -58,7 +60,7 @@ export default function WorkspaceLayerBar({
   return (
     <nav
       data-workspace-layers=""
-      aria-label="Layers"
+      aria-label={wt('layerBar.label')}
       className="cc-no-print relative flex flex-wrap items-center gap-x-1 gap-y-1 border-b border-cc-line"
     >
       {filled.map((layer) => {
@@ -80,7 +82,7 @@ export default function WorkspaceLayerBar({
           >
             {layer.label}
             <span className="font-cc-mono text-[11px] font-semibold text-cc-ink-muted">
-              {layer.count ?? 'empty'}
+              {layer.count ?? wt('layerBar.empty')}
             </span>
           </button>
         );
@@ -97,8 +99,8 @@ export default function WorkspaceLayerBar({
             onClick={() => setMoreOpen((v) => !v)}
             className="inline-flex items-center gap-1.5 border-b-2 border-transparent px-2.5 py-2 text-[13px] font-medium text-cc-ink-muted whitespace-nowrap pointer-coarse:min-h-11"
           >
-            More
-            <span className="font-cc-mono text-[11px] font-semibold">{empty.length} empty</span>
+            {wt('layerBar.more')}
+            <span className="font-cc-mono text-[11px] font-semibold">{layerBarEmptyCount(empty.length)}</span>
             <ChevronDown size={14} aria-hidden={true} />
           </button>
           {moreOpen && (
@@ -138,7 +140,7 @@ export default function WorkspaceLayerBar({
               </ul>
               <div className="mt-3 flex justify-end">
                 <CcButton variant="ghost" onClick={() => setMoreOpen(false)}>
-                  Close
+                  {t('action.close')}
                 </CcButton>
               </div>
             </div>

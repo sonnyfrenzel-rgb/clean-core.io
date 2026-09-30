@@ -7,6 +7,7 @@ import CcAnchor from '@/components/cc/Anchor';
 import { CcTag } from '@/components/cc/Tag';
 import type { ProcessMapElement, ProcessMapModel } from '@/lib/process-map';
 import type { PlaneProblems, ProcessNavigation } from '@/lib/process-navigation';
+import { mapOutlineCount, mapOutlineLabel, mapOutlineRowLabel, wt } from '@/lib/workspace-messages';
 
 /**
  * The outline tree — roadmap 2.9, `DESIGN.md` §5.9 items 1, 3 and 4.
@@ -261,13 +262,11 @@ export default function ProcessOutline({
         data-process-outline-count
         className="border-b border-cc-line px-2 py-1 text-[11px] font-semibold text-cc-ink-muted"
       >
-        {visible
-          ? `Showing ${visible.size} of ${nav.order.length} elements`
-          : `${nav.order.length} elements on ${nav.planes.size} levels`}
+        {mapOutlineCount(visible ? visible.size : null, nav.order.length, nav.planes.size)}
       </p>
       <ul
         role="tree"
-        aria-label={`Outline of ${model.processName}`}
+        aria-label={mapOutlineLabel(model.processName)}
         data-process-outline-tree=""
         onKeyDown={handleKeyDown}
         className="max-h-[420px] overflow-y-auto md:max-h-[520px]"
@@ -292,9 +291,7 @@ export default function ProcessOutline({
               aria-setsize={row.size}
               aria-selected={isSelected}
               aria-expanded={row.hasChildren ? row.expanded : undefined}
-              aria-label={`${row.outline}. ${element.accessibleName}${problem ? ` ${problem.text}` : ''}${
-                out ? ' Does not run in this variant.' : ''
-              }`}
+              aria-label={mapOutlineRowLabel(row.outline, element.accessibleName, problem ? problem.text : null, out)}
               data-tree-node={element.id}
               data-outline={row.outline}
               data-variant={out ? 'out' : 'in'}
@@ -351,7 +348,7 @@ export default function ProcessOutline({
                     </span>
                     {out ? (
                       <span data-variant-mark={element.id} className="text-[11px] font-semibold text-cc-ink-muted">
-                        does not run
+                        {wt('mapOutline.doesNotRun')}
                       </span>
                     ) : null}
                   </span>

@@ -18,6 +18,8 @@ import {
   type SteeringLink,
 } from '@/lib/steering-one-pager';
 import type { Project } from '@/lib/types';
+import { t } from '@/lib/cc-messages';
+import { wt } from '@/lib/workspace-messages';
 
 /**
  * The steering one-pager — roadmap step 8.6, mockup screen 5.
@@ -109,7 +111,7 @@ export default function SteeringOnePager({
       } else {
         setDecision({
           record: null,
-          unreadable: d.json?.error?.trim() || 'the decision of this project could not be read',
+          unreadable: d.json?.error?.trim() || wt('steering.decisionUnreadable'),
         });
       }
     })();
@@ -188,23 +190,23 @@ export default function SteeringOnePager({
             disabled={!pager}
             onClick={() => window.print()}
           >
-            Print / Save as PDF
+            {wt('steering.print')}
           </CcButton>
           <CcButton variant="ghost" density="compact" onClick={() => setOpen(false)}>
-            Close
+            {t('action.close')}
           </CcButton>
         </div>
       </div>
 
       {!pager ? (
         <div data-steering-one-pager-state="loading" role="status" className="py-6">
-          <span className="sr-only">Reading the figures of this project…</span>
+          <span className="sr-only">{wt('steering.reading')}</span>
         </div>
       ) : (
         <div className="mt-4 grid gap-4 md:grid-cols-[3fr_2fr]">
           <div>
             <h3 className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-              Figures
+              {wt('steering.figures')}
             </h3>
             <ul className="m-0 mt-2 list-none space-y-2 p-0">
               {pager.figures.map((f) => (
@@ -233,11 +235,11 @@ export default function SteeringOnePager({
 
           <div>
             <h3 className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-              Not determined
+              {wt('steering.notDetermined')}
             </h3>
             {pager.notDetermined.length === 0 ? (
               <p className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                Every figure on this page could be read.
+                {wt('steering.allRead')}
               </p>
             ) : (
               <ul className="m-0 mt-2 list-none space-y-2 p-0">

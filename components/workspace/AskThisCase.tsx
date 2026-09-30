@@ -5,6 +5,7 @@ import CcCard from '@/components/cc/Card';
 import CcAnchor from '@/components/cc/Anchor';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { t } from '@/lib/cc-messages';
+import { wt, askRulesLabel } from '@/lib/workspace-messages';
 import GlossaryText from './GlossaryText';
 import type { PreAnswered } from '@/lib/ask-this-case';
 
@@ -45,7 +46,7 @@ import type { PreAnswered } from '@/lib/ask-this-case';
 export default function AskThisCase({ answer }: { answer: PreAnswered }) {
   return (
     <CcCard
-      title="Ask this case"
+      title={wt('ask.title')}
       meta={
         <>
           <CcProvenanceChip value="reconstructed" />
@@ -69,9 +70,9 @@ export default function AskThisCase({ answer }: { answer: PreAnswered }) {
               <GlossaryText>{answer.question}</GlossaryText>
             </span>
             {answer.anchor ? (
-              <CcAnchor label={`Source line ${answer.anchor}`}>{answer.anchor}</CcAnchor>
+              <CcAnchor label={`${wt('ask.sourceLine')} ${answer.anchor}`}>{answer.anchor}</CcAnchor>
             ) : (
-              <CcAnchor tone="unlinked">no line</CcAnchor>
+              <CcAnchor tone="unlinked">{wt('ask.noLine')}</CcAnchor>
             )}
           </p>
 
@@ -83,20 +84,20 @@ export default function AskThisCase({ answer }: { answer: PreAnswered }) {
                 className="flex flex-wrap items-center gap-2 text-[13px] text-cc-ink"
               >
                 <span className="font-cc-mono text-[12px]">
-                  {branch.condition ?? 'otherwise'}
+                  {branch.condition ?? wt('ask.otherwise')}
                 </span>
                 <span aria-hidden={true} className="text-cc-ink-muted">
-                  &rarr;
+                  {'→'}
                 </span>
                 <span className="font-cc-mono text-[12px]">
                   <GlossaryText>{branch.target}</GlossaryText>
                 </span>
                 {branch.anchor ? (
-                  <CcAnchor label={`Source line ${branch.anchor}`}>{branch.anchor}</CcAnchor>
+                  <CcAnchor label={`${wt('ask.sourceLine')} ${branch.anchor}`}>{branch.anchor}</CcAnchor>
                 ) : null}
                 {branch.endsFlow ? (
                   <span className="text-[12px] font-medium text-cc-ink-muted">
-                    ends the flow here
+                    {wt('ask.endsFlow')}
                   </span>
                 ) : null}
               </li>
@@ -106,9 +107,7 @@ export default function AskThisCase({ answer }: { answer: PreAnswered }) {
           {answer.rules.length > 0 ? (
             <p className="m-0 flex flex-wrap items-center gap-2 text-[12px] font-medium text-cc-ink-muted">
               <span>
-                {answer.rules.length === 1
-                  ? 'One rule stands on this decision:'
-                  : `${answer.rules.length} rules stand on this decision:`}
+                {askRulesLabel(answer.rules.length)}
               </span>
               {answer.rules.map((rule) => (
                 <span key={rule.id} data-ask-rule={rule.id} className="flex items-center gap-1.5">
@@ -116,7 +115,7 @@ export default function AskThisCase({ answer }: { answer: PreAnswered }) {
                     <GlossaryText>{rule.label}</GlossaryText>
                   </span>
                   {rule.anchors.slice(0, 2).map((anchor) => (
-                    <CcAnchor key={anchor} label={`Source line ${anchor}`}>
+                    <CcAnchor key={anchor} label={`${wt('ask.sourceLine')} ${anchor}`}>
                       {anchor}
                     </CcAnchor>
                   ))}

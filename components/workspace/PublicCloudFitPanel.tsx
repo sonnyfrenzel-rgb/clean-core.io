@@ -19,6 +19,7 @@ import {
 } from '@/lib/abap/public-cloud-fit';
 import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
 import type { Project } from '@/lib/types';
+import { wt, cloudFitNotAssigned, cloudFitTargetPlatform } from '@/lib/workspace-messages';
 
 /**
  * Public-Cloud-Fit and the four buckets — `DESIGN.md` §5.6 (ADR-033), roadmap
@@ -139,9 +140,9 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
   if (!project?.legacyCode?.trim() || !findings) {
     return (
       <div className="cc" data-public-cloud-fit-panel="empty">
-        <CcCard title="Public-Cloud-Fit and the four buckets" meta={<CcProvenanceChip value="not-determined" />}>
+        <CcCard title={wt('cloudFit.title')} meta={<CcProvenanceChip value="not-determined" />}>
           <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
-            No source has been staged, so no object can be sorted into a bucket yet.
+            {wt('cloudFit.noSource')}
           </p>
         </CcCard>
       </div>
@@ -153,9 +154,9 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
   if (lookup.status === 'loading') {
     return (
       <div className="cc" data-public-cloud-fit-panel="loading">
-        <CcCard title="Public-Cloud-Fit and the four buckets" meta={<CcProvenanceChip value="not-determined" />}>
+        <CcCard title={wt('cloudFit.title')} meta={<CcProvenanceChip value="not-determined" />}>
           <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
-            Looking up each object&apos;s clean-core level and released path in the Cloudification Repository…
+            {wt('cloudFit.loading')}
           </p>
         </CcCard>
       </div>
@@ -166,10 +167,9 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
   if (lookup.status === 'error' || !result) {
     return (
       <div className="cc" data-public-cloud-fit-panel="error">
-        <CcCard title="Public-Cloud-Fit and the four buckets" meta={<CcProvenanceChip value="not-determined" />}>
+        <CcCard title={wt('cloudFit.title')} meta={<CcProvenanceChip value="not-determined" />}>
           <CcMessageStrip state="error">
-            The catalog lookup failed, so no object can be sorted into Retire, No catalogued path, Rebuild or Keep
-            right now. Reload the page to try again.
+            {wt('cloudFit.lookupFailed')}
           </CcMessageStrip>
         </CcCard>
       </div>
@@ -181,13 +181,13 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
 
   return (
     <div className="cc" data-public-cloud-fit-panel="ready">
-      <CcCard title="Public-Cloud-Fit and the four buckets" count={assignments.length}>
+      <CcCard title={wt('cloudFit.title')} count={assignments.length}>
         <p data-public-cloud-fit-headline className="m-0 text-[14px] leading-snug font-semibold text-cc-ink">
           {publicCloudFitHeadline(summary)}
         </p>
         {summary.targetPlatform && (
           <p className="m-0 mt-0.5 text-[12px] font-medium text-cc-ink-muted">
-            Target platform: {TARGET_PLATFORM_LABELS[summary.targetPlatform]}.
+            {cloudFitTargetPlatform(TARGET_PLATFORM_LABELS[summary.targetPlatform])}
           </p>
         )}
         {summary.noCatalogMatchNote && (
@@ -215,11 +215,11 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
 
           <section data-public-cloud-fit-bucket="not-assigned">
             <h4 className="m-0 flex flex-wrap items-center gap-1.5 text-[12px] font-bold tracking-[0.04em] text-cc-ink uppercase">
-              Not assigned ({notAssigned.length})
+              {cloudFitNotAssigned(notAssigned.length)}
               <CcProvenanceChip value="not-determined" />
             </h4>
             {notAssigned.length === 0 ? (
-              <p className="m-0 mt-1 text-[12px] font-medium text-cc-ink-muted">Every object could be assigned.</p>
+              <p className="m-0 mt-1 text-[12px] font-medium text-cc-ink-muted">{wt('cloudFit.allAssigned')}</p>
             ) : (
               <ul className="m-0 mt-1.5 list-none space-y-1.5 p-0">
                 {notAssigned.map((a) => (
@@ -275,7 +275,7 @@ function BucketSection({
         {meaning}
       </p>
       {rows.length === 0 ? (
-        <p className="m-0 mt-1 text-[12px] font-medium text-cc-ink-muted">No object in this bucket.</p>
+        <p className="m-0 mt-1 text-[12px] font-medium text-cc-ink-muted">{wt('cloudFit.emptyBucket')}</p>
       ) : (
         <ul className="m-0 mt-1.5 list-none space-y-1.5 p-0">
           {rows.map((a) => (
@@ -291,7 +291,7 @@ function BucketSection({
                   data-public-cloud-fit-review-task
                   className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink"
                 >
-                  <span className="font-bold tracking-[0.04em] uppercase">To find out:</span> {a.reviewTask}
+                  <span className="font-bold tracking-[0.04em] uppercase">{wt('cloudFit.toFindOut')}</span> {a.reviewTask}
                 </p>
               )}
               {a.usageNote && (

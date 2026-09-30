@@ -4,6 +4,7 @@ import React from 'react';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
 import type { ProcessMapLegendEntry } from '@/lib/process-map';
+import { mapLegendEmpty } from '@/lib/workspace-messages';
 
 /**
  * The legend — roadmap 2.5: Reconstructed · Confirmed · Proven.
@@ -50,8 +51,7 @@ export default function ProcessMapLegend({ entries, unanchored, unanchoredLabel 
       </ul>
       {empty.length > 0 ? (
         <p className="text-[12px] font-medium text-cc-ink-muted">
-          {empty.join(' and ')} {empty.length === 1 ? 'is' : 'are'} empty: this map is read out of the code.
-          Nobody has confirmed a step of it, and nothing in it has been shown to run.
+          {mapLegendEmpty(empty)}
         </p>
       ) : null}
     </div>

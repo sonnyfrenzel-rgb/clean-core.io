@@ -10,6 +10,7 @@ import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/fireb
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { t } from '@/lib/cc-messages';
+import { wt } from '@/lib/workspace-messages';
 import { describeRunCost, type RunCost } from '@/lib/run-cost';
 import { DEMO_LIST_TAGLINE, DEMO_PROJECT_TITLE, DEMO_TAG, DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
 import {
@@ -236,9 +237,9 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-cc-card border border-cc-error-border bg-cc-error-bg text-cc-error">
           <ShieldAlert className="h-7 w-7" />
         </div>
-        <h2 className="mb-2 text-[15px] font-bold text-cc-ink">Access denied</h2>
+        <h2 className="mb-2 text-[15px] font-bold text-cc-ink">{wt('listReport.accessDenied')}</h2>
         <p className="text-[13px] leading-relaxed font-medium text-cc-ink-muted">
-          This page is restricted to Clean-Core.io system administrators.
+          {wt('listReport.adminOnly')}
         </p>
       </div>
     );

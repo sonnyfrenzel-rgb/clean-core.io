@@ -13,6 +13,7 @@ import { conditionsSummary, decisionCardView } from '../lib/decision-card';
 import { deriveProjectDecision } from '../lib/decision-facts';
 import { PROCESS_STATE_COLLECTION } from '../lib/process-states';
 import { PROCESS_REVISION_COLLECTION } from '../lib/process-revisions';
+import { WORKSPACE_MESSAGES } from '../lib/workspace-messages';
 
 /**
  * Roadmap 8.4, second half — the "Open decision" card of the workspace
@@ -377,8 +378,12 @@ test.describe('8.4 card — source guards', () => {
     // confirms; a refusal of the second command left the draft written while
     // the strip said "Nothing was written."
     expect(card).toMatch(/record-decision-draft', decision: draft \}\);\s*draftSaved = true;/);
-    expect(card).toMatch(/headline: draftSaved \? '[^']*draft was saved[^']*' : 'Nothing was written\.'/);
-    expect(card).not.toMatch(/headline="Nothing was written\."/);
+    // The two headlines come from the catalogue since block D, D.29 — the
+    // source names the keys, and the keys are read for their words.
+    expect(card).toMatch(/headline: draftSaved \? wt\('decision\.draftSaved'\) : wt\('decision\.nothingWritten'\)/);
+    expect(WORKSPACE_MESSAGES['decision.draftSaved']).toMatch(/draft was saved/);
+    expect(WORKSPACE_MESSAGES['decision.nothingWritten']).toBe('Nothing was written.');
+    expect(card).not.toMatch(/headline=\{wt\('decision\.nothingWritten'\)\}/);
   });
 
   test('a command whose answer was lost is not reported as nothing written, and the decision is read again', () => {
@@ -398,11 +403,14 @@ test.describe('8.4 card — source guards', () => {
     for (const c of catches) {
       const lost = c.indexOf('if (err instanceof CommandAnswerLostError)');
       expect(lost).toBeGreaterThanOrEqual(0);
-      expect(lost).toBeLessThan(c.indexOf('Nothing was written.'));
+      const nothing = c.indexOf("wt('decision.nothingWritten')");
+      expect(nothing, 'the refusal no longer says nothing was written').toBeGreaterThan(-1);
+      expect(lost).toBeLessThan(nothing);
     }
     const handler = card.slice(card.indexOf('const answerLost = useCallback('), card.indexOf('const confirm = useCallback('));
     expect(handler).toContain('setReload((n) => n + 1);');
     expect(handler).not.toContain('Nothing was written');
+    expect(handler).not.toContain("wt('decision.nothingWritten')");
   });
 
   test('no role is stored or sent: Management, Business and IT are views only', () => {
