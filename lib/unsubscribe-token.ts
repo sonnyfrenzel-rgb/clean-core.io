@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHash, createHmac, timingSafeEqual } from 'crypto';
 
 /**
  * Signed unsubscribe links for bulk mail.
@@ -40,6 +40,16 @@ function sign(payload: string): string {
 /** Normalised form used for both signing and the suppression key. */
 export function normaliseEmail(email: string): string {
   return (email || '').trim().toLowerCase();
+}
+
+/**
+ * The id of an address's document in `email_suppressions`: SHA-256 of the
+ * normalised address, so the raw address stays out of the key space. Shared by
+ * the unsubscribe route, which writes it, and the account erasure, which
+ * removes it.
+ */
+export function suppressionId(email: string): string {
+  return createHash('sha256').update(normaliseEmail(email)).digest('hex');
 }
 
 /** Create an unsubscribe token bound to one email address. */

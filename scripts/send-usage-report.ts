@@ -6,7 +6,9 @@
  *
  * Each report is also stored in `usage_reports`, so a later version can chart a
  * trend longer than the two weeks the mail itself compares. Storing it costs one
- * document a week.
+ * document a week. Mail and snapshot carry figures only — no name, address or
+ * uid of any account (30.09.2026); see `usageReportSnapshot` in
+ * lib/usage-report.ts for the stored fields.
  *
  * Usage:
  *   npx tsx scripts/send-usage-report.ts              # dry run: prints the figures
@@ -18,7 +20,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { initializeApp, applicationDefault, getApps } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { buildUsageReport } from '../lib/usage-report';
+import { buildUsageReport, usageReportSnapshot } from '../lib/usage-report';
 import {
   renderUsageReportEmail,
   renderUsageReportSubject,
@@ -129,13 +131,11 @@ async function main() {
   console.log(`sent (${id})`);
 
   // Kept so a later version can show a longer trend than the mail's two weeks.
+  // Figures only, and not the recipient either: that is the administrator's
+  // address, and the provider id already identifies the message.
   await db.collection('usage_reports').add({
-    ...report,
-    periodStart: report.periodStart,
-    periodEnd: report.periodEnd,
+    ...usageReportSnapshot(report, { providerId: id }),
     generatedAt: FieldValue.serverTimestamp(),
-    recipient: to,
-    providerId: id,
   });
   console.log('snapshot stored in usage_reports');
 }

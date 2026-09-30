@@ -64,35 +64,33 @@ function totalRow(label: string, value: string, highlight = false): string {
 }
 
 /**
- * Every dynamic value here is escaped, and `name` is why.
- *
- * `lib/usage-report.ts` builds the displayed name straight from `firstName` and
- * `lastName` on the user profile, which the account owner chooses. Interpolated
- * raw, a first name of `<a href="…">` put a working link into the administrator's
- * own weekly report, and an `<img src="…">` made it call out the moment the mail
- * was opened. The failure details further down were already escaped; these three
- * lines were not (QA review of 33471220d6e9, finding 230989f67624). Styling
- * markup stays outside the escaped values.
- */
-/**
  * A number where a list of people used to be.
  *
  * "Neu registriert diese Woche" named every new account — first name, last name
  * and e-mail address — in a mail that leaves our infrastructure through Resend
  * and lands in a mailbox that is not ours. Sonny, 23.09.2026: naming them is not
- * required. What the report is for is noticing that people arrive; the count
- * answers that, and the admin panel answers "who" for anyone who actually needs
- * to know, behind a login.
+ * required. On 30.09.2026 the same decision reached the two lists that had been
+ * kept for an addressee — "erstmals aktiviert" and "Kontingent aufgebraucht" —
+ * and the list of failed deliveries: the report carries figures only. "Who" is
+ * answered by the admin panel, behind a login and a second factor, for anyone
+ * who actually needs to know.
  *
- * The two lists below it still carry names on purpose: "erstmals aktiviert" and
- * "Kontingent aufgebraucht" are the rows an operator acts on, and an action
- * needs an addressee.
+ * Every value that reaches the markup is still escaped. None of them is typed by
+ * a user any more; keeping the escaping means that never has to be re-checked.
  */
-function countPanel(title: string, count: number, emptyText: string): string {
+function countPanel(
+  title: string,
+  count: number,
+  noun: { one: string; many: string },
+  emptyText: string,
+  detail?: string,
+): string {
   const body = count
-    ? `<div style="font-size: 17px; font-weight: 800; color: #0f172a; line-height: 1.3; padding: 9px 0;">${count} ${
-        count === 1 ? 'neue Registrierung' : 'neue Registrierungen'
-      }</div>`
+    ? `<div style="font-size: 17px; font-weight: 800; color: #0f172a; line-height: 1.3; padding: 9px 0;">${count} ${escapeHtml(
+        count === 1 ? noun.one : noun.many,
+      )}</div>${
+        detail ? `<div style="font-size: 13px; color: #64748b; line-height: 1.5;">${escapeHtml(detail)}</div>` : ''
+      }`
     : `<p style="font-size: 14px; color: #94a3b8; margin: 6px 0 0 0; font-style: italic; line-height: 1.5;">${escapeHtml(emptyText)}</p>`;
   return `
     <div class="panel" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 18px;">
@@ -101,30 +99,13 @@ function countPanel(title: string, count: number, emptyText: string): string {
     </div>`;
 }
 
-function personList(
-  title: string,
-  people: { name: string; email: string; suffix?: string }[],
-  emptyText: string,
-): string {
-  const rows = people.length
-    ? people
-        .map(
-          (p) => `
-        <div style="padding: 9px 0; border-bottom: 1px solid #f1f5f9;">
-          <div style="font-size: 15px; font-weight: 700; color: #0f172a;">${escapeHtml(p.name)}${
-            p.suffix ? ` <span style="font-weight: 600; color: #047857;">${escapeHtml(p.suffix)}</span>` : ''
-          }</div>
-          <div style="font-size: 13px; color: #64748b; word-break: break-word; line-height: 1.5;">${escapeHtml(p.email)}</div>
-        </div>`,
-        )
-        .join('')
-    : `<p style="font-size: 14px; color: #94a3b8; margin: 6px 0 0 0; font-style: italic; line-height: 1.5;">${escapeHtml(emptyText)}</p>`;
+/** How the week's first analyses were spread: one figure per account, no account named. */
+function runsPerAccount(runs: number[]): string | undefined {
+  return runs.length ? `Analysen je Account diese Woche: ${runs.join(', ')}` : undefined;
+}
 
-  return `
-    <div class="panel" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 18px;">
-      <span style="font-weight: 800; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">${escapeHtml(title)}</span>
-      ${rows}
-    </div>`;
+function failureLabel(status: string): string {
+  return status === 'email.complained' ? 'Als Spam gemeldet' : 'Abgeprallt';
 }
 
 /**
@@ -158,26 +139,16 @@ function deliveryPanel(d: UsageReport['delivery']): string {
            <div style="font-size: 17px; font-weight: 800; color: ${colour}; line-height: 1.3;">${value}</div>
          </div>`;
 
-  // Every message that did not reach its reader, with the provider's own words.
-  // Truncated: a mailbox that is full produces a paragraph, and this is a summary.
+  // What did not arrive, counted per kind of mail and outcome. Not per
+  // recipient, and without the provider's reason text, which usually repeats
+  // the address: the report carries figures only (30.09.2026).
   const failures = d.failures.length
     ? d.failures
         .map(
           (f) => `
         <div style="padding: 10px 0; border-bottom: 1px solid #fee2e2;">
-          <div style="font-size: 14px; font-weight: 700; color: #7f1d1d; word-break: break-word;">${escapeHtml(f.to)}</div>
-          <div style="font-size: 12px; color: #b91c1c; line-height: 1.5;">
-            ${f.status === 'email.complained' ? 'Als Spam gemeldet' : 'Abgeprallt'} &middot; ${escapeHtml(f.kind)}${
-              f.at ? ` &middot; ${fmtDate(f.at)}` : ''
-            }
-          </div>
-          ${
-            f.detail
-              ? `<div style="font-size: 12px; color: #991b1b; line-height: 1.5; margin-top: 3px;">${escapeHtml(
-                  f.detail.slice(0, 240),
-                )}</div>`
-              : ''
-          }
+          <div style="font-size: 14px; font-weight: 700; color: #7f1d1d;">${f.count} &times; ${escapeHtml(f.kind)}</div>
+          <div style="font-size: 12px; color: #b91c1c; line-height: 1.5;">${failureLabel(f.status)}</div>
         </div>`,
         )
         .join('')
@@ -211,7 +182,7 @@ function deliveryPanel(d: UsageReport['delivery']): string {
       <span style="font-weight: 800; color: #b91c1c; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">Nicht angekommen</span>
       ${failures}
       <p style="font-size: 12px; color: #b91c1c; margin: 10px 0 0 0; line-height: 1.5;">
-        Diese Leute haben nichts erhalten. Bei einer Willkommensmail heißt das: ein Konto ohne
+        Diese Mails haben niemanden erreicht. Bei einer Willkommensmail heißt das: ein Konto ohne
         First-Start-Guide und ohne die Sicherheitsantworten &mdash; der wahrscheinlichste Grund, nie
         anzufangen.
       </p>
@@ -306,30 +277,30 @@ export function renderUsageReportEmail(report: UsageReport): string {
 
     ${countPanel(
       'Neu registriert diese Woche',
-      report.newAccounts.length,
+      report.newAccounts,
+      { one: 'neue Registrierung', many: 'neue Registrierungen' },
       'Keine neuen Registrierungen in dieser Woche.',
     )}
 
-    ${personList(
+    ${countPanel(
       'Erstmals aktiviert diese Woche',
-      report.newlyActivated.map((a) => ({
-        name: a.name,
-        email: a.email,
-        suffix: `${a.runs} ${a.runs === 1 ? 'Analyse' : 'Analysen'}`,
-      })),
+      report.newlyActivated.length,
+      { one: 'Account mit erster Analyse', many: 'Accounts mit erster Analyse' },
       'Niemand hat diese Woche seine erste Analyse gestartet.',
+      runsPerAccount(report.newlyActivated),
     )}
 
     ${
-      report.reachedLimit.length
-        ? personList(
+      report.reachedLimit
+        ? countPanel(
             'Kontingent aufgebraucht',
             report.reachedLimit,
+            { one: 'Account am Limit', many: 'Accounts am Limit' },
             '',
           ) +
           `<p class="body-text" style="font-size: 12px; color: #94a3b8; margin: -8px 0 18px 0; line-height: 1.5;">
              Diese Accounts können ohne eigenen Gemini-Key nichts Neues analysieren — der wahrscheinlichste
-             Zeitpunkt für ein Gespräch.
+             Zeitpunkt für ein Gespräch. Welche es sind, zeigt das Admin-Panel.
            </p>`
         : ''
     }
@@ -378,10 +349,7 @@ function deliveryText(d: UsageReport['delivery']): string {
   if (d.failures.length) {
     lines.push('');
     lines.push('NICHT ANGEKOMMEN');
-    for (const f of d.failures) {
-      const what = f.status === 'email.complained' ? 'Als Spam gemeldet' : 'Abgeprallt';
-      lines.push(`- ${f.to} — ${what} (${f.kind})${f.detail ? `: ${f.detail.slice(0, 240)}` : ''}`);
-    }
+    for (const f of d.failures) lines.push(`- ${f.count} x ${f.kind} — ${failureLabel(f.status)}`);
   }
   return lines.join('\n') + '\n';
 }
@@ -419,12 +387,12 @@ GESAMTBESTAND
   BYOK                        ${totals.byok}
 
 NEU REGISTRIERT
-${report.newAccounts.length ? `  ${report.newAccounts.length} ${report.newAccounts.length === 1 ? 'neue Registrierung' : 'neue Registrierungen'}` : '  (keine)'}
+${report.newAccounts ? `  ${report.newAccounts} ${report.newAccounts === 1 ? 'neue Registrierung' : 'neue Registrierungen'}` : '  (keine)'}
 
 ERSTMALS AKTIVIERT
-${report.newlyActivated.length ? report.newlyActivated.map((a) => `  ${a.name} <${a.email}> — ${a.runs} Analysen`).join('\n') : '  (niemand)'}
+${report.newlyActivated.length ? `  ${report.newlyActivated.length} ${report.newlyActivated.length === 1 ? 'Account' : 'Accounts'}, Analysen je Account: ${report.newlyActivated.join(', ')}` : '  (niemand)'}
 
-${report.reachedLimit.length ? `KONTINGENT AUFGEBRAUCHT\n${report.reachedLimit.map((a) => `  ${a.name} <${a.email}>`).join('\n')}\n` : ''}
+${report.reachedLimit ? `KONTINGENT AUFGEBRAUCHT\n  ${report.reachedLimit} ${report.reachedLimit === 1 ? 'Account am Limit' : 'Accounts am Limit'}\n` : ''}
 ${deliveryText(report.delivery)}
 Im Admin-Panel oeffnen: ${BASE_URL}/admin?tab=usage
 

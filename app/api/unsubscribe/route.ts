@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createHash } from 'crypto';
 import { logger, errMessage } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase-admin';
-import { verifyUnsubscribeToken, normaliseEmail } from '@/lib/unsubscribe-token';
+import { verifyUnsubscribeToken, normaliseEmail, suppressionId } from '@/lib/unsubscribe-token';
 import { APP_BASE_URL } from '@/lib/constants';
 
 /**
@@ -33,10 +32,6 @@ import { APP_BASE_URL } from '@/lib/constants';
  */
 
 export const dynamic = 'force-dynamic';
-
-function suppressionId(email: string): string {
-  return createHash('sha256').update(normaliseEmail(email)).digest('hex');
-}
 
 async function suppress(email: string, source: 'one-click' | 'confirmation-page'): Promise<void> {
   const { db, FieldValue } = await getAdminDb();

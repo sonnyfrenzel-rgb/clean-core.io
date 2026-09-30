@@ -33,6 +33,8 @@ Two sub-processors receive data in transit for the features that require them �
 | `survey_responses/{campaign}__{uid}` | Survey answers and the free-text comment beside them | `uid` | Life of account | ✅ query delete |
 | `email_sends/{campaign}__{uid}` | Bulk-mail outbox: recipient address, uid, send state per campaign | `uid` | Life of account | ✅ query delete |
 | `email_events/{messageId}` | Delivery log per sent mail: recipient address, subject, kind, delivery status | `uid` where the sender passed one; recipient address in `to` | Life of account | ✅ query delete, by uid and by address |
+| `email_suppressions/{sha256(address)}` | Opt-out list for community mail: the normalised address, list, source, time | hash of the address (document id); `uid` where an entry carries one | Until the address opts in again or its account is erased | ✅ by the hashed address, by the stored address and by uid (since 2026-09-30) |
+| `usage_reports/{id}` | Weekly admin report snapshot. **Since 2026-09-30 figures only** — counts, analyses per newly activated account, failed mails per kind; no name, address, uid or recipient (`usageReportSnapshot`, `lib/usage-report.ts`). Older snapshots listed accounts by name and address | none (figures); older snapshots: address inside the lists | Kept for the trend | ✅ the account's entries are removed from older snapshots, by address; everybody else's stay (see note) |
 | `audit_events/{id}` | Admin/security audit log | server | **24 months** from the recorded action, then deleted (see note) | ❌ intentionally kept |
 | `rate_limits/{key}` | Sliding-window counters. The document id is an HMAC-SHA256 of `gemini:<uid>:<ip>` under `RATE_LIMIT_PEPPER`, so no address is stored in readable form | composite (hashed) | Self-expiring: `expiresAt` drives a Firestore TTL policy, **created 2026-09-18** | ❌ no durable PII, auto-expires |
 
@@ -45,6 +47,25 @@ setting is not the setting — the pattern is the same one the Backups section b
 records, and it is why both are now named with the command that proves them:
 `npm run retention:verify` checks this policy is present and `ACTIVE` in the same run
 that checks the backups.
+
+**`usage_reports` note:** the weekly report — the mail and the snapshot stored beside
+it — carries figures only since the owner's decision of **2026-09-30**; "who" is answered
+by the admin panel, behind a login and a second factor. Snapshots written before that
+date listed new accounts, newly activated accounts and accounts at their limit by name
+and address, failed deliveries by recipient and provider text, and the administrator's
+address as `recipient`. The account erasure removes the erased account's entries from
+them. **`scripts/scrub-usage-report-snapshots.ts`** turns every old snapshot into the
+current figures-only shape: dry run by default (counts and field names only, never a
+value), `--apply` only together with `SCRUB_USAGE_REPORTS_CONFIRM=remove-personal-data`,
+and it refuses to run in CI. It writes no backup, since a backup would be one more copy of
+the data being removed. Whether and when it runs against production is the owner's
+decision. Mails already sent sit in the administrator's mailbox and at the mail provider,
+outside this database; no erasure reaches them.
+
+**`email_suppressions` note:** removing the opt-out on erasure does not re-open
+community mail to the address: the profile and the outbox records go in the same
+cascade, so no send script has the address any more. A new account under the same
+address starts without an opt-out, as any new account does.
 
 **`audit_events` note:** deliberately excluded from erasure to preserve a tamper-evident record of privileged actions (approvals, deletions). Contains actor uid/email and action type — a legitimate-interest legal basis for security accountability. Reviewed for minimization; no analysis content stored.
 
