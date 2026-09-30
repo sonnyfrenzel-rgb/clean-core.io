@@ -1,9 +1,14 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { FileSpreadsheet, AlertTriangle, CheckCircle2, Info, ChevronDown, XCircle } from 'lucide-react';
-import clsx from 'clsx';
+import { FileSpreadsheet, AlertTriangle, Info } from 'lucide-react';
 import type { UsageSource, UsageReport, UsageDateLocale } from '@/lib/abap/usage-model';
+import { formatIsoDate } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import CcButton from '@/components/cc/Button';
+import CcField from '@/components/cc/Field';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcTable from '@/components/cc/Table';
 import { PRIVACY_NOTICE } from '@/lib/abap/usage-privacy';
 import {
   personalDataHintKey,
@@ -206,38 +211,30 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
   // ── Imported ────────────────────────────────────────────────────────
   if (imported && !file) {
     return (
-      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5" data-usage-imported>
-        <div className="flex items-start gap-3">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-emerald-900">
-              Usage data imported — {imported.records.length} objects from {imported.source.toUpperCase()}
-            </p>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-emerald-700">
-              {imported.window ? (
-                <span>🗓 Monitoring window (declared): {imported.window.from} – {imported.window.to}, {imported.window.days} days</span>
-              ) : (
-                <span className="text-amber-700">🗓 No monitoring window declared</span>
-              )}
-              {/* Not the window: the span between the first and last execution
-                  the export contains. */}
-              {imported.observedSpanDays && (
-                <span>📅 {imported.observedSpanDays} days of observed activity</span>
-              )}
-              {imported.quarantined && imported.quarantined.length > 0 && (
-                <span className="text-amber-700">⛔ {imported.quarantined.length} rows rejected</span>
-              )}
-              <span>📊 Imported {new Date(imported.importedAt).toLocaleDateString()}</span>
-            </div>
-            <Warnings warnings={imported.warnings} />
-          </div>
-          <button
-            onClick={startOver}
-            className="text-xs text-emerald-600 hover:text-emerald-800 font-bold underline underline-offset-2 shrink-0"
-          >
-            Replace
-          </button>
-        </div>
+      <div data-usage-imported="">
+        <CcMessageStrip
+          state="information"
+          headline={`Usage data imported — ${imported.records.length} objects from ${imported.source.toUpperCase()}.`}
+          actions={<CcButton variant="ghost" onClick={startOver}>Replace</CcButton>}
+        >
+          <span className="flex flex-wrap gap-x-4 gap-y-1">
+            {imported.window ? (
+              <span>Monitoring window (declared): {imported.window.from} – {imported.window.to}, {imported.window.days} days</span>
+            ) : (
+              <span className="text-cc-warning">No monitoring window declared</span>
+            )}
+            {/* Not the window: the span between the first and last execution
+                the export contains. */}
+            {imported.observedSpanDays && (
+              <span>{imported.observedSpanDays} days of observed activity</span>
+            )}
+            {imported.quarantined && imported.quarantined.length > 0 && (
+              <span className="text-cc-warning">{imported.quarantined.length} rows rejected</span>
+            )}
+            <span>Imported <span className="font-cc-mono">{formatIsoDate(imported.importedAt) ?? 'date not recorded'}</span></span>
+          </span>
+          <Warnings warnings={imported.warnings} />
+        </CcMessageStrip>
       </div>
     );
   }
@@ -245,74 +242,77 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
   // ── Declare, then drop ──────────────────────────────────────────────
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <label className="block">
-          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Source format</span>
-          <div className="relative mt-1">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <CcField label="Source format" help={SOURCE_OPTIONS.find(o => o.value === selectedSource)?.description}>
+          {(control) => (
             <select
+              id={control.id}
+              aria-describedby={control.describedBy}
               value={selectedSource}
               onChange={(e) => declare({ source: e.target.value as UsageSource | 'auto' })}
               data-usage-source
-              className="w-full appearance-none bg-white border border-slate-200 rounded-lg px-3 py-1.5 pr-8 text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+              className={cn(control.className, 'cursor-pointer')}
             >
               {SOURCE_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-          </div>
-          <span className="text-[10px] text-slate-400 mt-1 block">
-            {SOURCE_OPTIONS.find(o => o.value === selectedSource)?.description}
-          </span>
-        </label>
+          )}
+        </CcField>
 
-        <label className="block">
-          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Date format in the export</span>
-          <div className="relative mt-1">
+        <CcField
+          label="Date format in the export"
+          help="ISO and SAP YYYYMMDD dates are read either way; any other date needs this."
+          valueState={dateLocale ? undefined : 'warning'}
+          message={dateLocale ? undefined : 'Not declared yet.'}
+        >
+          {(control) => (
             <select
+              id={control.id}
+              aria-describedby={control.describedBy}
               value={dateLocale}
               onChange={(e) => declare({ dateLocale: e.target.value as UsageDateLocale | '' })}
               data-usage-date-locale
-              className={clsx(
-                'w-full appearance-none bg-white border rounded-lg px-3 py-1.5 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500',
-                dateLocale ? 'border-slate-200 text-slate-700' : 'border-amber-300 text-amber-800',
-              )}
+              className={cn(control.className, 'cursor-pointer')}
             >
               {DATE_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-          </div>
-          <span className="text-[10px] text-slate-400 mt-1 block">
-            ISO and SAP YYYYMMDD dates are read either way; any other date needs this.
-          </span>
-        </label>
+          )}
+        </CcField>
 
-        <fieldset className="block">
-          <legend className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Monitoring window (declared)</legend>
-          <div className="flex items-center gap-2 mt-1">
-            <input
-              type="date"
-              value={windowFrom}
-              onChange={(e) => declare({ windowFrom: e.target.value })}
-              aria-label="Monitoring window start"
-              data-usage-window-from
-              className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm text-slate-700"
-            />
-            <span className="text-slate-400 text-xs">–</span>
-            <input
-              type="date"
-              value={windowTo}
-              onChange={(e) => declare({ windowTo: e.target.value })}
-              aria-label="Monitoring window end"
-              data-usage-window-to
-              className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm text-slate-700"
-            />
-          </div>
-          <span className="text-[10px] text-slate-400 mt-1 block">
+        <fieldset className="flex min-w-0 flex-col gap-1">
+          <legend className="text-[13px] font-semibold text-cc-ink">Monitoring window (declared)</legend>
+          <p className="cc-text-meta text-cc-ink-muted">
             When monitoring actually ran. Zero calls count as disuse only over 13 months or more.
-          </span>
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <CcField label="From">
+              {(control) => (
+                <input
+                  id={control.id}
+                  type="date"
+                  value={windowFrom}
+                  onChange={(e) => declare({ windowFrom: e.target.value })}
+                  data-usage-window-from
+                  className={control.className}
+                />
+              )}
+            </CcField>
+            <CcField label="To">
+              {(control) => (
+                <input
+                  id={control.id}
+                  type="date"
+                  value={windowTo}
+                  onChange={(e) => declare({ windowTo: e.target.value })}
+                  data-usage-window-to
+                  className={control.className}
+                />
+              )}
+            </CcField>
+          </div>
         </fieldset>
       </div>
 
@@ -321,13 +321,11 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-        className={clsx(
-          'relative border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all',
-          isDragging
-            ? 'border-emerald-400 bg-emerald-50/50'
-            : 'border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/20',
-          parsing && 'opacity-50 pointer-events-none'
+        data-usage-dropzone={isDragging ? 'dragging' : 'idle'}
+        className={cn(
+          'flex flex-col items-center gap-2 rounded-cc-card border-2 border-dashed p-6 text-center',
+          isDragging ? 'border-cc-ink bg-cc-surface-muted' : 'border-cc-field-border bg-cc-surface',
+          parsing && 'opacity-60',
         )}
       >
         <input
@@ -338,27 +336,33 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
           data-usage-file
           className="hidden"
         />
-        <FileSpreadsheet className={clsx(
-          'w-8 h-8 mx-auto mb-2',
-          isDragging ? 'text-emerald-500' : 'text-slate-300'
-        )} />
-        <p className="text-sm font-bold text-slate-700">
+        <FileSpreadsheet size={32} aria-hidden={true} className="text-cc-ink-muted" />
+        <p className="cc-text-h3 text-cc-ink" aria-live="polite">
           {parsing ? 'Reading usage data…' : file ? `${file.name} — drop another file to replace it` : 'Drop SAP usage export here'}
         </p>
-        <p className="text-xs text-slate-400 mt-1">
+        <p className="cc-text-meta text-cc-ink-muted">
           CSV (semicolon, comma, tab) or XLSX · SCMON / UPL / ST03N · nothing is stored until you confirm
         </p>
+        <CcButton
+          variant="secondary"
+          busy={parsing}
+          icon={<FileSpreadsheet size={16} aria-hidden={true} />}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {file ? 'Choose another file' : 'Choose a file'}
+        </CcButton>
       </div>
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-bold text-red-800">Import failed</p>
-            <p className="text-xs text-red-600 mt-0.5">{error}</p>
-          </div>
-        </div>
+        <CcMessageStrip
+          state="error"
+          headline="Import failed."
+          announce
+          actions={<CcButton variant="ghost" onClick={() => fileInputRef.current?.click()}>Choose another file</CcButton>}
+        >
+          {error}
+        </CcMessageStrip>
       )}
 
       {/* What the file itself looks like it may carry. Shapes, not a verdict —
@@ -376,32 +380,37 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
 
       {/* Preview — what would be taken over, and what would not */}
       {preview && !error && (
-        <div className="border border-slate-200 rounded-2xl p-4 space-y-3" data-usage-preview>
-          <p className="text-sm font-bold text-slate-800">
+        <div className="space-y-3 rounded-cc-card border border-cc-line bg-cc-surface p-4" data-usage-preview>
+          <p className="cc-text-h3 text-cc-ink">
             Preview: {preview.records.length} objects would be imported
             {preview.quarantined && preview.quarantined.length > 0 && (
-              <span className="text-rose-700"> · {preview.quarantined.length} rows rejected</span>
+              <span className="text-cc-error"> · {preview.quarantined.length} rows rejected</span>
             )}
           </p>
           <Warnings warnings={preview.warnings} />
 
           {preview.quarantined && preview.quarantined.length > 0 && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50/60 overflow-hidden" data-usage-quarantine>
-              <p className="px-3 py-2 text-[11px] font-bold text-rose-800 border-b border-rose-200">
-                Rejected rows — not imported, not used for prioritisation
-              </p>
-              <ul className="max-h-48 overflow-y-auto divide-y divide-rose-100">
-                {preview.quarantined.slice(0, PREVIEW_ROWS).map((q) => (
-                  <li key={q.row} className="px-3 py-1.5 text-[11px] text-rose-900 flex items-start gap-2">
-                    <XCircle className="w-3 h-3 shrink-0 mt-0.5 text-rose-500" />
-                    <span className="font-mono shrink-0">row {q.row}</span>
-                    <span className="font-mono font-bold shrink-0">{q.objectName}</span>
-                    <span className="min-w-0">{q.reason}</span>
-                  </li>
-                ))}
-              </ul>
+            <div className="space-y-2" data-usage-quarantine>
+              <p className="cc-text-label text-cc-ink-muted">Rejected rows — not imported, not used for prioritisation</p>
+              <CcTable
+                caption="Rejected rows"
+                limit={5}
+                columns={[
+                  { key: 'row', label: 'Row', numeric: true, width: '80px' },
+                  { key: 'object', label: 'Object' },
+                  { key: 'reason', label: 'Reason' },
+                ]}
+                rows={preview.quarantined.slice(0, PREVIEW_ROWS).map((q) => ({
+                  key: String(q.row),
+                  cells: {
+                    row: <span className="font-cc-mono">{q.row}</span>,
+                    object: <span className="font-cc-mono">{q.objectName}</span>,
+                    reason: q.reason,
+                  },
+                }))}
+              />
               {preview.quarantined.length > PREVIEW_ROWS && (
-                <p className="px-3 py-1.5 text-[10px] text-rose-700 border-t border-rose-200">
+                <p className="cc-text-meta text-cc-ink-muted">
                   …and {preview.quarantined.length - PREVIEW_ROWS} more. All are kept with the import.
                 </p>
               )}
@@ -409,22 +418,19 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
           )}
 
           <div className="flex flex-wrap items-center gap-3">
-            <button
+            <CcButton
+              variant="primary"
               onClick={confirm}
               disabled={preview.records.length === 0 || hintPending}
               data-usage-confirm
-              className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-wider hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed"
             >
               Import {preview.records.length} objects
-            </button>
-            <button
-              onClick={startOver}
-              className="text-xs text-slate-500 hover:text-slate-800 font-bold underline underline-offset-2"
-            >
+            </CcButton>
+            <CcButton variant="ghost" onClick={startOver}>
               Cancel
-            </button>
+            </CcButton>
             {hintPending && (
-              <span data-usage-personal-data-pending className="text-xs font-bold text-amber-700">
+              <span data-usage-personal-data-pending className="cc-text-meta text-cc-warning">
                 Tick the box above to say you have checked this file. Nothing has been imported yet.
               </span>
             )}
@@ -433,8 +439,8 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
       )}
 
       {/* Privacy notice */}
-      <div className="flex items-start gap-2 text-[11px] text-slate-400 leading-relaxed">
-        <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+      <div className="flex items-start gap-2 cc-text-meta text-cc-ink-muted">
+        <Info size={14} aria-hidden={true} className="mt-0.5 shrink-0" />
         <p>{PRIVACY_NOTICE}</p>
       </div>
     </div>
@@ -444,13 +450,13 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
 function Warnings({ warnings }: { warnings: string[] }) {
   if (warnings.length === 0) return null;
   return (
-    <div className="mt-2 space-y-1">
+    <ul className="mt-2 space-y-1" data-import-warnings="">
       {warnings.map((w, i) => (
-        <div key={i} className="flex items-start gap-1.5 text-[11px] text-amber-700">
-          <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
+        <li key={i} className="flex items-start gap-2 cc-text-meta text-cc-warning">
+          <AlertTriangle size={14} aria-hidden={true} className="mt-0.5 shrink-0" />
           <span>{w}</span>
-        </div>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
