@@ -14,7 +14,13 @@ und Löschablauf Zeile für Zeile gleich, nur ein leeres Passwort wird früher a
 Zwei echte Fehler dabei gefunden und behoben: Komplexität/Kritikalität (1–10) standen als „/100"
 (`d3b88233`); eine Modell-Lücke ohne `strategy` legte die Arbeitsliste lahm (`26e3ba43`).
 
-**Test-Audit:** Sonny gab am 30.09. **alle drei Stufen** frei; Stufe 1 läuft (`tests/audit-stufe1`).
+**Test-Audit:** Sonny gab am 30.09. **alle drei Stufen** frei; Stufe 1 ist gebaut (gemeinsamer Anmelde-Helper, ein Smoke-Spec statt fünf, `docs/testing.md`).
+
+**Welle 3 (30.09.):** D.7, D.12, D.15, D.20b, D.21 fertig. Offen: Terms-Gate R10 (wartet auf nicht schließbaren `CcDialog`, D.5e), Z-Ebene Dialog vs. Assistenten-FAB (D.5e/D.8).
+
+**Security v2.20.0 (§12):** 39 Befunde behoben und 6 widerlegt (Schritte C, F, Phase 2). **Schritt B (32 Regel-Befunde) ist gebaut und getestet, wirkt aber erst nach Sonnys Regel-Deploy** — bis dahin im Register „eingeplant“. Reihenfolge: App über CI, dann `npm run deploy:rules`, dann `npm run rules:verify`. **Entscheidungen bei Sonny:** Wochenbericht mit Namen/Adressen oder nur Zahlen (zwei Befunde); ob Kontolöschung `email_suppressions` und `usage_reports` mitnimmt; ein Collection-Group-Index auf `runs.userId` für den Lösch-Backstop (GCP). **Abhängigkeiten:** Audit-Gate war seit den Advisories vom 29.09. rot (undici, brace-expansion) — behoben.
+
+**3.0.9:** Abnahme ohne CSA und ohne T-Online (Sonny); Postmaster Tools eingerichtet, zeigt „Probleme festgestellt“ — Details offen.
 
 **Offen aus der Welle:** Banner-Satz „Powered by Generative AI" (§3.1 oder Offenlegung — Sonny) ·
 Sign-offs in `ConstructFindings` sind nur lokaler State · Hinweis „Konto gelöscht" wird von

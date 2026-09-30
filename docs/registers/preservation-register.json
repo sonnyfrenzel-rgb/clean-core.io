@@ -38,7 +38,7 @@
     },
     "rules": {
       "file": "firestore.rules",
-      "sha256OfLfNormalisedText": "7a68d28a176711e533c0fc57966e38f168acf9de2680e5733fa6e2136e515bf8",
+      "sha256OfLfNormalisedText": "235412c50ff78b9d1806bc166e95a864660ed85ed304c93536035e6971c6ef3a",
       "deploymentRecord": "docs/registers/rules-deployment.json",
       "note": "Hashed after normalising CRLF to LF so the value is the same on Windows and on CI.",
       "projectDocument": {
