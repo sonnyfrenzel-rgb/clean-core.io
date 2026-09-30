@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import {
@@ -13,6 +13,9 @@ import {
   assertNoAiTells,
 } from '../lib/model-text';
 import { createGalleryAdmin, openGallery, type GalleryAdmin } from './helpers/cc-gallery';
+import { ROUTES, pageSettled, type RouteDef } from './helpers/design-rendered';
+import { stripComments } from './helpers/design-rules';
+import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 
 /**
  * No AI tells — on the screen, in the exports, in the mails (`DESIGN.md` §3.1).
@@ -31,9 +34,12 @@ import { createGalleryAdmin, openGallery, type GalleryAdmin } from './helpers/cc
  *     and fails the build anyway is a guard people route around.
  *
  * The copy scan covers `app/`, `components/` and `lib/` — the scope §8 names.
- * The symbolism and emoji scan is narrower on purpose: it covers the surfaces
- * roadmap 1.5 built. Sweeping the emoji out of the 2.x dashboard is a change to
- * screens people use today, which this step does not touch.
+ * The symbolism and emoji scan covers every screen: all of `app/` and
+ * `components/` except the route handlers under `app/api/`, whose strings go
+ * to a server log or a mail, not to a screen. Until Block D it covered only the
+ * surfaces roadmap 1.5 built, because the 2.x screens still carried emoji; D.30
+ * widened it once the surface steps had taken them out, and added the same
+ * scan, rendered, on every route of the design walk.
  */
 const ROOT = path.resolve(__dirname, '..');
 
@@ -208,20 +214,25 @@ test.describe('and what it finds in this repository', () => {
     ).toEqual([]);
   });
 
-  test('and no AI iconography in the surfaces roadmap 1.5 built', () => {
+  test('and no AI iconography or emoji on any screen of the app', () => {
     const offenders: string[] = [];
+    let scanned = 0;
     for (const { rel, text } of productSources()) {
-      if (!rel.startsWith('components/cc/') && !rel.includes('admin/design-system')) continue;
-      const code = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+      if (!rel.startsWith('app/') && !rel.startsWith('components/')) continue;
+      if (rel.startsWith('app/api/')) continue;
+      scanned += 1;
+      // Comments carry the history of what was removed, on purpose.
+      const code = stripComments(text, rel);
       code.split('\n').forEach((line, i) => {
         for (const finding of findAiSymbolism(line)) {
           offenders.push(`${rel}:${i + 1}  ${finding.term} — ${line.trim().slice(0, 110)}`);
         }
       });
     }
+    expect(scanned, 'nothing scanned — the check would be vacuous').toBeGreaterThan(200);
     expect(
       offenders,
-      `sparkles, robots, "magic" or "Smart …" in the new interface (DESIGN.md §3.1):\n${offenders.join('\n')}`,
+      `sparkles, robots, emoji, "magic" or "Smart …" in the interface (DESIGN.md §3.1):\n${offenders.join('\n')}`,
     ).toEqual([]);
   });
 });
@@ -261,5 +272,59 @@ test.describe('and what reaches the screen', () => {
       findings.map((f) => `${f.kind}: ${f.term} — ${f.excerpt}`),
       'AI tells on the rendered page (DESIGN.md §3.1)',
     ).toEqual([]);
+  });
+});
+
+/**
+ * The same scan on every route of the design walk (`tests/helpers/design-rendered.ts`),
+ * signed out and signed in — the product as a reader meets it, not only the gallery.
+ *
+ * Read out of the scan, by identity: the code surface (`CcCodeSurface`, `pre`,
+ * `code`) — ABAP and generated code are quoted, not written, and a comment or a
+ * string in it is the customer's text, the code-surface exception of D.30 — and
+ * the "* required" note of §2.7, as above.
+ */
+test.describe('and what reaches the screen, route by route', () => {
+  test.use({ viewport: { width: 1440, height: 1000 }, contextOptions: { reducedMotion: 'reduce' } });
+
+  async function scanRoutes(page: Page, defs: RouteDef[], projectId: string): Promise<string[]> {
+    const found: string[] = [];
+    for (const def of defs) {
+      const url = def.url.replace('{project}', encodeURIComponent(projectId));
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 120_000 });
+      for (const selector of def.ready) {
+        await page.locator(selector).first().waitFor({ state: 'attached', timeout: 90_000 });
+      }
+      await page.waitForFunction(pageSettled, 750, { polling: 150, timeout: 60_000 });
+      const text = await page.evaluate(() => {
+        const clone = document.body.cloneNode(true) as HTMLElement;
+        clone
+          .querySelectorAll('[data-cc-code-surface], pre, code, script, style, noscript, [data-cc-required-note]')
+          .forEach((el) => el.remove());
+        document.body.appendChild(clone);
+        const out = clone.innerText;
+        clone.remove();
+        return out;
+      });
+      expect(text.length, `${def.route}: nothing rendered — the scan would be vacuous`).toBeGreaterThan(200);
+      for (const f of [...findBlockedPhrases(text), ...findAiSymbolism(text), ...findMarkdownResidue(text)]) {
+        found.push(`${def.route} — ${f.kind}: ${f.term} — ${f.excerpt}`);
+      }
+    }
+    return found;
+  }
+
+  test('public routes carry no tell, no emoji and no markdown residue', async ({ page }) => {
+    test.setTimeout(10 * 60 * 1000);
+    const found = await scanRoutes(page, ROUTES.filter((r) => r.session === 'public'), '');
+    expect(found, 'AI tells on a public page (DESIGN.md §3.1)').toEqual([]);
+  });
+
+  test('signed-in routes carry no tell, no emoji and no markdown residue', async ({ page }) => {
+    test.setTimeout(15 * 60 * 1000);
+    const seeded = await seedStageProject({ prefix: 'model-text', admin: true, acceptTerms: true, rich: true });
+    await signInThroughForm(page, { email: seeded.email, password: seeded.password });
+    const found = await scanRoutes(page, ROUTES.filter((r) => r.session === 'signed-in'), seeded.projectId);
+    expect(found, 'AI tells on a signed-in page (DESIGN.md §3.1)').toEqual([]);
   });
 });
