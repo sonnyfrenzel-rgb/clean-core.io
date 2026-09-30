@@ -210,6 +210,11 @@
   --cc-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
   --cc-shadow-dialog: 0 16px 48px rgb(11 28 48 / 0.18);
 
+  /* The line grid under the landing hero's mesh (block D, D.27, E-5: mesh is a
+     public-page form). Decoration at 18 % opacity, never text or a border
+     someone has to see, so it is held to no contrast floor. */
+  --cc-mesh-grid: #94a3b8;
+
   /* Stacking, bottom to top (block D, D.5e). Five named layers instead of the
      z-10 … z-[200] each file used to pick for itself — which is how the green
      assistant button (z-[80]) came to sit on top of every dialog (z-50) and,

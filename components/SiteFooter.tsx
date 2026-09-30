@@ -72,7 +72,9 @@ export default function SiteFooter({ dark = false }: { dark?: boolean }) {
             <RotateCw className="w-4 h-4 text-cc-brand" aria-hidden="true" />
           </span>
           <span className="font-bold text-base tracking-tight">
-            Clean-Core<span className="text-cc-brand">.io</span>
+            {/* `--cc-brand` is 3.3:1 on white, an accent and not text (§1.1): on
+                the light footer the word takes the strong brand. */}
+            Clean-Core<span className={dark ? 'text-cc-brand' : 'text-cc-brand-strong'}>.io</span>
           </span>
         </Link>
         <span className={clsx(MICRO_LABEL, 'mt-2', muted)}>Free Community Edition · complementary to SAP tooling</span>
