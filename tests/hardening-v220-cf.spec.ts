@@ -234,6 +234,15 @@ test.describe('the administrator mail routes', () => {
   });
 });
 
+test.describe('the HTML documents served from public/', () => {
+  test('load nothing from another origin when a visitor opens them', () => {
+    const pages = fs.readdirSync(path.join(ROOT, 'public')).filter((f) => f.endsWith('.html'));
+    expect(pages.length).toBeGreaterThan(0);
+    const external = /@import\s+(?:url\(\s*)?['"]?https?:|<(?:link|script|img|iframe|source)\b[^>]*\b(?:href|src)\s*=\s*["']?https?:/i;
+    for (const page of pages) expect(read(`public/${page}`), `public/${page} fetches from another origin`).not.toMatch(external);
+  });
+});
+
 test.describe('verifying a pack sealed in format 2', () => {
   test('does not report success over a user-attested file whose contents it cannot check', async () => {
     const sha = (s: string) => crypto.createHash('sha256').update(s).digest('hex');

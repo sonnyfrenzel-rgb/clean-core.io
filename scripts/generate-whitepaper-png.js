@@ -20,6 +20,12 @@ async function generateWhitepaperPng() {
   // Replace date
   const dateStr = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   html = html.replace('June 2026', dateStr);
+
+  // The fonts are fetched here, by this local render, and not by the template:
+  // the template is served publicly, and a visitor's browser would otherwise
+  // call Google for them.
+  html = html.replace('<style>', `<style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');`);
   
   // Write temporary file
   const tempPath = path.join(__dirname, '..', 'public', 'temp-linkedin-whitepaper-png.html');
