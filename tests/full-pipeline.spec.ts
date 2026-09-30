@@ -246,7 +246,8 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await startAnalysisBtn.click();
     
     // Verify confirmation modal opens
-    const confirmationModal = page.locator('h3:has-text("Confirm Target Operating Model")');
+    // A CcDialog since D.10b: the title is the dialog's h2 and names it.
+    const confirmationModal = page.getByRole('dialog', { name: 'Confirm Target Operating Model' });
     await expect(confirmationModal).toBeVisible();
 
     // Confirm the operating model and start (label since D.10a)
@@ -254,7 +255,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     console.log('AI modernization started. Performing deep analysis...');
 
     // Wait for the analysis loader to complete and render the analysis report
-    const complianceHeader = page.locator('h3:has-text("Understanding Clean Core")');
+    const complianceHeader = page.getByRole('dialog', { name: 'Understanding Clean Core' });
     // Generous timeout since Gemini call is executed live in this test context
     await expect(page.locator('text=Business Analysis Report')).toBeVisible({ timeout: 90000 });
     console.log('Stage 1 Complete: Analysis report parsed and rendered.');

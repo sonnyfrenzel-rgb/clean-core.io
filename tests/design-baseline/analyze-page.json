@@ -5,9 +5,7 @@
     "app/(app)/project/[projectId]/analyze/page.tsx": {
       "step": "D.10a",
       "R3": 223,
-      "R9": 5,
-      "R10": 2,
-      "R11": 7
+      "R11": 6
     }
   }
 }

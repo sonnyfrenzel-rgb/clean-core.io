@@ -13,13 +13,21 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType, getAuth } from '@/lib/firebase';
 import Stepper from '@/components/Stepper';
-import { UploadCloud, FileCode2, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, RefreshCw, Activity, X, HelpCircle, Info, Layers, Shield, BarChart3, Zap, Cloud } from 'lucide-react';
+import { UploadCloud, FileCode2, CheckCircle2, ArrowRight, ArrowLeft, RefreshCw, Activity, HelpCircle, Info, Layers, Shield, Zap, Cloud } from 'lucide-react';
 import clsx from 'clsx';
 import CcButton from '@/components/cc/Button';
 import CcIconButton from '@/components/cc/IconButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import { CcTag } from '@/components/cc/Tag';
+import CcDialog from '@/components/cc/Dialog';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import CcTable from '@/components/cc/Table';
+import CcTabs from '@/components/cc/Tabs';
+import CcField from '@/components/cc/Field';
+import CcCheckbox from '@/components/cc/Checkbox';
+import { CcSeverity } from '@/components/cc/Identifier';
+import { normaliseSeverity } from '@/lib/severity';
 import { STATE_CLASSES } from '@/components/cc/state';
 import type { SemanticState } from '@/lib/provenance';
 import { formatIsoDate } from '@/lib/format';
@@ -68,7 +76,6 @@ import PlainEnglishGuide from '@/components/analyze/PlainEnglishGuide';
 import ExtensibilityDecisionMatrix from '@/components/analyze/ExtensibilityDecisionMatrix';
 import TargetScopeMapping from '@/components/analyze/TargetScopeMapping';
 import ModernizationStrategy from '@/components/analyze/ModernizationStrategy';
-import ArchitecturalNextSteps from '@/components/analyze/ArchitecturalNextSteps';
 import CoverageVerdict from '@/components/analyze/CoverageVerdict';
 import ConstructFindings from '@/components/analyze/ConstructFindings';
 import UnassessedConstructs from '@/components/analyze/UnassessedConstructs';
@@ -331,7 +338,10 @@ export default function AnalyzePage() {
       setSweepCode(codeToAnalyze);
       setSweepFindings(evidenceReport.findings);
       setSweepActive(true);
-      setLoadingMessage('Evidence Scanner active — scanning code...');
+      // Every stage message from here on is said when the thing it names has
+      // happened or is starting — never on a timer (DESIGN.md §5.4, D.10b).
+      const findingCount = evidenceReport.findings.length;
+      setLoadingMessage(`Evidence scan complete — ${findingCount} ${findingCount === 1 ? 'finding' : 'findings'}.`);
 
       const prompt = buildAnalysisPrompt({ targetDeployment: deployment, evidenceReport, routeReport: computedRouteReport, code: codeToAnalyze });
 
@@ -358,6 +368,7 @@ export default function AnalyzePage() {
         narrativeAbsence = modelAvailability.keyAvailable ? 'stage-off' : 'no-key';
         setLoadingMessage('Evidence scanner only — no narrative for this run.');
       } else {
+        setLoadingMessage('Waiting for the model narrative...');
         try {
           const generated = await callGeminiWithReceipt(prompt, PRODUCT_GEMINI_MODEL, true, 'analyze');
           responseText = generated.text;
@@ -439,6 +450,7 @@ export default function AnalyzePage() {
           return 'ABAP Source';
         };
 
+        setLoadingMessage('Signing the run...');
         const idToken = await getAuth().currentUser?.getIdToken();
         const response = await fetch('/api/runs/create', {
           method: 'POST',
@@ -1341,45 +1353,21 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 
       return (
         <div className="space-y-8 font-sans">
-          {/* Report sections. Styled as the tabs of §2 (ink line, no green);
-              the ARIA tabs pattern and panels are D.10b. */}
-          <div className="sticky top-[128px] z-40 -mx-6 md:-mx-12 bg-cc-surface border-b border-cc-line shadow-cc">
-            <div className="px-4 md:px-8 flex items-center gap-4 overflow-x-auto">
-              {[
-                { id: 'evidence', label: 'Decision & Evidence', Icon: Shield },
-                { id: 'backlog', label: 'Gaps Backlog', Icon: AlertCircle },
-                { id: 'detailed', label: 'Assessment & Value', Icon: BarChart3 },
-                { id: 'strategy', label: 'Modernization Strategy', Icon: Zap }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id as any)}
-                  aria-pressed={activeTab === tab.id}
-                  className={clsx(
-                    "-mb-px min-h-10 pointer-coarse:min-h-11 text-[13px] flex items-center gap-2 border-b-2 whitespace-nowrap",
-                    activeTab === tab.id
-                      ? "border-cc-ink font-semibold text-cc-ink"
-                      : "border-transparent font-medium text-cc-ink-muted hover:text-cc-ink"
-                  )}
-                >
-                  <tab.Icon size={16} aria-hidden="true" className="shrink-0" />
-                  <span>{tab.label}</span>
-                </button>
-              ))}
-            </div>
-            {/* Explore all tabs hint — only shows on first tab */}
-            {activeTab === 'evidence' && (
-              <div className="px-6 md:px-12 py-1 bg-cc-surface-muted border-t border-cc-line text-center">
-                <p className="cc-text-meta text-cc-ink-muted">
-                  ← Explore all 4 report sections before proceeding to Solution Design →
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* TAB CONTENT: Decision & Evidence */}
+          {/* The four report sections: the WAI-ARIA tabs of §2 (CcTabs, D.10b).
+              Panels that are not chosen stay in the document, only hidden. */}
           {activeTab === 'evidence' && (
+            <p className="cc-text-meta text-cc-ink-muted">
+              Explore all 4 report sections before proceeding to Solution Design.
+            </p>
+          )}
+          <CcTabs
+            label="Report sections"
+            density="cozy"
+            value={activeTab}
+            onChange={setActiveTab}
+            tabs={[
+            // Decision & Evidence
+            { value: 'evidence', label: 'Decision & Evidence', content: (
             <div className="space-y-10 motion-safe:animate-in fade-in duration-300">
               {/* Missing Dependency Prompt — surfaces gaps upfront */}
               {missingDeps.length > 0 && (
@@ -1449,11 +1437,11 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                             : 'Confidence not computed'}
                       </span>
                     </div>
-                    <h4 className="cc-text-identifier text-cc-ink mb-1">
+                    <h3 className="cc-text-identifier text-cc-ink mb-1">
                       Target: {analysisData.extensibilityRouting?.targetArtifact || ((project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || '').includes('BTP')
                         ? <GlossaryTerm termKey="CAP" className="border-b-0 text-cc-ink">SAP BTP Node.js App (CAP)</GlossaryTerm>
                         : <GlossaryTerm termKey="RAP" className="border-b-0 text-cc-ink">RAP Business Object</GlossaryTerm>)}
-                    </h4>
+                    </h3>
                     {routeIsOverridden ? (
                       // The confidence and the reasoning belong to the route
                       // that was recommended. Printed beside a route the user
@@ -1658,55 +1646,50 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                       />
                     </div>
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full cc-text-cell">
-                      <thead>
-                        <tr className="bg-cc-surface-muted text-left">
-                          <th className="cc-text-label text-cc-ink-muted px-4 py-2 min-w-[180px]">Pattern</th>
-                          <th className="cc-text-label text-cc-ink-muted px-4 py-2">Lines</th>
-                          <th className="cc-text-label text-cc-ink-muted px-4 py-2 min-w-[200px]">Code Snippet</th>
-                          <th className="cc-text-label text-cc-ink-muted px-4 py-2">Severity</th>
-                          <th className="cc-text-label text-cc-ink-muted px-4 py-2">Source</th>
-                          <th className="cc-text-label text-cc-ink-muted px-4 py-2">SAP Replacement</th>
-                          <th className="cc-text-label text-cc-ink-muted px-4 py-2 min-w-[160px]">Target</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-cc-line">
-                        {filtered.length === 0 ? (
-                          <tr><td colSpan={7} className="px-4 py-6 text-center text-cc-ink-muted">No findings match the selected filter.</td></tr>
-                        ) : filtered.map(({ finding: ef, lines, snippets }, idx) => (
-                          <tr key={`${ef.kind}-${idx}`} className="hover:bg-cc-surface-muted">
-                            <td className="px-4 py-2 align-top">
-                              <div className="font-semibold text-cc-ink">
-                                {ef.title}{lines.length > 1 ? ` (${lines.length}×)` : ''}
-                              </div>
-                              <div className="cc-text-meta font-medium text-cc-ink-muted mt-0.5 font-cc-mono">{ef.kind}</div>
-                            </td>
-                            <td className="px-4 py-2 align-top font-cc-mono text-cc-ink-muted">{lines.join(', ')}</td>
-                            <td className="px-4 py-2 align-top">
-                              {snippets.slice(0, 2).map((s, i) => (
-                                <code key={i} className="block cc-text-meta font-medium font-cc-mono bg-cc-surface-muted border border-cc-line text-cc-ink px-2 rounded-[4px] mb-1 max-w-xs overflow-hidden text-ellipsis whitespace-nowrap" title={s}>
-                                  {s}
-                                </code>
-                              ))}
-                              {snippets.length > 2 && <span className="cc-text-meta text-cc-ink-muted">+{snippets.length - 2} more</span>}
-                            </td>
-                            <td className="px-4 py-2 align-top">
-                              <SeverityWord value={ef.severity} />
-                            </td>
-                            <td className="px-4 py-2 align-top">
-                              {/* Which part of the engine produced the row — a
-                                  plain label, not a proof mark. */}
-                              <CcTag>
-                                {ef.source === 'static-parser' ? 'Parser' :
-                                 ef.source === 'catalog-match' ? 'Catalog' :
-                                 'LLM'}
-                              </CcTag>
-                            </td>
-                            <td className="px-4 py-2 align-top">
-                              {ef.sapReplacement ? (
-                                <div>
-                                  <div className="font-medium text-cc-ink">{ef.sapReplacement.objectName}</div>
+                  <div className="px-3 py-3">
+                    {filtered.length === 0 ? (
+                      <p className="px-3 py-6 text-center cc-text-cell text-cc-ink-muted">No findings match the selected filter.</p>
+                    ) : (
+                      <CcTable
+                        caption="Evidence findings, deduplicated by pattern and object"
+                        limit={5}
+                        columns={EVIDENCE_COLUMNS}
+                        rows={filtered.map(({ finding: ef, lines, snippets }, idx) => {
+                          const sev = normaliseSeverity(ef.severity);
+                          return {
+                            key: `${ef.kind}-${idx}`,
+                            cells: {
+                              pattern: (
+                                <>
+                                  <div className="cc-text-cell font-semibold text-cc-ink">
+                                    {ef.title}{lines.length > 1 ? ` (${lines.length}×)` : ''}
+                                  </div>
+                                  <div className="cc-text-meta font-medium text-cc-ink-muted mt-0.5 font-cc-mono">{ef.kind}</div>
+                                </>
+                              ),
+                              lines: <span className="cc-text-cell font-cc-mono text-cc-ink-muted">{lines.join(', ')}</span>,
+                              snippet: (
+                                <>
+                                  {snippets.slice(0, 2).map((s, i) => (
+                                    <code key={i} className="block cc-text-meta font-medium font-cc-mono bg-cc-surface-muted border border-cc-line text-cc-ink px-2 rounded-[4px] mb-1 max-w-xs overflow-hidden text-ellipsis whitespace-nowrap" title={s}>
+                                      {s}
+                                    </code>
+                                  ))}
+                                  {snippets.length > 2 && <span className="cc-text-meta text-cc-ink-muted">+{snippets.length - 2} more</span>}
+                                </>
+                              ),
+                              severity: sev ? <CcSeverity value={sev} /> : <span className="cc-text-meta text-cc-ink-muted">{ef.severity || '—'}</span>,
+                              // Which part of the engine produced the row — a plain label, not a proof mark.
+                              source: (
+                                <CcTag>
+                                  {ef.source === 'static-parser' ? 'Parser' :
+                                   ef.source === 'catalog-match' ? 'Catalog' :
+                                   'LLM'}
+                                </CcTag>
+                              ),
+                              replacement: ef.sapReplacement ? (
+                                <div className="inline-block">
+                                  <div className="cc-text-cell font-medium text-cc-ink">{ef.sapReplacement.objectName}</div>
                                   <span className={clsx('cc-text-meta', STATE_CLASSES[replacementState(ef.sapReplacement.confidence)].text)}>
                                     {ef.sapReplacement.confidence}
                                     {ef.sapReplacement.catalogVersion && <span className="text-cc-ink-muted ml-1">(v{ef.sapReplacement.catalogVersion})</span>}
@@ -1714,37 +1697,51 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                                 </div>
                               ) : (
                                 <span className="text-cc-ink-muted">—</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-2 align-top">
-                              <div className="flex flex-col gap-1">
-                                {(ef.targetOptions || []).slice(0, 2).map((opt, i) => (
-                                  <span key={i} className="block cc-text-meta font-medium text-cc-ink-muted">{opt}</span>
-                                ))}
-                                {(ef.targetOptions || []).length > 2 && (
-                                  <span className="cc-text-meta text-cc-ink-muted">+{(ef.targetOptions || []).length - 2}</span>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                              ),
+                              target: (
+                                <span className="inline-flex flex-col gap-1">
+                                  {(ef.targetOptions || []).slice(0, 2).map((opt, i) => (
+                                    <span key={i} className="block cc-text-meta font-medium text-cc-ink-muted">{opt}</span>
+                                  ))}
+                                  {(ef.targetOptions || []).length > 2 && (
+                                    <span className="cc-text-meta text-cc-ink-muted">+{(ef.targetOptions || []).length - 2}</span>
+                                  )}
+                                </span>
+                              ),
+                            },
+                          };
+                        })}
+                      />
+                    )}
                   </div>
                 </div>
               );
               })()}
 
-              {/* Executive Plain English Guide — bottom of Decision & Evidence */}
+              {/* Executive Plain English Guide — bottom of Decision & Evidence.
+                  Its plan is either the model's or the page's generic fallback
+                  (bizFallback above); the line over it says which, since the
+                  component itself cannot tell (D.10b, from D.13). */}
+              <div data-action-plan-origin={analysisData.businessValueAnalysis?.plainEnglishActionPlan ? 'model' : 'generic'} className="flex flex-wrap items-center gap-2">
+                <span className="cc-text-label text-cc-ink-muted">Action plan</span>
+                {analysisData.businessValueAnalysis?.plainEnglishActionPlan ? (
+                  <CcProvenanceChip value="proposed" />
+                ) : (
+                  <span className="cc-text-meta text-cc-ink-muted">
+                    Generic guidance — no action plan was returned for this run.
+                  </span>
+                )}
+              </div>
               <PlainEnglishGuide 
                 plainEnglishActionPlan={bizFallback.plainEnglishActionPlan}
                 extensibilityRoute={project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Decoupled Extension'}
               />
             </div>
-          )}
+            ) },
 
-          {/* TAB CONTENT: Gaps Backlog */}
-          {activeTab === 'backlog' && (
+            // Gaps Backlog
+            { value: 'backlog', label: 'Gaps Backlog', content: (
+            <SectionBoundary name="Gaps Backlog">
             <div data-stage-output="worklist" className="motion-safe:animate-in fade-in duration-300">
               <GapsWorklist
                 projectId={projectId as string}
@@ -1756,10 +1753,12 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                 onUpdateWorklist={handleUpdateWorklist}
               />
             </div>
-          )}
+            </SectionBoundary>
+            ) },
 
-          {/* TAB CONTENT: Detailed Assessment */}
-          {activeTab === 'detailed' && (
+            // Detailed Assessment
+            { value: 'detailed', label: 'Assessment & Value', content: (
+            <SectionBoundary name="Assessment & Value">
             <div className="space-y-10 motion-safe:animate-in fade-in duration-300">
               {/* Complexity & Criticality badges — live recomputed */}
               {(() => {
@@ -1818,10 +1817,12 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                 </div>
               </div>
             </div>
-          )}
+            </SectionBoundary>
+            ) },
 
-          {/* TAB CONTENT: Modernization Strategy */}
-          {activeTab === 'strategy' && (
+            // Modernization Strategy
+            { value: 'strategy', label: 'Modernization Strategy', content: (
+            <SectionBoundary name="Modernization Strategy">
             <div className="space-y-10 motion-safe:animate-in fade-in duration-300">
               {/* Decision matrix pathway */}
               <ExtensibilityDecisionMatrix 
@@ -1863,7 +1864,10 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 
               {/* Next Steps */}
             </div>
-          )}
+            </SectionBoundary>
+            ) },
+          ]}
+          />
         </div>
       );
     }
@@ -1989,7 +1993,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   <RefreshCw className="w-5 h-5 motion-safe:animate-spin" aria-hidden="true" />
                 </div>
                 <div>
-                  <h3 className="cc-text-h3 text-cc-ink">Deterministic Evidence Engine</h3>
+                  <h2 className="cc-text-h3 text-cc-ink">Deterministic Evidence Engine</h2>
                   <p className="cc-text-cell text-cc-ink-muted">{loadingMessage || 'Analyzing your code — deterministic, before any model runs...'}</p>
                 </div>
               </div>
@@ -2001,34 +2005,31 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                 findings={sweepFindings}
                 isActive={sweepActive}
                 onComplete={() => {
+                  // The replay has shown every finding. The stage line is not
+                  // touched here: it follows the run itself (handleAnalyze),
+                  // not the animation (DESIGN.md §5.4).
                   sweepCompleteRef.current = true;
-                  setLoadingMessage(
-                    modelAvailability.enabled('analyze')
-                      ? 'Evidence scan complete — waiting for the model narrative...'
-                      : 'Evidence scan complete — signing the run.',
-                  );
                 }}
-                minDuration={6000}
               />
             ) : (
-              <ScannerConsole code={legacyCode} />
+              <ScannerConsole code={legacyCode} stage={loadingMessage} />
             )}
           </div>
         ) : (
           <div className="space-y-8">
+            {/* The drop area takes a dragged file; the button in it is the way
+                in for everyone else — a keyboard never reached the clickable
+                area this used to be (D.10b). */}
             <div
               className={clsx(
-                "border-2 border-dashed rounded-cc-card p-12 text-center cursor-pointer flex flex-col items-center justify-center min-h-[320px]",
+                "border-2 border-dashed rounded-cc-card p-12 text-center flex flex-col items-center justify-center min-h-[320px]",
                 isDragging
                   ? "border-cc-information bg-cc-information-bg"
-                  : legacyCode
-                    ? "border-cc-field-border bg-cc-surface"
-                    : "border-cc-field-border bg-cc-surface hover:bg-cc-surface-muted",
+                  : "border-cc-field-border bg-cc-surface",
               )}
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
             >
               <input
                 type="file"
@@ -2043,17 +2044,23 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   <div className="w-16 h-16 bg-cc-surface-muted border border-cc-line rounded-cc-card flex items-center justify-center mb-6">
                     <CheckCircle2 className="w-8 h-8 text-cc-ink" aria-hidden="true" />
                   </div>
-                  <h3 className="cc-text-h2 text-cc-ink mb-2">Source Code Ready</h3>
-                  <p className="cc-text-body text-cc-ink-muted">Your legacy asset has been successfully staged for analysis.</p>
+                  <h2 className="cc-text-h2 text-cc-ink mb-2">Source Code Ready</h2>
+                  <p className="cc-text-body text-cc-ink-muted mb-6">Your legacy asset has been successfully staged for analysis.</p>
+                  <CcButton variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                    Replace file
+                  </CcButton>
                 </>
               ) : (
                 <>
                   <div className="w-16 h-16 bg-cc-surface-muted border border-cc-line rounded-cc-card flex items-center justify-center mb-6">
                     <UploadCloud className="w-8 h-8 text-cc-ink-muted" aria-hidden="true" />
                   </div>
-                  <h3 className="cc-text-h2 text-cc-ink mb-2">Upload Legacy Asset</h3>
-                  <p className="cc-text-body text-cc-ink-muted mb-6 max-w-md">Drag and drop your legacy code file here, or click to browse. Supports .abap and .txt formats.</p>
-                  <div className="flex items-center gap-2">
+                  <h2 className="cc-text-h2 text-cc-ink mb-2">Upload Legacy Asset</h2>
+                  <p className="cc-text-body text-cc-ink-muted mb-6 max-w-md">Drag and drop your legacy code file here, or choose one. Supports .abap and .txt formats.</p>
+                  <CcButton variant="secondary" icon={<UploadCloud size={16} aria-hidden="true" />} onClick={() => fileInputRef.current?.click()}>
+                    Choose a file
+                  </CcButton>
+                  <div className="flex items-center gap-2 mt-6">
                     <CcTag>Evidence-Backed</CcTag>
                     <CcTag>Max 1MB</CcTag>
                   </div>
@@ -2069,47 +2076,25 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
             {legacyCode && (
               <div className="bg-cc-surface rounded-cc-card p-6 border border-cc-line shadow-cc space-y-6 mb-8">
                 <div>
-                  <h3 className="cc-text-h2 text-cc-ink">S/4HANA Target Operating Model</h3>
+                  <h2 id="analyze-deployment-title" className="cc-text-h2 text-cc-ink">S/4HANA Target Operating Model</h2>
                   <p className="cc-text-cell text-cc-ink-muted mt-1">Select your target deployment model. This dictates Clean Core compliant score evaluations, extensibility routing rules, and generated blueprints.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Public Cloud Card */}
-                  <div
-                    onClick={() => setTargetDeployment('public')}
-                    className={clsx(DEPLOYMENT_CARD_CLASS, targetDeployment === 'public' ? DEPLOYMENT_CARD_ON : DEPLOYMENT_CARD_OFF)}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="cc-text-h3 text-cc-ink inline-flex items-center gap-2"><Cloud size={16} aria-hidden="true" className="text-cc-ink-muted" />Public Cloud Edition</span>
-                        <CcTag>Strict Clean Core</CcTag>
-                      </div>
-                      <p className="cc-text-cell text-cc-ink-muted">SAP S/4HANA Cloud, Public Edition (SaaS). Custom core modifications are fully prohibited. Standard released APIs must be used exclusively.</p>
-                    </div>
-                  </div>
-
-                  {/* Private Cloud Card */}
-                  <div
-                    onClick={() => setTargetDeployment('private')}
-                    className={clsx(DEPLOYMENT_CARD_CLASS, targetDeployment === 'private' ? DEPLOYMENT_CARD_ON : DEPLOYMENT_CARD_OFF)}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="cc-text-h3 text-cc-ink inline-flex items-center gap-2"><Shield size={16} aria-hidden="true" className="text-cc-ink-muted" />Private Cloud RISE Edition</span>
-                        <CcTag>3-Tier Extensibility</CcTag>
-                      </div>
-                      <p className="cc-text-cell text-cc-ink-muted">SAP S/4HANA Cloud, Private Edition / On-Premise. Supports Custom Tier 2 API Wrappers to expose legacy unreleased objects upgrade-safely.</p>
-                    </div>
-                  </div>
-                </div>
+                <DeploymentChoice
+                  name="analyze-deployment"
+                  labelledBy="analyze-deployment-title"
+                  value={targetDeployment}
+                  onChange={setTargetDeployment}
+                  options={PAGE_DEPLOYMENT_OPTIONS}
+                />
               </div>
             )}
 
             {legacyCode && !isFromExample && (
               <div className="bg-cc-surface rounded-cc-card p-6 border border-cc-line shadow-cc space-y-4 mb-8">
-                <h4 className="cc-text-h3 text-cc-ink flex items-center gap-2">
+                <h2 className="cc-text-h3 text-cc-ink flex items-center gap-2">
                   <Shield size={16} aria-hidden="true" className="text-cc-ink-muted" /> Security Scan & Terms Agreement
-                </h4>
+                </h2>
 
                 {/* Visual Security Badge */}
                 {stagedScanBlock ? (
@@ -2123,17 +2108,15 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                 )}
 
                 {/* Terms and Conditions Consent Box */}
-                <label className="flex items-start gap-3 p-4 bg-cc-surface-muted border border-cc-line rounded-cc-row cursor-pointer select-none">
-                  <input
-                    type="checkbox"
+                <div className="p-4 bg-cc-surface-muted border border-cc-line rounded-cc-row">
+                  <CcCheckbox
+                    label="I agree to the Terms & Conditions of the Clean-Core.io Free Community Edition."
+                    help="I understand this is a free prototyping platform under absolute warranty and liability disclaimer, utilizing secure Gemini models on EU-compliant servers."
+                    required
                     checked={acceptedTerms}
-                    onChange={(e) => setAcceptedTerms(e.target.checked)}
-                    className="w-4 h-4 mt-0.5 accent-cc-ink shrink-0 cursor-pointer"
+                    onChange={setAcceptedTerms}
                   />
-                  <span className="cc-text-cell text-cc-ink">
-                    I agree to the <strong>Terms & Conditions</strong> of the Clean-Core.io Free Community Edition. I understand this is a free prototyping platform under absolute warranty and liability disclaimer, utilizing secure Gemini models on EU-compliant servers.
-                  </span>
-                </label>
+                </div>
               </div>
             )}
 
@@ -2155,7 +2138,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
               <div className="bg-cc-surface rounded-cc-card p-6 border border-cc-line shadow-cc space-y-4 mb-8">
                 <div>
                   <span className="cc-text-label text-cc-ink-muted">Optional</span>
-                  <h3 className="cc-text-h2 text-cc-ink mt-1">Add Usage Data</h3>
+                  <h2 className="cc-text-h2 text-cc-ink mt-1">Add Usage Data</h2>
                   <p className="cc-text-cell text-cc-ink-muted mt-1">Upload SAP usage exports (SCMON, UPL, ST03N) to enable usage-weighted risk prioritization. This is optional — analysis works without it.</p>
                 </div>
                 <UsageUpload
@@ -2185,7 +2168,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
               <div className="bg-cc-surface rounded-cc-card p-6 border border-cc-line shadow-cc space-y-4 mb-8">
                 <div>
                   <span className="cc-text-label text-cc-ink-muted">Optional</span>
-                  <h3 className="cc-text-h2 text-cc-ink mt-1">Add ATC Results</h3>
+                  <h2 className="cc-text-h2 text-cc-ink mt-1">Add ATC Results</h2>
                   <p className="cc-text-cell text-cc-ink-muted mt-1">Upload an ABAP Test Cockpit worklist export to compare its findings with this engine's evidence. This is optional — analysis works without it.</p>
                 </div>
                 <AtcUpload
@@ -2210,21 +2193,26 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
             )}
 
             {legacyCode && (
-              <div className="bg-cc-surface rounded-cc-card shadow-cc border border-cc-line overflow-hidden">
-                <div className="bg-cc-surface-muted border-b border-cc-line px-6 py-4 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <FileCode2 className="w-4 h-4 text-cc-ink-muted" aria-hidden="true" />
-                    <span className="cc-text-label text-cc-ink">Legacy Source Code</span>
-                  </div>
-                  <span className="cc-text-label text-cc-ink-muted">Read-Only Preview</span>
-                </div>
-                <textarea
-                  className="w-full h-80 p-6 font-cc-mono text-[13px] text-cc-ink bg-cc-surface resize-none leading-relaxed"
-                  value={legacyCode}
-                  onChange={(e) => setLegacyCode(e.target.value)}
-                  placeholder="Paste legacy code here..."
-                  spellCheck={false}
-                />
+              <div className="bg-cc-surface rounded-cc-card shadow-cc border border-cc-line p-6">
+                {/* Editable, and labelled so. It used to say "Read-Only Preview"
+                    over a field that took every keystroke — and the analysis
+                    reads what stands here, not the uploaded file (D.10b). */}
+                <CcField
+                  label="Legacy Source Code"
+                  help="Editable. The analysis reads the code exactly as it stands in this field; the uploaded file is not changed."
+                >
+                  {(control) => (
+                    <textarea
+                      id={control.id}
+                      aria-describedby={control.describedBy}
+                      className={clsx(control.className, 'h-80 py-3 font-cc-mono resize-y leading-relaxed')}
+                      value={legacyCode}
+                      onChange={(e) => setLegacyCode(e.target.value)}
+                      placeholder="Paste legacy code here..."
+                      spellCheck={false}
+                    />
+                  )}
+                </CcField>
               </div>
             )}
 
@@ -2378,84 +2366,84 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
         </div>
       )}
 
-      {/* Clean Core Score explanation modal */}
-      {showScoreModal && (
-        <div className="fixed inset-0 bg-cc-overlay/70 flex items-center justify-center z-[100] p-4 motion-safe:animate-in fade-in duration-300">
-          <div className="bg-cc-surface rounded-cc-card p-6 md:p-8 max-w-lg w-full border border-cc-line shadow-cc-dialog relative motion-safe:animate-in zoom-in-95 duration-300 space-y-6">
-            <div className="absolute top-4 right-4">
-              <CcIconButton label="Close" onClick={() => setShowScoreModal(false)}>
-                <X size={16} aria-hidden="true" />
-              </CcIconButton>
+      {/* Clean Core Score explanation — a CcDialog (D.10b): focus kept inside,
+          Escape closes, focus returns to the button that opened it. */}
+      <CcDialog
+        open={showScoreModal}
+        title="Understanding Clean Core"
+        lead="The Clean Core compliance score determines the long-term maintainability of your ERP core, grading custom elements against modern SAP S/4HANA extensibility patterns."
+        onClose={() => setShowScoreModal(false)}
+      >
+        <div className="space-y-3">
+          <p className="cc-text-label text-cc-ink-muted">Architecture Guide</p>
+          {SCORE_TIERS.map((tier) => (
+            <div key={tier.score} className="flex gap-4 p-3 rounded-cc-row bg-cc-surface-muted border border-cc-line">
+              <span className="w-12 h-10 rounded-cc-row border border-cc-field-border bg-cc-surface text-cc-ink font-cc-mono cc-text-identifier flex items-center justify-center shrink-0">{tier.score}</span>
+              <div className="space-y-1">
+                <h3 className="cc-text-h3 text-cc-ink">{tier.title}</h3>
+                <p className="cc-text-cell text-cc-ink-muted">{tier.text}</p>
+              </div>
             </div>
-
-            <div className="space-y-2 pr-10">
-              <span className="cc-text-label text-cc-ink-muted">Architecture Guide</span>
-              <h3 className="cc-text-title text-cc-ink">Understanding Clean Core</h3>
-              <p className="cc-text-cell text-cc-ink-muted">The Clean Core compliance score determines the long-term maintainability of your ERP core, grading custom elements against modern SAP S/4HANA extensibility patterns.</p>
-            </div>
-
-            <div className="space-y-3 pt-2 font-sans">
-              {SCORE_TIERS.map((tier) => (
-                <div key={tier.score} className="flex gap-4 p-3 rounded-cc-row bg-cc-surface-muted border border-cc-line">
-                  <span className="w-12 h-10 rounded-cc-row border border-cc-field-border bg-cc-surface text-cc-ink font-cc-mono cc-text-identifier flex items-center justify-center shrink-0">{tier.score}</span>
-                  <div className="space-y-1">
-                    <h5 className="cc-text-h3 text-cc-ink">{tier.title}</h5>
-                    <p className="cc-text-cell text-cc-ink-muted">{tier.text}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
-      )}
+      </CcDialog>
 
-      {/* Target Operating Model Concept Question Modal */}
-      {showConceptQuestion && (
-        <div className="fixed inset-0 bg-cc-overlay/70 flex items-center justify-center z-[100] p-4 motion-safe:animate-in fade-in duration-300">
-          <div className="bg-cc-surface rounded-cc-card p-6 md:p-8 max-w-2xl w-full border border-cc-line shadow-cc-dialog relative motion-safe:animate-in zoom-in-95 duration-300 space-y-6 max-h-[90vh] overflow-y-auto">
-            <div className="absolute top-4 right-4">
-              <CcIconButton label="Close" onClick={() => setShowConceptQuestion(false)}>
-                <X size={16} aria-hidden="true" />
-              </CcIconButton>
-            </div>
-
-            <div className="space-y-2 pr-10">
-              <span className="cc-text-label text-cc-ink-muted">Architecture Validation Checkpoint</span>
-              <h3 className="cc-text-title text-cc-ink">Confirm Target Operating Model</h3>
-              <p className="cc-text-body text-cc-ink-muted">
-                Before the analysis generates clean core recommendations, let's align on a critical architectural choice. Which target operating model is selected?
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Public Card */}
-              <div
-                onClick={() => setModalSelection('public')}
-                className={clsx(DEPLOYMENT_CARD_CLASS, 'min-h-[120px]', modalSelection === 'public' ? DEPLOYMENT_CARD_ON : DEPLOYMENT_CARD_OFF)}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="cc-text-h3 text-cc-ink inline-flex items-center gap-2"><Cloud size={16} aria-hidden="true" className="text-cc-ink-muted" />Public Cloud</span>
-                    {modalSelection === 'public' && <span aria-hidden="true" className="w-2 h-2 rounded-full bg-cc-ink" />}
-                  </div>
-                  <p className="cc-text-cell text-cc-ink-muted">Strict SaaS rules. Zero direct modifications allowed. Released standard APIs only.</p>
-                </div>
-              </div>
-
-              {/* Private Card */}
-              <div
-                onClick={() => setModalSelection('private')}
-                className={clsx(DEPLOYMENT_CARD_CLASS, 'min-h-[120px]', modalSelection === 'private' ? DEPLOYMENT_CARD_ON : DEPLOYMENT_CARD_OFF)}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="cc-text-h3 text-cc-ink inline-flex items-center gap-2"><Shield size={16} aria-hidden="true" className="text-cc-ink-muted" />Private Cloud / RISE</span>
-                    {modalSelection === 'private' && <span aria-hidden="true" className="w-2 h-2 rounded-full bg-cc-ink" />}
-                  </div>
-                  <p className="cc-text-cell text-cc-ink-muted">3-Tier Extensibility Model. Supports upgrade-safe Tier 2 custom wrappers.</p>
-                </div>
-              </div>
-            </div>
+      {/* Target Operating Model concept question — a CcDialog (D.10b). */}
+      <CcDialog
+        open={showConceptQuestion}
+        size="wide"
+        title="Confirm Target Operating Model"
+        lead="Before the analysis generates clean core recommendations, let's align on a critical architectural choice. Which target operating model is selected?"
+        onClose={() => setShowConceptQuestion(false)}
+        actions={
+          <>
+            <CcButton variant="ghost" onClick={() => setShowConceptQuestion(false)}>
+              Cancel
+            </CcButton>
+            <CcButton
+              variant="primary"
+              onClick={() => {
+                if (!acceptedTerms) {
+                  setError('Please agree to the Terms & Conditions of Clean-Core.io (Free Community Edition) before starting the analysis.');
+                  setShowConceptQuestion(false);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  return;
+                }
+                // The same check the button behind this dialog makes. The
+                // dialog is only reachable through that button, but a guard
+                // that lives in one of two places is a guard somebody routes
+                // around later — which is why `acceptedTerms` is asked twice
+                // here too.
+                if (personalDataPending) {
+                  setError('Some lines in this source look as though they may hold personal data. Read them, then tick the box to say you have checked them and want to upload this anyway.');
+                  setShowConceptQuestion(false);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  return;
+                }
+                if (modalSelection) {
+                  setTargetDeployment(modalSelection);
+                  setShowConceptQuestion(false);
+                  // The choice goes with the call. `setTargetDeployment` above
+                  // is for the screen; this closure still holds the old value.
+                  handleAnalyze(legacyCode, modalSelection);
+                }
+              }}
+              disabled={!modalSelection || !acceptedTerms || personalDataPending}
+            >
+              Confirm and start the analysis <ArrowRight size={16} aria-hidden="true" />
+            </CcButton>
+          </>
+        }
+      >
+        <div className="space-y-6">
+          <p className="cc-text-label text-cc-ink-muted">Architecture Validation Checkpoint</p>
+          <DeploymentChoice
+            name="analyze-deployment-confirm"
+            label="Target operating model"
+            value={modalSelection}
+            onChange={setModalSelection}
+            options={DIALOG_DEPLOYMENT_OPTIONS}
+          />
 
             {/* Explanation box based on selection */}
             {modalSelection && (
@@ -2490,46 +2478,8 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
               </div>
             )}
 
-            <div className="flex justify-end gap-2 pt-2">
-              <CcButton variant="ghost" onClick={() => setShowConceptQuestion(false)}>
-                Cancel
-              </CcButton>
-              <CcButton
-                variant="primary"
-                onClick={() => {
-                  if (!acceptedTerms) {
-                    setError('Please agree to the Terms & Conditions of Clean-Core.io (Free Community Edition) before starting the analysis.');
-                    setShowConceptQuestion(false);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    return;
-                  }
-                  // The same check the button behind this dialog makes. The
-                  // dialog is only reachable through that button, but a guard
-                  // that lives in one of two places is a guard somebody routes
-                  // around later — which is why `acceptedTerms` is asked twice
-                  // here too.
-                  if (personalDataPending) {
-                    setError('Some lines in this source look as though they may hold personal data. Read them, then tick the box to say you have checked them and want to upload this anyway.');
-                    setShowConceptQuestion(false);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    return;
-                  }
-                  if (modalSelection) {
-                    setTargetDeployment(modalSelection);
-                    setShowConceptQuestion(false);
-                    // The choice goes with the call. `setTargetDeployment` above
-                    // is for the screen; this closure still holds the old value.
-                    handleAnalyze(legacyCode, modalSelection);
-                  }
-                }}
-                disabled={!modalSelection || !acceptedTerms || personalDataPending}
-              >
-                Confirm and start the analysis <ArrowRight size={16} aria-hidden="true" />
-              </CcButton>
-            </div>
-          </div>
         </div>
-      )}
+      </CcDialog>
     </div>
   );
 }
@@ -2542,11 +2492,112 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 const ROUTE_TAG_CLASS =
   'inline-flex items-center rounded-[4px] border border-cc-line bg-cc-surface-muted px-2 cc-text-meta text-cc-ink whitespace-nowrap';
 
+/** The columns of the evidence findings table (CcTable, D.10b). */
+const EVIDENCE_COLUMNS = [
+  { key: 'pattern', label: 'Pattern', width: '22%' },
+  { key: 'lines', label: 'Lines' },
+  { key: 'snippet', label: 'Code Snippet' },
+  { key: 'severity', label: 'Severity' },
+  { key: 'source', label: 'Source' },
+  { key: 'replacement', label: 'SAP Replacement' },
+  { key: 'target', label: 'Target' },
+] as const;
+
 /** A deployment choice card. Chosen = ink outline, never green (§1.1: choosing proves nothing). */
 const DEPLOYMENT_CARD_CLASS =
   'p-4 rounded-cc-card border cursor-pointer flex flex-col justify-between min-h-[140px]';
 const DEPLOYMENT_CARD_ON = 'bg-cc-surface-muted border-cc-ink ring-1 ring-cc-ink';
 const DEPLOYMENT_CARD_OFF = 'bg-cc-surface border-cc-line hover:border-cc-field-border';
+
+type Deployment = 'public' | 'private';
+
+interface DeploymentOption {
+  value: Deployment;
+  title: string;
+  /** A property of the choice, as a plain tag (not a state). */
+  tag?: string;
+  text: string;
+}
+
+const PAGE_DEPLOYMENT_OPTIONS: readonly DeploymentOption[] = [
+  {
+    value: 'public',
+    title: 'Public Cloud Edition',
+    tag: 'Strict Clean Core',
+    text: 'SAP S/4HANA Cloud, Public Edition (SaaS). Custom core modifications are fully prohibited. Standard released APIs must be used exclusively.',
+  },
+  {
+    value: 'private',
+    title: 'Private Cloud RISE Edition',
+    tag: '3-Tier Extensibility',
+    text: 'SAP S/4HANA Cloud, Private Edition / On-Premise. Supports Custom Tier 2 API Wrappers to expose legacy unreleased objects upgrade-safely.',
+  },
+];
+
+const DIALOG_DEPLOYMENT_OPTIONS: readonly DeploymentOption[] = [
+  { value: 'public', title: 'Public Cloud', text: 'Strict SaaS rules. Zero direct modifications allowed. Released standard APIs only.' },
+  { value: 'private', title: 'Private Cloud / RISE', text: '3-Tier Extensibility Model. Supports upgrade-safe Tier 2 custom wrappers.' },
+];
+
+/**
+ * The deployment choice as radio cards (D.10b). It used to be two `<div
+ * onClick>`s — reachable by mouse only, and silent to a screen reader about
+ * being a choice at all. Native radios in a named group now carry the keyboard
+ * (Tab to the group, arrows between the options) and the focus ring; the card
+ * around each one is its label, so a click anywhere on it still chooses.
+ */
+function DeploymentChoice({
+  name,
+  label,
+  labelledBy,
+  value,
+  onChange,
+  options,
+}: {
+  name: string;
+  label?: string;
+  labelledBy?: string;
+  value: Deployment | null;
+  onChange: (value: Deployment) => void;
+  options: readonly DeploymentOption[];
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label={labelledBy ? undefined : label}
+      aria-labelledby={labelledBy}
+      className="grid grid-cols-1 md:grid-cols-2 gap-4"
+    >
+      {options.map((option) => (
+        <label
+          key={option.value}
+          className={clsx(DEPLOYMENT_CARD_CLASS, value === option.value ? DEPLOYMENT_CARD_ON : DEPLOYMENT_CARD_OFF)}
+        >
+          <span className="block">
+            <span className="flex items-center justify-between gap-2 mb-2">
+              <span className="inline-flex items-center gap-2">
+                <input
+                  type="radio"
+                  name={name}
+                  value={option.value}
+                  checked={value === option.value}
+                  onChange={() => onChange(option.value)}
+                  className="size-4 shrink-0 cursor-pointer accent-cc-ink"
+                />
+                {option.value === 'public'
+                  ? <Cloud size={16} aria-hidden="true" className="text-cc-ink-muted" />
+                  : <Shield size={16} aria-hidden="true" className="text-cc-ink-muted" />}
+                <span className="cc-text-h3 text-cc-ink">{option.title}</span>
+              </span>
+              {option.tag ? <CcTag>{option.tag}</CcTag> : null}
+            </span>
+            <span className="block cc-text-cell text-cc-ink-muted">{option.text}</span>
+          </span>
+        </label>
+      ))}
+    </div>
+  );
+}
 
 /** The four tiers the score explanation lists — the same words as before, in one place. */
 const SCORE_TIERS = [
@@ -2573,30 +2624,6 @@ function replacementState(confidence: string | undefined): SemanticState {
   return 'error';
 }
 
-/**
- * Severity of a finding in the identifier form of DESIGN.md §4.1 (ADR-049): a
- * 4px rectangle, the word in 12px/600, Critical and High `error`, Medium
- * `warning`, Low `neutral`, Info `information`, never `success`. Local until
- * `CcSeverity` (D.5d) lands; then this is one import away from gone.
- */
-function SeverityWord({ value }: { value: string }) {
-  const state: SemanticState =
-    value === 'Critical' || value === 'High' ? 'error' : value === 'Medium' ? 'warning' : value === 'Info' ? 'information' : 'neutral';
-  const classes = STATE_CLASSES[state];
-  return (
-    <span
-      data-severity={value}
-      className={clsx(
-        'inline-flex items-center rounded-[4px] border bg-cc-surface px-2 cc-text-meta leading-[18px] whitespace-nowrap',
-        classes.borderStrong,
-        classes.text,
-      )}
-    >
-      {value}
-    </span>
-  );
-}
-
 /** Complexity or criticality on the 1–10 scale, with its bar. */
 function ScoreMeter({ title, icon, label, value, caption }: { title: string; icon: React.ReactNode; label: string; value: number; caption: string }) {
   const classes = STATE_CLASSES[scoreState(value, 'lower-is-better')];
@@ -2621,47 +2648,27 @@ function ScoreMeter({ title, icon, label, value, caption }: { title: string; ico
  * The console shown while a run starts, before the evidence sweep takes over.
  * A code surface (ADR-028: the one dark surface that carries content), without
  * the laser line and the window dots it used to wear.
+ *
+ * Its log is the run's own stage line, one entry each time the stage changes
+ * (D.10b). It used to replay ten fixed lines on a 950 ms timer — "[SQL]
+ * Detecting Open SQL patterns…", "[DONE] … complete" — whatever the run was
+ * actually doing, which is the loading state that plays at work DESIGN.md
+ * §5.4 rules out.
  */
-function ScannerConsole({ code, onComplete }: { code: string; onComplete?: () => void }) {
-  const [logs, setLogs] = useState<string[]>([]);
-  const logIndexRef = useRef(0);
-
-  const logTemplates = [
-    "[ENGINE] Starting deterministic ABAP evidence scan...",
-    "[PARSE] Tokenizing ABAP — classes, reports, function modules...",
-    "[SQL] Detecting Open SQL patterns, joins & quirks (FOR ALL ENTRIES)...",
-    "[OO] Linearizing class/interface inheritance (MRO resolver)...",
-    "[COUPLING] Mapping standard-table access & data-coupling risk...",
-    "[CATALOG] Matching objects to released S/4HANA successors (Cloudification repo)...",
-    "[CLEAN CORE] Scoring complexity, criticality & clean-core readiness...",
-    "[ROUTING] Evaluating In-App RAP vs Side-by-Side CAP track...",
-    "[EVIDENCE] Assembling a replayable, signed evidence report...",
-    "[DONE] Deterministic analysis complete — findings ready for review."
-  ];
-
-  useEffect(() => {
-    setLogs([logTemplates[0]]);
-    logIndexRef.current = 1;
-
-    const interval = setInterval(() => {
-      if (logIndexRef.current < logTemplates.length) {
-        setLogs(prev => [...prev, logTemplates[logIndexRef.current]]);
-        logIndexRef.current += 1;
-      } else {
-        clearInterval(interval);
-        if (onComplete) onComplete();
-      }
-    }, 950);
-
-    return () => clearInterval(interval);
-  }, []);
+function ScannerConsole({ code, stage }: { code: string; stage: string }) {
+  const [logs, setLogs] = useState<string[]>(stage ? [stage] : []);
+  // A new stage is appended while rendering (React's "adjust state when a
+  // prop changes"), not in an effect: there is nothing outside React to wait for.
+  if (stage && logs[logs.length - 1] !== stage) setLogs([...logs, stage]);
 
   return (
     <div className="bg-cc-code-bg text-cc-code-ink font-cc-mono text-[12px] rounded-cc-card overflow-hidden h-[480px] flex flex-col">
       {/* Header bar */}
       <div className="border-b border-cc-code-muted/40 px-6 py-4 flex items-center justify-between gap-4 shrink-0">
         <span className="cc-text-label text-cc-code-muted">Clean-Core Analyzer {APP_VERSION}</span>
-        <span className="cc-text-label text-cc-code-ink" role="status">Scanning Code</span>
+        {/* Not a second live region: the card above the console already
+            announces the run and its stage. */}
+        <span className="cc-text-label text-cc-code-ink">Run in progress</span>
       </div>
 
       {/* Main split display */}

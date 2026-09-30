@@ -172,7 +172,8 @@ async function openUploadScreen(page: import('@playwright/test').Page) {
 /** The two things the upload screen already required before today. */
 async function satisfyTheOlderGates(page: import('@playwright/test').Page) {
   await page.getByText('Public Cloud Edition').first().click();
-  await page.locator('label:has-text("I agree to the") input[type="checkbox"]').check();
+  // CcCheckbox since D.10b: the label is beside the box, tied by for/id.
+  await page.getByLabel(/^I agree to the Terms & Conditions/).check();
 }
 
 test('the lines are shown, and the address is not', async ({ page }) => {

@@ -267,7 +267,8 @@ test.describe('a signed-in account reading its own project', () => {
      * their own code that nothing had assessed.
      */
     await page.goto(`/project/${BTP}/analyze`, { waitUntil: 'domcontentloaded' });
-    await page.getByRole('button', { name: 'Modernization Strategy' }).click({ timeout: 60000 });
+    // A real ARIA tab since D.10b (CcTabs), no longer an aria-pressed button.
+    await page.getByRole('tab', { name: 'Modernization Strategy' }).click({ timeout: 60000 });
     await page.waitForSelector('text=Extensibility Decision Matrix', { timeout: 60000 });
 
     // One for the checkpoints, one for the track comparison: the panel says twice
