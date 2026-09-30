@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { logger } from '@/lib/logger';
+import { logger, providerErrorShape } from '@/lib/logger';
 import { GoogleGenAI } from '@google/genai';
 import {
   verifyRequestAuth,
@@ -356,7 +356,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ text, receipt });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    logger.error('gemini route failed', { route: 'api/gemini', error: message });
+    // Not the message: a provider error can carry the refused prompt back, and
+    // the log would then hold the customer's source (providerErrorShape).
+    logger.error('gemini route failed', { route: 'api/gemini', error: providerErrorShape(error), network: message.includes('fetch') });
 
     if (message.includes('fetch')) {
       return NextResponse.json(

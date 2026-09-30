@@ -12,6 +12,7 @@ import { diffResultSets } from '../lib/abap/result-diff';
 import JSZip from 'jszip';
 import { verifyAuditPack } from '../lib/audit-pack-verify';
 import { canonicalAuditManifest } from '../lib/audit-pack-canonical';
+import { providerErrorShape } from '../lib/logger';
 import { generateExecutiveSummary, generateExecutiveSummaryDoc, generateModelCard } from '../lib/audit-pack';
 
 /**
@@ -204,6 +205,22 @@ test.describe('an internal error answered by a route', () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+});
+
+test.describe('a failed model call, as the log records it', () => {
+  test('keeps the class and status and drops the text', () => {
+    const providerError = Object.assign(new Error('Request refused. Prompt: REPORT zsecret. SELECT * FROM zcustomer.'), { status: 400 });
+    const shape = providerErrorShape(providerError);
+    expect(shape).toEqual({ name: 'Error', status: 400 });
+    expect(JSON.stringify(providerErrorShape('Prompt: REPORT zsecret'))).not.toContain('zsecret');
+  });
+
+  test('the model route logs that shape and not the message', () => {
+    const src = read('app/api/gemini/route.ts');
+    const line = src.split('\n').find((l) => l.includes("logger.error('gemini route failed'")) ?? '';
+    expect(line).toContain('providerErrorShape(error)');
+    expect(line).not.toMatch(/error: message\b/);
   });
 });
 

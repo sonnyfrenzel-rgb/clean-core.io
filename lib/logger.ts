@@ -32,3 +32,17 @@ export const logger = {
 export function errMessage(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
+
+/**
+ * A model provider's error, reduced to what may be logged: its class and any
+ * status code. Not its text — a provider error can carry back the prompt it
+ * refused, and the prompt is the customer's source.
+ */
+export function providerErrorShape(e: unknown): { name: string; status?: number | string } {
+  const err = (e ?? {}) as { name?: unknown; status?: unknown; code?: unknown };
+  const name = e instanceof Error ? e.name : typeof e;
+  const status = err.status ?? err.code;
+  return typeof status === 'number' || (typeof status === 'string' && /^[A-Z0-9_]{1,40}$/.test(status))
+    ? { name, status }
+    : { name };
+}
