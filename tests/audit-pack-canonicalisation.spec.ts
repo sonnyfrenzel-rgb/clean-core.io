@@ -194,6 +194,47 @@ test.describe('a file list can no longer be replaced without moving the signed b
     expect(out).not.toContain('Verified.');
     expect(code, 'the offline verifier accepted a pack missing a signed file').toBe(1);
   });
+
+  // Security audit of v2.20.0 (SEC-2026-576): the version-2 run suffix is not
+  // escaped, and the catalog version of every live pack carries a colon, so part
+  // of it could be moved into the field before it — or a boundary further left —
+  // and the signed bytes stayed the same. Only the last field may carry one now.
+  test('a version-2 run binding cannot shift a boundary through a colon', async () => {
+    const live = '2024.FPS02 + CR:latest@407843e4 (25467 entries, fetched 2026-09-15)';
+    const genuine = { files: GENUINE_FILES, ...bound, sapApiCatalogVersion: live };
+    const shiftedEngine = { ...genuine, engineVersion: `${bound.engineVersion}:2024.FPS02 + CR`, sapApiCatalogVersion: 'latest@407843e4 (25467 entries, fetched 2026-09-15)' };
+    const shiftedProject = { ...genuine, projectId: `${bound.projectId}:${bound.runId}`, runId: bound.runHash, runHash: bound.engineVersion, engineVersion: '2024.FPS02 + CR', sapApiCatalogVersion: 'latest@407843e4 (25467 entries, fetched 2026-09-15)' };
+    // The collision is real in the form that was signed ...
+    expect(formUpTo1709(shiftedEngine)).toBe(formUpTo1709(genuine));
+    expect(formUpTo1709(shiftedProject)).toBe(formUpTo1709(genuine));
+    for (const version of [undefined, '2.0', '2.1']) {
+      // ... the genuine pack still canonicalises to exactly those bytes ...
+      expect(canonicalAuditManifest({ ...genuine, version })).toBe(formUpTo1709(genuine));
+      // ... and the shifted ones have no canonical form.
+      expect(() => canonicalAuditManifest({ ...shiftedEngine, version })).toThrow(/engineVersion contains a field separator/);
+      expect(() => canonicalAuditManifest({ ...shiftedProject, version })).toThrow(/projectId contains a field separator/);
+      expect(() => canonicalAuditManifest({ ...genuine, runId: 'r:1', version })).toThrow(/runId contains a field separator/);
+      expect(() => canonicalAuditManifest({ ...genuine, runHash: 'h:1', version })).toThrow(/runHash contains a field separator/);
+    }
+
+    // The offline verifier holds the same line, with a signature the key really made.
+    const kp = keyPair();
+    const files = GENUINE_FILES.map((f) => ({ ...f, bytes: 1 }));
+    const manifestHash = sha(formUpTo1709({ ...genuine, files }));
+    const entries = { 'a-findings.md': BODY_A, 'b-summary.md': BODY_B };
+    const manifestOf = (fields: typeof genuine) => ({
+      version: '2.1', ...bound, projectId: fields.projectId, runId: fields.runId, runHash: fields.runHash,
+      engineVersion: fields.engineVersion, sapApiCatalogVersion: fields.sapApiCatalogVersion,
+      generatedAt: '2026-09-17T08:00:00.000Z', files, manifestHash, signed: true, signature: '',
+      signatureEd25519: sign(null, Buffer.from(manifestHash, 'utf8'), kp.privateKey).toString('base64'),
+    });
+    const genuineRun = runCli(await writePack(manifestOf(genuine), entries), kp.rawPublicBase64);
+    expect(genuineRun.code, genuineRun.out).toBe(0);
+    const shiftedRun = runCli(await writePack(manifestOf(shiftedEngine), entries), kp.rawPublicBase64);
+    expect(shiftedRun.out).toContain('no unambiguous canonical form');
+    expect(shiftedRun.out).not.toContain('Verified.');
+    expect(shiftedRun.code, 'the offline verifier accepted a shifted run binding').toBe(1);
+  });
 });
 
 // ── 2. The attested file's bytes are bound ────────────────────────────────

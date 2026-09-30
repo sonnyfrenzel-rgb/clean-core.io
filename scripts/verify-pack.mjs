@@ -420,6 +420,12 @@ function canonicalDefect(manifest, attested) {
       const value = manifest[name];
       if (value !== undefined && SECTION_END.test(String(value))) return `${name} contains a field separator: ${JSON.stringify(value)}`;
     }
+    // The version-2 suffix is not escaped: a colon in any field but the last
+    // (the catalog version) would move a boundary. Same rule as the library.
+    for (const name of ['projectId', 'runId', 'runHash', 'engineVersion']) {
+      const value = manifest[name];
+      if (value !== undefined && String(value).includes(':')) return `${name} contains a field separator: ${JSON.stringify(value)}`;
+    }
   }
   if (bound) {
     if (SEPARATOR.test(String(manifest.version))) return `version contains a field separator: ${JSON.stringify(manifest.version)}`;
