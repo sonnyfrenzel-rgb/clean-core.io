@@ -246,7 +246,14 @@ test.describe('"Show tips again" in the help menu', () => {
   test('is in the account menu, behind the workspace switch, and clears both kinds of tip', () => {
     const layout = read('app/(app)/layout.tsx');
     expect(layout).toContain('Show tips again');
-    expect(layout).toMatch(/workspaceShellEnabled\(profile\)\s*&&[\s\S]{0,200}showTipsAgain\(\)/);
+    // The item is the one element inside the switch's condition: from the
+    // condition to the end of that button, and nowhere else (the menu item
+    // carries its ARIA attributes since D.6, so a fixed window no longer fits).
+    const at = layout.indexOf('{workspaceShellEnabled(profile) && (');
+    expect(at, 'the item is not behind the workspace switch').toBeGreaterThan(-1);
+    const item = layout.slice(at, layout.indexOf('</button>', at));
+    expect(item).toContain('showTipsAgain()');
+    expect(item).toContain('Show tips again');
     const fn = read('lib/show-tips-again.ts');
     expect(fn).toContain('clearDismissedMarks()');
     expect(fn).toContain('clearTourProgress()');

@@ -47,7 +47,7 @@ export default function HeaderAuthButton() {
   }
 
   return (
-    <CcLinkButton href="?auth=signin" variant="primary" density="cozy">
+    <CcLinkButton href="?auth=signin" variant="primary" density="compact">
       {/* The full label does not fit a 320px header next to the wordmark, and it
           could not shrink, so it pushed the page sideways. Everything from `sm`
           up — every width the page has been reviewed at — is unchanged. */}
