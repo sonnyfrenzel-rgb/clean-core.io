@@ -15,10 +15,11 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
  * Asking again when the Terms have changed — and the reason it has to exist.
  *
  * `assertAccountActive(..., { requireCurrentTerms: true })` refuses every
- * protected route when the profile's `termsVersionAccepted` is not the current
- * `TERMS_VERSION`: analysis, audit packs, invitations, the model routes. The
- * refusal says *"The Terms of Service have been updated. Please re-accept them
- * in the app to continue."*
+ * protected route — analysis, audit packs, invitations, the model routes — when
+ * the profile's `termsVersionAccepted` is a version that is no longer in force
+ * (`termsVersionInForce`, `lib/firebase-admin.ts`). An older version that is
+ * still in force is accepted there, which is what makes "not now" below true.
+ * Until § 10.3 it refused anything but the current `TERMS_VERSION`.
  *
  * Until 18.09.2026 there was nowhere in the app to do that. `termsVersionAccepted`
  * appeared in exactly one component — the admin panel, read-only — and nothing
