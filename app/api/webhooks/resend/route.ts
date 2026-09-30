@@ -19,10 +19,21 @@ import { verifyResendSignature, recordEmailEvent, type EmailEventType } from '@/
  * refuses every request rather than accepting unsigned ones — an endpoint that
  * writes to Firestore on anyone's say-so would be worse than no endpoint.
  *
- * Always answers 2xx once the signature checks out, including for payloads it
- * does not understand. A webhook that returns an error is retried, and retrying
- * an event we will never handle is noise for both sides.
+ * Answers 2xx once the signature checks out, including for payloads it does
+ * not understand: a webhook that returns an error is retried, and retrying an
+ * event we will never handle is noise for both sides. The one exception is an
+ * event that could not be stored — that is ours, it is transient, and only a
+ * non-2xx gets it delivered again (recording is idempotent per svix-id).
  */
+
+/**
+ * A Resend event is a few kilobytes of JSON. The body is read before the
+ * signature can be checked, and the route is unauthenticated, so it is read
+ * under a bound and a deadline rather than buffered whole (QA full review of
+ * fc787674705f, 81ed8ba6a1db). Decoded exactly as `req.text()` decodes, so the
+ * signature covers the same string.
+ */
+const WEBHOOK_BODY_LIMITS = { maxBytes: 256 * 1024, timeoutMs: 10_000 };
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
@@ -77,20 +88,36 @@ export async function POST(req: NextRequest) {
     // record idempotent under retries.
     const eventId = req.headers.get('svix-id') || `${messageId}:${type}:${data?.created_at || ''}`;
 
-    await recordEmailEvent(
-      {
+    // A failed write is not acknowledged. It fell into the catch below and was
+    // answered 200, so an event that met a Firestore hiccup was never
+    // delivered again (QA full review of fc787674705f, 445e3934cbdd).
+    try {
+      await recordEmailEvent(
+        {
+          messageId,
+          type: type as EmailEventType,
+          to,
+          subject: data?.subject ?? null,
+          detail,
+          occurredAt: payload?.created_at || data?.created_at || null,
+        },
+        eventId,
+      );
+    } catch (storeErr) {
+      logger.error('resend webhook event not stored', {
+        route: 'api/webhooks/resend',
+        type,
         messageId,
-        type: type as EmailEventType,
-        to,
-        subject: data?.subject ?? null,
-        detail,
-        occurredAt: payload?.created_at || data?.created_at || null,
-      },
-      eventId,
-    );
+        error: errMessage(storeErr),
+      });
+      return NextResponse.json({ ok: false, retryable: true }, { status: 503 });
+    }
 
     // Anything that means the reader did not get it is worth a log line of its
-    // own, because that is the case somebody has to act on.
+    // own, because that is the case somebody has to act on. The message id is
+    // the handle; the address and the provider's diagnostic stay in
+    // `email_events`, which is server-only, and out of the application log
+    // (QA full review of fc787674705f, a488f527bff9).
     if (type === 'email.bounced' || type === 'email.complained') {
       logger.error('email did not reach the recipient', {
         route: 'api/webhooks/resend',
@@ -108,7 +135,7 @@ export async function POST(req: NextRequest) {
       error: errMessage(err),
     });
     // The signature was valid, so the sender is genuine; a parsing failure is
-    // ours and retrying will not fix it.
+    // ours and retrying will not fix it. (A storage failure is answered above.)
     return NextResponse.json({ ok: false }, { status: 200 });
   }
 }

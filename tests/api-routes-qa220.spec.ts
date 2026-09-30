@@ -113,4 +113,14 @@ test.describe('the OData read', () => {
 test.describe('the Resend webhook', () => {
   const REL = 'app/api/webhooks/resend/route.ts';
 
+  test('does not acknowledge an event it could not store', () => {
+    const src = code(REL);
+    const record = src.indexOf('await recordEmailEvent(');
+    const tryAt = src.lastIndexOf('try {', record);
+    const handler = src.indexOf('} catch (storeErr)', record);
+    expect(handler, 'a storage failure is not handled on its own').toBeGreaterThan(record);
+    expect(src.slice(tryAt, record)).not.toContain('JSON.parse');
+    expect(src.slice(handler, handler + 400)).toContain('{ status: 503 }');
+  });
+
 });
