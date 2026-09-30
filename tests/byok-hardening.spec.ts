@@ -277,7 +277,9 @@ test.describe('(d) the key routes are limited per account, not per account and a
 
 test.describe('(e) the key paths log codes, not errors', () => {
   test('an error that quotes the key back is logged as its class and status only', () => {
-    const key = 'sk-proj-abcdefghijklmnopqrstuvwxyz0123456789';
+    // A made-up key in a provider's shape, assembled at run time so no literal in
+    // the repository looks like a committed secret (QA a961d0af476a).
+    const key = ['sk', 'proj', 'abcdefghijklmnopqrstuvwxyz0123456789'].join('-');
     const err = Object.assign(new Error(`Incorrect API key provided: ${key}. You can find your API key at …`), {
       status: 401,
       response: { body: { error: { message: `key ${key} is invalid` } } },
