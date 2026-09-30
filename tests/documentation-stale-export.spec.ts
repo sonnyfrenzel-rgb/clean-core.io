@@ -14,6 +14,7 @@ import {
 } from '../lib/documentation-export';
 import type { ProcessDocumentation } from '../lib/process-documentation';
 import { signInViaLanding } from './helpers/sign-in';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * Owner decision 30.09.2026 on QA finding c8ae21453b3b — a stale
@@ -122,7 +123,7 @@ test.describe('the documentation stage, stale and current, in a browser', () => 
     const uid = cred.user.uid;
     await adminSetDoc('users', uid, {
       firstName: 'Doc', lastName: 'Stale', email: EMAIL,
-      tier: 'pilot', status: 'approved',
+      tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 50, createdAt: new Date(),
     });
 
