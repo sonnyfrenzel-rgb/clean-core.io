@@ -156,3 +156,35 @@ test.describe('the verdicts read from a test run', () => {
     expect(byId).toEqual({ 'TC-001': 'Failed', 'TC.002': 'Failed', TC_003: 'Failed', TC_004: 'Skipped' });
   });
 });
+
+/**
+ * `.gitleaks.toml` exempts `.gitleaksignore` from the secret scan as a whole
+ * path, for the reason written next to that entry. What keeps the exemption
+ * safe is that the file holds only two kinds of line; this is where that is
+ * checked, since the scanner no longer looks.
+ */
+test.describe('the secret-scan exception list', () => {
+  test('holds exact fingerprints and prose, and nothing shaped like a value', () => {
+    const lines = read('.gitleaksignore').split(/\r?\n/);
+    const offenders: string[] = [];
+    lines.forEach((line, i) => {
+      const at = `.gitleaksignore:${i + 1}`;
+      if (line.trim() === '') return;
+      if (line.startsWith('#')) {
+        // Prose may name a commit, a path or a variable, never carry a long
+        // opaque token: 24+ key characters mixing letters and digits that are
+        // not a plain hex commit id.
+        for (const token of line.match(/[A-Za-z0-9_+=-]{24,}/g) ?? []) {
+          const opaque = /[0-9]/.test(token) && /[A-Za-z]/.test(token) && !/^[0-9a-f]{7,40}$/.test(token);
+          if (opaque) offenders.push(`${at}: a comment carries an opaque token`);
+        }
+        return;
+      }
+      // commit:path:rule:line — the exact form gitleaks writes, and no value in it.
+      if (!/^[0-9a-f]{40}:[^:\s]+:[a-z0-9-]+:\d+$/.test(line)) offenders.push(`${at}: not a fingerprint or a comment`);
+    });
+    expect(offenders).toEqual([]);
+    // Not vacuous: the file does hold fingerprints.
+    expect(lines.filter((l) => /^[0-9a-f]{40}:/.test(l)).length).toBeGreaterThan(0);
+  });
+});
