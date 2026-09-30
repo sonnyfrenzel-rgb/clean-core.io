@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useDialogFocus } from '@/hooks/useDialogFocus';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc, runTransaction } from 'firebase/firestore';
 import { getAuth, getDb } from '@/lib/firebase';
@@ -9,11 +8,10 @@ import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import Stepper from '@/components/Stepper';
 import NavigationButtons from '@/components/NavigationButtons';
-import { Download, ArrowLeft, ArrowRight, RefreshCw, AlertCircle, FileCode2, Briefcase, Target, Users, Settings, Activity, Layers, Cpu, Database, Box, Lock, CheckCircle2, X, Rocket } from 'lucide-react';
+import { Download, RefreshCw, FileCode2, Briefcase, Target, Users, Settings, Activity, Layers, Box, Lock, Rocket } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import NotGenerated from '@/components/NotGenerated';
-import { motion, AnimatePresence } from 'motion/react';
 import dynamic from 'next/dynamic';
 import { clsx } from 'clsx';
 import { callGemini } from '@/lib/gemini';
@@ -21,19 +19,21 @@ import type { Project } from '@/lib/types';
 import { formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
 import {
   LEGACY_BLUEPRINT_NOTICE,
-  anchorsWords,
   processDocumentationToMarkdown,
   readStoredDocumentation,
-  stepEvidence,
   type ProcessDocumentation,
 } from '@/lib/process-documentation';
+import {
+  buildEngineConfluenceHtml,
+  buildLegacyConfluenceHtml,
+  confluenceFileName,
+} from '@/lib/documentation-export';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
 import { saveAs } from '@/lib/fileSaver';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
-import { escapeHtml } from '@/lib/utils';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { useProcessMap } from '@/hooks/useProcessMap';
 import { useProcessMapAddress } from '@/hooks/useProcessMapAddress';
@@ -54,6 +54,30 @@ import {
   checkBlueprintShape,
   STORED_BLUEPRINT_REJECTED,
 } from './blueprint-schema';
+import CcButton from '@/components/cc/Button';
+import CcDialog from '@/components/cc/Dialog';
+import CcEmptyState from '@/components/cc/EmptyState';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import CcSkeleton from '@/components/cc/Skeleton';
+import CcTable from '@/components/cc/Table';
+import CcTabs from '@/components/cc/Tabs';
+import { CcTag } from '@/components/cc/Tag';
+import { t } from '@/lib/cc-messages';
+
+/** A section of this stage — the card of DESIGN.md §1.4. */
+const SECTION = 'rounded-cc-card border border-cc-line bg-cc-surface p-4 md:p-6 shadow-cc';
+/** The micro-label above a heading or a value (§1.2). */
+const LABEL = 'cc-text-label text-cc-ink-muted';
+/** A section heading (§1.2). */
+const H2 = 'cc-text-h2 text-cc-ink';
+
+/**
+ * The workspace file the documentation is merged into, named after the stage
+ * (UX-169) — the same name the handover writes (`delivery/page.tsx`,
+ * `DOCUMENTATION_FILE`), so one project never carries two copies of it.
+ */
+const DOCUMENTATION_WORKSPACE_FILE = 'docs/process-documentation.md';
 
 const addOrUpdateFileInWorkspace = (generatedCode: string | undefined, filePath: string, fileContent: string): string => {
   let files: Array<{ path: string, content: string }> = [];
@@ -170,10 +194,9 @@ export default function DocumentationPage() {
   /** True when `docError` is a refused model answer rather than a blocked start. */
   const [docRejected, setDocRejected] = useState(false);
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
+  // The task specification is a modal (UX-034, roadmap 3.0.4) — `CcDialog`
+  // below, since block D, D.16a.
   const [activeTask, setActiveTask] = useState<any | null>(null);
-  // The task drawer is a modal (UX-034, roadmap 3.0.4): focus in, Tab kept
-  // inside, Escape closes, focus back to the task that opened it.
-  const taskDrawerRef = useDialogFocus<HTMLDivElement>(activeTask !== null, () => setActiveTask(null));
 
   // Stage 2 Business Documentation States
   const [businessDocumentation, setBusinessDocumentation] = useState('');
@@ -499,7 +522,7 @@ Structure the JSON exactly like this:
         if (current.activeRunId !== builtFromRun || current.legacyCode !== signedSource.source) {
           throw new Error('The analysis of this project changed while the documentation was being put together, so nothing was saved. Reload the stage and generate it again.');
         }
-        const merged = addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, 'docs/process-blueprint.md', processDocumentationToMarkdown(built));
+        const merged = addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, DOCUMENTATION_WORKSPACE_FILE, processDocumentationToMarkdown(built));
         tx.update(projectDoc, { documentation: stored, generatedCode: merged, status: 'documented' });
         return merged;
       });
@@ -761,272 +784,434 @@ Structure the JSON exactly like this:
     }
   };
 
-  const downloadConfluenceHTML = () => {
-    if (engineDoc) {
-      downloadEngineConfluenceHTML(engineDoc);
-      return;
-    }
-    if (!parsedDoc) return;
-
-    /**
-     * The export is an HTML document a reviewer opens, and every value in it
-     * was written by the model from the customer's own ABAP — a comment in the
-     * source is enough to steer it into returning markup (QA review of
-     * 33471220d6e9, 06f7c0c56a6c). Nothing generated reaches the document
-     * unescaped; the markup around it is ours.
-     */
-    const esc = escapeHtml;
-
-    const confluenceCSS = `
-      <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #172B4D; line-height: 1.6; padding: 20px; }
-        .doc-header { background: #0747A6; color: white; padding: 24px; border-radius: 8px; margin-bottom: 30px; }
-        .doc-header h1 { margin: 0; font-size: 28px; font-weight: 800; text-transform: uppercase; }
-        .doc-header p { margin: 8px 0 0 0; opacity: 0.8; font-weight: 500; }
-        h2 { color: #0747A6; border-bottom: 2px solid #DFE1E6; padding-bottom: 8px; margin-top: 40px; font-size: 20px; text-transform: uppercase; }
-        .meta-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
-        .meta-card { background: #F4F5F7; padding: 20px; border-radius: 8px; border: 1px solid #DFE1E6; }
-        .meta-card h3 { margin: 0 0 10px 0; color: #42526E; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; }
-        .meta-card p { margin: 0; font-weight: 600; font-size: 15px; }
-        .meta-card .badge { display: inline-block; background: #DEEBFF; color: #0747A6; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; text-transform: uppercase; margin-top: 8px; }
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        th, td { border: 1px solid #DFE1E6; padding: 12px; text-align: left; }
-        th { background-color: #F4F5F7; font-weight: 700; color: #42526E; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
-        .complexity-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
-        .complexity-high { background: #FFEBE6; color: #BF2600; }
-        .complexity-medium { background: #FFF0B3; color: #172B4D; }
-        .complexity-low { background: #EAE6FF; color: #403294; }
-        .tech-pill { display: inline-block; background: #E3FCEF; color: #006644; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-right: 4px; }
-      </style>
-    `;
-
-    const html = `
-      <html>
-        <head>
-          <meta charset="utf-8">
-          ${confluenceCSS}
-        </head>
-        <body>
-          <div class="doc-header">
-            <h1>${esc(parsedDoc.l1_domain?.name || 'Process Blueprint')}</h1>
-            <p>Enterprise Integration Specifications & Workflow Definition</p>
-          </div>
-          
-          <div class="meta-grid">
-            <div class="meta-card">
-              <h3>Level 1: Business Domain Blueprint</h3>
-              <p><strong>Strategic Goal:</strong> ${esc(parsedDoc.l1_domain?.strategicGoal || 'N/A')}</p>
-              <div class="badge">Owner: ${esc(parsedDoc.l1_domain?.owner || 'N/A')}</div>
-            </div>
-            
-            <div class="meta-card">
-              <h3>Level 2: Process Area Group</h3>
-              <p><strong>Process Area:</strong> ${esc(parsedDoc.l2_group?.processArea || 'N/A')}</p>
-              <p style="margin-top: 10px;"><strong>KPI Framework:</strong></p>
-              <div style="margin-top: 5px;">
-                ${(parsedDoc.l2_group?.kpis || []).map((kpi: string) => `<span class="tech-pill">${esc(kpi)}</span>`).join('')}
-              </div>
-            </div>
-          </div>
-          
-          <h2>Level 4: Architectural Task Specifications</h2>
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 10%">ID</th>
-                <th style="width: 25%">Task Name</th>
-                <th style="width: 35%">Functional Description</th>
-                <th style="width: 15%">Complexity</th>
-                <th style="width: 15%">Technology Stack</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${(parsedDoc.l4_tasks || []).map((task: any) => `
-                <tr>
-                  <td style="font-family: monospace; font-weight: bold; color: #0747A6;">${esc(task.stepId)}</td>
-                  <td><strong>${esc(task.name) || `Task ${esc(task.stepId)}`}</strong></td>
-                   <td>
-                     <p style="margin: 0;">${esc(task.description)}</p>
-                     <p style="margin: 6px 0 0 0; font-size: 11px; color: #6B778C;">
-                       <strong>Inputs:</strong> ${esc((task.inputs || []).join(', ') || 'N/A')} | 
-                       <strong>Outputs:</strong> ${esc((task.outputs || []).join(', ') || 'N/A')}
-                     </p>
-                   </td>
-                  <td>
-                    <span class="complexity-badge ${
-                      task.complexity === 'High' ? 'complexity-high' :
-                      task.complexity === 'Medium' ? 'complexity-medium' :
-                      'complexity-low'
-                    }">${esc(task.complexity || 'Low')}</span>
-                  </td>
-                  <td>
-                    ${(task.systems || []).map((sys: string) => `<span class="tech-pill">${esc(sys)}</span>`).join('')}
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          
-          ${parsedBusinessDoc ? `
-            <h2>Level 5: Standard Operating Procedures (SOP) & RACI Assignment</h2>
-            
-            <h3>RACI Assignment Matrix</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Task ID</th>
-                  <th>Responsible (R)</th>
-                  <th>Accountable (A)</th>
-                  <th>Consulted (C)</th>
-                  <th>Informed (I)</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${(parsedBusinessDoc.raci_matrix || []).map((raci: any) => `
-                  <tr>
-                    <td style="font-family: monospace; font-weight: bold; color: #0747A6;">${esc(raci.stepId)}</td>
-                    <td>${esc(raci.r || 'N/A')}</td>
-                    <td>${esc(raci.a || 'N/A')}</td>
-                    <td>${esc(raci.c || 'N/A')}</td>
-                    <td>${esc(raci.i || 'N/A')}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-            
-            <h3>SOP Operational Playbook</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th style="width: 15%">Task ID</th>
-                  <th style="width: 50%">Operational SOP Description</th>
-                  <th style="width: 20%">Business Exception Fallback</th>
-                  <th style="width: 15%">KPI Success Metric</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${(parsedBusinessDoc.sop_details || []).map((sop: any) => `
-                  <tr>
-                    <td style="font-family: monospace; font-weight: bold; color: #0747A6;">${esc(sop.stepId)}</td>
-                    <td>${esc(sop.narrative || 'N/A')}</td>
-                    <td style="color: #BF2600; font-weight: 500;">${esc(sop.businessException || 'N/A')}</td>
-                    <td style="font-weight: 600; color: #006644;">${esc(sop.kpiTarget || 'N/A')}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-            
-            <h3>Internal Audit Compliance & Risk Controls</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Task ID</th>
-                  <th>Control Objective</th>
-                  <th>Mitigation Action</th>
-                  <th>Assertion Verification Method</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${(parsedBusinessDoc.audit_controls || []).map((ctrl: any) => `
-                  <tr>
-                    <td style="font-family: monospace; font-weight: bold; color: #0747A6;">${esc(ctrl.stepId)}</td>
-                    <td><strong>${esc(ctrl.controlObjective || 'N/A')}</strong></td>
-                    <td>${esc(ctrl.mitigationAction || 'N/A')}</td>
-                    <td style="font-family: monospace; font-size: 11px;">${esc(ctrl.assertionMethod || 'N/A')}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          ` : ''}
-        </body>
-      </html>
-    `;
-    
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
-    saveAs(blob, `${fileName}_Confluence.html`);
-  };
-
   /**
-   * Roadmap 3.0.5 — the Confluence page of the engine document: the same
-   * content as the stage shows, every value escaped, nothing added. The
-   * business layer, when there is one, follows as a model proposal.
+   * The Confluence page — of the engine document, or of a legacy blueprint.
+   * Both templates live in `lib/documentation-export.ts` (block D, D.16a):
+   * they are documents with a stylesheet of their own, not this screen.
    */
-  const downloadEngineConfluenceHTML = (engine: ProcessDocumentation) => {
-    const esc = escapeHtml;
-    const statementById = new Map(engine.statements.map((s) => [s.id, s]));
-    const stepRows = engine.steps.map((step) => {
-      const sentence = step.statementId ? statementById.get(step.statementId) : undefined;
-      const name = step.businessName
-        ? `${esc(step.businessName)} <small>(${esc(step.technicalName)}) — Model proposal</small>`
-        : esc(step.technicalName);
-      return `<tr><td><code>${esc(step.id)}</code><br>${esc(step.kind)}</td><td>${name}${step.lane ? `<br><small>Lane: ${esc(step.lane)} — Model proposal</small>` : ''}</td><td>${sentence ? esc(sentence.text) : ''}</td><td>${esc(stepEvidence(step))}</td></tr>`;
-    }).join('');
-    const statementSection = engine.statements
-      .map((s) => `<li>${esc(s.text)} <small>— ${esc(anchorsWords(s.anchors))}</small></li>`)
-      .join('');
-    const gapSection = engine.notDetermined
-      .map((g) => `<li><strong>${esc(g.subject)}:</strong> Not determined — ${esc(g.reason)}</li>`)
-      .join('');
-    // The business layer the stage shows below the engine document. It was
-    // promised by the comment above and never written, so an export of a
-    // project with an SOP left the SOP out (QA review of 4b4586aff273). Every
-    // value in it was written by the model: it is marked as a proposal and
-    // escaped like the rest.
-    const businessSection = parsedBusinessDoc
-      ? `<h2 data-business-layer="">Business layer — Model proposal</h2>
-      <p><em>Written by a language model from the documentation above. Not derived from the code, and not verified.</em></p>
-      <h3>RACI assignment</h3>
-      <table><thead><tr><th>Step</th><th>Responsible (R)</th><th>Accountable (A)</th><th>Consulted (C)</th><th>Informed (I)</th></tr></thead><tbody>${(parsedBusinessDoc.raci_matrix || [])
-        .map((raci: Record<string, unknown>) => `<tr><td><code>${esc(raci.stepId)}</code></td><td>${esc(raci.r || 'N/A')}</td><td>${esc(raci.a || 'N/A')}</td><td>${esc(raci.c || 'N/A')}</td><td>${esc(raci.i || 'N/A')}</td></tr>`)
-        .join('')}</tbody></table>
-      <h3>Standard operating procedure</h3>
-      <table><thead><tr><th>Step</th><th>Description</th><th>Business exception</th><th>KPI</th></tr></thead><tbody>${(parsedBusinessDoc.sop_details || [])
-        .map((sop: Record<string, unknown>) => `<tr><td><code>${esc(sop.stepId)}</code></td><td>${esc(sop.narrative || 'N/A')}</td><td>${esc(sop.businessException || 'N/A')}</td><td>${esc(sop.kpiTarget || 'N/A')}</td></tr>`)
-        .join('')}</tbody></table>
-      <h3>Audit controls</h3>
-      <table><thead><tr><th>Step</th><th>Control objective</th><th>Mitigation</th><th>Verification</th></tr></thead><tbody>${(parsedBusinessDoc.audit_controls || [])
-        .map((ctrl: Record<string, unknown>) => `<tr><td><code>${esc(ctrl.stepId)}</code></td><td>${esc(ctrl.controlObjective || 'N/A')}</td><td>${esc(ctrl.mitigationAction || 'N/A')}</td><td>${esc(ctrl.assertionMethod || 'N/A')}</td></tr>`)
-        .join('')}</tbody></table>`
-      : '';
-    const engineHtml = `<html><head><meta charset="utf-8"><style>
-      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #172B4D; line-height: 1.6; padding: 20px; }
-      table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #DFE1E6; padding: 8px; text-align: left; vertical-align: top; }
-      th { background: #F4F5F7; } small { color: #6B778C; }
-    </style></head><body>
-      <h1>Process documentation — ${esc(engine.processName)}</h1>
-      <p><em>${esc(engine.disclaimer)}</em></p>
-      <p>${esc(engine.fileName)}, ${esc(String(engine.lineCount))} lines. ${esc(engine.overview)} ${esc(engine.traceability.sentence)}</p>
-      <h2>The process, element by element</h2>
-      <table><thead><tr><th>Element</th><th>Name</th><th>What it does</th><th>Lines</th></tr></thead><tbody>${stepRows}</tbody></table>
-      <h2>Business statements, across the whole program</h2><ul>${statementSection}</ul>
-      <h2>Not determined from the code</h2><ul>${gapSection}</ul>
-      ${businessSection}
-    </body></html>`;
-    const blob = new Blob([engineHtml], { type: 'text/html;charset=utf-8' });
-    const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
-    saveAs(blob, `${fileName}_Confluence.html`);
+  const downloadConfluenceHTML = () => {
+    const blob = engineDoc
+      ? buildEngineConfluenceHtml(engineDoc, parsedBusinessDoc)
+      : parsedDoc
+        ? buildLegacyConfluenceHtml(parsedDoc, parsedBusinessDoc)
+        : null;
+    if (!blob) return;
+    saveAs(blob, confluenceFileName(project?.name));
   };
 
   const phases = workflowSteps(project);
 
   if (loading) return (
-    <div className="animate-in fade-in duration-500">
+    <div>
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
           neither decides anything. */}
       <VerificationRail steps={phases} current="documentation" projectId={projectId as string} />
 
       <Stepper steps={phases} current="documentation" projectId={projectId as string} />
-      <div className="h-[60vh] flex flex-col items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
-          <p className="text-lg font-medium text-gray-400">Loading documentation...</p>
+      <StageHeader stage="documentation" />
+      <CcSkeleton shape="cards" label="documentation" count={2} />
+    </div>
+  );
+
+  /**
+   * What the business layer costs before the click — DESIGN.md §2.8. Every
+   * part of it is a fact of this page: the model it names is the one
+   * `generateBusinessDocumentation` passes to `/api/gemini`, the key is the one
+   * `/api/model-stages` reports, and that route meters by the hour, not by the
+   * analysis run.
+   */
+  const businessCostLine = `One model call (${PRODUCT_GEMINI_MODEL})${
+    modelAvailability.keySource === 'byok' ? ', with your own Gemini key' : ''
+  }. Not counted against your analysis runs; it counts toward the hourly limit on model calls of this account.`;
+
+  const technicalPanel = engineDoc ? (
+    <ProcessDocumentationView
+      doc={engineDoc}
+      proposal={workspaceShellEnabled(profile) ? {
+        view: statementProposal.view,
+        canRequest: isOwner,
+        byok: modelAvailability.keySource === 'byok',
+        requesting: statementProposal.requesting,
+        message: statementProposal.message,
+        onRequest: statementProposal.request,
+      } : undefined}
+    />
+  ) : parsedDoc ? (
+    <div className="space-y-6">
+      {/* Roadmap 3.0.5 — a blueprint stored before the engine wrote this
+          stage. Shown as it was, never migrated and never deleted, and
+          said to be what it is before anything in it is read. */}
+      <div data-legacy-blueprint>
+        <CcMessageStrip state="warning">{LEGACY_BLUEPRINT_NOTICE}</CcMessageStrip>
       </div>
+
+      {/* L1 & L2 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <section className={SECTION}>
+          <div className="flex items-center gap-3 mb-4">
+            <Briefcase size={20} aria-hidden={true} className="text-cc-ink-muted" />
+            <div>
+              <p className={LABEL}>Level 1 Blueprint</p>
+              <h2 className={H2}>Business Domain</h2>
+            </div>
+          </div>
+          <dl className="space-y-3">
+            <div>
+              <dt className={LABEL}>Integration Domain</dt>
+              <dd className="cc-text-h3 text-cc-ink">{parsedDoc.l1_domain?.name}</dd>
+            </div>
+            <div>
+              <dt className={LABEL}>Strategic Goal</dt>
+              <dd className="cc-text-body text-cc-ink">{parsedDoc.l1_domain?.strategicGoal}</dd>
+            </div>
+            <div>
+              <dt className={LABEL}>Service Owner</dt>
+              <dd className="mt-1"><CcTag>{parsedDoc.l1_domain?.owner}</CcTag></dd>
+            </div>
+          </dl>
+        </section>
+
+        <section className={SECTION}>
+          <div className="flex items-center gap-3 mb-4">
+            <Target size={20} aria-hidden={true} className="text-cc-ink-muted" />
+            <div>
+              <p className={LABEL}>Level 2 Blueprint</p>
+              <h2 className={H2}>Process Area Group</h2>
+            </div>
+          </div>
+          <dl className="space-y-3">
+            <div>
+              <dt className={LABEL}>Process Area</dt>
+              <dd className="cc-text-h3 text-cc-ink">{parsedDoc.l2_group?.name}</dd>
+            </div>
+            <div>
+              <dt className={LABEL}>Functional Context</dt>
+              <dd className="cc-text-body text-cc-ink">{parsedDoc.l2_group?.processArea}</dd>
+            </div>
+            <div>
+              <dt className={LABEL}>KPI Framework</dt>
+              <dd className="mt-1 flex flex-wrap gap-2">
+                {(parsedDoc.l2_group?.kpis || []).map((kpi: string, i: number) => (
+                  <CcTag key={i}>{kpi}</CcTag>
+                ))}
+              </dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+
+      {/* Process Flow Map */}
+      <section className={SECTION}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
+          <div className="flex items-center gap-3">
+            <Activity size={20} aria-hidden={true} className="text-cc-ink-muted" />
+            <div>
+              <p className={LABEL}>Level 3 Flow</p>
+              <h2 className={H2}>Interactive BPMN Map</h2>
+            </div>
+          </div>
+
+          {/* BPMN legend — the shapes, each with its word. */}
+          <div className="flex flex-wrap items-center gap-3 cc-text-meta text-cc-ink-muted">
+            <span className={LABEL}>Legend:</span>
+            <span className="inline-flex items-center gap-1">
+              <span aria-hidden={true} className="inline-block h-3 w-3 rounded-full border border-cc-ink-muted" />
+              Start
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span aria-hidden={true} className="inline-block h-3 w-4 rounded-cc-row border border-cc-ink-muted" />
+              Task
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span aria-hidden={true} className="inline-block h-3 w-3 rotate-45 border border-cc-ink-muted" />
+              Gateway
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span aria-hidden={true} className="inline-block h-3 w-3 rounded-full border-2 border-cc-ink" />
+              End
+            </span>
+          </div>
+        </div>
+        <div className="rounded-cc-card overflow-hidden border border-cc-line h-[400px] md:h-[500px] relative">
+          {parsedDoc.l3_flow && (
+            <ProcessFlow flow={parsedDoc.l3_flow} tasks={parsedDoc.l4_tasks} onNodeClick={handleNodeClick} />
+          )}
+        </div>
+        <p className="mt-2 cc-text-meta text-cc-ink-muted">Tip: select a node to open its task specification below.</p>
+      </section>
+
+      {/* Task Definitions */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-3">
+          <Settings size={20} aria-hidden={true} className="text-cc-ink-muted" />
+          <div>
+            <p className={LABEL}>Level 4</p>
+            <h2 className={H2}>Architectural Task Index</h2>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {(parsedDoc.l4_tasks || []).map((task: any, i: number) => {
+            const isHighlighted = highlightedTaskId === task.stepId;
+            return (
+              <article
+                key={i}
+                id={`task-${task.stepId}`}
+                data-task-card={task.stepId}
+                className={clsx(
+                  'flex flex-col rounded-cc-card border bg-cc-surface p-4 shadow-cc',
+                  isHighlighted ? 'border-cc-ink bg-cc-surface-muted' : 'border-cc-line',
+                )}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <span className="cc-text-identifier font-cc-mono text-cc-ink">Task {task.stepId}</span>
+                  <CcTag>Complexity: {task.complexity || 'Low'}</CcTag>
+                </div>
+
+                <h3 className="cc-text-h3 text-cc-ink mb-1">{task.name || `Task ${task.stepId}`}</h3>
+                <p className="cc-text-cell text-cc-ink-muted mb-4 flex-grow">{task.description}</p>
+
+                <dl className="grid grid-cols-2 gap-3 border-t border-cc-line pt-3">
+                  <div className="min-w-0">
+                    <dt className={clsx(LABEL, 'flex items-center gap-1')}>
+                      <Layers size={12} aria-hidden={true} className="shrink-0" /> Inputs
+                    </dt>
+                    <dd className="cc-text-cell text-cc-ink break-words">{(task.inputs || []).join(', ') || 'N/A'}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className={clsx(LABEL, 'flex items-center gap-1')}>
+                      <Box size={12} aria-hidden={true} className="shrink-0" /> Outputs
+                    </dt>
+                    <dd className="cc-text-cell text-cc-ink break-words">{(task.outputs || []).join(', ') || 'N/A'}</dd>
+                  </div>
+                  <div className="col-span-2 min-w-0">
+                    <dt className={LABEL}>Systems</dt>
+                    <dd className="cc-text-cell text-cc-ink break-words">
+                      {Array.isArray(task.systems) ? task.systems.join(', ') : (task.systems || 'Not stated')}
+                    </dd>
+                  </div>
+                </dl>
+
+                <div className="mt-4">
+                  <CcButton
+                    onClick={() => setActiveTask(task)}
+                    icon={<FileCode2 size={16} aria-hidden={true} />}
+                    data-open-task={task.stepId}
+                  >
+                    Open specification
+                  </CcButton>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  ) : null;
+
+  const businessPanel = (
+    <div className="space-y-6">
+      {isGeneratingBusinessDoc ? (
+        <section className={SECTION} aria-busy="true">
+          <h2 className={H2}>Mapping SOP &amp; RACI Matrix</h2>
+          <p className="cc-text-cell text-cc-ink-muted mt-1 mb-4 max-w-2xl">
+            Gemini is evaluating executing roles, drafting operational playbook instructions, and defining target compliance checkpoints.
+          </p>
+          <CcSkeleton shape="table" label="the business layer" count={3} />
+        </section>
+      ) : parsedBusinessDoc ? (
+        <div data-stage-output="businessDocumentation" className="space-y-6">
+          {/* RACI Matrix Section */}
+          <section className={SECTION}>
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
+              <div className="flex items-center gap-3">
+                <Users size={20} aria-hidden={true} className="text-cc-ink-muted" />
+                <div>
+                  <p className={LABEL}>Level 5</p>
+                  <h2 className={clsx(H2, 'flex flex-wrap items-center gap-2')}>
+                    RACI Assignment Matrix <CcProvenanceChip value="proposed" />
+                  </h2>
+                </div>
+              </div>
+
+              {/* RACI legend — the letters the column heads carry. */}
+              <div className="flex flex-wrap items-center gap-3 cc-text-meta text-cc-ink-muted">
+                <span className={LABEL}>RACI Guide:</span>
+                <span className="inline-flex items-center gap-1"><CcTag>R</CcTag> Responsible</span>
+                <span className="inline-flex items-center gap-1"><CcTag>A</CcTag> Accountable</span>
+                <span className="inline-flex items-center gap-1"><CcTag>C</CcTag> Consulted</span>
+                <span className="inline-flex items-center gap-1"><CcTag>I</CcTag> Informed</span>
+              </div>
+            </div>
+
+            <CcTable
+              caption="RACI assignment matrix"
+              columns={[
+                { key: 'step', label: 'Step ID', width: '120px' },
+                { key: 'r', label: 'Responsible (R)' },
+                { key: 'a', label: 'Accountable (A)' },
+                { key: 'c', label: 'Consulted (C)' },
+                { key: 'i', label: 'Informed (I)' },
+              ]}
+              rows={(parsedBusinessDoc.raci_matrix || []).map((raci: any, rIdx: number) => ({
+                key: String(rIdx),
+                cells: {
+                  step: <span className="font-cc-mono">{raci.stepId}</span>,
+                  r: raci.r || 'N/A',
+                  a: raci.a || 'N/A',
+                  c: raci.c || 'N/A',
+                  i: raci.i || 'N/A',
+                },
+              }))}
+            />
+          </section>
+
+          {/* SOP Narratives Section */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Briefcase size={20} aria-hidden={true} className="text-cc-ink-muted" />
+              <div>
+                <p className={LABEL}>Level 5 SOP</p>
+                <h2 className={clsx(H2, 'flex flex-wrap items-center gap-2')}>
+                  Standard Operating Procedures <CcProvenanceChip value="proposed" />
+                </h2>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {(parsedBusinessDoc.sop_details || []).map((sop: any, sIdx: number) => (
+                <article key={sIdx} className={SECTION}>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <span className="cc-text-identifier font-cc-mono text-cc-ink">Step {sop.stepId}</span>
+                    <span className="cc-text-meta text-cc-ink-muted inline-flex items-center gap-1">
+                      <Activity size={14} aria-hidden={true} /> Target: {sop.kpiTarget}
+                    </span>
+                  </div>
+                  <h3 className={LABEL}>Operational Narrative</h3>
+                  <p className="cc-text-cell text-cc-ink mt-1 mb-3">{sop.narrative}</p>
+                  <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
+                    <h3 className={LABEL}>Business Exception Fallback</h3>
+                    <p className="cc-text-cell text-cc-ink mt-1">{sop.businessException}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          {/* Internal Controls Section */}
+          <section className={SECTION}>
+            <div className="flex items-center gap-3 mb-4">
+              <Lock size={20} aria-hidden={true} className="text-cc-ink-muted" />
+              <div>
+                <p className={LABEL}>Compliance Audit</p>
+                <h2 className={clsx(H2, 'flex flex-wrap items-center gap-2')}>
+                  Risk &amp; Control Checkpoints <CcProvenanceChip value="proposed" />
+                </h2>
+              </div>
+            </div>
+            <CcTable
+              caption="Risk and control checkpoints"
+              columns={[
+                { key: 'step', label: 'Step', width: '120px' },
+                { key: 'objective', label: 'Control Objective' },
+                { key: 'mitigation', label: 'Mitigation Action' },
+                { key: 'assertion', label: 'Assertion Method' },
+              ]}
+              rows={(parsedBusinessDoc.audit_controls || []).map((ctrl: any, cIdx: number) => ({
+                key: String(cIdx),
+                cells: {
+                  step: <span className="font-cc-mono">{ctrl.stepId}</span>,
+                  objective: <span className="font-semibold">{ctrl.controlObjective}</span>,
+                  mitigation: ctrl.mitigationAction,
+                  assertion: ctrl.assertionMethod,
+                },
+              }))}
+            />
+          </section>
+        </div>
+      ) : (
+        <section data-business-layer-offer className={SECTION}>
+          <div className="max-w-3xl">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <h2 className={H2}>Generate Enterprise Business SOP &amp; RACI Matrix</h2>
+              <CcProvenanceChip value="proposed" />
+            </div>
+            <p className="cc-text-body text-cc-ink-muted mb-4">
+              Unlock business-level mapping to align technical Clean Core changes with corporate compliance frameworks and operational execution procedures.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-4">
+                <p className={clsx(LABEL, 'flex items-center gap-2 mb-1')}>
+                  <Users size={16} aria-hidden={true} /> RACI Assignment
+                </p>
+                <p className="cc-text-cell text-cc-ink">Maps Responsible, Accountable, Consulted, and Informed roles across all process tasks.</p>
+              </div>
+              <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-4">
+                <p className={clsx(LABEL, 'flex items-center gap-2 mb-1')}>
+                  <Layers size={16} aria-hidden={true} /> Level 5 Narratives
+                </p>
+                <p className="cc-text-cell text-cc-ink">Drafts standard operating narratives, KPI targets, and functional exception handling guidance.</p>
+              </div>
+              <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-4">
+                <p className={clsx(LABEL, 'flex items-center gap-2 mb-1')}>
+                  <Lock size={16} aria-hidden={true} /> Internal Audit Controls
+                </p>
+                <p className="cc-text-cell text-cc-ink">Identifies key clean core control objectives, mitigating actions, and assertion evidence methods.</p>
+              </div>
+            </div>
+
+            {!modelAvailability.enabled('documentation') ? (
+              <NotGenerated
+                what="Business SOP and RACI layer"
+                absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
+                stage="documentation"
+                hint={
+                  modelAvailability.keyAvailable
+                    ? 'Turn the documentation stage back on in Settings to generate it.'
+                    : 'Add your own Gemini API key in Settings to generate it.'
+                }
+              />
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                <CcButton
+                  variant="primary"
+                  density="cozy"
+                  onClick={generateBusinessDocumentation}
+                  disabled={isGeneratingDoc}
+                  busy={isGeneratingBusinessDoc}
+                  icon={<Rocket size={16} aria-hidden={true} />}
+                  data-generate-business-layer
+                >
+                  Generate business layer
+                </CcButton>
+                <span data-business-layer-cost className="cc-text-meta text-cc-ink-muted">{businessCostLine}</span>
+              </div>
+            )}
+
+            {businessDocError && (
+              <div className="mt-4">
+                <CcMessageStrip
+                  state="error"
+                  headline="The business layer was not generated."
+                  actions={
+                    modelAvailability.enabled('documentation')
+                      ? <CcButton onClick={generateBusinessDocumentation} disabled={isGeneratingDoc}>Try again</CcButton>
+                      : undefined
+                  }
+                >
+                  {businessDocError}
+                </CcMessageStrip>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 
   return (
-    <div className="animate-in fade-in duration-500 bg-[#f8f9ff] min-h-screen p-4 md:p-8">
+    <div className="bg-cc-page min-h-screen p-4 md:p-8">
       {/* Rendered here as well as in the loading state — it used to exist only
           there, and disappeared as soon as the page had loaded. */}
       <VerificationRail steps={phases} current="documentation" projectId={projectId as string} />
@@ -1043,12 +1228,12 @@ Structure the JSON exactly like this:
         ]}
       />
 
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-10 mt-6 md:mt-8">
+      <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6 mb-8 mt-6 md:mt-8">
         <div>
           <StageHeader stage="documentation">
             Business Architecture &amp; BPMN Map
           </StageHeader>
-          
+
           {/* Roadmap 0.2 (UX-029). Two badges used to stand here —
               "BPMN-Compatible" and "SAP Build-Compatible" — and the only thing
               that qualified either of them was a hover tooltip, which a phone
@@ -1062,13 +1247,14 @@ Structure the JSON exactly like this:
               than on hover. The SAP Build badge is gone
               rather than reworded: there is no SAP Build export on this page,
               so there was nothing for a second badge to describe. Step 4.3
-              proves the round trip; this line changes when it does. */}
+              proves the round trip; this line changes when it does.
+
+              Block D, D.16a: the format is a tag (§4.1) — a property of the
+              file, not a state — instead of a green badge. */}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Export format:</span>
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 rounded text-[9px] font-black uppercase tracking-tight shadow-sm">
-              BPMN 2.0 XML
-            </span>
-            <span data-export-caveat className="text-[10px] text-slate-500 font-medium normal-case">
+            <span className={LABEL}>Export format:</span>
+            <CcTag>BPMN 2.0 XML</CcTag>
+            <span data-export-caveat className="cc-text-meta text-cc-ink-muted">
               Import into SAP Signavio or SAP Build has not been verified yet.
             </span>
           </div>
@@ -1076,14 +1262,16 @@ Structure the JSON exactly like this:
           {/* Roadmap 4.4. What the second download holds, said before it is
               asked for: a summary carries no signature, and a reader who takes
               it for one has been misled by the button rather than by the file. */}
-          <p data-brief-caveat className="mt-2 text-[10px] text-slate-500 font-medium normal-case max-w-xl">
+          <p data-brief-caveat className="mt-2 cc-text-meta text-cc-ink-muted max-w-xl">
             The brief is a PDF and the BPMN file in one archive. Every statement in it names the lines it was
             read from, or says that it is not determined. It is a summary, not a signed audit pack.
           </p>
           {briefError && (
-            <p data-brief-error className="mt-1 text-[10px] text-red-600 font-semibold normal-case">
-              {briefError}
-            </p>
+            <div className="mt-2 max-w-xl">
+              <CcMessageStrip state="error">
+                <span data-brief-error>{briefError}</span>
+              </CcMessageStrip>
+            </div>
           )}
         </div>
         {/* Nothing to export, and nothing to regenerate, until a blueprint exists.
@@ -1100,7 +1288,7 @@ Structure the JSON exactly like this:
             with two exports above them (UX review of 52f171091948, 5bf7552894e5;
             visible in screenshot 07-documentation-desktop-s1). Two conditions
             for one question is how a screen ends up contradicting itself. */}
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2">
           {/* Roadmap 2.6 — the one export here that does not wait for the
               blueprint. It is drawn from the skeleton of the signed run, so it
               exists as soon as the run does, and it says nothing the code does
@@ -1108,13 +1296,14 @@ Structure the JSON exactly like this:
               active run, or after the source moved on from the one the run
               signed, there is nothing true to export and no button. */}
           {signedSource && (
-            <button
+            <CcButton
+              density="cozy"
               onClick={downloadBPMN}
               data-export-bpmn
-              className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-bold text-xs md:text-sm uppercase tracking-widest border bg-white border-[#eff4ff] text-[#0b1c30] hover:bg-[#eff4ff]"
+              icon={<FileCode2 size={16} aria-hidden={true} />}
             >
-              <FileCode2 size={16} /> Export BPMN
-            </button>
+              Export BPMN
+            </CcButton>
           )}
 
           {/* Roadmap 4.4 — the brief. Offered on the same condition as the BPMN
@@ -1122,35 +1311,41 @@ Structure the JSON exactly like this:
               describe. It waits for no blueprint either, because everything in
               it comes from the code and from what accounts confirmed. */}
           {signedSource && processMap.model && (
-            <button
+            <CcButton
+              density="cozy"
               onClick={downloadBrief}
-              disabled={isBuildingBrief}
+              busy={isBuildingBrief}
               data-export-brief
-              className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-bold text-xs md:text-sm uppercase tracking-widest border bg-white border-[#eff4ff] text-[#0b1c30] hover:bg-[#eff4ff] disabled:opacity-50"
+              icon={<Briefcase size={16} aria-hidden={true} />}
             >
-              <Briefcase size={16} /> {isBuildingBrief ? 'Writing brief…' : 'Export brief'}
-            </button>
+              Export brief
+            </CcButton>
           )}
 
-          <div className={`flex flex-wrap gap-3 ${hasDocument ? '' : 'hidden'}`}>
-            <button
-              onClick={downloadConfluenceHTML}
-              disabled={!hasDocument || isGeneratingDoc}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-bold text-xs md:text-sm uppercase tracking-widest border bg-white border-[#eff4ff] text-[#0b1c30] hover:bg-[#eff4ff] opacity-100 disabled:opacity-50"
-            >
-              <Download size={16} /> Export Confluence
-            </button>
+          {hasDocument && (
+            <>
+              <CcButton
+                density="cozy"
+                onClick={downloadConfluenceHTML}
+                disabled={isGeneratingDoc}
+                icon={<Download size={16} aria-hidden={true} />}
+              >
+                Export Confluence
+              </CcButton>
 
-            <button
-              onClick={generateDocumentation}
-              disabled={isGeneratingDoc || isGeneratingBusinessDoc || !signedSource || !processMap.model}
-              data-regenerate-documentation
-              className="flex items-center gap-2 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all font-bold text-xs md:text-sm uppercase tracking-widest disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${isGeneratingDoc ? 'animate-spin' : ''}`} />
-              {engineDoc ? 'Read again from the code' : 'Replace with the code reading'}
-            </button>
-          </div>
+              <CcButton
+                variant="primary"
+                density="cozy"
+                onClick={generateDocumentation}
+                disabled={isGeneratingBusinessDoc || !signedSource || !processMap.model}
+                busy={isGeneratingDoc}
+                data-regenerate-documentation
+                icon={<RefreshCw size={16} aria-hidden={true} />}
+              >
+                {engineDoc ? 'Read again from the code' : 'Replace with the code reading'}
+              </CcButton>
+            </>
+          )}
         </div>
       </div>
 
@@ -1161,7 +1356,7 @@ Structure the JSON exactly like this:
           blueprint stored before that is a model's account and is marked as
           one. Putting the evidence first is the order `DESIGN.md` §5 asks for. */}
       {signedSource && (
-        <div data-process-map-section className="mb-10 rounded-[2rem] border border-gray-100 bg-white p-6 md:p-8 shadow-sm">
+        <div data-process-map-section className={clsx(SECTION, 'mb-8')}>
           {processMap.model ? (
             <ProcessMap
               model={processMap.model}
@@ -1180,7 +1375,7 @@ Structure the JSON exactly like this:
               save={saveProcessModel}
             />
           ) : (
-            <p className="text-sm font-medium text-gray-500">
+            <p className="cc-text-cell text-cc-ink-muted">
               {processMap.status === 'failed'
                 ? processMap.reason
                 : 'Reading the process out of the source…'}
@@ -1192,8 +1387,8 @@ Structure the JSON exactly like this:
               its history is the account of it. It reads only; the effect above
               is what reconstructs revision 1, and `refreshKey` is what brings
               this list back after that and after every save. */}
-          <div data-process-revisions-section className="mt-6 border-t border-gray-100 pt-6">
-            <h4 className="mb-3 text-[15px] font-bold text-cc-ink">Revisions of this process</h4>
+          <div data-process-revisions-section className="mt-6 border-t border-cc-line pt-6">
+            <h2 className="mb-3 cc-text-h2 text-cc-ink">Revisions of this process</h2>
             <RevisionCompare
               projectId={(Array.isArray(projectId) ? projectId[0] : projectId) ?? ''}
               refreshKey={revisionsKey}
@@ -1208,721 +1403,180 @@ Structure the JSON exactly like this:
           Calling the second one "blocked" told the reader the opposite of what
           occurred, and neither told him he could simply try again. */}
       {docError && (
-        <div
-          data-doc-error={docRejected ? 'rejected' : 'blocked'}
-          className="bg-red-50 border border-red-200 text-red-800 p-6 rounded-[2rem] mb-10 flex items-start gap-4 shadow-sm"
-        >
-          <div className="p-2 bg-red-100 rounded-xl text-red-600">
-            <AlertCircle className="w-6 h-6 shrink-0" />
-          </div>
-          <div>
-            <h3 className="font-bold text-red-900 uppercase tracking-tight">
-              {docRejected ? 'Generation failed' : 'Generation Blocked'}
-            </h3>
-            <p className="text-sm text-red-700 font-medium mt-1 leading-relaxed">{docError}</p>
-          </div>
+        <div data-doc-error={docRejected ? 'rejected' : 'blocked'} className="mb-8">
+          <CcMessageStrip
+            state="error"
+            headline={docRejected ? 'Generation failed' : 'Generation blocked'}
+            actions={docRejected ? (
+              <CcButton onClick={generateDocumentation} disabled={!signedSource || !processMap.model || isGeneratingDoc}>
+                Try again
+              </CcButton>
+            ) : undefined}
+          >
+            {docError}
+          </CcMessageStrip>
         </div>
       )}
 
       {isGeneratingDoc ? (
-        <div className="min-h-[40vh] bg-white flex flex-col items-center justify-center p-8 text-center rounded-[2.5rem] md:rounded-[3rem] border border-gray-100 shadow-sm mb-12">
-          <div className="relative w-20 h-20 md:w-24 md:h-24 mx-auto mb-8">
-            <div className="absolute inset-0 rounded-full border-4 border-green-100"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-green-600 border-t-transparent animate-spin"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <RefreshCw className="w-8 h-8 text-green-600" />
-            </div>
-          </div>
-          <div className="text-xl md:text-2xl font-black text-gray-900 mb-2 uppercase tracking-tight">Reading the process</div>
-          <p className="text-gray-500 font-medium text-sm md:text-base">Putting the documentation together from the whole source…</p>
-        </div>
+        <section className={clsx(SECTION, 'mb-8')} aria-busy="true">
+          <h2 className={H2}>Reading the process</h2>
+          <p className="cc-text-cell text-cc-ink-muted mt-1 mb-4">Putting the documentation together from the whole source…</p>
+          <CcSkeleton shape="text" label="the process documentation" count={4} />
+        </section>
       ) : hasDocument ? (
-        <div id="documentation-report" data-stage-output="documentation" className="space-y-8 mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-          
-          {/* Tab Switcher */}
-          <div className="flex border-b border-gray-200 mb-8 mt-4 overflow-x-auto gap-4">
-            <button
-              onClick={() => setActiveTab('technical')}
-              className={clsx(
-                "px-6 py-3 font-bold text-xs md:text-sm uppercase tracking-wider border-b-2 transition-all shrink-0",
-                activeTab === 'technical' ? "border-[#006b2c] text-[#006b2c]" : "border-transparent text-gray-400 hover:text-gray-600"
-              )}
-            >
-              {engineDoc ? 'Process documentation' : 'Technical Blueprint'}
-            </button>
-            <button
-              onClick={() => setActiveTab('business')}
-              className={clsx(
-                "px-6 py-3 font-bold text-xs md:text-sm uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 shrink-0",
-                activeTab === 'business' ? "border-[#006b2c] text-[#006b2c]" : "border-transparent text-gray-400 hover:text-gray-600"
-              )}
-            >
-              Business SOP & Compliance
-              {!parsedBusinessDoc && (
-                <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-              )}
-            </button>
-          </div>
-
-          {activeTab === 'technical' && engineDoc ? (
-            <ProcessDocumentationView
-              doc={engineDoc}
-              proposal={workspaceShellEnabled(profile) ? {
-                view: statementProposal.view,
-                canRequest: isOwner,
-                byok: modelAvailability.keySource === 'byok',
-                requesting: statementProposal.requesting,
-                message: statementProposal.message,
-                onRequest: statementProposal.request,
-              } : undefined}
-            />
-          ) : activeTab === 'technical' ? (
-            <div className="space-y-8">
-              {/* Roadmap 3.0.5 — a blueprint stored before the engine wrote this
-                  stage. Shown as it was, never migrated and never deleted, and
-                  said to be what it is before anything in it is read. */}
-              <div data-legacy-blueprint className="rounded-[2rem] border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 flex flex-col md:flex-row md:items-center gap-3">
-                <p className="flex-1 font-medium leading-relaxed">{LEGACY_BLUEPRINT_NOTICE}</p>
-              </div>
-              {/* L1 & L2 Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* L1 Domain */}
-            <div className="bg-gradient-to-br from-slate-900 to-[#0b1c30] p-8 rounded-[2rem] shadow-xl border border-white/5 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full blur-3xl pointer-events-none group-hover:bg-green-500/10 transition-all duration-500"></div>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-green-500/10 text-green-400 rounded-xl border border-green-500/20"><Briefcase size={24} /></div>
-                <div>
-                  <h2 className="text-[10px] font-black text-green-400 uppercase tracking-widest">Level 1 Blueprint</h2>
-                  <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tight">Business Domain</h3>
-                </div>
-              </div>
-              <div className="space-y-5">
-                <div>
-                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Integration Domain</p>
-                  <p className="text-base md:text-lg font-black text-white tracking-tight">{parsedDoc.l1_domain?.name}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Strategic Goal</p>
-                  <p className="text-gray-300 font-medium text-sm leading-relaxed">{parsedDoc.l1_domain?.strategicGoal}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Service Owner</p>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-500/10 rounded-lg text-[11px] font-black uppercase tracking-widest text-green-400 border border-green-500/20">
-                    <Users size={12} /> {parsedDoc.l1_domain?.owner}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* L2 Group */}
-            <div className="bg-gradient-to-br from-slate-900 to-[#0b1c30] p-8 rounded-[2rem] shadow-xl border border-white/5 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full blur-3xl pointer-events-none group-hover:bg-green-500/10 transition-all duration-500"></div>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-green-500/10 text-green-400 rounded-xl border border-green-500/20"><Target size={24} /></div>
-                <div>
-                  <h2 className="text-[10px] font-black text-green-400 uppercase tracking-widest">Level 2 Blueprint</h2>
-                  <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tight">Process Area Group</h3>
-                </div>
-              </div>
-              <div className="space-y-5">
-                <div>
-                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Process Area</p>
-                  <p className="text-base md:text-lg font-black text-white tracking-tight">{parsedDoc.l2_group?.name}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Functional Context</p>
-                  <p className="text-gray-300 font-medium text-sm leading-relaxed">{parsedDoc.l2_group?.processArea}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">KPI Framework</p>
-                  <div className="flex flex-wrap gap-2">
-                    {(parsedDoc.l2_group?.kpis || []).map((kpi: string, i: number) => (
-                      <span key={i} className="px-2.5 py-1 bg-green-500/10 text-green-400 rounded-md text-[10px] font-black uppercase tracking-tight border border-green-500/20">
-                        {kpi}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Process Flow Map */}
-          <div className="bg-[#ffffff] p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-sm border border-gray-100 relative group">
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-[#eff4ff] text-[#006b2c] rounded-xl"><Activity size={24} /></div>
-                <div>
-                  <h2 className="text-[10px] font-black text-[#0b1c30]/40 uppercase tracking-widest">Level 3 Flow</h2>
-                  <h3 className="text-lg md:text-xl font-black text-[#0b1c30] uppercase tracking-tight">Interactive BPMN Map</h3>
-                </div>
-              </div>
-              
-              {/* BPMN Legend */}
-              <div className="flex flex-wrap items-center gap-3 bg-gray-55/50 px-4 py-2.5 rounded-2xl border border-gray-100">
-                <span className="text-[9px] font-black text-gray-400 uppercase mr-1">Legend:</span>
-                <div className="flex items-center gap-1">
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-100 border border-green-500"></div>
-                  <span className="text-[9px] font-bold text-gray-600">Start</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-4 h-2.5 rounded bg-blue-50 border border-blue-200"></div>
-                  <span className="text-[9px] font-bold text-gray-600">Task</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 bg-amber-50 border border-amber-500 rotate-45"></div>
-                  <span className="text-[9px] font-bold text-gray-600">Gateway</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-100 border-2 border-red-500"></div>
-                  <span className="text-[9px] font-bold text-gray-600">End</span>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-2xl overflow-hidden border border-gray-100 h-[400px] md:h-[500px] shadow-inner relative">
-              {parsedDoc.l3_flow && (
-                <ProcessFlow flow={parsedDoc.l3_flow} tasks={parsedDoc.l4_tasks} onNodeClick={handleNodeClick} />
-              )}
-              <div className="absolute bottom-4 left-4 bg-gray-900/80 text-white text-[9px] px-3 py-1.5 rounded-lg backdrop-blur-sm pointer-events-none font-bold uppercase tracking-wider">
-                💡 Tip: Click nodes to scroll to Task Specs
-              </div>
-            </div>
-          </div>
-
-          {/* Task Definitions */}
-          <div className="space-y-6">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-2">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-[#eff4ff] text-[#00873a] rounded-xl"><Settings size={24} /></div>
-                <div>
-                  <h2 className="text-[10px] font-black text-[#0b1c30]/40 uppercase tracking-widest">Level 4</h2>
-                  <h3 className="text-lg md:text-xl font-black text-[#0b1c30] uppercase tracking-tight">Architectural Task Index</h3>
-                </div>
-              </div>
-              
-              <div className="flex flex-wrap gap-4 bg-white/60 p-3 rounded-2xl border border-slate-100">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Low Complexity</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Medium Logic</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">High Integration</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {(parsedDoc.l4_tasks || []).map((task: any, i: number) => {
-                const isHighlighted = highlightedTaskId === task.stepId;
-                return (
-                  <motion.div 
-                    key={i} 
-                    id={`task-${task.stepId}`}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    onClick={() => setActiveTask(task)}
-                    className={clsx(
-                      "p-6 rounded-[2rem] shadow-sm flex flex-col transition-all duration-300 border relative overflow-hidden cursor-pointer hover:-translate-y-1 group active:scale-[0.99]",
-                      isHighlighted 
-                        ? "border-green-500 ring-4 ring-green-500/20 bg-green-50/20 scale-[1.02] shadow-xl"
-                        : task.complexity === 'High' ? "bg-white border-red-100 hover:border-red-300 hover:shadow-red-500/10" :
-                          task.complexity === 'Medium' ? "bg-white border-amber-100 hover:border-amber-300 hover:shadow-amber-500/10" :
-                          "bg-white border-green-100 hover:border-green-300 hover:shadow-green-500/10"
-                    )}
-                  >
-                    {isHighlighted && (
-                      <div className="absolute top-0 left-0 right-0 h-1 bg-green-500 animate-pulse"></div>
-                    )}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="inline-block px-3 py-1 bg-[#0b1c30] text-white text-[9px] font-black rounded-lg uppercase tracking-tight shrink-0">
-                        Task: {task.stepId}
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[9px] font-black text-green-600 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-all">Deep Dive</span>
-                        <div className={clsx(
-                          "px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border",
-                          task.complexity === 'High' ? "bg-red-50 text-red-600 border-red-100" :
-                          task.complexity === 'Medium' ? "bg-amber-50 text-amber-600 border-amber-100" :
-                          "bg-green-50 text-green-600 border-green-100"
-                        )}>
-                          {task.complexity || 'Low'}
-                        </div>
-                      </div>
-                    </div>
-
-                    <h4 className="text-base font-black text-[#0b1c30] mb-2 leading-tight uppercase tracking-tight group-hover:text-green-700 transition-colors">{task.name || `Task ${task.stepId}`}</h4>
-                    <p className="text-xs md:text-sm text-[#0b1c30]/70 font-medium mb-6 flex-grow leading-relaxed">{task.description}</p>
-
-                    <div className="mt-auto space-y-4 pt-4 border-t border-slate-100">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col justify-between">
-                          <div className="flex items-center gap-1.5 text-gray-400 mb-1">
-                            <Layers size={10} className="shrink-0" />
-                            <span className="text-[9px] font-black uppercase tracking-widest">Inputs</span>
-                          </div>
-                          <p className="text-[10px] font-bold text-[#0b1c30] break-words mt-1 leading-normal" title={(task.inputs || []).join(', ')}>
-                            {(task.inputs || []).join(', ') || 'N/A'}
-                          </p>
-                        </div>
-                        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col justify-between">
-                          <div className="flex items-center gap-1.5 text-gray-400 mb-1">
-                            <Box size={10} className="shrink-0" />
-                            <span className="text-[9px] font-black uppercase tracking-widest">Outputs</span>
-                          </div>
-                          <p className="text-[10px] font-bold text-[#0b1c30] break-words mt-1 leading-normal" title={(task.outputs || []).join(', ')}>
-                            {(task.outputs || []).join(', ') || 'N/A'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3 text-[11px] pt-1 flex-wrap">
-                        <div className="flex items-center gap-1.5 text-slate-500 font-medium min-w-0 flex-1">
-                          <Cpu size={12} className="text-green-600 shrink-0" />
-                          <span className="break-words text-xs leading-none">
-                            {Array.isArray(task.systems) ? task.systems.join(', ') : (task.systems || 'Not stated')}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 text-green-600 font-mono font-bold shrink-0">
-                          <FileCode2 size={12} />
-                          <span>Specs</span>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-          ) : (
-            <div className="space-y-8">
-              {isGeneratingBusinessDoc ? (
-                <div className="min-h-[40vh] bg-[#0b1c30] border border-slate-800 flex flex-col items-center justify-center p-8 text-center rounded-[2.5rem] md:rounded-[3rem] shadow-sm mb-12 text-white relative overflow-hidden">
-                  <div className="relative w-20 h-20 md:w-24 md:h-24 mx-auto mb-8">
-                    <div className="absolute inset-0 rounded-full border-4 border-slate-800"></div>
-                    <div className="absolute inset-0 rounded-full border-4 border-green-500 border-t-transparent animate-spin"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <RefreshCw className="w-8 h-8 text-green-500 animate-pulse" />
-                    </div>
-                  </div>
-                  <div className="text-xl md:text-2xl font-black mb-2 uppercase tracking-tight text-white">Mapping SOP & RACI Matrix</div>
-                  <p className="text-slate-400 font-medium text-sm md:text-base max-w-md leading-relaxed">
-                    Gemini is evaluating executing roles, drafting operational playbook instructions, and defining target compliance checkpoints...
-                  </p>
-                </div>
-              ) : parsedBusinessDoc ? (
-                <div data-stage-output="businessDocumentation" className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
-                  {/* RACI Matrix Section */}
-                  <div className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 bg-[#eff4ff] text-[#0b1c30] rounded-xl"><Users size={24} /></div>
-                        <div>
-                          <h2 className="text-[10px] font-black text-[#0b1c30]/40 uppercase tracking-widest">Level 5</h2>
-                          <h3 className="text-lg md:text-xl font-black text-[#0b1c30] uppercase tracking-tight">RACI Assignment Matrix</h3>
-                        </div>
-                      </div>
-                      
-                      {/* RACI Legend */}
-                      <div className="flex flex-wrap items-center gap-3 bg-gray-55 px-4 py-2.5 rounded-2xl border border-gray-100">
-                        <span className="text-[9px] font-black text-gray-400 uppercase mr-1">RACI Guide:</span>
-                        <div className="flex items-center gap-1">
-                          <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 rounded border border-purple-100 text-[8px] font-black uppercase">R</span>
-                          <span className="text-[8px] font-bold text-gray-600">Responsible</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-100 text-[8px] font-black uppercase">A</span>
-                          <span className="text-[8px] font-bold text-gray-600">Accountable</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-100 text-[8px] font-black uppercase">C</span>
-                          <span className="text-[8px] font-bold text-gray-600">Consulted</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200 text-[8px] font-black uppercase">I</span>
-                          <span className="text-[8px] font-bold text-gray-600">Informed</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="overflow-x-auto rounded-2xl border border-gray-100 shadow-inner">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Step ID</th>
-                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Responsible (R)</th>
-                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Accountable (A)</th>
-                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Consulted (C)</th>
-                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Informed (I)</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-100 font-medium text-xs text-gray-700">
-                          {(parsedBusinessDoc.raci_matrix || []).map((raci: any, rIdx: number) => (
-                            <tr key={rIdx} className="hover:bg-gray-50/50">
-                              <td className="px-6 py-4 font-mono font-black text-green-600">{raci.stepId}</td>
-                              <td className="px-6 py-4">
-                                <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded border border-purple-100 font-bold uppercase text-[10px] tracking-tight">{raci.r || 'N/A'}</span>
-                              </td>
-                              <td className="px-6 py-4">
-                                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-100 font-bold uppercase text-[10px] tracking-tight">{raci.a || 'N/A'}</span>
-                              </td>
-                              <td className="px-6 py-4">
-                                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-100 font-bold uppercase text-[10px] tracking-tight">{raci.c || 'N/A'}</span>
-                              </td>
-                              <td className="px-6 py-4">
-                                <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200 font-bold uppercase text-[10px] tracking-tight">{raci.i || 'N/A'}</span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* SOP Narratives Section */}
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 bg-[#eff4ff] text-[#00873a] rounded-xl"><Briefcase size={24} /></div>
-                      <div>
-                        <h2 className="text-[10px] font-black text-[#0b1c30]/40 uppercase tracking-widest">Level 5 SOP</h2>
-                        <h3 className="text-lg md:text-xl font-black text-[#0b1c30] uppercase tracking-tight">Standard Operating Procedures</h3>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {(parsedBusinessDoc.sop_details || []).map((sop: any, sIdx: number) => (
-                        <div key={sIdx} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                          <div className="flex items-center justify-between mb-4">
-                            <span className="px-3 py-1 bg-slate-900 text-white rounded-lg text-[9px] font-black uppercase tracking-tight font-mono">Step: {sop.stepId}</span>
-                            <span className="text-[10px] font-black text-green-600 uppercase tracking-wider flex items-center gap-1">
-                              <Activity className="w-3.5 h-3.5" /> Target: {sop.kpiTarget}
-                            </span>
-                          </div>
-                          <div className="space-y-4">
-                            <div>
-                              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 font-mono">Operational Narrative</h4>
-                              <p className="text-xs text-gray-700 leading-relaxed font-semibold">{sop.narrative}</p>
-                            </div>
-                            <div className="bg-rose-50/50 p-4 rounded-xl border border-rose-100">
-                              <h4 className="text-[10px] font-black text-rose-700 uppercase tracking-widest mb-1 font-mono">Business Exception Fallback</h4>
-                              <p className="text-xs text-rose-950 leading-relaxed font-semibold">{sop.businessException}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Internal Controls Section */}
-                  <div className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-3 bg-[#eff4ff] text-[#006b2c] rounded-xl"><Lock size={24} /></div>
-                      <div>
-                        <h2 className="text-[10px] font-black text-[#0b1c30]/40 uppercase tracking-widest">Compliance Audit</h2>
-                        <h3 className="text-lg md:text-xl font-black text-[#0b1c30] uppercase tracking-tight">Risk & Control Checkpoints</h3>
-                      </div>
-                    </div>
-                    <div className="overflow-x-auto rounded-2xl border border-gray-100 shadow-inner">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Step</th>
-                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Control Objective</th>
-                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Mitigation Action</th>
-                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Assertion Method</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-100 font-medium text-xs text-gray-700">
-                          {(parsedBusinessDoc.audit_controls || []).map((ctrl: any, cIdx: number) => (
-                            <tr key={cIdx} className="hover:bg-gray-50/50">
-                              <td className="px-6 py-4 font-mono font-black text-green-600">{ctrl.stepId}</td>
-                              <td className="px-6 py-4 font-extrabold text-gray-900 leading-normal">{ctrl.controlObjective}</td>
-                              <td className="px-6 py-4 text-gray-600 leading-normal">{ctrl.mitigationAction}</td>
-                              <td className="px-6 py-4">
-                                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded font-mono text-[9px] font-bold uppercase">{ctrl.assertionMethod}</span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-[#0b1c30] border border-slate-800 rounded-[2.5rem] p-8 md:p-12 text-white shadow-xl relative overflow-hidden group">
-                  {/* Decorative gradient blur */}
-                  <div className="absolute top-0 right-0 w-80 h-80 bg-green-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-green-500/15 transition-all duration-700"></div>
-                  
-                  <div className="max-w-3xl">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-xs font-black uppercase tracking-widest mb-6">
-                      <Cpu className="w-4 h-4 animate-pulse" /> AI Business Extension
-                    </div>
-                    <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-4">Generate Enterprise Business SOP & RACI Matrix</h3>
-                    <p className="text-slate-300 font-medium mb-8 text-sm md:text-base leading-relaxed">
-                      Unlock business-level mapping to align technical Clean Core changes with corporate compliance frameworks and operational execution procedures.
-                    </p>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                      <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-800/80">
-                        <div className="flex items-center gap-2 text-green-400 mb-2">
-                          <Users size={16} />
-                          <span className="text-[10px] font-black uppercase tracking-widest font-mono">RACI Assignment</span>
-                        </div>
-                        <p className="text-xs text-slate-300 font-medium leading-relaxed">Maps Responsible, Accountable, Consulted, and Informed roles across all process tasks.</p>
-                      </div>
-                      <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-800/80">
-                        <div className="flex items-center gap-2 text-cyan-400 mb-2">
-                          <Layers size={16} />
-                          <span className="text-[10px] font-black uppercase tracking-widest font-mono">Level 5 Narratives</span>
-                        </div>
-                        <p className="text-xs text-slate-300 font-medium leading-relaxed">Drafts standard operating narratives, KPI targets, and functional exception handling guidance.</p>
-                      </div>
-                      <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-800/80">
-                        <div className="flex items-center gap-2 text-rose-400 mb-2">
-                          <Lock size={16} />
-                          <span className="text-[10px] font-black uppercase tracking-widest font-mono">Internal Audit Controls</span>
-                        </div>
-                        <p className="text-xs text-slate-300 font-medium leading-relaxed">Identifies key clean core control objectives, mitigating actions, and assertion evidence methods.</p>
-                      </div>
-                    </div>
-                    
-                    {!modelAvailability.enabled('documentation') ? (
-                      <NotGenerated
-                        what="Business SOP and RACI layer"
-                        absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
-                        stage="documentation"
-                        hint={
-                          modelAvailability.keyAvailable
-                            ? 'Turn the documentation stage back on in Settings to generate it.'
-                            : 'Add your own Gemini API key in Settings to generate it.'
-                        }
-                      />
-                    ) : (
-                    <button
-                      onClick={generateBusinessDocumentation}
-                      disabled={isGeneratingBusinessDoc || isGeneratingDoc}
-                      className="relative inline-flex items-center gap-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-black uppercase tracking-widest text-xs md:text-sm px-10 py-4.5 rounded-2xl shadow-xl hover:shadow-green-600/20 active:scale-95 transition-all disabled:opacity-50"
-                    >
-                      <Rocket className="w-4 h-4" />
-                      <span>Generate Business Layer (AI)</span>
-                    </button>
-                    )}
-
-                    {businessDocError && (
-                      <p className="text-rose-400 font-medium text-xs mt-4 animate-pulse">{businessDocError}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+        <div id="documentation-report" data-stage-output="documentation" className="mb-8">
+          <CcTabs
+            label="Documentation"
+            value={activeTab}
+            onChange={setActiveTab}
+            density="cozy"
+            tabs={[
+              {
+                value: 'technical',
+                label: engineDoc ? 'Process documentation' : 'Technical Blueprint',
+                content: technicalPanel,
+              },
+              {
+                value: 'business',
+                // The amber dot that stood here said "not generated yet" in
+                // colour alone (§2.4); it is said in words now.
+                label: parsedBusinessDoc ? 'Business SOP & Compliance' : 'Business SOP & Compliance · not generated',
+                content: businessPanel,
+              },
+            ]}
+          />
         </div>
       ) : (
-        <div className="p-12 md:p-20 text-center bg-gray-50/50 rounded-[2.5rem] md:rounded-[3rem] border-2 border-dashed border-gray-200 mb-12">
-          {/* Roadmap 1.2 / V25-A12 — an invitation to start something the
-              server would refuse is not an empty state, it is a dead end. When
-              this stage cannot call a model, the reason and the way back stand
-              here instead of the button. */}
+        <div className="mb-8 space-y-4">
           {/* Said before either branch, because it is true in both: a stored
               blueprint that cannot be drawn is a fact about this project, not
               about whether a model can be called right now. */}
           {storedBlueprintRejected && (
-            <p data-stored-blueprint-rejected className="text-gray-600 mb-6 font-medium max-w-2xl mx-auto leading-relaxed">
-              {STORED_BLUEPRINT_REJECTED}
-            </p>
+            <CcMessageStrip state="warning">
+              <span data-stored-blueprint-rejected>{STORED_BLUEPRINT_REJECTED}</span>
+            </CcMessageStrip>
           )}
           {/* Roadmap 3.0.5 — no model is called for this document, so neither
               a missing key nor a switched-off stage stands in its way. What
               can: the source no longer being the one the run signed, or the
               map not being read yet. Both are said, and the button waits. */}
-          {!storedBlueprintRejected && (
-            <p className="text-gray-500 mb-2 font-medium">No process documentation yet.</p>
-          )}
-          <p className="text-gray-500 mb-6 text-sm max-w-2xl mx-auto">
+          <CcEmptyState
+            title={storedBlueprintRejected ? 'Replace the stored blueprint' : 'No process documentation yet.'}
+            action={
+              <CcButton
+                variant="primary"
+                density="cozy"
+                onClick={generateDocumentation}
+                disabled={!signedSource || !processMap.model}
+                busy={isGeneratingDoc}
+                data-generate-blueprint
+              >
+                {storedBlueprintRejected ? 'Replace with the code reading' : 'Read the documentation from the code'}
+              </CcButton>
+            }
+            cost={
+              signedSource ? t('run.noModelCall') : (
+                <span data-documentation-needs-run>
+                  There is no source here that the active run signed. Run the analysis in stage 1 first.
+                </span>
+              )
+            }
+          >
             It is read out of the whole source the active run signed: the process element by element, what each part does,
             the update task and the lanes the code proves, every statement with its lines. No language model is involved.
-          </p>
-          <button
-            onClick={generateDocumentation}
-            disabled={!signedSource || !processMap.model || isGeneratingDoc}
-            data-generate-blueprint
-            className="bg-[#0b1c30] text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-[#006b2c] transition-all shadow-xl hover:shadow-green-600/20 disabled:opacity-50"
-          >
-            {storedBlueprintRejected ? 'Replace with the code reading' : 'Read the documentation from the code'}
-          </button>
-          {!signedSource && (
-            <p data-documentation-needs-run className="text-gray-500 mt-4 text-xs">
-              There is no source here that the active run signed. Run the analysis in stage 1 first.
-            </p>
-          )}
+          </CcEmptyState>
         </div>
       )}
 
-      {/* Level 4 Task Deep-Dive Drawer Overlay */}
-      <AnimatePresence>
+      {/* Level 4 task specification — a dialog (§2.6). Focus in, Tab kept
+          inside, Escape closes, focus back to the button that opened it: the
+          same modal contract the hand-built drawer had (UX-034, roadmap 3.0.4),
+          now from the library. */}
+      <CcDialog
+        open={activeTask !== null}
+        onClose={() => setActiveTask(null)}
+        title={activeTask ? (activeTask.name || `Task ${activeTask.stepId}`) : ''}
+        lead="Level 4 task specification"
+        size="wide"
+        data-task-dialog=""
+        actions={<CcButton onClick={() => setActiveTask(null)}>Close specification</CcButton>}
+      >
         {activeTask && (
-          <>
-            {/* Backdrop */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setActiveTask(null)}
-              className="fixed inset-0 bg-slate-950 z-[110]"
-            />
-            
-            {/* Slide-out Drawer Panel */}
-            <motion.div
-              ref={taskDrawerRef}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="task-drawer-title"
-              tabIndex={-1}
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-screen w-full md:w-[480px] xl:w-[550px] bg-slate-900/95 backdrop-blur-xl border-l border-slate-800 shadow-2xl z-[120] text-white p-6 md:p-8 flex flex-col overflow-hidden"
-            >
-              {/* Close Button */}
-              <button
-                type="button"
-                aria-label="Close task details"
-                onClick={() => setActiveTask(null)}
-                className="absolute top-6 right-6 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-colors z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-              >
-                <X size={18} />
-              </button>
+          <div className="space-y-4">
+            <div>
+              <h3 className={LABEL}>Functional Description &amp; Role Responsibility</h3>
+              <p className="cc-text-body text-cc-ink mt-1">{activeTask.description}</p>
+            </div>
 
-              {/* Decorative background blob */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16"></div>
-              
-              {/* Header */}
-              <div className="flex items-center gap-3.5 mb-6 pb-6 border-b border-slate-800/80 shrink-0">
-                <div className="bg-green-500/20 p-2.5 rounded-2xl text-green-400 border border-green-500/30">
-                  <Settings className="w-6 h-6 animate-pulse" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest font-mono">Level 4 Task Specification</span>
-                  <h3 id="task-drawer-title" className="text-xl font-extrabold text-white mt-0.5 uppercase tracking-tight">{activeTask.name || `Task ${activeTask.stepId}`}</h3>
-                </div>
+            <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-y border-cc-line py-3">
+              <div>
+                <dt className={LABEL}>Step ID</dt>
+                <dd className="cc-text-identifier font-cc-mono text-cc-ink mt-1">{activeTask.stepId}</dd>
               </div>
-
-              {/* Scrollable Body */}
-              <div className="flex-1 overflow-y-auto pr-2 space-y-6 text-sm scrollbar-thin scrollbar-thumb-slate-800">
-                <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">Functional Description & Role Responsibility</h4>
-                  <p className="text-slate-200 leading-relaxed font-medium">{activeTask.description}</p>
-                </div>
-
-                {/* Grid Metrics */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-y border-slate-800 py-4 my-2 shrink-0">
-                  <div>
-                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block font-mono">Step ID</span>
-                    <span className="text-sm font-black text-slate-200 mt-1 block uppercase">{activeTask.stepId}</span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block font-mono">Logic Complexity</span>
-                    <span className={clsx(
-                      "text-xs font-black uppercase tracking-widest mt-1.5 inline-block px-2.5 py-0.5 rounded border",
-                      activeTask.complexity === 'High' ? "bg-red-950/40 text-red-400 border-red-900/60" :
-                      activeTask.complexity === 'Medium' ? "bg-amber-950/40 text-amber-400 border-amber-900/60" :
-                      "bg-green-950/40 text-green-400 border-green-900/60"
-                    )}>
-                      {activeTask.complexity || 'Low'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block font-mono">Estimated Effort</span>
-                    <span className="text-sm font-bold text-emerald-400 mt-1.5 flex items-center gap-1.5">
-                      <Activity className="w-3.5 h-3.5" />
-                      {activeTask.estimatedDuration || 'Not stated'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Inputs & Outputs */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 shrink-0">
-                  <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/80">
-                    <div className="flex items-center gap-2 text-slate-400 mb-2">
-                      <Layers size={14} className="text-green-500" />
-                      <span className="text-[9px] font-black uppercase tracking-widest font-mono">Input Parameters</span>
-                    </div>
-                    <ul className="space-y-1.5 text-xs text-slate-200 list-disc pl-4 font-semibold">
-                      {(activeTask.inputs || []).map((inp: string, idx: number) => (
-                        <li key={idx}>{inp}</li>
-                      ))}
-                      {(!activeTask.inputs || activeTask.inputs.length === 0) && <li>N/A</li>}
-                    </ul>
-                  </div>
-
-                  <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/80">
-                    <div className="flex items-center gap-2 text-slate-400 mb-2">
-                      <Box size={14} className="text-green-500" />
-                      <span className="text-[9px] font-black uppercase tracking-widest font-mono">Output Results</span>
-                    </div>
-                    <ul className="space-y-1.5 text-xs text-slate-200 list-disc pl-4 font-semibold">
-                      {(activeTask.outputs || []).map((out: string, idx: number) => (
-                        <li key={idx}>{out}</li>
-                      ))}
-                      {(!activeTask.outputs || activeTask.outputs.length === 0) && <li>N/A</li>}
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Target Systems */}
-                <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2.5 font-mono">Target Platform & Tech Stack</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {(Array.isArray(activeTask.systems) ? activeTask.systems : [activeTask.systems || 'Not stated']).map((sys: string, idx: number) => (
-                      <code key={idx} className="bg-slate-950 text-emerald-400 border border-slate-800 text-xs px-3 py-1.5 rounded-xl font-mono">
-                        {sys}
-                      </code>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Technical Mapping Snippet */}
-                <div className="space-y-2.5 pt-2 shrink-0">
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Technical & Execution Mapping</h4>
-                  <div className="rounded-2xl border border-slate-800 overflow-hidden bg-slate-950">
-                    <div className="bg-slate-900 border-b border-slate-800 px-4 py-2 flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
-                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
-                        <div className="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
-                      </div>
-                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest font-mono">{activeTask.stepId}.ts</span>
-                      <div className="w-12"></div>
-                    </div>
-                    <pre className="p-5 text-xs font-mono text-emerald-300 overflow-x-auto max-h-[220px] select-all scrollbar-thin scrollbar-thumb-slate-800">
-                      <code>{activeTask.technicalMapping || '// Transformed execution handler\nrouter.post(\'/sync\', async (req, res) => {\n  // Implementation code mapping detailed above...\n});'}</code>
-                    </pre>
-                  </div>
-                </div>
+              <div>
+                <dt className={LABEL}>Logic Complexity</dt>
+                <dd className="mt-1"><CcTag>{activeTask.complexity || 'Low'}</CcTag></dd>
               </div>
-
-              {/* Footer */}
-              <div className="mt-8 pt-6 border-t border-slate-800/80 flex justify-between items-center shrink-0">
-                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-mono">Clean-Core.io Architecture Mapping Standard</span>
-                <button
-                  onClick={() => setActiveTask(null)}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-950/20 active:scale-95"
-                >
-                  Close Specification
-                </button>
+              <div>
+                <dt className={LABEL}>Estimated Effort</dt>
+                <dd className="cc-text-cell text-cc-ink mt-1">{activeTask.estimatedDuration || 'Not stated'}</dd>
               </div>
-            </motion.div>
-          </>
+            </dl>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
+                <h3 className={clsx(LABEL, 'flex items-center gap-2 mb-1')}>
+                  <Layers size={14} aria-hidden={true} /> Input Parameters
+                </h3>
+                <ul className="space-y-1 cc-text-cell text-cc-ink list-disc pl-4">
+                  {(activeTask.inputs || []).map((inp: string, idx: number) => (
+                    <li key={idx}>{inp}</li>
+                  ))}
+                  {(!activeTask.inputs || activeTask.inputs.length === 0) && <li>N/A</li>}
+                </ul>
+              </div>
+              <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
+                <h3 className={clsx(LABEL, 'flex items-center gap-2 mb-1')}>
+                  <Box size={14} aria-hidden={true} /> Output Results
+                </h3>
+                <ul className="space-y-1 cc-text-cell text-cc-ink list-disc pl-4">
+                  {(activeTask.outputs || []).map((out: string, idx: number) => (
+                    <li key={idx}>{out}</li>
+                  ))}
+                  {(!activeTask.outputs || activeTask.outputs.length === 0) && <li>N/A</li>}
+                </ul>
+              </div>
+            </div>
+
+            <div>
+              <h3 className={clsx(LABEL, 'mb-2')}>Target Platform &amp; Tech Stack</h3>
+              <div className="flex flex-wrap gap-2">
+                {(Array.isArray(activeTask.systems) ? activeTask.systems : [activeTask.systems || 'Not stated']).map((sys: string, idx: number) => (
+                  <CcTag key={idx}>{sys}</CcTag>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className={clsx(LABEL, 'mb-2')}>Technical &amp; Execution Mapping</h3>
+              {/* What the blueprint stored, or that it stored nothing. The
+                  hand-built drawer printed an invented `router.post('/sync')`
+                  handler when the field was empty — code nobody wrote, dressed
+                  as the mapping of this task. */}
+              {activeTask.technicalMapping ? (
+                <pre className="m-0 max-h-[220px] overflow-auto rounded-cc-row border border-cc-line bg-cc-surface-muted p-3 font-cc-mono text-[12px] leading-5 text-cc-ink">
+                  <code>{activeTask.technicalMapping}</code>
+                </pre>
+              ) : (
+                <p className="cc-text-cell text-cc-ink-muted">Not stated</p>
+              )}
+            </div>
+          </div>
         )}
-      </AnimatePresence>
+      </CcDialog>
 
-      <NavigationButtons 
+      <NavigationButtons
         backPath={`/project/${projectId}/transformation`}
         backLabel="Back to Transformation"
         proceedPath={`/project/${projectId}/testing`}

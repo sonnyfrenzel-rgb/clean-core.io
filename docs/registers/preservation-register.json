@@ -998,7 +998,7 @@
           {
             "field": "generatedCode",
             "from": "project",
-            "why": "the documentation is merged back into it as docs/process-blueprint.md"
+            "why": "the documentation is merged back into it as docs/process-documentation.md"
           },
           {
             "field": "documentation",
@@ -1029,7 +1029,7 @@
           "documentation",
           "businessDocumentation"
         ],
-        "note": "This is the one stage that writes an upstream stage's artefact: the documentation inserts docs/process-blueprint.md and the business layer docs/business-documentation.md into generatedCode, each inside a Firestore transaction that re-reads it. Since 3.0.5 `documentation` holds the engine form (format 'engine-process-documentation', lib/process-documentation.ts); it stays client-written and client-writable in firestore.rules."
+        "note": "This is the one stage that writes an upstream stage's artefact: the documentation inserts docs/process-documentation.md and the business layer docs/business-documentation.md into generatedCode, each inside a Firestore transaction that re-reads it. Since 3.0.5 `documentation` holds the engine form (format 'engine-process-documentation', lib/process-documentation.ts); it stays client-written and client-writable in firestore.rules."
       },
       "preconditions": {
         "enforceActiveRun": true,
@@ -1086,7 +1086,7 @@
         "notShown": [
           {
             "field": "generatedCode",
-            "why": "not read for the documentation since 3.0.5 (L-04 resolved); the stage only merges docs/process-blueprint.md into it, and that workspace copy leaves as a download"
+            "why": "not read for the documentation since 3.0.5 (L-04 resolved); the stage only merges docs/process-documentation.md into it, and that workspace copy leaves as a download"
           },
           {
             "field": "status",
