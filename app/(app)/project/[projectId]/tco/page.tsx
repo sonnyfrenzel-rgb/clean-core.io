@@ -10,7 +10,7 @@ import Stepper from '@/components/Stepper';
 import StageHeader from '@/components/StageHeader';
 import VerificationRail from '@/components/VerificationRail';
 import NavigationButtons from '@/components/NavigationButtons';
-import { workflowSteps } from '@/lib/workflow-steps';
+import { workflowSteps, staleness } from '@/lib/workflow-steps';
 import { Calculator, ShieldCheck, Printer, BarChart3, AlertCircle } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import OptionComparison from '@/components/tco/OptionComparison';
@@ -75,6 +75,11 @@ export default function TcoCalculatorPage() {
   const { projectId } = useParams();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  // A read that failed is not a project without a score (QA ffddf6b4fee6).
+  const [loadError, setLoadError] = useState(false);
+  // The line count of the uploaded source, so the slider's range can hold it
+  // (QA 246b1ea24dbc): a 420-line upload used to be drawn at 1,000.
+  const [sourceLoc, setSourceLoc] = useState<number | null>(null);
 
   // Model inputs.
   //
@@ -126,11 +131,14 @@ export default function TcoCalculatorPage() {
           // estate, but the number to model on is the reader's to supply; the
           // field is editable and now starts from something true.
           if (data.legacyCode) {
-            setLoc(data.legacyCode.split('\n').length);
+            const lines = data.legacyCode.split('\n').length;
+            setLoc(lines);
+            setSourceLoc(lines);
           }
         }
       } catch (err) {
         console.error("Failed to load project:", err);
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
@@ -177,11 +185,29 @@ export default function TcoCalculatorPage() {
     );
   }
 
-  // Nothing any input could fix: no signed score, or one at or above the
-  // assumed target. Everything else — missing cost figures, an estate too small
-  // to price — is shown next to the inputs that would change it.
+  if (loadError) return (
+    <div className="cc min-h-screen bg-cc-page p-4 md:p-8">
+      <div className="max-w-xl" data-tco-load-error="">
+        <CcMessageStrip
+          state="error"
+          headline="This stage could not be opened"
+          actions={<CcButton onClick={() => window.location.reload()}>Try again</CcButton>}
+        >
+          The project could not be loaded. This is usually a permissions or connectivity issue; it says
+          nothing about whether a signed score exists.
+        </CcMessageStrip>
+      </div>
+    </div>
+  );
+
+  // Nothing any input could fix: no signed score, one at or above the assumed
+  // target, or one that describes a previous source (QA b23daef11548 — the
+  // line count below would come from the current source, the score from the
+  // run before it). Everything else — missing cost figures, an estate too
+  // small to price — is shown next to the inputs that would change it.
   const baselineScore = typeof project?.cleanCoreScore === 'number' ? project.cleanCoreScore : null;
-  if (baselineScore === null || baselineScore >= TCO_TARGET_SCORE) {
+  const sourceChanged = staleness(project).sourceChanged;
+  if (baselineScore === null || baselineScore >= TCO_TARGET_SCORE || sourceChanged) {
     return (
       <div className="cc min-h-screen bg-cc-page p-4 md:p-8">
         <VerificationRail steps={phases} current="tco" projectId={projectId as string} />
@@ -189,7 +215,13 @@ export default function TcoCalculatorPage() {
         <div className={`max-w-2xl mx-auto mt-10 p-8 ${CARD}`}>
           <StageHeader title="No baseline to model against" />
           <p className="cc-text-body text-cc-ink-muted -mt-4">
-            {typeof project?.cleanCoreScore === 'number' && project.cleanCoreScore >= TCO_TARGET_SCORE ? (
+            {sourceChanged && baselineScore !== null ? (
+              <span data-tco-stale="">
+                The source changed after the signed run, so its Clean Core score of {baselineScore} describes
+                code that is no longer the code under review. Every figure here is derived from that score.
+                Re-run the analysis in stage&nbsp;1.
+              </span>
+            ) : typeof project?.cleanCoreScore === 'number' && project.cleanCoreScore >= TCO_TARGET_SCORE ? (
               <>
                 This code already scores {project.cleanCoreScore}, at or above the {TCO_TARGET_SCORE} this model
                 assumes modernisation would reach. The model has no improvement to price, so it
@@ -275,8 +307,8 @@ export default function TcoCalculatorPage() {
               <RangeField
                 label="Legacy lines of code (LoC)"
                 help="Total lines of custom legacy ABAP."
-                min={1000}
-                max={50000}
+                min={Math.min(1000, sourceLoc ?? 1000)}
+                max={Math.max(50000, sourceLoc ?? 50000)}
                 step={500}
                 value={loc}
                 onChange={setLoc}
@@ -309,18 +341,18 @@ export default function TcoCalculatorPage() {
               {/* Input 4 */}
               <RangeField
                 label="RISE major upgrades / yr"
-                min={1}
+                min={0}
                 max={3}
                 step={1}
                 value={upgradeFreq}
                 onChange={setUpgradeFreq}
-                readout={`${upgradeFreq} Upgrade`}
+                readout={`${upgradeFreq} Upgrade${upgradeFreq === 1 ? '' : 's'}`}
               />
 
               {/* Input 5 */}
               <RangeField
                 label="Feature pack updates / yr"
-                min={1}
+                min={0}
                 max={4}
                 step={1}
                 value={fpFreq}
@@ -363,6 +395,11 @@ export default function TcoCalculatorPage() {
                   The model needs your own cost figures and has no defaults for them. Missing:{' '}
                   <strong className="font-semibold text-cc-ink">{missingCosts.join(', ')}</strong>.
                   {!currency ? ' The currency is stated once, in "Options and costs" below, and both halves of this stage use it.' : ''}
+                </>
+              ) : upgradeFreq + fpFreq === 0 ? (
+                <>
+                  With no release upgrade and no feature pack update in a year, the model has no upgrade
+                  effort to price, so there is no saving to forecast.
                 </>
               ) : (
                 <>
