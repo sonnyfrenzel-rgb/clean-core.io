@@ -21,16 +21,16 @@ export function formatAnalysisToMarkdown(rawJson: string): string {
     const data: ReturnType<typeof JSON.parse> = readStoredAnalysis(rawJson);
     if (!data) return withoutUnapprovedMoney(rawJson);
 
-    let md = `# 📊 Business Analysis Report: ${data.projectTitle || 'ABAP Modernization'}\n\n`;
-    md += `## 🛡️ Clean Core Compliance Baseline\n`;
+    let md = `# Business Analysis Report: ${data.projectTitle || 'ABAP Modernization'}\n\n`;
+    md += `## Clean Core Compliance Baseline\n`;
     md += `**Compliance Score:** \`${data.cleanCoreScore || 0} / 100\`\n\n`;
-    md += `> 💡 **Executive Summary:** ${data.summary || ''}\n\n`;
+    md += `> **Executive Summary:** ${data.summary || ''}\n\n`;
     
-    md += `## 📂 As-Is Process & Legacy Context\n`;
+    md += `## As-Is Process & Legacy Context\n`;
     md += `${data.asIsContext || 'No context available.'}\n\n`;
     
     if (data.standardFit) {
-      md += `## 🎯 Target Standard Process & SAP Fit\n`;
+      md += `## Target Standard Process & SAP Fit\n`;
       md += `- **Fit Potential:** **${data.standardFit.potential || 'N/A'}**\n`;
       md += `- **Target Standard Process:** \`${data.standardFit.targetStandardProcess || 'N/A'}\`\n`;
       md += `- **Technical Rationale:** ${data.standardFit.rationale || 'N/A'}\n\n`;
@@ -39,7 +39,7 @@ export function formatAnalysisToMarkdown(rawJson: string): string {
     // A single object is one gap; any other shape is said, not left out (lib/model-gaps.ts).
     const gapsReading = readModelGaps(data.gaps);
     if (gapsReading.gaps.length > 0 || gapsReading.unreadable) {
-      md += `## ⚠️ Functional Gaps & Extensibility Strategies\n`;
+      md += `## Functional Gaps & Extensibility Strategies\n`;
       if (gapsReading.gaps.length > 0) {
         md += `The following customization gaps have been identified compared to the standard S/4HANA core:\n\n`;
         md += `| Gap / Capability | Severity | Complexity | Recommended Extensibility Strategy | Technical Rationale |\n`;
@@ -55,14 +55,14 @@ export function formatAnalysisToMarkdown(rawJson: string): string {
     }
     
     if (data.recommendations) {
-      md += `## 💡 Clean Core Architecture Recommendations\n`;
+      md += `## Clean Core Architecture Recommendations\n`;
       md += `- **Keep Core Clean Strategy:** ${data.recommendations.keepCoreClean || 'N/A'}\n`;
       md += `- **Decommissioning / Deactivation Strategy:** ${data.recommendations.decommissioning || 'N/A'}\n`;
       md += `- **Transformed Cloud Readiness:** ${data.recommendations.cloudReadiness || 'N/A'}\n\n`;
     }
     
     if (Array.isArray(data.strategicNextSteps) && data.strategicNextSteps.length > 0) {
-      md += `## 🚀 Architectural Next Steps\n`;
+      md += `## Architectural Next Steps\n`;
       data.strategicNextSteps.forEach((step: string, idx: number) => {
         md += `${idx + 1}. **${step}**\n`;
       });
@@ -82,17 +82,17 @@ export function formatDesignToMarkdown(rawJson: string): string {
     const data = JSON.parse(cleanedJson);
     if (!data || typeof data !== 'object') return rawJson;
 
-    let md = `# 🏗️ Target Architecture Blueprint: ${data.projectName || 'Transformed Cloud Service'}\n\n`;
+    let md = `# Target Architecture Blueprint: ${data.projectName || 'Transformed Cloud Service'}\n\n`;
     
     if (data.architectureOverview) {
-      md += `## 🌐 Architecture Overview\n`;
+      md += `## Architecture Overview\n`;
       md += `${data.architectureOverview.approachDescription || ''}\n\n`;
       md += `- **Target Node.js Framework:** \`${data.architectureOverview.nodeFramework || 'Express'}\`\n`;
       md += `- **Recommended Runtime Platform:** \`${data.architectureOverview.runtimePlatform || 'SAP BTP'}\`\n\n`;
     }
     
     if (data.nodeAppBlueprint) {
-      md += `## 📁 Transformed Folder Structure & Artifacts\n`;
+      md += `## Transformed Folder Structure & Artifacts\n`;
       md += `Below is the recommended side-by-side microservice project layout:\n\n`;
       md += `| File/Folder Path | Purpose & Content |\n`;
       md += `| :--- | :--- |\n`;
@@ -103,7 +103,7 @@ export function formatDesignToMarkdown(rawJson: string): string {
       }
       md += `\n`;
       
-      md += `## 🔌 Modernized REST/OData API Method Catalog\n`;
+      md += `## Modernized REST/OData API Method Catalog\n`;
       md += `| HTTP Method | API Endpoint Path | Functional Scope & Capability |\n`;
       md += `| :---: | :--- | :--- |\n`;
       if (Array.isArray(data.nodeAppBlueprint.apiEndpoints)) {
@@ -115,9 +115,9 @@ export function formatDesignToMarkdown(rawJson: string): string {
     }
     
     if (Array.isArray(data.cloudServices) && data.cloudServices.length > 0) {
-      md += `## ☁️ SAP BTP & Native Cloud Services Integration\n`;
+      md += `## SAP BTP & Native Cloud Services Integration\n`;
       data.cloudServices.forEach((service: any) => {
-        md += `### 🔹 ${service.serviceName}\n`;
+        md += `### ${service.serviceName}\n`;
         md += `**Purpose in Project:** ${service.purpose}\n\n`;
         if (Array.isArray(service.npmPackages) && service.npmPackages.length > 0) {
           md += `**Required Node.js SDK Packages:** ${service.npmPackages.map((pkg: string) => `\`${pkg}\``).join(', ')}\n\n`;
@@ -126,13 +126,13 @@ export function formatDesignToMarkdown(rawJson: string): string {
     }
     
     if (data.dataSync) {
-      md += `## 🔄 Data Synchronization & Integration Pattern\n`;
+      md += `## Data Synchronization & Integration Pattern\n`;
       md += `### **Pattern:** \`${data.dataSync.patternName || 'Event-Driven'}\`\n`;
       md += `${data.dataSync.description || ''}\n\n`;
     }
     
     if (Array.isArray(data.sapStandardApiMapping) && data.sapStandardApiMapping.length > 0) {
-      md += `## 🌐 SAP Business Accelerator Hub Mappings\n`;
+      md += `## SAP Business Accelerator Hub Mappings\n`;
       md += `The side-by-side extension communicates with S/4HANA via released standard interfaces to keep the core clean:\n\n`;
       md += `| Legacy Object | Target Released SAP Public API | Business Accelerator Hub ID | Integration Role / Context | Link |\n`;
       md += `| :--- | :--- | :--- | :--- | :--- |\n`;
@@ -143,7 +143,7 @@ export function formatDesignToMarkdown(rawJson: string): string {
     }
     
     if (Array.isArray(data.securityHardening) && data.securityHardening.length > 0) {
-      md += `## 🛡️ Security Hardening Checklist\n`;
+      md += `## Security Hardening Checklist\n`;
       md += `| Category | Hardening Rule / Requirement | Concrete Implementation Detail |\n`;
       md += `| :--- | :--- | :--- |\n`;
       data.securityHardening.forEach((item: any) => {
@@ -153,9 +153,9 @@ export function formatDesignToMarkdown(rawJson: string): string {
     }
     
     if (Array.isArray(data.roadmap) && data.roadmap.length > 0) {
-      md += `## 🗺️ Modernization Execution Roadmap\n`;
+      md += `## Modernization Execution Roadmap\n`;
       data.roadmap.forEach((phase: any) => {
-        md += `### 📍 ${phase.phase || 'Phase'}: ${phase.title}\n`;
+        md += `### ${phase.phase || 'Phase'}: ${phase.title}\n`;
         if (Array.isArray(phase.deliverables) && phase.deliverables.length > 0) {
           phase.deliverables.forEach((del: string) => {
             md += `- [ ] ${del}\n`;
@@ -177,7 +177,8 @@ export function formatDesignToMarkdown(rawJson: string): string {
  * The engine document (`lib/process-documentation.ts`) renders itself. A
  * blueprint a language model wrote before 3.0.5 is rendered as it always was,
  * under the notice that says what it is; nothing is migrated. This is what the
- * delivery bundle's `docs/process-blueprint.md` and the dashboard export read.
+ * delivery bundle's documentation file (`process-documentation.md`) and the
+ * dashboard export read.
  */
 export function formatDocumentationToMarkdown(raw: string | undefined | null): string {
   const stored = readStoredDocumentation(raw);
@@ -198,38 +199,38 @@ export function formatDocsToMarkdown(rawJson: string): string {
     const data = JSON.parse(cleanedJson);
     if (!data || typeof data !== 'object') return rawJson;
 
-    let md = `# 📋 Process Blueprint Documentation\n\n`;
+    let md = `# Process documentation\n\n`;
     
     if (data.l1_domain) {
-      md += `## 🏢 Level 1: Business Domain\n`;
+      md += `## Level 1: Business Domain\n`;
       md += `- **Domain Name:** **${data.l1_domain.name || 'N/A'}**\n`;
       md += `- **Strategic Modernization Goal:** ${data.l1_domain.strategicGoal || 'N/A'}\n`;
       md += `- **Process Executive Owner:** \`${data.l1_domain.owner || 'N/A'}\`\n\n`;
     }
     
     if (data.l2_group) {
-      md += `## 📊 Level 2: Process Group & Metrics\n`;
+      md += `## Level 2: Process Group & Metrics\n`;
       md += `- **Process Group Name:** **${data.l2_group.name || 'N/A'}**\n`;
       md += `- **Process Area:** \`${data.l2_group.processArea || 'N/A'}\`\n\n`;
       
       if (Array.isArray(data.l2_group.kpis) && data.l2_group.kpis.length > 0) {
         md += `**Target Business KPIs:**\n`;
         data.l2_group.kpis.forEach((kpi: string) => {
-          md += `- 📈 ${kpi}\n`;
+          md += `- ${kpi}\n`;
         });
         md += `\n`;
       }
     }
     
     if (Array.isArray(data.l3_flow) && data.l3_flow.length > 0) {
-      md += `## 🔀 Level 3: Logical BPMN Process Flow\n`;
+      md += `## Level 3: Logical BPMN Process Flow\n`;
       md += `Below is the logical sequencing of the modernized workflow:\n\n`;
       data.l3_flow.forEach((flow: any) => {
-        const typeIcon = flow.type === 'startEvent' ? '🟢' : flow.type === 'endEvent' ? '🔴' : '⚙️';
+        const typeWord = flow.type === 'startEvent' ? 'Start:' : flow.type === 'endEvent' ? 'End:' : 'Task:';
         const roleLabel = flow.role ? ` (Role: **${flow.role}**)` : '';
-        md += `- ${typeIcon} **[${flow.id}] ${flow.name}**${roleLabel}`;
+        md += `- ${typeWord} **[${flow.id}] ${flow.name}**${roleLabel}`;
         if (Array.isArray(flow.next) && flow.next.length > 0) {
-          md += ` ➔ Triggers: \`${flow.next.join(', ')}\``;
+          md += ` Triggers: \`${flow.next.join(', ')}\``;
         }
         md += `\n`;
       });
@@ -237,10 +238,10 @@ export function formatDocsToMarkdown(rawJson: string): string {
     }
     
     if (Array.isArray(data.l4_tasks) && data.l4_tasks.length > 0) {
-      md += `## 🛠️ Level 4: Technical Task Specifications\n`;
+      md += `## Level 4: Technical Task Specifications\n`;
       md += `Detailed technical specifications for each business operation block:\n\n`;
       data.l4_tasks.forEach((task: any) => {
-        md += `### 🔹 [${task.stepId || 'Task'}] ${task.name}\n`;
+        md += `### [${task.stepId || 'Task'}] ${task.name}\n`;
         md += `**Functional Description:**\n${task.description || ''}\n\n`;
         
         md += `| Attribute | Specification Details |\n`;
@@ -267,13 +268,13 @@ export function formatPresentationToMarkdown(rawJson: string): string {
     const data = JSON.parse(cleanedJson);
     if (!data || typeof data !== 'object') return rawJson;
 
-    let md = `# 👔 Executive Summary Slide Deck: ${data.title || 'Project Handover'}\n\n`;
+    let md = `# Executive Summary Slide Deck: ${data.title || 'Project Handover'}\n\n`;
     md += `**Date:** ${data.date || 'N/A'} | **Author:** ${data.author || 'Clean-Core Transformation Engine'}\n\n`;
     md += `---\n\n`;
     
     if (Array.isArray(data.slides)) {
       data.slides.forEach((slide: any, idx: number) => {
-        md += `## 🛝 Slide ${idx + 1}: ${slide.title || 'Untitled Slide'}\n`;
+        md += `## Slide ${idx + 1}: ${slide.title || 'Untitled Slide'}\n`;
         if (slide.subtitle) {
           md += `### *${slide.subtitle}*\n\n`;
         }
@@ -285,15 +286,15 @@ export function formatPresentationToMarkdown(rawJson: string): string {
           }
           md += `\n`;
         } else if (slide.type === 'split') {
-          md += `### 📊 Technical Context & Metrics\n\n`;
-          md += `| 🧪 Sandbox & Testing Metrics | ⚙️ Platform Service Bindings |\n`;
+          md += `### Technical Context & Metrics\n\n`;
+          md += `| Sandbox & Testing Metrics | Platform Service Bindings |\n`;
           md += `| :--- | :--- |\n`;
           md += `| ${slide.leftContent || 'N/A'} | ${slide.rightContent || 'N/A'} |\n\n`;
         } else {
           // Standard bullets/text slide
           if (Array.isArray(slide.content)) {
             slide.content.forEach((bullet: string) => {
-              md += `- 📝 ${bullet}\n`;
+              md += `- ${bullet}\n`;
             });
           } else if (slide.content) {
             md += `${slide.content}\n`;
@@ -302,7 +303,7 @@ export function formatPresentationToMarkdown(rawJson: string): string {
         }
         
         if (slide.speakerNotes) {
-          md += `#### 🗣️ Presenter Talking Points\n`;
+          md += `#### Presenter Talking Points\n`;
           md += `*${slide.speakerNotes}*\n\n`;
         }
         
@@ -323,10 +324,10 @@ export function formatBusinessDocsToMarkdown(rawJson: string): string {
     const data = JSON.parse(cleanedJson);
     if (!data || typeof data !== 'object') return rawJson;
 
-    let md = `# 🏢 Business SOP & Compliance Documentation\n\n`;
+    let md = `# Business SOP & Compliance Documentation\n\n`;
 
     if (Array.isArray(data.raci_matrix) && data.raci_matrix.length > 0) {
-      md += `## 👥 RACI Assignment Matrix\n\n`;
+      md += `## RACI Assignment Matrix\n\n`;
       md += `| Task ID | Responsible (R) | Accountable (A) | Consulted (C) | Informed (I) |\n`;
       md += `| :--- | :--- | :--- | :--- | :--- |\n`;
       data.raci_matrix.forEach((raci: any) => {
@@ -336,9 +337,9 @@ export function formatBusinessDocsToMarkdown(rawJson: string): string {
     }
 
     if (Array.isArray(data.sop_details) && data.sop_details.length > 0) {
-      md += `## 📋 Standard Operating Procedures (SOP) Playbook\n\n`;
+      md += `## Standard Operating Procedures (SOP) Playbook\n\n`;
       data.sop_details.forEach((sop: any) => {
-        md += `### 🔹 Task: \`${sop.stepId}\`\n`;
+        md += `### Task: \`${sop.stepId}\`\n`;
         md += `* **Operational Narrative:** ${sop.narrative || 'N/A'}\n`;
         md += `* **KPI Target:** \`${sop.kpiTarget || 'N/A'}\`\n`;
         md += `* **Business Exception Fallback:** _${sop.businessException || 'N/A'}_\n\n`;
@@ -346,7 +347,7 @@ export function formatBusinessDocsToMarkdown(rawJson: string): string {
     }
 
     if (Array.isArray(data.audit_controls) && data.audit_controls.length > 0) {
-      md += `## 🛡️ Internal Audit Compliance & Risk Controls\n\n`;
+      md += `## Internal Audit Compliance & Risk Controls\n\n`;
       md += `| Task ID | Control Objective | Mitigation Action | Assertion Method |\n`;
       md += `| :--- | :--- | :--- | :--- |\n`;
       data.audit_controls.forEach((ctrl: any) => {

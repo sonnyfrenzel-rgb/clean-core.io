@@ -1,6 +1,7 @@
 import type { Project } from '@/lib/types';
 import type { SupportFinding } from '@/lib/abap/class-model';
-import { rollupLevel, type SupportLevel } from '@/lib/abap/support-matrix';
+import { rollupLevel, LEVEL_LABEL, type SupportLevel } from '@/lib/abap/support-matrix';
+import { formatIsoDate } from '@/lib/format';
 import { APP_VERSION } from '@/lib/version';
 import type { PresentationData, SlideData } from '@/components/PresentationViewer';
 
@@ -181,7 +182,7 @@ export function buildBoardDeck(input: {
           col1: f.title,
           col2: 0,
           col3: f.recommendation,
-          col4: '⚠️ Partial',
+          col4: LEVEL_LABEL.partial,
           status: 'warning',
           url: f.howItWorks
         };
@@ -204,7 +205,7 @@ export function buildBoardDeck(input: {
     partialRows.push(
       findings.length === 0
         ? { col1: 'No findings detected', col2: '—', col3: 'Not a compliance statement — coverage is not established.', col4: '— Not determined', status: 'info', url: undefined }
-        : { col1: 'No partial constructs detected', col2: '—', col3: `None of the ${findings.length} finding(s) is partial.`, col4: '✅ None partial', status: 'success', url: undefined },
+        : { col1: 'No partial constructs detected', col2: '—', col3: `None of the ${findings.length} finding(s) is partial.`, col4: 'None partial', status: 'success', url: undefined },
     );
   }
 
@@ -225,7 +226,7 @@ export function buildBoardDeck(input: {
           col1: f.title,
           col2: 0,
           col3: f.recommendation,
-          col4: '❌ Not Supported',
+          col4: LEVEL_LABEL['not-supported'],
           status: 'danger',
           url: f.howItWorks
         };
@@ -246,7 +247,7 @@ export function buildBoardDeck(input: {
     notSupportedRows.push(
       findings.length === 0
         ? { col1: 'No findings detected', col2: '—', col3: 'Not a compliance statement — coverage is not established.', col4: '— Not determined', status: 'info', url: undefined }
-        : { col1: 'No unsupported constructs detected', col2: '—', col3: `None of the ${findings.length} finding(s) is a kernel call, dynpro or static legacy screen layout.`, col4: '✅ Zero gaps among the findings', status: 'success', url: undefined },
+        : { col1: 'No unsupported constructs detected', col2: '—', col3: `None of the ${findings.length} finding(s) is a kernel call, dynpro or static legacy screen layout.`, col4: 'Zero gaps among the findings', status: 'success', url: undefined },
     );
   }
 
@@ -395,7 +396,8 @@ export function buildBoardDeck(input: {
 
   return {
     title: project.name || 'Executive Summary',
-    date: new Date().toLocaleDateString(),
+    // ISO 8601 like every export date (DESIGN.md §3), not the reader's locale.
+    date: formatIsoDate(new Date()) ?? '',
     author: 'Clean-Core Transformation Board',
     slides
   };

@@ -533,6 +533,8 @@ test('0613631545b2 · and the Confluence export carries no invented evidence eit
    */
   for (const rel of [
     'app/(app)/project/[projectId]/analyze/page.tsx',
+    // The export, moved out of the page in block D, D.28.
+    'lib/analysis-export.ts',
     'components/analyze/ExtensibilityDecisionMatrix.tsx',
   ]) {
     const s = withoutComments(read(rel));
@@ -551,7 +553,7 @@ test('0613631545b2 · and the Confluence export carries no invented evidence eit
     expect(s, `${rel} fills in decisionTreeCheckpoints`).not.toMatch(/decisionTreeCheckpoints\s*\|\|/);
     expect(s, `${rel} fills in comparativeAnalysis`).not.toMatch(/comparativeAnalysis\s*\|\|/);
   }
-  expect(withoutComments(read('app/(app)/project/[projectId]/analyze/page.tsx')), 'the export says so instead').toContain(
+  expect(withoutComments(read('lib/analysis-export.ts')), 'the export says so instead').toContain(
     'Not determined for this run',
   );
 });

@@ -24,6 +24,12 @@ import { buildEvidenceChain } from '@/lib/evidence-chain';
 // before still verify. Project/user/AI-supplied fields (name, approver email,
 // file name, …) must never be able to inject markup into an exported document.
 import { escapeHtml } from '@/lib/export-safety';
+// The look of the Word summary is the one every export shares (block D, D.28).
+// It is presentation only: the style is not part of the signed generator input
+// (`signedGeneratorInput` in `lib/audit-pack-build.ts`), and a pack verifies by
+// the hashes in its manifest, not by being generated again, so every pack
+// issued before this change still verifies.
+import { EXPORT_WORD_CSS } from '@/lib/export-style';
 
 interface ManifestFile {
   path: string;
@@ -327,18 +333,7 @@ export function generateExecutiveSummaryDoc(project: Project): string {
     </w:WordDocument>
   </xml>
   <![endif]-->
-  <style>
-    body { font-family: 'Calibri', 'Arial', sans-serif; font-size: 11pt; line-height: 1.5; color: #333333; margin: 1in; }
-    h1 { font-family: 'Calibri Light', sans-serif; font-size: 24pt; color: #006b2c; border-bottom: 2px solid #006b2c; padding-bottom: 5px; margin-top: 0; }
-    h2 { font-family: 'Calibri Light', sans-serif; font-size: 16pt; color: #00873a; margin-top: 20px; border-bottom: 1px solid #D3D3D3; padding-bottom: 3px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; }
-    th { background-color: #006b2c; color: #ffffff; text-align: left; font-weight: bold; padding: 6px 10px; border: 1px solid #D3D3D3; }
-    td { padding: 6px 10px; border: 1px solid #D3D3D3; vertical-align: top; }
-    tr:nth-child(even) td { background-color: #F0Fdf4; }
-    blockquote { border-left: 4px solid #00873a; padding-left: 10px; margin-left: 0; color: #595959; font-style: italic; }
-    code { font-family: 'Consolas', monospace; background-color: #F2F2F2; padding: 2px 4px; font-size: 10pt; }
-    .footer { font-size: 9pt; color: #7F7F7F; text-align: right; margin-top: 40px; border-top: 1px solid #D3D3D3; padding-top: 5px; }
-  </style>
+  <style>${EXPORT_WORD_CSS}  </style>
 </head>
 <body>
   <h1>Compliance Audit Pack — Executive Summary</h1>

@@ -85,11 +85,33 @@ export interface Hit {
 // ---------------------------------------------------------------------------
 
 /**
+ * Standalone exports (block D, D.28) — the one exception for colour literals.
+ *
+ * The Confluence/HTML exports of Analyze, Design and Documentation and the
+ * audit pack's Word summary are files a reader opens outside the application,
+ * where the CSS variables of `app/globals.css` do not exist. Their colours are
+ * therefore written out once, as named values equal to the tokens, in
+ * `lib/export-style.ts`: R3 does not apply to that file ("Standalone-Export").
+ * The templates that use it are read as well and hold no colour literal of
+ * their own — so a hex cannot hide in `lib/` — but they may write a raw
+ * `<table>` (R11): a document has no `CcTable`. Every other rule applies.
+ */
+export const STANDALONE_EXPORT_STYLE = 'lib/export-style.ts';
+export const STANDALONE_EXPORT_TEMPLATES = [
+  'lib/analysis-export.ts',
+  'lib/design-export.ts',
+  'lib/documentation-export.ts',
+  'lib/audit-pack.ts',
+] as const;
+export const STANDALONE_EXPORT_FILES = [STANDALONE_EXPORT_STYLE, ...STANDALONE_EXPORT_TEMPLATES] as const;
+
+/**
  * The files the guard reads: every `.tsx` under `app/` and `components/`
  * (route handlers under `app/api/` are not UI), plus the `.ts` style modules
  * under `components/` (e.g. `components/cc/state.ts`, where class strings live).
  */
 export function isUiFile(rel: string): boolean {
+  if ((STANDALONE_EXPORT_FILES as readonly string[]).includes(rel)) return true;
   if (rel.startsWith('app/api/')) return false;
   if (rel.startsWith('app/') && rel.endsWith('.tsx')) return true;
   if (rel.startsWith('components/') && /\.(tsx|ts)$/.test(rel) && !rel.endsWith('.d.ts')) return true;
@@ -475,6 +497,7 @@ export function scanFile(rel: string, source: string): Hit[] {
     return found;
   };
   const inLibrary = rel.startsWith('components/cc/');
+  const standaloneExport = (STANDALONE_EXPORT_FILES as readonly string[]).includes(rel);
   const workspace = isWorkspaceFile(rel);
 
   // R1 / R19 — type size
@@ -494,9 +517,11 @@ export function scanFile(rel: string, source: string): Hit[] {
   // R2 — 900
   each(RE_BLACK, (m) => add('R2', m.index, m[0]));
 
-  // R3 — colour literals
-  each(RE_HEX, (m) => add('R3', m.index, m[0]));
-  each(RE_RGB, (m) => add('R3', m.index, m[0]));
+  // R3 — colour literals (not in the export stylesheet, see STANDALONE_EXPORT_STYLE)
+  if (rel !== STANDALONE_EXPORT_STYLE) {
+    each(RE_HEX, (m) => add('R3', m.index, m[0]));
+    each(RE_RGB, (m) => add('R3', m.index, m[0]));
+  }
 
   // R4 / R5 — palette
   each(RE_PALETTE, (m) => {
@@ -614,7 +639,7 @@ export function scanFile(rel: string, source: string): Hit[] {
     }
 
     // R11 — raw table
-    if (t.name === 'table' && rel !== 'components/cc/Table.tsx' && !(cls && /\bdoc-table\b/.test(cls))) {
+    if (t.name === 'table' && !standaloneExport && rel !== 'components/cc/Table.tsx' &&!(cls && /\bdoc-table\b/.test(cls))) {
       add('R11', t.start, t.text.slice(0, 100));
     }
 

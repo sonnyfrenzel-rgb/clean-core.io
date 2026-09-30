@@ -285,9 +285,9 @@ export function stepEvidence(step: Pick<DocStep, 'anchor' | 'undetermined'>): st
 const cell = (text: string): string => text.replace(/\r?\n/g, ' ').replace(/\|/g, '\\|').trim();
 
 /**
- * The Markdown the workspace file `docs/process-blueprint.md`, the delivery
- * bundle and the dashboard export carry. Same content as the stage shows, same
- * order, nothing added.
+ * The Markdown the workspace file `docs/process-documentation.md`, the
+ * delivery bundle (`process-documentation.md`) and the dashboard export
+ * carry. Same content as the stage shows, same order, nothing added.
  */
 export function processDocumentationToMarkdown(doc: ProcessDocumentation): string {
   const out: string[] = [];

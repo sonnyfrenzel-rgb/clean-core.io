@@ -58,11 +58,9 @@ import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps, staleness } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
-import { escapeHtml } from '@/lib/utils';
-import { sapApiHubLink } from '@/lib/export-safety';
+import { buildDesignExportHtml, designExportFileName } from '@/lib/design-export';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { cleanAndParseJSON, checkDesignResponse } from '@/lib/design-response';
-import { formatIsoDate } from '@/lib/format';
 import CcButton from '@/components/cc/Button';
 import { CcEmptyState } from '@/components/cc/EmptyState';
 import CcMessageStrip from '@/components/cc/MessageStrip';
@@ -412,245 +410,16 @@ ${responseText.substring(0, 4000)}`;
 
 
   /**
-   * Everything the model wrote is text, and this document is opened as HTML in
-   * the application's own origin (QA review of 33471220d6e9, 024ec609bc86). A
-   * comment in the uploaded ABAP is enough to steer the model into returning
-   * markup, so no model value reaches the template unescaped.
+   * The Confluence page is built in `lib/design-export.ts` (block D, D.28),
+   * which escapes every model value and takes its look from
+   * `lib/export-style.ts`. The page decides only whether it is previewed or saved.
    */
-  const esc = escapeHtml;
-
-
   const exportToConfluence = async (viewOnly = false) => {
     const currentProject = projectRef.current;
-    if (!currentProject?.solutionDesign) {
+    const htmlContent = currentProject ? buildDesignExportHtml(currentProject) : null;
+    if (!currentProject || htmlContent === null) {
       console.warn("No solution design found");
       return;
-    }
-
-    let htmlContent = '';
-    
-    // Check if JSON
-    let isJson = false;
-    let data: DesignData | null = null;
-    const trimmedDesignText = currentProject.solutionDesign.trim();
-    if (trimmedDesignText.startsWith('{') || (trimmedDesignText.includes('{') && trimmedDesignText.includes('}'))) {
-      try {
-        data = cleanAndParseJSON(currentProject.solutionDesign) as DesignData;
-        isJson = true;
-      } catch {}
-    }
-
-    if (isJson && data) {
-      const structureRows = data.nodeAppBlueprint?.projectStructure?.map(item => {
-        if (!item) return '';
-        const pathStr = typeof item === 'string' ? item : item.path || '';
-        const purposeStr = typeof item === 'string' ? '' : item.purpose || '';
-        return `
-          <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-weight: bold;">${esc(pathStr)}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${esc(purposeStr)}</td>
-          </tr>
-        `;
-      }).join('') || '';
-
-      const endpointsRows = data.nodeAppBlueprint?.apiEndpoints?.map(route => `
-        <tr>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0;"><span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; background: ${route.method === 'GET' ? '#e6fcff' : route.method === 'POST' ? '#eae6ff' : route.method === 'PUT' ? '#fffae6' : '#ffebe6'}; color: ${route.method === 'GET' ? '#007a87' : route.method === 'POST' ? '#403294' : route.method === 'PUT' ? '#974f0c' : '#de350b'}; border: 1px solid ${route.method === 'GET' ? '#b3f0ff' : route.method === 'POST' ? '#c5bdf3' : route.method === 'PUT' ? '#ffe380' : '#ffbdad'};">${esc(route.method)}</span></td>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-weight: bold; color: #0747a6;">${esc(route.path)}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${esc(route.description)}</td>
-        </tr>
-      `).join('') || '';
-
-      const servicesCards = data.cloudServices?.map(svc => `
-        <div style="border: 1px solid #ebecf0; border-radius: 8px; padding: 15px; background: #fff;">
-          <div style="font-weight: bold; color: #0747a6; font-size: 15px; margin-bottom: 5px;">${esc(svc.serviceName)}</div>
-          <p style="font-size: 13px; margin: 0 0 10px 0; color: #5e6c84;">${esc(svc.purpose)}</p>
-          <div style="font-size: 11px; color: #6b778c; border-top: 1px solid #f4f5f7; padding-top: 8px;">
-            <strong>Packages:</strong> ${svc.npmPackages?.map(pkg => `<code style="background: #f4f5f7; padding: 2px 4px; border-radius: 3px; font-family: monospace;">${esc(pkg)}</code>`).join(', ') || 'None'}
-          </div>
-        </div>
-      `).join('') || '';
-
-      const securityRows = data.securityHardening?.map(item => `
-        <tr>
-          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-weight: bold;">${esc(item.category)}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${esc(item.requirement)}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-weight: bold; color: #de350b;">${esc(item.packageOrConfig)}</td>
-        </tr>
-      `).join('') || '';
-
-      const roadmapPhases = data.roadmap?.map(phase => `
-        <div style="margin-bottom: 20px; border-left: 3px solid #00875a; padding-left: 15px;">
-          <h4 style="margin: 0 0 5px 0; color: #172b4d; font-size: 16px;"><strong>${esc(phase.phase)}: ${esc(phase.title)}</strong></h4>
-          <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #5e6c84;">
-            ${phase.deliverables?.map(del => `<li>${esc(del)}</li>`).join('') || ''}
-          </ul>
-        </div>
-      `).join('') || '';
-
-            const apiMappingRows = data.sapStandardApiMapping?.map(map => `
-        <tr>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-weight: bold;">${esc(map.legacyTableOrFunction)}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-weight: bold; color: #00875a;">${esc(map.sapStandardApiName)}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-size: 12px;">${esc(map.apiId)}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${esc(map.description)}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 12px;">${sapApiHubLink(map.apiHubUrl, 'api.sap.com →')}</td>
-        </tr>
-      `).join('') || '';
-
-      const apiMappingSection = data.sapStandardApiMapping && data.sapStandardApiMapping.length > 0 ? `
-        <h2>SAP Business Accelerator Hub Mappings</h2>
-        <p>Decoupled communication mappings dynamically generated to keep the S/4HANA core clean:</p>
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 20%;">Legacy Object</th>
-              <th style="width: 25%;">Target Released API</th>
-              <th style="width: 15%;">Hub API ID</th>
-              <th>Description</th>
-              <th style="width: 15%;">Reference</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${apiMappingRows}
-          </tbody>
-        </table>
-      ` : '';
-
-      htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <title>Solution Design: ${esc(data.projectName || currentProject.name)}</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif; color: #172b4d; line-height: 1.6; padding: 40px; max-width: 900px; margin: 0 auto; background: #fff; }
-            .header { border-bottom: 2px solid #ebecf0; padding-bottom: 20px; margin-bottom: 30px; }
-            h1 { color: #0747a6; font-size: 32px; margin-bottom: 8px; border-bottom: none; }
-            h2 { color: #172b4d; font-size: 24px; margin-top: 40px; border-bottom: 1px solid #ebecf0; padding-bottom: 10px; }
-            h3 { color: #172b4d; font-size: 20px; margin-top: 30px; }
-            p { margin-bottom: 16px; }
-            ul { margin-bottom: 16px; padding-left: 20px; }
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            th { background: #f4f5f7; text-align: left; padding: 10px; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #6b778c; border-bottom: 2px solid #ebecf0; }
-            td { padding: 10px; border-bottom: 1px solid #ebecf0; }
-            .card-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 16px; margin: 20px 0; }
-            .summary-box { background: #f4f5f7; border-left: 4px solid #00875a; padding: 20px; border-radius: 0 8px 8px 0; margin-bottom: 30px; }
-            .meta { color: #6b778c; font-size: 14px; margin-top: 10px; }
-            hr { border: 0; border-top: 1px solid #ebecf0; margin: 30px 0; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Solution Design Document: ${esc(data.projectName || currentProject.name)}</h1>
-            <div class="meta">Target Framework: <strong>${esc(data.architectureOverview?.nodeFramework)}</strong> | Platform: <strong>${esc(data.architectureOverview?.runtimePlatform)}</strong> | Generated by Clean-Core.io | ${esc(formatIsoDate(new Date()) ?? '')}</div>
-          </div>
-          <div class="content">
-            <div class="summary-box">
-              <h3 style="margin-top: 0; color: #00875a;">Architectural Approach</h3>
-              <p>${esc(data.architectureOverview?.approachDescription)}</p>
-            </div>
-
-            <h2>Side-by-Side Node.js Project Blueprint</h2>
-            <p>Recommended folder and file organization for the transformed extension:</p>
-            <table>
-              <thead>
-                <tr>
-                  <th style="width: 40%;">Path</th>
-                  <th>Purpose</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${structureRows}
-              </tbody>
-            </table>
-
-            <h2>Designed API Catalog</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Method</th>
-                  <th>Endpoint Path</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${endpointsRows}
-              </tbody>
-            </table>
-
-            <h2>Cloud Services & NPM Dependencies</h2>
-            <div class="card-grid">
-              ${servicesCards}
-            </div>
-
-            <h2>Data Synchronization Pattern</h2>
-            <p><strong>Pattern:</strong> <strong>${esc(data.dataSync?.patternName)}</strong></p>
-            <p>${esc(data.dataSync?.description)}</p>
-
-            ${apiMappingSection}
-
-            <h2>Security Hardening Blueprint</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Category</th>
-                  <th>Requirement</th>
-                  <th>Package / Configuration</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${securityRows}
-              </tbody>
-            </table>
-
-            <h2>Modernization Roadmap</h2>
-            <div>
-              ${roadmapPhases}
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
-    } else {
-      // Legacy markdown fallback
-      htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <title>Solution Design: ${esc(currentProject.name)}</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif; color: #172b4d; line-height: 1.6; padding: 40px; max-width: 900px; margin: 0 auto; background: #fff; }
-            .header { border-bottom: 2px solid #ebecf0; padding-bottom: 20px; margin-bottom: 30px; }
-            h1 { color: #0747a6; font-size: 32px; margin-bottom: 8px; border-bottom: none; }
-            h2 { color: #172b4d; font-size: 24px; margin-top: 40px; border-bottom: 1px solid #ebecf0; padding-bottom: 10px; }
-            h3 { color: #172b4d; font-size: 20px; margin-top: 30px; }
-            p { margin-bottom: 16px; }
-            ul, ol { margin-bottom: 16px; padding-left: 30px; }
-            li { margin-bottom: 8px; }
-            blockquote { border-left: 4px solid #4c9aff; padding-left: 20px; color: #6b778c; font-style: italic; margin: 20px 0; background: #f4f5f7; padding: 15px 20px; border-radius: 0 4px 4px 0; }
-            code { background: #f4f5f7; padding: 2px 4px; border-radius: 3px; font-family: "SFMono-Medium", "SF Mono", "Segoe UI Mono", "Roboto Mono", "Ubuntu Mono", Menlo, Consolas, Courier, monospace; font-size: 12px; }
-            pre { background: #f4f5f7; padding: 16px; border-radius: 4px; overflow-x: auto; margin-bottom: 16px; }
-            pre code { background: none; padding: 0; }
-            table { border-collapse: collapse; width: 100%; margin-bottom: 16px; }
-            th, td { border: 1px solid #ebecf0; padding: 12px; text-align: left; }
-            th { background: #f4f5f7; font-weight: bold; }
-            .meta { color: #6b778c; font-size: 14px; margin-top: 10px; }
-            hr { border: 0; border-top: 1px solid #ebecf0; margin: 30px 0; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Solution Design Document: ${esc(currentProject.name)}</h1>
-            <div class="meta">Generated by Clean-Core.io | ${esc(formatIsoDate(new Date()) ?? '')}</div>
-          </div>
-          <div class="content">
-            ${renderMarkdownSafe(currentProject.solutionDesign)}
-          </div>
-        </body>
-        </html>
-      `;
     }
 
     if (viewOnly) {
@@ -666,7 +435,7 @@ ${responseText.substring(0, 4000)}`;
     }
 
     const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-    await saveAs(blob, `${currentProject.name.replace(/\s+/g, '_')}_Solution_Design.html`);
+    await saveAs(blob, designExportFileName(currentProject.name));
     
     // The export is no longer written back into the project document; the same
     // decision as the Analyze stage, for the same reason.
