@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight, PlayCircle } from 'lucide-react';
+import { CcTag } from '@/components/cc/Tag';
 import {
   DEMO_LIST_TAGLINE,
   DEMO_PROJECT_TITLE,
@@ -20,34 +21,39 @@ import {
  *
  * Deliberately not an invitation to start something: the invitation lives inside
  * the demo, one per screen. This is a door.
+ *
+ * Block D (D.22b): a card of the workspace (§1.4) — tokens, 12 px radius, the
+ * bare `CcTag` for "Demo" — and a link without a surface of its own (§1.5): the
+ * card carries the surface, the link only its outline and the focus ring.
  */
 export default function DemoEntryCard() {
   return (
-    <Link
-      href={DEMO_ROUTE}
-      data-testid="demo-entry"
-      className="group mb-4 flex flex-col gap-3 rounded-3xl border border-blue-200 bg-blue-50 p-5 shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-100 sm:flex-row sm:items-center sm:justify-between sm:p-6"
-    >
-      <div className="flex items-start gap-3 min-w-0">
-        <PlayCircle className="mt-0.5 h-6 w-6 shrink-0 text-blue-700" aria-hidden />
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded border border-blue-300 bg-white px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-blue-700">
-              {DEMO_TAG}
-            </span>
-            <span data-testid="demo-entry-title" className="truncate text-base font-black text-blue-950">
-              {DEMO_PROJECT_TITLE}
-            </span>
+    <div className="cc mb-4 rounded-cc-card bg-cc-surface shadow-cc">
+      <Link
+        href={DEMO_ROUTE}
+        data-testid="demo-entry"
+        className="group flex flex-col gap-3 rounded-cc-card border border-cc-information-border p-4 no-underline transition-colors hover:border-cc-information sm:flex-row sm:items-center sm:justify-between sm:p-6"
+      >
+        <div className="flex min-w-0 items-start gap-3">
+          <PlayCircle size={24} className="mt-1 shrink-0 text-cc-information" aria-hidden={true} />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <CcTag>{DEMO_TAG}</CcTag>
+              <span data-testid="demo-entry-title" className="truncate cc-text-h2 text-cc-ink">
+                {DEMO_PROJECT_TITLE}
+              </span>
+            </div>
+            <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+              {DEMO_LIST_TAGLINE} — {DEMO_SUBJECT}. Click through all seven stages without touching your five free
+              analyses; nothing you do in it is saved.
+            </p>
           </div>
-          <p className="mt-1 text-xs font-medium leading-relaxed text-blue-900">
-            {DEMO_LIST_TAGLINE} — {DEMO_SUBJECT}. Click through all seven stages without touching your five free
-            analyses; nothing you do in it is saved.
-          </p>
         </div>
-      </div>
-      <span className="inline-flex shrink-0 items-center gap-1.5 text-xs font-black uppercase tracking-widest text-blue-800">
-        Open the demo <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
-      </span>
-    </Link>
+        <span className="inline-flex shrink-0 items-center gap-1 cc-text-identifier text-cc-ink">
+          Open the demo{' '}
+          <ArrowRight size={14} className="motion-safe:transition-transform group-hover:translate-x-0.5" aria-hidden={true} />
+        </span>
+      </Link>
+    </div>
   );
 }
