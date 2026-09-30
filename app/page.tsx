@@ -39,6 +39,7 @@ import StageTimeline, { type TimelineStage } from '@/components/landing/StageTim
 import { publicButton } from '@/components/landing/public-button';
 import HeroPreview from '@/components/landing/HeroPreview';
 import ProcessMapPanel from '@/components/landing/ProcessMapPanel';
+import CleanCoreSchema from '@/components/landing/CleanCoreSchema';
 import CcTable from '@/components/cc/Table';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcAnchor from '@/components/cc/Anchor';
@@ -332,7 +333,7 @@ export default function Home() {
     {
       tool: 'ABAP Test Cockpit (ATC)',
       purpose: 'The authoritative check for clean core violations — keep using it.',
-      relation: `Reads the same SAP Cloudification Repository (${catalogObjects} classified objects) and shows its reading as level A–D. Import ATC results to compare them with the engine.`,
+      relation: `Reads the same SAP Cloudification Repository (${catalogObjects}, classified) and shows its reading as level A–D. Import ATC results to compare them with the engine.`,
     },
     {
       tool: 'ABAP Development Tools (ADT)',
@@ -595,6 +596,9 @@ export default function Home() {
                 <p className="mt-2 text-base font-medium leading-relaxed text-cc-ink-muted">
                   Keep the SAP core standard. An extension reaches it only through released interfaces:
                 </p>
+                <div className="mt-5">
+                  <CleanCoreSchema />
+                </div>
                 <ol className="mt-4 flex list-none flex-col gap-3 p-0">
                   {[
                     { k: 'In-app', v: 'ABAP Cloud inside S/4HANA, against released APIs and extension points.', ok: true },
@@ -662,7 +666,7 @@ export default function Home() {
                 {[
                   { t: 'Your ABAP source', d: 'Every statement keeps its program, include and line — that is what a line anchor points to. Includes that were not uploaded are named as not determined.', pv: 'reconstructed' as const },
                   { t: 'Deterministic engine', d: 'Parses the code and finds the constructs, rules and SAP objects without a language model. The same file gives the same result.', pv: 'reconstructed' as const },
-                  { t: 'SAP’s published data', d: `The Cloudification Repository and SAP’s object classification, ${catalogObjects} objects, synced ${facts.catalogSyncDate}.`, pv: 'imported' as const },
+                  { t: 'SAP’s published data', d: `The Cloudification Repository and SAP’s object classification, ${catalogObjects}, synced ${facts.catalogSyncDate}.`, pv: 'imported' as const },
                   { t: 'Your imports, optional', d: 'ATC results and usage data you upload. They are marked as imported, never as proven.', pv: 'imported' as const },
                   { t: 'A language model', d: 'Business names and drafts come last and are marked as a model proposal until someone confirms them.', pv: 'proposed' as const },
                 ].map((s, i) => (
@@ -687,7 +691,7 @@ export default function Home() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <SectionHeader eyebrow="SAP Cloudification Repository viewer" title="Look up an SAP object's release state and successor" titleId="catalog-title">
               The SAP object catalog is a free viewer of SAP&apos;s Cloudification Repository and object classification:{' '}
-              {catalogObjects} classified objects with release state, clean core level and successor, synced {facts.catalogSyncDate}.
+              {catalogObjects} classified, each with release state, clean core level and successor, synced {facts.catalogSyncDate}.
             </SectionHeader>
             <div className={`${CARD} mx-auto max-w-5xl`}>
               <form role="search" action="/catalog" method="get">
