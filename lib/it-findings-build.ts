@@ -46,11 +46,12 @@ function rowOf(
   routine: string | null,
   rulesCoveringLine: string[],
   rulesInRoutine: string[],
+  catalogSnapshot: string | undefined,
 ): ItFindingRow {
   const objectName = finding.objectName ? finding.objectName.trim().toUpperCase() : null;
   // No object, no question for the catalog — and therefore no level, rather
   // than an Unknown that would read as "the catalog was asked and shrugged".
-  const graded = objectName ? gradeSapObjectUse(objectName, accessUseOfKind(finding.kind)) : null;
+  const graded = objectName ? gradeSapObjectUse(objectName, accessUseOfKind(finding.kind), catalogSnapshot) : null;
 
   return {
     id: finding.id,
@@ -72,9 +73,23 @@ function rowOf(
   };
 }
 
-/** The rows of one source — pulled out so nothing about it depends on a request. */
-export function findingsOf(source: string, fileName: string, deployment?: 'public' | 'private'): ItFindingsSource {
-  const evidence = buildAbapEvidence(source, fileName, deployment);
+/**
+ * The rows of one source — pulled out so nothing about it depends on a request.
+ *
+ * `catalogSnapshot` is the key of the project's target profile
+ * (`catalogSnapshotKeyForProject`, roadmap 7.10): the findings and every level
+ * on them are read from the catalog the signed run read, so a PCE project does
+ * not show a Public Cloud level here and a PCE level in its run (owner
+ * decision 30.09.2026). Omitted, the default file — the run route's own
+ * default for a project that names no edition.
+ */
+export function findingsOf(
+  source: string,
+  fileName: string,
+  deployment?: 'public' | 'private',
+  catalogSnapshot?: string,
+): ItFindingsSource {
+  const evidence = buildAbapEvidence(source, fileName, deployment, catalogSnapshot);
   const rules = deriveBusinessRules(source);
   const containers = buildProcessFacts(source).structure.containers;
 
@@ -105,7 +120,7 @@ export function findingsOf(source: string, fileName: string, deployment?: 'publi
       )
       .map((rule) => rule.id);
     const inRoutine = (byRoutine.get(routine ?? '') ?? []).filter((id) => !covering.includes(id));
-    return rowOf(finding, routine, covering, inRoutine);
+    return rowOf(finding, routine, covering, inRoutine, catalogSnapshot);
   });
 
   return { rows, sourceSha256: sha256Hex(source), rulesDerived: rules.rules.length };

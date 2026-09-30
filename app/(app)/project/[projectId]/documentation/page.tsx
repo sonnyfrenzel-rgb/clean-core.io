@@ -29,6 +29,7 @@ import {
   confluenceFileName,
 } from '@/lib/documentation-export';
 import CcStateText from '@/components/cc/StateText';
+import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
 import { saveAs } from '@/lib/fileSaver';
 import VerificationRail from '@/components/VerificationRail';
@@ -1422,6 +1423,7 @@ Structure the JSON exactly like this:
                  and an absent import means the overlay is not offered rather
                  than offered empty. */
               usage={project?.usageReport ?? null}
+              catalogTarget={project ? catalogLookupTargetOf(project) : null}
               plane={resolved.plane}
               onPlaneChange={openPlane}
               selected={resolved.node}

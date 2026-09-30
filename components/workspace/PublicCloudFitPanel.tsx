@@ -18,6 +18,7 @@ import {
   type PublicCloudFitBucket,
 } from '@/lib/abap/public-cloud-fit';
 import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
+import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import type { Project } from '@/lib/types';
 import { wt, cloudFitNotAssigned, cloudFitTargetPlatform } from '@/lib/workspace-messages';
 
@@ -119,7 +120,8 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
   }, [project]);
 
   const lookupObjects = useMemo(() => (findings ? publicCloudFitLookupObjects(findings) : []), [findings]);
-  const lookup = useAbcdCatalogLookup(lookupObjects);
+  // Graded under the project's target profile (owner decision 30.09.2026).
+  const lookup = useAbcdCatalogLookup(lookupObjects, project ? catalogLookupTargetOf(project) : null);
 
   const result = useMemo(() => {
     if (!findings || !project || lookup.status !== 'ready') return null;
