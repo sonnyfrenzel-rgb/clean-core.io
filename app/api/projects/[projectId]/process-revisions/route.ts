@@ -147,6 +147,19 @@ async function openProject(
       }
       throw gateErr;
     }
+  } else {
+    // The read loads every revision of the project, BPMN included, so it gets a
+    // budget of its own — wider than the write's, because the workspace asks on
+    // focus and before each save (the reasoning of `process-states`).
+    try {
+      await assertRateLimit(`process-revisions-read:${decodedToken.uid}`, 600, 60 * 60 * 1000);
+    } catch (rateErr: unknown) {
+      const q = rateErr as { message?: string; status?: number };
+      return {
+        ok: false,
+        response: NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 }),
+      };
+    }
   }
 
   if (!mutating) {

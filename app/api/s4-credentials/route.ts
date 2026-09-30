@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { saveS4Credentials, deleteS4Credentials, loadS4ConfigForUser } from '@/lib/s4-credentials';
 import { isUrlSafe } from '@/lib/url-validation';
+import { logger, errMessage } from '@/lib/logger';
 
 /**
  * POST /api/s4-credentials — Save S/4HANA credentials (encrypted server-side).
@@ -21,7 +22,8 @@ export async function POST(req: Request) {
     if (e instanceof QuotaError) {
       return NextResponse.json({ error: e.message }, { status: e.status });
     }
-    return NextResponse.json({ error: e.message || 'Internal server error during authorization check.' }, { status: 500 });
+    logger.error('s4-credentials authorization check failed', { route: 'api/s4-credentials', error: errMessage(e) });
+    return NextResponse.json({ error: 'Internal server error during authorization check.' }, { status: 500 });
   }
 
   const body = await req.json();
@@ -42,7 +44,9 @@ export async function POST(req: Request) {
     });
     return NextResponse.json({ ok: true, meta });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message || 'Failed to store credentials.' }, { status: 500 });
+    // A fixed sentence outward; the cause (a key or storage failure) into the log.
+    logger.error('s4-credentials store failed', { route: 'api/s4-credentials', error: errMessage(e) });
+    return NextResponse.json({ error: 'Failed to store credentials.' }, { status: 500 });
   }
 }
 
@@ -58,7 +62,8 @@ export async function GET(req: Request) {
     if (e instanceof QuotaError) {
       return NextResponse.json({ error: e.message }, { status: e.status });
     }
-    return NextResponse.json({ error: e.message || 'Internal server error during authorization check.' }, { status: 500 });
+    logger.error('s4-credentials authorization check failed', { route: 'api/s4-credentials', error: errMessage(e) });
+    return NextResponse.json({ error: 'Internal server error during authorization check.' }, { status: 500 });
   }
 
   const cfg = await loadS4ConfigForUser(decoded.uid);

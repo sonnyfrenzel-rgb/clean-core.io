@@ -291,7 +291,7 @@ export function generateExecutiveSummary(project: Project): string {
 | SAP API Catalog | ${mdCell((mc as any)?.catalogVersion || '2024.FPS02')} |
 | Model Provider | ${mdCell(modelProviderOf(mc))} |
 | Model | ${mdCell(modelIdOf(mc))} |
-| BYOK Used | ${mc?.byokUsed ? 'Yes' : 'No'} |
+| BYOK Used | ${mdCell(byokLineOf(mc))} |
 | Analysis Timestamp | ${mdCell(mc?.analysisTimestamp || '—')} |
 | Design Timestamp | ${mdCell(mc?.designTimestamp || '—')} |
 | Transformation Timestamp | ${mdCell(mc?.transformationTimestamp || '—')} |
@@ -398,7 +398,7 @@ export function generateExecutiveSummaryDoc(project: Project): string {
       <tr><td>Platform Version</td><td>${escapeHtml(mc?.engineVersion || APP_VERSION)}</td></tr>
       <tr><td>Model Provider</td><td>${escapeHtml(modelProviderOf(mc))}</td></tr>
       <tr><td>Model</td><td>${escapeHtml(modelIdOf(mc))}</td></tr>
-      <tr><td>BYOK Used</td><td>${mc?.byokUsed ? 'Yes' : 'No'}</td></tr>
+      <tr><td>BYOK Used</td><td>${escapeHtml(byokLineOf(mc))}</td></tr>
       <tr><td>Analysis Timestamp</td><td>${escapeHtml(mc?.analysisTimestamp || '—')}</td></tr>
       <tr><td>Design Timestamp</td><td>${escapeHtml(mc?.designTimestamp || '—')}</td></tr>
       <tr><td>Transformation Timestamp</td><td>${escapeHtml(mc?.transformationTimestamp || '—')}</td></tr>

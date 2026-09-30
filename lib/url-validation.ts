@@ -141,7 +141,12 @@ export async function isUrlSafe(urlString: string): Promise<UrlSafeResult> {
 
   // Optionale Allowlist
   const al = allowlist();
-  if (al.length && !al.some((suf) => host === suf.replace(/^\./, '') || host.endsWith(suf))) {
+  // At a label boundary: an entry `s4hana.cloud` (with or without the leading
+  // dot) admits `x.s4hana.cloud` and never `evil-s4hana.cloud`.
+  if (al.length && !al.some((suf) => {
+    const base = suf.replace(/^\./, '');
+    return host === base || host.endsWith(`.${base}`);
+  })) {
     return { safe: false, reason: 'Host is not in the configured allowlist.' };
   }
 

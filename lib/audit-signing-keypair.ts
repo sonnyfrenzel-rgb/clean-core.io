@@ -266,6 +266,13 @@ function retiredKeyEntries(raw: string): string[] {
 
 /** A published key in any of the shapes an operator is likely to paste. */
 function parsePublicKey(text: string): KeyObject | null {
+  // `createPublicKey` accepts a private PEM too and quietly derives the public
+  // half, so a private key pasted here would be published as "retired" and stay
+  // in a variable meant for public values. It is refused instead, and said so.
+  if (/PRIVATE KEY/i.test(text)) {
+    console.error('AUDIT_SIGNING_PUBLIC_KEYS_RETIRED contains private key material — refused. Move it out of this variable.');
+    return null;
+  }
   try {
     if (text.includes('BEGIN')) {
       const key = crypto.createPublicKey(text.replace(/\\n/g, '\n'));

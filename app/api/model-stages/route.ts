@@ -76,6 +76,9 @@ export async function GET(req: NextRequest) {
     // `requireCurrentTerms`: § 10.3 lets somebody carry on under the Terms they
     // accepted, and the write is where that is decided.
     await assertAccountActive(decodedToken.uid);
+    // Every answer decrypts the account's own key, so the read has a budget too —
+    // wider than the write's, because pages ask on load.
+    await assertRateLimit(`model_stages_read:${decodedToken.uid}:${getClientIp(req)}`, 600, 60 * 60 * 1000);
     return NextResponse.json(await answerFor(decodedToken.uid));
   } catch (err: unknown) {
     if (err instanceof QuotaError) {

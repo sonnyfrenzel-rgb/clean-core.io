@@ -35,8 +35,13 @@ export interface TestRunResult {
 export function parseTapOutput(stdout: string): TestRunResult[] {
   const results: TestRunResult[] = [];
   const lines = stdout.split('\n');
-  const testLineRegex = /^(ok|not ok)\s+\d+\s+-\s+([A-Za-z0-9_]+):?\s*(.*)$/;
-  const directiveRegex = /#\s*(skip|todo)\b\s*(.*)$/i;
+  // The id is everything up to the first colon, whitespace or `#` — not only
+  // word characters: a case called `TC-001` used to be read as `TC`, missed its
+  // case, and a failure was reported as "not run".
+  const testLineRegex = /^(ok|not ok)\s+\d+\s+-\s+([^\s:#]+):?\s*(.*)$/;
+  // A directive is a `#` the runner wrote. Node's TAP reporter escapes a `#`
+  // inside a test name as `\#`, so a name that says "# todo" is a name.
+  const directiveRegex = /(?<!\\)#\s*(skip|todo)\b\s*(.*)$/i;
 
   let currentResult: TestRunResult | null = null;
   let inErrorBlock = false;
@@ -119,7 +124,13 @@ export function applyRunnerVerdicts<T extends { id?: unknown }>(
   results: readonly TestRunResult[],
   exitCode: number,
 ): Array<T & { status: StoredVerdict; message: string }> {
-  const reported = new Map(results.map((r) => [r.id, r]));
+  // One id reported twice is resolved towards the worse verdict rather than to
+  // whichever came last, so a second, passing result cannot hide a failure.
+  const reported = new Map<string, TestRunResult>();
+  for (const r of results) {
+    const earlier = reported.get(r.id);
+    if (!earlier || (earlier.status !== 'Failed' && r.status === 'Failed')) reported.set(r.id, r);
+  }
   return cases.map((testCase) => {
     const hit = reported.get(String(testCase?.id ?? ''));
     if (hit) {

@@ -115,6 +115,18 @@ async function openProject(
       }
       throw gateErr;
     }
+  } else {
+    // A read budget of its own, as `process-states` has: one document is cheap,
+    // an unlimited number of them is not.
+    try {
+      await assertRateLimit(`process-naming-read:${decodedToken.uid}`, 600, 60 * 60 * 1000);
+    } catch (rateErr: unknown) {
+      const q = rateErr as { message?: string; status?: number };
+      return {
+        ok: false,
+        response: NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 }),
+      };
+    }
   }
 
   if (!mutating) {

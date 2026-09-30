@@ -784,6 +784,14 @@ export async function deleteUserDataAndAccount(
   //    owner in `uid`. It was missing from this list, so an erased account's
   //    answers and comment went on being read into the daily digest.
   await deleteCollectionByUid('survey_responses', 'uid');
+  //    The bulk-mail outbox (`lib/survey/outbox.ts`): one record per recipient
+  //    and campaign, `${campaign}__${uid}`, holding the address beside the uid.
+  //    It exists so nobody is mailed twice; an erased account is mailed never.
+  await deleteCollectionByUid('email_sends', 'uid');
+  //    The delivery log (`lib/email-events.ts`) keeps the recipient address per
+  //    message. Records written with the account's uid go here; records written
+  //    for the address alone go in step 3c, once the address has been read.
+  await deleteCollectionByUid('email_events', 'uid');
 
   // 3. Delete single documents keyed by uid. F-07: do NOT silently swallow
   //    failures — tolerate an idempotent "not found" but collect any real error
@@ -873,11 +881,14 @@ export async function deleteUserDataAndAccount(
   //     indexes for a collection, not for a collection group — and that without
   //     it this step fails rather than passing quietly.
   let invitedAddress: string | null = null;
+  let profileAddress: string | null = null;
   try {
     const profileSnap = await db.collection('users').doc(uid).get();
     // The profile, not the Auth user: the Auth module is deliberately not loaded
     // until the last step, and this document is still here — it goes in step 5.
-    invitedAddress = normaliseInvitedEmail((profileSnap.data() || {}).email);
+    const stored = (profileSnap.data() || {}).email;
+    invitedAddress = normaliseInvitedEmail(stored);
+    profileAddress = typeof stored === 'string' && stored.trim() ? stored.trim() : null;
   } catch (e: any) {
     erasureErrors.push(`invitations: the account address could not be read: ${e?.message || e}`);
   }
@@ -892,6 +903,22 @@ export async function deleteUserDataAndAccount(
       while (snapshot.size > 0) {
         const batch = db.batch();
         snapshot.docs.forEach((inviteDoc: ErasableDoc) => batch.delete(inviteDoc.ref));
+        await batch.commit();
+        snapshot = await q.get();
+      }
+    });
+  }
+
+  //     Delivery-log records that name the account by address only — a mail
+  //     sent before the log carried a uid, or by a route that never passed one.
+  //     `to` holds the address as it was sent, so both spellings are asked.
+  for (const address of new Set([profileAddress, invitedAddress].filter((a): a is string => !!a))) {
+    const q = db.collection('email_events').where('to', 'array-contains', address).limit(400);
+    await tryDelete('email_events', async () => {
+      let snapshot = await q.get();
+      while (snapshot.size > 0) {
+        const batch = db.batch();
+        snapshot.docs.forEach((eventDoc: ErasableDoc) => batch.delete(eventDoc.ref));
         await batch.commit();
         snapshot = await q.get();
       }

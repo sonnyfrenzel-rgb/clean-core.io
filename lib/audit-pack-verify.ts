@@ -194,6 +194,10 @@ export interface VerifyResult {
    * documented boolean would show a successful verification for a pack with no
    * authenticity whatsoever. Local checksum consistency is a real and separate
    * fact, so it gets its own field rather than being folded into this one.
+   *
+   * False, too, when the pack carries a user-attested file its manifest version
+   * seals by name only (format 2): the signature stands, but it does not stand
+   * behind that file's contents, and `true` would read as though it did.
    */
   success: boolean;
   /** Files match the manifest and the manifest hash is consistent. Says nothing about origin. */
@@ -315,6 +319,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
     // "Authenticity & Integrity Verified" (QA full review of a19945ef01dc).
     // Packs sealed in version 2 have no digest to check; that limit is said out
     // loud rather than passed off as a verified file.
+    let attestedUnbound = false;
     for (const a of attested) {
       const file = zip.file(a.path);
       if (!file) {
@@ -323,6 +328,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
         continue;
       }
       if (!a.sha256) {
+        attestedUnbound = true;
         fileResults.push({ path: a.path, expectedHash: '', actualHash: '', valid: true, found: true, signed: false });
         errors.push(`Attested file not covered by a digest in this pack's manifest version: ${a.path}. Its presence was sealed, its contents were not.`);
         continue;
@@ -472,7 +478,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
       }
     }
 
-    const success = status === 'authentic';
+    const success = status === 'authentic' && !attestedUnbound;
 
     return {
       success,

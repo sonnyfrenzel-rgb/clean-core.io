@@ -935,6 +935,16 @@ function splitTopLevel(text: string, separator: ',' | ' '): string[] {
  */
 function readTypedDataObjects(ctx: Context, sink: Sink): void {
   const used = ctx.code.filter((_c, i) => !ctx.inMacroBody[i]).join(' ');
+  // Every name the source selects a component of, read in one pass. This was a
+  // regular expression per declaration, each run over the whole source — work
+  // that grew with declarations times length, so one large upload with many
+  // typed declarations could hold a request for as long as it liked. The pass
+  // below finds the same hits: a name that no word character, `/`, `<` or `-`
+  // precedes, followed by one or more `-component`.
+  const selectedNames = new Set<string>();
+  for (const hit of used.matchAll(/(?<![\w/<-])(<[\w/]+>|[\w/]+)(?:-[\w/]+)+/g)) {
+    if (!HYPHENATED_KEYWORDS.has(hit[0].toUpperCase())) selectedNames.add(hit[1].toUpperCase());
+  }
   ctx.code.forEach((code, i) => {
     if (ctx.inMacroBody[i]) return;
     // The fields of a local structure are no data objects of their own — a
@@ -948,10 +958,7 @@ function readTypedDataObjects(ctx: Context, sink: Sink): void {
       if (!isRepositoryStructureName(type, ctx)) continue;
       const variable = m[1].replace(/^(?:VALUE|REFERENCE)\(\s*/i, '').replace(/\s*\)$/, '');
       if (/^(?:TYPES|TYPE|DATA|CLASS-DATA|STATICS|CONSTANTS|PARAMETERS)$/i.test(variable)) continue;
-      const escaped = variable.replace(/[<>/]/g, (c) => `\\${c}`);
-      const component = new RegExp(`(?<![\\w/<-])${escaped}(?:-[\\w/]+)+`, 'gi');
-      const selected = [...used.matchAll(component)].some((hit) => !HYPHENATED_KEYWORDS.has(hit[0].toUpperCase()));
-      if (!selected) continue;
+      if (!selectedNames.has(variable.toUpperCase())) continue;
       sink.table({ statement: i, line: statement.line, snippet: statement.text }, type, 'reference', 'type-reference');
     }
   });

@@ -1,4 +1,5 @@
 import { marked } from 'marked';
+import type { DOMPurify } from 'dompurify';
 
 /**
  * Sanitizer for untrusted / AI-generated markdown and HTML (audit P1 XSS).
@@ -26,7 +27,35 @@ function getPurify() {
     const { JSDOM } = require('jsdom');
     _purify = createDOMPurify(new JSDOM('').window);
   }
+  addStyleHooks(_purify);
   return _purify;
+}
+
+/**
+ * CSS that can reach outside the picture: a resource function other than a
+ * reference to a fragment of the same SVG (`url(#marker)` is how mermaid wires
+ * its arrow heads), an `@import`, or a backslash — CSS lets an escape spell any
+ * of those without the letters appearing, so a backslash is refused outright.
+ * Mermaid's own stylesheet and inline styles contain none of these; a diagram
+ * that does was not drawn by mermaid.
+ */
+const OUTBOUND_CSS = /\\|@import|(?:image-set|image|cross-fade|src)\s*\(|url\s*\((?!\s*['"]?#)/i;
+
+/**
+ * DOMPurify does not read CSS. `style` survives in the diagram config because
+ * mermaid's theme `<style>` block and its inline styles are what make the
+ * diagram look like one — so the one thing CSS can do beyond looks, fetch or
+ * navigate, is checked here. The hooks sit on the shared instance; the markdown
+ * config forbids `style` elements and attributes altogether, so for it they
+ * never find anything to decide.
+ */
+function addStyleHooks(purify: DOMPurify): void {
+  purify.addHook('uponSanitizeElement', (node, data) => {
+    if (data.tagName === 'style' && OUTBOUND_CSS.test(node.textContent || '')) node.textContent = '';
+  });
+  purify.addHook('uponSanitizeAttribute', (_node, data) => {
+    if (data.attrName === 'style' && OUTBOUND_CSS.test(data.attrValue || '')) data.keepAttr = false;
+  });
 }
 
 const HTML_CONFIG = {
@@ -59,7 +88,8 @@ export function sanitizeHtml(html: string): string {
  * This was a chain of regular expressions, and its comment said why: DOMPurify
  * emptied every `<foreignObject>`, which is exactly where mermaid v11 renders
  * node labels, so the Target Architecture Diagram came out as a row of blank
- * boxes. That was true, and it is still true of `sanitizeSvg` below. Measured
+ * boxes. That was true of the strict SVG profile, and it is why this one is
+ * configured rather than taken as it comes. Measured
  * on a real mermaid v11 flowchart rather than assumed: `USE_PROFILES: { svg,
  * svgFilters, html }` with `ADD_TAGS: ['foreignObject', 'div', 'span', …]`
  * keeps all nine `<foreignObject>` elements and not one character of their
@@ -96,22 +126,18 @@ const MERMAID_SVG_CONFIG = {
   // nowhere else. This REPLACES DOMPurify's default set rather than extending
   // it, so 'annotation-xml' stops being one — a diagram has no MathML in it.
   HTML_INTEGRATION_POINTS: { foreignobject: true } as Record<string, boolean>,
-  // Nothing mermaid emits is in this list; everything in it is a way to get
-  // behaviour, navigation or an outbound request out of a picture.
-  FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'select', 'textarea', 'label', 'link', 'base', 'meta', 'audio', 'video', 'source', 'track', 'canvas', 'math', 'annotation-xml', 'set', 'animate', 'animatetransform', 'animatemotion', 'handler', 'listener'],
-  FORBID_ATTR: ['formaction', 'ping', 'srcdoc', 'srcset'],
+  // Nothing mermaid emits is in these lists. The tags are the ways to get
+  // behaviour, navigation or an outbound request out of a picture: script and
+  // its carriers, forms, media, links (`a`, `area`), and every element that
+  // loads a resource by reference (`img`, `image`, `use`, `feImage`, `picture`).
+  // The attributes are the references themselves, so an element not named here
+  // cannot carry one either. CSS, the remaining way, is checked by the hooks
+  // above.
+  FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'select', 'textarea', 'label', 'link', 'base', 'meta', 'audio', 'video', 'source', 'track', 'canvas', 'math', 'annotation-xml', 'set', 'animate', 'animatetransform', 'animatemotion', 'handler', 'listener', 'a', 'area', 'map', 'img', 'image', 'picture', 'use', 'feimage'],
+  FORBID_ATTR: ['formaction', 'ping', 'srcdoc', 'srcset', 'href', 'xlink:href', 'src', 'background', 'poster', 'action'],
 } as const;
 
 export function sanitizeMermaidSvg(svg: string): string {
   if (!svg) return '';
   return getPurify().sanitize(svg, MERMAID_SVG_CONFIG);
-}
-
-/** Sanitize SVG output using the strict SVG profile (drops foreignObject HTML). */
-export function sanitizeSvg(svg: string): string {
-  return getPurify().sanitize(svg ?? '', {
-    USE_PROFILES: { svg: true, svgFilters: true, html: true },
-    ADD_TAGS: ['foreignObject', 'div', 'span', 'p', 'br', 'b', 'i', 'em', 'strong', 'code', 'pre', 'ul', 'li', 'a'],
-    ADD_ATTR: ['dominant-baseline', 'text-anchor', 'requiredFeatures', 'transform', 'style', 'x', 'y', 'width', 'height', 'class', 'xmlns', 'xmlns:xlink', 'viewBox', 'marker-end', 'marker-start', 'font-size', 'fill', 'stroke', 'rx', 'ry', 'cx', 'cy', 'r', 'd', 'points'],
-  });
 }
