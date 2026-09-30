@@ -100,8 +100,16 @@ test.describe('request-tenant-access', () => {
 
 test.describe('the tenant mail routes report only what they did', () => {
   for (const rel of ['app/api/send-tenant-approval-email/route.ts', 'app/api/send-tenant-revoke-email/route.ts']) {
+    test(`${rel} does not claim the access change was not applied`, () => {
+      // The admin console applies the change first and then shows this error
+      // after "Tenant access was changed, but ...".
+      expect(raw(rel)).not.toContain('The change was not applied');
+    });
   }
 
+  test('the welcome-mail route carries no verdict about a review', () => {
+    expect(raw('app/api/send-approval-email/route.ts')).not.toMatch(/Reported as `not_met`/);
+  });
 });
 
 test.describe('the tenant connection check', () => {
@@ -186,4 +194,19 @@ test.describe('the Resend webhook', () => {
     expect(block).not.toMatch(/\bto\b\s*:/);
     expect(block).not.toMatch(/\bdetail\b/);
   });
+});
+
+test('the workspace switch does not report a landed write as failed', () => {
+  const src = code('app/api/workspace-shell/route.ts');
+  const post = src.slice(src.indexOf('export async function POST'));
+  expect(post).not.toContain('...(await answerFor(uid))');
+  expect(post).toMatch(/answerFor\(uid\)\.catch\(/);
+});
+
+test('the mock purchase-order route is never served in production and says it is a simulation', () => {
+  const src = code('app/api/v1/purchase-orders/mass-create/route.ts');
+  expect(src).not.toContain('ENABLE_MOCK_PO_ROUTE');
+  expect(src).toMatch(/if \(process\.env\.NODE_ENV === 'production'\) \{/);
+  expect(src).not.toContain("status: 'COMPLETED'");
+  expect(src).toContain('simulated: true');
 });

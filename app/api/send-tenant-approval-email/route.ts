@@ -91,7 +91,9 @@ export async function POST(request: NextRequest) {
         await resendRes.body?.cancel().catch(() => {});
         console.error('[Email] Resend rejected the tenant approval: HTTP', resendRes.status);
         return NextResponse.json(
-          { error: 'The notification could not be sent. The change was not applied.' },
+          // This route only sends the mail; the access change was made before it
+          // by /api/admin/console-action and stands either way.
+          { error: 'The notification could not be sent.' },
           { status: 502 },
         );
       }

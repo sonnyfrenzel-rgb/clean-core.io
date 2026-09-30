@@ -84,9 +84,8 @@ export async function POST(request: NextRequest) {
      * properly means verifying addresses at sign-up, which is a product change
      * and not a line here: a hard `emailVerified` check today would silently stop
      * the welcome mail for every existing account, which is the lockout shape
-     * this codebase has been bitten by twice. Reported as `not_met` by the QA
-     * review of 4a99d5355716, correctly — the first version of this comment
-     * claimed the address was proven, and it is not.
+     * this codebase has been bitten by twice. The address is bound to the
+     * account, not proven to belong to its holder.
      */
     const adminAuth = await getAdminAuth();
     let account;
