@@ -39,7 +39,13 @@ function getPurify() {
  * Mermaid's own stylesheet and inline styles contain none of these; a diagram
  * that does was not drawn by mermaid.
  */
-const OUTBOUND_CSS = /\\|@import|(?:image-set|image|cross-fade|src)\s*\(|url\s*\((?!\s*['"]?#)/i;
+const OUTBOUND_CSS_PATTERN = /\\|@import|(?:image-set|image|cross-fade|src)\s*\(|url\s*\((?!\s*['"]?#)/i;
+
+/** Checked as written and with CSS comments removed, so a comment cannot split a function name from its parenthesis. */
+const OUTBOUND_CSS = {
+  test: (css: string): boolean =>
+    OUTBOUND_CSS_PATTERN.test(css) || OUTBOUND_CSS_PATTERN.test(css.replace(/\/\*[\s\S]*?(?:\*\/|$)/g, '')),
+};
 
 /**
  * DOMPurify does not read CSS. `style` survives in the diagram config because

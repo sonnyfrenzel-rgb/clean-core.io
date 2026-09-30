@@ -140,8 +140,9 @@ export async function POST(request: NextRequest) {
       // `success: true` regardless, so the admin console reported a welcome mail
       // that Resend had rejected.
       if (!resendRes.ok) {
-        const errText = await resendRes.text();
-        console.error('[Email] Resend rejected the welcome mail:', errText);
+        // The provider's answer can echo the recipient; the status is enough to act on.
+        await resendRes.body?.cancel().catch(() => {});
+        console.error('[Email] Resend rejected the welcome mail: HTTP', resendRes.status);
         return NextResponse.json(
           { error: 'The welcome email could not be sent. Nothing was delivered to the user.' },
           { status: 502 },

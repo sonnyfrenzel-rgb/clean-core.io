@@ -1095,7 +1095,8 @@ test.describe('the reference cases, seeded and opened', () => {
         }
         if (entry.opensWith) {
           await page
-            .getByRole('button', { name: new RegExp(entry.opensWith.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') })
+            // The Analyze report sections are ARIA tabs since D.10b (CcTabs).
+            .getByRole('tab', { name: new RegExp(entry.opensWith.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') })
             .first()
             .click();
         }

@@ -87,8 +87,9 @@ export async function POST(request: NextRequest) {
       // what lets a later delivery event from /api/webhooks/resend be joined to
       // this send.
       if (!resendRes.ok) {
-        const errText = await resendRes.text();
-        console.error('[Email] Resend rejected the tenant revoke:', errText);
+        // The provider's answer can echo the recipient; the status is enough to act on.
+        await resendRes.body?.cancel().catch(() => {});
+        console.error('[Email] Resend rejected the tenant revoke: HTTP', resendRes.status);
         return NextResponse.json(
           { error: 'The notification could not be sent. The change was not applied.' },
           { status: 502 },

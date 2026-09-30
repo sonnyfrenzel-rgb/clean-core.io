@@ -33,18 +33,13 @@ function normalizeRow(row: Record<string, unknown>, dateFields: string[]): strin
   // Two keys that differ only in case fold onto one; both values are kept, in
   // key order, instead of the later one silently replacing the earlier — which
   // made two rows that differed only in the dropped field compare equal.
-  const collided = new Set<string>();
+  // Every field holds the list of its values, so a collision is a list of two
+  // and can never be mistaken for a field whose own value looks like a marker.
   for (const k of Object.keys(row).sort()) {
     const upperKey = k.toUpperCase();
     const value = initialize(row[k], upperKey, dateFields);
-    if (!(upperKey in norm)) {
-      norm[upperKey] = value;
-    } else if (collided.has(upperKey)) {
-      (norm[upperKey] as { caseCollision: unknown[] }).caseCollision.push(value);
-    } else {
-      norm[upperKey] = { caseCollision: [norm[upperKey], value] };
-      collided.add(upperKey);
-    }
+    if (!(upperKey in norm)) norm[upperKey] = [value];
+    else (norm[upperKey] as unknown[]).push(value);
   }
   return JSON.stringify(norm);
 }

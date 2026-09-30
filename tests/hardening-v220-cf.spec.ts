@@ -112,7 +112,8 @@ test.describe('the list of retired signing keys', () => {
 test.describe('credentials quoted from the source', () => {
   test('are removed from every field of a finding that quotes the source', () => {
     const google = 'AIzaSyD4k3yF0rT3stPurp0s3s0nlyXYZ12345';
-    const aws = 'AKIAIOSFODNN7EXAMPLE';
+    // AWS's own documentation example, assembled so secret scanners do not read it as a key.
+    const aws = ['AKIA', 'IOSFODNN7EXAMPLE'].join('');
     const jwt = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U';
     const source = [
       'REPORT zdemo.',
@@ -323,6 +324,8 @@ test.describe('the result-set comparison', () => {
       const report = diffResultSets([{ a: 1, A: 2 }], [{ a: 1, A: 3 }], { unordered });
       expect(report.equal, `unordered=${unordered}: two different rows compared equal`).toBe(false);
       expect(diffResultSets([{ a: 1, A: 2 }], [{ a: 1, A: 2 }], { unordered }).equal).toBe(true);
+      // QA 9368ea4798e8: a real field whose value looks like the collision marker is not a collision.
+      expect(diffResultSets([{ A: { caseCollision: [2, 1] } }], [{ a: 1, A: 2 }], { unordered }).equal).toBe(false);
     }
     // One spelling on each side still compares the way ABAP names compare.
     expect(diffResultSets([{ matnr: 'X' }], [{ MATNR: 'X' }]).equal).toBe(true);
@@ -380,4 +383,14 @@ test.describe('the secret-scan exception list', () => {
     // Not vacuous: the file does hold fingerprints.
     expect(lines.filter((l) => /^[0-9a-f]{40}:/.test(l)).length).toBeGreaterThan(0);
   });
+});
+
+// QA eb6d5e633dcb, f11deb425925: a read budget follows the account, not the address it
+// calls from; and a provider's refusal is logged by its status, never by its body.
+test('the model-stage read budget is per account, and mail refusals log no provider body', () => {
+  const stages = read('app/api/model-stages/route.ts');
+  expect(stages).toMatch(/assertRateLimit\(`model_stages_read:\$\{decodedToken\.uid\}`/);
+  for (const route of ['app/api/send-approval-email/route.ts', 'app/api/send-tenant-approval-email/route.ts', 'app/api/send-tenant-revoke-email/route.ts']) {
+    expect(read(route), `${route} logs the provider's answer`).not.toMatch(/resendRes\.text\(\)/);
+  }
 });

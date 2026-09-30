@@ -220,6 +220,9 @@ test.describe('the architecture diagram is parsed, not pattern-matched', () => {
       { name: 'an SVG image', dirty: svg(`<image href="https://${OUTSIDE}/i.png" width="4" height="4"/>`) },
       { name: 'a reference to an outside shape', dirty: svg(`<use href="https://${OUTSIDE}/j.svg#x"/>`) },
       { name: 'a filter that loads an image', dirty: svg(`<filter id="k"><feImage href="https://${OUTSIDE}/k.png"/></filter>`) },
+      // QA 047ce2238fa9: a comment between a function name and its parenthesis.
+      { name: 'a resource split by a comment', dirty: svg(`<style>.n{background:url/**/(https://${OUTSIDE}/m)}</style><text>Order</text>`), mustKeep: 'Order' },
+      { name: 'an image set split by a comment', dirty: svg(`<rect style="background-image:image-set/**/('https://${OUTSIDE}/n.png' 1x)" width="4" height="4"/>`) },
       { name: 'a background on a label table', dirty: label(`<table background="https://${OUTSIDE}/l.png"><tr><td>Order</td></tr></table>`), mustKeep: 'Order' },
     ];
 
