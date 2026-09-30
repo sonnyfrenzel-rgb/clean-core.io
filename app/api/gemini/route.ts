@@ -19,7 +19,7 @@ import {
 } from '@/lib/model-stages';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { isTransientModelError } from '@/lib/model-retry';
-import { issueModelReceipt } from '@/lib/model-receipt';
+import { issueModelReceipt, MODEL_PROVIDER_ID } from '@/lib/model-receipt';
 import { GEMINI_TEST_STUB_HEADER, GEMINI_TEST_STUB_TEXT, geminiTestStubActive } from '@/lib/gemini-test-stub';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
@@ -349,7 +349,18 @@ export async function POST(request: NextRequest) {
       // The stage goes into the receipt when the caller named one — it was
       // validated above — so a store of one stage can refuse a receipt of
       // another (QA review of 8f9ea35a000e, 33a42c475f1a).
-      { uid: decodedToken.uid, text, modelId: model, byok: !!byokKey, ...(stage !== undefined ? { stage } : {}) },
+      //
+      // The provider is named here, by the handler that made the call — this one
+      // calls Google Gemini and nothing else — rather than filled in by the
+      // receipt module when nobody said (roadmap 3.0.13 b).
+      {
+        uid: decodedToken.uid,
+        text,
+        provider: MODEL_PROVIDER_ID,
+        modelId: model,
+        byok: !!byokKey,
+        ...(stage !== undefined ? { stage } : {}),
+      },
       signingKey,
     );
 
