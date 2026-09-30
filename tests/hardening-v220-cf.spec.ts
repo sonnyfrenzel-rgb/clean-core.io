@@ -8,6 +8,7 @@ import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { readTableDependencies } from '../lib/abap/table-dependencies';
 import { applyRunnerVerdicts, parseTapOutput } from '../lib/test-verdicts';
 import { isUrlSafe } from '../lib/url-validation';
+import { diffResultSets } from '../lib/abap/result-diff';
 import { generateExecutiveSummary, generateExecutiveSummaryDoc, generateModelCard } from '../lib/audit-pack';
 
 /**
@@ -173,6 +174,18 @@ test.describe('the executive summary of an audit pack', () => {
       expect(row, `${what}: no key row`).not.toBe('');
       expect(row, `${what}: claims a key was used where no model was called`).toContain('Not applicable — no model was called');
     }
+  });
+});
+
+test.describe('the result-set comparison', () => {
+  test('does not drop a field whose name differs from another only in case', () => {
+    for (const unordered of [true, false]) {
+      const report = diffResultSets([{ a: 1, A: 2 }], [{ a: 1, A: 3 }], { unordered });
+      expect(report.equal, `unordered=${unordered}: two different rows compared equal`).toBe(false);
+      expect(diffResultSets([{ a: 1, A: 2 }], [{ a: 1, A: 2 }], { unordered }).equal).toBe(true);
+    }
+    // One spelling on each side still compares the way ABAP names compare.
+    expect(diffResultSets([{ matnr: 'X' }], [{ MATNR: 'X' }]).equal).toBe(true);
   });
 });
 
