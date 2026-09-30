@@ -23,6 +23,8 @@ const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'ut
 const ANALYZE = 'app/(app)/project/[projectId]/analyze/page.tsx';
 const DESIGN = 'app/(app)/project/[projectId]/design/page.tsx';
 const DOCS = 'app/(app)/project/[projectId]/documentation/page.tsx';
+/** The documentation stage's two Confluence pages, moved out of the page in block D, D.16a. */
+const DOCS_EXPORT = 'lib/documentation-export.ts';
 
 /** The interpolations of one template region, minus the ones we build ourselves. */
 function modelValues(source: string, from: string, to: string): string[] {
@@ -46,14 +48,14 @@ test('the design export escapes every value the model wrote', () => {
 });
 
 test('the documentation export escapes every value the model wrote', () => {
-  const left = modelValues(read(DOCS), 'const html = `', '_Confluence.html');
+  const left = modelValues(read(DOCS_EXPORT), 'const html = `', '_Confluence.html');
   expect(left, `unescaped in the documentation export: ${left.join(', ')}`).toEqual([]);
 });
 
 test('the engine documentation export (3.0.5) escapes every value it prints', () => {
   // Names from the naming stage are model output, and every technical name,
   // condition and business statement is a token of the customer's source.
-  const src = read(DOCS);
+  const src = read(DOCS_EXPORT);
   expect(src).toContain('const engineHtml = `');
   const left = modelValues(src, 'const engineHtml = `', 'new Blob([engineHtml]');
   expect(left, `unescaped in the engine documentation export: ${left.join(', ')}`).toEqual([]);
@@ -66,8 +68,8 @@ test('the engine documentation export (3.0.5) escapes every value it prints', ()
 test('the engine documentation export carries the business layer, escaped and marked as a proposal', () => {
   // QA review of 4b4586aff273 (496a06c737f1): the engine export returned
   // before the business layer, so an existing SOP was missing from the file.
-  const src = read(DOCS);
-  const engine = src.slice(src.indexOf('const downloadEngineConfluenceHTML'), src.indexOf('new Blob([engineHtml]'));
+  const src = read(DOCS_EXPORT);
+  const engine = src.slice(src.indexOf('export function buildEngineConfluenceHtml'), src.indexOf('new Blob([engineHtml]'));
   expect(engine).toContain('const businessSection = parsedBusinessDoc');
   expect(engine).toMatch(/<\/ul>\s*\$\{businessSection\}\s*<\/body>/);
   expect(engine).toContain('Business layer — Model proposal');
@@ -77,6 +79,15 @@ test('the engine documentation export carries the business layer, escaped and ma
   expect(all.length, 'the scan found no value in the business layer').toBeGreaterThan(10);
   const raw = all.filter((e) => !e.startsWith('esc('));
   expect(raw, `unescaped in the business layer of the engine export: ${raw.join(', ')}`).toEqual([]);
+});
+
+test('the documentation stage builds its Confluence pages only through the escaping module', () => {
+  // D.16a moved both templates out of the page; the page must not grow a
+  // template of its own again beside them, one that the checks above would not read.
+  const page = read(DOCS);
+  expect(page).toContain("from '@/lib/documentation-export'");
+  expect(page).not.toContain('<html');
+  expect(page).not.toContain('<table');
 });
 
 test('the design preview is not written into a window of our own origin', () => {
@@ -219,12 +230,12 @@ test('nothing foreign is interpolated into an attribute of an exported document'
   const regions: Array<[string, string]> = [
     [ANALYZE, 'const gapsRows'],
     [DESIGN, 'const structureRows'],
-    [DOCS, 'const html = `'],
+    [DOCS_EXPORT, 'const html = `'],
   ];
   const ends: Record<string, string> = {
     [ANALYZE]: 'const blob = new Blob',
     [DESIGN]: 'if (viewOnly) {',
-    [DOCS]: '_Confluence.html',
+    [DOCS_EXPORT]: '_Confluence.html',
   };
 
   const offenders: string[] = [];
