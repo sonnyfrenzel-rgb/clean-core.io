@@ -83,7 +83,7 @@ const TONE_CLASS: Record<SegmentTone, string> = {
   // `components/cc/state.ts`, never green: a level is imported, not proven.
   'level-A': 'bg-cc-information',
   'level-B': 'bg-cc-neutral',
-  'level-C': 'bg-cc-warning',
+  'level-C': 'bg-cc-warning-mark',
   'level-D': 'bg-cc-error',
   // The one area that is not a category: no fill colour, a dashed outline —
   // a form rather than a hue, so it survives a printer without colour and a

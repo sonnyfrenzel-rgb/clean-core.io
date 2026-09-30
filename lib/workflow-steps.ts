@@ -121,7 +121,7 @@ export function phaseTone(step: Pick<RailStep, 'state' | 'proven'>): PhaseTone {
 export const PHASE_TONE_CLASS: Record<PhaseTone, { border: string; fill: string; surface: string; ink: string }> = {
   proven: { border: 'border-cc-success', fill: 'bg-cc-success', surface: 'bg-cc-surface', ink: 'text-cc-success' },
   unproven: { border: 'border-cc-warning-line', fill: 'bg-cc-warning-line', surface: 'bg-cc-warning-bg', ink: 'text-cc-warning' },
-  stale: { border: 'border-cc-warning', fill: 'bg-cc-warning', surface: 'bg-cc-warning-bg', ink: 'text-cc-warning' },
+  stale: { border: 'border-cc-warning', fill: 'bg-cc-warning-mark', surface: 'bg-cc-warning-bg', ink: 'text-cc-warning' },
   none: { border: 'border-cc-neutral-border', fill: 'bg-cc-line', surface: 'bg-cc-surface', ink: 'text-cc-ink-muted' },
 };
 

@@ -38,7 +38,7 @@ export const STATE_CLASSES: Record<SemanticState, StateClasses> = {
     bg: 'bg-cc-warning-bg',
     border: 'border-cc-warning-border',
     borderStrong: 'border-cc-warning-line',
-    mark: 'bg-cc-warning',
+    mark: 'bg-cc-warning-mark',
   },
   error: {
     text: 'text-cc-error',
